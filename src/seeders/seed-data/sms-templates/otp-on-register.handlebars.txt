@@ -1,0 +1,1 @@
+Hi {{ firstName }}, To get started with {{ solidAppName }}, please verify your account using {{ mobileVerificationTokenOnRegistration }} as your verification code.

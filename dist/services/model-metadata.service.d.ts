@@ -1,0 +1,53 @@
+import { DataSource, EntityManager, Repository } from 'typeorm';
+import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
+import { ModelMetadata } from '../entities/model-metadata.entity';
+import { BasicFilterDto } from '../dtos/basic-filters.dto';
+import { UpdateModelMetaDataDto } from '../dtos/update-model-metadata.dto';
+import { FieldMetadata } from '../entities/field-metadata.entity';
+import { SchematicService } from '../helpers/schematic.service';
+import { CodeGenerationOptions } from '../interfaces';
+import { CrudHelperService } from './crud-helper.service';
+import { FieldMetadataService } from './field-metadata.service';
+import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
+import { RoleMetadataService } from './role-metadata.service';
+export declare class ModelMetadataService {
+    private readonly modelMetadataRepo;
+    private readonly fieldMetadataRepo;
+    private readonly schematicService;
+    private readonly dataSource;
+    private readonly crudHelperService;
+    private readonly mediaStorageProviderMetadataService;
+    private readonly fieldMetadataService;
+    private readonly roleService;
+    private logger;
+    constructor(modelMetadataRepo: Repository<ModelMetadata>, fieldMetadataRepo: Repository<FieldMetadata>, schematicService: SchematicService, dataSource: DataSource, crudHelperService: CrudHelperService, mediaStorageProviderMetadataService: MediaStorageProviderMetadataService, fieldMetadataService: FieldMetadataService, roleService: RoleMetadataService);
+    findMany(basicFilterDto: BasicFilterDto): Promise<{
+        meta: {
+            totalRecords: number;
+            currentPage: number;
+            nextPage: number;
+            prevPage: number;
+            totalPages: number;
+            perPage: number;
+        };
+        records: ModelMetadata[];
+    }>;
+    findOne(id: any, query?: any): Promise<ModelMetadata>;
+    findOneBySingularName(singularName: string, relations?: {}): Promise<ModelMetadata>;
+    findOneByUserKey(singularName: string, relations?: {}): Promise<ModelMetadata>;
+    create(createDto: CreateModelMetadataDto): Promise<ModelMetadata>;
+    update(id: number, updateModelMetaDataDto: UpdateModelMetaDataDto): Promise<void>;
+    createInDB(manager: EntityManager, createDto: CreateModelMetadataDto): Promise<ModelMetadata>;
+    createInFile(modelId: any, repo: Repository<ModelMetadata>): Promise<void>;
+    updateInDb(manager: EntityManager, id: number, updateModelMetaDataDto: UpdateModelMetaDataDto): Promise<ModelMetadata>;
+    updateInFile(modelId: any, repo: Repository<ModelMetadata>): Promise<void>;
+    upsert(updateDto: UpdateModelMetaDataDto): Promise<ModelMetadata>;
+    removeBySingularName(singularName: string): Promise<ModelMetadata>;
+    deleteMany(ids: number[]): Promise<any>;
+    remove(id: number): Promise<ModelMetadata>;
+    generateCode(options: CodeGenerationOptions): Promise<string>;
+    generateRemoveFieldsCode(options: CodeGenerationOptions): Promise<string>;
+    generateModelCode(options: CodeGenerationOptions): Promise<string>;
+    private executeRefreshModelCommand;
+    private executeRemoveFieldsCommand;
+}

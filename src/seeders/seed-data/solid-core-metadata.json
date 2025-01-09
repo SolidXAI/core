@@ -1,0 +1,5324 @@
+{
+  "moduleMetadata": {
+    "name": "solid-core",
+    "displayName": "Solid Core",
+    "description": "Solid Core Module",
+    "defaultDataSource": "default",
+    "menuIconUrl": "/images/menu/app-builder.svg",
+    "menuSequenceNumber": 1,
+    "isSystem": true,
+    "models": [
+      {
+        "singularName": "moduleMetadata",
+        "tableName": "ss_module_metadata",
+        "pluralName": "moduleMetadatas",
+        "displayName": "Module Metadata",
+        "description": "Model to capture all Modules which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "name",
+        "dataSourceType": "rdbms",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "display_name",
+            "isSystem": true
+          },
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "menuIconUrl",
+            "displayName": "Menu Icon Url",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "menuSequenceNumber",
+            "displayName": "Menu Sequence Number",
+            "type": "int",
+            "ormType": "integer",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "defaultDataSource",
+            "displayName": "Default Data Source",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "isSystem",
+            "displayName": "Is System",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "modelMetadata",
+        "tableName": "ss_model_metadata",
+        "pluralName": "modelMetadatas",
+        "displayName": "Model Metadata",
+        "description": "Model to capture all Models which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "singularName",
+        "dataSourceType": "rdbms",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "singularName",
+            "displayName": "Singular Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "columnName": "singular_name",
+            "isSystem": true
+          },
+          {
+            "name": "tableName",
+            "displayName": "Table Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "columnName": "table_name",
+            "isSystem": true
+          },
+          {
+            "name": "pluralName",
+            "displayName": "Plural Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "columnName": "plural_name",
+            "isSystem": true
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "display_name",
+            "isSystem": true
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "description",
+            "isSystem": true
+          },
+          {
+            "name": "dataSource",
+            "displayName": "Data Source",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "data_source",
+            "isSystem": true
+          },
+          {
+            "name": "dataSourceType",
+            "displayName": "Data Source Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "data_source_type",
+            "isSystem": true
+          },
+          {
+            "name": "enableSoftDelete",
+            "displayName": "Enable Soft Delete",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "true",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "enable_soft_delete",
+            "isSystem": true
+          },
+          {
+            "name": "enableAuditTracking",
+            "displayName": "Enable Audit Tracking",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "enable_audit_tracking",
+            "isSystem": true
+          },
+          {
+            "name": "internationalisation",
+            "displayName": "Internationalisation",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "internationalisation",
+            "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "moduleMetadata",
+            "relationCreateInverse": true,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "isExportable",
+            "displayName": "Is Exportable",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "is_exportable",
+            "isSystem": true
+          },
+          {
+            "name": "userKeyField",
+            "displayName": "User Key Field",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "fieldMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "isSystem",
+            "displayName": "Is System",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "fieldMetadata",
+        "tableName": "ss_field_metadata",
+        "pluralName": "fieldMetadatas",
+        "displayName": "Field Metadata",
+        "description": "Model to capture all Fields which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "name",
+        "dataSourceType": "rdbms",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "name",
+            "isSystem": true
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "display_name",
+            "isSystem": true
+          },
+          {
+            "name": "type",
+            "displayName": "Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "type",
+            "isSystem": true
+          },
+          {
+            "name": "ormType",
+            "displayName": "ORM Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "orm_type",
+            "isSystem": true
+          },
+          {
+            "name": "model",
+            "displayName": "Model",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "modelMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "defaultValue",
+            "displayName": "Default Value",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "default_value",
+            "isSystem": true
+          },
+          {
+            "name": "regexPattern",
+            "displayName": "Regex Pattern",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "regex_pattern",
+            "isSystem": true
+          },
+          {
+            "name": "regexPatternNotMatchingErrorMsg",
+            "displayName": "Regex Pattern Not Matching Error Message",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "regex_pattern_not_maching_error_msg",
+            "isSystem": true
+          },
+          {
+            "name": "required",
+            "displayName": "Required",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "required",
+            "isSystem": true
+          },
+          {
+            "name": "unique",
+            "displayName": "Unique",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "unique",
+            "isSystem": true
+          },
+          {
+            "name": "encrypt",
+            "displayName": "Encrypt",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "encrypt",
+            "isSystem": true
+          },
+          {
+            "name": "encryptionType",
+            "displayName": "Encryption Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "encryption_type",
+            "isSystem": true
+          },
+          {
+            "name": "decryptWhen",
+            "displayName": "Decrypt When",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "decrypt_when",
+            "isSystem": true
+          },
+          {
+            "name": "index",
+            "displayName": "Index",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "index",
+            "isSystem": true
+          },
+          {
+            "name": "length",
+            "displayName": "Length",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "length",
+            "isSystem": true
+          },
+          {
+            "name": "max",
+            "displayName": "Max",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "max",
+            "isSystem": true
+          },
+          {
+            "name": "min",
+            "displayName": "Min",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "min",
+            "isSystem": true
+          },
+          {
+            "name": "private",
+            "displayName": "Private",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": true,
+            "encrypt": false,
+            "columnName": "private",
+            "isSystem": true
+          },
+          {
+            "name": "mediaTypes",
+            "displayName": "Media Types",
+            "type": "string",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "media_types",
+            "isSystem": true
+          },
+          {
+            "name": "mediaMaxSizeKb",
+            "displayName": "Media Max Size (KB)",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "media_max_size_kb",
+            "isSystem": true
+          },
+          {
+            "name": "mediaStorageProvider",
+            "displayName": "Media Storage Provider",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "mediaStorageProviderMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "relationType",
+            "displayName": "Relation Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relation_type",
+            "isSystem": true
+          },
+          {
+            "name": "relationModelSingularName",
+            "displayName": "Relation Model Singular Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relation_model_singular_name",
+            "isSystem": true
+          },
+          {
+            "name": "relationCreateInverse",
+            "displayName": "Relation Create Inverse",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relation_create_inverse",
+            "isSystem": true
+          },
+          {
+            "name": "relationCascade",
+            "displayName": "Relation Cascade",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relation_cascade",
+            "isSystem": true
+          },
+          {
+            "name": "relationModelModuleName",
+            "displayName": "Relation Model Module Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relation_model_module_name",
+            "isSystem": true
+          },
+          {
+            "name": "relationModelFieldName",
+            "displayName": "Relation Model Field Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relation_model_field_name",
+            "isSystem": true
+          },
+          {
+            "name": "selectionDynamicProvider",
+            "displayName": "Selection Dynamic Provider",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "selection_dynamic_provider",
+            "isSystem": true
+          },
+          {
+            "name": "selectionDynamicProviderCtxt",
+            "displayName": "Selection Dynamic Provider Context",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "selection_dynamic_provider_ctxt",
+            "isSystem": true
+          },
+          {
+            "name": "selectionStaticValues",
+            "displayName": "Selection Static Values",
+            "type": "shortText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "selection_static_values",
+            "isSystem": true
+          },
+          {
+            "name": "selectionValueType",
+            "displayName": "Selection Value Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "defaultValue": "string",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "selection_value_type",
+            "isSystem": true
+          },
+          {
+            "name": "computedFieldValueProvider",
+            "displayName": "Computed Field Value Provider",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "computed_field_value_provider",
+            "isSystem": true
+          },
+          {
+            "name": "computedFieldValueProviderCtxt",
+            "displayName": "Computed Field Value Provider Context",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "computed_field_value_provider_ctxt",
+            "isSystem": true
+          },
+          {
+            "name": "computedFieldValueType",
+            "displayName": "Computed Field Value Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "computed_field_value_type",
+            "isSystem": true
+          },
+          {
+            "name": "uuid",
+            "displayName": "UUID",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "uuid",
+            "isSystem": true
+          },
+          {
+            "name": "isSystem",
+            "displayName": "Is System",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "is_system",
+            "isSystem": true
+          },
+          {
+            "name": "isMarkedForRemoval",
+            "displayName": "Is Marked For Removal",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "is_marked_for_removal",
+            "isSystem": true
+          },
+          {
+            "name": "columnName",
+            "displayName": "Column Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "column_name",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "mediaStorageProviderMetadata",
+        "tableName": "ss_media_storage_provider_metadata",
+        "pluralName": "mediaStorageProviderMetadatas",
+        "displayName": "Media Storage Providers",
+        "description": "Model to capture all Media storage Provider which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "name",
+        "dataSourceType": "rdbms",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "name",
+            "isSystem": true
+          },
+          {
+            "name": "type",
+            "displayName": "Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "type",
+            "isSystem": true
+          },
+          {
+            "name": "region",
+            "displayName": "Region",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "region",
+            "isSystem": true
+          },
+          {
+            "name": "bucketName",
+            "displayName": "Bucket Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "bucket_name",
+            "isSystem": true
+          },
+          {
+            "name": "isPublic",
+            "displayName": "Is Public",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "defaultValue": "false",
+            "columnName": "is_public",
+            "isSystem": true
+          },
+          {
+            "name": "localPath",
+            "displayName": "Local Path",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "local_path",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "viewMetadata",
+        "tableName": "ss_view_metadata",
+        "pluralName": "viewMetadatas",
+        "displayName": "View Metadata",
+        "description": "Model to capture all views which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "name",
+        "dataSourceType": "rdbms",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "name",
+            "isSystem": true,
+            "regexPattern": "[a-z]+(-[a-z]+)*",
+            "regexPatternNotMatchingErrorMsg": "Only kebab case allowed for name, also only lower case."
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "display_name",
+            "isSystem": true
+          },
+          {
+            "name": "type",
+            "displayName": "Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "type",
+            "isSystem": true
+          },
+          {
+            "name": "context",
+            "displayName": "Context",
+            "type": "json",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "context",
+            "defaultValue": "{}",
+            "isSystem": true
+          },
+          {
+            "name": "layout",
+            "displayName": "Layout",
+            "type": "json",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "layout",
+            "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "moduleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "model",
+            "displayName": "Model",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "modelMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "actionMetadata",
+        "tableName": "ss_action_metadata",
+        "pluralName": "actionMetadatas",
+        "displayName": "Action Metadata",
+        "description": "Model to capture all actions which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "name",
+        "dataSourceType": "rdbms",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "name",
+            "isSystem": true,
+            "regexPattern": "[a-z]+(-[a-z]+)*",
+            "regexPatternNotMatchingErrorMsg": "Only kebab case allowed for name, also only lower case."
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "display_name",
+            "isSystem": true
+          },
+          {
+            "name": "type",
+            "displayName": "Type",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "index": true,
+            "isSystem": true,
+            "columnName": "type",
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "solid:solid",
+              "custom:custom"
+            ]
+          },
+          {
+            "name": "domain",
+            "displayName": "Domain",
+            "type": "json",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "domain",
+            "isSystem": true
+          },
+          {
+            "name": "context",
+            "displayName": "Context",
+            "type": "json",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "context",
+            "defaultValue": "{}",
+            "isSystem": true
+          },
+          {
+            "name": "customComponent",
+            "displayName": "Custom Component",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "custom_component",
+            "isSystem": true
+          },
+          {
+            "name": "customIsModal",
+            "displayName": "Custom Is Modal",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "defaultValue": false,
+            "columnName": "custom_is_modal",
+            "isSystem": true
+          },
+          {
+            "name": "serverEndpoint",
+            "displayName": "Server Endpoint",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "server_endpoint",
+            "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "moduleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "model",
+            "displayName": "Model",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "modelMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "view",
+            "displayName": "View",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "viewMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "menuItemMetadata",
+        "tableName": "ss_menu_item_metadata",
+        "pluralName": "menuItemMetadatas",
+        "displayName": "Menu Item Metadata",
+        "description": "Model to capture all Solid Menu Items which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "name",
+        "dataSourceType": "rdbms",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "name",
+            "isSystem": true,
+            "regexPattern": "[a-z]+(-[a-z]+)*",
+            "regexPatternNotMatchingErrorMsg": "Only kebab case allowed for name, also only lower case."
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "display_name",
+            "isSystem": true
+          },
+          {
+            "name": "sequenceNumber",
+            "displayName": "Sequence Number",
+            "type": "decimal",
+            "ormType": "int",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "sequence_number",
+            "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "moduleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "parentMenuItem",
+            "displayName": "Parent Menu Item",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "menuItemMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "action",
+            "displayName": "Action",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "actionMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "roles",
+            "displayName": "Roles",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationModelSingularName": "roleMetadata",
+            "relationModelFieldName": "roles",
+            "relationCreateInverse": true,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "solidMediaModel",
+        "tableName": "ss_media_model",
+        "pluralName": "solidMediaModels",
+        "displayName": "solid Media Model",
+        "description": "Model to capture all Media in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "entityId",
+        "dataSourceType": "rdbms",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "entityId",
+            "displayName": "Entity Id",
+            "type": "int",
+            "ormType": "integer",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "relativeUri",
+            "displayName": "Relative Uri",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "modelMetadata",
+            "displayName": "Model Metadata",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "modelMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "mediaStorageProviderMetadata",
+            "displayName": "Media Storage Provider",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "mediaStorageProviderMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "fieldMetadata",
+            "displayName": "Field Metadata",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "fieldMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "user",
+        "tableName": "ss_user",
+        "pluralName": "users",
+        "displayName": "User",
+        "description": "Model to capture Users",
+        "dataSource": "default",
+        "dataSourceType": "rdbms",
+        "userKeyFieldUserKey": "username",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "fullName",
+            "displayName": "Full Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "username",
+            "displayName": "User Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "email",
+            "displayName": "Email",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "mobile",
+            "displayName": "Mobile",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "password",
+            "displayName": "Password",
+            "type": "password",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "forcePasswordChange",
+            "displayName": "Force Password Change",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "lastLoginProvider",
+            "displayName": "Last Login Provider",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "defaultValue": "local",
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "accessCode",
+            "displayName": "Access Code",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "googleAccessToken",
+            "displayName": "Google Acces Token",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "googleId",
+            "displayName": "Google Id",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "googleProfilePicture",
+            "displayName": "Google Profile Picture",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "active",
+            "displayName": "Active",
+            "type": "boolean",
+            "ormType": "boolean",
+            "length": 512,
+            "defaultValue": "false",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "roles",
+            "displayName": "Roles",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationModelSingularName": "roleMetadata",
+            "relationModelFieldName": "users",
+            "relationCreateInverse": true,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "forgotPasswordConfirmedAt",
+            "displayName": "Forgot Password Confirmed At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "verificationTokenOnForgotPassword",
+            "displayName": "Verification Token On Forgot Password",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 8,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "verificationTokenOnForgotPasswordExpiresAt",
+            "displayName": "Verification Token On Forgot Password ExpiresAt",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "emailVerifiedOnRegistrationAt",
+            "displayName": "Email Verified On Registration At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "emailVerificationTokenOnRegistration",
+            "displayName": "Email Verification Token On Registration",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 8,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "emailVerificationTokenOnRegistrationExpiresAt",
+            "displayName": "Email Verification Token On Registration Expires At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "mobileVerifiedOnRegistrationAt",
+            "displayName": "Mobile Verified On Registration At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "mobileVerificationTokenOnRegistration",
+            "displayName": "Mobile Verification Token On Registration",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "mobileVerificationTokenOnRegistrationExpiresAt",
+            "displayName": "Mobile Verification Token On Registration Expires At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "emailVerifiedOnLoginAt",
+            "displayName": "Email Verified On Login At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "emailVerificationTokenOnLogin",
+            "displayName": "Email Verification Token On Login",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "emailVerificationTokenOnLoginExpiresAt",
+            "displayName": "Email Verification Token On Login Expires At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "mobileVerifiedOnLoginAt",
+            "displayName": "Mobile Verified On Login At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "mobileVerificationTokenOnLogin",
+            "displayName": "Mobile Verification Token On Login",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "mobileVerificationTokenOnLoginExpiresAt",
+            "displayName": "Mobile Verification Token On Login Expires At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "customPayload",
+            "displayName": "Custom Payload",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "permissionMetadata",
+        "pluralName": "permissionMetadatas",
+        "displayName": "Role",
+        "description": "Model to capture Permission",
+        "dataSource": "default",
+        "tableName": "ss_permission_metadata",
+        "dataSourceType": "rdbms",
+        "userKeyFieldUserKey": "name",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "columnName": "name",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "roleMetadata",
+        "tableName": "ss_role_metadata",
+        "pluralName": "roleMetadatas",
+        "displayName": "Role",
+        "description": "Model to capture Roles",
+        "dataSource": "default",
+        "dataSourceType": "rdbms",
+        "userKeyFieldUserKey": "name",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "name",
+            "isSystem": true
+          },
+          {
+            "name": "permissions",
+            "displayName": "Permissions",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationCreateInverse": true,
+            "relationModelFieldName": "roles",
+            "relationModelSingularName": "permissionMetadata",
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "users",
+            "displayName": "Users",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationModelSingularName": "user",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "menuItems",
+            "displayName": "Mmenu Items",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationModelSingularName": "menuItemMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "mqMessageQueue",
+        "tableName": "ss_mq_message_queue",
+        "pluralName": "mqMessageQueues",
+        "displayName": "Message Queues",
+        "description": "Model to capture all queues which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "name",
+        "dataSourceType": "rdbms",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": true,
+            "isSystem": true
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": true,
+            "isSystem": true
+          },
+          {
+            "name": "mqMessages",
+            "displayName": "Messages",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "one-to-many",
+            "relationModelSingularName": "mqMessageQueue",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationTypeManyToManyOwner": true,
+            "relationModelModuleName": "solid-core"
+          }
+        ]
+      },
+      {
+        "singularName": "mqMessage",
+        "tableName": "ss_mq_message",
+        "pluralName": "mqMessages",
+        "displayName": "Messages",
+        "description": "Model to capture all messages being sent on the queue",
+        "dataSource": "default",
+        "dataSourceType": "rdbms",
+        "isSystem": true,
+        "userKeyFieldUserKey": "messageId",
+        "fields": [
+          {
+            "name": "messageId",
+            "displayName": "Message Id",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "retryCount",
+            "displayName": "Retry Count",
+            "type": "int",
+            "ormType": "integer",
+            "length": 512,
+            "isSystem": true
+          },
+          {
+            "name": "retryInterval",
+            "displayName": "Retry Interval",
+            "type": "int",
+            "ormType": "integer",
+            "length": 512,
+            "isSystem": true
+          },
+          {
+            "name": "messageType",
+            "displayName": "Message Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "stage",
+            "displayName": "Stage",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "index": true,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "pending:pending",
+              "scheduled:scheduled",
+              "started:started",
+              "retry:retry",
+              "retrying:retrying",
+              "failed:failed",
+              "succeeded:succeeded"
+            ]
+          },
+          {
+            "name": "startedAt",
+            "displayName": "Started At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "index": false,
+            "isSystem": true
+          },
+          {
+            "name": "finishedAt",
+            "displayName": "Finished At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "index": false,
+            "isSystem": true
+          },
+          {
+            "name": "elapsedMillis",
+            "displayName": "Elapsed Millis",
+            "type": "int",
+            "ormType": "integer",
+            "length": 512,
+            "isSystem": true
+          },
+          {
+            "name": "input",
+            "displayName": "Input",
+            "type": "json",
+            "ormType": "varchar",
+            "length": 1024,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "output",
+            "displayName": "Output",
+            "type": "json",
+            "ormType": "varchar",
+            "length": 1024,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "error",
+            "displayName": "Error",
+            "type": "json",
+            "ormType": "varchar",
+            "length": 1024,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "parentEntityId",
+            "displayName": "Parent Entity Id",
+            "type": "int",
+            "ormType": "integer",
+            "length": 512,
+            "required": false,
+            "isSystem": true
+          },
+          {
+            "name": "parentEntity",
+            "displayName": "Parent Entity",
+            "type": "selectionDynamic",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "selectionValueType": "string",
+            "selectionDynamicProvider": "ListOfModelsSelectionProvider",
+            "selectionDynamicProviderCtxt": {},
+            "isSystem": true
+          },
+          {
+            "name": "mqMessageQueue",
+            "displayName": "Queue",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "mqMessageQueue",
+            "relationCreateInverse": true,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core"
+          }
+        ]
+      }
+    ]
+  },
+  "roles": [
+    {
+      "name": "Admin"
+    },
+    {
+      "name": "Public"
+    }
+  ],
+  "users": [
+    {
+      "username": "admin@example.service.com",
+      "email": "admin@example.service.com",
+      "password": "Admin@3214$",
+      "forcePasswordChange": false,
+      "fullName": "Default Admin"
+    }
+  ],
+  "actions": [
+    {
+      "displayName": "Module list view",
+      "name": "moduleMetadata-list-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/app-builder/module/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "moduleMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "moduleMetadata"
+    },
+    {
+      "displayName": "Model list view",
+      "name": "modelMetadata-list-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/app-builder/model/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "modelMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelMetadata"
+    },
+    {
+      "displayName": "Field list view",
+      "name": "fieldMetadata-list-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/app-builder/field/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "fieldMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fieldMetadata"
+    },
+    {
+      "displayName": "View Metadata list action",
+      "name": "viewMetadata-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "viewMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "viewMetadata"
+    },
+    {
+      "displayName": "Action Metadata list action",
+      "name": "actionMetadata-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "actionMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "actionMetadata"
+    },
+    {
+      "displayName": "Menu Item Metadata list action",
+      "name": "menuItemMetadata-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "menuItemMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "menuItemMetadata"
+    },
+    {
+      "displayName": "Solid Media Model list action",
+      "name": "solidMediaModel-list-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/app-builder/media/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "solidMediaModel-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "solidMediaModel"
+    },
+    {
+      "displayName": "Solid Media Storage Provider Model list action",
+      "name": "mediaStorageProviderMetadata-list-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/app-builder/media-storage-provider/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "mediaStorageProviderMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mediaStorageProviderMetadata"
+    },
+    {
+      "displayName": "User list action",
+      "name": "user-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/iam/users/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "user-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "user"
+    },
+    {
+      "displayName": "User form Create action",
+      "name": "user-form-create-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/iam/users/create",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "user"
+    },
+    {
+      "displayName": "User form Edit action",
+      "name": "user-form-edit-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/iam/users",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "user"
+    },
+    {
+      "displayName": "Role list action",
+      "name": "roleMetadata-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/iam/roles/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "roleMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "roleMetadata"
+    },
+    {
+      "displayName": "Permission list action",
+      "name": "permissionMetadata-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/iam/permissions/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "permissionMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "permissionMetadata"
+    },
+    {
+      "displayName": "Message list action",
+      "name": "mqMessage-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "mqMessage-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessage"
+    },
+    {
+      "displayName": "Queues list action",
+      "name": "mqMessageQueue-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "mqMessageQueue-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessageQueue"
+    }
+  ],
+  "menus": [
+    {
+      "displayName": "App Builder",
+      "name": "app-builder-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "app-builder-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Module",
+      "name": "module",
+      "sequenceNumber": 1,
+      "actionUserKey": "moduleMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "app-builder-menu-item"
+    },
+    {
+      "displayName": "Model",
+      "name": "model",
+      "sequenceNumber": 2,
+      "actionUserKey": "modelMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "app-builder-menu-item"
+    },
+    {
+      "displayName": "Field",
+      "name": "field",
+      "sequenceNumber": 3,
+      "actionUserKey": "fieldMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "app-builder-menu-item"
+    },
+    {
+      "displayName": "Layout Builder",
+      "name": "layout-builder-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "layout-builder-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Menu Item",
+      "name": "menu-item-metadata",
+      "sequenceNumber": 4,
+      "actionUserKey": "menuItemMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layout-builder-menu-item"
+    },
+    {
+      "displayName": "View",
+      "name": "view-metadata",
+      "sequenceNumber": 5,
+      "actionUserKey": "viewMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layout-builder-menu-item"
+    },
+    {
+      "displayName": "Action",
+      "name": "action-metadata",
+      "sequenceNumber": 6,
+      "actionUserKey": "actionMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layout-builder-menu-item"
+    },
+    {
+      "displayName": "Media",
+      "name": "media-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "media-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Media Storage Provider",
+      "name": "media-storage-provider",
+      "sequenceNumber": 7,
+      "actionUserKey": "mediaStorageProviderMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "media-menu-item"
+    },
+    {
+      "displayName": "Media",
+      "name": "media",
+      "sequenceNumber": 8,
+      "actionUserKey": "solidMediaModel-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "media-menu-item"
+    },
+    {
+      "displayName": "IAM",
+      "name": "iam-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "iam-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "User",
+      "name": "user-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "user-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
+      "displayName": "Role",
+      "name": "roleMetadata-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "roleMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
+      "displayName": "Permission",
+      "name": "permissionMetadata-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "permissionMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
+      "displayName": "Queues",
+      "name": "queues-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "queues-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Messages",
+      "name": "mqMessage-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "mqMessage-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "queues-menu-item"
+    },
+    {
+      "displayName": "Queues",
+      "name": "mqMessageQueue-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "mqMessageQueue-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "queues-menu-item"
+    }
+  ],
+  "views": [
+    {
+      "name": "moduleMetadata-list-view",
+      "displayName": "Module Metadata",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "moduleMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "menuIconUrl",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "menuSequenceNumber",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "defaultDataSource",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isSystem",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "moduleMetadata-form-view",
+      "displayName": "Module Metadata",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "moduleMetadata",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Module Metadata",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "displayName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "description"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "menuIconUrl"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "menuSequenceNumber"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "defaultDataSource"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "isSystem"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "modelMetadata-list-view",
+      "displayName": "Model Metadata",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "singularName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "tableName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "pluralName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dataSource",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dataSourceType",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "enableSoftDelete",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "enableAuditTracking",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "internationalisation",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isExportable",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "userKeyField",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isSystem",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "modelMetadata-form-view",
+      "displayName": "Model Metadata",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelMetadata",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Model Metadata",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "singularName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "tableName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "pluralName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "displayName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "description"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "dataSource"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "dataSourceType"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "enableSoftDelete"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "enableAuditTracking"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "internationalisation"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "module"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "isExportable"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "userKeyField"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "isSystem"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "mediaStorageProviderMetadata-list-view",
+      "displayName": "Solid Media Storage Provider Metadata Model",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mediaStorageProviderMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "region",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "bucketName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isPublic",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "localPath",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "mediaStorageProviderMetadata-form-view",
+      "displayName": "Solid Media Storage Provider Metadata Model",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mediaStorageProviderMetadata",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Solid Media Storage Provider Metadata Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "type"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "region"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "bucketName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "isPublic"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "localPath"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "viewMetadata-list-view",
+      "displayName": "View Metadata list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "viewMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "context",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "layout",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "viewMetadata-form-view",
+      "displayName": "View Metadata form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "viewMetadata",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "View Metadata",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-1",
+                      "label": "General Info"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "page-1-row-1",
+                          "label": "",
+                          "className": ""
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-1-row-1-col-1",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "name"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "displayName"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "type"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "module"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "model"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-1-row-1-col-2",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "context"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-2",
+                      "label": "Layout"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "page-2-row-1",
+                          "label": "",
+                          "className": ""
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-2-row-1-col-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "layout",
+                                  "height": "80vh"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "actionMetadata-list-view",
+      "displayName": "Action Metadata list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "actionMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "view",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "actionMetadata-form-view",
+      "displayName": "Action Metadata form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "actionMetadata",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Action Metadata",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-1",
+                      "label": "General Info"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "page-1-row-1",
+                          "label": "",
+                          "className": ""
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-1-row-1-col-1",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "name"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "displayName"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "type"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "customComponent"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "customIsModal"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "serverEndpoint"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-1-row-1-col-2",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "module"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "model"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "view"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-2",
+                      "label": "Layout"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "page-2-row-1",
+                          "label": "",
+                          "className": ""
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-2-row-1-col-1",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "domain",
+                                  "height": "80vh"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-2-row-1-col-1",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "context",
+                                  "height": "80vh"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "menuItemMetadata-list-view",
+      "displayName": "Menu Item Metadata list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "menuItemMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "sortable": true,
+              "filterable": true,
+              "widget": "HarishShortText"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequenceNumber",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "parentMenuItem",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "action",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "roles",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "menuItemMetadata-form-view",
+      "displayName": "Menu Item Metadata form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "menuItemMetadata",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Solid Menu Item Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "displayName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "sequenceNumber"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "module"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "parentMenuItem"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "action"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "roles",
+                      "renderMode": "checkbox",
+                      "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
+                      "inlineCreate": "true",
+                      "inlineCreateLayout": {
+                        "type": "form",
+                        "attrs": {
+                          "name": "form-1",
+                          "label": "User",
+                          "className": "grid",
+                          "width": "20vw"
+                        },
+                        "children": [
+                          {
+                            "type": "sheet",
+                            "attrs": {
+                              "name": "sheet-1"
+                            },
+                            "children": [
+                              {
+                                "type": "group",
+                                "attrs": {
+                                  "name": "group-1",
+                                  "label": "",
+                                  "className": "col-12"
+                                },
+                                "children": [
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "name"
+                                    }
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "solidMediaModel-list-view",
+      "displayName": "Solid Media Model",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "solidMediaModel",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "entityId",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "relativeUri",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelMetadata",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mediaStorageProviderMetadata",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "fieldMetadata",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "solidMediaModel-form-view",
+      "displayName": "Solid Media Model",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "solidMediaModel",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Solid Media Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "entityId"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "relativeUri"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "modelMetadata"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mediaStorageProviderMetadata"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "fieldMetadata"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "fieldMetadata-list-view",
+      "displayName": "Field Metadata",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fieldMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "ormType",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "defaultValue",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "regexPattern",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "regexPatternNotMatchingErrorMsg",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "required",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "unique",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "encrypt",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "encryptionType",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "decryptWhen",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "index",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "length",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "max",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "min",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "private",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mediaTypes",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mediaMaxSizeKb",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mediaStorageProvider",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "relationType",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "relationModelSingularName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "relationCreateInverse",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "relationCascade",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "relationModelModuleName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "relationModelFieldName",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "selectionDynamicProvider",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "selectionDynamicProviderCtxt",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "selectionStaticValues",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "selectionValueType",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "computedFieldValueProvider",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "computedFieldValueProviderCtxt",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "computedFieldValueType",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "uuid",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isSystem",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isMarkedForRemoval",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "columnName",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "fieldMetadata-form-view",
+      "displayName": "Field Metadata",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fieldMetadata",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Field Metadata",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "displayName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "type"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "ormType"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "model"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "defaultValue"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "regexPattern"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "regexPatternNotMatchingErrorMsg"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "required"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "unique"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "encrypt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "encryptionType"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "decryptWhen"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "index"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "length"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "max"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "min"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "private"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mediaTypes"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mediaMaxSizeKb"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mediaStorageProvider"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "relationType"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "relationModelSingularName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "relationCreateInverse"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "relationCascade"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "relationModelModuleName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "relationModelFieldName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "selectionDynamicProvider"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "selectionDynamicProviderCtxt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "selectionStaticValues"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "selectionValueType"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "computedFieldValueProvider"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "computedFieldValueProviderCtxt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "computedFieldValueType"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "uuid"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "isSystem"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "isMarkedForRemoval"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "columnName"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "user-list-view",
+      "displayName": "Users",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "user",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "createAction": "user-form-create-action",
+          "editAction": "user-form-edit-action",
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "username",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "email",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mobile",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "lastLoginProvider",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "active",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "user-form-view",
+      "displayName": "User",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "user",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "User",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "username"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "email"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mobile"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "password"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "lastLoginProvider"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "accessCode"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "googleAccessToken"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "googleId"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "googleProfilePicture"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "active"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "roles"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "forgotPasswordConfirmedAt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "verificationTokenOnForgotPassword"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "verificationTokenOnForgotPasswordExpiresAt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "emailVerifiedOnRegistrationAt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "emailVerificationTokenOnRegistration"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "emailVerificationTokenOnRegistrationExpiresAt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mobileVerifiedOnRegistrationAt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mobileVerificationTokenOnRegistration"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mobileVerificationTokenOnRegistrationExpiresAt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "emailVerifiedOnLoginAt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "emailVerificationTokenOnLogin"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "emailVerificationTokenOnLoginExpiresAt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mobileVerifiedOnLoginAt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mobileVerificationTokenOnLogin"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mobileVerificationTokenOnLoginExpiresAt"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "customPayload"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "permissionMetadata-list-view",
+      "displayName": "Permissions",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "permissionMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "permissionMetadata-form-view",
+      "displayName": "Permission",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "permissionMetadata",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Permission",
+          "className": "grid",
+          "disabled": true,
+          "readonly": true
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "roleMetadata-list-view",
+      "displayName": "Roles",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "roleMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "permissions",
+              "sortable": true,
+              "filterable": true,
+              "renderMode": "checkbox",
+              "inlineCreate": "true"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "users",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "menuItems",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "roleMetadata-form-view",
+      "displayName": "Role",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "roleMetadata",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "User",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "permissions",
+                      "renderMode": "autocomplete"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "users"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "menuItems"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "mqMessage-list-view",
+      "displayName": "Messages",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessage",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "messageId",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "stage",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "startedAt",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "finishedAt",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "elapsedMillis",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "parentEntityId",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "parentEntity",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mqMessageQueue",
+              "label": "Queue",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "mqMessage-form-view",
+      "displayName": "Mq Message",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessage",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Mq Message",
+          "className": "grid",
+          "disabled": true,
+          "readonly": true
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "messageType",
+                      "label": "Message Type"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "retryCount",
+                      "label": "Retry Count"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "retryInterval",
+                      "label": "Retry Interval"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "stage",
+                      "label": "Stage"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "startedAt",
+                      "label": "Started At"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "finishedAt",
+                      "label": "Finished At"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "elapsedMillis",
+                      "label": "Elapsed Millis"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "parentEntityId",
+                      "label": "Parent Entity Id"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "parentEntity",
+                      "label": "Parent Entity"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mqMessageQueue",
+                      "label": "Message Queue"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "input",
+                      "label": "Input"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "output",
+                      "label": "Output"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "error",
+                      "label": "Error"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "mqMessageQueue-list-view",
+      "displayName": "Message Queues",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessageQueue",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "label": "Queue Name",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "mqMessageQueue-form-view",
+      "displayName": "Mq Message Queue",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessageQueue",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Mq Message Queue",
+          "className": "grid",
+          "disabled": true,
+          "readonly": true
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name",
+                      "label": "Queue Name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "description",
+                      "label": "Queue Description"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    }
+  ],
+  "emailTemplates": [
+    {
+      "name": "on-force-password-change",
+      "displayName": "Default: On Force Password Change",
+      "body": "src/seeders/seed-data/email-templates/on-force-password-change.handlebars.html",
+      "subject": "{{solidAppName}} - Your New Account.",
+      "description": "When using password based signUp, if the user does not specify the password of the new account being created the system automatically triggers a force password change email.",
+      "active": true
+    },
+    {
+      "name": "otp-on-register",
+      "displayName": "Default: Otp On Register",
+      "body": "src/seeders/seed-data/email-templates/otp-on-register.handlebars.html",
+      "subject": "{{solidAppName}} - Verify Your New Account.",
+      "description": "This template is used to generate the account verification email sent to users to verify their email address when they register.",
+      "active": true
+    },
+    {
+      "name": "otp-on-login",
+      "displayName": "Default: Otp On Login",
+      "body": "src/seeders/seed-data/email-templates/otp-on-login.handlebars.html",
+      "subject": "{{solidAppName}} - Verification Token For Your Login.",
+      "description": "This template is used to send the email with the OTP when logging in.",
+      "active": true
+    },
+    {
+      "name": "forgot-password",
+      "displayName": "Default: Forgot Password",
+      "body": "src/seeders/seed-data/email-templates/forgot-password.handlebars.html",
+      "subject": "{{solidAppName}} - Password Reset Instructions.",
+      "description": "This template is used to send the verification token required by users to reset their password.",
+      "active": true
+    }
+  ],
+  "smsTemplates": [
+    {
+      "name": "otp-on-register",
+      "displayName": "Default: Otp On Register",
+      "body": "src/seeders/seed-data/sms-templates/otp-on-register.handlebars.txt",
+      "description": "This template is used to generate the account verification sms sent to users to verify their mobile number when they register.",
+      "smsProviderTemplateId": "666bd246d6fc051047560595",
+      "active": true
+    },
+    {
+      "name": "otp-on-login",
+      "displayName": "Default: Otp On Login",
+      "body": "src/seeders/seed-data/sms-templates/otp-on-login.handlebars.txt",
+      "description": "This template is used to send the sms with the OTP when logging in.",
+      "smsProviderTemplateId": "666bd246d6fc051047560595",
+      "active": true
+    },
+    {
+      "name": "forgot-password",
+      "displayName": "Default: Forgot Password",
+      "body": "src/seeders/seed-data/sms-templates/forgot-password.handlebars.txt",
+      "description": "This template is used to send the verification token required by users to reset their password.",
+      "smsProviderTemplateId": "666bd246d6fc051047560595",
+      "active": true
+    }
+  ],
+  "mediaStorageProviders": [
+    {
+      "name": "default-filesystem",
+      "type": "filesystem"
+    },
+    {
+      "name": "default-aws-s3",
+      "type": "aws-s3"
+    }
+  ],
+  "checksums": []
+}

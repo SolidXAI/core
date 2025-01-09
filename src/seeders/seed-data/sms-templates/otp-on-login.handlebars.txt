@@ -1,0 +1,1 @@
+Hi {{ firstName }}, Login to {{ solidAppName }}, using {{ mobileVerificationTokenOnLogin }} as your verification code.

@@ -1,0 +1,273 @@
+import { Brackets, SelectQueryBuilder, WhereExpressionBuilder } from "typeorm";
+import { BasicFilterDto } from "../dtos/basic-filters.dto";
+
+export class CrudHelperService {
+    constructor(
+
+    ) { }
+
+    
+    private orderOptions(sort: any[] = []) {
+        const orderOptions = {};
+        sort.forEach((s: string) => {
+            const [field, order] = s.split(':');
+            orderOptions[field] = order?.toUpperCase() ?? 'ASC';
+            if (!['ASC', 'DESC'].includes(orderOptions[field])) {
+                throw new Error(`Invalid sort order provided:  ${order}`);
+            }
+        });
+        return orderOptions;
+    }
+
+    private applyFilters(qb: WhereExpressionBuilder, filters: any, alias: string = 'entity', selectQb: SelectQueryBuilder<any>) {
+        const normalizedFilters = this.normalizeObjectKeys(filters);
+        if (normalizedFilters.$and) {
+            normalizedFilters.$and.forEach((andFilter: any) => {
+                qb.andWhere(
+                    new Brackets(subQb => {
+                        this.applyFilters(subQb, andFilter, alias, selectQb);
+                    })
+                );
+            });
+        } else if (normalizedFilters.$or) {
+            normalizedFilters.$or.forEach((orFilter: any) => {
+                qb.orWhere(new Brackets(subQb => {
+                    this.applyFilters(subQb, orFilter, alias, selectQb);
+                }));
+            });
+        } else {
+            // For individual conditions
+            Object.keys(normalizedFilters).forEach(key => {
+                const primaryFilterObj = normalizedFilters[key];
+                const normalizedPrimaryFilterObj = this.normalizeObjectKeys(primaryFilterObj);
+
+                // Get the operator or field from the key
+                const operatorOrField = Object.keys(normalizedPrimaryFilterObj)[0];
+                // if the key is an operator, then build the query based on the operator
+                if (operatorOrField.startsWith('$')) {
+                    const operator = operatorOrField;
+                    this.buildOperatorQuery(qb, alias, key, normalizedPrimaryFilterObj, operator);
+                    return;
+                }
+                else { // Recursively call the applyFilters method to handle nested conditions
+                    selectQb.leftJoin(`${alias}.${key}`, key);
+                    this.applyFilters(qb, primaryFilterObj, key, selectQb);    
+                }
+            });
+        }
+    }
+
+    private buildOperatorQuery(qb: any, alias: string, field: string, normalizedPrimaryOperatorObj: any, operator: string) {
+        const uniqueFieldAlias = `${alias}_${field}_${Math.floor(Math.random() * 1000)}`;
+        switch (operator) {
+            case '$eq':
+                qb.andWhere(`${alias}.${field} = :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$eq });
+                break;
+            case '$eqi':
+                qb.andWhere(`LOWER(${alias}.${field}) = :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$eqi.toLowerCase() });
+                break;
+            case '$ne':
+                qb.andWhere(`${alias}.${field} != :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$ne });
+                break;
+            case '$nei':
+                qb.andWhere(`LOWER(${alias}.${field}) != :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$nei.toLowerCase() });
+                break;
+            case '$gt':
+                qb.andWhere(`${alias}.${field} > :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$gt });
+                break;
+            case '$gte':
+                qb.andWhere(`${alias}.${field} >= :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$gte });
+                break;
+            case '$lt':
+                qb.andWhere(`${alias}.${field} < :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$lt });
+                break;
+            case '$lte':
+                qb.andWhere(`${alias}.${field} <= :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$lte });
+                break;
+            case '$in':
+                qb.andWhere(`${alias}.${field} IN (:...${uniqueFieldAlias})`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$in });
+                break;
+            case '$notIn':
+                qb.andWhere(`${alias}.${field} NOT IN (:...${uniqueFieldAlias})`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$notIn });
+                break;
+            case '$contains':
+                qb.andWhere(`${alias}.${field} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$contains}%` });
+                break;
+            case '$notContains':
+                qb.andWhere(`${alias}.${field} NOT LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$notContains}%` });
+                break;
+            case '$containsi':
+                qb.andWhere(`LOWER(${alias}.${field}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$containsi.toLowerCase()}%` });
+                break;
+            case '$notContainsi':
+                qb.andWhere(`LOWER(${alias}.${field}) NOT LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$notContainsi.toLowerCase()}%` });
+                break;
+            case '$null':
+                qb.andWhere(`${alias}.${field} IS NULL`);
+                break;
+            case '$notNull':
+                qb.andWhere(`${alias}.${field} IS NOT NULL`);
+                break;
+            case '$between':
+                qb.andWhere(`${alias}.${field} BETWEEN :${uniqueFieldAlias}0 AND :${uniqueFieldAlias}1`, { [`${uniqueFieldAlias}0`]: normalizedPrimaryOperatorObj.$between[0], [`${uniqueFieldAlias}1`]: normalizedPrimaryOperatorObj.$between[1] });
+                break;
+            case '$startsWith':
+                qb.andWhere(`${alias}.${field} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `${normalizedPrimaryOperatorObj.$startsWith}%` });
+                break;
+            case '$startsWithi':
+                qb.andWhere(`LOWER(${alias}.${field}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `${normalizedPrimaryOperatorObj.$startsWithi.toLowerCase()}%` });
+                break;
+            case '$endsWith':
+                qb.andWhere(`${alias}.${field} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$endsWith}` });
+                break;
+            case '$endsWithi':
+                qb.andWhere(`LOWER(${alias}.${field}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$endsWithi.toLowerCase()}` });
+                break;
+            default:
+                throw new Error(`Operator ${operator} is not supported`);
+        }
+    }
+
+    // Normalize the primary operator object by removing the surrounding brackets in the keys e.g [$eq] => $eq
+    private normalizeObjectKeys(obj: any): any {
+        return Object.keys(obj).reduce((acc, key) => {
+            // Transform the key by removing surrounding brackets
+            const newKey = key.replace(/^\[(.*)\]$/, '$1');
+            // Assign the value to the transformed key in the accumulator object
+            acc[newKey] = obj[key];
+            return acc;
+        }, {});
+    }
+
+    private normalize(value: string|string[]): string[] {
+        if (!value) return [];// if the value is nullish, then return an empty array
+        return Array.isArray(value) ? value : [value];        // if the value is an array, return it as is, otherwise return it as an array
+    }
+
+    private isRelationJoined(queryBuilder: SelectQueryBuilder<any>, joinProperty: string): boolean {
+        return queryBuilder.expressionMap.joinAttributes.some(join => join.entityOrProperty === joinProperty);
+    }
+
+    buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
+        let { limit, offset, showSoftDeleted, showOnlySoftDeleted, filters } = basicFilterDto;
+        const { fields, sort, groupBy, populate = [] } = basicFilterDto; 
+
+        // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
+        const normalizedFields = this.normalize(fields);
+        const normalizedPopulate = this.normalize(populate);
+        const normalizedSort = this.normalize(sort);
+        const normalizedGroupBy = this.normalize(groupBy);
+        if (normalizedGroupBy.length > 1) {
+             throw new Error('buildFilterQuery: Only 1 Group by field is supported currently');
+        }
+
+        if (filters) {
+            qb.where(new Brackets(whereQb => {
+                this.applyFilters(whereQb, filters, entityAlias, qb);
+            }));
+        }
+
+        // Depending upon the select option, apply the select clause
+        if (normalizedFields && normalizedFields.length) {
+            qb.select(normalizedFields.map(field => {
+                // If the field contains a (, do not prefix the entity alias
+                return this.isAggregateField(field) ?  field : `${entityAlias}.${field}`;
+            }));
+        }
+
+        // Depending upon the populate option, apply the join clause
+        if (normalizedPopulate && normalizedPopulate.length) {
+            normalizedPopulate.forEach((relation) => {
+                // Check if the relation is already joined, if not then join it
+                const joinProperty = `${entityAlias}.${relation}`;
+                if (!this.isRelationJoined(qb, joinProperty)) qb.leftJoinAndSelect(joinProperty, relation);
+            });
+        }
+
+        // Depending upon the order option, apply the order by clause
+        if (normalizedSort && normalizedSort.length) {
+            const orderOptions = this.orderOptions(normalizedSort);
+            if (orderOptions) {
+                const orderOptionKeys = Object.keys(orderOptions) as Array<keyof typeof orderOptions>;
+                orderOptionKeys.forEach((key) => {
+                    const value = orderOptions[key] as 'ASC' | 'DESC';
+                    qb.addOrderBy(`${entityAlias}.${key}`, value);
+                });
+            }
+        }
+
+
+        // Apply the soft delete options
+        if (showSoftDeleted || showOnlySoftDeleted) qb.withDeleted(); // Display the soft deleted records default condition    
+        if (showOnlySoftDeleted) { // Add the condition to show only soft deleted records
+            qb.andWhere(`${entityAlias}.deletedAt IS NOT NULL`);
+        }
+
+        // Apply the group by options
+        if (normalizedGroupBy && normalizedGroupBy.length) {
+            normalizedGroupBy.forEach((field: string) => {
+                qb.addGroupBy(`${entityAlias}.${field}`);
+            });
+        }
+
+        // Apply the pagination options
+        if (limit) qb.limit(limit);
+        if (offset) qb.offset(offset);
+        return qb;
+    }
+
+    isAggregateField(field: string): boolean {
+        return field.includes('(');
+    }
+
+    isAggregateFieldKey(key: string, alias: string): boolean {
+        return !key.startsWith(`${alias}_`)
+    }
+
+    getFieldFromQueryFieldKey(queryFieldKey: string, alias: string): string {
+        return queryFieldKey.replace(`${alias}_`, '');
+    }
+
+    buildGroupByRecordsQuery(qb: SelectQueryBuilder<any>, group: any, alias: string): SelectQueryBuilder<any> {
+        qb.andWhere(new Brackets(qb => {
+            for (const key in group) {
+                if (group.hasOwnProperty(key) && !this.isAggregateFieldKey(key, alias)) {
+                    const value = group[key];
+                    const field = this.getFieldFromQueryFieldKey(key, alias);
+                    qb.andWhere(`${alias}.${field} = :${field}`, { [field]: value });
+                }
+            }
+        }));
+        return qb;
+    }
+
+    getGroupName(group: any, alias: string): string {
+        return Object.keys(group)
+        .filter(key => !this.isAggregateFieldKey(key, alias))
+        .map(key => group[key])
+        .join('_');
+    }
+
+    createGroupRecords(group: any, alias: string, groupData: any[]) {
+        const groupName = this.getGroupName(group, alias);
+        return {
+            groupName,
+            groupData
+        }
+    }
+    createGroupMeta(group: any, alias: string) {
+        const groupName = this.getGroupName(group, alias);
+        const groupAggregateValues = {}
+        for (const key in group) {
+            if (group.hasOwnProperty(key) && this.isAggregateFieldKey(key, alias)) {
+                const value = group[key];
+                groupAggregateValues[key] = value;
+            }
+        }
+        return {
+            groupName,
+            ...groupAggregateValues
+        };
+    }
+
+}

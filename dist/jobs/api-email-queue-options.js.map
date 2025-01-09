@@ -1,0 +1,1 @@
+{"version":3,"file":"api-email-queue-options.js","sourceRoot":"","sources":["../../src/jobs/api-email-queue-options.ts"],"names":[],"mappings":";;AACA,8CAA2C;AAE3C,MAAM,mBAAmB,GAAG,gBAAgB,CAAC;AAE7C,kBAAe;IACX,IAAI,EAAE,iBAAiB;IACvB,IAAI,EAAE,uBAAU,CAAC,QAAQ;IACzB,SAAS,EAAE,mBAAmB;CAKjC,CAAC"}

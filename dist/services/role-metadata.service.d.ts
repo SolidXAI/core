@@ -1,0 +1,36 @@
+import { DiscoveryService } from "@nestjs/core";
+import { EntityManager, Repository } from 'typeorm';
+import { CRUDService } from 'src/services/crud.service';
+import { ModelMetadataService } from 'src/services/model-metadata.service';
+import { ModuleMetadataService } from 'src/services/module-metadata.service';
+import { MediaStorageProviderMetadataService } from 'src/services/media-storage-provider-metadata.service';
+import { ConfigService } from '@nestjs/config';
+import { MediaService } from "src/services/media.service";
+import { FileService } from "src/services/file.service";
+import { CrudHelperService } from "src/services/crud-helper.service";
+import { RoleMetadata } from '../entities/role-metadata.entity';
+import { PermissionMetadata } from '../entities/permission-metadata.entity';
+import { CreateRoleMetadataDto } from '../dtos/create-role-metadata.dto';
+export declare class RoleMetadataService extends CRUDService<RoleMetadata> {
+    readonly modelMetadataService: ModelMetadataService;
+    readonly moduleMetadataService: ModuleMetadataService;
+    readonly mediaStorageProviderService: MediaStorageProviderMetadataService;
+    readonly configService: ConfigService;
+    readonly fileService: FileService;
+    readonly mediaService: MediaService;
+    readonly discoveryService: DiscoveryService;
+    readonly crudHelperService: CrudHelperService;
+    readonly entityManager: EntityManager;
+    readonly repo: Repository<RoleMetadata>;
+    private readonly permissionRepository;
+    private readonly logger;
+    constructor(modelMetadataService: ModelMetadataService, moduleMetadataService: ModuleMetadataService, mediaStorageProviderService: MediaStorageProviderMetadataService, configService: ConfigService, fileService: FileService, mediaService: MediaService, discoveryService: DiscoveryService, crudHelperService: CrudHelperService, entityManager: EntityManager, repo: Repository<RoleMetadata>, permissionRepository: Repository<PermissionMetadata>);
+    findRoleByName(roleName: string): Promise<RoleMetadata>;
+    createRolesIfNotExists(roles: CreateRoleMetadataDto[]): Promise<void>;
+    addAllPermissionsToRole(roleName: string): Promise<RoleMetadata>;
+    addPermissionsToRole(roleName: string, permissionNames: string[]): Promise<RoleMetadata>;
+    addPermissionToRole(roleName: string, permissionName: string): Promise<RoleMetadata>;
+    private _addPermissionsToRole;
+    removePermissionsFromRole(roleName: string, permissionNames: string[]): Promise<RoleMetadata>;
+    private preloadPermissionByName;
+}

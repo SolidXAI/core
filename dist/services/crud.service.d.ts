@@ -1,0 +1,61 @@
+import { ConfigService } from "@nestjs/config";
+import { DiscoveryService } from "@nestjs/core";
+import { FileService } from "src/services/file.service";
+import { EntityManager } from "typeorm";
+import { Repository } from "typeorm/repository/Repository";
+import { BasicFilterDto } from "../dtos/basic-filters.dto";
+import { FieldMetadata } from "../entities/field-metadata.entity";
+import { FieldCrudManager } from "../interfaces";
+import { CrudHelperService } from "./crud-helper.service";
+import { MediaStorageProviderMetadataService } from "./media-storage-provider-metadata.service";
+import { MediaService } from "./media.service";
+import { ModelMetadataService } from "./model-metadata.service";
+import { ModuleMetadataService } from "./module-metadata.service";
+export declare class CRUDService<T> {
+    readonly modelMetadataService: ModelMetadataService;
+    readonly moduleMetadataService: ModuleMetadataService;
+    readonly mediaStorageProviderService: MediaStorageProviderMetadataService;
+    readonly configService: ConfigService;
+    readonly fileService: FileService;
+    readonly mediaService: MediaService;
+    readonly discoveryService: DiscoveryService;
+    readonly crudHelperService: CrudHelperService;
+    readonly entityManager: EntityManager;
+    readonly repo: Repository<T>;
+    readonly modelName: string;
+    readonly moduleName: string;
+    constructor(modelMetadataService: ModelMetadataService, moduleMetadataService: ModuleMetadataService, mediaStorageProviderService: MediaStorageProviderMetadataService, configService: ConfigService, fileService: FileService, mediaService: MediaService, discoveryService: DiscoveryService, crudHelperService: CrudHelperService, entityManager: EntityManager, repo: Repository<T>, modelName: string, moduleName: string);
+    create(createDto: any, files?: Express.Multer.File[]): Promise<T>;
+    private loadInverseRelationFields;
+    private loadModel;
+    private validateAndTransformDto;
+    private saveMedia;
+    update(id: number, updateDto: any, files?: Express.Multer.File[]): Promise<T>;
+    delete(id: number): Promise<T>;
+    fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager): FieldCrudManager;
+    find(basicFilterDto: BasicFilterDto): Promise<{
+        groupMeta: any[];
+        groupRecords: any[];
+        meta?: undefined;
+        records?: undefined;
+    } | {
+        meta: {
+            totalRecords: number;
+            currentPage: number;
+            nextPage: number;
+            prevPage: number;
+            totalPages: number;
+            perPage: number;
+        };
+        records: T[];
+        groupMeta?: undefined;
+        groupRecords?: undefined;
+    }>;
+    private handleNonGroupFind;
+    private handleGroupFind;
+    private wrapFindResponse;
+    private handlePopulateMedia;
+    findOne(id: number, query: any): Promise<T>;
+    insertMany(createDtos: any[], filesArray?: Express.Multer.File[][]): Promise<T[]>;
+    deleteMany(ids: number[]): Promise<any>;
+}

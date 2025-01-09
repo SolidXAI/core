@@ -2,7 +2,8 @@
   "name": "solid-core-module",
   "version": "1.0.0",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
-  "main": "index.js",
+  "main": "dist/index.js",
+  "types": "dist/index.d.ts",
   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",

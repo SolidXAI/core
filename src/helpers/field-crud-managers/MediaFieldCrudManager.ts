@@ -1,0 +1,72 @@
+import { FieldMetadata } from "src/entities/field-metadata.entity";
+import { FieldCrudManager, ValidationError } from "src/interfaces";
+
+export enum MediaType {
+    mediaSingle = 'mediaSingle',
+    mediaMultiple = 'mediaMultiple'
+}
+
+export interface MediaFieldOptions {
+    type: MediaType;
+    // embedded: boolean | undefined | null;
+    required: boolean | undefined | null;
+}
+
+export class MediaFieldCrudManager implements FieldCrudManager {
+    private options: MediaFieldOptions;
+
+    constructor(readonly fieldMetadata: FieldMetadata) {
+        this.options = { required: fieldMetadata.required, type: fieldMetadata.type as MediaType};
+    }
+
+    validate(dto: any, files:Array<Express.Multer.File>): ValidationError[] {
+        const isValidateForUpdate = dto.id !== undefined; //FIXME: This is a hack, since we are using PUT for update. Once we support PATCH, this will be removed
+        const fieldFiles = files.filter(file => file.fieldname === this.fieldMetadata.name);
+        return this.applyValidations(fieldFiles, isValidateForUpdate);
+    }
+
+    private applyValidations(fieldFiles:Array<Express.Multer.File>, isValidateForUpdate: boolean): ValidationError[] {
+        switch (this.options.type) {
+            case MediaType.mediaSingle:
+                return this.validateMediaSingle(fieldFiles, isValidateForUpdate);
+            case MediaType.mediaMultiple:
+                return this.validateMediaMultiple(fieldFiles, isValidateForUpdate);
+            default:
+                return [];
+        }
+    }
+
+    private validateMediaSingle(fieldFiles:Array<Express.Multer.File>, isValidateForUpdate: boolean): ValidationError[] {
+        const errors: ValidationError[] = [];
+        if (!isValidateForUpdate && this.options.required && fieldFiles.length === 0) {
+            errors.push({
+                field: this.fieldMetadata.name,
+                error: `${this.fieldMetadata.name} is required`
+            });
+        }
+        if (fieldFiles.length > 1) {
+            errors.push({
+                field: this.fieldMetadata.name,
+                error: `${this.fieldMetadata.name} must be a single file`
+            });
+        }
+        return errors;
+    }
+
+    private validateMediaMultiple(fieldFiles:Array<Express.Multer.File>, isValidateForUpdate: boolean): ValidationError[] {    
+        const errors: ValidationError[] = [];
+        if (!isValidateForUpdate && this.options.required && fieldFiles.length === 0) {
+            errors.push({
+                field: this.fieldMetadata.name,
+                error: `${this.fieldMetadata.name} is required`
+            });
+        }
+        return errors;
+    }
+
+    transformForCreate(dto: any): any {
+        return dto;
+    }
+
+    // Validation to be applied
+}

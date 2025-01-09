@@ -1,0 +1,33 @@
+import { CommonEntity } from "src/entities/common.entity";
+import { RoleMetadata } from 'src/entities/role-metadata.entity';
+export declare class User extends CommonEntity {
+    fullName: string;
+    username: string;
+    email: string;
+    mobile: string;
+    password: string;
+    forcePasswordChange: boolean;
+    lastLoginProvider: string;
+    accessCode: string;
+    googleAccessToken: string;
+    googleId: string;
+    googleProfilePicture: string;
+    active: boolean;
+    forgotPasswordConfirmedAt: Date;
+    verificationTokenOnForgotPassword: string;
+    verificationTokenOnForgotPasswordExpiresAt: Date;
+    emailVerifiedOnRegistrationAt: Date;
+    emailVerificationTokenOnRegistration: string;
+    emailVerificationTokenOnRegistrationExpiresAt: Date;
+    mobileVerifiedOnRegistrationAt: Date;
+    mobileVerificationTokenOnRegistration: string;
+    mobileVerificationTokenOnRegistrationExpiresAt: Date;
+    emailVerifiedOnLoginAt: Date;
+    emailVerificationTokenOnLogin: string;
+    emailVerificationTokenOnLoginExpiresAt: Date;
+    mobileVerifiedOnLoginAt: Date;
+    mobileVerificationTokenOnLogin: string;
+    mobileVerificationTokenOnLoginExpiresAt: Date;
+    customPayload: string;
+    roles: RoleMetadata[];
+}

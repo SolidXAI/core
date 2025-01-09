@@ -1,0 +1,1 @@
+{"version":3,"file":"selection-provider.decorator.js","sourceRoot":"","sources":["../../src/decorators/selection-provider.decorator.ts"],"names":[],"mappings":";;;AAAa,QAAA,qBAAqB,GAAG,uBAAuB,CAAC;AAEtD,MAAM,iBAAiB,GAAG,GAAG,EAAE;IAClC,OAAO,CAAC,MAAgB,EAAE,EAAE;QACxB,OAAO,CAAC,cAAc,CAAC,6BAAqB,EAAE,IAAI,EAAE,MAAM,CAAC,CAAC;IAChE,CAAC,CAAC;AACN,CAAC,CAAC;AAJW,QAAA,iBAAiB,qBAI5B"}
