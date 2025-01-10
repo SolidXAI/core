@@ -121,7 +121,7 @@ export * from './helpers/field-crud-managers/JsonFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/LongTextFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/ManyToManyRelationFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/ManyToOneRelationFieldCrudManager' //rename
-// export * from './helpers/field-crud-managers/MediaFieldCrudManager' // Need to resolve ambiguity
+export * from './helpers/field-crud-managers/MediaFieldCrudManager' // Need to resolve ambiguity
 export * from './helpers/field-crud-managers/NoOpsFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/OneToManyRelationFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/PasswordFieldCrudManager' //rename

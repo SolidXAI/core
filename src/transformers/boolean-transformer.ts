@@ -1,4 +1,6 @@
-const transformBoolean = ({ value }: any) => {
+import { TransformFnParams } from "class-transformer";
+
+const transformBoolean = ({ value }: TransformFnParams): boolean => {
     if (typeof (value) === "boolean") {
         return value
     } else if (value === 'true') {

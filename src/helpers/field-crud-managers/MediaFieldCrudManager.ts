@@ -1,13 +1,13 @@
 import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
 
-export enum MediaType {
+export enum SolidMediaType {
     mediaSingle = 'mediaSingle',
     mediaMultiple = 'mediaMultiple'
 }
 
 export interface MediaFieldOptions {
-    type: MediaType;
+    type: SolidMediaType;
     // embedded: boolean | undefined | null;
     required: boolean | undefined | null;
 }
@@ -16,7 +16,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
     private options: MediaFieldOptions;
 
     constructor(readonly fieldMetadata: FieldMetadata) {
-        this.options = { required: fieldMetadata.required, type: fieldMetadata.type as MediaType};
+        this.options = { required: fieldMetadata.required, type: fieldMetadata.type as SolidMediaType};
     }
 
     validate(dto: any, files:Array<Express.Multer.File>): ValidationError[] {
@@ -27,9 +27,9 @@ export class MediaFieldCrudManager implements FieldCrudManager {
 
     private applyValidations(fieldFiles:Array<Express.Multer.File>, isValidateForUpdate: boolean): ValidationError[] {
         switch (this.options.type) {
-            case MediaType.mediaSingle:
+            case SolidMediaType.mediaSingle:
                 return this.validateMediaSingle(fieldFiles, isValidateForUpdate);
-            case MediaType.mediaMultiple:
+            case SolidMediaType.mediaMultiple:
                 return this.validateMediaMultiple(fieldFiles, isValidateForUpdate);
             default:
                 return [];
