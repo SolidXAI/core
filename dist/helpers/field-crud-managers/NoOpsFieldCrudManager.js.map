@@ -1,1 +1,0 @@
-{"version":3,"file":"NoOpsFieldCrudManager.js","sourceRoot":"","sources":["../../../src/helpers/field-crud-managers/NoOpsFieldCrudManager.ts"],"names":[],"mappings":";;;AAGA,MAAa,qBAAqB;IAG9B,YAAY,aAA4B;QACpC,IAAI,CAAC,aAAa,GAAG,aAAa,CAAC;IACvC,CAAC;IACD,QAAQ,CAAC,GAAQ;QACb,OAAO,EAAE,CAAC;IACd,CAAC;IACD,kBAAkB,CAAC,GAAQ;QACvB,OAAO,GAAG,CAAC;IACf,CAAC;CACJ;AAZD,sDAYC"}

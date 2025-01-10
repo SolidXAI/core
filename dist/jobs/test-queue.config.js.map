@@ -1,1 +1,0 @@
-{"version":3,"file":"test-queue.config.js","sourceRoot":"","sources":["../../src/jobs/test-queue.config.ts"],"names":[],"mappings":";;AACA,8CAA2C;AAE3C,MAAM,UAAU,GAAG,YAAY,CAAC;AAEhC,kBAAe;IACX,IAAI,EAAE,WAAW;IACjB,IAAI,EAAE,uBAAU,CAAC,QAAQ;IACzB,SAAS,EAAE,UAAU;CAKxB,CAAC"}
