@@ -147,7 +147,7 @@ import { UserController } from './controllers/user.controller';
       EmailTemplate,
       SmsTemplate,
       EmailAttachment,
-      // User,
+      User,
       UserPasswordHistory,
       ViewMetadata,
       ActionMetadata,
@@ -175,7 +175,7 @@ import { UserController } from './controllers/user.controller';
     }),
     HttpModule,
     ConfigModule,
-    TypeOrmModule.forFeature([User]),
+    // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
     ModuleMetadataController,

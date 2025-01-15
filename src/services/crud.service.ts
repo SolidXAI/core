@@ -1,7 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DiscoveryService } from "@nestjs/core";
-import { FileService } from "src/services/file.service";
 import { EntityManager, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { Repository } from "typeorm/repository/Repository";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
@@ -31,6 +30,7 @@ import { ShortTextFieldCrudManager } from "../helpers/field-crud-managers/ShortT
 import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCrudManager";
 import { FieldCrudManager } from "../interfaces";
 import { CrudHelperService } from "./crud-helper.service";
+import { FileService } from "./file.service";
 import { MediaStorageProviderMetadataService } from "./media-storage-provider-metadata.service";
 import { MediaService } from "./media.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
@@ -365,7 +365,6 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         const groupRecords = [];
         // For each group, get the records and the count
         for (const group of groupByResult) {
-            const groupData = [];
             if (populateGroup) {
                 let groupByQb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias);
                 // For the group by records, apply the basic filter
@@ -382,7 +381,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 if (populateMedia && populateMedia.length > 0) {
                     await this.handlePopulateMedia(populateMedia, entities);
                 }
-                groupData.push(this.wrapFindResponse(basicFilterDto.offset, basicFilterDto.limit, count, entities));
+                const groupData = this.wrapFindResponse(basicFilterDto.offset, basicFilterDto.limit, count, entities);
                 groupRecords.push(this.crudHelperService.createGroupRecords(group, alias, groupData));
             }
             groupMeta.push(this.crudHelperService.createGroupMeta(group, alias));

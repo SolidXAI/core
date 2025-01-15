@@ -248,7 +248,7 @@ export class CrudHelperService {
         .join('_');
     }
 
-    createGroupRecords(group: any, alias: string, groupData: any[]) {
+    createGroupRecords(group: any, alias: string, groupData: any) {
         const groupName = this.getGroupName(group, alias);
         return {
             groupName,
