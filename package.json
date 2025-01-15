@@ -4,7 +4,11 @@
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
-  "scripts": {
+  "private": false,
+  "publishConfig": {
+    "access": "public"
+   },
+   "scripts": {
     "build": "nest build",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
