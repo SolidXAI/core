@@ -1,19 +1,18 @@
 import { DiscoveryService } from "@nestjs/core";
 import { ComputedFieldValueType } from "src/dtos/create-field-metadata.dto";
-import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { FieldCrudManager, IComputedFieldProvider, ValidationError } from "src/interfaces";
 
 export interface ComputedFieldOptions {
     computedFieldProvider: string;
     computedFieldValueType: ComputedFieldValueType;
     computedFieldValueProviderCtxt: any;
+    fieldName: string;
+    discoveryService: DiscoveryService;
 }
 
 export class ComputedFieldCrudManager implements FieldCrudManager {
-    private options: ComputedFieldOptions;
 
-    constructor(readonly fieldMetadata: FieldMetadata, readonly discoveryService: DiscoveryService) {
-        this.options = { computedFieldProvider: fieldMetadata.computedFieldValueProvider, computedFieldValueProviderCtxt: fieldMetadata.computedFieldValueProviderCtxt, computedFieldValueType: fieldMetadata.computedFieldValueType as ComputedFieldValueType };
+    constructor(private readonly options: ComputedFieldOptions) {
     }
 
     async validate(): Promise<ValidationError[]> {
@@ -22,7 +21,7 @@ export class ComputedFieldCrudManager implements FieldCrudManager {
 
     async transformForCreate(dto: any): Promise<any> {
         const ctxt = this.options.computedFieldValueProviderCtxt ? JSON.parse(this.options.computedFieldValueProviderCtxt) : {};
-        dto[this.fieldMetadata.name] = await this.computeValue(dto, ctxt);
+        dto[this.options.fieldName] = await this.computeValue(dto, ctxt);
         return dto;
     }
 
@@ -32,7 +31,7 @@ export class ComputedFieldCrudManager implements FieldCrudManager {
     }
 
     private providerInstance<DTO, T>(computedFieldProvider: string): IComputedFieldProvider<T> {
-        const provider = this.discoveryService
+        const provider = this.options.discoveryService
             .getProviders()
             .filter((provider) => provider.name === computedFieldProvider) //TODO : Add an extra check to verify if the provider is of type IComputedFieldProvider
             .pop();

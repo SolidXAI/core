@@ -1,29 +1,29 @@
 import { isEmpty, isNotEmpty, isString, length, matches } from "class-validator";
-import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
 
 export interface ShortTextFieldOptions {
     length: number | undefined | null;
     regexPattern: string | undefined | null;
     required: boolean | undefined | null;
+    fieldName: string;
 }
 
 export class ShortTextFieldCrudManager implements FieldCrudManager {
     private options: ShortTextFieldOptions;
 
-    constructor(readonly fieldMetadata: FieldMetadata) {
-        this.options = { length: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern, required: fieldMetadata.required };
+    constructor(options: ShortTextFieldOptions) {
+        this.options = options;
     }
 
     validate(dto: any,  _files:Array<Express.Multer.File>): ValidationError[] {
-        const fieldValue: any = dto[this.fieldMetadata.name];
+        const fieldValue: any = dto[this.options.fieldName];
         return this.applyValidations(fieldValue);
     }
 
 
     private applyValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.fieldMetadata.name, error: `Field: ${this.fieldMetadata.name} is required` }): "no errors";
+        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.options.fieldName, error: `Field: ${this.options.fieldName} is required` }): "no errors";
         if (isNotEmpty(fieldValue)) {
             errors.push(...this.applyFormatValidations(fieldValue));
         }
@@ -32,9 +32,9 @@ export class ShortTextFieldCrudManager implements FieldCrudManager {
 
     private applyFormatValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        this.isApplyStringValidation() && !isString(fieldValue) ? errors.push({ field: this.fieldMetadata.name, error: 'Field is not a string' }) : "no errors";
-        this.isApplyLengthValidation() && !length(fieldValue, 1, this.options.length) ? errors.push({ field: this.fieldMetadata.name, error: 'Field length is invalid' }) : "no errors"; //FIXME min length to be handled
-        this.isApplyRegexValidation() && !matches(fieldValue, new RegExp(this.options.regexPattern)) ? errors.push({ field: this.fieldMetadata.name, error: 'Field regex pattern is invalid' }) : "no errors";
+        this.isApplyStringValidation() && !isString(fieldValue) ? errors.push({ field: this.options.fieldName, error: 'Field is not a string' }) : "no errors";
+        this.isApplyLengthValidation() && !length(fieldValue, 1, this.options.length) ? errors.push({ field: this.options.fieldName, error: 'Field length is invalid' }) : "no errors"; //FIXME min length to be handled
+        this.isApplyRegexValidation() && !matches(fieldValue, new RegExp(this.options.regexPattern)) ? errors.push({ field: this.options.fieldName, error: 'Field regex pattern is invalid' }) : "no errors";
         return errors;
     }
 

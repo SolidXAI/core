@@ -1,4 +1,3 @@
-import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
 
 export enum SolidMediaType {
@@ -8,20 +7,18 @@ export enum SolidMediaType {
 
 export interface MediaFieldOptions {
     type: SolidMediaType;
-    // embedded: boolean | undefined | null;
     required: boolean | undefined | null;
+    fieldName: string | undefined | null;
 }
 
 export class MediaFieldCrudManager implements FieldCrudManager {
-    private options: MediaFieldOptions;
 
-    constructor(readonly fieldMetadata: FieldMetadata) {
-        this.options = { required: fieldMetadata.required, type: fieldMetadata.type as SolidMediaType};
+    constructor(private readonly options: MediaFieldOptions) {
     }
 
     validate(dto: any, files:Array<Express.Multer.File>): ValidationError[] {
         const isValidateForUpdate = dto.id !== undefined; //FIXME: This is a hack, since we are using PUT for update. Once we support PATCH, this will be removed
-        const fieldFiles = files.filter(file => file.fieldname === this.fieldMetadata.name);
+        const fieldFiles = files.filter(file => file.fieldname === this.options.fieldName);
         return this.applyValidations(fieldFiles, isValidateForUpdate);
     }
 
@@ -40,14 +37,14 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         const errors: ValidationError[] = [];
         if (!isValidateForUpdate && this.options.required && fieldFiles.length === 0) {
             errors.push({
-                field: this.fieldMetadata.name,
-                error: `${this.fieldMetadata.name} is required`
+                field: this.options.fieldName,
+                error: `${this.options.fieldName} is required`
             });
         }
         if (fieldFiles.length > 1) {
             errors.push({
-                field: this.fieldMetadata.name,
-                error: `${this.fieldMetadata.name} must be a single file`
+                field: this.options.fieldName,
+                error: `${this.options.fieldName} must be a single file`
             });
         }
         return errors;
@@ -57,8 +54,8 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         const errors: ValidationError[] = [];
         if (!isValidateForUpdate && this.options.required && fieldFiles.length === 0) {
             errors.push({
-                field: this.fieldMetadata.name,
-                error: `${this.fieldMetadata.name} is required`
+                field: this.options.fieldName,
+                error: `${this.options.fieldName} is required`
             });
         }
         return errors;

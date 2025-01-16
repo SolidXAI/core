@@ -1,20 +1,19 @@
-import { EntityManager } from 'typeorm';
-import { FieldMetadata } from './entities/field-metadata.entity';
-import { Media } from './entities/media.entity';
-import { CreateModuleMetadataDto } from './dtos/create-module-metadata.dto';
-import { SignUpDto } from 'src/dtos/sign-up.dto';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
-import { CreateMediaStorageProviderMetadataDto } from './dtos/create-media-storage-provider-metadata.dto';
+import { SignUpDto } from 'src/dtos/sign-up.dto';
 import { CreateActionMetadataDto } from './dtos/create-action-metadata.dto';
-import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
+import { CreateMediaStorageProviderMetadataDto } from './dtos/create-media-storage-provider-metadata.dto';
 import { CreateMenuItemMetadataDto } from './dtos/create-menu-item-metadata.dto';
 import { DatasourceType } from './dtos/create-model-metadata.dto';
+import { CreateModuleMetadataDto } from './dtos/create-module-metadata.dto';
 import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
+import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
+import { FieldMetadata } from './entities/field-metadata.entity';
+import { Media } from './entities/media.entity';
 
 export interface FieldCrudManager {
-  fieldMetadata: FieldMetadata;
-  entityManager?: EntityManager;
+  // fieldMetadata: FieldMetadata;
+  // entityManager?: EntityManager;
   // createDto: any;
   // files : Array<Express.Multer.File>;
   validate(

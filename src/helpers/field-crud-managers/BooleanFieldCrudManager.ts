@@ -1,26 +1,26 @@
 import { isBoolean, isEmpty, isNotEmpty } from "class-validator";
-import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
 
 export interface BooleanFieldOptions {
     required: boolean | undefined | null;
+    fieldName: string;
 }
 
 export class BooleanFieldCrudManager implements FieldCrudManager {
     private options: BooleanFieldOptions;
 
-    constructor(readonly fieldMetadata: FieldMetadata) {
-        this.options = { required: fieldMetadata.required };
+    constructor(options: BooleanFieldOptions) {
+        this.options = options
     }
 
     validate(dto: any): ValidationError[] {
-        const fieldValue: any = dto[this.fieldMetadata.name];
+        const fieldValue: any = dto[this.options.fieldName];
         return this.applyValidations(fieldValue);
     }
 
     private applyValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.fieldMetadata.name, error: `Field: ${this.fieldMetadata.name} is required` }): "no errors";
+        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.options.fieldName, error: `Field: ${this.options.fieldName} is required` }): "no errors";
         if (isNotEmpty(fieldValue)) {
             errors.push(...this.applyFormatValidations(fieldValue));
         }
@@ -29,7 +29,7 @@ export class BooleanFieldCrudManager implements FieldCrudManager {
 
     private applyFormatValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        !isBoolean(fieldValue) ? errors.push({ field: this.fieldMetadata.name, error: `Field: ${this.fieldMetadata.name} is not a boolean value` }): "no errors";
+        !isBoolean(fieldValue) ? errors.push({ field: this.options.fieldName, error: `Field: ${this.options.fieldName} is not a boolean value` }): "no errors";
         return errors;
     }
 

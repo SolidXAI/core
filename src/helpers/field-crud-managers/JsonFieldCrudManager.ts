@@ -1,26 +1,24 @@
-import { isEmpty, isJSON, isNotEmpty, isString, length, matches } from "class-validator";
-import { FieldMetadata } from "src/entities/field-metadata.entity";
+import { isEmpty, isJSON, isNotEmpty } from "class-validator";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
 
 export interface JsonFieldOptions {
     required: boolean | undefined | null;
+    fieldName: string | undefined | null;
 }
 
 export class JsonFieldCrudManager implements FieldCrudManager {
-    private options: JsonFieldOptions;
 
-    constructor(readonly fieldMetadata: FieldMetadata) {
-        this.options = { required: fieldMetadata.required };
+    constructor(private readonly options: JsonFieldOptions) {
     }
 
     validate(dto: any): ValidationError[] {
-        const fieldValue: any = dto[this.fieldMetadata.name];
+        const fieldValue: any = dto[this.options.fieldName];
         return this.applyValidations(fieldValue);
     }
 
     private applyValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.fieldMetadata.name, error: `Field: ${this.fieldMetadata.name} is required` }): "no errors";
+        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.options.fieldName, error: `Field: ${this.options.fieldName} is required` }): "no errors";
         if (isNotEmpty(fieldValue)) {
             errors.push(...this.applyFormatValidations(fieldValue));
         }
@@ -29,7 +27,7 @@ export class JsonFieldCrudManager implements FieldCrudManager {
 
     private applyFormatValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        !isJSON(fieldValue) ? errors.push({ field: this.fieldMetadata.name, error: 'Field is not a json object' }) : "no errors";
+        !isJSON(fieldValue) ? errors.push({ field: this.options.fieldName, error: 'Field is not a json object' }) : "no errors";
         return errors;
     }
 

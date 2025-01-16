@@ -1,27 +1,27 @@
-import { isEmpty, isNotEmpty, isString, length, matches } from "class-validator";
-import { FieldMetadata } from "src/entities/field-metadata.entity";
+import { isEmpty, isNotEmpty, isString, matches } from "class-validator";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
 
 export interface LongTextFieldOptions {
     regexPattern: string | undefined | null;
     required: boolean | undefined | null;
+    fieldName: string;
 }
 
 export class LongTextFieldCrudManager implements FieldCrudManager {
     private options: LongTextFieldOptions;
 
-    constructor(readonly fieldMetadata: FieldMetadata) {
-        this.options = { regexPattern: fieldMetadata.regexPattern, required: fieldMetadata.required };
+    constructor(options: LongTextFieldOptions) {
+        this.options = options;
     }
 
     validate(dto: any): ValidationError[] {
-        const fieldValue: any = dto[this.fieldMetadata.name];
+        const fieldValue: any = dto[this.options.fieldName];
         return this.applyValidations(fieldValue);
     }
 
     private applyValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.fieldMetadata.name, error: `Field: ${this.fieldMetadata.name} is required` }): "no errors";
+        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.options.fieldName, error: `Field: ${this.options.fieldName} is required` }): "no errors";
         if (isNotEmpty(fieldValue)) {
             errors.push(...this.applyFormatValidations(fieldValue));
         }
@@ -30,8 +30,8 @@ export class LongTextFieldCrudManager implements FieldCrudManager {
 
     private applyFormatValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        this.isApplyStringValidation() && !isString(fieldValue) ? errors.push({ field: this.fieldMetadata.name, error: 'Field is not a string' }) : "no errors";
-        this.isApplyRegexValidation() && !matches(fieldValue, new RegExp(this.options.regexPattern)) ? errors.push({ field: this.fieldMetadata.name, error: 'Field regex pattern is invalid' }) : "no errors";
+        this.isApplyStringValidation() && !isString(fieldValue) ? errors.push({ field: this.options.fieldName, error: 'Field is not a string' }) : "no errors";
+        this.isApplyRegexValidation() && !matches(fieldValue, new RegExp(this.options.regexPattern)) ? errors.push({ field: this.options.fieldName, error: 'Field regex pattern is invalid' }) : "no errors";
         return errors;
     }
 
