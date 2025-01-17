@@ -42,7 +42,9 @@ export class PasswordFieldCrudManager implements FieldCrudManager {
     }
 
     async transformForCreate(dto: any): Promise<any> {
-        dto[this.options.fieldName] = await this.hashingService.hash(dto[this.options.fieldName]); //Encrypt the password
+        if(dto[this.options.fieldName]){
+            dto[this.options.fieldName] = await this.hashingService.hash(dto[this.options.fieldName]);
+        }
         return dto;
     }
 

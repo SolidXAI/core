@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiForbiddenResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { UserService } from '../services/user.service';
@@ -35,6 +35,14 @@ export class UserController {
   update(@Param('id') id: number, @Body() updateDto: UpdateUserDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files);
   }
+
+  @ApiBearerAuth("jwt")
+  @Patch(':id')
+  @UseInterceptors(AnyFilesInterceptor())
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateUserDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+    return this.service.update(id, updateDto, files, true);
+  }
+
 
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, type: Boolean })
