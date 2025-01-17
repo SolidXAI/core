@@ -64,11 +64,11 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     });
     if (entity) {
       entity.layout = JSON.parse(entity.layout);
-      if (entity.layout.attrs.createAction) {
+      if (entity?.layout?.attrs?.createAction) {
         const actionName: string = entity.layout.attrs.createAction;
         entity.layout.attrs.createAction = await this.actionMetadataService.findOneByUserKey(actionName)
       }
-      if (entity.layout.attrs.editAction) {
+      if (entity?.layout?.attrs?.editAction) {
         const actionName: string = entity.layout.attrs.editAction;
         entity.layout.attrs.editAction = await this.actionMetadataService.findOneByUserKey(actionName)
       }

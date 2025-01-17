@@ -4494,8 +4494,6 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "createAction": "user-form-create-action",
-          "editAction": "user-form-edit-action",
           "pageSizeOptions": [
             10,
             25,
@@ -5466,7 +5464,7 @@
     {
       "name": "on-force-password-change",
       "displayName": "Default: On Force Password Change",
-      "body": "src/solid-core/seeders/seed-data/email-templates/on-force-password-change.handlebars.html",
+      "body": "on-force-password-change.handlebars.html",
       "subject": "{{solidAppName}} - Your New Account.",
       "description": "When using password based signUp, if the user does not specify the password of the new account being created the system automatically triggers a force password change email.",
       "active": true
@@ -5474,7 +5472,7 @@
     {
       "name": "otp-on-register",
       "displayName": "Default: Otp On Register",
-      "body": "src/solid-core/seeders/seed-data/email-templates/otp-on-register.handlebars.html",
+      "body": "otp-on-register.handlebars.html",
       "subject": "{{solidAppName}} - Verify Your New Account.",
       "description": "This template is used to generate the account verification email sent to users to verify their email address when they register.",
       "active": true
@@ -5482,7 +5480,7 @@
     {
       "name": "otp-on-login",
       "displayName": "Default: Otp On Login",
-      "body": "src/solid-core/seeders/seed-data/email-templates/otp-on-login.handlebars.html",
+      "body": "otp-on-login.handlebars.html",
       "subject": "{{solidAppName}} - Verification Token For Your Login.",
       "description": "This template is used to send the email with the OTP when logging in.",
       "active": true
@@ -5490,7 +5488,7 @@
     {
       "name": "forgot-password",
       "displayName": "Default: Forgot Password",
-      "body": "src/solid-core/seeders/seed-data/email-templates/forgot-password.handlebars.html",
+      "body": "forgot-password.handlebars.html",
       "subject": "{{solidAppName}} - Password Reset Instructions.",
       "description": "This template is used to send the verification token required by users to reset their password.",
       "active": true
@@ -5500,7 +5498,7 @@
     {
       "name": "otp-on-register",
       "displayName": "Default: Otp On Register",
-      "body": "src/solid-core/seeders/seed-data/sms-templates/otp-on-register.handlebars.txt",
+      "body": "otp-on-register.handlebars.txt",
       "description": "This template is used to generate the account verification sms sent to users to verify their mobile number when they register.",
       "smsProviderTemplateId": "666bd246d6fc051047560595",
       "active": true
@@ -5508,7 +5506,7 @@
     {
       "name": "otp-on-login",
       "displayName": "Default: Otp On Login",
-      "body": "src/solid-core/seeders/seed-data/sms-templates/otp-on-login.handlebars.txt",
+      "body": "otp-on-login.handlebars.txt",
       "description": "This template is used to send the sms with the OTP when logging in.",
       "smsProviderTemplateId": "666bd246d6fc051047560595",
       "active": true
@@ -5516,7 +5514,7 @@
     {
       "name": "forgot-password",
       "displayName": "Default: Forgot Password",
-      "body": "src/solid-core/seeders/seed-data/sms-templates/forgot-password.handlebars.txt",
+      "body": "forgot-password.handlebars.txt",
       "description": "This template is used to send the verification token required by users to reset their password.",
       "smsProviderTemplateId": "666bd246d6fc051047560595",
       "active": true
