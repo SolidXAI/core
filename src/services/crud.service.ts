@@ -4,7 +4,7 @@ import { DiscoveryService } from "@nestjs/core";
 import { EntityManager, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { Repository } from "typeorm/repository/Repository";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
-import { RelationType, SolidFieldType } from "../dtos/create-field-metadata.dto";
+import { ComputedFieldValueType, RelationType, SelectionValueType, SolidFieldType } from "../dtos/create-field-metadata.dto";
 import { MediaStorageProviderType } from "../dtos/create-media-storage-provider-metadata.dto";
 import { FieldMetadata } from "../entities/field-metadata.entity";
 import { ModelMetadata } from "../entities/model-metadata.entity";
@@ -13,13 +13,13 @@ import { BooleanFieldCrudManager } from "../helpers/field-crud-managers/BooleanF
 import { ComputedFieldCrudManager } from "../helpers/field-crud-managers/ComputedFieldCrudManager";
 import { DateFieldCrudManager } from "../helpers/field-crud-managers/DateFieldCrudManager";
 import { DecimalFieldCrudManager } from "../helpers/field-crud-managers/DecimalFieldCrudManager";
-import { EmailFieldCrudManager } from "../helpers/field-crud-managers/EmailFieldCrudManager";
+import { EmailFieldCrudManager, MAX_EMAIL_LENGTH } from "../helpers/field-crud-managers/EmailFieldCrudManager";
 import { IntFieldCrudManager } from "../helpers/field-crud-managers/IntFieldCrudManager";
 import { JsonFieldCrudManager } from "../helpers/field-crud-managers/JsonFieldCrudManager";
 import { LongTextFieldCrudManager } from "../helpers/field-crud-managers/LongTextFieldCrudManager";
 import { ManyToManyRelationFieldCrudManager } from "../helpers/field-crud-managers/ManyToManyRelationFieldCrudManager";
-import { ManyToOneRelationFieldCrudManager } from "../helpers/field-crud-managers/ManyToOneRelationFieldCrudManager";
-import { MediaFieldCrudManager } from "../helpers/field-crud-managers/MediaFieldCrudManager";
+import { ManyToOneRelationFieldCrudManager, ManyToOneRelationFieldOptions } from "../helpers/field-crud-managers/ManyToOneRelationFieldCrudManager";
+import { MediaFieldCrudManager, SolidMediaType } from "../helpers/field-crud-managers/MediaFieldCrudManager";
 import { NoOpsFieldCrudManager } from "../helpers/field-crud-managers/NoOpsFieldCrudManager";
 import { OneToManyRelationFieldCrudManager } from "../helpers/field-crud-managers/OneToManyRelationFieldCrudManager";
 import { PasswordFieldCrudManager } from "../helpers/field-crud-managers/PasswordFieldCrudManager";
@@ -121,8 +121,8 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         });
     }
 
-    private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean) {
-        const fieldManager: FieldCrudManager = this.fieldCrudManager(field, this.entityManager);
+    private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean, isPartialUpdate: boolean = false) {
+        const fieldManager: FieldCrudManager = this.fieldCrudManager(field, this.entityManager, isPartialUpdate);
         const validationErrors = fieldManager.validate(dto, files);
         const errors = (validationErrors instanceof Promise) ? await validationErrors : validationErrors;
         if (errors.length > 0) {
@@ -162,7 +162,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
     }
 
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
-    async update(id: number, updateDto: any, files: Express.Multer.File[] = []) {
+    async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate: boolean = false): Promise<T> {
             if (!id) {
             throw new Error('Id is required for update');
         }
@@ -191,7 +191,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         // 2. Loop through the fields with a switch statement
         // 3. Handle the fields based on field type
         for (const field of fieldsToProcess) {
-            const transformed = await this.validateAndTransformDto(field, updateDto, files, hasMediaFields);
+            const transformed = await this.validateAndTransformDto(field, updateDto, files, hasMediaFields, isPartialUpdate);
             updateDto = transformed.dto;
             hasMediaFields = transformed.hasMediaFields;
         }
@@ -239,55 +239,86 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
     }
 
-    fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager): FieldCrudManager {
+    private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean=false): FieldCrudManager {
+        const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name };
         switch (fieldMetadata.type) {
-            case SolidFieldType.shortText:
-                return new ShortTextFieldCrudManager(fieldMetadata);
-            case SolidFieldType.longtext:
-                return new LongTextFieldCrudManager(fieldMetadata);
-            case SolidFieldType.boolean:
-                return new BooleanFieldCrudManager(fieldMetadata);
-            case SolidFieldType.richText:
-                return new RichTextFieldCrudManager(fieldMetadata);
-            case SolidFieldType.json:
-                return new JsonFieldCrudManager(fieldMetadata);
-            case SolidFieldType.int:
-                return new IntFieldCrudManager(fieldMetadata);
-            case SolidFieldType.decimal:
-                return new DecimalFieldCrudManager(fieldMetadata);
-            case SolidFieldType.bigint:
-                return new BigIntFieldCrudManager(fieldMetadata);
-            case SolidFieldType.email:
-                return new EmailFieldCrudManager(fieldMetadata);
+            case SolidFieldType.shortText: {
+                const options = { ...commonOptions, length: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern };
+                return new ShortTextFieldCrudManager(options);
+            }
+            case SolidFieldType.longtext: {
+                const options = { ...commonOptions, regexPattern: fieldMetadata.regexPattern };
+                return new LongTextFieldCrudManager(options);
+            }
+            case SolidFieldType.boolean: {
+                const options = { ...commonOptions };
+                return new BooleanFieldCrudManager(options);
+            }
+            case SolidFieldType.richText: {
+                const options = { ...commonOptions, regexPattern: fieldMetadata.regexPattern };
+                return new RichTextFieldCrudManager(options);
+            }
+            case SolidFieldType.json: {
+                const options = { ...commonOptions };
+                return new JsonFieldCrudManager(options);
+            }
+            case SolidFieldType.int:{
+                const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max };
+                return new IntFieldCrudManager(options);
+            }
+            case SolidFieldType.decimal:{
+                const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max };
+                return new DecimalFieldCrudManager(options);
+            }
+            case SolidFieldType.bigint: {
+                const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max };
+                return new BigIntFieldCrudManager(options);
+            }
+            case SolidFieldType.email:{
+                const options = { ...commonOptions, max: fieldMetadata.max?? MAX_EMAIL_LENGTH, regexPattern: fieldMetadata.regexPattern };
+                return new EmailFieldCrudManager(options);
+            }
             case SolidFieldType.date:
-            case SolidFieldType.datetime:
-                return new DateFieldCrudManager(fieldMetadata);
-            // case 'time':
-            //     break;
-            case SolidFieldType.password:
-                return new PasswordFieldCrudManager(fieldMetadata);
+            case SolidFieldType.datetime:{
+                const options = { ...commonOptions };
+                return new DateFieldCrudManager(options);
+            }
+            case SolidFieldType.password:{
+                const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern };
+                return new PasswordFieldCrudManager(options);
+            }
             case SolidFieldType.mediaSingle:
-            case SolidFieldType.mediaMultiple:
-                return new MediaFieldCrudManager(fieldMetadata);
-            // update will need to delete the existing media and save the new media    
-            // case 'mediaSingle':
-            //    Use the EntityController to extract uploaded content & pass to the entity service.
-            //    If embedded media, then the media uri will saved in the entity table,
-            //    else the uri will be saved in the media table
-            //    Plan the media table schema e.g id, uri, storageProvider, entity_id, entity_name, createdAt, updatedAt
-            //     break;
-            // case 'mediaMultiple':
-            //    Use the EntityController to extract uploaded content & pass to the entity service.
-            //    If embedded media, then the media uri will saved in the entity table, else the uri will be saved in the media table
-            //    Plan the media table schema e.g id, uri, storageProvider, entity_id, entity_name, createdAt, updatedAt
-            case SolidFieldType.relation:
+            case SolidFieldType.mediaMultiple:{
+                // update will need to delete the existing media and save the new media    
+                // case 'mediaSingle':
+                //    Use the EntityController to extract uploaded content & pass to the entity service.
+                //    If embedded media, then the media uri will saved in the entity table,
+                //    else the uri will be saved in the media table
+                //    Plan the media table schema e.g id, uri, storageProvider, entity_id, entity_name, createdAt, updatedAt
+                //     break;
+                // case 'mediaMultiple':
+                //    Use the EntityController to extract uploaded content & pass to the entity service.
+                //    If embedded media, then the media uri will saved in the entity table, else the uri will be saved in the media table
+                //    Plan the media table schema e.g id, uri, storageProvider, entity_id, entity_name, createdAt, updatedAt
+                const options = { ...commonOptions, type: fieldMetadata.type as unknown as SolidMediaType };
+                return new MediaFieldCrudManager(options);
+            }
+            case SolidFieldType.relation: {
                 // Identify if the field is for the inverse side or not
                 const inverseSide = (fieldMetadata.model.singularName !== this.modelName) ? true : false;
                 if (fieldMetadata.relationType === RelationType.manyToOne) {
-                    return !inverseSide ? new ManyToOneRelationFieldCrudManager(fieldMetadata, entityManager) : new OneToManyRelationFieldCrudManager(fieldMetadata, entityManager, true);
+                    const manyToOneOptions: ManyToOneRelationFieldOptions = {
+                        ...commonOptions,
+                        relationModelSingularName: fieldMetadata.relationModelSingularName,
+                        modelUserKeyFieldName: fieldMetadata.model.userKeyField.name,
+                        modelSingularName: fieldMetadata.model.singularName,
+                        entityManager,
+                    }
+                    // const oneToManyOptions = {}
+                    return !inverseSide ? new ManyToOneRelationFieldCrudManager(manyToOneOptions) : new OneToManyRelationFieldCrudManager(fieldMetadata, entityManager, true); //FIXME : Pending options changes
                 }
                 else if (fieldMetadata.relationType === RelationType.manyTomany) {
-                    return !inverseSide ? new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager, false) : new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager, true);
+                    return !inverseSide ? new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager, false) : new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager, false); //FIXME : Pending options changes
                 }
                 else throw new Error('Relation type not supported in crud service');
             // return (fieldMetadata.relationType === 'many-to-one') ? new ManyToOneRelationFieldCrudManager(fieldMetadata, entityManager) : new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager); //FIXME many-to-many pending
@@ -295,27 +326,38 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             //    OneToMany -> fieldIds. Get the value of the oneToMany field side.  No transformation is required (While saving special provision to be made)
             //    ManyToMany
             //     break;
-            case SolidFieldType.selectionStatic:
+            }
+            case SolidFieldType.selectionStatic:{
+
                 //     Validation against the selectionStatic values. No transformation is required
                 //     If the value is not in the selectionStatic values, then throw
                 //     Also validate against the selectionType
-                return new SelectionStaticFieldCrudManager(fieldMetadata);
-            case SolidFieldType.selectionDynamic: // [HOLD]
+                const options = { ...commonOptions, selectionStaticValues: fieldMetadata.selectionStaticValues, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType };
+                return new SelectionStaticFieldCrudManager(options);
+            }
+            case SolidFieldType.selectionDynamic: {// [HOLD]
                 //     Default implementation using list of values.
                 //     ISelectionProvider interface to be implemented for dynamic selection
                 //     dataSource: string; // The name of the selection provider
                 //     filterSchema : json // This is a custom json object that every data source will handle accordingly. We could validate the query against the selection provider
                 //     values : string[]; // The values returned by the selection provider
-                return new SelectionDynamicFieldCrudManager(fieldMetadata, this.discoveryService);
-            case SolidFieldType.uuid:
+                const options = { ...commonOptions, selectionDynamicProvider: fieldMetadata.selectionDynamicProvider, selectionDynamicProviderCtxt: fieldMetadata.selectionDynamicProviderCtxt, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, discoveryService: this.discoveryService };
+                return new SelectionDynamicFieldCrudManager(options);
+            }
+            case SolidFieldType.uuid:{
+                const options = { ...commonOptions };
                 //    If no value is provided, then generate a uuid. Add to the dto
-                return new UUIDFieldCrudManager(fieldMetadata);
-            case SolidFieldType.computed:
+                return new UUIDFieldCrudManager(options);
+            }
+            case SolidFieldType.computed:{
+
                 //    The value will be computed by the computed provider
                 //    Invoke the appropriate computed provider, get the value and add to the dto
-                return new ComputedFieldCrudManager(fieldMetadata, this.discoveryService);
+                const options = { ...commonOptions, computedFieldProvider: fieldMetadata.computedFieldValueProvider, computedFieldValueProviderCtxt: fieldMetadata.computedFieldValueProviderCtxt, computedFieldValueType: fieldMetadata.computedFieldValueType as ComputedFieldValueType, discoveryService: this.discoveryService };
+                return new ComputedFieldCrudManager(options);
+            }
             default:
-                return new NoOpsFieldCrudManager(fieldMetadata);
+                return new NoOpsFieldCrudManager();
         }
     }
 

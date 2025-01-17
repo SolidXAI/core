@@ -1,11 +1,8 @@
-import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { FieldCrudManager } from "src/interfaces";
 
 export class NoOpsFieldCrudManager implements FieldCrudManager{
-    fieldMetadata: FieldMetadata;
     createDto: any;
-    constructor(fieldMetadata: FieldMetadata){
-        this.fieldMetadata = fieldMetadata;
+    constructor(){
     }
     validate(dto: any) {
         return [];

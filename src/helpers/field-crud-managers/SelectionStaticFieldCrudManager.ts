@@ -1,29 +1,27 @@
 import { isEmpty, isInt, isNotEmpty, isString } from "class-validator";
 import { SelectionValueType } from "src/dtos/create-field-metadata.dto";
-import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
 
 export interface SelectionStaticFieldOptions {
     selectionStaticValues: string[];
     selectionValueType: SelectionValueType;
     required: boolean | undefined | null;
+    fieldName: string;
 }
 
 export class SelectionStaticFieldCrudManager implements FieldCrudManager {
-    private options: SelectionStaticFieldOptions;
 
-    constructor(readonly fieldMetadata: FieldMetadata) {
-        this.options = { selectionStaticValues: fieldMetadata.selectionStaticValues, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, required: fieldMetadata.required };
+    constructor(private readonly options: SelectionStaticFieldOptions) {
     }
 
     validate(dto: any): ValidationError[] {
-        const fieldValue: any = dto[this.fieldMetadata.name];
+        const fieldValue: any = dto[this.options.fieldName];
         return this.applyValidations(fieldValue);
     }
 
     private applyValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.fieldMetadata.name, error: `Field: ${this.fieldMetadata.name} is required` }) : "no errors";
+        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.options.fieldName, error: `Field: ${this.options.fieldName} is required` }) : "no errors";
         if (isNotEmpty(fieldValue)) {
             errors.push(...this.applyFormatValidations(fieldValue));
         }
@@ -32,8 +30,8 @@ export class SelectionStaticFieldCrudManager implements FieldCrudManager {
 
     private applyFormatValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        !this.isValidSelectionValueType(fieldValue, this.options.selectionValueType) ? errors.push({ field: this.fieldMetadata.name, error: 'Field value is invalid' }) : "no errors";
-        !this.isValidSelectionStaticValue(fieldValue, this.options.selectionValueType, this.options.selectionStaticValues) ? errors.push({ field: this.fieldMetadata.name, error: 'Field value is invalid' }) : "no errors";
+        !this.isValidSelectionValueType(fieldValue, this.options.selectionValueType) ? errors.push({ field: this.options.fieldName, error: 'Field value is invalid' }) : "no errors";
+        !this.isValidSelectionStaticValue(fieldValue, this.options.selectionValueType, this.options.selectionStaticValues) ? errors.push({ field: this.options.fieldName, error: 'Field value is invalid' }) : "no errors";
         return errors;
     }
 
