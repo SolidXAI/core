@@ -5,35 +5,29 @@ import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
 import { EntityManager, In } from "typeorm";
 
-interface OneToManyRelationFieldOptions {
+export interface OneToManyRelationFieldOptions {
     // Add options for relation field
-    // type: string | undefined | null;
     required: boolean | undefined | null;
     relationModelSingularName: string | undefined | null;
+    inverseRelationModelFieldName: string | undefined | null;
     modelSingularName: string | undefined | null;
-    valueFieldName: string | undefined | null;
-    idFieldName: string | undefined | null;
-    commandFieldName: string | undefined | null;
+    inverseFieldName: string | undefined | null;
+    entityManager: EntityManager | undefined | null;
 }
 
 const linkCommands = [RelationFieldsCommand.link, RelationFieldsCommand.unlink, RelationFieldsCommand.set];
 
 // This implementation is meant to be used for many-to-one relation field
 export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
-    private options: OneToManyRelationFieldOptions;
 
-    constructor(readonly fieldMetadata: FieldMetadata, readonly entityManager: EntityManager, readonly isInverseSide: boolean) {
-        if (isInverseSide == false) throw new Error('OneToManyRelationFieldCrudManager can only be used for inverse side of the entity');
-        const relationModelFieldNamePrefix = this.fieldMetadata.relationModelFieldName ?? this.fieldMetadata.model.singularName;
-        const valueFieldName = this.fieldMetadata.relationModelFieldName ?? `${relationModelFieldNamePrefix}s`;
-        this.options = { 
-            required: false,
-            relationModelSingularName: fieldMetadata.model.singularName, // Since this field metadata is of the inverse side
-            modelSingularName: fieldMetadata.relationModelSingularName, // Since this field metadata is of the inverse side
-            valueFieldName: valueFieldName,
-            idFieldName: `${relationModelFieldNamePrefix}Ids`,
-            commandFieldName: `${relationModelFieldNamePrefix}Command`
-        };
+    private readonly valueFieldName: string;
+    private readonly idFieldName: string;
+    private readonly commandFieldName: string;
+
+    constructor(private readonly options: OneToManyRelationFieldOptions) {
+        this.valueFieldName = this.options.inverseRelationModelFieldName ?? `${this.options.relationModelSingularName}s`;
+        this.idFieldName = `${this.options.inverseRelationModelFieldName ?? this.options.relationModelSingularName}Ids`;
+        this.commandFieldName = `${this.options.inverseRelationModelFieldName ?? this.options.relationModelSingularName}Command`;
     }
 
     validate(dto: any) {
@@ -43,24 +37,24 @@ export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
     private applyValidations(dto: any): ValidationError[] { 
         const errors: ValidationError[] = [];
 
-        const commandFieldName = this.options.commandFieldName;
+        const commandFieldName = this.commandFieldName;
         const commandValue = dto[commandFieldName];
         this.isApplyRequiredValidation() && isEmpty(commandValue) ? errors.push({ field: commandFieldName, error: 'Command field is  required' }) : "no errors";
         if (isNotEmpty(commandValue)) {
-            !isEnum(commandValue, RelationFieldsCommand)? errors.push({ field: this.fieldMetadata.name, error: 'Command Field has invalid value' }) : "no errors";
+            !isEnum(commandValue, RelationFieldsCommand)? errors.push({ field: this.options.inverseFieldName, error: 'Command Field has invalid value' }) : "no errors";
         }  
        
         var fieldValue = null
         if (commandValue === RelationFieldsCommand.clear) {
             return errors;
         } else if (linkCommands.includes(commandValue)) {
-            fieldValue = dto[this.options.idFieldName];
+            fieldValue = dto[this.idFieldName];
         } 
         else {
-            fieldValue = dto[this.options.valueFieldName];
+            fieldValue = dto[this.valueFieldName];
         }
 
-        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.fieldMetadata.name, error: `Field: ${this.fieldMetadata.name} is required` }) : "no errors";
+        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.options.inverseFieldName, error: `Field: ${this.options.inverseFieldName} is required` }) : "no errors";
         if (isNotEmpty(fieldValue)) {
             errors.push(...this.applyFormatValidations(fieldValue, commandValue, commandFieldName));
         }
@@ -72,35 +66,30 @@ export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
         if (linkCommands.includes(commandValue)) {
             for (const id of fieldValue) {
                 if (!isInt(id)) {
-                    errors.push({ field: this.fieldMetadata.name, error: `Invalid ids in ${commandFieldName}` });
+                    errors.push({ field: this.options.inverseFieldName, error: `Invalid ids in ${commandFieldName}` });
                 }
             }
         }
         return errors;
     }
 
-    // private fieldName(): string {
-    //     //FIXME: Need to finalize the approach for many-to-many multiple fields
-    //     return `${this.fieldMetadata.name}s`;
-    // }
-
     async transformForCreate(dto: any): Promise<any> {
         // const relatedFieldData: any[] = dto[this.fieldName()];
         const currentEntityTarget = this.getEntityTarget(classify(this.options.modelSingularName));
-        const currentEntityRepository = this.entityManager.getRepository(currentEntityTarget);
+        const currentEntityRepository = this.options.entityManager.getRepository(currentEntityTarget);
 
         const relatedEntityTarget = this.getEntityTarget(classify(this.options.relationModelSingularName));
-        const relatedEntityRepository = this.entityManager.getRepository(relatedEntityTarget)
+        const relatedEntityRepository = this.options.entityManager.getRepository(relatedEntityTarget)
 
-        dto[this.options.valueFieldName] = await this.transformByCommand(dto, relatedEntityRepository, currentEntityRepository);
+        dto[this.valueFieldName] = await this.transformByCommand(dto, relatedEntityRepository, currentEntityRepository);
         return dto;
     }
 
     private async transformByCommand(dto: any, relatedEntityRepository: any, currentEntityRepository: any): Promise<any[]> {
         // TODO : Need to add support for the multiple commands
-        const command = dto[this.options.commandFieldName];
-        const values = dto[this.options.valueFieldName];
-        const ids = dto[this.options.idFieldName];
+        const command = dto[this.commandFieldName];
+        const values = dto[this.valueFieldName];
+        const ids = dto[this.idFieldName];
         
         switch (command) {
             case RelationFieldsCommand.create:
@@ -135,20 +124,6 @@ export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
             throw new Error('Invalid entity ids provided for linking');
         }
 
-        /*if (dto.id != null) { //clear the existing associations from the join table
-            const entityInstance = await currentEntityRepository.findOne({
-                where: {id: dto.id},
-                relations: [this.options.valueFieldName]
-            });
-
-            // Now clear all the association in the join table after we have managed the transformation
-            await currentEntityRepository.
-            createQueryBuilder()
-            .relation(this.getEntityTarget(classify(this.options.modelSingularName)), this.options.valueFieldName)
-            .of(dto.id)
-            .remove(entityInstance[this.options.valueFieldName]);
-        }*///TODO: Need to test this code. This probably will work as commented out after changing id from bigint to integer
-
         return loadedEntities;
     }
 
@@ -163,21 +138,6 @@ export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
         }
         tranformedRelatedFields.push(...loadedEntities);
 
-        // If dto has an id, then it is an update operation, load existing related entities
-        /*if (dto.id != null) {
-            const entityInstance = await currentEntityRepository.findOne({
-                where: {id: dto.id},
-                relations: [this.options.valueFieldName]
-            });
-            tranformedRelatedFields.push(...entityInstance[this.options.valueFieldName]);
-
-            // Now clear all the association in the join table after we have managed the transformation
-            await currentEntityRepository.
-            createQueryBuilder()
-            .relation(this.getEntityTarget(classify(this.options.modelSingularName)), this.options.valueFieldName)
-            .of(dto.id)
-            .remove(entityInstance[this.options.valueFieldName]);
-        }*///TODO: Need to test this code. This probably will work as commented out after changing id from bigint to integer
         return tranformedRelatedFields;
     }
 
@@ -189,18 +149,11 @@ export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
         const tranformedRelatedFields = [];
         const entityInstance = await currentEntityRepository.findOne({
             where: {id: dto.id},
-            relations: [this.options.valueFieldName]
+            relations: [this.valueFieldName]
         });
-        const filteredEntities = entityInstance[this.options.valueFieldName].filter((entity) => !ids.includes(entity.id));
+        const filteredEntities = entityInstance[this.valueFieldName].filter((entity) => !ids.includes(entity.id));
         tranformedRelatedFields.push(...filteredEntities);
 
-        // Now clear all the association in the join table after we have managed the transformation
-        /*await currentEntityRepository.
-        createQueryBuilder()
-        .relation(this.getEntityTarget(classify(this.options.modelSingularName)), this.options.valueFieldName)
-        .of(dto.id)
-        .remove(entityInstance[this.options.valueFieldName]);*///TODO: Need to test this code. This probably will work as commented out after changing id from bigint to integer
-        
         return tranformedRelatedFields;
     }
 
@@ -226,21 +179,6 @@ export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
             }
         }
 
-        /*if (dto.id != null) { //clear the existing associations from the join table
-            const entityInstance = await currentEntityRepository.findOne({
-                where: {id: dto.id},
-                relations: [this.options.valueFieldName]
-            });
-
-            // Now clear all the association in the join table after we have managed the transformation
-            await currentEntityRepository.
-            createQueryBuilder()
-            .relation(this.getEntityTarget(classify(this.options.modelSingularName)), this.options.valueFieldName)
-            .of(dto.id)
-            .remove(entityInstance[this.options.valueFieldName]);
-        }*///TODO: Need to test this code. This probably will work as commented out after changing id from bigint to integer
-
-        
         return transformedRelatedFields;
     }
 
@@ -259,7 +197,7 @@ export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
 
     // Returns the entity target class from the entity name
     private getEntityTarget(entityName: string): any { //TODO Can be refactored to use this function from crud helper service
-        const entityMetadatas = this.entityManager.connection.entityMetadatas;
+        const entityMetadatas = this.options.entityManager.connection.entityMetadatas;
         const entityMetadata = entityMetadatas.find(em => em.name === entityName);
         return entityMetadata.target;
     }
