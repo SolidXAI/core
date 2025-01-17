@@ -122,7 +122,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
     }
 
     private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean, isPartialUpdate: boolean = false) {
-        const fieldManager: FieldCrudManager = this.fieldCrudManager(field, this.entityManager);
+        const fieldManager: FieldCrudManager = this.fieldCrudManager(field, this.entityManager, isPartialUpdate);
         const validationErrors = fieldManager.validate(dto, files);
         const errors = (validationErrors instanceof Promise) ? await validationErrors : validationErrors;
         if (errors.length > 0) {
