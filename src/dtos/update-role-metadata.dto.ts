@@ -8,6 +8,7 @@ export class UpdateRoleMetadataDto {
     @IsInt()
     id: number;
 
+@IsOptional()    
 @IsNotEmpty()
 @IsString()
 name: string;

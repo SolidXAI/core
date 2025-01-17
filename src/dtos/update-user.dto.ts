@@ -8,6 +8,7 @@ export class UpdateUserDto {
     @IsString()
     fullName: string;
 
+    @IsOptional()
     @IsNotEmpty()
     @IsString()
     username: string;
@@ -20,11 +21,13 @@ export class UpdateUserDto {
     @IsString()
     mobile: string;
 
+    @IsOptional()
     @IsNotEmpty()
     @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).*$/)
     @IsString()
     password: string;
 
+    @IsOptional()
     @IsString()
     @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).*$/)
     @IsNotEmpty()
@@ -34,6 +37,7 @@ export class UpdateUserDto {
     @IsBoolean()
     forcePasswordChange: boolean = true;
 
+    @IsOptional()
     @IsNotEmpty()
     @IsString()
     lastLoginProvider: string = "local";
@@ -54,6 +58,7 @@ export class UpdateUserDto {
     @IsString()
     googleProfilePicture: string;
 
+    @IsOptional()
     @IsNotEmpty()
     @IsBoolean()
     active: boolean = true;

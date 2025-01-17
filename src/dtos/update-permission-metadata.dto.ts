@@ -6,6 +6,7 @@ export class UpdatePermissionMetadataDto {
     @IsInt()
     id: number;
 
+    @IsOptional()
     @IsNotEmpty()
     @IsString()
     name: string;
