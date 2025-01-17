@@ -56,9 +56,11 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
         type: viewType,
       },
       relations: {
-        model: true,
-        module: true
-      },
+        model: {
+          userKeyField: true,  // Nested population of 'someOtherEntity' within 'model'
+        },    
+        module: true,
+      }
     });
     if (entity) {
       entity.layout = JSON.parse(entity.layout);

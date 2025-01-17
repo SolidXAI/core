@@ -26,6 +26,8 @@ import { Repository } from 'typeorm';
 import { SolidRegistry } from '../helpers/solid-registry';
 import { RoleMetadataService } from '../services/role-metadata.service';
 import { getCoreModuleNames, getDynamicModuleNames } from '../helpers/module.helper';
+import solidCoreMetadata from './seed-data/solid-core-metadata.json';
+import { ModuleMetadataConfiguration } from 'src/interfaces';
 
 @Injectable()
 export class ModuleMetadataSeederService {
@@ -54,6 +56,8 @@ export class ModuleMetadataSeederService {
 
     async seed() {
 
+        const typedSolidCoreMetadata: any = solidCoreMetadata;
+
         // Run the permissions seeder. 
         // await this.permissionsSeederService.seed();
         await this.seedPermissions();
@@ -70,7 +74,8 @@ export class ModuleMetadataSeederService {
             // 'src/iam/seeders/seed-data/iam-metadata.json',
             // 'src/app-builder/seeders/seed-data/app-builder-metadata.json',
             // 'src/queues/seeders/seed-data/queues-metadata.json',
-            ...coreModules.map(module => `src/${module}/seeders/seed-data/${module}-metadata.json`),
+            // ...coreModules.map(module => `src/${module}/seeders/seed-data/${module}-metadata.json`),
+            typedSolidCoreMetadata
         ];
 
         const enabledModules = getDynamicModuleNames();
@@ -80,7 +85,9 @@ export class ModuleMetadataSeederService {
             const enabledModuleSeedFile = `module-metadata/${enabledModule}/${enabledModule}-metadata.json`
             const fullPath = path.join(process.cwd(), enabledModuleSeedFile);
             if (fs.existsSync(fullPath)) {
-                seedDataFiles.push(enabledModuleSeedFile)
+                const overallMetadata: any = JSON.parse(fs.readFileSync(fullPath, 'utf-8').toString());
+
+                seedDataFiles.push(overallMetadata)
             }
         }
 
@@ -89,13 +96,13 @@ export class ModuleMetadataSeederService {
         for (let i = 0; i < seedDataFiles.length; i++) {
 
             // Module, model & field handling.
-            const seedDataFile = seedDataFiles[i];
-            const fullPath = path.join(process.cwd(), seedDataFile);
+            const overallMetadata = seedDataFiles[i];
+            // const fullPath = path.join(process.cwd(), seedDataFile);
 
             // For each module metadata seed file provided, read contents, parse & convert to a variable. 
-            this.logger.log(`[Start] module seed data: ${fullPath}`);
+            // this.logger.log(`[Start] module seed data: ${fullPath}`);
 
-            const overallMetadata: any = JSON.parse(fs.readFileSync(fullPath, 'utf-8').toString());
+            // const overallMetadata: any = JSON.parse(fs.readFileSync(fullPath, 'utf-8').toString());
 
             // Process module metadata first. 
             const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
@@ -152,7 +159,7 @@ export class ModuleMetadataSeederService {
             this.logger.log(`[End] Processing sms templates for ${moduleMetadata.name}`);
 
 
-            this.logger.log(`[End] module seed data: ${fullPath}`);
+            this.logger.log(`[End] module seed data: ${overallMetadata}`);
 
         }
 

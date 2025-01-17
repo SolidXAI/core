@@ -1967,7 +1967,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "one-to-many",
-            "relationModelSingularName": "mqMessageQueue",
+            "relationModelSingularName": "mqMessage",
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationTypeManyToManyOwner": true,
@@ -2183,7 +2183,7 @@
       "type": "custom",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/app-builder/module/all",
+      "customComponent": "/admin/core/solid-core/module-metadata/list",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "moduleMetadata-list-view",
@@ -2196,7 +2196,7 @@
       "type": "custom",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/app-builder/model/all",
+      "customComponent": "/admin/core/solid-core/model-metadata/list",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "modelMetadata-list-view",
@@ -2209,7 +2209,7 @@
       "type": "custom",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/app-builder/field/all",
+      "customComponent": "/admin/core/solid-core/field-metadata/list",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "fieldMetadata-list-view",
@@ -3712,6 +3712,7 @@
                     "attrs": {
                       "name": "roles",
                       "renderMode": "checkbox",
+                      "inlineCreateAutoSave":"true",
                       "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
                       "inlineCreate": "true",
                       "inlineCreateLayout": {
@@ -4961,7 +4962,7 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": false,
+          "create": true,
           "edit": true,
           "delete": false
         },
@@ -5180,7 +5181,7 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": false,
+          "create": true,
           "edit": true,
           "delete": false
         },
@@ -5210,8 +5211,8 @@
           "name": "form-1",
           "label": "Mq Message Queue",
           "className": "grid",
-          "disabled": true,
-          "readonly": true
+          "disabled": false,
+          "readonly": false
         },
         "children": [
           {
@@ -5241,6 +5242,217 @@
                       "name": "description",
                       "label": "Queue Description"
                     }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "mqMessages",
+                      "label": "mqMessages",
+                      "inlineCreate": "true",
+                      "inlineCreateLayout": {
+                        "type": "form",
+                        "attrs": {
+                          "name": "form-1",
+                          "label": "Mq Message",
+                          "className": "grid",
+                          "disabled": true,
+                          "readonly": true
+                        },
+                        "children": [
+                          {
+                            "type": "sheet",
+                            "attrs": {
+                              "name": "sheet-1"
+                            },
+                            "children": [
+                              {
+                                "type": "group",
+                                "attrs": {
+                                  "name": "group-1",
+                                  "label": "",
+                                  "className": "col-6"
+                                },
+                                "children": [
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "messageType",
+                                      "label": "Message Type"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "retryCount",
+                                      "label": "Retry Count"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "retryInterval",
+                                      "label": "Retry Interval"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "stage",
+                                      "label": "Stage"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "startedAt",
+                                      "label": "Started At"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "finishedAt",
+                                      "label": "Finished At"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "elapsedMillis",
+                                      "label": "Elapsed Millis"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "parentEntityId",
+                                      "label": "Parent Entity Id"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "parentEntity",
+                                      "label": "Parent Entity"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "mqMessageQueue",
+                                      "label": "Message Queue"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "input",
+                                      "label": "Input"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "output",
+                                      "label": "Output"
+                                    }
+                                  },
+                                  {
+                                    "type": "field",
+                                    "attrs": {
+                                      "name": "error",
+                                      "label": "Error"
+                                    }
+                                  }
+                                ]
+                              }
+                            ]
+                          }
+                        ]
+                      },
+                      "inlineListLayout": {
+                        "type": "list",
+                        "attrs": {
+                          "pagination": true,
+                          "pageSizeOptions": [
+                            10,
+                            25,
+                            50
+                          ],
+                          "enableGlobalSearch": true,
+                          "create": true,
+                          "edit": true,
+                          "delete": false
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "messageId",
+                              "sortable": true,
+                              "filterable": true
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "stage",
+                              "sortable": true,
+                              "filterable": true
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "startedAt",
+                              "sortable": true,
+                              "filterable": true
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "finishedAt",
+                              "sortable": true,
+                              "filterable": true
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "elapsedMillis",
+                              "sortable": true,
+                              "filterable": true
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "parentEntityId",
+                              "sortable": true,
+                              "filterable": true
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "parentEntity",
+                              "sortable": true,
+                              "filterable": true
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "mqMessageQueue",
+                              "label": "Queue",
+                              "sortable": true,
+                              "filterable": true
+                            }
+                          }
+                        ]
+                      }
+                    }
                   }
                 ]
               }
@@ -5254,7 +5466,7 @@
     {
       "name": "on-force-password-change",
       "displayName": "Default: On Force Password Change",
-      "body": "src/seeders/seed-data/email-templates/on-force-password-change.handlebars.html",
+      "body": "src/solid-core/seeders/seed-data/email-templates/on-force-password-change.handlebars.html",
       "subject": "{{solidAppName}} - Your New Account.",
       "description": "When using password based signUp, if the user does not specify the password of the new account being created the system automatically triggers a force password change email.",
       "active": true
@@ -5262,7 +5474,7 @@
     {
       "name": "otp-on-register",
       "displayName": "Default: Otp On Register",
-      "body": "src/seeders/seed-data/email-templates/otp-on-register.handlebars.html",
+      "body": "src/solid-core/seeders/seed-data/email-templates/otp-on-register.handlebars.html",
       "subject": "{{solidAppName}} - Verify Your New Account.",
       "description": "This template is used to generate the account verification email sent to users to verify their email address when they register.",
       "active": true
@@ -5270,7 +5482,7 @@
     {
       "name": "otp-on-login",
       "displayName": "Default: Otp On Login",
-      "body": "src/seeders/seed-data/email-templates/otp-on-login.handlebars.html",
+      "body": "src/solid-core/seeders/seed-data/email-templates/otp-on-login.handlebars.html",
       "subject": "{{solidAppName}} - Verification Token For Your Login.",
       "description": "This template is used to send the email with the OTP when logging in.",
       "active": true
@@ -5278,7 +5490,7 @@
     {
       "name": "forgot-password",
       "displayName": "Default: Forgot Password",
-      "body": "src/seeders/seed-data/email-templates/forgot-password.handlebars.html",
+      "body": "src/solid-core/seeders/seed-data/email-templates/forgot-password.handlebars.html",
       "subject": "{{solidAppName}} - Password Reset Instructions.",
       "description": "This template is used to send the verification token required by users to reset their password.",
       "active": true
@@ -5288,7 +5500,7 @@
     {
       "name": "otp-on-register",
       "displayName": "Default: Otp On Register",
-      "body": "src/seeders/seed-data/sms-templates/otp-on-register.handlebars.txt",
+      "body": "src/solid-core/seeders/seed-data/sms-templates/otp-on-register.handlebars.txt",
       "description": "This template is used to generate the account verification sms sent to users to verify their mobile number when they register.",
       "smsProviderTemplateId": "666bd246d6fc051047560595",
       "active": true
@@ -5296,7 +5508,7 @@
     {
       "name": "otp-on-login",
       "displayName": "Default: Otp On Login",
-      "body": "src/seeders/seed-data/sms-templates/otp-on-login.handlebars.txt",
+      "body": "src/solid-core/seeders/seed-data/sms-templates/otp-on-login.handlebars.txt",
       "description": "This template is used to send the sms with the OTP when logging in.",
       "smsProviderTemplateId": "666bd246d6fc051047560595",
       "active": true
@@ -5304,7 +5516,7 @@
     {
       "name": "forgot-password",
       "displayName": "Default: Forgot Password",
-      "body": "src/seeders/seed-data/sms-templates/forgot-password.handlebars.txt",
+      "body": "src/solid-core/seeders/seed-data/sms-templates/forgot-password.handlebars.txt",
       "description": "This template is used to send the verification token required by users to reset their password.",
       "smsProviderTemplateId": "666bd246d6fc051047560595",
       "active": true
