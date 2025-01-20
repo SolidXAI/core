@@ -19,7 +19,7 @@ export class ManyToOneRelationFieldCrudManager implements FieldCrudManager {
     private idFieldName: string;
     private userKeyFieldName: string;
     constructor(private readonly options: ManyToOneRelationFieldOptions) {
-        this.options = options;
+        // this.options = options;
         this.idFieldName = `${options.fieldName}Id`;
         this.userKeyFieldName = `${options.fieldName}UserKey`;
     }

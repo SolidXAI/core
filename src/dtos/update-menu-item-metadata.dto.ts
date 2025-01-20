@@ -7,11 +7,13 @@ export class UpdateMenuItemMetadataDto {
     @IsInt()
     id: number;
 
+    @IsOptional()
     @IsNotEmpty()
     @Matches(/[a-z]+(-[a-z]+)*/)
     @IsString()
     name: string;
 
+    @IsOptional()
     @IsNotEmpty()
     @IsString()
     displayName: string;
