@@ -16,7 +16,7 @@
         "description": "Model to capture all Modules which are configured in the system",
         "dataSource": "default",
         "userKeyFieldUserKey": "name",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "isSystem": true,
         "fields": [
           {
@@ -121,7 +121,7 @@
         "description": "Model to capture all Models which are configured in the system",
         "dataSource": "default",
         "userKeyFieldUserKey": "singularName",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "isSystem": true,
         "fields": [
           {
@@ -332,7 +332,7 @@
         "description": "Model to capture all Fields which are configured in the system",
         "dataSource": "default",
         "userKeyFieldUserKey": "name",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "isSystem": true,
         "fields": [
           {
@@ -854,7 +854,7 @@
         "description": "Model to capture all Media storage Provider which are configured in the system",
         "dataSource": "default",
         "userKeyFieldUserKey": "name",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "isSystem": true,
         "fields": [
           {
@@ -946,7 +946,7 @@
         "description": "Model to capture all views which are configured in the system",
         "dataSource": "default",
         "userKeyFieldUserKey": "name",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "isSystem": true,
         "fields": [
           {
@@ -1059,7 +1059,7 @@
         "description": "Model to capture all actions which are configured in the system",
         "dataSource": "default",
         "userKeyFieldUserKey": "name",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "isSystem": true,
         "fields": [
           {
@@ -1231,7 +1231,7 @@
         "description": "Model to capture all Solid Menu Items which are configured in the system",
         "dataSource": "default",
         "userKeyFieldUserKey": "name",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "isSystem": true,
         "fields": [
           {
@@ -1350,7 +1350,7 @@
         "description": "Model to capture all Media in the system",
         "dataSource": "default",
         "userKeyFieldUserKey": "entityId",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "isSystem": true,
         "fields": [
           {
@@ -1436,7 +1436,7 @@
         "displayName": "User",
         "description": "Model to capture Users",
         "dataSource": "default",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "userKeyFieldUserKey": "username",
         "isSystem": true,
         "fields": [
@@ -1832,7 +1832,7 @@
         "description": "Model to capture Permission",
         "dataSource": "default",
         "tableName": "ss_permission_metadata",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "userKeyFieldUserKey": "name",
         "isSystem": true,
         "fields": [
@@ -1858,7 +1858,7 @@
         "displayName": "Role",
         "description": "Model to capture Roles",
         "dataSource": "default",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "userKeyFieldUserKey": "name",
         "isSystem": true,
         "fields": [
@@ -1934,7 +1934,7 @@
         "description": "Model to capture all queues which are configured in the system",
         "dataSource": "default",
         "userKeyFieldUserKey": "name",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "isSystem": true,
         "fields": [
           {
@@ -1982,7 +1982,7 @@
         "displayName": "Messages",
         "description": "Model to capture all messages being sent on the queue",
         "dataSource": "default",
-        "dataSourceType": "rdbms",
+        "dataSourceType": "postgres",
         "isSystem": true,
         "userKeyFieldUserKey": "messageId",
         "fields": [
