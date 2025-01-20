@@ -27,7 +27,6 @@ import { SolidRegistry } from '../helpers/solid-registry';
 import { RoleMetadataService } from '../services/role-metadata.service';
 import { getCoreModuleNames, getDynamicModuleNames } from '../helpers/module.helper';
 import solidCoreMetadata from './seed-data/solid-core-metadata.json';
-import { ModuleMetadataConfiguration } from 'src/interfaces';
 
 @Injectable()
 export class ModuleMetadataSeederService {
@@ -233,8 +232,19 @@ export class ModuleMetadataSeederService {
             this.logger.log(`Found ${emailTemplate.name} email template`);
 
             // We need to load the actual template contents. 
-            const emailTemplateFilePath = path.join(process.cwd(), emailTemplate.body);
-            emailTemplate.body = fs.readFileSync(emailTemplateFilePath, 'utf-8').toString()
+            // const emailTemplateFilePath = path.join(process.cwd(), emailTemplate.body);
+
+            // emailTemplate.body = fs.readFileSync(emailTemplateFilePath, 'utf-8').toString()
+            const modulePath = path.dirname(require.resolve('@solidstarters/solid-core-module'));
+
+            // Resolve the `src` folder
+            const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/email-templates');
+
+            // Example usage
+            const filePath = path.join(seedDataPath, emailTemplate.body);
+
+
+            emailTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
 
             // Save to DB.
             await this.emailTemplateService.removeByName(emailTemplate.name);
@@ -254,8 +264,20 @@ export class ModuleMetadataSeederService {
 
             // We need to load the actual template contents. 
             if (smsTemplate.body) {
-                const smsTemplateFilePath = path.join(process.cwd(), smsTemplate.body);
-                smsTemplate.body = fs.readFileSync(smsTemplateFilePath, 'utf-8').toString()
+                // const smsTemplateFilePath = path.join(process.cwd(), smsTemplate.body);
+                // smsTemplate.body = fs.readFileSync(smsTemplateFilePath, 'utf-8').toString()
+             
+                const modulePath = path.dirname(require.resolve('@solidstarters/solid-core-module'));
+
+                // Resolve the `src` folder
+                const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/sms-templates');
+    
+                // Example usage
+                const filePath = path.join(seedDataPath, smsTemplate.body);
+    
+    
+                smsTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
+
             }
 
             // Save to DB.
