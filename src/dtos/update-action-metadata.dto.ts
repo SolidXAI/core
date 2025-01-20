@@ -4,23 +4,27 @@ export class UpdateActionMetadataDto {
     @IsInt()
     id: number;
 
+    @IsOptional()
     @IsNotEmpty()
     @Matches(/[a-z]+(-[a-z]+)*/)
     @IsString()
     name: string;
 
+    @IsOptional()
     @IsNotEmpty()
     @IsString()
     displayName: string;
 
+    @IsOptional()
     @IsNotEmpty()
     @IsString()
     type: string;
 
     @IsOptional()
+    @IsOptional()
     @IsJSON()
     domain: any;
-
+    
     @IsOptional()
     @IsJSON()
     context: any;
@@ -37,6 +41,7 @@ export class UpdateActionMetadataDto {
     @IsString()
     serverEndpoint: string;
 
+    @IsOptional()
     @IsNotEmpty()
     moduleId: number;
 
@@ -44,6 +49,7 @@ export class UpdateActionMetadataDto {
     @IsOptional()
     moduleUserKey: string;
 
+    @IsOptional()
     @IsNotEmpty()
     modelId: number;
 
@@ -51,6 +57,7 @@ export class UpdateActionMetadataDto {
     @IsOptional()
     modelUserKey: string;
 
+    @IsOptional()
     @IsNotEmpty()
     viewId: number;
 

@@ -17,11 +17,11 @@ import { EmailFieldCrudManager, MAX_EMAIL_LENGTH } from "../helpers/field-crud-m
 import { IntFieldCrudManager } from "../helpers/field-crud-managers/IntFieldCrudManager";
 import { JsonFieldCrudManager } from "../helpers/field-crud-managers/JsonFieldCrudManager";
 import { LongTextFieldCrudManager } from "../helpers/field-crud-managers/LongTextFieldCrudManager";
-import { ManyToManyRelationFieldCrudManager } from "../helpers/field-crud-managers/ManyToManyRelationFieldCrudManager";
+import { ManyToManyRelationFieldCrudManager, ManyToManyRelationFieldOptions } from "../helpers/field-crud-managers/ManyToManyRelationFieldCrudManager";
 import { ManyToOneRelationFieldCrudManager, ManyToOneRelationFieldOptions } from "../helpers/field-crud-managers/ManyToOneRelationFieldCrudManager";
 import { MediaFieldCrudManager, SolidMediaType } from "../helpers/field-crud-managers/MediaFieldCrudManager";
 import { NoOpsFieldCrudManager } from "../helpers/field-crud-managers/NoOpsFieldCrudManager";
-import { OneToManyRelationFieldCrudManager } from "../helpers/field-crud-managers/OneToManyRelationFieldCrudManager";
+import { OneToManyRelationFieldCrudManager, OneToManyRelationFieldOptions } from "../helpers/field-crud-managers/OneToManyRelationFieldCrudManager";
 import { PasswordFieldCrudManager } from "../helpers/field-crud-managers/PasswordFieldCrudManager";
 import { RichTextFieldCrudManager } from "../helpers/field-crud-managers/RichTextFieldCrudManager";
 import { SelectionDynamicFieldCrudManager } from "../helpers/field-crud-managers/SelectionDynamicFieldCrudManager";
@@ -308,18 +308,54 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 // Identify if the field is for the inverse side or not
                 const inverseSide = (fieldMetadata.model.singularName !== this.modelName) ? true : false;
                 if (fieldMetadata.relationType === RelationType.manyToOne) {
-                    const manyToOneOptions: ManyToOneRelationFieldOptions = {
-                        ...commonOptions,
-                        relationModelSingularName: fieldMetadata.relationModelSingularName,
-                        modelUserKeyFieldName: fieldMetadata.model.userKeyField.name,
-                        modelSingularName: fieldMetadata.model.singularName,
-                        entityManager,
+                    if (!inverseSide) {
+                        const manyToOneOptions: ManyToOneRelationFieldOptions = {
+                            ...commonOptions,
+                            relationModelSingularName: fieldMetadata.relationModelSingularName,
+                            modelUserKeyFieldName: fieldMetadata.model.userKeyField.name,
+                            modelSingularName: fieldMetadata.model.singularName,
+                            entityManager,
+                        }
+                        return new ManyToOneRelationFieldCrudManager(manyToOneOptions);
                     }
-                    // const oneToManyOptions = {}
-                    return !inverseSide ? new ManyToOneRelationFieldCrudManager(manyToOneOptions) : new OneToManyRelationFieldCrudManager(fieldMetadata, entityManager, true); //FIXME : Pending options changes
+                    else {
+                        const inverseFieldMetadata = fieldMetadata; //Setting an alias for clarity purpose
+                        const oneToManyOptions: OneToManyRelationFieldOptions = {
+                            ...commonOptions,
+                            relationModelSingularName: inverseFieldMetadata.model.singularName,
+                            modelSingularName: inverseFieldMetadata.relationModelSingularName,
+                            entityManager,
+                            inverseFieldName: inverseFieldMetadata.name,
+                            inverseRelationModelFieldName: inverseFieldMetadata.relationModelFieldName,
+                        }
+                        return new OneToManyRelationFieldCrudManager(oneToManyOptions);
+                    }
                 }
                 else if (fieldMetadata.relationType === RelationType.manyTomany) {
-                    return !inverseSide ? new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager, false) : new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager, false); //FIXME : Pending options changes
+                    if (!inverseSide) {
+                        const manyToManyOptions: ManyToManyRelationFieldOptions = {
+                            ...commonOptions,
+                            relationModelSingularName: fieldMetadata.relationModelSingularName,
+                            modelSingularName: fieldMetadata.model.singularName,
+                            isInverseSide: false,
+                            entityManager,
+                            fieldName: fieldMetadata.name,
+                        }
+                        return new ManyToManyRelationFieldCrudManager(manyToManyOptions); 
+                    }
+                    else {
+                        const inverseFieldMetadata = fieldMetadata; //Setting an alias for clarity purpose
+                        const inverseManyToManyOptions: ManyToManyRelationFieldOptions = {
+                            ...commonOptions,
+                            relationModelSingularName: inverseFieldMetadata.model.singularName,
+                            modelSingularName: inverseFieldMetadata.relationModelSingularName,
+                            isInverseSide: true,
+                            entityManager,
+                            fieldName: inverseFieldMetadata.name,
+                            relationModelFieldName: inverseFieldMetadata.relationModelFieldName,
+                        }
+                        return new ManyToManyRelationFieldCrudManager(inverseManyToManyOptions);
+                    }
                 }
                 else throw new Error('Relation type not supported in crud service');
                 // return (fieldMetadata.relationType === 'many-to-one') ? new ManyToOneRelationFieldCrudManager(fieldMetadata, entityManager) : new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager); //FIXME many-to-many pending

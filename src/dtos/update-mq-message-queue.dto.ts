@@ -8,6 +8,7 @@ export class UpdateMqMessageQueueDto {
     @IsInt()
     id: number;
 
+@IsOptional()    
 @IsNotEmpty()
 @IsString()
 name: string;
