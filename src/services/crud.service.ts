@@ -36,6 +36,7 @@ import { MediaService } from "./media.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
+import { BasicGroupFilterDto } from "src/dtos/basic-group-filters.dto";
 
 const DEFAULT_LIMIT = 10;
 const DEFAULT_OFFSET = 0;
@@ -163,7 +164,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
 
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
     async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate: boolean = false): Promise<T> {
-            if (!id) {
+        if (!id) {
             throw new Error('Id is required for update');
         }
         const entity = await this.repo.findOne({
@@ -239,7 +240,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
     }
 
-    private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean=false): FieldCrudManager {
+    private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false): FieldCrudManager {
         const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name };
         switch (fieldMetadata.type) {
             case SolidFieldType.shortText: {
@@ -262,11 +263,11 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 const options = { ...commonOptions };
                 return new JsonFieldCrudManager(options);
             }
-            case SolidFieldType.int:{
+            case SolidFieldType.int: {
                 const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max };
                 return new IntFieldCrudManager(options);
             }
-            case SolidFieldType.decimal:{
+            case SolidFieldType.decimal: {
                 const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max };
                 return new DecimalFieldCrudManager(options);
             }
@@ -274,21 +275,21 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max };
                 return new BigIntFieldCrudManager(options);
             }
-            case SolidFieldType.email:{
-                const options = { ...commonOptions, max: fieldMetadata.max?? MAX_EMAIL_LENGTH, regexPattern: fieldMetadata.regexPattern };
+            case SolidFieldType.email: {
+                const options = { ...commonOptions, max: fieldMetadata.max ?? MAX_EMAIL_LENGTH, regexPattern: fieldMetadata.regexPattern };
                 return new EmailFieldCrudManager(options);
             }
             case SolidFieldType.date:
-            case SolidFieldType.datetime:{
+            case SolidFieldType.datetime: {
                 const options = { ...commonOptions };
                 return new DateFieldCrudManager(options);
             }
-            case SolidFieldType.password:{
+            case SolidFieldType.password: {
                 const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern };
                 return new PasswordFieldCrudManager(options);
             }
             case SolidFieldType.mediaSingle:
-            case SolidFieldType.mediaMultiple:{
+            case SolidFieldType.mediaMultiple: {
                 // update will need to delete the existing media and save the new media    
                 // case 'mediaSingle':
                 //    Use the EntityController to extract uploaded content & pass to the entity service.
@@ -321,13 +322,13 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                     return !inverseSide ? new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager, false) : new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager, false); //FIXME : Pending options changes
                 }
                 else throw new Error('Relation type not supported in crud service');
-            // return (fieldMetadata.relationType === 'many-to-one') ? new ManyToOneRelationFieldCrudManager(fieldMetadata, entityManager) : new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager); //FIXME many-to-many pending
-            //    ManyToOne -> fieldId. The value is saved as is. No transformation is required
-            //    OneToMany -> fieldIds. Get the value of the oneToMany field side.  No transformation is required (While saving special provision to be made)
-            //    ManyToMany
-            //     break;
+                // return (fieldMetadata.relationType === 'many-to-one') ? new ManyToOneRelationFieldCrudManager(fieldMetadata, entityManager) : new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager); //FIXME many-to-many pending
+                //    ManyToOne -> fieldId. The value is saved as is. No transformation is required
+                //    OneToMany -> fieldIds. Get the value of the oneToMany field side.  No transformation is required (While saving special provision to be made)
+                //    ManyToMany
+                //     break;
             }
-            case SolidFieldType.selectionStatic:{
+            case SolidFieldType.selectionStatic: {
 
                 //     Validation against the selectionStatic values. No transformation is required
                 //     If the value is not in the selectionStatic values, then throw
@@ -344,12 +345,12 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 const options = { ...commonOptions, selectionDynamicProvider: fieldMetadata.selectionDynamicProvider, selectionDynamicProviderCtxt: fieldMetadata.selectionDynamicProviderCtxt, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, discoveryService: this.discoveryService };
                 return new SelectionDynamicFieldCrudManager(options);
             }
-            case SolidFieldType.uuid:{
+            case SolidFieldType.uuid: {
                 const options = { ...commonOptions };
                 //    If no value is provided, then generate a uuid. Add to the dto
                 return new UUIDFieldCrudManager(options);
             }
-            case SolidFieldType.computed:{
+            case SolidFieldType.computed: {
 
                 //    The value will be computed by the computed provider
                 //    Invoke the appropriate computed provider, get the value and add to the dto
@@ -365,7 +366,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
     async find(basicFilterDto: BasicFilterDto) {
         const alias = 'entity';
         // Extract the required keys from the input query
-        let { limit, offset, populateMedia, populateGroup } = basicFilterDto;
+        let { limit, offset, populateMedia, populateGroup,groupFilter } = basicFilterDto;
 
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
@@ -373,7 +374,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
 
         if (basicFilterDto.groupBy) {
             // Get the records and the count
-            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, populateGroup, alias, populateMedia);
+            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter,populateGroup, alias, populateMedia);
             return {
                 groupMeta,
                 groupRecords,
@@ -381,7 +382,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
         else {
             // Get the records and the count
-            const {meta, records} = await this.handleNonGroupFind(qb, populateMedia, offset, limit);
+            const { meta, records } = await this.handleNonGroupFind(qb, populateMedia, offset, limit);
             return {
                 meta,
                 records,
@@ -397,10 +398,10 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             await this.handlePopulateMedia(populateMedia, entities);
         }
 
-        return  this.wrapFindResponse(offset, limit, count, entities);
+        return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, populateGroup: boolean, alias: string, populateMedia: string[]) {
+    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicGroupFilterDto,populateGroup: boolean, alias: string, populateMedia: string[]) {
         const groupByResult = await qb.getRawMany();
 
         const groupMeta = [];
@@ -410,11 +411,11 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             if (populateGroup) {
                 let groupByQb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias);
                 // For the group by records, apply the basic filter
-                const basicFilterDto = {
-                    limit: DEFAULT_LIMIT,
-                    offset: DEFAULT_OFFSET,
-                };
-                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, basicFilterDto, alias);
+                // const basicFilterDto = {
+                //     limit: DEFAULT_LIMIT,
+                //     offset: DEFAULT_OFFSET,
+                // };
+                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
                 const [entities, count] = await groupByQb.getManyAndCount();
 
@@ -423,7 +424,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 if (populateMedia && populateMedia.length > 0) {
                     await this.handlePopulateMedia(populateMedia, entities);
                 }
-                const groupData = this.wrapFindResponse(basicFilterDto.offset, basicFilterDto.limit, count, entities);
+                const groupData = this.wrapFindResponse(groupFilter.offset, groupFilter.limit, count, entities);
                 groupRecords.push(this.crudHelperService.createGroupRecords(group, alias, groupData));
             }
             groupMeta.push(this.crudHelperService.createGroupMeta(group, alias));

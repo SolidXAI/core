@@ -2,10 +2,9 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsOptional } from "class-validator";
 import { PaginationQueryDto } from "./pagination-query.dto";
-import { BasicGroupFilterDto } from "./basic-group-filters.dto";
 
 
-export class BasicFilterDto extends PaginationQueryDto {
+export class BasicGroupFilterDto extends PaginationQueryDto {
 
     @IsOptional()
     @ApiProperty({ description: "Fields" })
@@ -46,7 +45,4 @@ export class BasicFilterDto extends PaginationQueryDto {
     @ApiProperty({ description: "populateGroup" })
     readonly populateGroup?: boolean;
 
-    @IsOptional()
-    @ApiProperty({ description: "groupFilter" })
-    groupFilter?: BasicGroupFilterDto
 }
