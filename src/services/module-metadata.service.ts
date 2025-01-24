@@ -344,7 +344,9 @@ export class ModuleMetadataService {
     const moduleInstance = this.solidRegistry.getModule(`${classify(module.name)}Module`);
     
     if (!moduleInstance) {
-      return await this.generateAddModuleCode(options);
+      const addModuleOutput = await this.generateAddModuleCode(options);
+      const refreshModuleOutput = await this.generateRefreshModuleCode(options);
+      return `${addModuleOutput}\n${refreshModuleOutput}`;
     } else {
       return await this.generateRefreshModuleCode(options);
     }
