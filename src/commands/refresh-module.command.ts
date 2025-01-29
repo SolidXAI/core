@@ -1,6 +1,5 @@
 import { Logger } from '@nestjs/common';
 import { Command, CommandRunner, Option } from 'nest-commander';
-import { ModelMetadataService } from '../services/model-metadata.service';
 import { ModuleMetadataService } from '../services/module-metadata.service';
 import { CommandError } from './helper';
 
@@ -14,10 +13,9 @@ interface CommandOptions {
   name: 'refresh-module',
   description: 'Refreshes a module and its model and fields i.e (entity,dto,service,controller files)',
 })
-export class RefreshModuleCommand extends CommandRunner { //FIXME This command is not invoked from UI anywhere, so it is not tested
+export class RefreshModuleCommand extends CommandRunner { 
   constructor(
     private readonly moduleMetadataService: ModuleMetadataService,
-    private readonly modelMetadataService: ModelMetadataService,
   ) {
     super();
   }

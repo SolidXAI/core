@@ -27,7 +27,7 @@ enum SYSTEM_FIELDS_TO_IGNORE_FOR_CODE_GENERATION {
 @Injectable()
 export class SchematicService {
   private readonly logger = new Logger(SchematicService.name);
-  private readonly SCHEMATIC_PROJECT = 'code-builder';
+  private readonly SCHEMATIC_PROJECT = '@solidstarters/solid-code-builder';
   constructor(private readonly commandService: CommandService) {}
 
   async executeSchematicCommand(
@@ -45,7 +45,7 @@ export class SchematicService {
     options: GenerateModuleOptions | FieldOptions,
     debug: boolean,
   ): string {
-    const baseCommand = `schematics ./${this.SCHEMATIC_PROJECT}:${command} --debug=${debug}`;
+    const baseCommand = `schematics ${this.SCHEMATIC_PROJECT}:${command} --debug=${debug}`;
     if (
       command === REMOVE_FIELDS_COMMAND ||
       command === REFRESH_MODEL_COMMAND
