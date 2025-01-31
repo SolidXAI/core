@@ -121,17 +121,17 @@ import { Msg91SMSService } from './services/sms/Msg91SMSService';
 import { Msg91WhatsappService } from './services/whatsapp/Msg91WhatsappService';
 import { SoftDeleteAwareEventSubscriber } from './subscribers/softDeleteAwareEventSubscriber.subscriber';
 
+import { PermissionMetadataController } from './controllers/permission-metadata.controller';
 import { PermissionMetadata } from './entities/permission-metadata.entity';
 import { PermissionMetadataService } from './services/permission-metadata.service';
-import { PermissionMetadataController } from './controllers/permission-metadata.controller';
 
-import { RoleMetadata } from './entities/role-metadata.entity';
-import { RoleMetadataService } from './services/role-metadata.service';
 import { RoleMetadataController } from './controllers/role-metadata.controller';
-import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
-import { User } from './entities/user.entity';
-import { UserService } from './services/user.service';
 import { UserController } from './controllers/user.controller';
+import { RoleMetadata } from './entities/role-metadata.entity';
+import { User } from './entities/user.entity';
+import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
+import { RoleMetadataService } from './services/role-metadata.service';
+import { UserService } from './services/user.service';
 
 
 @Global()
@@ -311,6 +311,8 @@ import { UserController } from './controllers/user.controller';
     AuthenticationService,
     MqMessageQueueService,
     MqMessageService,
+    RefreshModelCommand,
+    RefreshModuleCommand,
   ],
 })
 export class SolidCoreModule { }
