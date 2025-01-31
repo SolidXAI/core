@@ -235,7 +235,7 @@ export class ModuleMetadataSeederService {
             // const emailTemplateFilePath = path.join(process.cwd(), emailTemplate.body);
 
             // emailTemplate.body = fs.readFileSync(emailTemplateFilePath, 'utf-8').toString()
-            const modulePath = path.dirname(require.resolve('@solidstarters/solid-core-module'));
+            const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
 
             // Resolve the `src` folder
             const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/email-templates');
@@ -267,7 +267,7 @@ export class ModuleMetadataSeederService {
                 // const smsTemplateFilePath = path.join(process.cwd(), smsTemplate.body);
                 // smsTemplate.body = fs.readFileSync(smsTemplateFilePath, 'utf-8').toString()
              
-                const modulePath = path.dirname(require.resolve('@solidstarters/solid-core-module'));
+                const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
 
                 // Resolve the `src` folder
                 const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/sms-templates');
