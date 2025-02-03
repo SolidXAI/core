@@ -162,6 +162,13 @@ import { ChatterMessageDetailsService } from './services/chatter-message-details
 import { ChatterMessageDetailsController } from './controllers/chatter-message-details.controller';
 import { AuditSubscriber } from './subscribers/audit.subscriber';
 import { UserContextService } from './services/user-context.service';
+import { ExportTemplate } from './entities/export-template.entity';
+import { ExportTemplateService } from './services/export-template.service';
+import { ExportTemplateController } from './controllers/export-template.controller';
+import { ExportTransaction } from './entities/export-transaction.entity';
+import { ExportTransactionService } from './services/export-transaction.service';
+import { ExportTransactionController } from './controllers/export-transaction.controller';
+
 
 @Global()
 @Module({
@@ -212,6 +219,8 @@ import { UserContextService } from './services/user-context.service';
     TypeOrmModule.forFeature([ListOfValues]),
     TypeOrmModule.forFeature([ChatterMessage]),
     TypeOrmModule.forFeature([ChatterMessageDetails]),
+    TypeOrmModule.forFeature([ExportTemplate]),
+    TypeOrmModule.forFeature([ExportTransaction]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -243,7 +252,9 @@ import { UserContextService } from './services/user-context.service';
     SavedFiltersController,
     ListOfValuesController,
     ChatterMessageController,
-    ChatterMessageDetailsController
+    ChatterMessageDetailsController,
+    ExportTemplateController,
+    ExportTransactionController,
   ],
   providers: [
     {
@@ -349,6 +360,8 @@ import { UserContextService } from './services/user-context.service';
     ChatterMessageDetailsService,
     AuditSubscriber,
     UserContextService,
+    ExportTemplateService,
+    ExportTransactionService,
   ],
   exports: [
     ModuleMetadataService,

@@ -2,3 +2,21 @@
 node_modules
 logs
 *.tgz
+# IDEs
+.idea/
+jsconfig.json
+.vscode/
+
+# Misc
+node_modules/
+npm-debug.log*
+yarn-error.log*
+
+# Mac OSX Finder files.
+**/.DS_Store
+.DS_Store
+
+# All Env files
+.env
+.env.*
+.env-*
