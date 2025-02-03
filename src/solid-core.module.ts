@@ -132,6 +132,12 @@ import { User } from './entities/user.entity';
 import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
 import { RoleMetadataService } from './services/role-metadata.service';
 import { UserService } from './services/user.service';
+import { ExportTemplate } from './entities/export-template.entity';
+import { ExportTemplateService } from './services/export-template.service';
+import { ExportTemplateController } from './controllers/export-template.controller';
+import { ExportTransaction } from './entities/export-transaction.entity';
+import { ExportTransactionService } from './services/export-transaction.service';
+import { ExportTransactionController } from './controllers/export-transaction.controller';
 
 
 @Global()
@@ -175,6 +181,8 @@ import { UserService } from './services/user.service';
     }),
     HttpModule,
     ConfigModule,
+    TypeOrmModule.forFeature([ExportTemplate]),
+    TypeOrmModule.forFeature([ExportTransaction]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -199,6 +207,8 @@ import { UserService } from './services/user.service';
     PermissionMetadataController,
     RoleMetadataController,
     UserController,
+    ExportTemplateController,
+    ExportTransactionController,
   ],
   providers: [
     {
@@ -286,6 +296,8 @@ import { UserService } from './services/user.service';
     RoleMetadataService,
     PermissionMetadataSeederService,
     UserService,
+    ExportTemplateService,
+    ExportTransactionService,
   ],
   exports: [
     ModuleMetadataService,
