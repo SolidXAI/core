@@ -18,9 +18,9 @@ error: string;
 
 @IsOptional()
 @IsInt()
-exportTemplateIdId: number;
+exportTemplateId: number;
 
 @IsString()
 @IsOptional()
-exportTemplateIdUserKey: string;
+exportTemplateUserKey: string;
 }

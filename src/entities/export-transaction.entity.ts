@@ -14,11 +14,9 @@ export class ExportTransaction extends CommonEntity {
     @Index()
     @Column({ type: "varchar" })
     status: string;
-
     @Column({ type: "text", nullable: true })
     error: string;
-
     @Index()
     @ManyToOne(() => ExportTemplate, { onDelete: "CASCADE", nullable: false })
-    exportTemplateId: ExportTemplate;
+    exportTemplate: ExportTemplate;
 }
