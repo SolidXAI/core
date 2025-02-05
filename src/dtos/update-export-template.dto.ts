@@ -18,16 +18,16 @@ templateFormat: string;
 @IsBoolean()
 notifyOnEmail: boolean = true;
 
-@IsOptional()
-@IsInt()
-modelIdId: number;
-
-@IsString()
-@IsOptional()
-modelIdUserKey: string;
-
 @IsNotEmpty()
 @IsOptional()
 @IsJSON()
 fields: any;
+
+@IsOptional()
+@IsInt()
+modelMetadataId: number;
+
+@IsString()
+@IsOptional()
+modelMetadataUserKey: string;
 }
