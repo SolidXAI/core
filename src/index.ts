@@ -223,3 +223,5 @@ export * from './validators/is-parsable-int'
 export * from './constants'
 export * from './interfaces'
 export * from './solid-core.module'
+
+ export * from './winston.logger'
