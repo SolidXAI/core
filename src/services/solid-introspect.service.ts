@@ -78,6 +78,7 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       .getProviders()
       .filter((provider) => this.isModule(provider));
     this.solidRegistry.registerModules(allModules);
+
   }
 
   // This method identifies a provider as a seeder if it has a seed method i.e duck typing
@@ -145,4 +146,8 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
   //   if (!seederMetadata || !seederMetadata.seeder) return false;
   //   return true;
   // }
+
+  getProvider(providerName: string) {
+    return this.discoveryService.getProviders().find((provider) => provider.name === providerName);
+  }
 }

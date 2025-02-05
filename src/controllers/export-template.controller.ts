@@ -7,7 +7,7 @@ import { UpdateExportTemplateDto } from '../dtos/update-export-template.dto';
 
 @ApiTags('Solid') 
 @Controller('export-template') //FIXME: Change this to the model plural name 
-export class ExportTemplateController {
+export class ExportTemplateController { 
   constructor(private readonly service: ExportTemplateService) {}
 
   @ApiBearerAuth("jwt")
@@ -72,5 +72,10 @@ export class ExportTemplateController {
     return this.service.delete(id);
   }
 
+  @ApiBearerAuth("jwt")
+  @Post(':id/startExport')
+  async startExport(@Param('id') id: number) {
+    return this.service.startExport(+id);
+  }
 
 }
