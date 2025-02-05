@@ -96,6 +96,8 @@ export * from './entities/sms-template.entity'
 export * from './entities/user-password-history.entity'
 export * from './entities/user.entity'
 export * from './entities/view-metadata.entity'
+export * from './entities/export-template.entity'
+export * from './entities/export-transaction.entity'
 
 export * from './enums/auth-type.enum'
 

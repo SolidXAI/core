@@ -13,4 +13,16 @@ datetime: Date;
 @IsOptional()
 @IsString()
 status: string;
+
+@IsOptional()
+@IsString()
+error: string;
+
+@IsOptional()
+@IsInt()
+exportTemplateIdId: number;
+
+@IsString()
+@IsOptional()
+exportTemplateIdUserKey: string;
 }
