@@ -3531,6 +3531,35 @@
             "private": false,
             "encrypt": false,
             "isSystem": true            
+          },
+          {
+            "name": "error",
+            "displayName": "Error",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "exportTemplateId",
+            "displayName": "Template Id",
+            "type": "relation",
+            "ormType": "int",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "exportTemplate",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ]
       }
