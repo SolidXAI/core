@@ -14,16 +14,15 @@ import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
 import { CreateExportTransactionDto } from 'src/dtos/create-export-transaction.dto';
+import { ExportTransaction } from 'src/entities/export-transaction.entity';
+import { Readable } from 'stream';
 import { ExportTemplate } from '../entities/export-template.entity';
 import { ExportTransactionService } from './export-transaction.service';
 
 @Injectable()
 export class ExportTemplateService extends CRUDService<ExportTemplate>{
-  async startExport(id: number) {
-    // It should load the export template by id
-    // const exportTemplate = this.findOne(id, { })
-
-    // It should create the export transaction entry
+  async startExportSync(id: number): Promise<Readable> {
+    // Create the export transaction entry, with status 'started'
     const exportTransaction: CreateExportTransactionDto =  await this.exportTransactionService.toDto({
       datetime: new Date(),
       status: 'started',
@@ -32,10 +31,25 @@ export class ExportTemplateService extends CRUDService<ExportTemplate>{
     const exportTransactionEntity = await this.exportTransactionService.create(exportTransaction);
 
     // Trigger the export process
-    this.exportTransactionService.triggerExport(exportTransactionEntity.id);
-
+    const exportStream = await this.exportTransactionService.triggerExportSync(exportTransactionEntity.id);
     // It should return the export transaction id
-    return exportTransaction;
+    return exportStream;
+  }
+
+  async startExportAsync(id: number): Promise<ExportTransaction>{
+    // Create the export transaction entry, with status 'started'
+    const exportTransaction: CreateExportTransactionDto =  await this.exportTransactionService.toDto({
+      datetime: new Date(),
+      status: 'started',
+      exportTemplateId: id,
+    });
+    const exportTransactionEntity = await this.exportTransactionService.create(exportTransaction);
+
+    // Trigger the export process
+    this.exportTransactionService.triggerExportAsync(exportTransactionEntity.id);
+
+    // It should return the export transaction id, so client can use this to check the status
+    return exportTransactionEntity;
   }
 
   constructor(
