@@ -18,7 +18,7 @@ export class BasicFilterDto extends PaginationQueryDto {
     @ApiProperty({ description: "groupBy" })
     readonly groupBy?: string[];
 
-    
+
     @IsOptional()
     @ApiProperty({ description: "populate" })
     readonly populate?: string[];
@@ -44,4 +44,8 @@ export class BasicFilterDto extends PaginationQueryDto {
     @IsOptional()
     @ApiProperty({ description: "populateGroup" })
     readonly populateGroup?: boolean;
+
+    @IsOptional()
+    @ApiProperty({ description: "groupFilter" })
+    groupFilter?: BasicFilterDto
 }
