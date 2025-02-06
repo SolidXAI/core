@@ -93,12 +93,13 @@ export class ExcelService {
       }
 
       await workbook.commit();
-
+      // passThrough.end(); // ✅ Properly close the stream
     } catch (error) {
       this.logger.error(`❌ Error writing Excel: ${error.message}`);
       passThrough.destroy(error); // Destroy stream
-
-    } return passThrough; // Return streaming response
+      throw error;
+    }
+    return passThrough; // Return streaming response
   }
 
 }

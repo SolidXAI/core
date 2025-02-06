@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, Res } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, Res, InternalServerErrorException } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ExportTemplateService } from '../services/export-template.service';
@@ -76,14 +76,17 @@ export class ExportTemplateController {
   @ApiBearerAuth("jwt")
   @Post(':id/startExport/sync')
   async startExportSync(@Param('id') id: number, @Res() res: Response) {
-    const exportStream = await this.service.startExportSync(+id);
-    const filename = `export-${id}.xlsx`;
-    // Set response headers for Excel download
-    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
-    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    const exportFileInfo = await this.service.startExportSync(+id);
+    if (exportFileInfo.exportStream === null) {
+      throw new InternalServerErrorException("Export stream is null");
+    }
+
+    // ✅ Set response headers for streaming
+    res.setHeader('Content-Disposition', `attachment; filename="${exportFileInfo.fileName}"`);
+    res.setHeader('Content-Type', exportFileInfo.mimeType);
     
     // Pipe the strea to the response as an excel file
-    exportStream.pipe(res);
+    exportFileInfo.exportStream.pipe(res);
   }
 
   @ApiBearerAuth("jwt")
