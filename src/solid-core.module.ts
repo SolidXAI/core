@@ -139,6 +139,7 @@ import { ExportTransaction } from './entities/export-transaction.entity';
 import { ExportTransactionService } from './services/export-transaction.service';
 import { ExportTransactionController } from './controllers/export-transaction.controller';
 import { ExcelService } from './services/excel.service';
+import { CsvService } from './services/csv.service';
 
 
 @Global()
@@ -299,7 +300,8 @@ import { ExcelService } from './services/excel.service';
     UserService,
     ExportTemplateService,
     ExportTransactionService,
-    ExcelService
+    ExcelService,
+    CsvService,
   ],
   exports: [
     ModuleMetadataService,

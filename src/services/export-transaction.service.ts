@@ -20,11 +20,12 @@ import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
 import { CreateExportTransactionDto } from 'src/dtos/create-export-transaction.dto';
 import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
+import { Readable } from 'stream';
 import { ExportTransaction } from '../entities/export-transaction.entity';
+import { CsvService } from './csv.service';
 import { ExcelService } from './excel.service';
 import { getMediaStorageProvider } from './mediaStorageProviders';
 import { SolidIntrospectService } from './solid-introspect.service';
-import { Readable } from 'stream';
 
 const EXPORT_CHUNK_SIZE = 100;
 enum ExportStatus {
@@ -32,6 +33,19 @@ enum ExportStatus {
   COMPLETED = 'completed',
   FAILED = 'failed',
 }
+
+enum ExportFormat {
+  CSV = 'csv',
+  EXCEL = 'excel',
+}
+
+export interface ExportTransactionFileInfo {
+  exportStream: Readable;
+  fileName: string;
+  mimeType: string;
+  exportTransaction: ExportTransaction;
+}
+
 @Injectable()
 export class ExportTransactionService extends CRUDService<ExportTransaction> {
   private logger = new Logger(ExportTransactionService.name);
@@ -51,6 +65,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     readonly repo: Repository<ExportTransaction>,
     readonly introspectService: SolidIntrospectService,
     readonly excelService: ExcelService,
+    readonly csvService: CsvService,
     // readonly fieldMetadataService: FieldMetadataService,
     @InjectRepository(FieldMetadata, 'default')
     readonly fieldRepo: Repository<FieldMetadata>,
@@ -59,13 +74,14 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
   }
 
   // Return the export stream
-  async triggerExportSync(id: number): Promise<Readable> {
+  async triggerExportSync(id: number): Promise<ExportTransactionFileInfo> {
     try {
       const loadedExportTransaction = await this.loadExportTransaction(id);
-      const { exportStream } = await this.getExportStreamDetails(loadedExportTransaction);
+      const { exportStream, templateName, uuid, exportTransaction } = await this.getExportStreamDetails(loadedExportTransaction);
       this.updateExportTransaction(id, ExportStatus.COMPLETED);
-      return exportStream;
-
+      const fileName = this.getFileName(templateName, uuid, loadedExportTransaction.exportTemplate.templateFormat);
+      const mimeType = this.getMimeType(loadedExportTransaction.exportTemplate.templateFormat);
+      return { exportStream, fileName, mimeType, exportTransaction };
     } catch (error) {
       this.updateExportTransaction(id, ExportStatus.FAILED, error.message);
       throw error;
@@ -77,11 +93,10 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     try {
       const loadedExportTransaction = await this.loadExportTransaction(id)
       const { exportStream, templateName, uuid, exportTransaction } = await this.getExportStreamDetails(loadedExportTransaction);
-
+      const fileFormat = loadedExportTransaction.exportTemplate.templateFormat;
       // Store the file using the appropriate storage provider
-      await this.storeExportStream(exportStream, templateName, uuid, exportTransaction);
+      await this.storeExportStream(exportStream, exportTransaction, this.getFileName(templateName, uuid, fileFormat));
       this.updateExportTransaction(id, ExportStatus.COMPLETED);
-
     } catch (error) {
       this.updateExportTransaction(id, ExportStatus.FAILED, error.message);
       throw error;
@@ -116,11 +131,26 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     const dataRecordsFunc = await this.getDataRecordsFunc(fields, modelService);
 
     // Get the export passthru stream (since it is a passthru stream, nothing is stored in memory & it is streamed directly when the stream is read)
-    const exportStream = await this.excelService.createExcelStream(dataRecordsFunc, EXPORT_CHUNK_SIZE);
+    let exportStream = await this.getExportStream(exportTransaction.exportTemplate.templateFormat, dataRecordsFunc);
     return { exportStream, templateName, uuid, exportTransaction };
   }
 
-  private async storeExportStream(exportStream: Readable, templateName: string, uuid: string, exportTransaction: ExportTransaction) {
+  private async getExportStream(templateFormat: string, dataRecordsFunc: (chunkIndex: number, chunkSize: number) => Promise<any[]>) {
+    let exportStream = null;
+    switch (templateFormat) {
+      case ExportFormat.EXCEL:
+        exportStream = await this.excelService.createExcelStream(dataRecordsFunc, EXPORT_CHUNK_SIZE);
+        break;
+      case ExportFormat.CSV:
+        exportStream = await await this.csvService.createCsvStream(dataRecordsFunc, EXPORT_CHUNK_SIZE);
+        break;
+      default:
+        throw new Error('Invalid export format');
+    }
+    return exportStream;
+  }
+
+  private async storeExportStream(exportStream: Readable, exportTransaction: ExportTransaction, fileName: string) {
     const exportedFileMediaField = await this.fieldRepo.findOne({
       where: {
         name: 'exportedFile',
@@ -140,8 +170,16 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     const storageProvider = getMediaStorageProvider(this.configService, this.fileService, this.mediaService, storageProviderType);
 
     //Commented the below code since we will be direclty images from server on call from ui 
-    // await storageProvider.delete(savedEntity, mediaField);
-    await storageProvider.storeStreams([[exportStream, `${dasherize(templateName)}-${uuid}.xlsx`]], exportTransaction, exportedFileMediaField);
+    await storageProvider.storeStreams([[exportStream, fileName]], exportTransaction, exportedFileMediaField)
+  }
+
+  private getFileName(templateName: string, exportTransactionUUID: string, fileFormat: string): string {
+    const extension = (fileFormat === ExportFormat.EXCEL) ? 'xlsx' : 'csv';
+    return `${dasherize(templateName)}-${exportTransactionUUID}.${extension}`;
+  }
+
+  private getMimeType(fileFormat: string): string {
+    return (fileFormat === ExportFormat.EXCEL) ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv';
   }
 
   private async getDataRecordsFunc(fields: any, modelService: InstanceWrapper<any>): Promise<(chunkIndex: number, chunkSize: number) => Promise<any[]>> {
