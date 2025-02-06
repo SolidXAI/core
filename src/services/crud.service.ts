@@ -36,7 +36,6 @@ import { MediaService } from "./media.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
-import { BasicGroupFilterDto } from "src/dtos/basic-group-filters.dto";
 
 const DEFAULT_LIMIT = 10;
 const DEFAULT_OFFSET = 0;
@@ -437,7 +436,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicGroupFilterDto,populateGroup: boolean, alias: string, populateMedia: string[]) {
+    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto,populateGroup: boolean, alias: string, populateMedia: string[]) {
         const groupByResult = await qb.getRawMany();
 
         const groupMeta = [];
