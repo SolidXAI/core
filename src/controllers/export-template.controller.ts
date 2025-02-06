@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, Res } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ExportTemplateService } from '../services/export-template.service';
 import { CreateExportTemplateDto } from '../dtos/create-export-template.dto';
 import { UpdateExportTemplateDto } from '../dtos/update-export-template.dto';
+import { Response } from 'express';
 
 @ApiTags('Solid') 
 @Controller('export-template') //FIXME: Change this to the model plural name 
@@ -73,9 +74,22 @@ export class ExportTemplateController {
   }
 
   @ApiBearerAuth("jwt")
-  @Post(':id/startExport')
-  async startExport(@Param('id') id: number) {
-    return this.service.startExport(+id);
+  @Post(':id/startExport/sync')
+  async startExportSync(@Param('id') id: number, @Res() res: Response) {
+    const exportStream = await this.service.startExportSync(+id);
+    const filename = `export-${id}.xlsx`;
+    // Set response headers for Excel download
+    res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
+    res.setHeader('Content-Type', 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet');
+    
+    // Pipe the strea to the response as an excel file
+    exportStream.pipe(res);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Post(':id/startExport/async')
+  async startExportAsync(@Param('id') id: number) {
+    return this.service.startExportAsync(+id);
   }
 
 }

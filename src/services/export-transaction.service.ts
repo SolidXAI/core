@@ -27,36 +27,14 @@ import { SolidIntrospectService } from './solid-introspect.service';
 import { Readable } from 'stream';
 
 const EXPORT_CHUNK_SIZE = 100;
+enum ExportStatus {
+  STARTED = 'started',
+  COMPLETED = 'completed',
+  FAILED = 'failed',
+}
 @Injectable()
 export class ExportTransactionService extends CRUDService<ExportTransaction> {
   private logger = new Logger(ExportTransactionService.name);
-  async triggerExport(id: number) {
-    
-    // Load the export transaction entry
-    const exportTransaction = await this.repo.findOne({
-      where: { id: id },
-      relations: { exportTemplate: { modelMetadata: true } },
-    }
-    );
-
-    // Get the columns which need to be exported & the model id
-    const fields = JSON.parse(exportTransaction.exportTemplate.fields);
-
-    // Get the appropriate service for the model by trying to fetch a model service matching a particular name
-    const modelName = exportTransaction.exportTemplate.modelMetadata.singularName;
-    const modelService = this.introspectService.getProvider(`${classify(modelName)}Service`);
-    const templateName = exportTransaction.exportTemplate.templateName;
-    const uuid = exportTransaction.exportTransactionId; //TODO can be renamed to exportTransactionUUID
-
-    // Get the data records function
-    const dataRecordsFunc = await this.getDataRecordsFunc(fields, modelService);
-
-    // Get the export passthru stream (since it is a passthru stream, nothing is stored in memory & it is streamed directly when the stream is read)
-    const exportStream = await this.excelService.createExcelStream(dataRecordsFunc, EXPORT_CHUNK_SIZE)
-
-    // Store the file using the appropriate storage provider
-    await this.storeExportStream(exportStream, templateName, uuid, exportTransaction);
-  }
 
   constructor(
     readonly modelMetadataService: ModelMetadataService,
@@ -80,6 +58,67 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     super(modelMetadataService, moduleMetadataService, mediaStorageProviderService, configService, fileService, mediaService, discoveryService, crudHelperService, entityManager, repo, 'exportTransaction', 'solid-core');
   }
 
+  // Return the export stream
+  async triggerExportSync(id: number): Promise<Readable> {
+    try {
+      const loadedExportTransaction = await this.loadExportTransaction(id);
+      const { exportStream } = await this.getExportStreamDetails(loadedExportTransaction);
+      this.updateExportTransaction(id, ExportStatus.COMPLETED);
+      return exportStream;
+
+    } catch (error) {
+      this.updateExportTransaction(id, ExportStatus.FAILED, error.message);
+      throw error;
+    }
+  }
+
+  // Store the export stream using the appropriate storage provider
+  async triggerExportAsync(id: number): Promise<void> {
+    try {
+      const loadedExportTransaction = await this.loadExportTransaction(id)
+      const { exportStream, templateName, uuid, exportTransaction } = await this.getExportStreamDetails(loadedExportTransaction);
+
+      // Store the file using the appropriate storage provider
+      await this.storeExportStream(exportStream, templateName, uuid, exportTransaction);
+      this.updateExportTransaction(id, ExportStatus.COMPLETED);
+
+    } catch (error) {
+      this.updateExportTransaction(id, ExportStatus.FAILED, error.message);
+      throw error;
+
+    }
+  }
+
+  private async loadExportTransaction(id: number) {
+    return await this.repo.findOne({
+      where: { id: id },
+      relations: { exportTemplate: { modelMetadata: true } },
+    }
+    );
+  }
+
+  private async updateExportTransaction(id: number, status: string, error?: string) {
+    await this.repo.update(id, { status, error });
+  }
+
+  private async getExportStreamDetails(exportTransaction: ExportTransaction) {
+    // Get the columns which need to be exported & the model id
+    const fields = JSON.parse(exportTransaction.exportTemplate.fields);
+
+    // Get the appropriate service for the model by trying to fetch a model service matching a particular name
+    const modelName = exportTransaction.exportTemplate.modelMetadata.singularName;
+    const modelService = this.introspectService.getProvider(`${classify(modelName)}Service`);
+    const templateName = exportTransaction.exportTemplate.templateName;
+    const uuid = exportTransaction.exportTransactionId; //TODO can be renamed to exportTransactionUUID
+
+
+    // Get the data records function
+    const dataRecordsFunc = await this.getDataRecordsFunc(fields, modelService);
+
+    // Get the export passthru stream (since it is a passthru stream, nothing is stored in memory & it is streamed directly when the stream is read)
+    const exportStream = await this.excelService.createExcelStream(dataRecordsFunc, EXPORT_CHUNK_SIZE);
+    return { exportStream, templateName, uuid, exportTransaction };
+  }
 
   private async storeExportStream(exportStream: Readable, templateName: string, uuid: string, exportTransaction: ExportTransaction) {
     const exportedFileMediaField = await this.fieldRepo.findOne({
@@ -118,18 +157,6 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
       const records = data.records ?? [];
       return records;
     }
-  }
-
-
-  private async getDataCount(fields: any, modelProvider: InstanceWrapper<any>) {
-    const countFilterDto: BasicFilterDto = {
-      fields,
-      limit: 1,
-      offset: 0,
-    };
-    const countData = await modelProvider.instance.find(countFilterDto);
-    const totalCount = countData?.meta?.totalRecords ?? 0;
-    return totalCount;
   }
 
   async toDto(data: Partial<CreateExportTransactionDto>): Promise<CreateExportTransactionDto> {
