@@ -32,7 +32,7 @@ export class ExportTemplateService extends CRUDService<ExportTemplate>{
     const exportTransactionEntity = await this.exportTransactionService.create(exportTransaction);
 
     // Trigger the export process
-    await this.exportTransactionService.triggerExport(exportTransactionEntity.id);
+    this.exportTransactionService.triggerExport(exportTransactionEntity.id);
 
     // It should return the export transaction id
     return exportTransaction;

@@ -138,6 +138,7 @@ import { ExportTemplateController } from './controllers/export-template.controll
 import { ExportTransaction } from './entities/export-transaction.entity';
 import { ExportTransactionService } from './services/export-transaction.service';
 import { ExportTransactionController } from './controllers/export-transaction.controller';
+import { ExcelService } from './services/excel.service';
 
 
 @Global()
@@ -298,6 +299,7 @@ import { ExportTransactionController } from './controllers/export-transaction.co
     UserService,
     ExportTemplateService,
     ExportTransactionService,
+    ExcelService
   ],
   exports: [
     ModuleMetadataService,

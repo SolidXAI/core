@@ -1,12 +1,12 @@
-import { Inject, Logger } from "@nestjs/common";
-import { ConfigService, ConfigType } from "@nestjs/config";
-import { MediaStorageProvider } from "src/interfaces";
-import { FileService } from "src/services/file.service";
-import { MediaService } from "../media.service";
-import { Media } from "src/entities/media.entity";
+import { Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { CommonEntity } from "src/entities/common.entity";
 import { FieldMetadata } from "src/entities/field-metadata.entity";
-import appBuilderConfig from "src/config/app-builder.config";
+import { Media } from "src/entities/media.entity";
+import { MediaStorageProvider } from "src/interfaces";
+import { FileService } from "src/services/file.service";
+import { Readable } from "stream";
+import { MediaService } from "../media.service";
 
 export class FileStorageProvider<T> implements MediaStorageProvider<T> {
     private logger = new Logger(FileStorageProvider.name);
@@ -38,8 +38,8 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         files.forEach(async (file) => {
             // Store the file in the configured file storage directory
             const fileStoragePath = this.getFullFilePath(this.getFileName(file));
-            this.fileService.copyFile(file.path, fileStoragePath);
-            this.fileService.deleteFile(file.path);
+            await this.fileService.copyFile(file.path, fileStoragePath);
+            await this.fileService.deleteFile(file.path);
 
             // Create an entry in the media table
             const mediaEntity = await this.mediaService.create({
@@ -50,6 +50,27 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
                 fieldMetadataId: mediaFieldMetadata.id
             }) as unknown as Media;
             result.push(mediaEntity);
+            this.logger.debug(`Stored media with`, mediaEntity);
+        });
+        return result;
+    }
+
+    async storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
+        if (!(entity instanceof CommonEntity)) {
+            throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
+        }
+        const result: Media[] = [];
+        streamPairs.forEach(async (pair) => {
+            const stream = pair[0];
+            const fileName = pair[1];
+            this.fileService.writeStreamToFile(stream, fileName);
+            const mediaEntity = await this.mediaService.create({
+                entityId: entity.id,
+                modelMetadataId: mediaFieldMetadata.model.id,
+                relativeUri: fileName,
+                mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
+                fieldMetadataId: mediaFieldMetadata.id
+            }) as unknown as Media;
             this.logger.debug(`Stored media with`, mediaEntity);
         });
         return result;

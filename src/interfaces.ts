@@ -10,6 +10,7 @@ import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
 import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
+import { Readable } from 'stream';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -33,6 +34,7 @@ export interface MediaStorageProvider<T> {
     store(files: Express.Multer.File[], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
     delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void>;
     retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
+    storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
     // delete(file: string): Promise<void>;
 }
 
