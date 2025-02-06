@@ -1,0 +1,6 @@
+1. Do i need to create a storeStreams method for aws service too?
+    - Handle later
+2. queues handling -> if queues is enabled by default, i.e triggerExport(exportTransactionEntity.id).
+    - startExport should either return the data or return the transaction id
+3. How to handle scenarios wherein, nested related exist.(do i need to only get the userkey)
+    - show the userKey

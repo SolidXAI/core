@@ -1,10 +1,11 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 // import * as AWS from 'aws-sdk';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
 import { ConfigType } from '@nestjs/config';
 import commonConfig, { AwsS3Config } from '../config/common.config';
 import path from 'path';
+import { Readable } from 'stream';
 
 
 
@@ -13,6 +14,7 @@ import path from 'path';
 export class FileService {
 
   private readonly s3Client: S3Client;
+  private readonly logger = new Logger(FileService.name);
 
   constructor(
     @Inject(commonConfig.KEY)
@@ -163,5 +165,28 @@ export class FileService {
 
   private isValidS3Config(config: AwsS3Config): boolean {
     return !!config.S3_AWS_ACCESS_KEY && !!config.S3_AWS_SECRET_KEY && !!config.S3_AWS_REGION_NAME;
+  }
+  
+  /**
+   * Save a stream to a file
+   * @param stream - Readable stream
+   * @param filePath - Destination file path
+   * @returns Promise<void>
+   */
+  public async writeStreamToFile(stream: Readable, filePath: string): Promise<void> {
+    return new Promise((resolve, reject) => {
+      const writeStream = fs.createWriteStream(filePath);
+      stream.pipe(writeStream);
+
+      writeStream.on('finish', () => {
+        this.logger.debug(`✅ File saved: ${filePath}`);
+        resolve();
+      });
+
+      writeStream.on('error', (err) => {
+        this.logger.debug(`❌ Error saving file: ${filePath}`, err);
+        reject(err);
+      });
+    });
   }
 }

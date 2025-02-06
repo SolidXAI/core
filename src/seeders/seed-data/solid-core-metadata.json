@@ -3530,7 +3530,8 @@
             "index": false,
             "private": false,
             "encrypt": false,
-            "isSystem": true            
+            "isSystem": true,
+            "mediaStorageProviderUserKey": "default-filesystem"
           },
           {
             "name": "error",
