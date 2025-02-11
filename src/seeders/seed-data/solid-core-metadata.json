@@ -2539,7 +2539,40 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true
+          "delete": true,
+          "rowButtons": [
+            {
+              "attrs": {
+                "className": "pi pi-cog",
+                "label": ""
+              },
+              "action": {
+                "title": "",
+                "body": "",
+                "confirmBtnLabel": "Generate Code",
+                "cancelBtnLabel": "Cancel",
+                "customComponent": "core/extension/solid-core/moduleMetadata/list/GenerateModuleCodeRowAction",
+                "customComponentIsSystem": true,
+                "endpoint": ""
+              }
+            }
+          ],
+          "headerButtons": [
+            {
+              "attrs": {
+                "className": "pi pi-cog",
+                "label": ""
+              },
+              "action": {
+                "title": "",
+                "body": "",
+                "confirmBtnLabel": "Generate Code",
+                "cancelBtnLabel": "Cancel",
+                "customComponent": "GenerateModuleCode",
+                "endpoint": ""
+              }
+            }
+          ]
         },
         "children": [
           {
@@ -2698,7 +2731,40 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true
+          "delete": true,
+          "rowButtons": [
+            {
+              "attrs": {
+                "className": "pi pi-cog",
+                "label": ""
+              },
+              "action": {
+                "title": "",
+                "body": "",
+                "confirmBtnLabel": "Generate Code",
+                "cancelBtnLabel": "Cancel",
+                "customComponent": "core/extension/solid-core/modelMetadata/list/GenerateModelCodeRowAction",
+                "customComponentIsSystem": true,
+                "endpoint": ""
+              }
+            }
+          ],
+          "headerButtons": [
+            {
+              "attrs": {
+                "className": "pi pi-cog",
+                "label": ""
+              },
+              "action": {
+                "title": "",
+                "body": "",
+                "confirmBtnLabel": "Generate Code",
+                "cancelBtnLabel": "Cancel",
+                "customComponent": "GenerateModelCode",
+                "endpoint": ""
+              }
+            }
+          ]
         },
         "children": [
           {
@@ -3712,7 +3778,7 @@
                     "attrs": {
                       "name": "roles",
                       "renderMode": "checkbox",
-                      "inlineCreateAutoSave":"true",
+                      "inlineCreateAutoSave": "true",
                       "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
                       "inlineCreate": "true",
                       "inlineCreateLayout": {
