@@ -2156,6 +2156,181 @@
             "relationModelModuleName": "solid-core"
           }
         ]
+      },
+      {
+        "singularName": "setting",
+        "tableName": "ss_setting",
+        "pluralName": "settings",
+        "displayName": "Settings",
+        "description": "Model to capture all settings",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "userKeyFieldUserKey": "username",
+        "fields": [
+          {
+            "name": "authPagesLayout",
+            "displayName": "Auth Pages Layout",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "authPagesTheme",
+            "displayName": "Auth Pages Theme",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "appTitle",
+            "displayName": "App Title",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "appLogo",
+            "displayName": "App Logo",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "appDescription",
+            "displayName": "App Description",
+            "type": "longText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "appTnc",
+            "displayName": "App TNC",
+            "type": "richText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "appPrivacyPolicy",
+            "displayName": "App Privacy Policy",
+            "type": "richText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamAllowPublicRegistration",
+            "displayName": "Iam Allow Public Registration",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamPasswordRegistrationEnabled",
+            "displayName": "Iam Password Registration Enabled",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamPasswordLessRegistrationEnabled",
+            "displayName": "Iam Password Less Registration enabled",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamActivateUserOnRegistration",
+            "displayName": "Iam Activate User On Registration",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamDefaultRole",
+            "displayName": "Iam Default Role",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamGoogleOAuthEnabled",
+            "displayName": "Iam Google OAuth Enabled",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "columnName": "iam_google_oauth_enabled",
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
       }
     ]
   },
@@ -2371,6 +2546,19 @@
       "viewUserKey": "mqMessageQueue-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "mqMessageQueue"
+    },
+    {
+      "displayName": "Settings action",
+      "name": "settings-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "settings-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "setting"
     }
   ],
   "menus": [
@@ -2517,6 +2705,14 @@
       "actionUserKey": "mqMessageQueue-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "queues-menu-item"
+    },
+    {
+      "displayName": "Settings",
+      "name": "settings-menu-item",
+      "sequenceNumber": 5,
+      "actionUserKey": "settings-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
     }
   ],
   "views": [
@@ -5521,6 +5717,40 @@
                 ]
               }
             ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "settings-list-view",
+      "displayName": "Settings",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "setting",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "appTitle",
+              "label": "App Name",
+              "sortable": true,
+              "filterable": true
+            }
           }
         ]
       }
