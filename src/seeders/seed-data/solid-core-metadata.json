@@ -1295,7 +1295,7 @@
             "name": "parentMenuItem",
             "displayName": "Parent Menu Item",
             "type": "relation",
-            "required": true,
+            "required": false,
             "unique": false,
             "index": true,
             "private": false,
