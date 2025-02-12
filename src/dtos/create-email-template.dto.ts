@@ -1,30 +1,45 @@
-import { IsArray, IsBoolean, IsEmail, IsNotEmpty, IsOptional, MaxLength, MinLength, ValidateNested } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsNotEmpty, IsOptional, MaxLength, MinLength, ValidateNested, Matches, IsString } from 'class-validator';
 import { CreateEmailAttachmentDto } from './create-email-attachment.dto';
 import { Type } from 'class-transformer';
 
 export class CreateEmailTemplateDto {
-    @IsNotEmpty()
-    name: string;
 
-    @IsNotEmpty()
-    displayName: string;
+@IsNotEmpty()
+@Matches(/[a-z]+(-[a-z]+)*/)
+@IsString()
+name: string;
 
-    @IsNotEmpty()
-    body: string;
+@IsNotEmpty()
+@IsString()
+displayName: string;
 
-    @IsNotEmpty()
-    @MaxLength(128)
-    subject: string;
+@IsNotEmpty()
+@IsString()
+body: string;
 
-    @IsNotEmpty()
-    description: string;
+@IsNotEmpty()
+@IsString()
+subject: string;
 
-    @IsBoolean()
-    active: boolean;
+@IsOptional()
+@IsString()
+description: string;
+
+@IsOptional()
+@IsBoolean()
+active: boolean;
 
     @IsOptional()
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => CreateEmailAttachmentDto)
     attachments: CreateEmailAttachmentDto[];
+
+@IsOptional()
+@IsString()
+emailType: string = "text";
+
+@IsNotEmpty()
+@IsString()
+type: string = "text";
 }

@@ -14,7 +14,7 @@ import { Public } from 'src/decorators/public.decorator';
 import Mailgen = require('mailgen');
 
 
-@Controller('email-templates')
+@Controller('email-template')
 @ApiTags("Common")
 export class EmailTemplateController {
   constructor(private readonly emailTemplateService: EmailTemplateService) { }
@@ -32,14 +32,14 @@ export class EmailTemplateController {
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @Get()
   findAll(@Query() paginationQuery: PaginationQueryDto) {
-    return this.emailTemplateService.findAll(paginationQuery);
+    return this.emailTemplateService.find(paginationQuery);
   }
 
   @ApiBearerAuth("jwt")
   @Roles('Admin')
   @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.emailTemplateService.findOne(+id);
+  findOne(@Param('id') id: string, @Query() query: any) {
+    return this.emailTemplateService.findOne(+id, query);
   }
 
   @ApiBearerAuth("jwt")
