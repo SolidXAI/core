@@ -3,7 +3,7 @@ import * as fs from 'fs';
 // import * as AWS from 'aws-sdk';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
 import { ConfigType } from '@nestjs/config';
-import commonConfig from '../config/common.config';
+import commonConfig, { AwsS3Config } from '../config/common.config';
 
 
 
@@ -18,14 +18,13 @@ export class FileService {
     private readonly commonConfiguration: ConfigType<typeof commonConfig>,
 
   ) {
+    if (!this.isValidS3Config(this.commonConfiguration.awsS3Credentials)) { return }
     this.s3Client = new S3Client({
       region: this.commonConfiguration.awsS3Credentials.S3_AWS_REGION_NAME,
       credentials: {
         accessKeyId: this.commonConfiguration.awsS3Credentials.S3_AWS_ACCESS_KEY,
         secretAccessKey: this.commonConfiguration.awsS3Credentials.S3_AWS_SECRET_KEY,
       },
-      // endpoint: `https://${process.env.S3_AWS_BUCKET_NAME}.s3.${process.env.S3_AWS_REGION_NAME}.amazonaws.com`, // Correct regional endpoint
-
     });
   }
 
@@ -84,6 +83,7 @@ export class FileService {
   }
 
   async copyToS3(filePath: string, ContentType: string, fileName: string, bucketName: string): Promise<string> {
+    this.checkIfS3ClientExists();
     try {
       // Read Image File TO Fetch Buffer 
       const data = await this.readImageFile(filePath);
@@ -109,7 +109,12 @@ export class FileService {
     }
   }
 
+  private checkIfS3ClientExists() {
+    if (!this.s3Client) { throw new Error('S3 Client not initialized. Please check the S3 configuration'); }
+  }
+
   async copyToS3WithPublic(filePath: string, ContentType: string, fileName: string, bucketName: string): Promise<string> {
+    this.checkIfS3ClientExists();
     try {
       // Read Image File TO Fetch Buffer 
       const data = await this.readImageFile(filePath);
@@ -136,7 +141,7 @@ export class FileService {
   }
 
   async deleteFromS3(fileName: string, bucketName: string): Promise<string> {
-
+    this.checkIfS3ClientExists();
     const params = {
       Bucket: bucketName,  // your S3 bucket name
       Key: fileName        // the name of the file you want to delete    
@@ -145,5 +150,9 @@ export class FileService {
     const command = new DeleteObjectCommand(params)
     const response = await this.s3Client.send(command);
     return fileName
+  }
+
+  private isValidS3Config(config: AwsS3Config): boolean {
+    return !!config.S3_AWS_ACCESS_KEY && !!config.S3_AWS_SECRET_KEY && !!config.S3_AWS_REGION_NAME;
   }
 }
