@@ -37,7 +37,7 @@ export class RefreshModuleCommand extends CommandRunner {
 
 
   @Option({
-    flags: '-id, --moduleId [module ID]',
+    flags: '-id, --id [module ID]',
     description: 'Module ID from the ss_module_metadata table',
   })
   parseModuleId(val: string): number {
@@ -46,7 +46,7 @@ export class RefreshModuleCommand extends CommandRunner {
 
     // Accept the module name as an argument
     @Option({
-      flags: '-n, --moduleName [module name]',
+      flags: '-n, --name [module name]',
       description: 'Module Name from the ss_module_metadata table',
     })
     parseModuleName(val: string): string {
