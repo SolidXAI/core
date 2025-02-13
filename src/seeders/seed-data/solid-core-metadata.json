@@ -280,20 +280,6 @@
             "isSystem": true
           },
           {
-            "name": "isExportable",
-            "displayName": "Is Exportable",
-            "type": "boolean",
-            "ormType": "boolean",
-            "defaultValue": "false",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "columnName": "is_exportable",
-            "isSystem": true
-          },
-          {
             "name": "userKeyField",
             "displayName": "User Key Field",
             "type": "relation",
@@ -3053,22 +3039,6 @@
           {
             "type": "field",
             "attrs": {
-              "name": "enableAuditTracking",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "internationalisation",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "module",
               "sortable": true,
               "filterable": true
@@ -3077,23 +3047,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "isExportable",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "userKeyField",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "isSystem",
               "sortable": true,
               "filterable": true
             }
@@ -3175,37 +3129,13 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "enableAuditTracking"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "internationalisation"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
                       "name": "module"
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "isExportable"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
                       "name": "userKeyField"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "isSystem"
                     }
                   }
                 ]
