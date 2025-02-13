@@ -8,7 +8,9 @@ export const RedisOptions: CacheModuleAsyncOptions = {
     imports: [ConfigModule],
     useFactory: async (configService: ConfigService) => {
         if (!isRedisConfigured(configService)) {
-            return {} // This defaults to in-memory cache
+            return {
+                ttl: 0
+            } // This defaults to in-memory cache
         }
         const store = await createRedisStore(configService);
         return {
