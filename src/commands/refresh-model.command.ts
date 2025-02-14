@@ -37,7 +37,7 @@ export class RefreshModelCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '-id, --modelId [model ID]',
+    flags: '-id, --id [model ID]',
     description: 'Model ID from the ss_model_metadata table',
   })
   parseModelId(val: string): number {
@@ -46,7 +46,7 @@ export class RefreshModelCommand extends CommandRunner {
 
     // Accept the module name as an argument
     @Option({
-      flags: '-n, --modelName [model name]',
+      flags: '-n, --name [model name]',
       description: 'Model Name from the ss_model_metadata table',
     })
     parseModelName(val: string): string {

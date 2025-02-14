@@ -8,7 +8,7 @@ export * from './commands/seed.command'
 export * from './config/app-builder.config'
 export * from './config/common.config'
 export * from './config/iam.config'
-export * from './config/redis.options'
+export * from './config/cache.options'
 
 export * from './decorators/active-user.decorator'
 export * from './decorators/auth.decorator'

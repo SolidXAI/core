@@ -36,9 +36,13 @@ export default registerAs('common', () => {
         awsS3Credentials: {
             S3_AWS_ACCESS_KEY: process.env.S3_AWS_ACCESS_KEY,
             S3_AWS_SECRET_KEY: process.env.S3_AWS_SECRET_KEY,
-            S3_AWS_BUCKET_NAME: process.env.S3_AWS_BUCKET_NAME,
-            S3_AWS_REGION_HOST: process.env.S3_AWS_REGION_HOST,
             S3_AWS_REGION_NAME: process.env.S3_AWS_REGION_NAME
         }
     };
 });
+
+export interface AwsS3Config {
+    S3_AWS_ACCESS_KEY: string;
+    S3_AWS_SECRET_KEY: string;
+    S3_AWS_REGION_NAME: string;
+}
