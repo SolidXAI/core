@@ -419,7 +419,8 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "isUserKey"
                 ];
 
             case SolidFieldType.longtext:

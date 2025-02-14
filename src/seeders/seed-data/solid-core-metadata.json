@@ -829,6 +829,20 @@
             "encrypt": false,
             "columnName": "column_name",
             "isSystem": true
+          },
+          {
+            "name": "isUserKey",
+            "displayName": "Is User Key",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "required",
+            "isSystem": true
           }
         ]
       },
@@ -2722,14 +2736,6 @@
       "actionUserKey": "mqMessageQueue-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "queues-menu-item"
-    },
-    {
-      "displayName": "Settings",
-      "name": "settings-menu-item",
-      "sequenceNumber": 5,
-      "actionUserKey": "settings-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
     }
   ],
   "views": [
@@ -3043,14 +3049,6 @@
               "sortable": true,
               "filterable": true
             }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "userKeyField",
-              "sortable": true,
-              "filterable": true
-            }
           }
         ]
       }
@@ -3135,7 +3133,7 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "userKeyField"
+                      "name": "isUserKey"
                     }
                   }
                 ]

@@ -38,6 +38,12 @@ iamActivateUserOnRegistration: boolean = false;
 @Column({ type: "varchar", nullable: true })
 iamDefaultRole: string;
 
-@Column({ name: "iam_google_oauth", type: "boolean", nullable: true, default: false })
-iamGoogleOAuth: boolean = false;
+@Column({ type: "boolean", nullable: true, default: false })
+iamGoogleOAuthEnabled: boolean = false;
+
+@Column({ type: "boolean", nullable: true, default: false })
+shouldQueueEmails: boolean = false;
+
+@Column({ type: "boolean", nullable: true, default: false })
+shouldQueueSms: boolean = false;
 }

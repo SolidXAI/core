@@ -382,4 +382,9 @@ export class CreateFieldMetadataDto {
   @IsString()
   @IsOptional()
   columnName: string
+
+  @ApiProperty({ description: "Is User Key" })
+  @IsOptional()
+  @IsBoolean()
+  readonly isUserKey: boolean
 }

@@ -54,5 +54,13 @@ iamDefaultRole: string;
 
 @IsOptional()
 @IsBoolean()
-iamGoogleOAuth: boolean = false;
+iamGoogleOAuthEnabled: boolean = false;
+
+@IsOptional()
+@IsBoolean()
+shouldQueueEmails: boolean = false;
+
+@IsOptional()
+@IsBoolean()
+shouldQueueSms: boolean = false;
 }

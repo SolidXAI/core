@@ -15,6 +15,7 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 
 import { Setting } from '../entities/setting.entity';
 import { iamConfig } from 'src/config/iam.config';
+import commonConfig from 'src/config/common.config';
 
 @Injectable()
 export class SettingService extends CRUDService<Setting>{
@@ -28,6 +29,8 @@ export class SettingService extends CRUDService<Setting>{
     readonly discoveryService: DiscoveryService,
     readonly crudHelperService: CrudHelperService,
     @Inject(iamConfig.KEY) private readonly iamConfiguration: ConfigType<typeof iamConfig>,
+    @Inject(commonConfig.KEY)
+            private readonly commonConfiguration: ConfigType<typeof commonConfig>,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     @InjectRepository(Setting, 'default')
@@ -51,7 +54,7 @@ export class SettingService extends CRUDService<Setting>{
       iamPasswordRegistrationEnabled: false,
       iamPasswordLessRegistrationEnabled: this.iamConfiguration.passwordlessRegistration,
       iamActivateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
-      iamGoogleOAuth: false,
+      iamGoogleOAuthEnabled: false,
       authPagesLayout: "center",
       authPagesTheme: "light",
       appTitle: process.env.SOLID_APP_NAME || "Default App",
@@ -59,7 +62,9 @@ export class SettingService extends CRUDService<Setting>{
       appDescription: "",
       appTnc: "",
       appPrivacyPolicy: "",
-      iamDefaultRole: this.iamConfiguration.defaultRole
+      iamDefaultRole: this.iamConfiguration.defaultRole,
+      shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
+      shouldQueueSms: this.commonConfiguration.shouldQueueSms
     };
   }
 
