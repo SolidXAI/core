@@ -47,9 +47,6 @@ export class ModelMetadata extends CommonEntity {
     @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })
     module: ModuleMetadata;
 
-    @Column({ name: "is_exportable", default: false })
-    isExportable: boolean;
-
     // ExternalId
     // 1. Single field. 
     // 2. Composite field. 

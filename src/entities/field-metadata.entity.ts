@@ -135,4 +135,6 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'column_name', nullable: true })
     columnName: string;
 
+    @Column({ name: "isUserKey", default: false })
+    isUserKey: boolean;
 }

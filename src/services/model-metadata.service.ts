@@ -158,7 +158,6 @@ export class ModelMetadataService {
         relations: {},
       });
     createDto['module'] = resolvedModule;
-
     const { fields: fieldsMetadata, ...modelMetaDataWithoutFields } = createDto;
     const modelMetadata = this.modelMetadataRepo.create(modelMetaDataWithoutFields);
     let model = await manager.save(modelMetadata);
@@ -168,7 +167,6 @@ export class ModelMetadataService {
     const listViewLayout = [];
     const formViewLayout = [];
 
-    const userKeyFieldName = createDto.userKeyFieldUserKey;
     for (let k = 0; k < fieldsMetadata.length; k++) {
       const fieldMetadata = fieldsMetadata[k];
 
@@ -182,7 +180,7 @@ export class ModelMetadataService {
       const fieldMetadataObject = this.fieldMetadataRepo.create(fieldMetadata);
       const affectedField = await manager.save(fieldMetadataObject);
 
-      if (fieldMetadata.name === userKeyFieldName) {
+      if (fieldMetadata.isUserKey) {
         userKeyField = affectedField;
       }
       listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, label: `${affectedField.displayName}`, sortable: true, filterable: true } })
@@ -466,7 +464,7 @@ export class ModelMetadataService {
     const existingFieldIds = existingFields.map((field) => field.id);
 
     // 2. Synchronize fields
-    const userKeyFieldName = updateModelMetaDataDto.userKeyFieldUserKey;
+    // const userKeyFieldName = updateModelMetaDataDto.userKeyFieldUserKey;
     let userKeyField = null;
 
     const fieldsToSave: FieldMetadata[] = [];
@@ -490,14 +488,14 @@ export class ModelMetadataService {
         if (fieldMetadata.mediaStorageProviderId) {
           fieldMetadata['mediaStorageProvider'] = await this.mediaStorageProviderMetadataService.findOne(fieldMetadata.mediaStorageProviderId);
         }
-        const createdField = await this.fieldMetadataRepo.create(fieldMetadata);
+        const createdField = fieldRepo.create(fieldMetadata);
         fieldsToSave.push(createdField);
       }
 
       // Check for userKeyField
-      if (fieldMetadata.name === userKeyFieldName) {
-        userKeyField = fieldMetadata;
-      }
+      // if (fieldMetadata.isUserKey) {
+      //   userKeyField = fieldMetadata;
+      // }
     }
 
     // Fields to delete (not in the payload)
@@ -514,10 +512,37 @@ export class ModelMetadataService {
       // await this.fieldMetadataRepo.remove(fieldsToDelete);
     }
 
+    const finalModel = await modelRepo.findOne({
+      where: { id: updatedModel.id },
+      relations: ["fields", "userKeyField"]
+    });
+
     // 3. Update model with userKeyField if specified
-    if (userKeyField) {
-      updatedModel.userKeyField = userKeyField;
-      await modelRepo.save(updatedModel);
+    const userKeyFields = fieldsMetadata.filter(field => field.isUserKey);
+
+    if (userKeyFields.length > 0) {
+        const newUserKeyField = userKeyFields[userKeyFields.length - 1]; 
+        const savedUserKeyField = await fieldRepo.findOne({ where: { id: newUserKeyField.id } });
+    
+        if (savedUserKeyField) {
+            finalModel.userKeyField = savedUserKeyField;
+            await modelRepo.save(finalModel);
+        }
+    
+        const otherUserKeyFields = userKeyFields.filter(field => field.id !== newUserKeyField.id);
+    
+        for (const field of otherUserKeyFields) {
+            const existingField = await fieldRepo.findOne({ where: { id: field.id } });
+            if (existingField) {
+                existingField.isUserKey = false;
+                await fieldRepo.save(existingField);
+            }
+        }
+    } else {
+        if (finalModel.userKeyField) {
+            finalModel.userKeyField = null;
+            await modelRepo.save(finalModel);
+        }
     }
 
     return updatedModel;

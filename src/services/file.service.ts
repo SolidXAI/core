@@ -4,6 +4,7 @@ import * as fs from 'fs';
 import { S3Client, PutObjectCommand, DeleteObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
 import { ConfigType } from '@nestjs/config';
 import commonConfig, { AwsS3Config } from '../config/common.config';
+import path from 'path';
 
 
 
@@ -65,9 +66,17 @@ export class FileService {
   async copyFile(sourcePath: string, destinationPath: string): Promise<void> {
     try {
       const data = await this.readFile(sourcePath);
+      await this.createDirectoryIfNotExists(destinationPath);
       await this.writeFile(destinationPath, data);
     } catch (error) {
       throw new Error(`Error copying file: ${error.message}`);
+    }
+  }
+
+  async createDirectoryIfNotExists(filePath: string): Promise<void> {
+    const dir = path.dirname(filePath);
+    if (!fs.existsSync(dir)) {
+      fs.mkdirSync(dir, { recursive: true });
     }
   }
 

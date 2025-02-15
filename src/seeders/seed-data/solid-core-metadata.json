@@ -280,20 +280,6 @@
             "isSystem": true
           },
           {
-            "name": "isExportable",
-            "displayName": "Is Exportable",
-            "type": "boolean",
-            "ormType": "boolean",
-            "defaultValue": "false",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "columnName": "is_exportable",
-            "isSystem": true
-          },
-          {
             "name": "userKeyField",
             "displayName": "User Key Field",
             "type": "relation",
@@ -843,6 +829,20 @@
             "encrypt": false,
             "columnName": "column_name",
             "isSystem": true
+          },
+          {
+            "name": "isUserKey",
+            "displayName": "Is User Key",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "required",
+            "isSystem": true
           }
         ]
       },
@@ -1295,7 +1295,7 @@
             "name": "parentMenuItem",
             "displayName": "Parent Menu Item",
             "type": "relation",
-            "required": true,
+            "required": false,
             "unique": false,
             "index": true,
             "private": false,
@@ -2156,6 +2156,212 @@
             "relationModelModuleName": "solid-core"
           }
         ]
+      },
+      {
+        "singularName": "setting",
+        "tableName": "ss_setting",
+        "pluralName": "settings",
+        "displayName": "Settings",
+        "description": "Model to capture all settings",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "userKeyFieldUserKey": "username",
+        "fields": [
+          {
+            "name": "authPagesLayout",
+            "displayName": "Auth Pages Layout",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionStaticValues": [
+              "left:Left",
+              "center:Center",
+              "right:Right"
+            ]
+          },
+          {
+            "name": "authPagesTheme",
+            "displayName": "Auth Pages Theme",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionStaticValues": [
+              "dark:Dark",
+              "light:Light"
+            ]
+          },
+          {
+            "name": "appTitle",
+            "displayName": "App Title",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "appLogo",
+            "displayName": "App Logo",
+            "type": "mediaSingle",
+            "mediaStorageProviderUserKey": "default-filesystem",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "appDescription",
+            "displayName": "App Description",
+            "type": "longText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "appTnc",
+            "displayName": "App TNC",
+            "type": "richText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "appPrivacyPolicy",
+            "displayName": "App Privacy Policy",
+            "type": "richText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamAllowPublicRegistration",
+            "displayName": "Iam Allow Public Registration",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamPasswordRegistrationEnabled",
+            "displayName": "Iam Password Registration Enabled",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamPasswordLessRegistrationEnabled",
+            "displayName": "Iam Password Less Registration enabled",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamActivateUserOnRegistration",
+            "displayName": "Iam Activate User On Registration",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamDefaultRole",
+            "displayName": "Iam Default Role",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "iamGoogleOAuthEnabled",
+            "displayName": "Iam Google OAuth Enabled",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "shouldQueueEmails",
+            "displayName": "Should Queue Emails",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "shouldQueueSms",
+            "displayName": "Should Queue SMS",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
       }
     ]
   },
@@ -2371,6 +2577,19 @@
       "viewUserKey": "mqMessageQueue-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "mqMessageQueue"
+    },
+    {
+      "displayName": "Settings action",
+      "name": "settings-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "settings-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "setting"
     }
   ],
   "menus": [
@@ -2818,14 +3037,6 @@
           {
             "type": "field",
             "attrs": {
-              "name": "dataSourceType",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "enableSoftDelete",
               "sortable": true,
               "filterable": true
@@ -2834,47 +3045,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "enableAuditTracking",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "internationalisation",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "module",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "isExportable",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "userKeyField",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "isSystem",
               "sortable": true,
               "filterable": true
             }
@@ -2950,25 +3121,7 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "dataSourceType"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
                       "name": "enableSoftDelete"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "enableAuditTracking"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "internationalisation"
                     }
                   },
                   {
@@ -2980,19 +3133,7 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "isExportable"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "userKeyField"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "isSystem"
+                      "name": "isUserKey"
                     }
                   }
                 ]
@@ -5516,6 +5657,181 @@
                           }
                         ]
                       }
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "settings-list-view",
+      "displayName": "Settings",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "setting",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "appTitle",
+              "label": "App Name",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "settings-form-view",
+      "displayName": "Settings",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "setting",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Settings",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "authPagesLayout",
+                      "label": "Auth Pages Layout"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "authPagesTheme",
+                      "label": "Auth Pages Theme"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "appTitle",
+                      "label": "App Title"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "appLogo",
+                      "label": "App Logo"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "appDescription",
+                      "label": "App Description"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "appTnc",
+                      "label": "App TNC"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "appPrivacyPolicy",
+                      "label": "App Privacy Policy"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "iamAllowPublicRegistration",
+                      "label": "Iam Allow Public Registration"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "iamPasswordRegistrationEnabled",
+                      "label": "Iam Password Registration Enabled"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "iamPasswordLessRegistrationEnabled",
+                      "label": "Iam Password Less Registration enabled"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "iamActivateUserOnRegistration",
+                      "label": "Iam Activate User On Registration"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "iamDefaultRole",
+                      "label": "Iam Default Role"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "iamGoogleOAuthEnabled",
+                      "label": "Iam Google OAuth Enabled"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "shouldQueueEmails",
+                      "label": "Should Queue Emails"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "shouldQueueSms",
+                      "label": "Should Queue SMS"
                     }
                   }
                 ]
