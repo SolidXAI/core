@@ -167,7 +167,8 @@ export class ModuleMetadataSeederService {
         // 1. Give all permissions to the Admin role.
         this.logger.log(`About to add all permissions to the Admin role`);
         await this.roleService.addAllPermissionsToRole("Admin");
-
+        // 2. Give getAllSettings permissions to the Public role.
+        await this.roleService.addPermissionToRole('Public', 'SettingController.getAllSettings');
         this.logger.log(`All Seeders finished`);
 
     }
