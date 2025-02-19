@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DiscoveryService } from "@nestjs/core";
-import { EntityManager, QueryFailedError, SelectQueryBuilder } from "typeorm";
+import { EntityManager, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { Repository } from "typeorm/repository/Repository";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { ComputedFieldValueType, RelationType, SelectionValueType, SolidFieldType } from "../dtos/create-field-metadata.dto";
@@ -647,6 +647,71 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             return this.repo.remove(removedEntities);
         }
         // return removedEntities
+    }
+
+    async recover(id: number) {
+        try {
+          const softDeletedRows = await this.repo.findOne({
+            where: { 
+                //@ts-ignore
+                id, deletedAt: Not(IsNull()) 
+            },
+            withDeleted: true,
+          });
+      
+          if (!softDeletedRows) {
+            throw new Error('No soft-deleted record found with the given ID.');
+          }
+      
+          await this.repo.update(id, {
+                //@ts-ignore
+                deletedAt: null, deletedTracker: "not-deleted" 
+            });
+      
+          return { message: 'Record successfully recovered', data: softDeletedRows };
+        } catch (error) {
+          if (error instanceof QueryFailedError) {
+            if ((error as any).code === '23505') {
+              throw new Error('Another record is conflicting with the record you are attempting to Un-Archive, either delete or change the other record so as to avoid this conflict.');
+            }
+          }
+    
+          throw new Error(error);
+        }
+    }
+    
+    async recoverMany() {
+        try {
+          const softDeletedRows = await this.repo.find({
+            where: {
+                //@ts-ignore
+                deletedAt: Not(IsNull())
+            },
+            withDeleted: true
+          })
+          
+          if (!softDeletedRows.length) {
+            throw new Error('No soft-deleted records found.');
+          }
+          
+          await this.repo.update(
+            {
+                //@ts-ignore
+                deletedAt: Not(IsNull())
+            },
+            {deletedAt: null, deletedTracker: "not-deleted"}
+          )
+        
+          return { message: 'All records successfully recovered' };
+        } catch (error) {
+          if (error instanceof QueryFailedError) {
+            if ((error as any).code === '23505') {
+              throw new Error('Another record is conflicting with the record you are attempting to Un-Archive, either delete or change the other record so as to avoid this conflict.');
+            }
+          }
+    
+          throw new Error(error);
+        }
     }
 
 }
