@@ -40,12 +40,23 @@ export class SettingService extends CRUDService<Setting>{
    );
  }
 
-  async getAllSettings(): Promise<Record<string, any>> {
-    const settings: any = await this.repo.find();
-    if (!settings || settings.length === 0) {
-      return this.getDefaultSettings();
+  async wrapSettings(): Promise<Record<string, any>> {
+    const settingsArray: any[] = await this.repo.find();
+    
+    if (!settingsArray || settingsArray.length === 0) {
+        return this.getDefaultSettings();
     }
-    return settings;
+
+    const settings = settingsArray[0];
+
+    const defaultSettings = this.getDefaultSettings();
+
+    const mergedSettings = Object.keys(defaultSettings).reduce((acc, key) => {
+        acc[key] = settings[key] !== null && settings[key] !== undefined ? settings[key] : defaultSettings[key];
+        return acc;
+    }, {} as Record<string, any>);
+
+    return mergedSettings;
   }
 
   private getDefaultSettings(): Record<string, any> {
@@ -57,7 +68,7 @@ export class SettingService extends CRUDService<Setting>{
       iamGoogleOAuthEnabled: false,
       authPagesLayout: "center",
       authPagesTheme: "light",
-      appTitle: process.env.SOLID_APP_NAME || "Default App",
+      appTitle: process.env.SOLID_APP_NAME || "Solid App",
       appLogo: "",
       appDescription: "",
       appTnc: "",
