@@ -40,7 +40,7 @@ export class SettingController {
   }
 
   @ApiBearerAuth("jwt")
-  @Get('/wrap')
+  @Get('/wrapped')
   async wrapSettings() {
       return this.service.wrapSettings();
   }  
