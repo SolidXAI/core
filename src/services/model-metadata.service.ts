@@ -40,7 +40,6 @@ export class ModelMetadataService {
     private readonly mediaStorageProviderMetadataService: MediaStorageProviderMetadataService,
     private readonly fieldMetadataService: FieldMetadataService,
     private readonly roleService: RoleMetadataService,
-    private readonly permissionsSeederService: PermissionMetadataSeederService,
   ) { }
 
   async findMany(basicFilterDto: BasicFilterDto) {
@@ -817,15 +816,9 @@ export class ModelMetadataService {
     const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
     const createdMenu = menuRepo.create(menu);
     await menuRepo.save(createdMenu);
-    await this.refreshPermission();
-    await this.roleService.addAllPermissionsToRole("Admin");
     return `${removeFieldCodeOuput} \n ${refreshModelCodeOutput}`;
   }
 
-  async refreshPermission() {
-    await this.permissionsSeederService.seed();
-    return true
-  }
 
   async generateRemoveFieldsCode(options: CodeGenerationOptions): Promise<string> {
     if (!options.modelId && !options.modelUserKey) {
