@@ -1,13 +1,15 @@
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { PassportStrategy } from '@nestjs/passport';
+import { AuthGuard, PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth2';
-import { Inject, Injectable } from '@nestjs/common';
-import { AuthGuard } from '@nestjs/passport';
+import { isGoogleOAuthConfigured } from 'src/helpers/google-oauth.helper';
 import { v4 as uuid } from 'uuid';
-import { AuthenticationService } from '../services/authentication.service';
-import { UserService } from '../services/user.service';
 import { iamConfig } from '../config/iam.config';
+import { UserService } from '../services/user.service';
 
+const DUMMY_CLIENT_ID = 'DUMMY_CLIENT_ID';
+const DUMMY_CLIENT_SECRET = 'DUMMY_CLIENT_SECRET';
+const DUMMY_CALLBACK_URL = 'DUMMY_CALLBACK_URL';
 
 @Injectable()
 export class GoogleOauthGuard extends AuthGuard('google') { }
@@ -15,17 +17,23 @@ export class GoogleOauthGuard extends AuthGuard('google') { }
 
 @Injectable()
 export class GoogleOauthStrategy extends PassportStrategy(Strategy, 'google') {
+  private readonly logger = new Logger(GoogleOauthStrategy.name);
   constructor(
     @Inject(iamConfig.KEY) private iamConfiguration: ConfigType<typeof iamConfig>,
-    private readonly authService: AuthenticationService,
     private readonly userService: UserService
   ) {
+    // TODO: Have added default dummy values for the configuration, since the configuration is not mandatory.
+    // Perhaps a cleaner way needs to be figured out
     super({
-      clientID: iamConfiguration.googleOauth.clientID,
-      clientSecret: iamConfiguration.googleOauth.clientSecret,
-      callbackURL: iamConfiguration.googleOauth.callbackURL,
+      clientID: iamConfiguration.googleOauth.clientID ?? DUMMY_CLIENT_ID,
+      clientSecret: iamConfiguration.googleOauth.clientSecret ?? DUMMY_CLIENT_SECRET,
+      callbackURL: iamConfiguration.googleOauth.callbackURL ?? DUMMY_CALLBACK_URL,
       scope: ['profile', 'email'],
     });
+
+    if (!isGoogleOAuthConfigured(iamConfiguration)) {
+      this.logger.debug('Google OAuth strategy is not configured');
+    }
   }
 
   async validate(
@@ -55,4 +63,5 @@ export class GoogleOauthStrategy extends PassportStrategy(Strategy, 'google') {
 
     done(null, user);
   }
+
 }

@@ -1,3 +1,4 @@
+.env*
 
 # Outputs
 src/**/*.js
