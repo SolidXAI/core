@@ -74,8 +74,7 @@ export class GoogleAuthenticationController {
     }
 
     /**
-     * This is just a dummy endpoint where we are passing in the accessCode, this will be configured in the .env as an environment variable and 
-     * will be passed the accessCode, using the accessCode the UI code on this page will mostly invoke the /iam/google/auth endpoint which will finally generate the JWT token.
+     * Use this endpoint to authenticate using an accessCode with Google.
      * 
      * @param accessCode 
      * @returns 
