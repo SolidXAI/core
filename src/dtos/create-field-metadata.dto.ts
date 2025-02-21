@@ -256,8 +256,6 @@ export class CreateFieldMetadataDto {
   @ApiProperty({ description: 'for text fields, this is length. for numeric fields, this is the range of values allowed. Only for type=shortText,longText,richText,json,int,decimal,date,dateTime,time', })
   @IsInt()
   @IsOptional()
-  @Transform(({ obj }) => obj.length ?? undefined) // Automatically sets max = length
-  @ValidateIf((obj) => obj.length !== undefined)  // Only validate if length is provided
   max: number;
 
   @ApiProperty({ description: 'for text fields, this is length. for numeric fields, this is the range of values allowed. Only for type=shortText,longText,richText,json,int,decimal,date,dateTime,time', })
