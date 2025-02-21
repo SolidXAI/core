@@ -925,7 +925,7 @@ export class AuthenticationService {
         await this.validateUserUsingGoogle(user);
 
         // finally we simply generate the tokens. 
-        const tokens = this.generateTokens(user);
+        const tokens = await this.generateTokens(user);
         return {
             user: {
                 email: user.email,
