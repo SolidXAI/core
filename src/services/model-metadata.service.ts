@@ -23,6 +23,7 @@ import { ViewMetadata } from '../entities/view-metadata.entity';
 import { ActionMetadata } from '../entities/action-metadata.entity';
 import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { RoleMetadataService } from './role-metadata.service';
+import { PermissionMetadataSeederService } from 'src/seeders/permission-metadata-seeder.service';
 
 @Injectable()
 export class ModelMetadataService {
@@ -195,104 +196,104 @@ export class ModelMetadataService {
       model = await manager.save(updatedModelMetadataDto);
     }
 
-    const modelViews = [{
-      name: `${model.singularName}-list-view`,
-      displayName: `${model.displayName}`,
-      type: 'list',
-      context: "{}",
-      module: resolvedModule,
-      model: model,
-      layout: JSON.stringify({
-        type: "list",
-        attrs: {
-          pagination: true,
-          pageSizeOptions: [
-            10,
-            25,
-            50
-          ],
-          enableGlobalSearch: true,
-          create: true,
-          edit: true,
-          delete: true
-        },
-        children: listViewLayout
-      }, null, 2)
-    },
-    {
-      name: `${model.singularName}-form-view`,
-      displayName: `${model.displayName}`,
-      type: 'form',
-      context: "{}",
-      module: model.module,
-      model: model,
-      layout: JSON.stringify(
-        {
-          type: "form",
-          attrs: { name: "form-1", label: `${model.displayName}`, className: "grid" },
-          children: [
-            {
-              type: "sheet",
-              attrs: { name: "sheet-1" },
-              children: [
-                {
-                  type: "row",
-                  attrs: { name: "group-1", label: "", className: "" },
-                  children: [
-                    {
-                      type: "column",
-                      attrs: { name: "group-1", label: "", className: "col-6" },
-                      children: formViewLayout
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }, null, 2)
-    }
-    ];
-    const viewRepo = manager.getRepository(ViewMetadata);
-    for (let j = 0; j < modelViews.length; j++) {
-      const view = modelViews[j];
-      const createdView = await viewRepo.create(view);
-      await viewRepo.save(createdView);
-    }
+    // const modelViews = [{
+    //   name: `${model.singularName}-list-view`,
+    //   displayName: `${model.displayName}`,
+    //   type: 'list',
+    //   context: "{}",
+    //   module: resolvedModule,
+    //   model: model,
+    //   layout: JSON.stringify({
+    //     type: "list",
+    //     attrs: {
+    //       pagination: true,
+    //       pageSizeOptions: [
+    //         10,
+    //         25,
+    //         50
+    //       ],
+    //       enableGlobalSearch: true,
+    //       create: true,
+    //       edit: true,
+    //       delete: true
+    //     },
+    //     children: listViewLayout
+    //   }, null, 2)
+    // },
+    // {
+    //   name: `${model.singularName}-form-view`,
+    //   displayName: `${model.displayName}`,
+    //   type: 'form',
+    //   context: "{}",
+    //   module: model.module,
+    //   model: model,
+    //   layout: JSON.stringify(
+    //     {
+    //       type: "form",
+    //       attrs: { name: "form-1", label: `${model.displayName}`, className: "grid" },
+    //       children: [
+    //         {
+    //           type: "sheet",
+    //           attrs: { name: "sheet-1" },
+    //           children: [
+    //             {
+    //               type: "row",
+    //               attrs: { name: "group-1", label: "", className: "" },
+    //               children: [
+    //                 {
+    //                   type: "column",
+    //                   attrs: { name: "group-1", label: "", className: "col-6" },
+    //                   children: formViewLayout
+    //                 }
+    //               ]
+    //             }
+    //           ]
+    //         }
+    //       ]
+    //     }, null, 2)
+    // }
+    // ];
+    // const viewRepo = manager.getRepository(ViewMetadata);
+    // for (let j = 0; j < modelViews.length; j++) {
+    //   const view = modelViews[j];
+    //   const createdView = await viewRepo.create(view);
+    //   await viewRepo.save(createdView);
+    // }
 
-    const view = await viewRepo.findOneBy({ name: `${model.singularName}-list-view` });
+    // const view = await viewRepo.findOneBy({ name: `${model.singularName}-list-view` });
 
-    const action = {
-      displayName: `${model.displayName} List View`,
-      name: `${model.singularName}-list-view`,
-      type: "solid",
-      domain: "",
-      context: "",
-      customComponent: `/admin/address-master/${model.singularName}/all`,
-      customIsModal: true,
-      serverEndpoint: "",
-      view: view,
-      module: resolvedModule,
-      model: model
-    };
-    const actionRepo = manager.getRepository(ActionMetadata);
-    const createdAction = await actionRepo.create(action);
-    const newAction = await actionRepo.save(createdAction);
+    // const action = {
+    //   displayName: `${model.displayName} List View`,
+    //   name: `${model.singularName}-list-view`,
+    //   type: "solid",
+    //   domain: "",
+    //   context: "",
+    //   customComponent: `/admin/address-master/${model.singularName}/all`,
+    //   customIsModal: true,
+    //   serverEndpoint: "",
+    //   view: view,
+    //   module: resolvedModule,
+    //   model: model
+    // };
+    // const actionRepo = manager.getRepository(ActionMetadata);
+    // const createdAction = await actionRepo.create(action);
+    // const newAction = await actionRepo.save(createdAction);
 
-    const adminRole = await this.roleService.findRoleByName('Admin');
+    // const adminRole = await this.roleService.findRoleByName('Admin');
 
-    const menu = {
-      displayName: `${model.displayName}`,
-      name: `${model.singularName}`,
-      sequenceNumber: 1,
-      action: newAction,
-      module: resolvedModule,
-      roles: [adminRole],
-      parentMenuItemUserKey: ""
-    };
+    // const menu = {
+    //   displayName: `${model.displayName}`,
+    //   name: `${model.singularName}`,
+    //   sequenceNumber: 1,
+    //   action: newAction,
+    //   module: resolvedModule,
+    //   roles: [adminRole],
+    //   parentMenuItemUserKey: ""
+    // };
 
-    const menuRepo = manager.getRepository(MenuItemMetadata);
-    const createdMenu = await menuRepo.create(menu);
-    await menuRepo.save(createdMenu);
+    // const menuRepo = manager.getRepository(MenuItemMetadata);
+    // const createdMenu = await menuRepo.create(menu);
+    // await menuRepo.save(createdMenu);
 
     return model;
   }
@@ -687,8 +688,137 @@ export class ModelMetadataService {
 
     const refreshModelCodeOutput = await this.generateModelCode(options);
     const removeFieldCodeOuput = await this.generateRemoveFieldsCode(options);
+
+    // Extract listViewLayout and formViewLayout from model fields
+    const listViewLayout = model.fields.map(field => ({
+        type: "field",
+        attrs: { 
+            name: `${field.name}`, 
+            label: `${field.displayName}`, 
+            sortable: true, 
+            filterable: true 
+        }
+    }));
+
+    const formViewLayout = model.fields.map(field => ({
+        type: "field",
+        attrs: { 
+            name: `${field.name}`, 
+            label: `${field.displayName}` 
+        }
+    }));
+
+    // Fetch module data
+    const resolvedModule = await this.dataSource.getRepository(ModuleMetadata).findOne({
+        where: { id: model.module.id }
+    });
+
+    // Generate model views
+    const modelViews = [
+        {
+            name: `${model.singularName}-list-view`,
+            displayName: `${model.displayName}`,
+            type: 'list',
+            context: "{}",
+            module: resolvedModule,
+            model: model,
+            layout: JSON.stringify({
+                type: "list",
+                attrs: {
+                    pagination: true,
+                    pageSizeOptions: [10, 25, 50],
+                    enableGlobalSearch: true,
+                    create: true,
+                    edit: true,
+                    delete: true
+                },
+                children: listViewLayout
+            }, null, 2)
+        },
+        {
+            name: `${model.singularName}-form-view`,
+            displayName: `${model.displayName}`,
+            type: 'form',
+            context: "{}",
+            module: resolvedModule,
+            model: model,
+            layout: JSON.stringify({
+                type: "form",
+                attrs: { name: "form-1", label: `${model.displayName}`, className: "grid" },
+                children: [
+                    {
+                        type: "sheet",
+                        attrs: { name: "sheet-1" },
+                        children: [
+                            {
+                                type: "row",
+                                attrs: { name: "group-1", label: "", className: "" },
+                                children: [
+                                    {
+                                        type: "column",
+                                        attrs: { name: "group-1", label: "", className: "col-6" },
+                                        children: formViewLayout
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }, null, 2)
+        }
+    ];
+
+    // Save views
+    const viewRepo = this.dataSource.getRepository(ViewMetadata);
+    for (const view of modelViews) {
+        const createdView = viewRepo.create(view);
+        await viewRepo.save(createdView);
+    }
+
+    // Fetch the list view
+    const view = await viewRepo.findOneBy({ name: `${model.singularName}-list-view` });
+
+    // Generate action
+    const action = {
+        displayName: `${model.displayName} List View`,
+        name: `${model.singularName}-list-view`,
+        type: "solid",
+        domain: "",
+        context: "",
+        customComponent: `/admin/address-master/${model.singularName}/all`,
+        customIsModal: true,
+        serverEndpoint: "",
+        view: view,
+        module: resolvedModule,
+        model: model
+    };
+
+    // Save action
+    const actionRepo = this.dataSource.getRepository(ActionMetadata);
+    const createdAction = actionRepo.create(action);
+    const newAction = await actionRepo.save(createdAction);
+
+    // Fetch Admin Role
+    const adminRole = await this.roleService.findRoleByName('Admin');
+
+    // Generate menu
+    const menu = {
+        displayName: `${model.displayName}`,
+        name: `${model.singularName}`,
+        sequenceNumber: 1,
+        action: newAction,
+        module: resolvedModule,
+        roles: [adminRole],
+        parentMenuItemUserKey: ""
+    };
+
+    // Save menu
+    const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
+    const createdMenu = menuRepo.create(menu);
+    await menuRepo.save(createdMenu);
     return `${removeFieldCodeOuput} \n ${refreshModelCodeOutput}`;
   }
+
 
   async generateRemoveFieldsCode(options: CodeGenerationOptions): Promise<string> {
     if (!options.modelId && !options.modelUserKey) {

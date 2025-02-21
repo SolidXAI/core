@@ -2770,7 +2770,7 @@
                 "body": "",
                 "confirmBtnLabel": "Generate Code",
                 "cancelBtnLabel": "Cancel",
-                "customComponent": "core/extension/solid-core/moduleMetadata/list/GenerateModuleCodeRowAction",
+                "customComponent": "../extension/solid-core/moduleMetadata/list/GenerateModuleCodeRowAction",
                 "customComponentIsSystem": true,
                 "endpoint": ""
               }
@@ -2962,7 +2962,7 @@
                 "body": "",
                 "confirmBtnLabel": "Generate Code",
                 "cancelBtnLabel": "Cancel",
-                "customComponent": "core/extension/solid-core/modelMetadata/list/GenerateModelCodeRowAction",
+                "customComponent": "../extension/solid-core/modelMetadata/list/GenerateModelCodeRowAction",
                 "customComponentIsSystem": true,
                 "endpoint": ""
               }
