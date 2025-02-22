@@ -385,4 +385,19 @@ export class CreateFieldMetadataDto {
   @IsOptional()
   @IsBoolean()
   readonly isUserKey: boolean
+
+  @ApiProperty({ description: 'Relation Join Column Name of Field', })
+  @IsString()
+  @IsOptional()
+  relationJoinColumnName: string
+
+  @ApiProperty({ description: 'Join Column Name of Field', })
+  @IsString()
+  @IsOptional()
+  joinColumnName: string
+
+  @ApiProperty({ description: 'Relation Join Table Name of Field', })
+  @IsString()
+  @IsOptional()
+  relationJoinTableName: string
 }

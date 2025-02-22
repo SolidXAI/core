@@ -583,7 +583,10 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "relationJoinColumnName",
+                    "joinColumnName",
+                    "relationJoinTableName"
                 ];
 
             case SolidFieldType.mediaSingle:
