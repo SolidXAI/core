@@ -804,7 +804,7 @@ export class ModelMetadataService {
     // Generate menu
     const menu = {
         displayName: `${model.displayName}`,
-        name: `${model.singularName}`,
+        name: `${model.singularName}-menu-item`,
         sequenceNumber: 1,
         action: newAction,
         module: resolvedModule,
