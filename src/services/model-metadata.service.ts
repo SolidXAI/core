@@ -184,8 +184,8 @@ export class ModelMetadataService {
       if (fieldMetadata.isUserKey) {
         userKeyField = affectedField;
       }
-      listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, label: `${affectedField.displayName}`, sortable: true, filterable: true } })
-      formViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, label: `${affectedField.displayName}` } })
+      listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, sortable: true, filterable: true } })
+      formViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}` } })
 
     }
 
@@ -324,7 +324,7 @@ export class ModelMetadataService {
         fields: []
       }
 
-      const listViewLayoutFields = [{ type: "field", attrs: { name: `id`, label: `Id`, sortable: true, filterable: true } }];
+      const listViewLayoutFields = [{ type: "field", attrs: { name: `id`, sortable: true, filterable: true } }];
       const formViewLayoutFields = [];
 
       for (let i = 0; i < model.fields.length; i++) {
@@ -339,8 +339,8 @@ export class ModelMetadataService {
             fieldObject[requiredField] = field[requiredField];
           });
           modelMetaData.fields.push(fieldObject);
-          listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, label: `${field.displayName}`, sortable: true, filterable: true } })
-          formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, label: `${field.displayName}` } })
+          listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, sortable: true, filterable: true } })
+          formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
 
         }
       }
@@ -694,7 +694,6 @@ export class ModelMetadataService {
         type: "field",
         attrs: { 
             name: `${field.name}`, 
-            label: `${field.displayName}`, 
             sortable: true, 
             filterable: true 
         }
@@ -704,7 +703,6 @@ export class ModelMetadataService {
         type: "field",
         attrs: { 
             name: `${field.name}`, 
-            label: `${field.displayName}` 
         }
     }));
 
@@ -733,7 +731,7 @@ export class ModelMetadataService {
                     delete: true
                 },
                 children: listViewLayout
-            }, null, 2)
+            }, null, 3)
         },
         {
             name: `${model.singularName}-form-view`,
@@ -764,7 +762,7 @@ export class ModelMetadataService {
                         ]
                     }
                 ]
-            }, null, 2)
+            }, null, 3)
         }
     ];
 
