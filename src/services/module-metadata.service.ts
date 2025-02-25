@@ -110,7 +110,8 @@ export class ModuleMetadataService {
         return module
       });
     } catch (error) {
-      console.error('Transaction failed:', error);
+      // console.error('Transaction failed:', error);
+      this.logger.error('Transaction failed:', error);
       throw error;
     }
   }
@@ -163,7 +164,8 @@ export class ModuleMetadataService {
       await fs.writeFile(filePath, metadataJson);
 
     } catch (error) {
-      console.error('File creation failed:', error);
+      // console.error('File creation failed:', error);
+      this.logger.error('File creation failed:', error);
       throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
     }
   }
@@ -177,7 +179,8 @@ export class ModuleMetadataService {
         return module
       });
     } catch (error) {
-      console.error('Transaction failed:', error);
+      // console.error('Transaction failed:', error);
+      this.logger.error('Transaction failed:', error);
       throw error;
     }
   }
@@ -249,7 +252,8 @@ export class ModuleMetadataService {
       await fs.writeFile(filePath, updatedContent);
 
     } catch (error) {
-      console.error('File creation failed:', error);
+      // console.error('File creation failed:', error);
+      this.logger.error('File creation failed:', error);
       throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
     }
   }
