@@ -184,8 +184,8 @@ export class ModelMetadataService {
       if (fieldMetadata.isUserKey) {
         userKeyField = affectedField;
       }
-      listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, label: `${affectedField.displayName}`, sortable: true, filterable: true } })
-      formViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, label: `${affectedField.displayName}` } })
+      listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, sortable: true, filterable: true } })
+      formViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}` } })
 
     }
 
@@ -324,7 +324,7 @@ export class ModelMetadataService {
         fields: []
       }
 
-      const listViewLayoutFields = [{ type: "field", attrs: { name: `id`, label: `Id`, sortable: true, filterable: true } }];
+      const listViewLayoutFields = [{ type: "field", attrs: { name: `id`, sortable: true, filterable: true } }];
       const formViewLayoutFields = [];
 
       for (let i = 0; i < model.fields.length; i++) {
@@ -339,8 +339,8 @@ export class ModelMetadataService {
             fieldObject[requiredField] = field[requiredField];
           });
           modelMetaData.fields.push(fieldObject);
-          listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, label: `${field.displayName}`, sortable: true, filterable: true } })
-          formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, label: `${field.displayName}` } })
+          listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, sortable: true, filterable: true } })
+          formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
 
         }
       }
@@ -681,20 +681,24 @@ export class ModelMetadataService {
 
   async generateCode(options: CodeGenerationOptions): Promise<string> {
     const query = {
-      populate: ["module", "fields"]
+        populate: ["module", "fields"]
     };
-    const model = options.modelId ? await this.findOne(options.modelId, query) : await this.findOneByUserKey(options.modelUserKey, query.populate);
-    options.fieldIdsForRemoval = model.fields.filter((field) => field.isMarkedForRemoval).map((field) => field.id);
+
+    const model = options.modelId 
+        ? await this.findOne(options.modelId, query) 
+        : await this.findOneByUserKey(options.modelUserKey, query.populate);
+
+    options.fieldIdsForRemoval = model.fields
+        .filter(field => field.isMarkedForRemoval)
+        .map(field => field.id);
 
     const refreshModelCodeOutput = await this.generateModelCode(options);
     const removeFieldCodeOuput = await this.generateRemoveFieldsCode(options);
 
-    // Extract listViewLayout and formViewLayout from model fields
     const listViewLayout = model.fields.map(field => ({
         type: "field",
         attrs: { 
             name: `${field.name}`, 
-            label: `${field.displayName}`, 
             sortable: true, 
             filterable: true 
         }
@@ -703,17 +707,18 @@ export class ModelMetadataService {
     const formViewLayout = model.fields.map(field => ({
         type: "field",
         attrs: { 
-            name: `${field.name}`, 
-            label: `${field.displayName}` 
+            name: `${field.name}`
         }
     }));
 
-    // Fetch module data
     const resolvedModule = await this.dataSource.getRepository(ModuleMetadata).findOne({
         where: { id: model.module.id }
     });
 
-    // Generate model views
+    const viewRepo = this.dataSource.getRepository(ViewMetadata);
+    const actionRepo = this.dataSource.getRepository(ActionMetadata);
+    const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
+
     const modelViews = [
         {
             name: `${model.singularName}-list-view`,
@@ -733,7 +738,7 @@ export class ModelMetadataService {
                     delete: true
                 },
                 children: listViewLayout
-            }, null, 2)
+            }, null, 3)
         },
         {
             name: `${model.singularName}-form-view`,
@@ -764,27 +769,27 @@ export class ModelMetadataService {
                         ]
                     }
                 ]
-            }, null, 2)
+            }, null, 3)
         }
     ];
 
-    // Save views
-    const viewRepo = this.dataSource.getRepository(ViewMetadata);
     for (const view of modelViews) {
-        const createdView = viewRepo.create(view);
-        await viewRepo.save(createdView);
+        const existingView = await viewRepo.findOne({ where: { name: view.name } });
+
+        if (!existingView) {
+          const createdView = viewRepo.create(view);
+          await viewRepo.save(createdView);
+        }
     }
 
-    // Fetch the list view
-    const view = await viewRepo.findOneBy({ name: `${model.singularName}-list-view` });
+    let view = await viewRepo.findOne({ where: { name: `${model.singularName}-list-view` } });
 
-    // Generate action
-    const action = {
+    const actionData = {
         displayName: `${model.displayName} List View`,
         name: `${model.singularName}-list-view`,
         type: "solid",
-        domain: "",
-        context: "",
+        domain: "" as any,
+        context: "" as any,
         customComponent: `/admin/address-master/${model.singularName}/all`,
         customIsModal: true,
         serverEndpoint: "",
@@ -793,32 +798,34 @@ export class ModelMetadataService {
         model: model
     };
 
-    // Save action
-    const actionRepo = this.dataSource.getRepository(ActionMetadata);
-    const createdAction = actionRepo.create(action);
-    const newAction = await actionRepo.save(createdAction);
+    let existingAction = await actionRepo.findOne({ where: { name: actionData.name } });
 
-    // Fetch Admin Role
+    if (!existingAction) {
+      const createdAction = actionRepo.create(actionData);
+      existingAction = await actionRepo.save(createdAction);
+    }
+
     const adminRole = await this.roleService.findRoleByName('Admin');
 
-    // Generate menu
-    const menu = {
+    const menuData = {
         displayName: `${model.displayName}`,
-        name: `${model.singularName}`,
+        name: `${model.singularName}-menu-item`,
         sequenceNumber: 1,
-        action: newAction,
+        action: existingAction,
         module: resolvedModule,
         roles: [adminRole],
         parentMenuItemUserKey: ""
     };
 
-    // Save menu
-    const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
-    const createdMenu = menuRepo.create(menu);
-    await menuRepo.save(createdMenu);
+    let existingMenu = await menuRepo.findOne({ where: { name: menuData.name } });
+
+    if (!existingMenu) {
+      const createdMenu = menuRepo.create(menuData);
+      await menuRepo.save(createdMenu);
+    }
+
     return `${removeFieldCodeOuput} \n ${refreshModelCodeOutput}`;
   }
-
 
   async generateRemoveFieldsCode(options: CodeGenerationOptions): Promise<string> {
     if (!options.modelId && !options.modelUserKey) {

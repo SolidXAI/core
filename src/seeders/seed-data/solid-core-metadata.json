@@ -843,6 +843,45 @@
             "encrypt": false,
             "columnName": "required",
             "isSystem": true
+          },
+          {
+            "name": "relationJoinColumnName",
+            "displayName": "Relation Join Column Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relation_join_column_name",
+            "isSystem": true
+          },
+          {
+            "name": "joinColumnName",
+            "displayName": "Join Column Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "join_column_name",
+            "isSystem": true
+          },
+          {
+            "name": "relationJoinTableName",
+            "displayName": "Relation Join Table Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relation_join_table_name",
+            "isSystem": true
           }
         ]
       },
@@ -1311,7 +1350,7 @@
             "name": "action",
             "displayName": "Action",
             "type": "relation",
-            "required": true,
+            "required": false,
             "unique": false,
             "index": true,
             "private": false,
