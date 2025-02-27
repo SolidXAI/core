@@ -1,15 +1,19 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
-import * as path from 'path'; // To handle file paths
 import { DataSource, EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 
+import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
+import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { UpdateModelMetaDataDto } from '../dtos/update-model-metadata.dto';
+import { ActionMetadata } from '../entities/action-metadata.entity';
 import { FieldMetadata } from '../entities/field-metadata.entity';
+import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
+import { ViewMetadata } from '../entities/view-metadata.entity';
 import {
   REFRESH_MODEL_COMMAND,
   REMOVE_FIELDS_COMMAND,
@@ -19,11 +23,7 @@ import { CodeGenerationOptions } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
-import { ViewMetadata } from '../entities/view-metadata.entity';
-import { ActionMetadata } from '../entities/action-metadata.entity';
-import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { RoleMetadataService } from './role-metadata.service';
-import { PermissionMetadataSeederService } from 'src/seeders/permission-metadata-seeder.service';
 
 @Injectable()
 export class ModelMetadataService {
@@ -40,6 +40,7 @@ export class ModelMetadataService {
     private readonly mediaStorageProviderMetadataService: MediaStorageProviderMetadataService,
     private readonly fieldMetadataService: FieldMetadataService,
     private readonly roleService: RoleMetadataService,
+    private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
   ) { }
 
   async findMany(basicFilterDto: BasicFilterDto) {
@@ -118,14 +119,30 @@ export class ModelMetadataService {
 
     try {
       return await this.dataSource.transaction(async (manager: EntityManager) => {
+        const modelRepository = manager.getRepository(ModelMetadata);
+        const fieldRepository = manager.getRepository(FieldMetadata);
+
         // Step 1: Write initial data to the database
         const model = await this.createInDB(manager, createDto);
-        await this.createInFile(model.id, manager.getRepository(ModelMetadata));
+        await this.createInFile(model.id, modelRepository);
+
+        await this.handleInverseRelationFieldsUpdates(model, fieldRepository, modelRepository);
+
         return model
       });
     } catch (error) {
       console.error('Transaction failed:', error);
       throw error;
+    }
+  }
+
+  // Iterate through the fields in the createDto & get all the relation fields which have create inverse as true
+  private async handleInverseRelationFieldsUpdates(model: ModelMetadata, fieldRepository: Repository<FieldMetadata>, modelRepository: Repository<ModelMetadata>) {
+    const fields: FieldMetadata[] = await this.getRelationInverseFields(model.id, fieldRepository);
+
+    // Call a function which will iterate through each field and create an inverse field entry for the respective model i.e call updateInverseField on the related model
+    for (const field of fields) {
+      await this.fieldMetadataService.updateInverseField(field, fieldRepository, modelRepository);
     }
   }
 
@@ -136,9 +153,15 @@ export class ModelMetadataService {
 
     try {
       return await this.dataSource.transaction(async (manager: EntityManager) => {
+        const modelRepository = manager.getRepository(ModelMetadata);
+        const fieldRepository = manager.getRepository(FieldMetadata);
+
         // Step 1: Write initial data to the database
         const model = await this.updateInDb(manager, id, updateModelMetaDataDto)
-        await this.updateInFile(model.id, manager.getRepository(ModelMetadata));
+        await this.updateInFile(model.id, modelRepository);
+
+        await this.handleInverseRelationFieldsUpdates(model, fieldRepository, modelRepository);
+
         // return model
       });
     } catch (error) {
@@ -304,15 +327,11 @@ export class ModelMetadataService {
         where: {
           id: modelId,
         },
-        relations: ["fields", "module"], //FIXME: Check with jenender and change to relations to avoid confusion
+        relations: ["fields", "fields.mediaStorageProvider", "module"], //FIXME: Check with jenender and change to relations to avoid confusion
       });
 
-      const folderPath = path.resolve(process.cwd(), 'module-metadata', model.module.name);
-      const filePath = path.join(folderPath, `${model.module.name}-metadata.json`);
-
-      // Read the existing JSON file
-      const fileContent = await fs.readFile(filePath, 'utf8');
-      const metaData = JSON.parse(fileContent);
+      const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
+      const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
       const modelMetaData = {
         singularName: model.singularName,
@@ -331,13 +350,7 @@ export class ModelMetadataService {
         const field = model.fields[i];
         if (!field.isSystem) {
 
-          const fieldsRequiredBasedOnType = await this.fieldMetadataService.fetchCurrentFieldsBasedOnType(field.type);
-          const fieldObject: Record<string, any> = {};
-
-          // Assign default or placeholder values for required fields
-          fieldsRequiredBasedOnType.forEach((requiredField) => {
-            fieldObject[requiredField] = field[requiredField];
-          });
+          const fieldObject: Record<string, any> = await this.fieldMetadataService.createFieldConfig(field);
           modelMetaData.fields.push(fieldObject);
           listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, sortable: true, filterable: true } })
           formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
@@ -476,7 +489,7 @@ export class ModelMetadataService {
         // Existing field
         const existingField = existingFields.find((field) => field.id === fieldMetadata.id);
         if (existingField) {
-          if (fieldMetadata.mediaStorageProviderId) {
+          if (fieldMetadata.mediaStorageProviderId) { 
             fieldMetadata['mediaStorageProvider'] = await this.mediaStorageProviderMetadataService.findOne(fieldMetadata.mediaStorageProviderId);
           }
           Object.assign(existingField, fieldMetadata);
@@ -562,12 +575,8 @@ export class ModelMetadataService {
         relations: ["fields", "fields.mediaStorageProvider", "module"], //FIXME: Check with jenender and change to relations to avoid confusion
       });
 
-      const folderPath = path.resolve(process.cwd(), 'module-metadata', model.module.name);
-      const filePath = path.join(folderPath, `${model.module.name}-metadata.json`);
-
-      // Read the existing JSON file
-      const fileContent = await fs.readFile(filePath, 'utf8');
-      const metaData = JSON.parse(fileContent);
+      const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
+      const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
       const modelMetaData = {
         singularName: model.singularName,
@@ -583,18 +592,7 @@ export class ModelMetadataService {
         const field = model.fields[i];
         if (!field.isSystem && !field.isMarkedForRemoval) {
 
-          const fieldsRequiredBasedOnType = await this.fieldMetadataService.fetchCurrentFieldsBasedOnType(field.type);
-          const fieldObject: Record<string, any> = {};
-
-          // Assign default or placeholder values for required fields
-          fieldsRequiredBasedOnType.forEach((requiredField) => {
-            fieldObject[requiredField] = field[requiredField];
-
-          });
-          if (field.type == "mediaSingle" || field.type == "mediaMultiple") {
-            delete fieldObject.mediaStorageProviderId
-            fieldObject.mediaStorageProviderUserKey = field.mediaStorageProvider.name
-          }
+          const fieldObject: Record<string, any> = await this.fieldMetadataService.createFieldConfig(field);
           modelMetaData.fields.push(fieldObject);
         }
       }
@@ -908,4 +906,23 @@ export class ModelMetadataService {
   }
 
 
+  private async getRelationInverseFields(modelId: number, repo: Repository<FieldMetadata>): Promise<FieldMetadata[]> {
+    return await repo.find({
+      where: {
+        model : {
+          id: modelId
+        },
+        type: SolidFieldType.relation,
+        relationCreateInverse: true
+      },
+      relations: {
+        model: {
+          module: true
+        }
+      }
+    });
+  }
+
 }
+
+
