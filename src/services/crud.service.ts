@@ -321,6 +321,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                         const inverseFieldMetadata = fieldMetadata; //Setting an alias for clarity purpose
                         const oneToManyOptions: OneToManyRelationFieldOptions = {
                             ...commonOptions,
+                            required: false,
                             relationModelSingularName: inverseFieldMetadata.model.singularName,
                             modelSingularName: inverseFieldMetadata.relationModelSingularName,
                             entityManager,
@@ -346,6 +347,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                         const inverseFieldMetadata = fieldMetadata; //Setting an alias for clarity purpose
                         const inverseManyToManyOptions: ManyToManyRelationFieldOptions = {
                             ...commonOptions,
+                            required: false,
                             relationModelSingularName: inverseFieldMetadata.model.singularName,
                             modelSingularName: inverseFieldMetadata.relationModelSingularName,
                             isInverseSide: true,
