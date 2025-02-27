@@ -311,7 +311,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                         const manyToOneOptions: ManyToOneRelationFieldOptions = {
                             ...commonOptions,
                             relationModelSingularName: fieldMetadata.relationModelSingularName,
-                            modelUserKeyFieldName: fieldMetadata.model.userKeyField.name,
+                            modelUserKeyFieldName: fieldMetadata.model.userKeyField?.name,
                             modelSingularName: fieldMetadata.model.singularName,
                             entityManager,
                         }
