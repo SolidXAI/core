@@ -66,8 +66,8 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         let hasMediaFields = false;
 
         const model = await this.loadModel();
-        const inverseRelationFields = await this.loadInverseRelationFields();
-        const fieldsToProcess = [...model.fields, ...inverseRelationFields];
+        // const inverseRelationFields = await this.loadInverseRelationFields();
+        const fieldsToProcess = [...model.fields];
 
         // 2. Loop through the fields with a switch statement
         // 3. Handle the fields based on field type
@@ -185,8 +185,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         let hasMediaFields = false;
 
         const model = await this.loadModel();
-        const inverseRelationFields = await this.loadInverseRelationFields();
-        const fieldsToProcess = [...model.fields, ...inverseRelationFields];
+        const fieldsToProcess = [...model.fields];
 
         // 2. Loop through the fields with a switch statement
         // 3. Handle the fields based on field type
@@ -305,9 +304,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             }
             case SolidFieldType.relation: {
                 // Identify if the field is for the inverse side or not
-                const inverseSide = (fieldMetadata.model.singularName !== this.modelName) ? true : false;
                 if (fieldMetadata.relationType === RelationType.manyToOne) {
-                    if (!inverseSide) {
                         const manyToOneOptions: ManyToOneRelationFieldOptions = {
                             ...commonOptions,
                             relationModelSingularName: fieldMetadata.relationModelSingularName,
@@ -316,23 +313,20 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                             entityManager,
                         }
                         return new ManyToOneRelationFieldCrudManager(manyToOneOptions);
-                    }
-                    else {
-                        const inverseFieldMetadata = fieldMetadata; //Setting an alias for clarity purpose
+                }
+                else if (fieldMetadata.relationType === RelationType.oneToMany) {
                         const oneToManyOptions: OneToManyRelationFieldOptions = {
                             ...commonOptions,
-                            required: false,
-                            relationModelSingularName: inverseFieldMetadata.model.singularName,
-                            modelSingularName: inverseFieldMetadata.relationModelSingularName,
+                            relationModelSingularName: fieldMetadata.relationModelSingularName,
+                            modelSingularName: fieldMetadata.model.singularName,
                             entityManager,
-                            inverseFieldName: inverseFieldMetadata.name,
-                            inverseRelationModelFieldName: inverseFieldMetadata.relationModelFieldName,
+                            inverseFieldName: fieldMetadata.relationModelFieldName,
+                            inverseRelationModelFieldName: fieldMetadata.name,
                         }
                         return new OneToManyRelationFieldCrudManager(oneToManyOptions);
-                    }
                 }
                 else if (fieldMetadata.relationType === RelationType.manyTomany) {
-                    if (!inverseSide) {
+                    if (fieldMetadata.isRelationManyToManyOwner) {
                         const manyToManyOptions: ManyToManyRelationFieldOptions = {
                             ...commonOptions,
                             relationModelSingularName: fieldMetadata.relationModelSingularName,
@@ -344,16 +338,14 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                         return new ManyToManyRelationFieldCrudManager(manyToManyOptions); 
                     }
                     else {
-                        const inverseFieldMetadata = fieldMetadata; //Setting an alias for clarity purpose
                         const inverseManyToManyOptions: ManyToManyRelationFieldOptions = {
                             ...commonOptions,
-                            required: false,
-                            relationModelSingularName: inverseFieldMetadata.model.singularName,
-                            modelSingularName: inverseFieldMetadata.relationModelSingularName,
+                            relationModelSingularName: fieldMetadata.relationModelSingularName,
+                            modelSingularName: fieldMetadata.model.singularName,
                             isInverseSide: true,
                             entityManager,
-                            fieldName: inverseFieldMetadata.name,
-                            relationModelFieldName: inverseFieldMetadata.relationModelFieldName,
+                            fieldName: fieldMetadata.relationModelFieldName,
+                            relationModelFieldName: fieldMetadata.name,
                         }
                         return new ManyToManyRelationFieldCrudManager(inverseManyToManyOptions);
                     }

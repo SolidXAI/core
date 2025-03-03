@@ -99,6 +99,9 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'relation_model_field_name', nullable: true })
     relationModelFieldName: string;
 
+    @Column({ name: 'is_relation_many_to_many_owner', nullable: true })
+    isRelationManyToManyOwner: boolean;
+
     @Column({ name: 'selection_dynamic_provider', nullable: true })
     selectionDynamicProvider: string;
 

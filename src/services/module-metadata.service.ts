@@ -20,6 +20,7 @@ import { SolidRegistry } from '../helpers/solid-registry';
 import { CodeGenerationOptions, ModuleMetadataConfiguration } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { ModelMetadataService } from './model-metadata.service';
+import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 
 @Injectable()
 export class ModuleMetadataService {
@@ -38,6 +39,7 @@ export class ModuleMetadataService {
     @Inject(forwardRef(() => ModelMetadataService))
     private readonly modelMetadataService: ModelMetadataService,
     private readonly solidRegistry: SolidRegistry,
+    private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
   ) { }
 
   async findMany(basicFilterDto: BasicFilterDto) {
@@ -154,7 +156,7 @@ export class ModuleMetadataService {
 
       // Create the folder path inside 'module-metadata'
       const folderPath = path.resolve(process.cwd(), 'module-metadata', module.name);
-      const filePath = this.getModuleMetadataFilePath(module);
+      const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(module.name);
 
       // Ensure the folder exists
       await fs.mkdir(folderPath, { recursive: true });
@@ -205,12 +207,12 @@ export class ModuleMetadataService {
 
   async updateInFile(module: ModuleMetadata) {
     try {
-      const filePath = this.getModuleMetadataFilePath(module);
+      const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(module.name);
 
       // Read the existing JSON file
       let metaData;
       try {
-        metaData = await this.getModuleMetadata(filePath);
+        metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
       } catch (error) {
         metaData = {
@@ -254,17 +256,6 @@ export class ModuleMetadataService {
     }
   }
 
-
-  private async getModuleMetadata(filePath: string): Promise<any> {
-    const fileContent = await fs.readFile(filePath, 'utf8');
-    return JSON.parse(fileContent);
-  }
-
-  private getModuleMetadataFilePath(module: ModuleMetadata) {
-    const folderPath = path.resolve(process.cwd(), 'module-metadata', module.name);
-    const filePath = path.join(folderPath, `${module.name}-metadata.json`);
-    return filePath;
-  }
 
   async upsert(updateModuleMetadataDto: UpdateModuleMetadataDto) {
     this.logger.log(`Module Upsert called for : ${updateModuleMetadataDto.name}`);
