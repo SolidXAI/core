@@ -91,10 +91,6 @@ export class CreateModelMetadataDto {
     @Type(() => CreateFieldMetadataDto)
     fields: CreateFieldMetadataDto[];
 
-    @ApiProperty({ description: "Is Exportable" })
-    @IsBoolean()
-    readonly isExportable: boolean
-
     @ApiProperty({ description: 'System models are not included in the code generation, the assumption being that system models have manually written code.', })
     @IsBoolean()
     isSystem: boolean;

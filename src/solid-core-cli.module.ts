@@ -5,7 +5,7 @@ import { WinstonLoggerConfig } from './winston.logger';
 import { WinstonModule } from 'nest-winston';
 import { CacheModule } from '@nestjs/cache-manager';
 import { EventEmitterModule } from '@nestjs/event-emitter';
-import { RedisOptions } from './config/redis.options';
+import { RedisOptions } from './config/cache.options';
 import { ConfigModule } from '@nestjs/config';
 import Joi from '@hapi/joi';
 

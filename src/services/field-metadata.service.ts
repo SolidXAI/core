@@ -419,7 +419,8 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "isUserKey"
                 ];
 
             case SolidFieldType.longtext:
@@ -582,7 +583,10 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "relationJoinColumnName",
+                    "joinColumnName",
+                    "relationJoinTableName"
                 ];
 
             case SolidFieldType.mediaSingle:

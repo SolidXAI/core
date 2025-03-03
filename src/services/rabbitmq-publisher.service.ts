@@ -1,30 +1,50 @@
-import { v4 as uuidv4 } from 'uuid';
-import { Injectable, Logger } from '@nestjs/common';
+import { Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
+import { v4 as uuidv4 } from 'uuid';
+import { QueuesModuleOptions } from "../interfaces";
 import { QueueMessage, QueuePublisher } from '../interfaces/mq';
 import { MqMessageQueueService } from './mq-message-queue.service';
 import { MqMessageService } from './mq-message.service';
-import { QueuesModuleOptions } from "../interfaces";
 
-@Injectable()
 export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TODO This can be made a generic type for better type visibility
     private readonly logger = new Logger(RabbitMqPublisher.name);
+    private readonly url: string;
+    private readonly serviceRole: string;
 
     constructor(
         protected readonly mqMessageService: MqMessageService,
         protected readonly mqMessageQueueService: MqMessageQueueService,
     ) {
-        const url = process.env.QUEUES_RABBIT_MQ_URL;
-        this.logger.debug(`RabbitMqPublisher instance created with options: ${JSON.stringify(this.options())} and url: ${url}`);
+        this.url = process.env.QUEUES_RABBIT_MQ_URL;
+        this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
+        if (!this.url) {
+            this.logger.debug('RabbitMqPublisher url is not defined in the environment variables');
+        }
+        if (!this.serviceRole) {
+            this.logger.debug('Queue service Role is not defined in the environment variables');
+        }
+        this.logger.debug(`RabbitMqPublisher instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
     }
 
     abstract options(): QueuesModuleOptions;
 
     async publish(message: QueueMessage<T>): Promise<string> {
-        const url = process.env.QUEUES_RABBIT_MQ_URL;
-        this.logger.debug(`RabbitMqPublisher publishing with options: ${JSON.stringify(this.options())} and url: ${url}`);
+        if (!this.url) {
+            this.logger.error('RabbitMqPublisher url is not defined in the environment variables');
+            throw new Error('RabbitMqPublisher url is not defined in the environment variables');
+        }
+        if (!this.serviceRole) {
+            this.logger.error('Queue service Role is not defined in the environment variables');
+            throw new Error('Queue service Role is not defined in the environment variables');
+        }
+        if (this.serviceRole === 'subscriber') {
+            this.logger.error('Queue service Role is subscriber, cannot publish messages');
+            throw new Error('Queue service Role is subscriber, cannot publish messages');
+        }
 
-        const connection = await amqp.connect(url);
+        this.logger.debug(`RabbitMqPublisher publishing with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
+
+        const connection = await amqp.connect(this.url);
         // this.logger.debug(`RabbitMqPublisher publisher connected options: ${JSON.stringify(this.options())} and url: ${url}`);
 
         const channel = await connection.createChannel();
@@ -117,5 +137,6 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TOD
         }
 
     }
+    
 
 }

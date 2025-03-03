@@ -23,6 +23,7 @@ import { ViewMetadata } from '../entities/view-metadata.entity';
 import { ActionMetadata } from '../entities/action-metadata.entity';
 import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { RoleMetadataService } from './role-metadata.service';
+import { PermissionMetadataSeederService } from 'src/seeders/permission-metadata-seeder.service';
 
 @Injectable()
 export class ModelMetadataService {
@@ -158,7 +159,6 @@ export class ModelMetadataService {
         relations: {},
       });
     createDto['module'] = resolvedModule;
-
     const { fields: fieldsMetadata, ...modelMetaDataWithoutFields } = createDto;
     const modelMetadata = this.modelMetadataRepo.create(modelMetaDataWithoutFields);
     let model = await manager.save(modelMetadata);
@@ -168,7 +168,6 @@ export class ModelMetadataService {
     const listViewLayout = [];
     const formViewLayout = [];
 
-    const userKeyFieldName = createDto.userKeyFieldUserKey;
     for (let k = 0; k < fieldsMetadata.length; k++) {
       const fieldMetadata = fieldsMetadata[k];
 
@@ -182,11 +181,11 @@ export class ModelMetadataService {
       const fieldMetadataObject = this.fieldMetadataRepo.create(fieldMetadata);
       const affectedField = await manager.save(fieldMetadataObject);
 
-      if (fieldMetadata.name === userKeyFieldName) {
+      if (fieldMetadata.isUserKey) {
         userKeyField = affectedField;
       }
-      listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, label: `${affectedField.displayName}`, sortable: true, filterable: true } })
-      formViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, label: `${affectedField.displayName}` } })
+      listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, sortable: true, filterable: true } })
+      formViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}` } })
 
     }
 
@@ -197,104 +196,104 @@ export class ModelMetadataService {
       model = await manager.save(updatedModelMetadataDto);
     }
 
-    const modelViews = [{
-      name: `${model.singularName}-list-view`,
-      displayName: `${model.displayName}`,
-      type: 'list',
-      context: "{}",
-      module: resolvedModule,
-      model: model,
-      layout: JSON.stringify({
-        type: "list",
-        attrs: {
-          pagination: true,
-          pageSizeOptions: [
-            10,
-            25,
-            50
-          ],
-          enableGlobalSearch: true,
-          create: true,
-          edit: true,
-          delete: true
-        },
-        children: listViewLayout
-      }, null, 2)
-    },
-    {
-      name: `${model.singularName}-form-view`,
-      displayName: `${model.displayName}`,
-      type: 'form',
-      context: "{}",
-      module: model.module,
-      model: model,
-      layout: JSON.stringify(
-        {
-          type: "form",
-          attrs: { name: "form-1", label: `${model.displayName}`, className: "grid" },
-          children: [
-            {
-              type: "sheet",
-              attrs: { name: "sheet-1" },
-              children: [
-                {
-                  type: "row",
-                  attrs: { name: "group-1", label: "", className: "" },
-                  children: [
-                    {
-                      type: "column",
-                      attrs: { name: "group-1", label: "", className: "col-6" },
-                      children: formViewLayout
-                    }
-                  ]
-                }
-              ]
-            }
-          ]
-        }, null, 2)
-    }
-    ];
-    const viewRepo = manager.getRepository(ViewMetadata);
-    for (let j = 0; j < modelViews.length; j++) {
-      const view = modelViews[j];
-      const createdView = await viewRepo.create(view);
-      await viewRepo.save(createdView);
-    }
+    // const modelViews = [{
+    //   name: `${model.singularName}-list-view`,
+    //   displayName: `${model.displayName}`,
+    //   type: 'list',
+    //   context: "{}",
+    //   module: resolvedModule,
+    //   model: model,
+    //   layout: JSON.stringify({
+    //     type: "list",
+    //     attrs: {
+    //       pagination: true,
+    //       pageSizeOptions: [
+    //         10,
+    //         25,
+    //         50
+    //       ],
+    //       enableGlobalSearch: true,
+    //       create: true,
+    //       edit: true,
+    //       delete: true
+    //     },
+    //     children: listViewLayout
+    //   }, null, 2)
+    // },
+    // {
+    //   name: `${model.singularName}-form-view`,
+    //   displayName: `${model.displayName}`,
+    //   type: 'form',
+    //   context: "{}",
+    //   module: model.module,
+    //   model: model,
+    //   layout: JSON.stringify(
+    //     {
+    //       type: "form",
+    //       attrs: { name: "form-1", label: `${model.displayName}`, className: "grid" },
+    //       children: [
+    //         {
+    //           type: "sheet",
+    //           attrs: { name: "sheet-1" },
+    //           children: [
+    //             {
+    //               type: "row",
+    //               attrs: { name: "group-1", label: "", className: "" },
+    //               children: [
+    //                 {
+    //                   type: "column",
+    //                   attrs: { name: "group-1", label: "", className: "col-6" },
+    //                   children: formViewLayout
+    //                 }
+    //               ]
+    //             }
+    //           ]
+    //         }
+    //       ]
+    //     }, null, 2)
+    // }
+    // ];
+    // const viewRepo = manager.getRepository(ViewMetadata);
+    // for (let j = 0; j < modelViews.length; j++) {
+    //   const view = modelViews[j];
+    //   const createdView = await viewRepo.create(view);
+    //   await viewRepo.save(createdView);
+    // }
 
-    const view = await viewRepo.findOneBy({ name: `${model.singularName}-list-view` });
+    // const view = await viewRepo.findOneBy({ name: `${model.singularName}-list-view` });
 
-    const action = {
-      displayName: `${model.displayName} List View`,
-      name: `${model.singularName}-list-view`,
-      type: "solid",
-      domain: "",
-      context: "",
-      customComponent: `/admin/address-master/${model.singularName}/all`,
-      customIsModal: true,
-      serverEndpoint: "",
-      view: view,
-      module: resolvedModule,
-      model: model
-    };
-    const actionRepo = manager.getRepository(ActionMetadata);
-    const createdAction = await actionRepo.create(action);
-    const newAction = await actionRepo.save(createdAction);
+    // const action = {
+    //   displayName: `${model.displayName} List View`,
+    //   name: `${model.singularName}-list-view`,
+    //   type: "solid",
+    //   domain: "",
+    //   context: "",
+    //   customComponent: `/admin/address-master/${model.singularName}/all`,
+    //   customIsModal: true,
+    //   serverEndpoint: "",
+    //   view: view,
+    //   module: resolvedModule,
+    //   model: model
+    // };
+    // const actionRepo = manager.getRepository(ActionMetadata);
+    // const createdAction = await actionRepo.create(action);
+    // const newAction = await actionRepo.save(createdAction);
 
-    const adminRole = await this.roleService.findRoleByName('Admin');
+    // const adminRole = await this.roleService.findRoleByName('Admin');
 
-    const menu = {
-      displayName: `${model.displayName}`,
-      name: `${model.singularName}`,
-      sequenceNumber: 1,
-      action: newAction,
-      module: resolvedModule,
-      roles: [adminRole],
-      parentMenuItemUserKey: ""
-    };
+    // const menu = {
+    //   displayName: `${model.displayName}`,
+    //   name: `${model.singularName}`,
+    //   sequenceNumber: 1,
+    //   action: newAction,
+    //   module: resolvedModule,
+    //   roles: [adminRole],
+    //   parentMenuItemUserKey: ""
+    // };
 
-    const menuRepo = manager.getRepository(MenuItemMetadata);
-    const createdMenu = await menuRepo.create(menu);
-    await menuRepo.save(createdMenu);
+    // const menuRepo = manager.getRepository(MenuItemMetadata);
+    // const createdMenu = await menuRepo.create(menu);
+    // await menuRepo.save(createdMenu);
 
     return model;
   }
@@ -325,7 +324,7 @@ export class ModelMetadataService {
         fields: []
       }
 
-      const listViewLayoutFields = [{ type: "field", attrs: { name: `id`, label: `Id`, sortable: true, filterable: true } }];
+      const listViewLayoutFields = [{ type: "field", attrs: { name: `id`, sortable: true, filterable: true } }];
       const formViewLayoutFields = [];
 
       for (let i = 0; i < model.fields.length; i++) {
@@ -340,8 +339,8 @@ export class ModelMetadataService {
             fieldObject[requiredField] = field[requiredField];
           });
           modelMetaData.fields.push(fieldObject);
-          listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, label: `${field.displayName}`, sortable: true, filterable: true } })
-          formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, label: `${field.displayName}` } })
+          listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, sortable: true, filterable: true } })
+          formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
 
         }
       }
@@ -466,7 +465,7 @@ export class ModelMetadataService {
     const existingFieldIds = existingFields.map((field) => field.id);
 
     // 2. Synchronize fields
-    const userKeyFieldName = updateModelMetaDataDto.userKeyFieldUserKey;
+    // const userKeyFieldName = updateModelMetaDataDto.userKeyFieldUserKey;
     let userKeyField = null;
 
     const fieldsToSave: FieldMetadata[] = [];
@@ -490,14 +489,14 @@ export class ModelMetadataService {
         if (fieldMetadata.mediaStorageProviderId) {
           fieldMetadata['mediaStorageProvider'] = await this.mediaStorageProviderMetadataService.findOne(fieldMetadata.mediaStorageProviderId);
         }
-        const createdField = await this.fieldMetadataRepo.create(fieldMetadata);
+        const createdField = fieldRepo.create(fieldMetadata);
         fieldsToSave.push(createdField);
       }
 
       // Check for userKeyField
-      if (fieldMetadata.name === userKeyFieldName) {
-        userKeyField = fieldMetadata;
-      }
+      // if (fieldMetadata.isUserKey) {
+      //   userKeyField = fieldMetadata;
+      // }
     }
 
     // Fields to delete (not in the payload)
@@ -514,10 +513,37 @@ export class ModelMetadataService {
       // await this.fieldMetadataRepo.remove(fieldsToDelete);
     }
 
+    const finalModel = await modelRepo.findOne({
+      where: { id: updatedModel.id },
+      relations: ["fields", "userKeyField"]
+    });
+
     // 3. Update model with userKeyField if specified
-    if (userKeyField) {
-      updatedModel.userKeyField = userKeyField;
-      await modelRepo.save(updatedModel);
+    const userKeyFields = fieldsMetadata.filter(field => field.isUserKey);
+
+    if (userKeyFields.length > 0) {
+        const newUserKeyField = userKeyFields[userKeyFields.length - 1]; 
+        const savedUserKeyField = await fieldRepo.findOne({ where: { id: newUserKeyField.id } });
+    
+        if (savedUserKeyField) {
+            finalModel.userKeyField = savedUserKeyField;
+            await modelRepo.save(finalModel);
+        }
+    
+        const otherUserKeyFields = userKeyFields.filter(field => field.id !== newUserKeyField.id);
+    
+        for (const field of otherUserKeyFields) {
+            const existingField = await fieldRepo.findOne({ where: { id: field.id } });
+            if (existingField) {
+                existingField.isUserKey = false;
+                await fieldRepo.save(existingField);
+            }
+        }
+    } else {
+        if (finalModel.userKeyField) {
+            finalModel.userKeyField = null;
+            await modelRepo.save(finalModel);
+        }
     }
 
     return updatedModel;
@@ -655,13 +681,149 @@ export class ModelMetadataService {
 
   async generateCode(options: CodeGenerationOptions): Promise<string> {
     const query = {
-      populate: ["module", "fields"]
+        populate: ["module", "fields"]
     };
-    const model = options.modelId ? await this.findOne(options.modelId, query) : await this.findOneByUserKey(options.modelUserKey, query.populate);
-    options.fieldIdsForRemoval = model.fields.filter((field) => field.isMarkedForRemoval).map((field) => field.id);
+
+    const model = options.modelId 
+        ? await this.findOne(options.modelId, query) 
+        : await this.findOneByUserKey(options.modelUserKey, query.populate);
+
+    options.fieldIdsForRemoval = model.fields
+        .filter(field => field.isMarkedForRemoval)
+        .map(field => field.id);
 
     const refreshModelCodeOutput = await this.generateModelCode(options);
     const removeFieldCodeOuput = await this.generateRemoveFieldsCode(options);
+
+    const listViewLayout = model.fields.map(field => ({
+        type: "field",
+        attrs: { 
+            name: `${field.name}`, 
+            sortable: true, 
+            filterable: true 
+        }
+    }));
+
+    const formViewLayout = model.fields.map(field => ({
+        type: "field",
+        attrs: { 
+            name: `${field.name}`
+        }
+    }));
+
+    const resolvedModule = await this.dataSource.getRepository(ModuleMetadata).findOne({
+        where: { id: model.module.id }
+    });
+
+    const viewRepo = this.dataSource.getRepository(ViewMetadata);
+    const actionRepo = this.dataSource.getRepository(ActionMetadata);
+    const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
+
+    const modelViews = [
+        {
+            name: `${model.singularName}-list-view`,
+            displayName: `${model.displayName}`,
+            type: 'list',
+            context: "{}",
+            module: resolvedModule,
+            model: model,
+            layout: JSON.stringify({
+                type: "list",
+                attrs: {
+                    pagination: true,
+                    pageSizeOptions: [10, 25, 50],
+                    enableGlobalSearch: true,
+                    create: true,
+                    edit: true,
+                    delete: true
+                },
+                children: listViewLayout
+            }, null, 3)
+        },
+        {
+            name: `${model.singularName}-form-view`,
+            displayName: `${model.displayName}`,
+            type: 'form',
+            context: "{}",
+            module: resolvedModule,
+            model: model,
+            layout: JSON.stringify({
+                type: "form",
+                attrs: { name: "form-1", label: `${model.displayName}`, className: "grid" },
+                children: [
+                    {
+                        type: "sheet",
+                        attrs: { name: "sheet-1" },
+                        children: [
+                            {
+                                type: "row",
+                                attrs: { name: "group-1", label: "", className: "" },
+                                children: [
+                                    {
+                                        type: "column",
+                                        attrs: { name: "group-1", label: "", className: "col-6" },
+                                        children: formViewLayout
+                                    }
+                                ]
+                            }
+                        ]
+                    }
+                ]
+            }, null, 3)
+        }
+    ];
+
+    for (const view of modelViews) {
+        const existingView = await viewRepo.findOne({ where: { name: view.name } });
+
+        if (!existingView) {
+          const createdView = viewRepo.create(view);
+          await viewRepo.save(createdView);
+        }
+    }
+
+    let view = await viewRepo.findOne({ where: { name: `${model.singularName}-list-view` } });
+
+    const actionData = {
+        displayName: `${model.displayName} List View`,
+        name: `${model.singularName}-list-view`,
+        type: "solid",
+        domain: "" as any,
+        context: "" as any,
+        customComponent: `/admin/address-master/${model.singularName}/all`,
+        customIsModal: true,
+        serverEndpoint: "",
+        view: view,
+        module: resolvedModule,
+        model: model
+    };
+
+    let existingAction = await actionRepo.findOne({ where: { name: actionData.name } });
+
+    if (!existingAction) {
+      const createdAction = actionRepo.create(actionData);
+      existingAction = await actionRepo.save(createdAction);
+    }
+
+    const adminRole = await this.roleService.findRoleByName('Admin');
+
+    const menuData = {
+        displayName: `${model.displayName}`,
+        name: `${model.singularName}-menu-item`,
+        sequenceNumber: 1,
+        action: existingAction,
+        module: resolvedModule,
+        roles: [adminRole],
+        parentMenuItemUserKey: ""
+    };
+
+    let existingMenu = await menuRepo.findOne({ where: { name: menuData.name } });
+
+    if (!existingMenu) {
+      const createdMenu = menuRepo.create(menuData);
+      await menuRepo.save(createdMenu);
+    }
+
     return `${removeFieldCodeOuput} \n ${refreshModelCodeOutput}`;
   }
 

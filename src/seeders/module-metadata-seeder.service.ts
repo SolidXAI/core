@@ -27,6 +27,11 @@ import { SolidRegistry } from '../helpers/solid-registry';
 import { RoleMetadataService } from '../services/role-metadata.service';
 import { getCoreModuleNames, getDynamicModuleNames } from '../helpers/module.helper';
 import solidCoreMetadata from './seed-data/solid-core-metadata.json';
+import { iamConfig } from 'src/config/iam.config';
+import commonConfig from 'src/config/common.config';
+import { CreateSettingDto } from 'src/dtos/create-setting.dto';
+import { SettingService } from 'src/services/setting.service';
+import { Setting } from 'src/entities/setting.entity';
 
 @Injectable()
 export class ModuleMetadataSeederService {
@@ -51,11 +56,35 @@ export class ModuleMetadataSeederService {
         private readonly solidRegistry: SolidRegistry,
         @Inject(appBuilderConfig.KEY)
         private readonly appBuilderConfiguration: ConfigType<typeof appBuilderConfig>,
+        @Inject(iamConfig.KEY) private readonly iamConfiguration: ConfigType<typeof iamConfig>,
+        @Inject(commonConfig.KEY)
+        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
+        private readonly service: SettingService,
+        @InjectRepository(Setting, 'default')
+        readonly settingsRepo: Repository<Setting>,
     ) { }
 
     async seed() {
 
         const typedSolidCoreMetadata: any = solidCoreMetadata;
+
+        const settingsSeederData: any = {
+            iamAllowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
+            iamPasswordRegistrationEnabled: false,
+            iamPasswordLessRegistrationEnabled: this.iamConfiguration.passwordlessRegistration,
+            iamActivateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
+            iamGoogleOAuthEnabled: false,
+            authPagesLayout: "center",
+            authPagesTheme: "light",
+            appTitle: process.env.SOLID_APP_NAME || "Solid App",
+            appLogo: "",
+            appDescription: "",
+            appTnc: "",
+            appPrivacyPolicy: "",
+            iamDefaultRole: this.iamConfiguration.defaultRole,
+            shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
+            shouldQueueSms: this.commonConfiguration.shouldQueueSms
+        }
 
         // Run the permissions seeder. 
         // await this.permissionsSeederService.seed();
@@ -157,6 +186,10 @@ export class ModuleMetadataSeederService {
             await this.seedSmsTemplates(smsTemplates);
             this.logger.log(`[End] Processing sms templates for ${moduleMetadata.name}`);
 
+            // Sms templates
+            this.logger.log(`[Start] Processing settings for ${moduleMetadata.name}`);
+            await this.seedSettings(settingsSeederData);
+            this.logger.log(`[End] Processing settings for ${moduleMetadata.name}`);
 
             this.logger.log(`[End] module seed data: ${overallMetadata}`);
 
@@ -167,7 +200,8 @@ export class ModuleMetadataSeederService {
         // 1. Give all permissions to the Admin role.
         this.logger.log(`About to add all permissions to the Admin role`);
         await this.roleService.addAllPermissionsToRole("Admin");
-
+        // 2. Give wrapSettings permissions to the Public role.
+        await this.roleService.addPermissionToRole('Public', 'SettingController.wrapSettings');
         this.logger.log(`All Seeders finished`);
 
     }
@@ -415,6 +449,13 @@ export class ModuleMetadataSeederService {
                 modelMetaDataWithoutFields['userKeyField'] = userKeyField;
                 await this.modelMetadataService.upsert(modelMetaDataWithoutFields);
             }
+        }
+    }
+
+    async seedSettings(createDto: CreateSettingDto) {
+        const settingsArray: any[] = await this.settingsRepo.find();
+        if (!settingsArray || settingsArray.length === 0) {
+            this.service.create(createDto);
         }
     }
 }

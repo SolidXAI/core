@@ -1,6 +1,6 @@
 {
   "name": "@solidstarters/solid-core",
-  "version": "1.2.4",
+  "version": "1.2.20",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -43,6 +43,7 @@
     "class-validator": "^0.14.1",
     "handlebars": "^4.7.8",
     "ioredis": "^5.4.1",
+    "lodash": "^4.17.21",
     "luxon": "^3.4.4",
     "mailgen": "^2.0.28",
     "mongoose": "^8.7.0",

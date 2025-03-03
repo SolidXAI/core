@@ -135,4 +135,15 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'column_name', nullable: true })
     columnName: string;
 
+    @Column({ name: "isUserKey", default: false })
+    isUserKey: boolean;
+
+    @Column({ name: 'relation_join_column_name', nullable: true })
+    relationJoinColumnName: string;
+
+    @Column({ name: 'join_column_name', nullable: true })
+    joinColumnName: string;
+
+    @Column({ name: 'relation_join_table_name', nullable: true })
+    relationJoinTableName: string;
 }

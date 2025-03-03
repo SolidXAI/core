@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DiscoveryService } from "@nestjs/core";
-import { EntityManager, QueryFailedError, SelectQueryBuilder } from "typeorm";
+import { EntityManager, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { Repository } from "typeorm/repository/Repository";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { ComputedFieldValueType, RelationType, SelectionValueType, SolidFieldType } from "../dtos/create-field-metadata.dto";
@@ -311,7 +311,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                         const manyToOneOptions: ManyToOneRelationFieldOptions = {
                             ...commonOptions,
                             relationModelSingularName: fieldMetadata.relationModelSingularName,
-                            modelUserKeyFieldName: fieldMetadata.model.userKeyField.name,
+                            modelUserKeyFieldName: fieldMetadata.model.userKeyField?.name,
                             modelSingularName: fieldMetadata.model.singularName,
                             entityManager,
                         }
@@ -321,6 +321,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                         const inverseFieldMetadata = fieldMetadata; //Setting an alias for clarity purpose
                         const oneToManyOptions: OneToManyRelationFieldOptions = {
                             ...commonOptions,
+                            required: false,
                             relationModelSingularName: inverseFieldMetadata.model.singularName,
                             modelSingularName: inverseFieldMetadata.relationModelSingularName,
                             entityManager,
@@ -346,6 +347,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                         const inverseFieldMetadata = fieldMetadata; //Setting an alias for clarity purpose
                         const inverseManyToManyOptions: ManyToManyRelationFieldOptions = {
                             ...commonOptions,
+                            required: false,
                             relationModelSingularName: inverseFieldMetadata.model.singularName,
                             modelSingularName: inverseFieldMetadata.relationModelSingularName,
                             isInverseSide: true,
@@ -648,5 +650,78 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
         // return removedEntities
     }
+
+    async recover(id: number) {
+        try {
+          const softDeletedRows = await this.repo.findOne({
+            where: { 
+                //@ts-ignore
+                id, deletedAt: Not(IsNull()) 
+            },
+            withDeleted: true,
+          });
+      
+          if (!softDeletedRows) {
+            throw new Error('No soft-deleted record found with the given ID.');
+          }
+      
+          await this.repo.update(id, {
+                //@ts-ignore
+                deletedAt: null, deletedTracker: "not-deleted" 
+            });
+      
+          return { message: 'Record successfully recovered', data: softDeletedRows };
+        } catch (error) {
+          if (error instanceof QueryFailedError) {
+            if ((error as any).code === '23505') {
+              throw new Error('Another record is conflicting with the record you are attempting to Un-Archive, either delete or change the other record so as to avoid this conflict.');
+            }
+          }
+    
+          throw new Error(error);
+        }
+    }
+    
+    async recoverMany(ids: number[]) {
+        try {
+            if (!ids || ids.length === 0) {
+                throw new Error("No IDs provided for recovery.");
+            }
+    
+            // Find soft-deleted records matching the given IDs
+            const softDeletedRows = await this.repo.find({
+                where: {
+                    //@ts-ignore
+                    id: In(ids),
+                    deletedAt: Not(IsNull()),
+                },
+                withDeleted: true,
+            });
+    
+            if (softDeletedRows.length === 0) {
+                throw new Error("No matching soft-deleted records found.");
+            }
+    
+            // Recover the specific records by setting deletedAt to null
+            await this.repo.update(
+                //@ts-ignore
+                { id: In(ids) },
+                { deletedAt: null, deletedTracker: "not-deleted" }
+            );
+    
+            return { message: "Selected records successfully recovered", recoveredIds: ids };
+        } catch (error) {
+            if (error instanceof QueryFailedError) {
+                if ((error as any).code === "23505") {
+                    throw new Error(
+                        "Another record is conflicting with the record you are attempting to Un-Archive, either delete or change the other record to avoid this conflict."
+                    );
+                }
+            }
+    
+            throw new Error(error);
+        }
+    }
+    
 
 }

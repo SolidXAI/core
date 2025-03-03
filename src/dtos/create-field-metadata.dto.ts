@@ -256,8 +256,6 @@ export class CreateFieldMetadataDto {
   @ApiProperty({ description: 'for text fields, this is length. for numeric fields, this is the range of values allowed. Only for type=shortText,longText,richText,json,int,decimal,date,dateTime,time', })
   @IsInt()
   @IsOptional()
-  @Transform(({ obj }) => obj.length ?? undefined) // Automatically sets max = length
-  @ValidateIf((obj) => obj.length !== undefined)  // Only validate if length is provided
   max: number;
 
   @ApiProperty({ description: 'for text fields, this is length. for numeric fields, this is the range of values allowed. Only for type=shortText,longText,richText,json,int,decimal,date,dateTime,time', })
@@ -382,4 +380,24 @@ export class CreateFieldMetadataDto {
   @IsString()
   @IsOptional()
   columnName: string
+
+  @ApiProperty({ description: "Is User Key" })
+  @IsOptional()
+  @IsBoolean()
+  readonly isUserKey: boolean
+
+  @ApiProperty({ description: 'Relation Join Column Name of Field', })
+  @IsString()
+  @IsOptional()
+  relationJoinColumnName: string
+
+  @ApiProperty({ description: 'Join Column Name of Field', })
+  @IsString()
+  @IsOptional()
+  joinColumnName: string
+
+  @ApiProperty({ description: 'Relation Join Table Name of Field', })
+  @IsString()
+  @IsOptional()
+  relationJoinTableName: string
 }

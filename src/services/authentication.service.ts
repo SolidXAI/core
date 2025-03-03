@@ -925,7 +925,19 @@ export class AuthenticationService {
         await this.validateUserUsingGoogle(user);
 
         // finally we simply generate the tokens. 
-        return await this.generateTokens(user);
+        const tokens = await this.generateTokens(user);
+        return {
+            user: {
+                email: user.email,
+                mobile: user.mobile,
+                username: user.username,
+                forcePasswordChange: user.forcePasswordChange,
+                id: user.id,
+                roles: user.roles.map((role, idx, roles) => role.name)
+            },
+            ...tokens
+        }
+
     }
 
     private isPasswordlessRegistrationEnabled() {
