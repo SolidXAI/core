@@ -29,10 +29,13 @@ export class FieldMetadataService {
     private logger = new Logger(FieldMetadataService.name);
 
     async updateInverseField(field: FieldMetadata, fieldRepository: Repository<FieldMetadata>, modelRepository: Repository<ModelMetadata>) {
+        if (!field.model || !field.model.module) {
+            throw new Error('Model and module are required to update inverse field');
+        }
         // Update the inverse field in the db
         const savedInverseField = await this.updateInverseFieldInDb(field, fieldRepository, modelRepository);
         // Update the inverse field in the file
-        this.updateRelationInverseFieldInFile(savedInverseField, field.model.singularName);
+        this.updateRelationInverseFieldInFile(savedInverseField, field.relationModelSingularName, field.model.module.name);
     }
 
     private async updateInverseFieldInDb(field: FieldMetadata, fieldRepository: Repository<FieldMetadata>, modelRepository: Repository<ModelMetadata>): Promise<FieldMetadata> {
@@ -41,6 +44,7 @@ export class FieldMetadataService {
         // Get the relation model reference
         const relationModel = await this.getRelationModel(modelRepository, field, moduleName);
 
+        // const {id, createdAt, updatedAt, deletedAt, ...fieldKeys} = field;
         switch (field.relationType) {
             case RelationType.manyToOne: {
                 const inverseField: FieldMetadata = {
@@ -55,12 +59,21 @@ export class FieldMetadataService {
                     relationCreateInverse: true,
                     relationCascade: field.relationCascade,
                     relationModelModuleName: moduleName,
+                    relationModelFieldName: field.name,
                     required: false,
                     unique: false,
                     index: false,
                     private: false,
                     encrypt: false,
-                    model: relationModel
+                    model: relationModel,
+                    columnName:null,
+                    relationJoinTableName: null,
+                    relationJoinColumnName: null,
+                    joinColumnName: null,
+                    id : null,
+                    // createdAt: null,
+                    // updatedAt: null,
+                    // deletedAt: null,
                 }
 
                 // Load the inverse field, 
@@ -81,12 +94,22 @@ export class FieldMetadataService {
                     relationCreateInverse: true,
                     relationCascade: field.relationCascade,
                     relationModelModuleName: moduleName,
+                    relationModelFieldName: field.name,
                     required: false,
                     unique: false,
                     index: false,
                     private: false,
                     encrypt: false,
-                    model: relationModel
+                    model: relationModel,
+                    columnName:null,
+                    relationJoinTableName: null,
+                    relationJoinColumnName: null,
+                    joinColumnName: null,
+                    isRelationManyToManyOwner: false,
+                    id : null,
+                    // createdAt: null,
+                    // updatedAt: null,
+                    // deletedAt: null,
                 }
                 const savedField = await this.saveInverseField(fieldRepository, relationModel, inverseFieldManyToMany);
                 return savedField;
@@ -702,7 +725,8 @@ export class FieldMetadataService {
                     "columnName",
                     "relationJoinColumnName",
                     "joinColumnName",
-                    "relationJoinTableName"
+                    "relationJoinTableName",
+                    "isRelationManyToManyOwner",
                 ];
 
             case SolidFieldType.mediaSingle:
@@ -990,24 +1014,24 @@ export class FieldMetadataService {
         return selectionProviderInstance.value(query.optionValue, selectionDynamicProviderCtxt);
     }
 
-    private async updateRelationInverseFieldInFile(savedInverseField: FieldMetadata, modelName: string) {
+    private async updateRelationInverseFieldInFile(savedInverseField: FieldMetadata, inverseModelName: string, moduleName: string) {
         try {
-            const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(modelName);
-            const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(modelName);
+            const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
+            const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
             // Create the config object for the inverse field
             const fieldObject: Record<string, any> = await this.createFieldConfig(savedInverseField);
 
-            // Find the field in the metadata
-            const fieldIndex = metaData.fields.findIndex((field: any) => field.name === savedInverseField.name);
+            // Find the field config object in the json file
+            const model = metaData.moduleMetadata.models.find((model: any) => model.singularName === inverseModelName);
 
-            // If the field is found, update it, else push it in the existing fields array
-
+            // Replace the current field object with the above field object
+            const fieldIndex = model.fields.findIndex((field: any) => field.name === savedInverseField.name);
             if (fieldIndex === -1) {
-                metaData.fields.push(fieldObject);
+                model.fields.push(fieldObject);
             }
             else {
-                metaData.fields[fieldIndex] = fieldObject;
+                model.fields[fieldIndex] = fieldObject;
             }
 
             // Write the updated object back to the file
