@@ -1,16 +1,18 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
-import { FieldMetadata } from '../entities/field-metadata.entity';
-import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { CascadeType, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MediaType, PSQLType, RelationType, SelectionValueType } from '../dtos/create-field-metadata.dto';
-import { ModelMetadata } from '../entities/model-metadata.entity';
-import { SolidFieldType } from '../dtos/create-field-metadata.dto'
+import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
+import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
-import { CrudHelperService } from './crud-helper.service';
-import { UpdateFieldMetaDataDto } from '../dtos/update-field-metadata.dto';
+import { CascadeType, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MediaType, PSQLType, RelationType, SelectionValueType, SolidFieldType } from '../dtos/create-field-metadata.dto';
 import { SelectionDynamicQueryDto } from '../dtos/selection-dynamic-query.dto';
+import { UpdateFieldMetaDataDto } from '../dtos/update-field-metadata.dto';
+import { FieldMetadata } from '../entities/field-metadata.entity';
+import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ISelectionProviderValues } from '../interfaces';
+import { CrudHelperService } from './crud-helper.service';
+
 
 @Injectable()
 export class FieldMetadataService {
@@ -20,8 +22,145 @@ export class FieldMetadataService {
         @InjectDataSource()
         private readonly dataSource: DataSource,
         private readonly solidRegistry: SolidRegistry,
-        private readonly crudHelperService: CrudHelperService
+        private readonly crudHelperService: CrudHelperService,
+        private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
     ) { }
+
+    private logger = new Logger(FieldMetadataService.name);
+
+    async updateInverseField(field: FieldMetadata, fieldRepository: Repository<FieldMetadata>, modelRepository: Repository<ModelMetadata>) {
+        if (!field.model || !field.model.module) {
+            throw new Error('Model and module are required to update inverse field');
+        }
+        // Update the inverse field in the db
+        const savedInverseField = await this.updateInverseFieldInDb(field, fieldRepository, modelRepository);
+        // Update the inverse field in the file
+        this.updateRelationInverseFieldInFile(savedInverseField, field.relationModelSingularName, field.model.module.name);
+    }
+
+    private async updateInverseFieldInDb(field: FieldMetadata, fieldRepository: Repository<FieldMetadata>, modelRepository: Repository<ModelMetadata>): Promise<FieldMetadata> {
+        const { moduleName, modelName } = this.validateForInverseField(field);
+
+        // Get the relation model reference
+        const relationModel = await this.getRelationModel(modelRepository, field, moduleName);
+
+        // const {id, createdAt, updatedAt, deletedAt, ...fieldKeys} = field;
+        switch (field.relationType) {
+            case RelationType.manyToOne: {
+                const inverseField: FieldMetadata = {
+                    ...field,
+                    name: field.relationModelFieldName ?? `${modelName}s`,
+                    displayName: `Inverse ${field.displayName}`,
+                    description: `Inverse field for ${field.displayName}`,
+                    type: SolidFieldType.relation,
+                    isSystem: field.isSystem,
+                    relationType: RelationType.oneToMany,
+                    relationModelSingularName: modelName,
+                    relationCreateInverse: true,
+                    relationCascade: field.relationCascade,
+                    relationModelModuleName: moduleName,
+                    relationModelFieldName: field.name,
+                    required: false,
+                    unique: false,
+                    index: false,
+                    private: false,
+                    encrypt: false,
+                    model: relationModel,
+                    columnName:null,
+                    relationJoinTableName: null,
+                    relationJoinColumnName: null,
+                    joinColumnName: null,
+                    id : null,
+                    // createdAt: null,
+                    // updatedAt: null,
+                    // deletedAt: null,
+                }
+
+                // Load the inverse field, 
+                const savedField = await this.saveInverseField(fieldRepository, relationModel, inverseField);
+                return savedField;
+            }
+            case RelationType.manyTomany: {
+                // Logic to create a manyToMany inverse field definition
+                const inverseFieldManyToMany: FieldMetadata = {
+                    ...field,
+                    name: field.relationModelFieldName,
+                    displayName: `Inverse ${field.displayName}`,
+                    description: `Inverse field for ${field.displayName}`,
+                    type: SolidFieldType.relation,
+                    isSystem: field.isSystem,
+                    relationType: RelationType.manyTomany,
+                    relationModelSingularName: modelName,
+                    relationCreateInverse: true,
+                    relationCascade: field.relationCascade,
+                    relationModelModuleName: moduleName,
+                    relationModelFieldName: field.name,
+                    required: false,
+                    unique: false,
+                    index: false,
+                    private: false,
+                    encrypt: false,
+                    model: relationModel,
+                    columnName:null,
+                    relationJoinTableName: null,
+                    relationJoinColumnName: null,
+                    joinColumnName: null,
+                    isRelationManyToManyOwner: false,
+                    id : null,
+                    // createdAt: null,
+                    // updatedAt: null,
+                    // deletedAt: null,
+                }
+                const savedField = await this.saveInverseField(fieldRepository, relationModel, inverseFieldManyToMany);
+                return savedField;
+            }
+            default:
+                throw new Error(`Invalid relation type for field ${field.name} with relation type  ${field.relationType}`);
+        }
+    }
+    
+    private async getRelationModel(modelRepository: Repository<ModelMetadata>, field: FieldMetadata, moduleName: string) {
+        return await modelRepository.findOne({
+            where: {
+                singularName: field.relationModelSingularName,
+                module: {
+                    name: field.relationModelModuleName ?? moduleName
+                }
+            }
+        });
+    }
+
+    private async saveInverseField(fieldRepository: Repository<FieldMetadata>, relationModel: ModelMetadata, inverseField: FieldMetadata): Promise<FieldMetadata> {
+        const existingInverseField = await fieldRepository.findOne({
+            where: {
+                model: relationModel,
+                name: inverseField.name
+            }
+        });
+
+        if (existingInverseField) {
+            const updatedField = fieldRepository.merge(existingInverseField, inverseField);
+            const savedField = await fieldRepository.save(updatedField);
+            return savedField;
+        }
+        else {
+            const savedField = await fieldRepository.save(fieldRepository.create(inverseField));
+            return savedField;
+        }
+    }
+
+    private validateForInverseField(field: FieldMetadata) {
+        if (field.type !== SolidFieldType.relation) {
+            throw new Error('Only relation fields can have inverse fields');
+        }
+        const modelName = field.model.singularName;
+        const moduleName = field.model.module.name;
+
+        if (!modelName || !moduleName) {
+            throw new Error('Model name and module name are required to create inverse field');
+        }
+        return { moduleName, modelName };
+    }
 
     async findMany(basicFilterDto: BasicFilterDto) {
         const alias = 'fieldMetadata';
@@ -586,7 +725,8 @@ export class FieldMetadataService {
                     "columnName",
                     "relationJoinColumnName",
                     "joinColumnName",
-                    "relationJoinTableName"
+                    "relationJoinTableName",
+                    "isRelationManyToManyOwner",
                 ];
 
             case SolidFieldType.mediaSingle:
@@ -874,4 +1014,54 @@ export class FieldMetadataService {
         return selectionProviderInstance.value(query.optionValue, selectionDynamicProviderCtxt);
     }
 
+    private async updateRelationInverseFieldInFile(savedInverseField: FieldMetadata, inverseModelName: string, moduleName: string) {
+        try {
+            const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
+            const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
+
+            // Create the config object for the inverse field
+            const fieldObject: Record<string, any> = await this.createFieldConfig(savedInverseField);
+
+            // Find the field config object in the json file
+            const model = metaData.moduleMetadata.models.find((model: any) => model.singularName === inverseModelName);
+
+            // Replace the current field object with the above field object
+            const fieldIndex = model.fields.findIndex((field: any) => field.name === savedInverseField.name);
+            if (fieldIndex === -1) {
+                model.fields.push(fieldObject);
+            }
+            else {
+                model.fields[fieldIndex] = fieldObject;
+            }
+
+            // Write the updated object back to the file
+            const updatedContent = JSON.stringify(metaData, null, 2);
+            await fs.writeFile(filePath, updatedContent);
+        } catch (error) {
+            this.logger.error('File creation failed:', error);
+            throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
+        }
+    }
+
+    //Moved existing reusable logic to a separate function
+    async createFieldConfig(field: FieldMetadata) {
+        const fieldsRequiredBasedOnType = await this.fetchCurrentFieldsBasedOnType(field.type);
+        const fieldObject: Record<string, any> = {};
+
+        // Assign default or placeholder values for required fields
+        fieldsRequiredBasedOnType.forEach((requiredField) => {
+            fieldObject[requiredField] = field[requiredField];
+        });
+        
+        if (field.type == "mediaSingle" || field.type == "mediaMultiple") {
+            if (field.mediaStorageProvider) {
+                delete fieldObject.mediaStorageProviderId
+                fieldObject.mediaStorageProviderUserKey = field.mediaStorageProvider.name
+            }
+        }
+
+        return fieldObject;
+    }
 }
+
+

@@ -135,6 +135,7 @@ import { UserService } from './services/user.service';
 import { Setting } from './entities/setting.entity';
 import { SettingService } from './services/setting.service';
 import { SettingController } from './controllers/setting.controller';
+import { ModuleMetadataHelperService } from './helpers/module-metadata-helper.service';
 
 
 @Global()
@@ -223,6 +224,7 @@ import { SettingController } from './controllers/setting.controller';
       useClass: PermissionsGuard,
     },
     ModuleMetadataService,
+    ModuleMetadataHelperService,
     ModelMetadataService,
     FieldMetadataService,
     RemoveFieldsCommand,

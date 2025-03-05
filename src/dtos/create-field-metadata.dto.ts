@@ -142,6 +142,7 @@ export enum MediaType {
 export enum RelationType {
   manyToOne = 'many-to-one',
   manyTomany = 'many-to-many',
+  oneToMany = 'one-to-many',
 }
 
 export enum CascadeType {
@@ -319,6 +320,10 @@ export class CreateFieldMetadataDto {
   @ApiProperty({ description: 'Related field module. Only required for type=relation and relationType=many-to-many, i.e if the related many to many field belongs to a different model' })
   @IsOptional()
   relationModelFieldName: string;
+
+  @ApiProperty({description: 'Only for type=relation, many-to-many. This field is used to set the owner of the many-to-many relation'})
+  @IsOptional()
+  isRelationManyToManyOwner: boolean;
 
   @ApiProperty({
     description:
