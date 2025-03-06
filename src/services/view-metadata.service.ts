@@ -137,6 +137,19 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       return this.repo.save(viewData);
     }
   }
+  async createIfNotPresent(updateSolidViewDto: UpdateViewMetadataDto) {
+    // First check if module already exists using name
+    const existingSolidView = await this.findOneByUserKey(updateSolidViewDto.name);
+
+    // if found
+    if (existingSolidView) {
+    }
+    // if not found - create new 
+    else {
+      const viewData = this.repo.create(updateSolidViewDto);
+      return this.repo.save(viewData);
+    }
+  }
 
   // END: Custom Service Methods
 

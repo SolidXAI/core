@@ -300,16 +300,16 @@ export class ModuleMetadataSeederService {
             if (smsTemplate.body) {
                 // const smsTemplateFilePath = path.join(process.cwd(), smsTemplate.body);
                 // smsTemplate.body = fs.readFileSync(smsTemplateFilePath, 'utf-8').toString()
-             
+
                 const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
 
                 // Resolve the `src` folder
                 const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/sms-templates');
-    
+
                 // Example usage
                 const filePath = path.join(seedDataPath, smsTemplate.body);
-    
-    
+
+
                 smsTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
 
             }
@@ -372,7 +372,10 @@ export class ModuleMetadataSeederService {
 
             viewData['module'] = await this.moduleMetadataService.findOneByUserKey(viewData.moduleUserKey);
             viewData['model'] = await this.modelMetadataService.findOneByUserKey(viewData.modelUserKey);
-            await this.solidViewService.upsert(viewData);
+            // await this.solidViewService.upsert(viewData);
+            // First check if module already exists using name
+             await this.solidViewService.createIfNotPresent(viewData);
+
         }
     }
 
