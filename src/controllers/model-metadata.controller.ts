@@ -60,6 +60,12 @@ export class ModelMetadataController {
         return this.modelMetadataService.create(createDto);
     }
 
+    @Public()
+    @Post('/update-user-key')
+    updateUserKey(@Body() data: any) {
+        return this.modelMetadataService.updateUserKey(data);
+    }
+
     @ApiBearerAuth("jwt")
     @Post(':id/generate-code')
     generateCode(@Param('id', ParseIntPipe) id: number) {

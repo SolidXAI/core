@@ -29,7 +29,7 @@ export class CreateUserDto {
 
     @IsOptional()
     @IsBoolean()
-    forcePasswordChange: boolean = true;
+    forcePasswordChange: boolean = false;
 
     @IsNotEmpty()
     @IsString()

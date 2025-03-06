@@ -131,7 +131,8 @@ export class ModelMetadataService {
         return model
       });
     } catch (error) {
-      console.error('Transaction failed:', error);
+      // console.error('Transaction failed:', error);
+      this.logger.error('Transaction failed:', error);
       throw error;
     }
   }
@@ -165,7 +166,8 @@ export class ModelMetadataService {
         // return model
       });
     } catch (error) {
-      console.error('Transaction failed:', error);
+      // console.error('Transaction failed:', error);
+      this.logger.error('Transaction failed:', error);
       throw error;
     }
   }
@@ -200,6 +202,7 @@ export class ModelMetadataService {
         fieldMetadata['mediaStorageProvider'] = await this.mediaStorageProviderMetadataService.findOne(fieldMetadata.mediaStorageProviderId);
       }
       // console.log(fieldMetadata.displayName);
+      // this.logger.debug(fieldMetadata.displayName);
 
       const fieldMetadataObject = this.fieldMetadataRepo.create(fieldMetadata);
       const affectedField = await manager.save(fieldMetadataObject);
@@ -465,7 +468,8 @@ export class ModelMetadataService {
       await fs.writeFile(filePath, updatedContent);
 
     } catch (error) {
-      console.error('File creation failed:', error);
+      // console.error('File creation failed:', error);
+      this.logger.error('File creation failed:', error);
       throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
     }
   }
@@ -632,7 +636,8 @@ export class ModelMetadataService {
       await fs.writeFile(filePath, updatedContent);
 
     } catch (error) {
-      console.error('File creation failed:', error);
+      // console.error('File creation failed:', error);
+      this.logger.error('File creation failed:', error);
       throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
     }
   }
@@ -922,6 +927,38 @@ export class ModelMetadataService {
     return output;
   }
 
+  async updateUserKey(data: any) {
+    const { modelName, fieldName } = data;
+
+    const model = await this.modelMetadataRepo.findOne({
+        where: { singularName: modelName },
+        relations: ['fields', 'userKeyField'],
+    });
+
+    if (!model) {
+        throw new Error(`Model with name ${modelName} not found`);
+    }
+
+    if (model.userKeyField) {
+      throw new Error(`User key is already set to ${model.userKeyField.name}. No changes were made.`);
+    }
+
+    const fieldToUpdate = model.fields.find(field => field.name === fieldName);
+    if (!fieldToUpdate) {
+        throw new Error(`Field with name ${fieldName} not found in model ${modelName}`);
+    }
+
+    fieldToUpdate.isUserKey = true;
+
+    model.userKeyField = fieldToUpdate;
+
+    await this.modelMetadataRepo.save(model);
+
+    return {
+      message: `User key has been successfully updated to ${fieldName}.`,
+      success: true
+    };
+  }
 
   private async getRelationInverseFields(modelId: number, repo: Repository<FieldMetadata>): Promise<FieldMetadata[]> {
     return await repo.find({
