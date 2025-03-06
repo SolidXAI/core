@@ -149,7 +149,7 @@ export class CrudHelperService {
     }
 
     buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
-        let { limit, offset, showSoftDeleted, showOnlySoftDeleted, filters } = basicFilterDto;
+        let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
         const { fields, sort, groupBy, populate = [] } = basicFilterDto; 
 
         // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
@@ -197,11 +197,14 @@ export class CrudHelperService {
         }
 
 
-        // Apply the soft delete options
-        if (showSoftDeleted || showOnlySoftDeleted) qb.withDeleted(); // Display the soft deleted records default condition    
-        if (showOnlySoftDeleted) { // Add the condition to show only soft deleted records
-            qb.andWhere(`${entityAlias}.deletedAt IS NOT NULL`);
+        if (showSoftDeleted === 'inclusive') {
+            qb.withDeleted();
         }
+        
+        if (showSoftDeleted === 'exclusive') {
+            qb.withDeleted();
+            qb.where(`${entityAlias}.deletedAt IS NOT NULL`);
+        }        
 
         // Apply the group by options
         if (normalizedGroupBy && normalizedGroupBy.length) {
@@ -209,7 +212,6 @@ export class CrudHelperService {
                 qb.addGroupBy(`${entityAlias}.${field}`);
             });
         }
-
         // Apply the pagination options
         if (limit) qb.limit(limit);
         if (offset) qb.offset(offset);

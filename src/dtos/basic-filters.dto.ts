@@ -1,8 +1,12 @@
 
 import { ApiProperty } from "@nestjs/swagger";
-import { IsOptional } from "class-validator";
+import { IsEnum, IsOptional } from "class-validator";
 import { PaginationQueryDto } from "./pagination-query.dto";
 
+export enum SoftDeleteFilter {
+    INCLUSIVE = "inclusive",
+    EXCLUSIVE = "exclusive",
+}
 
 export class BasicFilterDto extends PaginationQueryDto {
 
@@ -34,12 +38,12 @@ export class BasicFilterDto extends PaginationQueryDto {
     // readonly filters: any[];
 
     @IsOptional()
-    @ApiProperty({ description: "showSoftDeleted" })
-    readonly showSoftDeleted?: boolean;
-
-    @IsOptional()
-    @ApiProperty({ description: "showOnlySoftDeleted" })
-    readonly showOnlySoftDeleted?: boolean;
+    @IsEnum(SoftDeleteFilter)
+    @ApiProperty({
+        description: "showSoftDeleted",
+        enum: SoftDeleteFilter,
+    })
+    readonly showSoftDeleted?: SoftDeleteFilter;
 
     @IsOptional()
     @ApiProperty({ description: "populateGroup" })

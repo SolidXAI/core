@@ -910,6 +910,38 @@ export class ModelMetadataService {
     return output;
   }
 
+  async updateUserKey(data: any) {
+    const { modelName, fieldName } = data;
+
+    const model = await this.modelMetadataRepo.findOne({
+        where: { singularName: modelName },
+        relations: ['fields', 'userKeyField'],
+    });
+
+    if (!model) {
+        throw new Error(`Model with name ${modelName} not found`);
+    }
+
+    if (model.userKeyField) {
+      throw new Error(`User key is already set to ${model.userKeyField.name}. No changes were made.`);
+    }
+
+    const fieldToUpdate = model.fields.find(field => field.name === fieldName);
+    if (!fieldToUpdate) {
+        throw new Error(`Field with name ${fieldName} not found in model ${modelName}`);
+    }
+
+    fieldToUpdate.isUserKey = true;
+
+    model.userKeyField = fieldToUpdate;
+
+    await this.modelMetadataRepo.save(model);
+
+    return {
+      message: `User key has been successfully updated to ${fieldName}.`,
+      success: true
+    };
+  }
 
   private async getRelationInverseFields(modelId: number, repo: Repository<FieldMetadata>): Promise<FieldMetadata[]> {
     return await repo.find({
