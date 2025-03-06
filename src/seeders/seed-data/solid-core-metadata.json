@@ -2417,7 +2417,7 @@
       "username": "admin@example.service.com",
       "email": "admin@example.service.com",
       "password": "Admin@3214$",
-      "forcePasswordChange": false,
+      "forcePasswordChange": true,
       "fullName": "Default Admin"
     }
   ],
