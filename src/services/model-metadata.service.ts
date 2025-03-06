@@ -131,7 +131,8 @@ export class ModelMetadataService {
         return model
       });
     } catch (error) {
-      console.error('Transaction failed:', error);
+      // console.error('Transaction failed:', error);
+      this.logger.error('Transaction failed:', error);
       throw error;
     }
   }
@@ -165,7 +166,8 @@ export class ModelMetadataService {
         // return model
       });
     } catch (error) {
-      console.error('Transaction failed:', error);
+      // console.error('Transaction failed:', error);
+      this.logger.error('Transaction failed:', error);
       throw error;
     }
   }
@@ -200,6 +202,7 @@ export class ModelMetadataService {
         fieldMetadata['mediaStorageProvider'] = await this.mediaStorageProviderMetadataService.findOne(fieldMetadata.mediaStorageProviderId);
       }
       // console.log(fieldMetadata.displayName);
+      // this.logger.debug(fieldMetadata.displayName);
 
       const fieldMetadataObject = this.fieldMetadataRepo.create(fieldMetadata);
       const affectedField = await manager.save(fieldMetadataObject);
@@ -448,7 +451,8 @@ export class ModelMetadataService {
       await fs.writeFile(filePath, updatedContent);
 
     } catch (error) {
-      console.error('File creation failed:', error);
+      // console.error('File creation failed:', error);
+      this.logger.error('File creation failed:', error);
       throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
     }
   }
@@ -615,7 +619,8 @@ export class ModelMetadataService {
       await fs.writeFile(filePath, updatedContent);
 
     } catch (error) {
-      console.error('File creation failed:', error);
+      // console.error('File creation failed:', error);
+      this.logger.error('File creation failed:', error);
       throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
     }
   }

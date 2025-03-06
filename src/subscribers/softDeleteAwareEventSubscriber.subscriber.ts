@@ -23,7 +23,8 @@ export class SoftDeleteAwareEventSubscriber implements EntitySubscriberInterface
         } else {
             entity.deletedTracker = `${entity.deletedAt}`; // Set trackerDate to the deleted Date
         }
-        console.log('TrackerDate updated:', entity.trackerDate);
+        // console.log('TrackerDate updated:', entity.trackerDate);
+        this.logger.debug(`TrackerDate updated: ${entity.trackerDate}`);
 
     }
 

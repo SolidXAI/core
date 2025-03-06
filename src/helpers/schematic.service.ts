@@ -82,7 +82,7 @@ export class SchematicService {
       // console.log('moduleOptions', moduleOptions);
       const schematicCommand =  ` ${baseCommand} --module=${moduleOptions.module}`;
       // console.log('schematicCommand', schematicCommand);
-      this.logger.log('schematicCommand', schematicCommand);
+      this.logger.debug('schematicCommand', schematicCommand);
       return schematicCommand;
     } else {
       throw new Error('Schematic command not supported.');
