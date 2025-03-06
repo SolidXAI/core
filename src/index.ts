@@ -1,4 +1,3 @@
-export * from './commands/basic.command'
 export * from './commands/helper'
 export * from './commands/refresh-model.command'
 export * from './commands/refresh-module.command'
