@@ -1,4 +1,3 @@
-export * from './commands/basic.command'
 export * from './commands/helper'
 export * from './commands/refresh-model.command'
 export * from './commands/refresh-module.command'
@@ -8,7 +7,7 @@ export * from './commands/seed.command'
 export * from './config/app-builder.config'
 export * from './config/common.config'
 export * from './config/iam.config'
-export * from './config/redis.options'
+export * from './config/cache.options'
 
 export * from './decorators/active-user.decorator'
 export * from './decorators/auth.decorator'
@@ -76,6 +75,9 @@ export * from './dtos/update-role-metadata.dto'
 export * from './dtos/update-sms-template.dto'
 export * from './dtos/update-user.dto'
 export * from './dtos/update-view-metadata.dto'
+export * from './dtos/create-setting.dto'
+export * from './dtos/update-setting.dto'
+
 
 export * from './entities/action-metadata.entity'
 export * from './entities/common.entity'
@@ -96,6 +98,7 @@ export * from './entities/sms-template.entity'
 export * from './entities/user-password-history.entity'
 export * from './entities/user.entity'
 export * from './entities/view-metadata.entity'
+export * from './entities/setting.entity'
 
 export * from './enums/auth-type.enum'
 
@@ -208,6 +211,7 @@ export * from './services/solid-introspect.service'
 export * from './services/user.service'
 export * from './services/view-metadata.service'
 export * from './services/whatsapp/Msg91WhatsappService' //rename
+export * from './services/setting.service'
 
 
 //softDeleteAwareEventSubscriber.subscriber.ts

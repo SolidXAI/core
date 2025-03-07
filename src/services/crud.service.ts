@@ -1,7 +1,7 @@
 import { BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DiscoveryService } from "@nestjs/core";
-import { EntityManager, QueryFailedError, SelectQueryBuilder } from "typeorm";
+import { EntityManager, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { Repository } from "typeorm/repository/Repository";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { ComputedFieldValueType, RelationType, SelectionValueType, SolidFieldType } from "../dtos/create-field-metadata.dto";
@@ -66,8 +66,8 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         let hasMediaFields = false;
 
         const model = await this.loadModel();
-        const inverseRelationFields = await this.loadInverseRelationFields();
-        const fieldsToProcess = [...model.fields, ...inverseRelationFields];
+        // const inverseRelationFields = await this.loadInverseRelationFields();
+        const fieldsToProcess = [...model.fields];
 
         // 2. Loop through the fields with a switch statement
         // 3. Handle the fields based on field type
@@ -163,7 +163,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
 
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
     async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate: boolean = false): Promise<T> {
-            if (!id) {
+        if (!id) {
             throw new Error('Id is required for update');
         }
         const entity = await this.repo.findOne({
@@ -185,8 +185,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         let hasMediaFields = false;
 
         const model = await this.loadModel();
-        const inverseRelationFields = await this.loadInverseRelationFields();
-        const fieldsToProcess = [...model.fields, ...inverseRelationFields];
+        const fieldsToProcess = [...model.fields];
 
         // 2. Loop through the fields with a switch statement
         // 3. Handle the fields based on field type
@@ -239,7 +238,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
     }
 
-    private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean=false): FieldCrudManager {
+    private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false): FieldCrudManager {
         const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name };
         switch (fieldMetadata.type) {
             case SolidFieldType.shortText: {
@@ -262,11 +261,11 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 const options = { ...commonOptions };
                 return new JsonFieldCrudManager(options);
             }
-            case SolidFieldType.int:{
+            case SolidFieldType.int: {
                 const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max };
                 return new IntFieldCrudManager(options);
             }
-            case SolidFieldType.decimal:{
+            case SolidFieldType.decimal: {
                 const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max };
                 return new DecimalFieldCrudManager(options);
             }
@@ -274,21 +273,21 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max };
                 return new BigIntFieldCrudManager(options);
             }
-            case SolidFieldType.email:{
-                const options = { ...commonOptions, max: fieldMetadata.max?? MAX_EMAIL_LENGTH, regexPattern: fieldMetadata.regexPattern };
+            case SolidFieldType.email: {
+                const options = { ...commonOptions, max: fieldMetadata.max ?? MAX_EMAIL_LENGTH, regexPattern: fieldMetadata.regexPattern };
                 return new EmailFieldCrudManager(options);
             }
             case SolidFieldType.date:
-            case SolidFieldType.datetime:{
+            case SolidFieldType.datetime: {
                 const options = { ...commonOptions };
                 return new DateFieldCrudManager(options);
             }
-            case SolidFieldType.password:{
+            case SolidFieldType.password: {
                 const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern };
                 return new PasswordFieldCrudManager(options);
             }
             case SolidFieldType.mediaSingle:
-            case SolidFieldType.mediaMultiple:{
+            case SolidFieldType.mediaMultiple: {
                 // update will need to delete the existing media and save the new media    
                 // case 'mediaSingle':
                 //    Use the EntityController to extract uploaded content & pass to the entity service.
@@ -305,33 +304,29 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             }
             case SolidFieldType.relation: {
                 // Identify if the field is for the inverse side or not
-                const inverseSide = (fieldMetadata.model.singularName !== this.modelName) ? true : false;
                 if (fieldMetadata.relationType === RelationType.manyToOne) {
-                    if (!inverseSide) {
                         const manyToOneOptions: ManyToOneRelationFieldOptions = {
                             ...commonOptions,
                             relationModelSingularName: fieldMetadata.relationModelSingularName,
-                            modelUserKeyFieldName: fieldMetadata.model.userKeyField.name,
+                            modelUserKeyFieldName: fieldMetadata.model.userKeyField?.name,
                             modelSingularName: fieldMetadata.model.singularName,
                             entityManager,
                         }
                         return new ManyToOneRelationFieldCrudManager(manyToOneOptions);
-                    }
-                    else {
-                        const inverseFieldMetadata = fieldMetadata; //Setting an alias for clarity purpose
+                }
+                else if (fieldMetadata.relationType === RelationType.oneToMany) {
                         const oneToManyOptions: OneToManyRelationFieldOptions = {
                             ...commonOptions,
-                            relationModelSingularName: inverseFieldMetadata.model.singularName,
-                            modelSingularName: inverseFieldMetadata.relationModelSingularName,
+                            relationModelSingularName: fieldMetadata.relationModelSingularName,
+                            modelSingularName: fieldMetadata.model.singularName,
                             entityManager,
-                            inverseFieldName: inverseFieldMetadata.name,
-                            inverseRelationModelFieldName: inverseFieldMetadata.relationModelFieldName,
+                            inverseFieldName: fieldMetadata.relationModelFieldName,
+                            inverseRelationModelFieldName: fieldMetadata.name,
                         }
                         return new OneToManyRelationFieldCrudManager(oneToManyOptions);
-                    }
                 }
                 else if (fieldMetadata.relationType === RelationType.manyTomany) {
-                    if (!inverseSide) {
+                    if (fieldMetadata.isRelationManyToManyOwner) {
                         const manyToManyOptions: ManyToManyRelationFieldOptions = {
                             ...commonOptions,
                             relationModelSingularName: fieldMetadata.relationModelSingularName,
@@ -343,27 +338,26 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                         return new ManyToManyRelationFieldCrudManager(manyToManyOptions); 
                     }
                     else {
-                        const inverseFieldMetadata = fieldMetadata; //Setting an alias for clarity purpose
                         const inverseManyToManyOptions: ManyToManyRelationFieldOptions = {
                             ...commonOptions,
-                            relationModelSingularName: inverseFieldMetadata.model.singularName,
-                            modelSingularName: inverseFieldMetadata.relationModelSingularName,
+                            relationModelSingularName: fieldMetadata.relationModelSingularName,
+                            modelSingularName: fieldMetadata.model.singularName,
                             isInverseSide: true,
                             entityManager,
-                            fieldName: inverseFieldMetadata.name,
-                            relationModelFieldName: inverseFieldMetadata.relationModelFieldName,
+                            fieldName: fieldMetadata.relationModelFieldName,
+                            relationModelFieldName: fieldMetadata.name,
                         }
                         return new ManyToManyRelationFieldCrudManager(inverseManyToManyOptions);
                     }
                 }
                 else throw new Error('Relation type not supported in crud service');
-            // return (fieldMetadata.relationType === 'many-to-one') ? new ManyToOneRelationFieldCrudManager(fieldMetadata, entityManager) : new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager); //FIXME many-to-many pending
-            //    ManyToOne -> fieldId. The value is saved as is. No transformation is required
-            //    OneToMany -> fieldIds. Get the value of the oneToMany field side.  No transformation is required (While saving special provision to be made)
-            //    ManyToMany
-            //     break;
+                // return (fieldMetadata.relationType === 'many-to-one') ? new ManyToOneRelationFieldCrudManager(fieldMetadata, entityManager) : new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager); //FIXME many-to-many pending
+                //    ManyToOne -> fieldId. The value is saved as is. No transformation is required
+                //    OneToMany -> fieldIds. Get the value of the oneToMany field side.  No transformation is required (While saving special provision to be made)
+                //    ManyToMany
+                //     break;
             }
-            case SolidFieldType.selectionStatic:{
+            case SolidFieldType.selectionStatic: {
 
                 //     Validation against the selectionStatic values. No transformation is required
                 //     If the value is not in the selectionStatic values, then throw
@@ -380,12 +374,12 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 const options = { ...commonOptions, selectionDynamicProvider: fieldMetadata.selectionDynamicProvider, selectionDynamicProviderCtxt: fieldMetadata.selectionDynamicProviderCtxt, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, discoveryService: this.discoveryService };
                 return new SelectionDynamicFieldCrudManager(options);
             }
-            case SolidFieldType.uuid:{
+            case SolidFieldType.uuid: {
                 const options = { ...commonOptions };
                 //    If no value is provided, then generate a uuid. Add to the dto
                 return new UUIDFieldCrudManager(options);
             }
-            case SolidFieldType.computed:{
+            case SolidFieldType.computed: {
 
                 //    The value will be computed by the computed provider
                 //    Invoke the appropriate computed provider, get the value and add to the dto
@@ -401,7 +395,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
     async find(basicFilterDto: BasicFilterDto) {
         const alias = 'entity';
         // Extract the required keys from the input query
-        let { limit, offset, populateMedia, populateGroup } = basicFilterDto;
+        let { limit, offset, populateMedia, populateGroup,groupFilter } = basicFilterDto;
 
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
@@ -409,7 +403,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
 
         if (basicFilterDto.groupBy) {
             // Get the records and the count
-            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, populateGroup, alias, populateMedia);
+            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter,populateGroup, alias, populateMedia);
             return {
                 groupMeta,
                 groupRecords,
@@ -417,7 +411,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
         else {
             // Get the records and the count
-            const {meta, records} = await this.handleNonGroupFind(qb, populateMedia, offset, limit);
+            const { meta, records } = await this.handleNonGroupFind(qb, populateMedia, offset, limit);
             return {
                 meta,
                 records,
@@ -433,10 +427,10 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             await this.handlePopulateMedia(populateMedia, entities);
         }
 
-        return  this.wrapFindResponse(offset, limit, count, entities);
+        return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, populateGroup: boolean, alias: string, populateMedia: string[]) {
+    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto,populateGroup: boolean, alias: string, populateMedia: string[]) {
         const groupByResult = await qb.getRawMany();
 
         const groupMeta = [];
@@ -446,11 +440,11 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             if (populateGroup) {
                 let groupByQb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias);
                 // For the group by records, apply the basic filter
-                const basicFilterDto = {
-                    limit: DEFAULT_LIMIT,
-                    offset: DEFAULT_OFFSET,
-                };
-                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, basicFilterDto, alias);
+                // const basicFilterDto = {
+                //     limit: DEFAULT_LIMIT,
+                //     offset: DEFAULT_OFFSET,
+                // };
+                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
                 const [entities, count] = await groupByQb.getManyAndCount();
 
@@ -459,7 +453,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 if (populateMedia && populateMedia.length > 0) {
                     await this.handlePopulateMedia(populateMedia, entities);
                 }
-                const groupData = this.wrapFindResponse(basicFilterDto.offset, basicFilterDto.limit, count, entities);
+                const groupData = this.wrapFindResponse(groupFilter.offset, groupFilter.limit, count, entities);
                 groupRecords.push(this.crudHelperService.createGroupRecords(group, alias, groupData));
             }
             groupMeta.push(this.crudHelperService.createGroupMeta(group, alias));
@@ -648,5 +642,78 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
         // return removedEntities
     }
+
+    async recover(id: number) {
+        try {
+          const softDeletedRows = await this.repo.findOne({
+            where: { 
+                //@ts-ignore
+                id, deletedAt: Not(IsNull()) 
+            },
+            withDeleted: true,
+          });
+      
+          if (!softDeletedRows) {
+            throw new Error('No soft-deleted record found with the given ID.');
+          }
+      
+          await this.repo.update(id, {
+                //@ts-ignore
+                deletedAt: null, deletedTracker: "not-deleted" 
+            });
+      
+          return { message: 'Record successfully recovered', data: softDeletedRows };
+        } catch (error) {
+          if (error instanceof QueryFailedError) {
+            if ((error as any).code === '23505') {
+              throw new Error('Another record is conflicting with the record you are attempting to Un-Archive, either delete or change the other record so as to avoid this conflict.');
+            }
+          }
+    
+          throw new Error(error);
+        }
+    }
+    
+    async recoverMany(ids: number[]) {
+        try {
+            if (!ids || ids.length === 0) {
+                throw new Error("No IDs provided for recovery.");
+            }
+    
+            // Find soft-deleted records matching the given IDs
+            const softDeletedRows = await this.repo.find({
+                where: {
+                    //@ts-ignore
+                    id: In(ids),
+                    deletedAt: Not(IsNull()),
+                },
+                withDeleted: true,
+            });
+    
+            if (softDeletedRows.length === 0) {
+                throw new Error("No matching soft-deleted records found.");
+            }
+    
+            // Recover the specific records by setting deletedAt to null
+            await this.repo.update(
+                //@ts-ignore
+                { id: In(ids) },
+                { deletedAt: null, deletedTracker: "not-deleted" }
+            );
+    
+            return { message: "Selected records successfully recovered", recoveredIds: ids };
+        } catch (error) {
+            if (error instanceof QueryFailedError) {
+                if ((error as any).code === "23505") {
+                    throw new Error(
+                        "Another record is conflicting with the record you are attempting to Un-Archive, either delete or change the other record to avoid this conflict."
+                    );
+                }
+            }
+    
+            throw new Error(error);
+        }
+    }
+    
 
 }

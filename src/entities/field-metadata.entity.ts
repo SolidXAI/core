@@ -99,6 +99,9 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'relation_model_field_name', nullable: true })
     relationModelFieldName: string;
 
+    @Column({ name: 'is_relation_many_to_many_owner', nullable: true })
+    isRelationManyToManyOwner: boolean;
+
     @Column({ name: 'selection_dynamic_provider', nullable: true })
     selectionDynamicProvider: string;
 
@@ -135,4 +138,15 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'column_name', nullable: true })
     columnName: string;
 
+    @Column({ name: "isUserKey", default: false })
+    isUserKey: boolean;
+
+    @Column({ name: 'relation_join_column_name', nullable: true })
+    relationJoinColumnName: string;
+
+    @Column({ name: 'join_column_name', nullable: true })
+    joinColumnName: string;
+
+    @Column({ name: 'relation_join_table_name', nullable: true })
+    relationJoinTableName: string;
 }

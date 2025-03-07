@@ -10,7 +10,7 @@ Let's say that:
 3. The backend redirects the tab to the Google login page where the user logs in.
 4. Once done, Google redirects the tab to the backend URL: https://solid.website.com/api/iam/google/connect/callback. When this callback comes, it comes with the users profile & access token.
 5. Then, the backend redirects the tab to the url of your choice with the param accessCode (example: http://website.com/connect/google/dummy-redirect?accessCode=eyfvg).
-6. The frontend (http://website.com/connect/google/dummy-redirect) calls the backend with https://solid.website.com/api/iam/google/auth?accessCode=eyfvg that returns the Solid user profile with its jwt.
+6. The frontend (http://website.com/connect/google/dummy-redirect) calls the backend with https://solid.website.com/api/iam/google/authenticate?accessCode=eyfvg that returns the Solid user profile with its jwt.
    (Under the hood, the backend asks Google for the user's profile and a match is done on Google user's email address and Solid user's email address).
 7. The frontend now possesses the user's jwt, which means the user is connected and the frontend can make authenticated requests to the backend!
 

@@ -1,4 +1,4 @@
-import { Controller, Get, Inject, Query, Req, Res, UseGuards } from '@nestjs/common';
+import { Controller, Get, Inject, InternalServerErrorException, Query, Req, Res, UseGuards } from '@nestjs/common';
 import { AuthenticationService } from '../services/authentication.service';
 import { Auth } from '../decorators/auth.decorator';
 import { AuthType } from '../enums/auth-type.enum';
@@ -9,6 +9,7 @@ import { ConfigType } from '@nestjs/config';
 import { UserService } from '../services/user.service';
 import { Public } from '../decorators/public.decorator';
 import { iamConfig } from '../config/iam.config';
+import { isGoogleOAuthConfigured } from 'src/helpers/google-oauth.helper';
 
 
 @Auth(AuthType.None)
@@ -24,12 +25,21 @@ export class GoogleAuthenticationController {
     @Public()
     @UseGuards(GoogleOauthGuard)
     @Get('connect')
-    async connect() { }
+    async connect() {
+        this.validateConfiguration();
+    }
+
+    private validateConfiguration() {
+        if (!isGoogleOAuthConfigured(this.iamConfiguration)) {
+            throw new InternalServerErrorException('Google OAuth is not configured');
+        }
+    }
 
     @Public()
     @Get('connect/callback')
     @UseGuards(GoogleOauthGuard)
     googleAuthCallback(@Req() req: Request, @Res() res: Response) {
+        this.validateConfiguration();
         const user = req.user;
 
         // console.log(`Found user: ${JSON.stringify(user)}`);
@@ -55,6 +65,7 @@ export class GoogleAuthenticationController {
     @Public()
     @Get('dummy-redirect')
     async dummyGoogleAuthRedirect(@Query('accessCode') accessCode) {
+        this.validateConfiguration();
         const user = await this.userService.findOneByAccessCode(accessCode);
 
         delete user['password'];
@@ -63,8 +74,7 @@ export class GoogleAuthenticationController {
     }
 
     /**
-     * This is just a dummy endpoint where we are passing in the accessCode, this will be configured in the .env as an environment variable and 
-     * will be passed the accessCode, using the accessCode the UI code on this page will mostly invoke the /iam/google/auth endpoint which will finally generate the JWT token.
+     * Use this endpoint to authenticate using an accessCode with Google.
      * 
      * @param accessCode 
      * @returns 
@@ -73,6 +83,7 @@ export class GoogleAuthenticationController {
     @Get('authenticate')
     @ApiQuery({ name: 'accessCode', required: true, type: String })
     async googleAuth(@Query('accessCode') accessCode) {
+        this.validateConfiguration();
         return this.authService.signInUsingGoogle(accessCode);
     }
 }

@@ -142,6 +142,7 @@ export enum MediaType {
 export enum RelationType {
   manyToOne = 'many-to-one',
   manyTomany = 'many-to-many',
+  oneToMany = 'one-to-many',
 }
 
 export enum CascadeType {
@@ -256,8 +257,6 @@ export class CreateFieldMetadataDto {
   @ApiProperty({ description: 'for text fields, this is length. for numeric fields, this is the range of values allowed. Only for type=shortText,longText,richText,json,int,decimal,date,dateTime,time', })
   @IsInt()
   @IsOptional()
-  @Transform(({ obj }) => obj.length ?? undefined) // Automatically sets max = length
-  @ValidateIf((obj) => obj.length !== undefined)  // Only validate if length is provided
   max: number;
 
   @ApiProperty({ description: 'for text fields, this is length. for numeric fields, this is the range of values allowed. Only for type=shortText,longText,richText,json,int,decimal,date,dateTime,time', })
@@ -322,6 +321,10 @@ export class CreateFieldMetadataDto {
   @IsOptional()
   relationModelFieldName: string;
 
+  @ApiProperty({description: 'Only for type=relation, many-to-many. This field is used to set the owner of the many-to-many relation'})
+  @IsOptional()
+  isRelationManyToManyOwner: boolean;
+
   @ApiProperty({
     description:
       'Dynamic provider for selection. Only for type=selectionDynamic',
@@ -382,4 +385,24 @@ export class CreateFieldMetadataDto {
   @IsString()
   @IsOptional()
   columnName: string
+
+  @ApiProperty({ description: "Is User Key" })
+  @IsOptional()
+  @IsBoolean()
+  readonly isUserKey: boolean
+
+  @ApiProperty({ description: 'Relation Join Column Name of Field', })
+  @IsString()
+  @IsOptional()
+  relationJoinColumnName: string
+
+  @ApiProperty({ description: 'Join Column Name of Field', })
+  @IsString()
+  @IsOptional()
+  joinColumnName: string
+
+  @ApiProperty({ description: 'Relation Join Table Name of Field', })
+  @IsString()
+  @IsOptional()
+  relationJoinTableName: string
 }

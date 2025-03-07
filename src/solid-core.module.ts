@@ -132,6 +132,10 @@ import { User } from './entities/user.entity';
 import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
 import { RoleMetadataService } from './services/role-metadata.service';
 import { UserService } from './services/user.service';
+import { Setting } from './entities/setting.entity';
+import { SettingService } from './services/setting.service';
+import { SettingController } from './controllers/setting.controller';
+import { ModuleMetadataHelperService } from './helpers/module-metadata-helper.service';
 
 
 @Global()
@@ -175,6 +179,7 @@ import { UserService } from './services/user.service';
     }),
     HttpModule,
     ConfigModule,
+    TypeOrmModule.forFeature([Setting]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -199,6 +204,7 @@ import { UserService } from './services/user.service';
     PermissionMetadataController,
     RoleMetadataController,
     UserController,
+    SettingController,
   ],
   providers: [
     {
@@ -218,6 +224,7 @@ import { UserService } from './services/user.service';
       useClass: PermissionsGuard,
     },
     ModuleMetadataService,
+    ModuleMetadataHelperService,
     ModelMetadataService,
     FieldMetadataService,
     RemoveFieldsCommand,
@@ -286,6 +293,7 @@ import { UserService } from './services/user.service';
     RoleMetadataService,
     PermissionMetadataSeederService,
     UserService,
+    SettingService,
   ],
   exports: [
     ModuleMetadataService,

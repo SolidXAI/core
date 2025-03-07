@@ -280,20 +280,6 @@
             "isSystem": true
           },
           {
-            "name": "isExportable",
-            "displayName": "Is Exportable",
-            "type": "boolean",
-            "ormType": "boolean",
-            "defaultValue": "false",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "columnName": "is_exportable",
-            "isSystem": true
-          },
-          {
             "name": "userKeyField",
             "displayName": "User Key Field",
             "type": "relation",
@@ -843,6 +829,59 @@
             "encrypt": false,
             "columnName": "column_name",
             "isSystem": true
+          },
+          {
+            "name": "isUserKey",
+            "displayName": "Is User Key",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "required",
+            "isSystem": true
+          },
+          {
+            "name": "relationJoinColumnName",
+            "displayName": "Relation Join Column Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relation_join_column_name",
+            "isSystem": true
+          },
+          {
+            "name": "joinColumnName",
+            "displayName": "Join Column Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "join_column_name",
+            "isSystem": true
+          },
+          {
+            "name": "relationJoinTableName",
+            "displayName": "Relation Join Table Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relation_join_table_name",
+            "isSystem": true
           }
         ]
       },
@@ -1295,7 +1334,7 @@
             "name": "parentMenuItem",
             "displayName": "Parent Menu Item",
             "type": "relation",
-            "required": true,
+            "required": false,
             "unique": false,
             "index": true,
             "private": false,
@@ -1311,7 +1350,7 @@
             "name": "action",
             "displayName": "Action",
             "type": "relation",
-            "required": true,
+            "required": false,
             "unique": false,
             "index": true,
             "private": false,
@@ -2379,7 +2418,7 @@
       "username": "admin@example.service.com",
       "email": "admin@example.service.com",
       "password": "Admin@3214$",
-      "forcePasswordChange": false,
+      "forcePasswordChange": true,
       "fullName": "Default Admin"
     }
   ],
@@ -2783,7 +2822,40 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true
+          "delete": true,
+          "rowButtons": [
+            {
+              "attrs": {
+                "className": "pi pi-cog",
+                "label": ""
+              },
+              "action": {
+                "title": "",
+                "body": "",
+                "confirmBtnLabel": "Generate Code",
+                "cancelBtnLabel": "Cancel",
+                "customComponent": "../extension/solid-core/moduleMetadata/list/GenerateModuleCodeRowAction",
+                "customComponentIsSystem": true,
+                "endpoint": ""
+              }
+            }
+          ],
+          "headerButtons": [
+            {
+              "attrs": {
+                "className": "pi pi-cog",
+                "label": ""
+              },
+              "action": {
+                "title": "",
+                "body": "",
+                "confirmBtnLabel": "Generate Code",
+                "cancelBtnLabel": "Cancel",
+                "customComponent": "GenerateModuleCode",
+                "endpoint": ""
+              }
+            }
+          ]
         },
         "children": [
           {
@@ -2942,7 +3014,40 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true
+          "delete": true,
+          "rowButtons": [
+            {
+              "attrs": {
+                "className": "pi pi-cog",
+                "label": ""
+              },
+              "action": {
+                "title": "",
+                "body": "",
+                "confirmBtnLabel": "Generate Code",
+                "cancelBtnLabel": "Cancel",
+                "customComponent": "../extension/solid-core/modelMetadata/list/GenerateModelCodeRowAction",
+                "customComponentIsSystem": true,
+                "endpoint": ""
+              }
+            }
+          ],
+          "headerButtons": [
+            {
+              "attrs": {
+                "className": "pi pi-cog",
+                "label": ""
+              },
+              "action": {
+                "title": "",
+                "body": "",
+                "confirmBtnLabel": "Generate Code",
+                "cancelBtnLabel": "Cancel",
+                "customComponent": "GenerateModelCode",
+                "endpoint": ""
+              }
+            }
+          ]
         },
         "children": [
           {
@@ -2996,14 +3101,6 @@
           {
             "type": "field",
             "attrs": {
-              "name": "dataSourceType",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "enableSoftDelete",
               "sortable": true,
               "filterable": true
@@ -3012,47 +3109,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "enableAuditTracking",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "internationalisation",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "module",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "isExportable",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "userKeyField",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "isSystem",
               "sortable": true,
               "filterable": true
             }
@@ -3128,25 +3185,7 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "dataSourceType"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
                       "name": "enableSoftDelete"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "enableAuditTracking"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "internationalisation"
                     }
                   },
                   {
@@ -3158,19 +3197,7 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "isExportable"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "userKeyField"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "isSystem"
+                      "name": "isUserKey"
                     }
                   }
                 ]
@@ -3957,7 +3984,7 @@
                     "attrs": {
                       "name": "roles",
                       "renderMode": "checkbox",
-                      "inlineCreateAutoSave":"true",
+                      "inlineCreateAutoSave": "true",
                       "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
                       "inlineCreate": "true",
                       "inlineCreateLayout": {

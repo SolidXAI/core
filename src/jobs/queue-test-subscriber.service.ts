@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
 import { RabbitMqSubscriber } from 'src/services/rabbitmq-subscriber.service';
 import { QueueMessage } from 'src/interfaces/mq';
@@ -9,6 +9,7 @@ import { QueuesModuleOptions } from "../interfaces";
 
 @Injectable()
 export class TestQueueSubscriber extends RabbitMqSubscriber<any> {
+    private readonly testQueueLogger = new Logger(TestQueueSubscriber.name);
     constructor(
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
@@ -23,6 +24,7 @@ export class TestQueueSubscriber extends RabbitMqSubscriber<any> {
     }
 
     subscribe(message: QueueMessage<any>) {
-        console.log(`Received message ${JSON.stringify(message)}`);
+        // console.log(`Received message ${JSON.stringify(message)}`);
+        this.testQueueLogger.debug(`Received message: ${JSON.stringify(message)}`);
     }
 }

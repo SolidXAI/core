@@ -46,7 +46,8 @@ export class SeedCommand extends CommandRunner {
   @Option({
     flags: '-s, --seeder [seeder name]',
     description: 'The seeder to run.',
-    required: true
+    required: true,
+    defaultValue: 'ModuleMetadataSeederService'
   })
   parseString(val: string): string {
     return val;

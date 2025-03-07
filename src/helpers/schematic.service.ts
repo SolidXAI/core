@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CommandService } from './command.service';
+import { snakeCase } from "lodash";
 
 export const ADD_MODULE_COMMAND = 'add-module';
 export type GenerateModuleOptions = {
@@ -54,7 +55,7 @@ export class SchematicService {
       // console.log('fieldOptions', fieldOptions);
       let modelCommand = `${baseCommand} --module=${fieldOptions.module} --model=${fieldOptions.model}`;
       if (fieldOptions.moduleDisplayName) {
-        modelCommand += ` --module-display-name=${fieldOptions.moduleDisplayName}`;
+        modelCommand += ` --module-display-name=${snakeCase(fieldOptions.moduleDisplayName)}`;
       }
 
       if (fieldOptions.table) {
@@ -81,7 +82,7 @@ export class SchematicService {
       // console.log('moduleOptions', moduleOptions);
       const schematicCommand =  ` ${baseCommand} --module=${moduleOptions.module}`;
       // console.log('schematicCommand', schematicCommand);
-      this.logger.log('schematicCommand', schematicCommand);
+      this.logger.debug('schematicCommand', schematicCommand);
       return schematicCommand;
     } else {
       throw new Error('Schematic command not supported.');
