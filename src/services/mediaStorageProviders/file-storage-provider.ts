@@ -67,7 +67,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
     }
 
     private getFullFilePath(fileName: string): string {
-        return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
+        return `${process.env.BASE_URL}/${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
     }
 
     private getFileName(file: Express.Multer.File): string {
