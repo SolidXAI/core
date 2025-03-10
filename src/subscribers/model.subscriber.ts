@@ -67,7 +67,7 @@ export class ModelSubscriber implements EntitySubscriberInterface<ModelMetadata>
         model: event.entity,
       },
     ];
-    transactionManager.save(FieldMetadata, systemFieldsMetadata);
+    await transactionManager.save(FieldMetadata, systemFieldsMetadata);
     // Save to the database.
     // fieldMetadataRepo.save(systemFieldsMetadata);
 
