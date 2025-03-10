@@ -84,7 +84,7 @@ export class FieldMetadata extends CommonEntity {
     relationType: string;
 
     @Column({ name: 'relation_model_singular_name', nullable: true })
-    relationModelSingularName: string;
+    relationCoModelSingularName: string;
 
     @Column({ name: "relation_create_inverse", default: false })
     relationCreateInverse: boolean;
@@ -97,7 +97,7 @@ export class FieldMetadata extends CommonEntity {
 
     // This field will be used to set the inverse field name in the related model e.g required for many to many relation
     @Column({ name: 'relation_model_field_name', nullable: true })
-    relationModelFieldName: string;
+    relationCoModelFieldName: string;
 
     @Column({ name: 'is_relation_many_to_many_owner', nullable: true })
     isRelationManyToManyOwner: boolean;
@@ -138,7 +138,10 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'column_name', nullable: true })
     columnName: string;
 
-    @Column({ name: "isUserKey", default: false })
+    @Column({ name: 'relation_co_model_column_name', nullable: true })
+    relationCoModelColumnName: string;
+
+    @Column({ name: "is_user_key", default: false })
     isUserKey: boolean;
 
     @Column({ name: 'relation_join_column_name', nullable: true })

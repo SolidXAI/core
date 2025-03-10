@@ -101,7 +101,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         const inverseRelationFields = await fieldMetadataRepo.find({
             where: {
                 type: 'relation',
-                relationModelSingularName: this.modelName,
+                relationCoModelSingularName: this.modelName,
                 relationCreateInverse: true,
             },
             relations: ['model'],
@@ -307,7 +307,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 if (fieldMetadata.relationType === RelationType.manyToOne) {
                         const manyToOneOptions: ManyToOneRelationFieldOptions = {
                             ...commonOptions,
-                            relationModelSingularName: fieldMetadata.relationModelSingularName,
+                            relationCoModelSingularName: fieldMetadata.relationCoModelSingularName,
                             modelUserKeyFieldName: fieldMetadata.model.userKeyField?.name,
                             modelSingularName: fieldMetadata.model.singularName,
                             entityManager,
@@ -317,11 +317,11 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 else if (fieldMetadata.relationType === RelationType.oneToMany) {
                         const oneToManyOptions: OneToManyRelationFieldOptions = {
                             ...commonOptions,
-                            relationModelSingularName: fieldMetadata.relationModelSingularName,
+                            relationCoModelSingularName: fieldMetadata.relationCoModelSingularName,
                             modelSingularName: fieldMetadata.model.singularName,
                             entityManager,
-                            inverseFieldName: fieldMetadata.relationModelFieldName,
-                            inverseRelationModelFieldName: fieldMetadata.name,
+                            inverseFieldName: fieldMetadata.relationCoModelFieldName,
+                            inverseRelationCoModelFieldName: fieldMetadata.name,
                         }
                         return new OneToManyRelationFieldCrudManager(oneToManyOptions);
                 }
@@ -329,7 +329,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                     if (fieldMetadata.isRelationManyToManyOwner) {
                         const manyToManyOptions: ManyToManyRelationFieldOptions = {
                             ...commonOptions,
-                            relationModelSingularName: fieldMetadata.relationModelSingularName,
+                            relationCoModelSingularName: fieldMetadata.relationCoModelSingularName,
                             modelSingularName: fieldMetadata.model.singularName,
                             isInverseSide: false,
                             entityManager,
@@ -340,12 +340,12 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                     else {
                         const inverseManyToManyOptions: ManyToManyRelationFieldOptions = {
                             ...commonOptions,
-                            relationModelSingularName: fieldMetadata.relationModelSingularName,
+                            relationCoModelSingularName: fieldMetadata.relationCoModelSingularName,
                             modelSingularName: fieldMetadata.model.singularName,
                             isInverseSide: true,
                             entityManager,
-                            fieldName: fieldMetadata.relationModelFieldName,
-                            relationModelFieldName: fieldMetadata.name,
+                            fieldName: fieldMetadata.relationCoModelFieldName,
+                            relationCoModelFieldName: fieldMetadata.name,
                         }
                         return new ManyToManyRelationFieldCrudManager(inverseManyToManyOptions);
                     }
