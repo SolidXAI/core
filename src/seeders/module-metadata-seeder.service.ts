@@ -88,9 +88,11 @@ export class ModuleMetadataSeederService {
 
         // Run the permissions seeder. 
         // await this.permissionsSeederService.seed();
+        this.logger.log(`Seeding permissions`);
         await this.seedPermissions();
 
         // TODO: move this also the main loop processing. Generate the media storage providers required by default
+        this.logger.log(`Seeding media storage providers`);
         await this.mediaStorageProviderSeederService.seed();
 
         // Read the module metadata from a file specified in the .env 
@@ -105,8 +107,9 @@ export class ModuleMetadataSeederService {
             // ...coreModules.map(module => `src/${module}/seeders/seed-data/${module}-metadata.json`),
             typedSolidCoreMetadata
         ];
-
+        this.logger.debug(`getting dynamics modules`);
         const enabledModules = getDynamicModuleNames();
+        this.logger.log(`Seeding metadata`);
 
         for (let i = 0; i < enabledModules.length; i++) {
             const enabledModule = enabledModules[i];
@@ -119,8 +122,8 @@ export class ModuleMetadataSeederService {
             }
         }
 
-        this.logger.log(`Seed data files are: ${seedDataFiles}`);
-
+        this.logger.debug(`Seed data files are: ${seedDataFiles}`);
+        let usersDetail;
         for (let i = 0; i < seedDataFiles.length; i++) {
 
             // Module, model & field handling.
@@ -134,76 +137,77 @@ export class ModuleMetadataSeederService {
 
             // Process module metadata first. 
             const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
-            this.logger.log(`[Start] Processing module metadata for ${moduleMetadata.name}`)
+            this.logger.debug(`[Start] Processing module metadata for ${moduleMetadata.name}`)
             await this.seedModuleModelFields(moduleMetadata);
-            this.logger.log(`[End] Processing module metadata for ${moduleMetadata.name}`)
+            this.logger.debug(`[End] Processing module metadata for ${moduleMetadata.name}`)
 
             // Media Storage provider templates
-            this.logger.log(`[Start] Processing Media Storage Provider for ${moduleMetadata.name}`);
+            this.logger.debug(`[Start] Processing Media Storage Provider for ${moduleMetadata.name}`);
             const mediaStorageProviders = overallMetadata.mediaStorageProviders;
             await this.seedMediaStorageProviders(mediaStorageProviders);
-            this.logger.log(`[End] Processing Media Storage Provider for ${moduleMetadata.name}`);
+            this.logger.debug(`[End] Processing Media Storage Provider for ${moduleMetadata.name}`);
 
             // TODO: Custom role handling
-            this.logger.log(`[End] Processing roles for ${moduleMetadata.name}`)
+            this.logger.debug(`[End] Processing roles for ${moduleMetadata.name}`)
             const roles = overallMetadata.roles;
             await this.roleService.createRolesIfNotExists(roles);
-            this.logger.log(`[End] Processing roles for ${moduleMetadata.name}`)
+            this.logger.debug(`[End] Processing roles for ${moduleMetadata.name}`)
 
             // Custom user handling
-            this.logger.log(`[Start] Processing users for ${moduleMetadata.name}`);
+            this.logger.debug(`[Start] Processing users for ${moduleMetadata.name}`);
             const users = overallMetadata.users;
+            usersDetail = users;
             await this.seedUsers(users);
-            this.logger.log(`[End] Processing users for ${moduleMetadata.name}`)
+            this.logger.debug(`[End] Processing users for ${moduleMetadata.name}`)
 
             // Application Module View handling 
-            this.logger.log(`[Start] Processing views for ${moduleMetadata.name}`);
+            this.logger.debug(`[Start] Processing views for ${moduleMetadata.name}`);
             const views = overallMetadata.views;
             await this.seedViews(views);
-            this.logger.log(`[End] Processing views for ${moduleMetadata.name}`)
+            this.logger.debug(`[End] Processing views for ${moduleMetadata.name}`)
 
             // Application Module Action handling
-            this.logger.log(`[Start] Processing actions for ${moduleMetadata.name}`);
+            this.logger.debug(`[Start] Processing actions for ${moduleMetadata.name}`);
             const actions = overallMetadata.actions;
             await this.seedActions(actions);
-            this.logger.log(`[End] Processing actions for ${moduleMetadata.name}`)
+            this.logger.debug(`[End] Processing actions for ${moduleMetadata.name}`)
 
             // Application Module Menu handling 
-            this.logger.log(`[Start] Processing menus for ${moduleMetadata.name}`);
+            this.logger.debug(`[Start] Processing menus for ${moduleMetadata.name}`);
             const menus = overallMetadata.menus;
             await this.seedMenus(menus);
-            this.logger.log(`[End] Processing menus for ${moduleMetadata.name}`)
+            this.logger.debug(`[End] Processing menus for ${moduleMetadata.name}`)
 
             // Email templates 
-            this.logger.log(`[Start] Processing email templates for ${moduleMetadata.name}`);
+            this.logger.debug(`[Start] Processing email templates for ${moduleMetadata.name}`);
             const emailTemplates: CreateEmailTemplateDto[] = overallMetadata.emailTemplates;
             await this.seedEmailTemplates(emailTemplates);
-            this.logger.log(`[End] Processing email templates for ${moduleMetadata.name}`);
+            this.logger.debug(`[End] Processing email templates for ${moduleMetadata.name}`);
 
             // Sms templates
-            this.logger.log(`[Start] Processing sms templates for ${moduleMetadata.name}`);
+            this.logger.debug(`[Start] Processing sms templates for ${moduleMetadata.name}`);
             const smsTemplates: CreateSmsTemplateDto[] = overallMetadata.smsTemplates;
             await this.seedSmsTemplates(smsTemplates);
-            this.logger.log(`[End] Processing sms templates for ${moduleMetadata.name}`);
+            this.logger.debug(`[End] Processing sms templates for ${moduleMetadata.name}`);
 
             // Sms templates
-            this.logger.log(`[Start] Processing settings for ${moduleMetadata.name}`);
+            this.logger.debug(`[Start] Processing settings for ${moduleMetadata.name}`);
             await this.seedSettings(settingsSeederData);
-            this.logger.log(`[End] Processing settings for ${moduleMetadata.name}`);
+            this.logger.debug(`[End] Processing settings for ${moduleMetadata.name}`);
 
-            this.logger.log(`[End] module seed data: ${overallMetadata}`);
+            this.logger.debug(`[End] module seed data: ${overallMetadata}`);
 
         }
 
         // Post seed data file processing. 
 
         // 1. Give all permissions to the Admin role.
-        this.logger.log(`About to add all permissions to the Admin role`);
+        this.logger.debug(`About to add all permissions to the Admin role`);
         await this.roleService.addAllPermissionsToRole("Admin");
         // 2. Give wrapSettings permissions to the Public role.
         await this.roleService.addPermissionToRole('Public', 'SettingController.wrapSettings');
         this.logger.log(`All Seeders finished`);
-
+        this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
     }
 
 
@@ -300,16 +304,16 @@ export class ModuleMetadataSeederService {
             if (smsTemplate.body) {
                 // const smsTemplateFilePath = path.join(process.cwd(), smsTemplate.body);
                 // smsTemplate.body = fs.readFileSync(smsTemplateFilePath, 'utf-8').toString()
-             
+
                 const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
 
                 // Resolve the `src` folder
                 const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/sms-templates');
-    
+
                 // Example usage
                 const filePath = path.join(seedDataPath, smsTemplate.body);
-    
-    
+
+
                 smsTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
 
             }
@@ -372,7 +376,10 @@ export class ModuleMetadataSeederService {
 
             viewData['module'] = await this.moduleMetadataService.findOneByUserKey(viewData.moduleUserKey);
             viewData['model'] = await this.modelMetadataService.findOneByUserKey(viewData.modelUserKey);
-            await this.solidViewService.upsert(viewData);
+            // await this.solidViewService.upsert(viewData);
+            // First check if module already exists using name
+             await this.solidViewService.createIfNotPresent(viewData);
+
         }
     }
 

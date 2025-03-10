@@ -2430,7 +2430,7 @@
       "username": "admin@example.service.com",
       "email": "admin@example.service.com",
       "password": "Admin@3214$",
-      "forcePasswordChange": false,
+      "forcePasswordChange": true,
       "fullName": "Default Admin"
     }
   ],
@@ -2815,7 +2815,7 @@
             {
               "attrs": {
                 "className": "pi pi-cog",
-                "label": ""
+                "label": "Generate Code"
               },
               "action": {
                 "title": "",
@@ -2832,7 +2832,7 @@
             {
               "attrs": {
                 "className": "pi pi-cog",
-                "label": ""
+                "label": "Generate Code"
               },
               "action": {
                 "title": "",
@@ -3000,6 +3000,7 @@
             50
           ],
           "enableGlobalSearch": true,
+          "truncateAfter": 50,
           "create": true,
           "edit": true,
           "delete": true,
@@ -3007,7 +3008,7 @@
             {
               "attrs": {
                 "className": "pi pi-cog",
-                "label": ""
+                "label": "Generate Code"
               },
               "action": {
                 "title": "",
@@ -3024,7 +3025,7 @@
             {
               "attrs": {
                 "className": "pi pi-cog",
-                "label": ""
+                "label": "Generate Code"
               },
               "action": {
                 "title": "",

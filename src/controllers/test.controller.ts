@@ -27,8 +27,10 @@ export class TestController {
   @Post('upload')
   @UseInterceptors(FileInterceptor('file')) // 'file' here is the name of the field in the form
   uploadFile(@UploadedFile() file: Express.Multer.File, @Body() body: any) {
-    console.log(file);
-    console.log(body);
+    // console.log(file);
+    this.logger.debug(file);
+    // console.log(body);
+    this.logger.debug(body);
     return { filename: file.originalname };
   }
 

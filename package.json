@@ -1,6 +1,6 @@
 {
   "name": "@solidstarters/solid-core",
-  "version": "1.2.21",
+  "version": "1.2.23",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",

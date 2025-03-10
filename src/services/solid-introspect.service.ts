@@ -128,21 +128,23 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     return !!isSolidDatabaseModule;
   }
 
-  private isModule(provider: InstanceWrapper) {
-    // Check if the provider is a module
-    const metatype = provider.metatype;
-    return metatype && Reflect.getMetadata('imports', metatype); 
-  }
-  // This method uses the @SolidSeeder decorator to identify if a provider is a seeder
-  // private isSeeder(provider: InstanceWrapper) {
-  //   const { instance } = provider;
-  //   if (!instance) return false;
 
-  //   const seederMetadata = this.reflector.get(
-  //     'SOLID_SERVICE',
-  //     instance.constructor,
-  //   );
-  //   if (!seederMetadata || !seederMetadata.seeder) return false;
-  //   return true;
-  // }
+  private isModule(provider: InstanceWrapper): boolean {
+    const metatype = provider.metatype;
+    // Check if it's a Static Module (Class-Based)
+    if (metatype && typeof metatype === 'function' && Reflect.getMetadata('imports', metatype)) {
+      return true;
+    }
+  
+    // Ensure provider.instance is an object before checking for 'module'
+    if (provider.instance && typeof provider.instance === 'object') {
+      // Check if it's a Dynamic Module (Object-Based)
+      if ('module' in provider.instance && typeof provider.instance.module === 'function') {
+        return true;
+      }
+    }
+  
+    return false;
+  }
+
 }

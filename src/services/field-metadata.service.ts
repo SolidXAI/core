@@ -12,6 +12,7 @@ import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ISelectionProviderValues } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
+import { classify } from '@angular-devkit/core/src/utils/strings';
 
 
 @Injectable()
@@ -47,11 +48,12 @@ export class FieldMetadataService {
         // const {id, createdAt, updatedAt, deletedAt, ...fieldKeys} = field;
         switch (field.relationType) {
             case RelationType.manyToOne: {
+                const fieldName = field.relationCoModelFieldName || `${modelName}s`;
                 const inverseField: FieldMetadata = {
                     ...field,
-                    name: field.relationCoModelFieldName ?? `${modelName}s`,
-                    displayName: `Inverse ${field.displayName}`,
-                    description: `Inverse field for ${field.displayName}`,
+                    name: fieldName,
+                    displayName: classify(fieldName),
+                    description: classify(fieldName),
                     type: SolidFieldType.relation,
                     isSystem: field.isSystem,
                     relationType: RelationType.oneToMany,
@@ -71,9 +73,38 @@ export class FieldMetadataService {
                     relationJoinColumnName: null,
                     joinColumnName: null,
                     id : null,
-                    // createdAt: null,
-                    // updatedAt: null,
-                    // deletedAt: null,
+                }
+
+                // Load the inverse field, 
+                const savedField = await this.saveInverseField(fieldRepository, relationModel, inverseField);
+                return savedField;
+            }
+            case RelationType.oneToMany: {
+                const fieldName = field.relationCoModelFieldName || `${modelName}`;
+                const inverseField: FieldMetadata = {
+                    ...field,
+                    name: fieldName,
+                    displayName: classify(fieldName),
+                    description: classify(fieldName),
+                    type: SolidFieldType.relation,
+                    isSystem: field.isSystem,
+                    relationType: RelationType.manyToOne,
+                    relationCoModelSingularName: modelName,
+                    relationCreateInverse: true,
+                    relationCascade: null,
+                    relationModelModuleName: moduleName,
+                    relationCoModelFieldName: field.name,
+                    required: false,
+                    unique: false,
+                    index: false,
+                    private: false,
+                    encrypt: false,
+                    model: relationModel,
+                    columnName:null,
+                    relationJoinTableName: null,
+                    relationJoinColumnName: null,
+                    joinColumnName: null,
+                    id : null,
                 }
 
                 // Load the inverse field, 
@@ -81,18 +112,19 @@ export class FieldMetadataService {
                 return savedField;
             }
             case RelationType.manyTomany: {
+                const fieldName = field.relationCoModelFieldName;
                 // Logic to create a manyToMany inverse field definition
                 const inverseFieldManyToMany: FieldMetadata = {
                     ...field,
-                    name: field.relationCoModelFieldName,
-                    displayName: `Inverse ${field.displayName}`,
-                    description: `Inverse field for ${field.displayName}`,
+                    name: fieldName,
+                    displayName: classify(fieldName),
+                    description: classify(fieldName),
                     type: SolidFieldType.relation,
                     isSystem: field.isSystem,
                     relationType: RelationType.manyTomany,
                     relationCoModelSingularName: modelName,
                     relationCreateInverse: true,
-                    relationCascade: field.relationCascade,
+                    relationCascade: null,
                     relationModelModuleName: moduleName,
                     relationCoModelFieldName: field.name,
                     required: false,
@@ -107,9 +139,6 @@ export class FieldMetadataService {
                     joinColumnName: null,
                     isRelationManyToManyOwner: false,
                     id : null,
-                    // createdAt: null,
-                    // updatedAt: null,
-                    // deletedAt: null,
                 }
                 const savedField = await this.saveInverseField(fieldRepository, relationModel, inverseFieldManyToMany);
                 return savedField;
