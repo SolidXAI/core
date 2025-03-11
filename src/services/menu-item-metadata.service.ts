@@ -148,9 +148,16 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
   // Recursive function to build the tree
   private buildMenuTree(rootItems: MenuItemMetadata[], allMenuItems: MenuItemMetadata[], activeUser: ActiveUserData): any[] {
     const menuItemsData = rootItems.map(rootItem => {
-
+      const allowedMenuItems =allMenuItems.filter(i => {
+        console.log("i",i);
+        if(!i.parentMenuItem){
+          return true
+        }else{
+          const hasPermission = hasReadPermissionOnModel(activeUser, i.action.model.singularName);
+          return  hasReadPermissionOnModel(activeUser, i.action.model.singularName)
+        }}); 
       // Get immediate children of the current loop variable menuItem.
-      const children = allMenuItems.filter(item => item.parentMenuItem && item.parentMenuItem.id === rootItem.id);
+      const children = allowedMenuItems.filter(item => item.parentMenuItem && item.parentMenuItem.id === rootItem.id);
 
       // TODO: We should specify path only if there are no more children present. 
       // For now adding path everywhere. 

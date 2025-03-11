@@ -25,7 +25,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         const media = await this.mediaService.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         // Add the full URL to the media
         media.forEach(m => {
-            m['_full_url'] = this.getFullFilePath(m.relativeUri);
+            m['_full_url'] = `${process.env.BASE_URL}/${this.getFullFilePath(m.relativeUri)}`;
         });
         return media;
     }
@@ -46,6 +46,9 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
                 entityId: entity.id,
                 modelMetadataId: mediaFieldMetadata.model.id,
                 relativeUri: this.getFileName(file),
+                mimeType: file.mimetype,
+                fileSize: file.size,
+                originalFileName: file.originalname,
                 mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
                 fieldMetadataId: mediaFieldMetadata.id
             }) as unknown as Media;
@@ -59,7 +62,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         if (!(entity instanceof CommonEntity)) {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
-        const existingMedia = await this.mediaService.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
+        const existingMedia = await this.mediaService.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id,['mediaStorageProviderMetadata']);
         this.mediaService.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
         existingMedia.forEach(media => {
             this.fileService.deleteFile(this.getFullFilePath(media.relativeUri));
@@ -67,7 +70,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
     }
 
     private getFullFilePath(fileName: string): string {
-        return `${process.env.BASE_URL}/${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
+        return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
     }
 
     private getFileName(file: Express.Multer.File): string {

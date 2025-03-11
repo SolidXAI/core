@@ -99,8 +99,8 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     return await this._addPermissionsToRole(roleName, permissionNames);
   }
 
-  async addPermissionToRole(roleName: string, permissionName: string) {
-    return await this._addPermissionsToRole(roleName, [permissionName]);
+  async addPermissionToRole(roleName: string, permissionName: string[]) {
+    return await this._addPermissionsToRole(roleName, permissionName);
   }
 
   private async _addPermissionsToRole(roleName: string, permissionNames: string[]): Promise<RoleMetadata> {
