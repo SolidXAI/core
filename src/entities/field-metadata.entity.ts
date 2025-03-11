@@ -67,7 +67,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: "private", default: false })
     private: boolean;
 
-    @Column("text", { array: true, name: 'media_types', nullable: true })
+    @Column("json", { name: 'media_types', nullable: true })
     mediaTypes: string[];
 
     @Column({ name: 'media_max_size_kb', nullable: true })
@@ -111,7 +111,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'selection_static_values', nullable: true, type: 'simple-array' })
     selectionStaticValues: string[];
 
-    @Column({ name: 'selection_value_type', nullable: true, type: 'text', default: 'string' })
+    @Column({ name: 'selection_value_type', nullable: true, type: 'text' }) // text type cannot have a default value
     selectionValueType: string = 'string';
 
     // @Column({ name: "computed", default: false })

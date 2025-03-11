@@ -2214,7 +2214,7 @@
             "encrypt": false,
             "selectionValueType": "string",
             "selectionDynamicProvider": "ListOfModelsSelectionProvider",
-            "selectionDynamicProviderCtxt": {},
+            "selectionDynamicProviderCtxt": "{}",
             "isSystem": true
           },
           {

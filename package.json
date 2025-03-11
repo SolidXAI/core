@@ -1,6 +1,6 @@
 {
   "name": "@solidstarters/solid-core",
-  "version": "1.2.22",
+  "version": "1.2.23",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -53,6 +53,7 @@
     "passport-jwt": "^4.0.1",
     "passport-local": "^1.0.0",
     "pg": "^8.11.3",
+    "mysql2": "^3.13.0",
     "pluralize": "^8.0.0",
     "puppeteer": "^23.2.0",
     "reflect-metadata": "^0.1.13",

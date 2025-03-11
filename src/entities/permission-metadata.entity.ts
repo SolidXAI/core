@@ -4,8 +4,8 @@ import { RoleMetadata } from 'src/entities/role-metadata.entity'
 @Entity("ss_permission_metadata")
 export class PermissionMetadata extends CommonEntity {
 
-    @Index()
-    @Column({ name: "name", type: "varchar", unique: true })
+    @Index({unique: true})
+    @Column({ name: "name", type: "varchar" })
     name: string;
 
     @ManyToMany(() => RoleMetadata, roleMetadata => roleMetadata.permissions, { cascade: ['insert', 'update'] })
