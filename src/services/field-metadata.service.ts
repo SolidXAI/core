@@ -70,8 +70,6 @@ export class FieldMetadataService {
                     model: relationModel,
                     columnName:null,
                     relationJoinTableName: null,
-                    relationJoinColumnName: null,
-                    joinColumnName: null,
                     id : null,
                 }
 
@@ -102,8 +100,6 @@ export class FieldMetadataService {
                     model: relationModel,
                     columnName:null,
                     relationJoinTableName: null,
-                    relationJoinColumnName: null,
-                    joinColumnName: null,
                     id : null,
                 }
 
@@ -135,8 +131,6 @@ export class FieldMetadataService {
                     model: relationModel,
                     columnName:null,
                     relationJoinTableName: null,
-                    relationJoinColumnName: null,
-                    joinColumnName: null,
                     isRelationManyToManyOwner: false,
                     id : null,
                 }
@@ -743,6 +737,7 @@ export class FieldMetadataService {
                     "relationCoModelFieldName",
                     "relationCreateInverse",
                     "relationCoModelSingularName",
+                    "relationCoModelColumnName",
                     "relationModelModuleName",
                     "required",
                     "unique",
@@ -752,8 +747,6 @@ export class FieldMetadataService {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "relationJoinColumnName",
-                    "joinColumnName",
                     "relationJoinTableName",
                     "isRelationManyToManyOwner",
                 ];
