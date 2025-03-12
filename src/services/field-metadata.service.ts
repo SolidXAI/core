@@ -36,7 +36,7 @@ export class FieldMetadataService {
         // Update the inverse field in the db
         const savedInverseField = await this.updateInverseFieldInDb(field, fieldRepository, modelRepository);
         // Update the inverse field in the file
-        this.updateRelationInverseFieldInFile(savedInverseField, field.relationModelSingularName, field.model.module.name);
+        this.updateRelationInverseFieldInFile(savedInverseField, field.relationCoModelSingularName, field.model.module.name);
     }
 
     private async updateInverseFieldInDb(field: FieldMetadata, fieldRepository: Repository<FieldMetadata>, modelRepository: Repository<ModelMetadata>): Promise<FieldMetadata> {
@@ -48,7 +48,7 @@ export class FieldMetadataService {
         // const {id, createdAt, updatedAt, deletedAt, ...fieldKeys} = field;
         switch (field.relationType) {
             case RelationType.manyToOne: {
-                const fieldName = field.relationModelFieldName || `${modelName}s`;
+                const fieldName = field.relationCoModelFieldName || `${modelName}s`;
                 const inverseField: FieldMetadata = {
                     ...field,
                     name: fieldName,
@@ -57,11 +57,11 @@ export class FieldMetadataService {
                     type: SolidFieldType.relation,
                     isSystem: field.isSystem,
                     relationType: RelationType.oneToMany,
-                    relationModelSingularName: modelName,
+                    relationCoModelSingularName: modelName,
                     relationCreateInverse: true,
                     relationCascade: field.relationCascade,
                     relationModelModuleName: moduleName,
-                    relationModelFieldName: field.name,
+                    relationCoModelFieldName: field.name,
                     required: false,
                     unique: false,
                     index: false,
@@ -70,8 +70,6 @@ export class FieldMetadataService {
                     model: relationModel,
                     columnName:null,
                     relationJoinTableName: null,
-                    relationJoinColumnName: null,
-                    joinColumnName: null,
                     id : null,
                 }
 
@@ -80,7 +78,7 @@ export class FieldMetadataService {
                 return savedField;
             }
             case RelationType.oneToMany: {
-                const fieldName = field.relationModelFieldName || `${modelName}`;
+                const fieldName = field.relationCoModelFieldName || `${modelName}`;
                 const inverseField: FieldMetadata = {
                     ...field,
                     name: fieldName,
@@ -89,11 +87,11 @@ export class FieldMetadataService {
                     type: SolidFieldType.relation,
                     isSystem: field.isSystem,
                     relationType: RelationType.manyToOne,
-                    relationModelSingularName: modelName,
+                    relationCoModelSingularName: modelName,
                     relationCreateInverse: true,
                     relationCascade: null,
                     relationModelModuleName: moduleName,
-                    relationModelFieldName: field.name,
+                    relationCoModelFieldName: field.name,
                     required: false,
                     unique: false,
                     index: false,
@@ -102,8 +100,6 @@ export class FieldMetadataService {
                     model: relationModel,
                     columnName:null,
                     relationJoinTableName: null,
-                    relationJoinColumnName: null,
-                    joinColumnName: null,
                     id : null,
                 }
 
@@ -112,7 +108,7 @@ export class FieldMetadataService {
                 return savedField;
             }
             case RelationType.manyTomany: {
-                const fieldName = field.relationModelFieldName;
+                const fieldName = field.relationCoModelFieldName;
                 // Logic to create a manyToMany inverse field definition
                 const inverseFieldManyToMany: FieldMetadata = {
                     ...field,
@@ -122,11 +118,11 @@ export class FieldMetadataService {
                     type: SolidFieldType.relation,
                     isSystem: field.isSystem,
                     relationType: RelationType.manyTomany,
-                    relationModelSingularName: modelName,
+                    relationCoModelSingularName: modelName,
                     relationCreateInverse: true,
                     relationCascade: null,
                     relationModelModuleName: moduleName,
-                    relationModelFieldName: field.name,
+                    relationCoModelFieldName: field.name,
                     required: false,
                     unique: false,
                     index: false,
@@ -135,8 +131,6 @@ export class FieldMetadataService {
                     model: relationModel,
                     columnName:null,
                     relationJoinTableName: null,
-                    relationJoinColumnName: null,
-                    joinColumnName: null,
                     isRelationManyToManyOwner: false,
                     id : null,
                 }
@@ -151,7 +145,7 @@ export class FieldMetadataService {
     private async getRelationModel(modelRepository: Repository<ModelMetadata>, field: FieldMetadata, moduleName: string) {
         return await modelRepository.findOne({
             where: {
-                singularName: field.relationModelSingularName,
+                singularName: field.relationCoModelSingularName,
                 module: {
                     name: field.relationModelModuleName ?? moduleName
                 }
@@ -740,9 +734,10 @@ export class FieldMetadataService {
                     "ormType",
                     "isSystem",
                     "relationType",
-                    "relationModelFieldName",
+                    "relationCoModelFieldName",
                     "relationCreateInverse",
-                    "relationModelSingularName",
+                    "relationCoModelSingularName",
+                    "relationCoModelColumnName",
                     "relationModelModuleName",
                     "required",
                     "unique",
@@ -752,8 +747,6 @@ export class FieldMetadataService {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "relationJoinColumnName",
-                    "joinColumnName",
                     "relationJoinTableName",
                     "isRelationManyToManyOwner",
                 ];
