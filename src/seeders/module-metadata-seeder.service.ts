@@ -205,7 +205,19 @@ export class ModuleMetadataSeederService {
         this.logger.debug(`About to add all permissions to the Admin role`);
         await this.roleService.addAllPermissionsToRole("Admin");
         // 2. Give wrapSettings permissions to the Public role.
-        await this.roleService.addPermissionToRole('Public', 'SettingController.wrapSettings');
+        const internalRolePermission = ['UserController.findMany',
+            'UserController.checkIfPermissionExists',
+            'UserController.findOne',
+            'MenuItemMetadataController.findMany',
+            'MenuItemMetadataController.findUserMenus',
+            'MenuItemMetadataController.findOne',
+            'ViewMetadataController.getLayout',
+            'ViewMetadataController.findMany',
+            'ViewMetadataController.findOne',
+            'AuthenticationController.changePassword'
+        ]
+        await this.roleService.addPermissionToRole('Internal User', internalRolePermission);
+        await this.roleService.addPermissionToRole('Public', ['SettingController.wrapSettings']);
         this.logger.log(`All Seeders finished`);
         this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
     }
@@ -354,9 +366,9 @@ export class ModuleMetadataSeederService {
         for (let j = 0; j < actions.length; j++) {
             const actionData = actions[j];
             actionData['module'] = await this.moduleMetadataService.findOneByUserKey(actionData.moduleUserKey);
+            actionData['model'] = await this.modelMetadataService.findOneByUserKey(actionData.modelUserKey);
             if (actionData.type === 'solid') {
                 actionData['view'] = await this.solidViewService.findOneByUserKey(actionData.viewUserKey);
-                actionData['model'] = await this.modelMetadataService.findOneByUserKey(actionData.modelUserKey);
             }
             await this.solidActionService.upsert(actionData);
         }
@@ -378,7 +390,7 @@ export class ModuleMetadataSeederService {
             viewData['model'] = await this.modelMetadataService.findOneByUserKey(viewData.modelUserKey);
             // await this.solidViewService.upsert(viewData);
             // First check if module already exists using name
-             await this.solidViewService.createIfNotPresent(viewData);
+            await this.solidViewService.createIfNotPresent(viewData);
 
         }
     }

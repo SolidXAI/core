@@ -10,6 +10,9 @@ import { CrudHelperService } from "./crud-helper.service";
 import { FileService } from "src/services/file.service";
 import { ConfigService } from "@nestjs/config";
 import { MediaStorageProviderType } from "../dtos/create-media-storage-provider-metadata.dto";
+import { FileStorageProvider } from "./mediaStorageProviders/file-storage-provider";
+import { FileS3StorageProvider } from "./mediaStorageProviders/file-s3-storage-provider";
+import { getMediaStorageProvider } from "./mediaStorageProviders";
 
 @Injectable()
 export class MediaService {
@@ -32,8 +35,8 @@ export class MediaService {
     async findMany(basicFilterDto: BasicFilterDto) {
         const alias = 'media';
         // Extract the required keys from the input query
-        let { limit, offset} = basicFilterDto;
- 
+        let { limit, offset } = basicFilterDto;
+
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<Media> = this.mediaRepo.createQueryBuilder(alias)
         qb = await this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
@@ -174,8 +177,35 @@ export class MediaService {
     }
 
     async remove(id: number) {
-        const lov = await this.findOne(id);
-        return this.mediaRepo.remove(lov);
+        // const lov = await this.findOne(id);
+        const media = await this.mediaRepo.findOne({
+            where: {
+                id: id,
+            },
+            relations: ['mediaStorageProviderMetadata', 'fieldMetadata', 'fieldMetadata.model','fieldMetadata.mediaStorageProvider'],
+        });
+        const modelEntity = await this.modelMetadataRepo.findOne({
+            where: {
+                id: media.entityId,
+            }
+        }
+        );
+        // if (media.mediaStorageProviderMetadata.type === 'filesystem') {
+        //     const fileStorageProvider = new FileStorageProvider(this.configService, this.fileService, this);
+
+        //     await fileStorageProvider.delete(media, media.fieldMetadata);
+
+        // } else if (media.mediaStorageProviderMetadata.type === 'aws-s3') {
+        //     const fileStorageProvider = new FileS3StorageProvider(this.configService, this.fileService, this);
+        //     await fileStorageProvider.delete(media, media.fieldMetadata);
+
+        // } else {
+        // }
+        const storageProviderType = media.mediaStorageProviderMetadata.type as MediaStorageProviderType;
+        const storageProvider = getMediaStorageProvider(this.configService, this.fileService, this, storageProviderType);
+        await storageProvider.delete(modelEntity, media.fieldMetadata);
+
+        return this.mediaRepo.remove(media);
     }
 
     async delete(id: number) {
@@ -215,7 +245,7 @@ export class MediaService {
     // }
 
     async findByEntityIdAndFieldIdAndModelMetadataId(entityId: number, fieldMetadataId: number, modelMetadataId: number, relations = {}) {
-        return this.mediaRepo.find({
+        return await this.mediaRepo.find({
             where: {
                 modelMetadata: {
                     id: modelMetadataId

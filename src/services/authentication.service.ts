@@ -141,6 +141,8 @@ export class AuthenticationService {
             if (this.iamConfiguration.defaultRole) {
                 roles.push(this.iamConfiguration.defaultRole);
             }
+            // Default Internal user role assigned 
+            roles.push("Internal User");
             if (signUpDto.roles) {
                 roles = [...roles, ...signUpDto.roles];
             }

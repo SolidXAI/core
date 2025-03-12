@@ -51,6 +51,9 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
                 entityId: entity.id,
                 modelMetadataId: mediaFieldMetadata.model.id,
                 relativeUri: awsFileUrl,
+                mimeType: file.mimetype,
+                fileSize: file.size,
+                originalFileName: file.originalname,
                 mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
                 fieldMetadataId: mediaFieldMetadata.id
             }) as unknown as Media;
@@ -64,7 +67,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         if (!(entity instanceof CommonEntity)) {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
-        const existingMedia = await this.mediaService.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
+        const existingMedia = await this.mediaService.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id,['mediaStorageProviderMetadata']);
         this.mediaService.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
         existingMedia.forEach(media => {
             this.fileService.deleteFromS3(media.relativeUri, mediaFieldMetadata.mediaStorageProvider.bucketName); //TODO

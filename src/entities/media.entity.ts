@@ -19,6 +19,15 @@ export class Media extends CommonEntity {
     @Column({ name: "relative_uri" })
     relativeUri: string;
 
+    @Column({ name: "mime_type" })
+    mimeType: string;
+
+    @Column({ name: "file_size" })
+    fileSize: number;
+
+    @Column({ name: "original_file_name" })
+    originalFileName: string;
+
     @Index()
     @ManyToOne(() => MediaStorageProviderMetadata)
     @JoinColumn({ name: "media_storage_provider_metadata_id" })

@@ -1419,6 +1419,44 @@
             "isSystem": true
           },
           {
+            "name": "size",
+            "displayName": "Size",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "mimeType",
+            "displayName": "Mime Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "originalFileName",
+            "displayName": "Original File Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
             "name": "modelMetadata",
             "displayName": "Model Metadata",
             "type": "relation",
@@ -1949,7 +1987,7 @@
           },
           {
             "name": "menuItems",
-            "displayName": "Mmenu Items",
+            "displayName": "Menu Items",
             "type": "relation",
             "required": false,
             "unique": false,
@@ -2409,6 +2447,9 @@
       "name": "Admin"
     },
     {
+      "name": "Internal User"
+    },
+    {
       "name": "Public"
     }
   ],
@@ -2418,7 +2459,10 @@
       "email": "admin@example.service.com",
       "password": "Admin@3214$",
       "forcePasswordChange": true,
-      "fullName": "Default Admin"
+      "fullName": "Default Admin",
+      "roles": [
+        "Admin"
+      ]
     }
   ],
   "actions": [
@@ -5946,10 +5990,6 @@
     {
       "name": "default-filesystem",
       "type": "filesystem"
-    },
-    {
-      "name": "default-aws-s3",
-      "type": "aws-s3"
     }
   ],
   "checksums": []
