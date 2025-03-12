@@ -205,19 +205,18 @@ export class ModuleMetadataSeederService {
         this.logger.debug(`About to add all permissions to the Admin role`);
         await this.roleService.addAllPermissionsToRole("Admin");
         // 2. Give wrapSettings permissions to the Public role.
-        await this.roleService.addPermissionToRole('Internal User',
-            ['UserController.findMany',
-                'UserController.checkIfPermissionExists',
-                'UserController.findOne',
-                'MenuItemMetadataController.findMany',
-                'MenuItemMetadataController.findUserMenus',
-                'MenuItemMetadataController.findOne',
-                'ViewMetadataController.getLayout',
-                'ViewMetadataController.findMany',
-                'ViewMetadataController.findOne',
-                'AuthenticationController.changePassword'
-            ]
-        );
+        const internalRolePermission = ['UserController.findMany',
+            'UserController.checkIfPermissionExists',
+            'UserController.findOne',
+            'MenuItemMetadataController.findMany',
+            'MenuItemMetadataController.findUserMenus',
+            'MenuItemMetadataController.findOne',
+            'ViewMetadataController.getLayout',
+            'ViewMetadataController.findMany',
+            'ViewMetadataController.findOne',
+            'AuthenticationController.changePassword'
+        ]
+        await this.roleService.addPermissionToRole('Internal User', internalRolePermission);
         await this.roleService.addPermissionToRole('Public', ['SettingController.wrapSettings']);
         this.logger.log(`All Seeders finished`);
         this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);

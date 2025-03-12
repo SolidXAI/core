@@ -149,7 +149,6 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
   private buildMenuTree(rootItems: MenuItemMetadata[], allMenuItems: MenuItemMetadata[], activeUser: ActiveUserData): any[] {
     const menuItemsData = rootItems.map(rootItem => {
       const allowedMenuItems =allMenuItems.filter(i => {
-        console.log("i",i);
         if(!i.parentMenuItem){
           return true
         }else{
