@@ -5990,14 +5990,6 @@
     {
       "name": "default-filesystem",
       "type": "filesystem"
-    },
-    {
-      "name": "default-aws-s3",
-      "type": "aws-s3",
-      "region": "ap-south-1",
-      "bucketName": "radix-dev-public",
-      "isPublic": true,
-      "localPath": "/"
     }
   ],
   "checksums": []
