@@ -178,7 +178,7 @@ export class MediaService {
 
     async remove(id: number) {
         // const lov = await this.findOne(id);
-        const lov = await this.mediaRepo.findOne({
+        const media = await this.mediaRepo.findOne({
             where: {
                 id: id,
             },
@@ -186,26 +186,26 @@ export class MediaService {
         });
         const modelEntity = await this.modelMetadataRepo.findOne({
             where: {
-                id: lov.entityId,
+                id: media.entityId,
             }
         }
         );
-        // if (lov.mediaStorageProviderMetadata.type === 'filesystem') {
+        // if (media.mediaStorageProviderMetadata.type === 'filesystem') {
         //     const fileStorageProvider = new FileStorageProvider(this.configService, this.fileService, this);
 
-        //     await fileStorageProvider.delete(lov, lov.fieldMetadata);
+        //     await fileStorageProvider.delete(media, media.fieldMetadata);
 
-        // } else if (lov.mediaStorageProviderMetadata.type === 'aws-s3') {
+        // } else if (media.mediaStorageProviderMetadata.type === 'aws-s3') {
         //     const fileStorageProvider = new FileS3StorageProvider(this.configService, this.fileService, this);
-        //     await fileStorageProvider.delete(lov, lov.fieldMetadata);
+        //     await fileStorageProvider.delete(media, media.fieldMetadata);
 
         // } else {
         // }
-        const storageProviderType = lov.mediaStorageProviderMetadata.type as MediaStorageProviderType;
+        const storageProviderType = media.mediaStorageProviderMetadata.type as MediaStorageProviderType;
         const storageProvider = getMediaStorageProvider(this.configService, this.fileService, this, storageProviderType);
-        await storageProvider.delete(modelEntity, lov.fieldMetadata);
+        await storageProvider.delete(modelEntity, media.fieldMetadata);
 
-        return this.mediaRepo.remove(lov);
+        return this.mediaRepo.remove(media);
     }
 
     async delete(id: number) {
