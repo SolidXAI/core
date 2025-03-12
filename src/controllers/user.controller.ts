@@ -43,6 +43,12 @@ export class UserController {
     return this.service.update(id, updateDto, files, true);
   }
 
+  @ApiBearerAuth("jwt")
+  @Patch('/update-user/:id')
+  updateUser(@Param('id') id: number, @Body() updateDto: any, @UploadedFiles() files: Array<Express.Multer.File>) {
+    return this.service.updateUser(id, updateDto, files);
+  }
+
 
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, type: Boolean })

@@ -75,6 +75,21 @@ export class UserService extends CRUDService<User> {
     // return entity;
   }
 
+  async updateUser(id: any, updateDto, files) {
+    const user = await this.repo.findOne({
+      where: { id: id },
+      relations: {
+        roles: true
+      }
+    });
+    if (!user) {
+      throw new Error(`User not found.`);
+    }
+    const roles  = updateDto.roles ? updateDto.roles :[]; 
+    await this.addRolesToUser(user.username, roles);
+    await this.update(id, updateDto, files, true);
+  }
+
   async addRoleToUser(username: string, roleName: string): Promise<User> {
     // Find the role, find the user and populate the many 2 many table.
     const user = await this.repo.findOne({

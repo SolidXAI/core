@@ -1987,7 +1987,7 @@
           },
           {
             "name": "menuItems",
-            "displayName": "Mmenu Items",
+            "displayName": "Menu Items",
             "type": "relation",
             "required": false,
             "unique": false,
