@@ -902,6 +902,7 @@ export class ModelMetadataService {
         dataSource: model.dataSource,
         table: model.tableName,
         fields: fieldsForRefresh,
+        modelEnableSoftDelete: model.enableSoftDelete
       },
       dryRun
     );

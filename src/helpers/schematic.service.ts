@@ -13,6 +13,7 @@ type FieldOptions = {
   table?: string;
   dataSource: string;
   fields: any[]; //FIXME This type can be improved
+  modelEnableSoftDelete?: boolean;
 };
 export const REMOVE_FIELDS_COMMAND = 'remove-fields';
 export const REFRESH_MODEL_COMMAND = 'refresh-model';
@@ -52,7 +53,6 @@ export class SchematicService {
       command === REFRESH_MODEL_COMMAND
     ) {
       const fieldOptions = options as FieldOptions;
-      // console.log('fieldOptions', fieldOptions);
       let modelCommand = `${baseCommand} --module=${fieldOptions.module} --model=${fieldOptions.model}`;
       if (fieldOptions.moduleDisplayName) {
         modelCommand += ` --module-display-name=${snakeCase(fieldOptions.moduleDisplayName)}`;
@@ -64,6 +64,10 @@ export class SchematicService {
       
       if (fieldOptions.dataSource) {
         modelCommand += ` --data-source=${fieldOptions.dataSource}`;
+      }
+
+      if (fieldOptions.modelEnableSoftDelete) {
+        modelCommand += ` --model-enable-soft-delete=${fieldOptions.modelEnableSoftDelete}`;
       }
       
       let fieldCommand = fieldOptions.fields
