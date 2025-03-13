@@ -5182,37 +5182,115 @@
             },
             "children": [
               {
-                "type": "group",
+                "type": "notebook",
                 "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-6"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "name"
-                    }
+                      "name": "page-1",
+                      "label": "Name"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "name",
+                              "showLabel":false
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "permissions",
-                      "renderMode": "autocomplete"
-                    }
+                      "name": "page-2",
+                      "label": "Permissions"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "permissions",
+                              "renderMode": "autocomplete",
+                              "showLabel":false
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "users"
-                    }
+                      "name": "page-3",
+                      "label": "Users"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "users",
+                              "showLabel":false
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "menuItems"
-                    }
+                      "name": "page-4",
+                      "label": "Menu Items"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "menuItems",
+                              "showLabel":false
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               }
