@@ -4,7 +4,7 @@
     "displayName": "Solid Core",
     "description": "Solid Core Module",
     "defaultDataSource": "default",
-    "menuIconUrl": "/images/menu/app-builder.svg",
+    "menuIconUrl": null,
     "menuSequenceNumber": 1,
     "isSystem": true,
     "models": [
