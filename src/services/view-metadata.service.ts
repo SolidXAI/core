@@ -86,11 +86,11 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       const field = fields[i];
 
       // For fields of type relation & relationType many-to-one
-      // We fetch metadata regarding the relationModelSingularName
+      // We fetch metadata regarding the relationCoModelSingularName
       if (field.type === 'relation') {
         const relationModel = await this.modelMetadataRepo.find({
           where: {
-            singularName: field.relationModelSingularName
+            singularName: field.relationCoModelSingularName
           },
           relations: {
             userKeyField: true

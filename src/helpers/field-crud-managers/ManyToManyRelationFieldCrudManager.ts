@@ -8,12 +8,12 @@ import { EntityManager, In } from "typeorm";
 export interface ManyToManyRelationFieldOptions {
     // Add options for relation field
     required: boolean | undefined | null;
-    relationModelSingularName: string | undefined | null;
+    relationCoModelSingularName: string | undefined | null;
     modelSingularName: string | undefined | null;
     isInverseSide: boolean;
     entityManager: EntityManager;
     fieldName: string;
-    relationModelFieldName?: string;
+    relationCoModelFieldName?: string;
 }
 
 const linkCommands = [RelationFieldsCommand.link, RelationFieldsCommand.unlink, RelationFieldsCommand.set];
@@ -33,9 +33,9 @@ export class ManyToManyRelationFieldCrudManager implements FieldCrudManager {
             this.commandFieldName = `${this.options.fieldName}Command`;
         }
         else {
-            this.valueFieldName = `${this.options.relationModelFieldName}`;
-            this.idFieldName = `${this.options.relationModelFieldName}Ids`;
-            this.commandFieldName = `${this.options.relationModelFieldName}Command`;
+            this.valueFieldName = `${this.options.relationCoModelFieldName}`;
+            this.idFieldName = `${this.options.relationCoModelFieldName}Ids`;
+            this.commandFieldName = `${this.options.relationCoModelFieldName}Command`;
         }
     }
 
@@ -71,7 +71,7 @@ export class ManyToManyRelationFieldCrudManager implements FieldCrudManager {
         const currentEntityTarget = this.getEntityTarget(classify(this.options.modelSingularName));
         const currentEntityRepository = this.options.entityManager.getRepository(currentEntityTarget);
 
-        const relatedEntityTarget = this.getEntityTarget(classify(this.options.relationModelSingularName));
+        const relatedEntityTarget = this.getEntityTarget(classify(this.options.relationCoModelSingularName));
         const relatedEntityRepository = this.options.entityManager.getRepository(relatedEntityTarget)
 
         dto[this.valueFieldName] = await this.transformByCommand(dto, relatedEntityRepository, currentEntityRepository);

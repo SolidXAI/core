@@ -4,7 +4,7 @@
     "displayName": "Solid Core",
     "description": "Solid Core Module",
     "defaultDataSource": "default",
-    "menuIconUrl": "/images/menu/app-builder.svg",
+    "menuIconUrl": null,
     "menuSequenceNumber": 1,
     "isSystem": true,
     "models": [
@@ -273,7 +273,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "moduleMetadata",
+            "relationCoModelSingularName": "moduleMetadata",
             "relationCreateInverse": true,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -289,7 +289,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "fieldMetadata",
+            "relationCoModelSingularName": "fieldMetadata",
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -383,7 +383,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "modelMetadata",
+            "relationCoModelSingularName": "modelMetadata",
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -599,7 +599,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "mediaStorageProviderMetadata",
+            "relationCoModelSingularName": "mediaStorageProviderMetadata",
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -619,8 +619,8 @@
             "isSystem": true
           },
           {
-            "name": "relationModelSingularName",
-            "displayName": "Relation Model Singular Name",
+            "name": "relationCoModelSingularName",
+            "displayName": "Relation Co Model Singular Name",
             "type": "shortText",
             "ormType": "varchar",
             "required": false,
@@ -628,7 +628,20 @@
             "index": false,
             "private": false,
             "encrypt": false,
-            "columnName": "relation_model_singular_name",
+            "columnName": "relation_co_model_singular_name",
+            "isSystem": true
+          },
+          {
+            "name": "relationCoModelColumnName",
+            "displayName": "Relation Co Model Column Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relation_co_model_column_name",
             "isSystem": true
           },
           {
@@ -672,8 +685,8 @@
             "isSystem": true
           },
           {
-            "name": "relationModelFieldName",
-            "displayName": "Relation Model Field Name",
+            "name": "relationCoModelFieldName",
+            "displayName": "Relation Co Model Field Name",
             "type": "shortText",
             "ormType": "varchar",
             "required": false,
@@ -842,32 +855,6 @@
             "private": false,
             "encrypt": false,
             "columnName": "required",
-            "isSystem": true
-          },
-          {
-            "name": "relationJoinColumnName",
-            "displayName": "Relation Join Column Name",
-            "type": "shortText",
-            "ormType": "varchar",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "columnName": "relation_join_column_name",
-            "isSystem": true
-          },
-          {
-            "name": "joinColumnName",
-            "displayName": "Join Column Name",
-            "type": "shortText",
-            "ormType": "varchar",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "columnName": "join_column_name",
             "isSystem": true
           },
           {
@@ -1066,7 +1053,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "moduleMetadata",
+            "relationCoModelSingularName": "moduleMetadata",
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
@@ -1082,7 +1069,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "modelMetadata",
+            "relationCoModelSingularName": "modelMetadata",
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
@@ -1222,7 +1209,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "moduleMetadata",
+            "relationCoModelSingularName": "moduleMetadata",
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
@@ -1238,7 +1225,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "modelMetadata",
+            "relationCoModelSingularName": "modelMetadata",
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
@@ -1254,7 +1241,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "viewMetadata",
+            "relationCoModelSingularName": "viewMetadata",
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
@@ -1324,7 +1311,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "moduleMetadata",
+            "relationCoModelSingularName": "moduleMetadata",
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
@@ -1340,7 +1327,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "menuItemMetadata",
+            "relationCoModelSingularName": "menuItemMetadata",
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
@@ -1356,7 +1343,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "actionMetadata",
+            "relationCoModelSingularName": "actionMetadata",
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
@@ -1372,8 +1359,8 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-many",
-            "relationModelSingularName": "roleMetadata",
-            "relationModelFieldName": "roles",
+            "relationCoModelSingularName": "roleMetadata",
+            "relationCoModelFieldName": "roles",
             "relationCreateInverse": true,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -1466,7 +1453,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "modelMetadata",
+            "relationCoModelSingularName": "modelMetadata",
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -1482,7 +1469,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "mediaStorageProviderMetadata",
+            "relationCoModelSingularName": "mediaStorageProviderMetadata",
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -1498,7 +1485,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "fieldMetadata",
+            "relationCoModelSingularName": "fieldMetadata",
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -1685,8 +1672,8 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-many",
-            "relationModelSingularName": "roleMetadata",
-            "relationModelFieldName": "users",
+            "relationCoModelSingularName": "roleMetadata",
+            "relationCoModelFieldName": "users",
             "relationCreateInverse": true,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
@@ -1963,8 +1950,8 @@
             "encrypt": false,
             "relationType": "many-to-many",
             "relationCreateInverse": true,
-            "relationModelFieldName": "roles",
-            "relationModelSingularName": "permissionMetadata",
+            "relationCoModelFieldName": "roles",
+            "relationCoModelSingularName": "permissionMetadata",
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
             "isSystem": true
@@ -1979,7 +1966,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-many",
-            "relationModelSingularName": "user",
+            "relationCoModelSingularName": "user",
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -1995,7 +1982,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-many",
-            "relationModelSingularName": "menuItemMetadata",
+            "relationCoModelSingularName": "menuItemMetadata",
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -2044,7 +2031,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "one-to-many",
-            "relationModelSingularName": "mqMessage",
+            "relationCoModelSingularName": "mqMessage",
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationTypeManyToManyOwner": true,
@@ -2227,7 +2214,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "mqMessageQueue",
+            "relationCoModelSingularName": "mqMessageQueue",
             "relationCreateInverse": true,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core"
@@ -4382,7 +4369,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "relationModelSingularName",
+              "name": "relationCoModelSingularName",
               "sortable": true,
               "filterable": true
             }
@@ -4414,7 +4401,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "relationModelFieldName",
+              "name": "relationCoModelFieldName",
               "sortable": true,
               "filterable": true
             }
@@ -4674,7 +4661,7 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "relationModelSingularName"
+                      "name": "relationCoModelSingularName"
                     }
                   },
                   {
@@ -4698,7 +4685,7 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "relationModelFieldName"
+                      "name": "relationCoModelFieldName"
                     }
                   },
                   {

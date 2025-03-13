@@ -7,7 +7,7 @@ import { EntityManager } from "typeorm";
 export interface ManyToOneRelationFieldOptions {
     // Add options for relation field
     required: boolean | undefined | null;
-    relationModelSingularName: string | undefined | null;
+    relationCoModelSingularName: string | undefined | null;
     fieldName: string | undefined | null;
     modelUserKeyFieldName: string | undefined | null;
     modelSingularName: string | undefined | null;
@@ -64,17 +64,17 @@ export class ManyToOneRelationFieldCrudManager implements FieldCrudManager {
         if ((isEmpty(fieldId)) && isEmpty(fieldUserKeyValue)) return dto;
 
         // // Load the related entity from the database, using the repository of the related entity
-        const entityTarget = this.getRelatedEntityTarget(classify(this.options.relationModelSingularName));
+        const entityTarget = this.getRelatedEntityTarget(classify(this.options.relationCoModelSingularName));
         if (isNotEmpty(fieldId)) {
             dto[this.options.fieldName] = await this.options.entityManager.getRepository(entityTarget).findOneBy({ id: fieldId });
             if (this.options.required && isEmpty(dto[this.options.fieldName])) {
-                throw new Error(`ManyToOneRelationFieldCrudManager: Record with id: ${fieldId} not found in ${this.options.relationModelSingularName}`);
+                throw new Error(`ManyToOneRelationFieldCrudManager: Record with id: ${fieldId} not found in ${this.options.relationCoModelSingularName}`);
             }
         }
         else {
             dto[this.options.fieldName] = await this.options.entityManager.getRepository(entityTarget).findOneBy({ [this.options.modelUserKeyFieldName]: fieldUserKeyValue });
             if (this.options.required && isEmpty(dto[this.options.fieldName])) {
-                throw new Error(`ManyToOneRelationFieldCrudManager: Record with userKey: ${this.options.modelUserKeyFieldName}: ${fieldUserKeyValue} not found in ${this.options.relationModelSingularName}`);
+                throw new Error(`ManyToOneRelationFieldCrudManager: Record with userKey: ${this.options.modelUserKeyFieldName}: ${fieldUserKeyValue} not found in ${this.options.relationCoModelSingularName}`);
             }
         }
 

@@ -8,8 +8,8 @@ import { EntityManager, In } from "typeorm";
 export interface OneToManyRelationFieldOptions {
     // Add options for relation field
     required: boolean | undefined | null;
-    relationModelSingularName: string | undefined | null;
-    inverseRelationModelFieldName: string | undefined | null;
+    relationCoModelSingularName: string | undefined | null;
+    inverseRelationCoModelFieldName: string | undefined | null;
     modelSingularName: string | undefined | null;
     inverseFieldName: string | undefined | null;
     entityManager: EntityManager | undefined | null;
@@ -25,9 +25,9 @@ export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
     private readonly commandFieldName: string;
 
     constructor(private readonly options: OneToManyRelationFieldOptions) {
-        this.valueFieldName = this.options.inverseRelationModelFieldName ?? `${this.options.relationModelSingularName}s`;
-        this.idFieldName = `${this.options.inverseRelationModelFieldName ?? this.options.relationModelSingularName}Ids`;
-        this.commandFieldName = `${this.options.inverseRelationModelFieldName ?? this.options.relationModelSingularName}Command`;
+        this.valueFieldName = this.options.inverseRelationCoModelFieldName ?? `${this.options.relationCoModelSingularName}s`;
+        this.idFieldName = `${this.options.inverseRelationCoModelFieldName ?? this.options.relationCoModelSingularName}Ids`;
+        this.commandFieldName = `${this.options.inverseRelationCoModelFieldName ?? this.options.relationCoModelSingularName}Command`;
     }
 
     validate(dto: any) {
@@ -78,7 +78,7 @@ export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
         const currentEntityTarget = this.getEntityTarget(classify(this.options.modelSingularName));
         const currentEntityRepository = this.options.entityManager.getRepository(currentEntityTarget);
 
-        const relatedEntityTarget = this.getEntityTarget(classify(this.options.relationModelSingularName));
+        const relatedEntityTarget = this.getEntityTarget(classify(this.options.relationCoModelSingularName));
         const relatedEntityRepository = this.options.entityManager.getRepository(relatedEntityTarget)
 
         dto[this.valueFieldName] = await this.transformByCommand(dto, relatedEntityRepository, currentEntityRepository);

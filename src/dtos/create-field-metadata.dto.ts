@@ -301,7 +301,7 @@ export class CreateFieldMetadataDto {
   @ApiProperty({ description: 'Related model for the relation. Only for type=relation' })
   @IsString()
   @IsOptional()
-  relationModelSingularName: string;
+  relationCoModelSingularName: string;
 
   @ApiProperty({ description: 'Create inverse relation. Only for type=relation', })
   @IsBoolean()
@@ -319,7 +319,7 @@ export class CreateFieldMetadataDto {
 
   @ApiProperty({ description: 'Related field module. Only required for type=relation and relationType=many-to-many, i.e if the related many to many field belongs to a different model' })
   @IsOptional()
-  relationModelFieldName: string;
+  relationCoModelFieldName: string;
 
   @ApiProperty({description: 'Only for type=relation, many-to-many. This field is used to set the owner of the many-to-many relation'})
   @IsOptional()
@@ -386,20 +386,15 @@ export class CreateFieldMetadataDto {
   @IsOptional()
   columnName: string
 
+  @ApiProperty({ description: 'Relation CoModel Column Name of Field', })
+  @IsString()
+  @IsOptional()
+  relationCoModelColumnName: string
+
   @ApiProperty({ description: "Is User Key" })
   @IsOptional()
   @IsBoolean()
   readonly isUserKey: boolean
-
-  @ApiProperty({ description: 'Relation Join Column Name of Field', })
-  @IsString()
-  @IsOptional()
-  relationJoinColumnName: string
-
-  @ApiProperty({ description: 'Join Column Name of Field', })
-  @IsString()
-  @IsOptional()
-  joinColumnName: string
 
   @ApiProperty({ description: 'Relation Join Table Name of Field', })
   @IsString()
