@@ -63,7 +63,7 @@ export class FieldMetadataController {
 
     @ApiBearerAuth("jwt")
     @Delete(':id')
-    remove(@Param('id') id: number) {
+    async delete(@Param('id') id: number) {
         return this.fieldMetadataService.remove(id);
     }
 
