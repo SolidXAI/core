@@ -20,13 +20,13 @@ export class Media extends CommonEntity {
     relativeUri: string;
 
     @Column({ name: "mime_type" })
-    mimeType: string;
+    mimeType: string = "application";
 
     @Column({ name: "file_size" })
-    fileSize: number;
+    fileSize: number = 0;
 
     @Column({ name: "original_file_name" })
-    originalFileName: string;
+    originalFileName: string = "NA";
 
     @Index()
     @ManyToOne(() => MediaStorageProviderMetadata)
