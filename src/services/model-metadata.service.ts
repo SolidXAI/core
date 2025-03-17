@@ -343,6 +343,7 @@ export class ModelMetadataService {
         description: model.description,
         dataSource: model.dataSource,
         dataSourceType: model.dataSourceType,
+        tableName: model.tableName,
         fields: []
       }
 
@@ -606,6 +607,7 @@ export class ModelMetadataService {
         description: model.description,
         dataSource: model.dataSource,
         dataSourceType: model.dataSourceType,
+        tableName: model.tableName,
         fields: []
       }
 
