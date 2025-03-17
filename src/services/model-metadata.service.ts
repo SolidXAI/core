@@ -715,7 +715,9 @@ export class ModelMetadataService {
     const refreshModelCodeOutput = await this.generateModelCode(options);
     const removeFieldCodeOuput = await this.generateRemoveFieldsCode(options);
 
-    const listViewLayout = model.fields.map(field => ({
+    const jsonFieldsList = model.fields.filter((field: FieldMetadata) => field.isSystem !== true);
+
+    const listViewLayout = jsonFieldsList.map(field => ({
       type: "field",
       attrs: {
         name: `${field.name}`,
@@ -724,7 +726,7 @@ export class ModelMetadataService {
       }
     }));
 
-    const formViewLayout = model.fields.map(field => ({
+    const formViewLayout = jsonFieldsList.map(field => ({
       type: "field",
       attrs: {
         name: `${field.name}`
@@ -932,12 +934,12 @@ export class ModelMetadataService {
     const { modelName, fieldName } = data;
 
     const model = await this.modelMetadataRepo.findOne({
-        where: { singularName: modelName },
-        relations: ['fields', 'userKeyField'],
+      where: { singularName: modelName },
+      relations: ['fields', 'userKeyField'],
     });
 
     if (!model) {
-        throw new Error(`Model with name ${modelName} not found`);
+      throw new Error(`Model with name ${modelName} not found`);
     }
 
     if (model.userKeyField) {
@@ -946,7 +948,7 @@ export class ModelMetadataService {
 
     const fieldToUpdate = model.fields.find(field => field.name === fieldName);
     if (!fieldToUpdate) {
-        throw new Error(`Field with name ${fieldName} not found in model ${modelName}`);
+      throw new Error(`Field with name ${fieldName} not found in model ${modelName}`);
     }
 
     fieldToUpdate.isUserKey = true;
