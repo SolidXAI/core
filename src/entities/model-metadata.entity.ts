@@ -30,7 +30,7 @@ export class ModelMetadata extends CommonEntity {
     @Column({ name: "data_source_type" })
     dataSourceType: string;
 
-    @Column({ name: "enable_soft_delete", default: true })
+    @Column({ name: "enable_soft_delete", default: false })
     enableSoftDelete: boolean;
 
     @Column({ name: "enable_audit_tracking", default: false })
