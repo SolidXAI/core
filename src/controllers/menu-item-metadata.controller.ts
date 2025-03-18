@@ -6,6 +6,8 @@ import { CreateMenuItemMetadataDto } from '../dtos/create-menu-item-metadata.dto
 import { UpdateMenuItemMetadataDto } from '../dtos/update-menu-item-metadata.dto';
 import { ActiveUser } from 'src/decorators/active-user.decorator';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
+import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
+import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 
 @ApiTags('App')
 @Controller('menu-item-metadata') //FIXME: Change this to the model plural name 
@@ -15,23 +17,23 @@ export class MenuItemMetadataController {
   @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateMenuItemMetadataDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-    return this.service.create(createDto, files);
+  create(@Body() createDto: CreateMenuItemMetadataDto, @UploadedFiles() files: Array<Express.Multer.File>,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
+    return this.service.create(createDto, files,solidRequestContext);
   }
 
   @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateMenuItemMetadataDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
-    return this.service.insertMany(createDtos, filesArray);
+  insertMany(@Body() createDtos: CreateMenuItemMetadataDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = [],@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
+    return this.service.insertMany(createDtos, filesArray,solidRequestContext);
   }
 
 
   @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateMenuItemMetadataDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-    return this.service.update(id, updateDto, files);
+  update(@Param('id') id: number, @Body() updateDto: UpdateMenuItemMetadataDto, @UploadedFiles() files: Array<Express.Multer.File>,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
+    return this.service.update(id, updateDto, files,false,solidRequestContext);
   }
 
   @ApiBearerAuth("jwt")
@@ -46,8 +48,8 @@ export class MenuItemMetadataController {
   @ApiQuery({ name: 'populateMedia', required: false, type: Array })
   @ApiQuery({ name: 'filters', required: false, type: Array })
   @Get()
-  async findMany(@Query() query: any) {
-    return this.service.find(query);
+  async findMany(@Query() query: any,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
+    return this.service.find(query,solidRequestContext);
   }
 
   // /api/solid-menu-item/me
@@ -61,19 +63,19 @@ export class MenuItemMetadataController {
 
   @ApiBearerAuth("jwt")
   @Get(':id')
-  async findOne(@Param('id') id: string, @Query() query: any) {
-    return this.service.findOne(+id, query);
+  async findOne(@Param('id') id: string, @Query() query: any,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
+    return this.service.findOne(+id, query,solidRequestContext);
   }
 
   @Delete('/bulk')
-  async deleteMany(@Body() ids: number[]) {
-    return this.service.deleteMany(ids);
+  async deleteMany(@Body() ids: number[],@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
+    return this.service.deleteMany(ids,solidRequestContext);
   }
 
   @ApiBearerAuth("jwt")
   @Delete(':id')
-  async delete(@Param('id') id: number) {
-    return this.service.delete(id);
+  async delete(@Param('id') id: number,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
+    return this.service.delete(id,solidRequestContext);
   }
 
 }

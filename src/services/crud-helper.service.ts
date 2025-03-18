@@ -1,12 +1,14 @@
 import { Brackets, SelectQueryBuilder, WhereExpressionBuilder } from "typeorm";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
+import { classify } from "@angular-devkit/core/src/utils/strings";
+import { ActiveUserData } from "src/interfaces/active-user-data.interface";
 
 export class CrudHelperService {
     constructor(
 
     ) { }
 
-    
+
     private orderOptions(sort: any[] = []) {
         const orderOptions = {};
         sort.forEach((s: string) => {
@@ -51,7 +53,7 @@ export class CrudHelperService {
                 }
                 else { // Recursively call the applyFilters method to handle nested conditions
                     selectQb.leftJoin(`${alias}.${key}`, key);
-                    this.applyFilters(qb, primaryFilterObj, key, selectQb);    
+                    this.applyFilters(qb, primaryFilterObj, key, selectQb);
                 }
             });
         }
@@ -139,7 +141,7 @@ export class CrudHelperService {
         }, {});
     }
 
-    private normalize(value: string|string[]): string[] {
+    private normalize(value: string | string[]): string[] {
         if (!value) return [];// if the value is nullish, then return an empty array
         return Array.isArray(value) ? value : [value];        // if the value is an array, return it as is, otherwise return it as an array
     }
@@ -150,7 +152,7 @@ export class CrudHelperService {
 
     buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
-        const { fields, sort, groupBy, populate = [] } = basicFilterDto; 
+        const { fields, sort, groupBy, populate = [] } = basicFilterDto;
 
         // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
         const normalizedFields = this.normalize(fields);
@@ -158,7 +160,7 @@ export class CrudHelperService {
         const normalizedSort = this.normalize(sort);
         const normalizedGroupBy = this.normalize(groupBy);
         if (normalizedGroupBy.length > 1) {
-             throw new Error('buildFilterQuery: Only 1 Group by field is supported currently');
+            throw new Error('buildFilterQuery: Only 1 Group by field is supported currently');
         }
 
         if (filters) {
@@ -171,7 +173,7 @@ export class CrudHelperService {
         if (normalizedFields && normalizedFields.length) {
             qb.select(normalizedFields.map(field => {
                 // If the field contains a (, do not prefix the entity alias
-                return this.isAggregateField(field) ?  field : `${entityAlias}.${field}`;
+                return this.isAggregateField(field) ? field : `${entityAlias}.${field}`;
             }));
         }
 
@@ -200,11 +202,11 @@ export class CrudHelperService {
         if (showSoftDeleted === 'inclusive') {
             qb.withDeleted();
         }
-        
+
         if (showSoftDeleted === 'exclusive') {
             qb.withDeleted();
             qb.where(`${entityAlias}.deletedAt IS NOT NULL`);
-        }        
+        }
 
         // Apply the group by options
         if (normalizedGroupBy && normalizedGroupBy.length) {
@@ -245,9 +247,9 @@ export class CrudHelperService {
 
     getGroupName(group: any, alias: string): string {
         return Object.keys(group)
-        .filter(key => !this.isAggregateFieldKey(key, alias))
-        .map(key => group[key])
-        .join('_');
+            .filter(key => !this.isAggregateFieldKey(key, alias))
+            .map(key => group[key])
+            .join('_');
     }
 
     createGroupRecords(group: any, alias: string, groupData: any) {
@@ -271,5 +273,37 @@ export class CrudHelperService {
             ...groupAggregateValues
         };
     }
+
+
+    hasReadPermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
+        const permissionNames = [`${classify(modelName)}Controller.findOne`, `${classify(modelName)}Controller.findMany`];
+        const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
+        return matchingPermssions.length > 0
+    }
+
+    hasWritePermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
+        const permissionNames = [`${classify(modelName)}Controller.create`, `${classify(modelName)}Controller.insertMany`, `${classify(modelName)}Controller.update`];
+        const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
+        return matchingPermssions.length > 0
+    }
+
+    hasUpdatePermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
+        const permissionNames = [`${classify(modelName)}Controller.update`];
+        const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
+        return matchingPermssions.length > 0
+    }
+
+    hasDeletePermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
+        const permissionNames = [`${classify(modelName)}Controller.delete`, `${classify(modelName)}Controller.deleteMany`];
+        const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
+        return matchingPermssions.length > 0
+    }
+    hasCreatePermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
+        const permissionNames = [`${classify(modelName)}Controller.create`];
+        const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
+        return matchingPermssions.length > 0
+    }
+
+
 
 }
