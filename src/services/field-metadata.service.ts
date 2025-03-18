@@ -658,7 +658,7 @@ export class FieldMetadataService {
                     "ormType",
                     "isSystem",
                     "defaultValue",
-                    // "required",
+                    "required",
                     // "unique",
                     "index",
                     "private",
