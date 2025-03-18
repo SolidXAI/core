@@ -343,6 +343,8 @@ export class ModelMetadataService {
         description: model.description,
         dataSource: model.dataSource,
         dataSourceType: model.dataSourceType,
+        tableName: model.tableName,
+        userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
         fields: []
       }
 
@@ -606,6 +608,8 @@ export class ModelMetadataService {
         description: model.description,
         dataSource: model.dataSource,
         dataSourceType: model.dataSourceType,
+        tableName: model.tableName,
+        userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
         fields: []
       }
 
