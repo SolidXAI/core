@@ -43,7 +43,7 @@ export class SmsTemplateController {
 
   @ApiBearerAuth("jwt")
   @Delete(':id')
-  remove(@Param('id') id: string) {
+  async delete(@Param('id') id: number) {
     return this.smsTemplateService.remove(+id);
   }
 }
