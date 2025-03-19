@@ -61,33 +61,4 @@ export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
 
 }
 
-export const hasReadPermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
-  const permissionNames = [`${classify(modelName)}Controller.findOne`, `${classify(modelName)}Controller.findMany`];
-  const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
-  return matchingPermssions.length > 0
-}
-
-export const hasWritePermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
-  const permissionNames = [`${classify(modelName)}Controller.create`, `${classify(modelName)}Controller.insertMany`, `${classify(modelName)}Controller.update`];
-  const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
-  return matchingPermssions.length > 0
-}
-
-export const hasUpdatePermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
-  const permissionNames = [`${classify(modelName)}Controller.update`];
-  const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
-  return matchingPermssions.length > 0
-}
-
-export const hasDeletePermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
-  const permissionNames = [`${classify(modelName)}Controller.delete`, `${classify(modelName)}Controller.deleteMany`];
-  const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
-  return matchingPermssions.length > 0
-}
-export const hasCreatePermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
-  const permissionNames = [`${classify(modelName)}Controller.create`];
-  const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
-  return matchingPermssions.length > 0
-}
-
 

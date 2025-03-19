@@ -36,6 +36,7 @@ import { MediaService } from "./media.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
+import { SolidRequestContextDto } from "src/dtos/solid-request-context.dto";
 
 const DEFAULT_LIMIT = 10;
 const DEFAULT_OFFSET = 0;
@@ -57,7 +58,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         //We can just have the Model Entity here
     ) { }
 
-    async create(createDto: any, files: Express.Multer.File[] = []): Promise<T> {
+    async create(createDto: any, files: Express.Multer.File[] = [],solidRequestContext :any = {}): Promise<T> {
         // This class will be extended by the generated service class i.e PersonService
         // The data required to identify the model and module name will be passed from the generate CrudService subclass
         //TODO: Algorithm to create the entity
@@ -66,6 +67,13 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         let hasMediaFields = false;
 
         const model = await this.loadModel();
+        // Check wheather user has create permission for model
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasCreatePermissionOnModel(solidRequestContext.activeUser, model.singularName);
+            if (!hasPermission) {
+                throw new BadRequestException('Forbidden');
+            }
+        }
         // const inverseRelationFields = await this.loadInverseRelationFields();
         const fieldsToProcess = [...model.fields];
 
@@ -162,9 +170,17 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
     }
 
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
-    async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate: boolean = false): Promise<T> {
+    async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate: boolean = false, solidRequestContext: any = {}): Promise<T> {
         if (!id) {
             throw new Error('Id is required for update');
+        }
+        const model = await this.loadModel();
+        // Check wheather user has update permission for model
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasUpdatePermissionOnModel(solidRequestContext.activeUser, model.singularName);
+            if (!hasPermission) {
+                throw new BadRequestException('Forbidden');
+            }
         }
         const entity = await this.repo.findOne({
             where: {
@@ -184,7 +200,6 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         // FIXME This can be optimized to take in module name i.e (handle scenario wherein same model exists in multiple modules)
         let hasMediaFields = false;
 
-        const model = await this.loadModel();
         const fieldsToProcess = [...model.fields];
 
         // 2. Loop through the fields with a switch statement
@@ -208,11 +223,19 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
     }
 
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
-    async delete(id: number) {
+    async delete(id: number, solidRequestContext: any = {}) {
         if (!id) {
             throw new Error('Id is required for update');
         }
-
+        const loadedmodel = await this.loadModel();
+        // Check wheather user has update permission for model
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasDeletePermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
+            if (!hasPermission) {
+                throw new BadRequestException('Forbidden');
+            }
+        }
+        
         const model = await this.modelMetadataService.findOneBySingularName(this.modelName, {
             fields: {
                 model: true,
@@ -305,25 +328,25 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             case SolidFieldType.relation: {
                 // Identify if the field is for the inverse side or not
                 if (fieldMetadata.relationType === RelationType.manyToOne) {
-                        const manyToOneOptions: ManyToOneRelationFieldOptions = {
-                            ...commonOptions,
-                            relationCoModelSingularName: fieldMetadata.relationCoModelSingularName,
-                            modelUserKeyFieldName: fieldMetadata.model.userKeyField?.name,
-                            modelSingularName: fieldMetadata.model.singularName,
-                            entityManager,
-                        }
-                        return new ManyToOneRelationFieldCrudManager(manyToOneOptions);
+                    const manyToOneOptions: ManyToOneRelationFieldOptions = {
+                        ...commonOptions,
+                        relationCoModelSingularName: fieldMetadata.relationCoModelSingularName,
+                        modelUserKeyFieldName: fieldMetadata.model.userKeyField?.name,
+                        modelSingularName: fieldMetadata.model.singularName,
+                        entityManager,
+                    }
+                    return new ManyToOneRelationFieldCrudManager(manyToOneOptions);
                 }
                 else if (fieldMetadata.relationType === RelationType.oneToMany) {
-                        const oneToManyOptions: OneToManyRelationFieldOptions = {
-                            ...commonOptions,
-                            relationCoModelSingularName: fieldMetadata.relationCoModelSingularName,
-                            modelSingularName: fieldMetadata.model.singularName,
-                            entityManager,
-                            inverseFieldName: fieldMetadata.relationCoModelFieldName,
-                            inverseRelationCoModelFieldName: fieldMetadata.name,
-                        }
-                        return new OneToManyRelationFieldCrudManager(oneToManyOptions);
+                    const oneToManyOptions: OneToManyRelationFieldOptions = {
+                        ...commonOptions,
+                        relationCoModelSingularName: fieldMetadata.relationCoModelSingularName,
+                        modelSingularName: fieldMetadata.model.singularName,
+                        entityManager,
+                        inverseFieldName: fieldMetadata.relationCoModelFieldName,
+                        inverseRelationCoModelFieldName: fieldMetadata.name,
+                    }
+                    return new OneToManyRelationFieldCrudManager(oneToManyOptions);
                 }
                 else if (fieldMetadata.relationType === RelationType.manyTomany) {
                     if (fieldMetadata.isRelationManyToManyOwner) {
@@ -335,7 +358,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                             entityManager,
                             fieldName: fieldMetadata.name,
                         }
-                        return new ManyToManyRelationFieldCrudManager(manyToManyOptions); 
+                        return new ManyToManyRelationFieldCrudManager(manyToManyOptions);
                     }
                     else {
                         const inverseManyToManyOptions: ManyToManyRelationFieldOptions = {
@@ -392,10 +415,18 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
     }
 
 
-    async find(basicFilterDto: BasicFilterDto) {
+    async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}) {
         const alias = 'entity';
         // Extract the required keys from the input query
-        let { limit, offset, populateMedia, populateGroup,groupFilter } = basicFilterDto;
+        let { limit, offset, populateMedia, populateGroup, groupFilter } = basicFilterDto;
+        const model = await this.loadModel();
+        // Check wheather user has update permission for model
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasReadPermissionOnModel(solidRequestContext.activeUser, model.singularName);
+            if (!hasPermission) {
+                throw new BadRequestException('Forbidden');
+            }
+        }
 
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
@@ -403,7 +434,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
 
         if (basicFilterDto.groupBy) {
             // Get the records and the count
-            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter,populateGroup, alias, populateMedia);
+            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia);
             return {
                 groupMeta,
                 groupRecords,
@@ -430,7 +461,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto,populateGroup: boolean, alias: string, populateMedia: string[]) {
+    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[]) {
         const groupByResult = await qb.getRawMany();
 
         const groupMeta = [];
@@ -515,8 +546,18 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
     }
 
-    async findOne(id: number, query: any) {
+    async findOne(id: number, query: any, solidRequestContext: any = {}) {
         const { populate = [], fields = [], populateMedia = [] } = query;
+
+        const model = await this.loadModel();
+        // Check wheather user has update permission for model
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasReadPermissionOnModel(solidRequestContext.activeUser, model.singularName);
+            if (!hasPermission) {
+                throw new BadRequestException('Forbidden');
+            }
+        }
+
         const entity = await this.repo.findOne({
             where: {
                 //@ts-ignore
@@ -557,12 +598,21 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         return entity;
     }
 
-    async insertMany(createDtos: any[], filesArray: Express.Multer.File[][] = []): Promise<T[]> {
+    async insertMany(createDtos: any[], filesArray: Express.Multer.File[][] = [],solidRequestContext: any = {}): Promise<T[]> {
 
 
         // if (createDtos.length !== filesArray.length) {
         //     throw new BadRequestException('Mismatch between data objects and file arrays.');
         // }
+
+        const loadedmodel = await this.loadModel();
+        // Check wheather user has create permission for model
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasCreatePermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
+            if (!hasPermission) {
+                throw new BadRequestException('Forbidden');
+            }
+        }
 
         // Fetch model metadata once
         const model = await this.modelMetadataService.findOneBySingularName(this.modelName, {
@@ -607,12 +657,20 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         return savedEntities;
     }
 
-    async deleteMany(ids: number[]): Promise<any> {
+    async deleteMany(ids: number[],solidRequestContext: any = {}): Promise<any> {
 
         if (!ids || ids.length === 0) {
             throw new Error('At least one ID is required for deletion');
         }
 
+        const loadedmodel = await this.loadModel();
+        // Check wheather user has update permission for model
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasDeletePermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
+            if (!hasPermission) {
+                throw new BadRequestException('Forbidden');
+            }
+        }
         const model = await this.modelMetadataService.findOneBySingularName(this.modelName, {
             fields: {
                 model: true,
@@ -645,41 +703,41 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
 
     async recover(id: number) {
         try {
-          const softDeletedRows = await this.repo.findOne({
-            where: { 
-                //@ts-ignore
-                id, deletedAt: Not(IsNull()) 
-            },
-            withDeleted: true,
-          });
-      
-          if (!softDeletedRows) {
-            throw new Error('No soft-deleted record found with the given ID.');
-          }
-      
-          await this.repo.update(id, {
-                //@ts-ignore
-                deletedAt: null, deletedTracker: "not-deleted" 
+            const softDeletedRows = await this.repo.findOne({
+                where: {
+                    //@ts-ignore
+                    id, deletedAt: Not(IsNull())
+                },
+                withDeleted: true,
             });
-      
-          return { message: 'Record successfully recovered', data: softDeletedRows };
-        } catch (error) {
-          if (error instanceof QueryFailedError) {
-            if ((error as any).code === '23505') {
-              throw new Error('Another record is conflicting with the record you are attempting to Un-Archive, either delete or change the other record so as to avoid this conflict.');
+
+            if (!softDeletedRows) {
+                throw new Error('No soft-deleted record found with the given ID.');
             }
-          }
-    
-          throw new Error(error);
+
+            await this.repo.update(id, {
+                //@ts-ignore
+                deletedAt: null, deletedTracker: "not-deleted"
+            });
+
+            return { message: 'Record successfully recovered', data: softDeletedRows };
+        } catch (error) {
+            if (error instanceof QueryFailedError) {
+                if ((error as any).code === '23505') {
+                    throw new Error('Another record is conflicting with the record you are attempting to Un-Archive, either delete or change the other record so as to avoid this conflict.');
+                }
+            }
+
+            throw new Error(error);
         }
     }
-    
+
     async recoverMany(ids: number[]) {
         try {
             if (!ids || ids.length === 0) {
                 throw new Error("No IDs provided for recovery.");
             }
-    
+
             // Find soft-deleted records matching the given IDs
             const softDeletedRows = await this.repo.find({
                 where: {
@@ -689,18 +747,18 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 },
                 withDeleted: true,
             });
-    
+
             if (softDeletedRows.length === 0) {
                 throw new Error("No matching soft-deleted records found.");
             }
-    
+
             // Recover the specific records by setting deletedAt to null
             await this.repo.update(
                 //@ts-ignore
                 { id: In(ids) },
                 { deletedAt: null, deletedTracker: "not-deleted" }
             );
-    
+
             return { message: "Selected records successfully recovered", recoveredIds: ids };
         } catch (error) {
             if (error instanceof QueryFailedError) {
@@ -710,10 +768,10 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                     );
                 }
             }
-    
+
             throw new Error(error);
         }
     }
-    
+
 
 }

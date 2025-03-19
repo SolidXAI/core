@@ -75,7 +75,7 @@ export class UserService extends CRUDService<User> {
     // return entity;
   }
 
-  async updateUser(id: any, updateDto, files) {
+  async updateUser(id: any, updateDto, files,solidRequestContext :any = {}) {
     const user = await this.repo.findOne({
       where: { id: id },
       relations: {

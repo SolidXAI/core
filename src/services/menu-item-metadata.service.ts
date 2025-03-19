@@ -17,7 +17,6 @@ import { UpdateMenuItemMetadataDto } from '../dtos/update-menu-item-metadata.dto
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 import { dasherize } from '@angular-devkit/core/src/utils/strings';
-import { hasReadPermissionOnModel } from './permission-metadata.service';
 
 @Injectable()
 export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
@@ -148,13 +147,13 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
   // Recursive function to build the tree
   private buildMenuTree(rootItems: MenuItemMetadata[], allMenuItems: MenuItemMetadata[], activeUser: ActiveUserData): any[] {
     const menuItemsData = rootItems.map(rootItem => {
-      const allowedMenuItems =allMenuItems.filter(i => {
-        if(!i.parentMenuItem){
+      const allowedMenuItems = allMenuItems.filter(i => {
+        if (!i.parentMenuItem) {
           return true
-        }else{
-          const hasPermission = hasReadPermissionOnModel(activeUser, i.action.model.singularName);
-          return  hasReadPermissionOnModel(activeUser, i.action.model.singularName)
-        }}); 
+        } else {
+          return this.crudHelperService.hasReadPermissionOnModel(activeUser, i.action.model.singularName)
+        }
+      });
       // Get immediate children of the current loop variable menuItem.
       const children = allowedMenuItems.filter(item => item.parentMenuItem && item.parentMenuItem.id === rootItem.id);
 
@@ -166,7 +165,7 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
         path = rootItem.action.customComponent;
       }
       if (rootItem.action && rootItem.action.type === 'solid') {
-        if (hasReadPermissionOnModel(activeUser, rootItem.action.model.singularName)) {
+        if (this.crudHelperService.hasReadPermissionOnModel(activeUser, rootItem.action.model.singularName)) {
 
 
           // TODO: Here we are assuming that we will always take the user to collection view of a model. 
