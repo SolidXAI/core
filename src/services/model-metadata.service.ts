@@ -389,7 +389,7 @@ export class ModelMetadataService {
 
       const menu = {
         displayName: `${model.displayName}`,
-        name: `${model.singularName}`,
+        name: `${model.singularName}-menu-item`,
         sequenceNumber: 1,
         actionUserKey: `${model.singularName}-list-view`,
         moduleUserKey: `${model.module.name}`,
@@ -448,7 +448,7 @@ export class ModelMetadataService {
                     },
                     {
                       type: "column",
-                      attrs: { name: "group-1", label: "", className: "col-6" },
+                      attrs: { name: "group-2", label: "", className: "col-6" },
                       children: column2Fields
                     }]
                 },
@@ -737,6 +737,10 @@ export class ModelMetadataService {
       }
     }));
 
+    const midIndex = Math.ceil(formViewLayout.length / 2);
+    const firstHalf = formViewLayout.slice(0, midIndex);
+    const secondHalf = formViewLayout.slice(midIndex);
+
     const resolvedModule = await this.dataSource.getRepository(ModuleMetadata).findOne({
       where: { id: model.module.id }
     });
@@ -788,7 +792,12 @@ export class ModelMetadataService {
                     {
                       type: "column",
                       attrs: { name: "group-1", label: "", className: "col-6" },
-                      children: formViewLayout
+                      children: firstHalf
+                    },
+                    {
+                      type: "column",
+                      attrs: { name: "group-2", label: "", className: "col-6" },
+                      children: secondHalf
                     }
                   ]
                 }
