@@ -136,6 +136,7 @@ import { Setting } from './entities/setting.entity';
 import { SettingService } from './services/setting.service';
 import { SettingController } from './controllers/setting.controller';
 import { ModuleMetadataHelperService } from './helpers/module-metadata-helper.service';
+import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
 
 
 @Global()
@@ -294,6 +295,7 @@ import { ModuleMetadataHelperService } from './helpers/module-metadata-helper.se
     PermissionMetadataSeederService,
     UserService,
     SettingService,
+    ConcatComputedFieldProvider,
   ],
   exports: [
     ModuleMetadataService,
