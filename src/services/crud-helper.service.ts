@@ -303,6 +303,11 @@ export class CrudHelperService {
         const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
         return matchingPermssions.length > 0
     }
+    hasRecoverPermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
+        const permissionNames = [`${classify(modelName)}Controller.recover`, `${classify(modelName)}Controller.recoverMany`];
+        const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
+        return matchingPermssions.length > 0
+    }
 
 
 

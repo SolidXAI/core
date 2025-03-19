@@ -701,8 +701,17 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         // return removedEntities
     }
 
-    async recover(id: number) {
+    async recover(id: number,solidRequestContext: any = {}) {
         try {
+            const loadedmodel = await this.loadModel();
+            // Check wheather user has update permission for model
+            if (solidRequestContext.activeUser) {
+                const hasPermission = this.crudHelperService.hasRecoverPermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
+                if (!hasPermission) {
+                    throw new BadRequestException('Forbidden');
+                }
+            }
+
             const softDeletedRows = await this.repo.findOne({
                 where: {
                     //@ts-ignore
@@ -732,8 +741,17 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
     }
 
-    async recoverMany(ids: number[]) {
+    async recoverMany(ids: number[],solidRequestContext: any = {}) {
         try {
+            const loadedmodel = await this.loadModel();
+            // Check wheather user has update permission for model
+            if (solidRequestContext.activeUser) {
+                const hasPermission = this.crudHelperService.hasRecoverPermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
+                if (!hasPermission) {
+                    throw new BadRequestException('Forbidden');
+                }
+            }
+
             if (!ids || ids.length === 0) {
                 throw new Error("No IDs provided for recovery.");
             }
