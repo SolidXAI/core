@@ -1,20 +1,34 @@
-import { IsEmail, IsNotEmpty, IsOptional, MaxLength, MinLength } from 'class-validator';
+import { IsEmail, IsNotEmpty, IsOptional, MaxLength, MinLength, IsString, Matches, IsBoolean } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
 
 export class CreateSmsTemplateDto {
     @IsNotEmpty()
+    @Matches(/[a-z]+(-[a-z]+)*/)
+    @IsString()
+    @ApiProperty()
     name: string;
-
     @IsNotEmpty()
+    @IsString()
+    @ApiProperty()
     displayName: string;
-
     @IsOptional()
+    @IsString()
+    @ApiProperty()
     body: string;
-
     @IsOptional()
+    @IsString()
+    @ApiProperty()
     smsProviderTemplateId: string;
-
-    @IsNotEmpty()
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
     description: string;
-
-    active: boolean;
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty()
+    active: boolean = true;
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    type: string;
 }

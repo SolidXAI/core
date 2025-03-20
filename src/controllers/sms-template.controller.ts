@@ -1,49 +1,70 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaginationQueryDto } from 'src/dtos/pagination-query.dto';
 import { Roles } from 'src/decorators/roles.decorator';
 import { SmsTemplateService } from '../services/sms-template.service';
 import { CreateSmsTemplateDto } from '../dtos/create-sms-template.dto';
 import { UpdateSmsTemplateDto } from '../dtos/update-sms-template.dto';
+import { Public } from 'src/decorators/public.decorator';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
 
-@Controller('sms-templates')
+@Controller('sms-template')
 @ApiTags("Common")
 export class SmsTemplateController {
-  constructor(private readonly smsTemplateService: SmsTemplateService) { }
+  constructor(private readonly service: SmsTemplateService) { }
 
-  @ApiBearerAuth("jwt")
-  @Roles('Admin')
-  @Post()
-  create(@Body() dto: CreateSmsTemplateDto) {
-    return this.smsTemplateService.create(dto);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Roles('Admin')
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'offset', required: false, type: Number })    
-  @Get()
-  findAll(@Query() paginationQuery: PaginationQueryDto) {
-    return this.smsTemplateService.findAll(paginationQuery);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Roles('Admin')
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.smsTemplateService.findOne(+id);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateSmsTemplateDto) {
-    return this.smsTemplateService.update(+id, dto);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Delete(':id')
-  async delete(@Param('id') id: number) {
-    return this.smsTemplateService.remove(+id);
-  }
+   @Public()
+    @Post()
+    @UseInterceptors(AnyFilesInterceptor())
+    create(@Body() createDto: CreateSmsTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+      return this.service.create(createDto, files);
+    }
+  
+    @Public()
+    @Post('/bulk')
+    @UseInterceptors(AnyFilesInterceptor())
+    insertMany(@Body() createDtos: CreateSmsTemplateDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+      return this.service.insertMany(createDtos, filesArray);
+    }
+  
+    @Public()
+    @Put(':id')
+    @UseInterceptors(AnyFilesInterceptor())
+    update(@Param('id') id: number, @Body() updateDto: UpdateSmsTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+      return this.service.update(id, updateDto, files);
+    }
+  
+    @Public()
+    @ApiQuery({ name: 'showSoftDeleted', required: false, type: Boolean })
+    @ApiQuery({ name: 'showOnlySoftDeleted', required: false, type: Boolean })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    @ApiQuery({ name: 'offset', required: false, type: Number })
+    @ApiQuery({ name: 'fields', required: false, type: Array })
+    @ApiQuery({ name: 'sort', required: false, type: Array })
+    @ApiQuery({ name: 'groupBy', required: false, type: Array })
+    @ApiQuery({ name: 'populate', required: false, type: Array })
+    @ApiQuery({ name: 'populateMedia', required: false, type: Array })
+    @ApiQuery({ name: 'filters', required: false, type: Array })
+    @Get()
+    async findMany(@Query() query: any) {
+      return this.service.find(query);
+    }
+  
+    @Public()
+    @Get(':id')
+    async findOne(@Param('id') id: string, @Query() query: any) {
+      return this.service.findOne(+id, query);
+    }
+  
+    @Delete('/bulk')
+    async deleteMany(@Body() ids: number[]) {
+      return this.service.deleteMany(ids);
+    }
+  
+    @Public()
+    @Delete(':id')
+    async delete(@Param('id') id: number) {
+      return this.service.delete(id);
+    }
 }

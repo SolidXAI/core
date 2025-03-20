@@ -6,72 +6,48 @@ import { PaginationQueryDto } from 'src/dtos/pagination-query.dto';
 import { SmsTemplate } from '../entities/sms-template.entity';
 import { CreateSmsTemplateDto } from '../dtos/create-sms-template.dto';
 import { UpdateSmsTemplateDto } from '../dtos/update-sms-template.dto';
+import { CRUDService } from './crud.service';
+import { ModelMetadataService } from './model-metadata.service';
+import { ModuleMetadataService } from './module-metadata.service';
+import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
+import { ConfigService } from '@nestjs/config';
+import { FileService } from './file.service';
+import { MediaService } from './media.service';
+import { DiscoveryService } from '@nestjs/core';
+import { CrudHelperService } from './crud-helper.service';
 
 @Injectable()
-export class SmsTemplateService {
+export class SmsTemplateService extends CRUDService<SmsTemplate>{
     constructor(
-        @InjectRepository(SmsTemplate)
-        private readonly smsTemplateRepo: Repository<SmsTemplate>,
-        @InjectEntityManager()
-        private readonly entityManager: EntityManager,
-    ) { }
+        readonly modelMetadataService: ModelMetadataService,
+            readonly moduleMetadataService: ModuleMetadataService,
+            readonly mediaStorageProviderService: MediaStorageProviderMetadataService,
+            readonly configService: ConfigService,
+            readonly fileService: FileService,
+            readonly mediaService: MediaService,
+            readonly discoveryService: DiscoveryService,
+            readonly crudHelperService: CrudHelperService,
+            @InjectEntityManager()
+            readonly entityManager: EntityManager,
+            @InjectRepository(SmsTemplate, 'default')
+            readonly repo: Repository<SmsTemplate>,
+    ) {
+        super(modelMetadataService, moduleMetadataService, mediaStorageProviderService, configService, fileService, mediaService, discoveryService, crudHelperService, entityManager, repo, 'smsTemplate', 'app-builder');
+     }
 
-    create(createSmsTemplateDto: CreateSmsTemplateDto) {
-        const entity = this.smsTemplateRepo.create(createSmsTemplateDto);
-        return this.smsTemplateRepo.save(entity);
+    async removeByName(name: string) {
+        const entity = await this.findOneByName(name);
+        if (entity) {
+            return await this.repo.remove(entity);
+        }
     }
 
     async findOneByName(name: string) {
-        const entity = await this.smsTemplateRepo.findOne({
+        const entity = await this.repo.findOne({
             where: {
                 name: name,
             },
         });
         return entity;
     }
-
-    async findAll(paginationQuery: PaginationQueryDto) {
-        const { limit, offset } = paginationQuery;
-
-        return await this.smsTemplateRepo.find({
-            skip: offset,
-            take: limit,
-        });
-    }
-
-    async findOne(id: number) {
-        const entity = await this.smsTemplateRepo.findOne({
-            where: {
-                id: id,
-            },
-        });
-        if (!entity) {
-            throw new NotFoundException(`Sms template #${id} not found`);
-        }
-        return entity;
-    }
-
-    async update(id: number, updateSmsTemplateDto: UpdateSmsTemplateDto) {
-        const entity = await this.smsTemplateRepo.preload({
-            id,
-            ...updateSmsTemplateDto,
-        });
-        if (!entity) {
-            throw new NotFoundException(`Sms template #${id} not found`);
-        }
-        return this.smsTemplateRepo.save(entity);
-    }
-
-    async removeByName(name: string) {
-        const entity = await this.findOneByName(name);
-        if (entity) {
-            return await this.smsTemplateRepo.remove(entity);
-        }
-    }
-
-    async remove(id: number) {
-        const entity = await this.findOne(id);
-        return this.smsTemplateRepo.remove(entity);
-    }
-
 }

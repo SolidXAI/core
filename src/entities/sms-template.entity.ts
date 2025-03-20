@@ -1,24 +1,21 @@
 import { CommonEntity } from 'src/entities/common.entity';
-import { Column, Entity } from 'typeorm';
-
+import { Column, Entity, Index } from 'typeorm';
 
 @Entity("ss_sms_template")
 export class SmsTemplate extends CommonEntity {
-    @Column({ unique: true })
+    @Index({ unique: true })
+    @Column({ name: "name", type: "varchar", unique: true })
     name: string;
-
-    @Column()
+    @Column({ name: "display_name", type: "varchar" })
     displayName: string;
-
-    @Column({ type: 'text', nullable: true })
+    @Column({ name: "body", type: "varchar", nullable: true })
     body: string;
-
-    @Column({ nullable: true })
+    @Column({ type: "varchar", nullable: true })
     smsProviderTemplateId: string;
-
-    @Column({ nullable: true })
+    @Column({ name: "description", type: "text", nullable: true })
     description: string;
-
-    @Column({ default: false })
-    active: boolean;
+    @Column({ name: "active", type: "boolean", nullable: true, default: true })
+    active: boolean = true;
+    @Column({ name: "type", type: "varchar", nullable: true })
+    type: string;
 }
