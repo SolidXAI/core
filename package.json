@@ -1,6 +1,6 @@
 {
   "name": "@solidstarters/solid-core",
-  "version": "1.2.30",
+  "version": "1.2.33",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -24,7 +24,10 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "publish:patch": "node publish.js patch",
+    "publish:minor": "node publish.js minor",
+    "publish:major": "node publish.js major"
   },
   "author": "Oswald Rodrigues <oswald@logicloop.io>",
   "license": "ISC",
