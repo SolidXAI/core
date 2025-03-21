@@ -173,7 +173,7 @@ export class CrudHelperService {
         if (normalizedFields && normalizedFields.length) {
             qb.select(normalizedFields.map(field => {
                 // If the field contains a (, do not prefix the entity alias
-                return this.isAggregateField(field) ? field : `${entityAlias}.${field}`;
+                return this.wrapFieldWithAlias(field, entityAlias);
             }));
         }
 
@@ -218,6 +218,15 @@ export class CrudHelperService {
         if (limit) qb.limit(limit);
         if (offset) qb.offset(offset);
         return qb;
+    }
+
+    private wrapFieldWithAlias(field: string, entityAlias: string): string {
+        if (!this.isAggregateField(field)) return `${entityAlias}.${field}`;
+        // For aggregate fields, extract the field name from the aggregate function & wrap it with the entity alias, if it is not already wrapped
+        const fieldParts = field.split('(');
+        const aggregateFunction = fieldParts[0];
+        const fieldName = fieldParts[1].replace(')', '');
+        return `${aggregateFunction}(${entityAlias}.${fieldName})`;
     }
 
     isAggregateField(field: string): boolean {
