@@ -1,21 +1,19 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { DiscoveryService } from "@nestjs/core";
-import { EntityManager, Repository } from 'typeorm';
+import { CrudHelperService } from "src/services/crud-helper.service";
 import { CRUDService } from 'src/services/crud.service';
+import { FileService } from "src/services/file.service";
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { MediaStorageProviderMetadataService } from 'src/services/media-storage-provider-metadata.service';
-import { ConfigService } from '@nestjs/config';
-import { MediaService } from "src/services/media.service";
-import { FileService } from "src/services/file.service";
-import { CrudHelperService } from "src/services/crud-helper.service";
+import { EntityManager, Repository } from 'typeorm';
 
 
-import { ViewMetadata } from '../entities/view-metadata.entity';
+import { UpdateViewMetadataDto } from '../dtos/update-view-metadata.dto';
 import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
-import { UpdateViewMetadataDto } from '../dtos/update-view-metadata.dto';
+import { ViewMetadata } from '../entities/view-metadata.entity';
 import { ActionMetadataService } from './action-metadata.service';
 
 @Injectable()
@@ -23,10 +21,8 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
-    readonly mediaStorageProviderService: MediaStorageProviderMetadataService,
     readonly configService: ConfigService,
     readonly fileService: FileService,
-    readonly mediaService: MediaService,
     readonly discoveryService: DiscoveryService,
     readonly crudHelperService: CrudHelperService,
     readonly actionMetadataService: ActionMetadataService,
@@ -38,8 +34,10 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     private readonly fieldMetadataRepo: Repository<FieldMetadata>,
     @InjectRepository(ModelMetadata)
     private readonly modelMetadataRepo: Repository<ModelMetadata>,
+    readonly moduleRef: ModuleRef
+
   ) {
-    super(modelMetadataService, moduleMetadataService, mediaStorageProviderService, configService, fileService, mediaService, discoveryService, crudHelperService, entityManager, repo, 'viewMetadata', 'app-builder');
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'viewMetadata', 'app-builder', moduleRef);
   }
 
   // START: Custom Service Methods
@@ -58,7 +56,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       relations: {
         model: {
           userKeyField: true,  // Nested population of 'someOtherEntity' within 'model'
-        },    
+        },
         module: true,
       }
     });

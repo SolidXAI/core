@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { DiscoveryService } from "@nestjs/core";
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { Repository } from "typeorm/repository/Repository";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
@@ -31,12 +31,9 @@ import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCr
 import { FieldCrudManager } from "../interfaces";
 import { CrudHelperService } from "./crud-helper.service";
 import { FileService } from "./file.service";
-import { MediaStorageProviderMetadataService } from "./media-storage-provider-metadata.service";
-import { MediaService } from "./media.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
-import { SolidRequestContextDto } from "src/dtos/solid-request-context.dto";
 
 const DEFAULT_LIMIT = 10;
 const DEFAULT_OFFSET = 0;
@@ -45,16 +42,15 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
     constructor(
         readonly modelMetadataService: ModelMetadataService,
         readonly moduleMetadataService: ModuleMetadataService,
-        readonly mediaStorageProviderService: MediaStorageProviderMetadataService,
         readonly configService: ConfigService,
         readonly fileService: FileService,
-        readonly mediaService: MediaService,
         readonly discoveryService: DiscoveryService,
         readonly crudHelperService: CrudHelperService,
         readonly entityManager: EntityManager,
         readonly repo: Repository<T>,
         readonly modelName: string,
         readonly moduleName: string,
+        readonly moduleRef: ModuleRef
         //We can just have the Model Entity here
     ) { }
 
@@ -160,7 +156,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
 
                 // Get the storage provider implementation
-                const storageProvider = getMediaStorageProvider(this.configService, this.fileService, this.mediaService, storageProviderType);
+                const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
 
                 //Commented the below code since we will be direclty images from server on call from ui 
                 // await storageProvider.delete(savedEntity, mediaField);
@@ -533,7 +529,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 const media = await Promise.all(mediaFields.map(async (mediaField) => {
                     const storageProviderMetadata = mediaField.mediaStorageProvider;
                     const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
-                    const storageProvider = getMediaStorageProvider(this.configService, this.fileService, this.mediaService, storageProviderType);
+                    const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
                     const mediaResult = await storageProvider.retrieve(entity, mediaField);
                     mediaObj[mediaField.name] = mediaResult;
                 }));
@@ -585,7 +581,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 }
                 const storageProviderMetadata = mediaField.mediaStorageProvider;
                 const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
-                const storageProvider = getMediaStorageProvider(this.configService, this.fileService, this.mediaService, storageProviderType);
+                const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
                 const mediaResult = await storageProvider.retrieve(entity, mediaField);
                 let obj = { [mediaField.name]: mediaResult }
                 mediaObj[mediaField.name] = mediaResult;

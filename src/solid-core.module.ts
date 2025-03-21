@@ -137,6 +137,9 @@ import { SettingService } from './services/setting.service';
 import { SettingController } from './controllers/setting.controller';
 import { ModuleMetadataHelperService } from './helpers/module-metadata-helper.service';
 import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
+import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
+import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
+import { MediaRepository } from './repository/media.repository';
 
 
 @Global()
@@ -296,6 +299,9 @@ import { ConcatComputedFieldProvider } from './services/computed-fields/concat-c
     UserService,
     SettingService,
     ConcatComputedFieldProvider,
+    FileStorageProvider,
+    FileS3StorageProvider,
+    MediaRepository
   ],
   exports: [
     ModuleMetadataService,

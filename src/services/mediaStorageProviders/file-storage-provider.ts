@@ -1,13 +1,13 @@
-import { Inject, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ConfigService, ConfigType } from "@nestjs/config";
 import { MediaStorageProvider } from "src/interfaces";
 import { FileService } from "src/services/file.service";
-import { MediaService } from "../media.service";
 import { Media } from "src/entities/media.entity";
 import { CommonEntity } from "src/entities/common.entity";
 import { FieldMetadata } from "src/entities/field-metadata.entity";
-import appBuilderConfig from "src/config/app-builder.config";
+import { MediaRepository } from "src/repository/media.repository";
 
+@Injectable()
 export class FileStorageProvider<T> implements MediaStorageProvider<T> {
     private logger = new Logger(FileStorageProvider.name);
 
@@ -16,13 +16,15 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // private readonly appBuilderConfiguration: ConfigType<typeof appBuilderConfig>,
         private readonly configService: ConfigService, 
         readonly fileService: FileService,
-        readonly mediaService: MediaService
+        readonly mediaRepository: MediaRepository
+    
     ) { }
+    
     async retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         if (!(entity instanceof CommonEntity)) {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
-        const media = await this.mediaService.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
+        const media = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         // Add the full URL to the media
         media.forEach(m => {
             m['_full_url'] = `${process.env.BASE_URL}/${this.getFullFilePath(m.relativeUri)}`;
@@ -42,7 +44,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
             this.fileService.deleteFile(file.path);
 
             // Create an entry in the media table
-            const mediaEntity = await this.mediaService.create({
+            const mediaEntity = await this.mediaRepository.createMedia({
                 entityId: entity.id,
                 modelMetadataId: mediaFieldMetadata.model.id,
                 relativeUri: this.getFileName(file),
@@ -62,8 +64,8 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         if (!(entity instanceof CommonEntity)) {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
-        const existingMedia = await this.mediaService.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id,['mediaStorageProviderMetadata']);
-        this.mediaService.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
+        const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id,['mediaStorageProviderMetadata']);
+        this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
         existingMedia.forEach(media => {
             this.fileService.deleteFile(this.getFullFilePath(media.relativeUri));
         });

@@ -10,9 +10,8 @@ import { CrudHelperService } from "./crud-helper.service";
 import { FileService } from "src/services/file.service";
 import { ConfigService } from "@nestjs/config";
 import { MediaStorageProviderType } from "../dtos/create-media-storage-provider-metadata.dto";
-import { FileStorageProvider } from "./mediaStorageProviders/file-storage-provider";
-import { FileS3StorageProvider } from "./mediaStorageProviders/file-s3-storage-provider";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
+import { ModuleRef } from "@nestjs/core";
 
 @Injectable()
 export class MediaService {
@@ -27,6 +26,7 @@ export class MediaService {
         private readonly fieldMetadataRepo: Repository<FieldMetadata>,
         private readonly crudHelperService: CrudHelperService,
         readonly fileService: FileService,
+        readonly moduleRef: ModuleRef,
         // @Inject(radixConfig.KEY)
         // private readonly radixConfiguration: ConfigType<typeof radixConfig>,
         private readonly configService: ConfigService,
@@ -202,7 +202,7 @@ export class MediaService {
         // } else {
         // }
         const storageProviderType = media.mediaStorageProviderMetadata.type as MediaStorageProviderType;
-        const storageProvider = getMediaStorageProvider(this.configService, this.fileService, this, storageProviderType);
+        const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
         await storageProvider.delete(modelEntity, media.fieldMetadata);
 
         return this.mediaRepo.remove(media);

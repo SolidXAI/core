@@ -1406,7 +1406,7 @@
             "isSystem": true
           },
           {
-            "name": "size",
+            "name": "fileSize",
             "displayName": "Size",
             "type": "int",
             "ormType": "integer",
@@ -2547,7 +2547,7 @@
     {
       "displayName": "Solid Media Storage Provider Model list action",
       "name": "mediaStorageProviderMetadata-list-action",
-      "type": "custom",
+      "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "/admin/app-builder/media-storage-provider/all",
@@ -2728,7 +2728,7 @@
       "parentMenuItemUserKey": "layout-builder-menu-item"
     },
     {
-      "displayName": "Media",
+      "displayName": "Media & other",
       "name": "media-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "media-root",
@@ -2736,18 +2736,19 @@
       "parentMenuItemUserKey": ""
     },
     {
+      "displayName": "Media",
+      "name": "media-metadata-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "solidMediaModel-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "media-menu-item"
+    },
+    
+    {
       "displayName": "Media Storage Provider",
       "name": "media-storage-provider",
       "sequenceNumber": 7,
       "actionUserKey": "mediaStorageProviderMetadata-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "media-menu-item"
-    },
-    {
-      "displayName": "Media",
-      "name": "media",
-      "sequenceNumber": 8,
-      "actionUserKey": "solidMediaModel-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "media-menu-item"
     },
@@ -4056,7 +4057,8 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true
+          "delete": true,
+          "allowedViews": ["list","kanban"]
         },
         "children": [
           {
@@ -4098,6 +4100,106 @@
               "sortable": true,
               "filterable": true
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "solidMediaModel-kanban-view",
+      "displayName": "Media Kanban",
+      "type": "kanban",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "solidMediaModel",
+      "layout": {
+        "type": "kanban",
+        "attrs": {
+          "pageSize": 10,
+          "swimlanesSize": 5,
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "groupBy": "mimeType",
+          "draggable": true,
+          "allowedViews": ["list","kanban"]
+        },
+        "children": [
+          {
+            "type": "card",
+            "attrs": {
+              "name": "Card"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "row-1",
+                  "label": "",
+                  "className": "row"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "col-1",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "mimeType",
+                          "label": "mimeType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "relativeUri",
+                          "label": "relativeUri"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "originalFileName",
+                          "label": "originalFileName"
+                        }
+                      }                     
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "row-2",
+                  "label": "",
+                  "className": "row"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "col-1",
+                      "label": "",
+                      "className": "col-12"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "fileSize",
+                          "label": "fileSize"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
           }
         ]
       }
