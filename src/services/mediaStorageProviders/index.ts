@@ -8,9 +8,9 @@ export async function getMediaStorageProvider<T>(
     type: MediaStorageProviderType): Promise<any> {
     switch(type) {
         case MediaStorageProviderType.Filesystem:
-            return await moduleRef.resolve(FileStorageProvider);
+            return await moduleRef.get(FileStorageProvider,{ strict: false });
         case MediaStorageProviderType.AwsS3:
-            return await moduleRef.resolve(FileS3StorageProvider);
+            return await moduleRef.get(FileS3StorageProvider,{ strict: false });
         default:
             throw new Error(`Unknown media storage provider type ${type}`);
     }
