@@ -17,6 +17,8 @@ import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { UpdateViewMetadataDto } from '../dtos/update-view-metadata.dto';
 import { ActionMetadataService } from './action-metadata.service';
+import { SolidIntrospectService } from './solid-introspect.service';
+import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -30,6 +32,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     readonly discoveryService: DiscoveryService,
     readonly crudHelperService: CrudHelperService,
     readonly actionMetadataService: ActionMetadataService,
+    readonly introspectService: SolidIntrospectService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     @InjectRepository(ViewMetadata, 'default')
@@ -136,7 +139,14 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       }
       // for workflowFields of type relation.many-to-one we need to query the co-model, and return data in key/value format.
       if (workflowField.type === 'relation' && workflowField.relationType === 'many-to-one') {
-        // TODO: this is pending.
+        const comodelCrudService = this.introspectService.getCRUDService(workflowField.relationCoModelSingularName);
+        const data = await comodelCrudService.find({ limit: 100, offset: 0, });
+        const records = data.records ?? [];
+        const workflowFieldMetadata = fieldsMap.get(workflowFieldName);
+        const workflowFielUserkey = workflowFieldMetadata['relationModel']['userKeyField']['name'];
+
+        // iterate over the comodel records extracting the label & value. 
+        solidFormViewWorkflowData = records.map(item => ({ 'label': item[workflowFielUserkey], 'value': item['id'] }))
       }
 
     }
@@ -175,6 +185,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       return this.repo.save(viewData);
     }
   }
+
   async createIfNotPresent(updateSolidViewDto: UpdateViewMetadataDto) {
     // First check if module already exists using name
     const existingSolidView = await this.findOneByUserKey(updateSolidViewDto.name);

@@ -40,7 +40,7 @@ import { SolidRequestContextDto } from "src/dtos/solid-request-context.dto";
 
 const DEFAULT_LIMIT = 10;
 const DEFAULT_OFFSET = 0;
-export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
+export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
     constructor(
         readonly modelMetadataService: ModelMetadataService,
@@ -413,7 +413,6 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 return new NoOpsFieldCrudManager();
         }
     }
-
 
     async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}) {
         const alias = 'entity';
