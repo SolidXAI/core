@@ -428,16 +428,19 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             }
         }
 
-        // Get the revised relations to be populated, i.e exclude one-to-many & many-to-many relations
-        basicFilterDto = this.getRevisedFilterDto(model, basicFilterDto);
-
+        // Exclude one-to-many and many-to-one relations from the initial filter query, since they will be queried separately
+        const relationsExcludedFromInitialQuery = this.relationsExcludedFromInitialQuery(model, basicFilterDto.populate);
+        basicFilterDto = this.getRevisedFilterDto(basicFilterDto, relationsExcludedFromInitialQuery);
+        
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
         qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-
+        
         if (basicFilterDto.groupBy) {
+            const relationsExcludedFromInitialQuery = this.relationsExcludedFromInitialQuery(model, groupFilter.populate);
+            groupFilter = this.getRevisedFilterDto(groupFilter, relationsExcludedFromInitialQuery);
             // Get the records and the count
-            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia);
+            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia, relationsExcludedFromInitialQuery);
             return {
                 groupMeta,
                 groupRecords,
@@ -445,7 +448,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
         else {
             // Get the records and the count
-            const { meta, records } = await this.handleNonGroupFind(qb, populateMedia, offset, limit);
+            const { meta, records } = await this.handleNonGroupFind(qb, populateMedia, offset, limit, alias, relationsExcludedFromInitialQuery);
             return {
                 meta,
                 records,
@@ -453,22 +456,27 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
     }
 
-    private getRevisedFilterDto(model: ModelMetadata, basicFilterDto: BasicFilterDto) {
-        if (!basicFilterDto.populate) return basicFilterDto;
+    private getRevisedFilterDto(basicFilterDto: BasicFilterDto, relationsExcludedFromInitialQuery: string[]): BasicFilterDto {
         const normalizedPopulate = this.crudHelperService.normalize(basicFilterDto.populate);
-        const relationsExcludedFromInitialQuery = this.relationsToBeExcludedFromInitialQuery(model);
-        basicFilterDto = { ...basicFilterDto, populate: normalizedPopulate.filter(populate => !relationsExcludedFromInitialQuery.includes(populate)) };
-        return basicFilterDto;
+        if (normalizedPopulate.length === 0 || relationsExcludedFromInitialQuery.length === 0) return basicFilterDto;
+        return  { ...basicFilterDto, populate: normalizedPopulate.filter(populate => !relationsExcludedFromInitialQuery.includes(populate)) };
     }
 
-    private relationsToBeExcludedFromInitialQuery(model: ModelMetadata) {
-        return model.fields
-        .filter(field => field.type === 'relation' && [RelationType.manyToOne, RelationType.oneToMany].includes(field.relationType as RelationType))
+    private relationsExcludedFromInitialQuery(model: ModelMetadata, relationsToBePopulated: string[] = []): string[] {
+        const  relationToBeExcluded =
+         model.fields
+        .filter(field => field.type === 'relation' && [RelationType.manyTomany, RelationType.oneToMany].includes(field.relationType as RelationType))
         .map(field => field.name);
+        return relationsToBePopulated.filter(relation => relationToBeExcluded.includes(relation));
     }
 
-    private async handleNonGroupFind(qb: SelectQueryBuilder<T>, populateMedia: string[], offset: number, limit: number) {
+    private async handleNonGroupFind(qb: SelectQueryBuilder<T>, populateMedia: string[], offset: number, limit: number, alias: string, relationsExcludedFromInitialQuery: string[]) {
         const [entities, count] = await qb.getManyAndCount();
+
+        // Populate the excluded relations for the entities
+        if (relationsExcludedFromInitialQuery.length > 0) {
+            await this.populateExcludedRelations(entities, relationsExcludedFromInitialQuery, alias);
+        }
 
         // Populate the entity with the media
         if (populateMedia && populateMedia.length > 0) {
@@ -478,7 +486,34 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[]) {
+    private async populateExcludedRelations(entities: T[], relationsExcludedFromInitialQuery: string[], alias: string) {
+        //@ts-ignore
+        const ids = entities.map(entity => entity.id);
+
+        // Fire a query to get the records from the relation entity which match the ids
+        // Create a map with key as the entity id and value as the qb records
+        const relationEntitiesMap = {};
+        for (const relation of relationsExcludedFromInitialQuery) {
+            const qb = this.repo.createQueryBuilder(`${alias}`)
+                .leftJoinAndSelect(`${alias}.${relation}`, relation)
+                .where('entity.id IN (:...ids)', { ids });
+            const relationEntities = await qb.getMany();
+            relationEntitiesMap[relation] = relationEntities;
+        }
+
+        // Iterate over the map and assign the relation entities to the entity
+        for (const relation of relationsExcludedFromInitialQuery) {
+            for (const entity of entities) {
+                const entityRelations = relationEntitiesMap[relation]
+                    //@ts-ignore
+                    .filter((joinedEntity: T) => joinedEntity.id === entity.id)
+                    .flatMap((joinedEntity: T) => joinedEntity[relation]);
+                entity[relation] = entityRelations;
+            }
+        }
+    }
+
+    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[], relationsExcludedFromInitialQuery: string[]) {
         const groupByResult = await qb.getRawMany();
 
         const groupMeta = [];
@@ -487,15 +522,14 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         for (const group of groupByResult) {
             if (populateGroup) {
                 let groupByQb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias);
-                // For the group by records, apply the basic filter
-                // const basicFilterDto = {
-                //     limit: DEFAULT_LIMIT,
-                //     offset: DEFAULT_OFFSET,
-                // };
                 groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
                 const [entities, count] = await groupByQb.getManyAndCount();
 
+                // Populate the excluded relations for the entities
+                if (relationsExcludedFromInitialQuery.length > 0) {
+                    await this.populateExcludedRelations(entities, relationsExcludedFromInitialQuery, alias);
+                }
 
                 // Populate the entity with the media
                 if (populateMedia && populateMedia.length > 0) {
