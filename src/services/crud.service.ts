@@ -497,8 +497,8 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             const qb = this.repo.createQueryBuilder(`${alias}`)
                 .leftJoinAndSelect(`${alias}.${relation}`, relation)
                 .where(`${alias}.id IN (:...ids)`, { ids })
-                .limit(DEFAULT_LIMIT)
-                .offset(DEFAULT_OFFSET);
+                // .limit(DEFAULT_LIMIT)
+                // .offset(DEFAULT_OFFSET);
             const relationEntities = await qb.getMany();
             relationEntitiesMap[relation] = relationEntities;
         }
