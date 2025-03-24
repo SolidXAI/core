@@ -428,6 +428,9 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             }
         }
 
+        // Get the revised relations to be populated, i.e exclude one-to-many & many-to-many relations
+        basicFilterDto = this.getRevisedFilterDto(model, basicFilterDto);
+
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
         qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
@@ -448,6 +451,20 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 records,
             }
         }
+    }
+
+    private getRevisedFilterDto(model: ModelMetadata, basicFilterDto: BasicFilterDto) {
+        if (!basicFilterDto.populate) return basicFilterDto;
+        const normalizedPopulate = this.crudHelperService.normalize(basicFilterDto.populate);
+        const relationsExcludedFromInitialQuery = this.relationsToBeExcludedFromInitialQuery(model);
+        basicFilterDto = { ...basicFilterDto, populate: normalizedPopulate.filter(populate => !relationsExcludedFromInitialQuery.includes(populate)) };
+        return basicFilterDto;
+    }
+
+    private relationsToBeExcludedFromInitialQuery(model: ModelMetadata) {
+        return model.fields
+        .filter(field => field.type === 'relation' && [RelationType.manyToOne, RelationType.oneToMany].includes(field.relationType as RelationType))
+        .map(field => field.name);
     }
 
     private async handleNonGroupFind(qb: SelectQueryBuilder<T>, populateMedia: string[], offset: number, limit: number) {
