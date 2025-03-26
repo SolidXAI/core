@@ -205,7 +205,8 @@ export class ModuleMetadataSeederService {
         this.logger.debug(`About to add all permissions to the Admin role`);
         await this.roleService.addAllPermissionsToRole("Admin");
         // 2. Give wrapSettings permissions to the Public role.
-        const internalRolePermission = ['UserController.findMany',
+        const internalRolePermission = [
+            'UserController.findMany',
             'UserController.checkIfPermissionExists',
             'UserController.findOne',
             'MenuItemMetadataController.findMany',
@@ -214,7 +215,10 @@ export class ModuleMetadataSeederService {
             'ViewMetadataController.getLayout',
             'ViewMetadataController.findMany',
             'ViewMetadataController.findOne',
-            'AuthenticationController.changePassword'
+            'AuthenticationController.changePassword',
+            'FieldMetadataController.getSelectionDynamicValues',
+            'FieldMetadataController.getSelectionDynamicValue',
+            'FieldMetadataController.findFieldDefaultMetaData',
         ]
         await this.roleService.addPermissionToRole('Internal User', internalRolePermission);
         await this.roleService.addPermissionToRole('Public', ['SettingController.wrapSettings']);
@@ -366,8 +370,8 @@ export class ModuleMetadataSeederService {
         for (let j = 0; j < actions.length; j++) {
             const actionData = actions[j];
             actionData['module'] = await this.moduleMetadataService.findOneByUserKey(actionData.moduleUserKey);
-            actionData['model'] = await this.modelMetadataService.findOneByUserKey(actionData.modelUserKey);
             if (actionData.type === 'solid') {
+                actionData['model'] = await this.modelMetadataService.findOneByUserKey(actionData.modelUserKey);
                 actionData['view'] = await this.solidViewService.findOneByUserKey(actionData.viewUserKey);
             }
             await this.solidActionService.upsert(actionData);
