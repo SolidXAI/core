@@ -370,8 +370,8 @@ export class ModuleMetadataSeederService {
         for (let j = 0; j < actions.length; j++) {
             const actionData = actions[j];
             actionData['module'] = await this.moduleMetadataService.findOneByUserKey(actionData.moduleUserKey);
-            actionData['model'] = await this.modelMetadataService.findOneByUserKey(actionData.modelUserKey);
             if (actionData.type === 'solid') {
+                actionData['model'] = await this.modelMetadataService.findOneByUserKey(actionData.modelUserKey);
                 actionData['view'] = await this.solidViewService.findOneByUserKey(actionData.viewUserKey);
             }
             await this.solidActionService.upsert(actionData);
