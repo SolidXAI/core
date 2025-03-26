@@ -1,3 +1,4 @@
+import { classify } from '@angular-devkit/core/src/utils/strings';
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
@@ -5,6 +6,7 @@ import { IS_COMPUTED_FIELD_PROVIDER } from 'src/decorators/computed-field-provid
 import { IS_SELECTION_PROVIDER } from 'src/decorators/selection-provider.decorator';
 import { IS_SOLID_DATABASE_MODULE } from 'src/decorators/solid-database-module.decorator';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { CRUDService } from './crud.service';
 
 @Injectable()
 export class SolidIntrospectService implements OnApplicationBootstrap {
@@ -16,9 +18,9 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
   ) { }
 
   private readonly logger = new Logger(SolidIntrospectService.name);
-  onApplicationBootstrap() {  
+  onApplicationBootstrap() {
     this.logger.log('Introspecting the application for Solid metadata');
-    
+
     // Register all seeders
     const seeders = this.discoveryService
       .getProviders()
@@ -55,7 +57,7 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       .getProviders()
       .filter((provider) => this.isSolidDatabaseModule(provider));
 
-      solidDatabaseModules.forEach((solidDatabaseModule) => {
+    solidDatabaseModules.forEach((solidDatabaseModule) => {
       // @ts-ignore
       this.solidRegistry.registerSolidDatabaseModule(solidDatabaseModule);
     });
@@ -128,14 +130,13 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     return !!isSolidDatabaseModule;
   }
 
-
   private isModule(provider: InstanceWrapper): boolean {
     const metatype = provider.metatype;
     // Check if it's a Static Module (Class-Based)
     if (metatype && typeof metatype === 'function' && Reflect.getMetadata('imports', metatype)) {
       return true;
     }
-  
+
     // Ensure provider.instance is an object before checking for 'module'
     if (provider.instance && typeof provider.instance === 'object') {
       // Check if it's a Dynamic Module (Object-Based)
@@ -143,8 +144,21 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
         return true;
       }
     }
-  
+
     return false;
   }
 
+  /**
+   * Given a model singular name this will return the crud service instance.
+   * @param modelSingularName 
+   * @returns 
+   */
+  getCRUDService(modelSingularName: string): CRUDService<any> {
+    const provider = this.getProvider(`${classify(modelSingularName)}Service`);
+    return provider?.instance as CRUDService<any>;
+  }
+
+  getProvider(providerName: string) {
+    return this.discoveryService.getProviders().find((provider) => provider.name === providerName);
+  }
 }

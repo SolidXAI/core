@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService } from "@nestjs/core";
 import { EntityManager, Repository } from 'typeorm';
@@ -17,6 +17,8 @@ import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { UpdateViewMetadataDto } from '../dtos/update-view-metadata.dto';
 import { ActionMetadataService } from './action-metadata.service';
+import { SolidIntrospectService } from './solid-introspect.service';
+import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -30,6 +32,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     readonly discoveryService: DiscoveryService,
     readonly crudHelperService: CrudHelperService,
     readonly actionMetadataService: ActionMetadataService,
+    readonly introspectService: SolidIntrospectService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     @InjectRepository(ViewMetadata, 'default')
@@ -58,21 +61,33 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       relations: {
         model: {
           userKeyField: true,  // Nested population of 'someOtherEntity' within 'model'
-        },    
+        },
         module: true,
       }
     });
-    if (entity) {
-      entity.layout = JSON.parse(entity.layout);
-      if (entity?.layout?.attrs?.createAction) {
-        const actionName: string = entity.layout.attrs.createAction;
-        entity.layout.attrs.createAction = await this.actionMetadataService.findOneByUserKey(actionName)
-      }
-      if (entity?.layout?.attrs?.editAction) {
-        const actionName: string = entity.layout.attrs.editAction;
-        entity.layout.attrs.editAction = await this.actionMetadataService.findOneByUserKey(actionName)
-      }
+
+    if (!entity) {
+      throw new BadRequestException(`Unable to identify view for module: ${moduleName}, model: ${modelName} and viewType: ${viewType}`);
     }
+
+    // If view entity found then convert layout from "string" to "json".
+    entity.layout = JSON.parse(entity.layout);
+    if (entity?.layout?.attrs?.createAction) {
+      const actionName: string = entity.layout.attrs.createAction;
+      entity.layout.attrs.createAction = await this.actionMetadataService.findOneByUserKey(actionName)
+    }
+    if (entity?.layout?.attrs?.editAction) {
+      const actionName: string = entity.layout.attrs.editAction;
+      entity.layout.attrs.editAction = await this.actionMetadataService.findOneByUserKey(actionName)
+    }
+
+    // for form views, we need to check if "workflow" field is configured, if configured then return an extra metadata "solidFormViewWorkflowData"
+    let workflowFieldName = null;
+    let workflowField = null;
+    if (viewType === 'form') {
+      workflowFieldName = entity.layout?.attrs?.workflowField;
+    }
+
     // We also need to fetch a map of fields.
     const fields = await this.fieldMetadataRepo.find({
       where: {
@@ -84,6 +99,11 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     const fieldsMap = new Map<string, FieldMetadata>();
     for (let i = 0; i < fields.length; i++) {
       const field = fields[i];
+
+      // We need to identify the workflowField metadata if specified. 
+      if (workflowFieldName && field.name === workflowFieldName) {
+        workflowField = field;
+      }
 
       // For fields of type relation & relationType many-to-one
       // We fetch metadata regarding the relationCoModelSingularName
@@ -106,10 +126,38 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       }
     }
 
-    return {
+    // Check if we were able to resolve an actual workflowField.
+    let solidFormViewWorkflowData = [];
+    if (viewType === 'form' && workflowField) {
+      // check for type of workflow field. 
+      // for workflowFields of type selectionStatic we simply return the key/values from field metadata AS-IS
+      if (workflowField.type === 'selectionStatic') {
+        solidFormViewWorkflowData = workflowField.selectionStaticValues.map(item => {
+          const [label, value] = item.split(":");
+          return { label, value };
+        });
+      }
+      // for workflowFields of type relation.many-to-one we need to query the co-model, and return data in key/value format.
+      if (workflowField.type === 'relation' && workflowField.relationType === 'many-to-one') {
+        const comodelCrudService = this.introspectService.getCRUDService(workflowField.relationCoModelSingularName);
+        const data = await comodelCrudService.find({ limit: 100, offset: 0, });
+        const records = data.records ?? [];
+        const workflowFieldMetadata = fieldsMap.get(workflowFieldName);
+        const workflowFielUserkey = workflowFieldMetadata['relationModel']['userKeyField']['name'];
+
+        // iterate over the comodel records extracting the label & value. 
+        solidFormViewWorkflowData = records.map(item => ({ 'label': item[workflowFielUserkey], 'value': item['id'] }))
+      }
+
+    }
+
+    const r = {
       'solidView': entity,
       'solidFieldsMetadata': Object.fromEntries(fieldsMap),
-    };
+      'solidFormViewWorkflowData': solidFormViewWorkflowData
+    }
+
+    return r;
   }
 
   async findOneByUserKey(name: string, relations = {}) {
@@ -137,6 +185,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       return this.repo.save(viewData);
     }
   }
+
   async createIfNotPresent(updateSolidViewDto: UpdateViewMetadataDto) {
     // First check if module already exists using name
     const existingSolidView = await this.findOneByUserKey(updateSolidViewDto.name);

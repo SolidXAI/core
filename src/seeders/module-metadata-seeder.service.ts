@@ -205,7 +205,8 @@ export class ModuleMetadataSeederService {
         this.logger.debug(`About to add all permissions to the Admin role`);
         await this.roleService.addAllPermissionsToRole("Admin");
         // 2. Give wrapSettings permissions to the Public role.
-        const internalRolePermission = ['UserController.findMany',
+        const internalRolePermission = [
+            'UserController.findMany',
             'UserController.checkIfPermissionExists',
             'UserController.findOne',
             'MenuItemMetadataController.findMany',
@@ -214,7 +215,10 @@ export class ModuleMetadataSeederService {
             'ViewMetadataController.getLayout',
             'ViewMetadataController.findMany',
             'ViewMetadataController.findOne',
-            'AuthenticationController.changePassword'
+            'AuthenticationController.changePassword',
+            'FieldMetadataController.getSelectionDynamicValues',
+            'FieldMetadataController.getSelectionDynamicValue',
+            'FieldMetadataController.findFieldDefaultMetaData',
         ]
         await this.roleService.addPermissionToRole('Internal User', internalRolePermission);
         await this.roleService.addPermissionToRole('Public', ['SettingController.wrapSettings']);
