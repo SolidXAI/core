@@ -374,6 +374,11 @@ export class ModuleMetadataSeederService {
                 actionData['model'] = await this.modelMetadataService.findOneByUserKey(actionData.modelUserKey);
                 actionData['view'] = await this.solidViewService.findOneByUserKey(actionData.viewUserKey);
             }
+            else {
+                if (actionData.modelUserKey) {
+                    actionData['model'] = await this.modelMetadataService.findOneByUserKey(actionData.modelUserKey);
+                }
+            }
             await this.solidActionService.upsert(actionData);
         }
     }
