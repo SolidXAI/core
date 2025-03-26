@@ -1369,9 +1369,9 @@
         ]
       },
       {
-        "singularName": "solidMediaModel",
+        "singularName": "media",
         "tableName": "ss_media_model",
-        "pluralName": "solidMediaModels",
+        "pluralName": "medias",
         "displayName": "solid Media Model",
         "description": "Model to capture all Media in the system",
         "dataSource": "default",
@@ -1390,6 +1390,7 @@
             "index": true,
             "private": false,
             "encrypt": false,
+            "columnName": "entity_id",
             "isSystem": true
           },
           {
@@ -1403,18 +1404,21 @@
             "index": false,
             "private": false,
             "encrypt": false,
+            "columnName": "relative_uri",
             "isSystem": true
           },
           {
             "name": "fileSize",
-            "displayName": "Size",
+            "displayName": "File Size",
             "type": "int",
             "ormType": "integer",
             "required": false,
+            "defaultValue": 0,
             "unique": false,
             "index": false,
             "private": false,
             "encrypt": false,
+            "columnName": "file_size",
             "isSystem": true
           },
           {
@@ -1424,10 +1428,12 @@
             "ormType": "varchar",
             "length": 512,
             "required": false,
+            "defaultValue": "",
             "unique": false,
             "index": false,
             "private": false,
             "encrypt": false,
+            "columnName": "mime_type",
             "isSystem": true
           },
           {
@@ -1441,6 +1447,7 @@
             "index": false,
             "private": false,
             "encrypt": false,
+            "columnName": "original_file_name",
             "isSystem": true
           },
           {
@@ -1454,6 +1461,7 @@
             "encrypt": false,
             "relationType": "many-to-one",
             "relationCoModelSingularName": "modelMetadata",
+            "relationCoModelColumnName": "model_metadata_id",
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -1470,6 +1478,7 @@
             "encrypt": false,
             "relationType": "many-to-one",
             "relationCoModelSingularName": "mediaStorageProviderMetadata",
+            "relationCoModelColumnName": "media_storage_provider_metadata_id",
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -1486,6 +1495,7 @@
             "encrypt": false,
             "relationType": "many-to-one",
             "relationCoModelSingularName": "fieldMetadata",
+            "relationCoModelColumnName": "field_metadata_id",
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -2532,17 +2542,17 @@
       "modelUserKey": "menuItemMetadata"
     },
     {
-      "displayName": "Solid Media Model list action",
-      "name": "solidMediaModel-list-action",
-      "type": "custom",
+      "displayName": "Media list action",
+      "name": "media-list-action",
+      "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "/admin/app-builder/media/all",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "solidMediaModel-list-view",
+      "viewUserKey": "media-list-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "solidMediaModel"
+      "modelUserKey": "media"
     },
     {
       "displayName": "Solid Media Storage Provider Model list action",
@@ -2739,11 +2749,10 @@
       "displayName": "Media",
       "name": "media-metadata-menu-item",
       "sequenceNumber": 3,
-      "actionUserKey": "solidMediaModel-list-action",
+      "actionUserKey": "media-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "media-menu-item"
     },
-    
     {
       "displayName": "Media Storage Provider",
       "name": "media-storage-provider",
@@ -4039,12 +4048,12 @@
       }
     },
     {
-      "name": "solidMediaModel-list-view",
+      "name": "media-list-view",
       "displayName": "Solid Media Model",
       "type": "list",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "solidMediaModel",
+      "modelUserKey": "media",
       "layout": {
         "type": "list",
         "attrs": {
@@ -4058,7 +4067,10 @@
           "create": true,
           "edit": true,
           "delete": true,
-          "allowedViews": ["list","kanban"]
+          "allowedViews": [
+            "list",
+            "kanban"
+          ]
         },
         "children": [
           {
@@ -4105,12 +4117,12 @@
       }
     },
     {
-      "name": "solidMediaModel-kanban-view",
+      "name": "media-kanban-view",
       "displayName": "Media Kanban",
       "type": "kanban",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "solidMediaModel",
+      "modelUserKey": "media",
       "layout": {
         "type": "kanban",
         "attrs": {
@@ -4122,7 +4134,10 @@
           "delete": true,
           "groupBy": "mimeType",
           "draggable": true,
-          "allowedViews": ["list","kanban"]
+          "allowedViews": [
+            "list",
+            "kanban"
+          ]
         },
         "children": [
           {
@@ -4167,7 +4182,7 @@
                           "name": "originalFileName",
                           "label": "originalFileName"
                         }
-                      }                     
+                      }
                     ]
                   }
                 ]
@@ -4205,12 +4220,12 @@
       }
     },
     {
-      "name": "solidMediaModel-form-view",
+      "name": "media-form-view",
       "displayName": "Solid Media Model",
       "type": "form",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "solidMediaModel",
+      "modelUserKey": "media",
       "layout": {
         "type": "form",
         "attrs": {
@@ -5308,7 +5323,7 @@
                             "type": "field",
                             "attrs": {
                               "name": "name",
-                              "showLabel":false
+                              "showLabel": false
                             }
                           }
                         ]
@@ -5335,7 +5350,7 @@
                             "attrs": {
                               "name": "permissions",
                               "renderMode": "autocomplete",
-                              "showLabel":false
+                              "showLabel": false
                             }
                           }
                         ]
@@ -5361,7 +5376,7 @@
                             "type": "field",
                             "attrs": {
                               "name": "users",
-                              "showLabel":false
+                              "showLabel": false
                             }
                           }
                         ]
@@ -5387,7 +5402,7 @@
                             "type": "field",
                             "attrs": {
                               "name": "menuItems",
-                              "showLabel":false
+                              "showLabel": false
                             }
                           }
                         ]

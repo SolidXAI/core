@@ -301,7 +301,7 @@ import { MediaRepository } from './repository/media.repository';
     ConcatComputedFieldProvider,
     FileStorageProvider,
     FileS3StorageProvider,
-    MediaRepository
+    MediaRepository,
   ],
   exports: [
     ModuleMetadataService,
