@@ -4126,8 +4126,8 @@
       "layout": {
         "type": "kanban",
         "attrs": {
-          "pageSize": 10,
-          "swimlanesSize": 5,
+          "swimlanesCount": 10,
+          "recordsInSwimlane": 5,
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
