@@ -70,7 +70,7 @@ export class ModuleMetadataSeederService {
 
         const settingsSeederData: any = {
             iamAllowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
-            iamPasswordRegistrationEnabled: false,
+            iamPasswordRegistrationEnabled: true,
             iamPasswordLessRegistrationEnabled: this.iamConfiguration.passwordlessRegistration,
             iamActivateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
             iamGoogleOAuthEnabled: false,
