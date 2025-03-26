@@ -1,35 +1,59 @@
-import { IsBoolean, IsEnum, IsInt, IsNotEmpty, IsOptional, IsString, isBoolean } from "class-validator";
+import { ApiProperty } from '@nestjs/swagger';
+import { IsInt } from 'class-validator';
+import { IsNotEmpty, IsString, IsOptional } from 'class-validator';
 export class CreateMediaDto {
+@IsNotEmpty()
+@IsInt()
+@ApiProperty()
+entityId: number;
 
-    @IsNotEmpty()
-    @IsInt()
-    entityId: number;
+@IsOptional()
+@IsString()
+@ApiProperty()
+relativeUri: string;
 
-    @IsNotEmpty()
-    @IsInt()
-    modelMetadataId: number;
+@IsOptional()
+@IsInt()
+@ApiProperty()
+fileSize: number;
 
-    @IsNotEmpty()
-    @IsString()
-    relativeUri: string;
+@IsOptional()
+@IsString()
+@ApiProperty()
+mimeType: string;
 
-    @IsOptional()
-    @IsString()
-    mimeType: string;
+@IsOptional()
+@IsString()
+@ApiProperty()
+originalFileName: string;
 
-    @IsOptional()
-    @IsInt()
-    fileSize: number;
+@IsOptional()
+@IsInt()
+@ApiProperty()
+modelMetadataId: number;
 
-    @IsOptional()
-    @IsString()
-    originalFileName: string;
+@IsString()
+@IsOptional()
+@ApiProperty()
+modelMetadataUserKey: string;
 
-    @IsNotEmpty()
-    @IsInt()
-    mediaStorageProviderMetadataId: number;
+@IsOptional()
+@IsInt()
+@ApiProperty()
+mediaStorageProviderMetadataId: number;
 
-    @IsNotEmpty()
-    @IsInt()
-    fieldMetadataId: number;
+@IsString()
+@IsOptional()
+@ApiProperty()
+mediaStorageProviderMetadataUserKey: string;
+
+@IsOptional()
+@IsInt()
+@ApiProperty()
+fieldMetadataId: number;
+
+@IsString()
+@IsOptional()
+@ApiProperty()
+fieldMetadataUserKey: string;
 }
