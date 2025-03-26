@@ -4076,41 +4076,34 @@
           {
             "type": "field",
             "attrs": {
-              "name": "entityId",
-              "sortable": true,
-              "filterable": true
+              "name": "entityId"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relativeUri",
-              "sortable": true,
-              "filterable": true
+              "renderMode": "image"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "modelMetadata",
-              "sortable": true,
-              "filterable": true
+              "name": "modelMetadata"
+        
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "mediaStorageProviderMetadata",
-              "sortable": true,
-              "filterable": true
+              "name": "mediaStorageProviderMetadata"
+             
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "fieldMetadata",
-              "sortable": true,
-              "filterable": true
+              "name": "fieldMetadata"
             }
           }
         ]
@@ -4173,7 +4166,8 @@
                         "type": "field",
                         "attrs": {
                           "name": "relativeUri",
-                          "label": "relativeUri"
+                          "label": "relativeUri",
+                          "renderMode": "image"
                         }
                       },
                       {
@@ -4208,6 +4202,13 @@
                         "attrs": {
                           "name": "fileSize",
                           "label": "fileSize"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "mediaStorageProviderMetadata",
+                          "label": "mediaStorageProviderMetadata"
                         }
                       }
                     ]
