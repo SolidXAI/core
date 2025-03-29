@@ -1078,6 +1078,65 @@
         ]
       },
       {
+        "singularName": "userViewMetadata",
+        "tableName": "ss_user_view_metadata",
+        "pluralName": "userViewMetadatas",
+        "displayName": "User View Metadata",
+        "description": "Model to capture all views which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "view",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "view",
+            "displayName": "View",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "viewMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "user",
+            "displayName": "User",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "user",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "layout",
+            "displayName": "Layout",
+            "type": "json",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "context",
+            "defaultValue": "{}",
+            "isSystem": true
+          }
+        ]
+      },
+      {
         "singularName": "actionMetadata",
         "tableName": "ss_action_metadata",
         "pluralName": "actionMetadatas",
@@ -2516,6 +2575,19 @@
       "modelUserKey": "viewMetadata"
     },
     {
+      "displayName": "User View Metadata list action",
+      "name": "userViewMetadata-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "userViewMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "userViewMetadata"
+    },
+    {
       "displayName": "Action Metadata list action",
       "name": "actionMetadata-list-action",
       "type": "solid",
@@ -2734,6 +2806,14 @@
       "name": "action-metadata",
       "sequenceNumber": 6,
       "actionUserKey": "actionMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layout-builder-menu-item"
+    },
+    {
+      "displayName": "User View",
+      "name": "user-view-metadata",
+      "sequenceNumber": 7,
+      "actionUserKey": "userViewMetadata-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "layout-builder-menu-item"
     },
@@ -3596,6 +3676,170 @@
       }
     },
     {
+      "name": "userViewMetadata-list-view",
+      "displayName": "User View Metadata list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "userViewMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "view"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "layout"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "userViewMetadata-form-view",
+      "displayName": "User View Metadata form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "userViewMetadata",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "User View Metadata",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-1",
+                      "label": "General Info"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "page-1-row-1",
+                          "label": "",
+                          "className": ""
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-1-row-1-col-1",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "view"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-1-row-1-col-2",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "user"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-2",
+                      "label": "Layout"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "page-2-row-1",
+                          "label": "",
+                          "className": ""
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-2-row-1-col-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "layout",
+                                  "height": "80vh"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "name": "actionMetadata-list-view",
       "displayName": "Action Metadata list view",
       "type": "list",
@@ -4090,14 +4334,12 @@
             "type": "field",
             "attrs": {
               "name": "modelMetadata"
-        
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "mediaStorageProviderMetadata"
-             
             }
           },
           {
