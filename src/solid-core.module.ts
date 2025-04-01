@@ -140,6 +140,7 @@ import { ConcatComputedFieldProvider } from './services/computed-fields/concat-c
 import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
 import { MediaRepository } from './repository/media.repository';
+import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 
 
 @Global()
@@ -302,6 +303,7 @@ import { MediaRepository } from './repository/media.repository';
     FileStorageProvider,
     FileS3StorageProvider,
     MediaRepository,
+    ViewMetadataSubsciber
   ],
   exports: [
     ModuleMetadataService,
