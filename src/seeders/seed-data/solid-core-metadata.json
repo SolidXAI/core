@@ -1130,7 +1130,7 @@
             "index": false,
             "private": false,
             "encrypt": false,
-            "columnName": "context",
+            "columnName": "layout",
             "defaultValue": "{}",
             "isSystem": true
           }
