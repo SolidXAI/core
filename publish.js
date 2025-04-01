@@ -9,6 +9,9 @@ try {
   console.log("📦 Publishing package...");
   execSync("npm publish", { stdio: "inherit" });
 
+  console.log("📦 Pushing to git ...");
+  execSync("git push", { stdio: "inherit" });
+
   console.log("✅ Published successfully!");
 } catch (error) {
   console.error("❌ Error:", error.message);
