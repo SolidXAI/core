@@ -853,7 +853,9 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "isUserKey"
+
                 ];
 
             case SolidFieldType.selectionDynamic:
@@ -874,7 +876,9 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "isUserKey"
+
                 ];
             case SolidFieldType.computed:
                 return [
@@ -894,7 +898,8 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "isUserKey"
                 ];
 
             case SolidFieldType.uuid:
