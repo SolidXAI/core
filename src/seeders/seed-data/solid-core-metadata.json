@@ -6753,6 +6753,180 @@
       }
     },
     {
+      "name": "securityRule-list-view",
+      "displayName": "Security rules",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule",
+      "layout": {
+        "type": "form",
+        "attrs": {
+           "name": "form-1",
+           "label": "Security rules",
+           "className": "grid"
+        },
+        "children": [
+           {
+              "type": "sheet",
+              "attrs": {
+                 "name": "sheet-1"
+              },
+              "children": [
+                 {
+                    "type": "row",
+                    "attrs": {
+                       "name": "group-1",
+                       "label": "",
+                       "className": ""
+                    },
+                      "children": [
+                       {
+                          "type": "column",
+                          "attrs": {
+                             "name": "group-1",
+                             "label": "",
+                             "className": "col-6"
+                          },
+                          "children": [
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "name"
+                               }
+                             },
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "description"
+                               }
+                             },
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "securityRule"
+                               }
+                             }
+     
+                          ]
+                       },
+                       {
+                          "type": "column",
+                          "attrs": {
+                             "name": "group-2",
+                             "label": "",
+                             "className": "col-6"
+                          },
+                          "children": [
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "role"
+                               }
+                             },
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "modelMetadata"
+                               }
+                             }
+                          ]
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     }
+    },
+    {
+      "name": "securityRule-form-view",
+      "displayName": "Security rules",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule",
+      "layout":{
+        "type": "form",
+        "attrs": {
+           "name": "form-1",
+           "label": "Security rules",
+           "className": "grid"
+        },
+        "children": [
+           {
+              "type": "sheet",
+              "attrs": {
+                 "name": "sheet-1"
+              },
+              "children": [
+                 {
+                    "type": "row",
+                    "attrs": {
+                       "name": "group-1",
+                       "label": "",
+                       "className": ""
+                    },
+                      "children": [
+                       {
+                          "type": "column",
+                          "attrs": {
+                             "name": "group-1",
+                             "label": "",
+                             "className": "col-6"
+                          },
+                          "children": [
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "name"
+                               }
+                             },
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "description"
+                               }
+                             },
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "securityRule"
+                               }
+                             }
+     
+                          ]
+                       },
+                       {
+                          "type": "column",
+                          "attrs": {
+                             "name": "group-2",
+                             "label": "",
+                             "className": "col-6"
+                          },
+                          "children": [
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "role"
+                               }
+                             },
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "modelMetadata"
+                               }
+                             }
+                          ]
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     }
+    },
+    {
       "name": "email-list-view",
       "displayName": "Email",
       "type": "list",
