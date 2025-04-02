@@ -3177,6 +3177,19 @@
       "modelUserKey": "setting"
     },
     {
+      "displayName": "Security rules list view",
+      "name": "securityRule-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "securityRule-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule"
+    },
+    {
       "displayName": "Email list action",
       "name": "email-list-action",
       "type": "solid",
@@ -3329,6 +3342,14 @@
       "name": "permissionMetadata-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "permissionMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
+      "displayName": "Security rules",
+      "name": "securityRule-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "securityRule-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "iam-menu-item"
     },
