@@ -5,6 +5,9 @@ const versionType = process.argv[2] || "patch"; // Default to patch if not speci
 try {
   console.log(`🔄 Updating package version (${versionType})...`);
   execSync(`npm version ${versionType}`, { stdio: "inherit" });
+  
+  console.log("📦 Pushing to git ...");
+  execSync("git push", { stdio: "inherit" });
 
   console.log("📦 Publishing package...");
   execSync("npm publish", { stdio: "inherit" });
