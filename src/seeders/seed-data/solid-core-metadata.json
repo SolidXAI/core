@@ -6781,82 +6781,38 @@
       "moduleUserKey": "solid-core",
       "modelUserKey": "securityRule",
       "layout": {
-        "type": "form",
+        "type": "list",
         "attrs": {
-           "name": "form-1",
-           "label": "Security rules",
-           "className": "grid"
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": false
         },
         "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id",
+              "label": "Id",
+              "sortable": true,
+              "filterable": true
+            }
+          },
            {
-              "type": "sheet",
-              "attrs": {
-                 "name": "sheet-1"
-              },
-              "children": [
-                 {
-                    "type": "row",
-                    "attrs": {
-                       "name": "group-1",
-                       "label": "",
-                       "className": ""
-                    },
-                      "children": [
-                       {
-                          "type": "column",
-                          "attrs": {
-                             "name": "group-1",
-                             "label": "",
-                             "className": "col-6"
-                          },
-                          "children": [
-                             {
-                               "type": "field",
-                               "attrs": {
-                                 "name": "name"
-                               }
-                             },
-                             {
-                               "type": "field",
-                               "attrs": {
-                                 "name": "description"
-                               }
-                             },
-                             {
-                               "type": "field",
-                               "attrs": {
-                                 "name": "securityRule"
-                               }
-                             }
-     
-                          ]
-                       },
-                       {
-                          "type": "column",
-                          "attrs": {
-                             "name": "group-2",
-                             "label": "",
-                             "className": "col-6"
-                          },
-                          "children": [
-                             {
-                               "type": "field",
-                               "attrs": {
-                                 "name": "role"
-                               }
-                             },
-                             {
-                               "type": "field",
-                               "attrs": {
-                                 "name": "modelMetadata"
-                               }
-                             }
-                          ]
-                       }
-                    ]
-                 }
-              ]
-           }
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "label": "Name",
+              "sortable": true,
+              "filterable": true
+            }
+          }
         ]
      }
     },
