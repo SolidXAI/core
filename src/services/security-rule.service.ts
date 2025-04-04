@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { DiscoveryService, ModuleRef  } from "@nestjs/core";
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, Repository } from 'typeorm';
 
 import { CRUDService } from 'src/services/crud.service';
@@ -12,9 +12,10 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 
 
 import { SecurityRule } from '../entities/security-rule.entity';
+import { SolidRegistry } from 'src/helpers/solid-registry';
 
 @Injectable()
-export class SecurityRuleService extends CRUDService<SecurityRule>{
+export class SecurityRuleService extends CRUDService<SecurityRule> implements OnApplicationBootstrap {
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
@@ -26,9 +27,28 @@ export class SecurityRuleService extends CRUDService<SecurityRule>{
     readonly entityManager: EntityManager,
     @InjectRepository(SecurityRule, 'default')
     readonly repo: Repository<SecurityRule>,
-    readonly moduleRef: ModuleRef
+    readonly moduleRef: ModuleRef,
+    readonly solidRegistry: SolidRegistry,
 
- ) {
-   super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'securityRule', 'solid-core', moduleRef);
- }
+  ) {
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'securityRule', 'solid-core', moduleRef);
+  }
+
+  onApplicationBootstrap() {
+    // Load the security rules from the database
+    this.loadSecurityRules();
+  }
+
+  async loadSecurityRules() {
+    const securityRules = await this.repo.find(
+      {
+        relations: {
+          modelMetadata: true,
+          role: true,
+        }
+      }
+    );
+    this.solidRegistry.registerSecurityRules(securityRules);
+  }
+
 }

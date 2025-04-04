@@ -148,6 +148,7 @@ import { SecurityRule } from './entities/security-rule.entity';
 import { SecurityRuleService } from './services/security-rule.service';
 import { SecurityRuleController } from './controllers/security-rule.controller';
 import { RequestContextService } from './services/request-context.service';
+import { SecurityRuleRepository } from './repository/security-rule.repository';
 
 
 @Global()
@@ -317,6 +318,7 @@ import { RequestContextService } from './services/request-context.service';
     ViewMetadataSubsciber,
     UserViewMetadataService,
     SecurityRuleService,
+    SecurityRuleRepository,
     RequestContextService,
   ],
   exports: [
@@ -346,6 +348,7 @@ import { RequestContextService } from './services/request-context.service';
     RefreshModelCommand,
     RefreshModuleCommand,
     RequestContextService,
+    SecurityRuleRepository,
   ],
 })
 export class SolidCoreModule { }
