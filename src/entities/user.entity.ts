@@ -1,9 +1,10 @@
 import { CommonEntity } from "src/entities/common.entity"
-import { Entity, Column, Index, JoinTable, ManyToMany, OneToMany } from "typeorm";
+import { Entity, Column, Index, JoinTable, ManyToMany, OneToMany, TableInheritance } from "typeorm";
 import { RoleMetadata } from 'src/entities/role-metadata.entity';
 import { UserViewMetadata } from 'src/entities/user-view-metadata.entity'
 
 @Entity("ss_user")
+@TableInheritance({ column: { type: "varchar", name: "type", default: "User" } })
 export class User extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     fullName: string;

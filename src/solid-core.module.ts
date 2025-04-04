@@ -147,6 +147,7 @@ import { UserViewMetadataController } from './controllers/user-view-metadata.con
 import { SecurityRule } from './entities/security-rule.entity';
 import { SecurityRuleService } from './services/security-rule.service';
 import { SecurityRuleController } from './controllers/security-rule.controller';
+import { RequestContextService } from './services/request-context.service';
 
 
 @Global()
@@ -316,6 +317,7 @@ import { SecurityRuleController } from './controllers/security-rule.controller';
     ViewMetadataSubsciber,
     UserViewMetadataService,
     SecurityRuleService,
+    RequestContextService,
   ],
   exports: [
     ModuleMetadataService,
@@ -343,6 +345,7 @@ import { SecurityRuleController } from './controllers/security-rule.controller';
     MqMessageService,
     RefreshModelCommand,
     RefreshModuleCommand,
+    RequestContextService,
   ],
 })
 export class SolidCoreModule { }
