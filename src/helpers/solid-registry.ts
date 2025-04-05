@@ -15,6 +15,23 @@ export enum RESERVED_SOLID_KEYWORDS {
   dataSource = "dataSource",
   repository = "repository",
   entityManager = "entityManager",
+  actionMetadata = "actionMetadata",
+  emailAttachment = "emailAttachment",
+  emailTemplate = "emailTemplate",
+  listOfValues = "listOfValues",
+  mediaStorageProvider = "mediaStorageProvider",
+  media = "media",
+  menuItemMetadata = "menuItemMetadata",
+  mqMessageQueue = "mqMessageQueue",
+  mqMessage = "mqMessage",
+  permissionMetadata = "permissionMetadata",
+  roleMetadata = "roleMetadata",
+  securityRule = "securityRule",
+  setting = "setting",
+  smsTemplate = "smsTemplate",
+  userPasswordHistory = "userPasswordHistory",
+  userMetadata = "userMetadata",
+  user = "user",
 }
 
 @Injectable()
