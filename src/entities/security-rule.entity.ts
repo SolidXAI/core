@@ -20,5 +20,5 @@ export class SecurityRule extends CommonEntity {
     @JoinColumn()
     modelMetadata: ModelMetadata;
     @Column({ type: "text" })
-    securityRule: any;
+    securityRuleConfig: any;
 }
