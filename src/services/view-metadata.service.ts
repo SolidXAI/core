@@ -131,7 +131,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       // for workflowFields of type selectionStatic we simply return the key/values from field metadata AS-IS
       if (workflowField.type === 'selectionStatic') {
         solidFormViewWorkflowData = workflowField.selectionStaticValues.map(item => {
-          const [label, value] = item.split(":");
+          const [value,label] = item.split(":");
           return { label, value };
         });
       }
