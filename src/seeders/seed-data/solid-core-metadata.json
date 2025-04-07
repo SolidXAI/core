@@ -2878,49 +2878,49 @@
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "name",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "description",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "menuIconUrl",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "menuSequenceNumber",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "defaultDataSource",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "isSystem",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -2959,42 +2959,42 @@
                     "type": "field",
                     "attrs": {
                       "name": "displayName",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "name",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "description",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "menuIconUrl",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "menuSequenceNumber",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "defaultDataSource",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
@@ -3070,56 +3070,56 @@
             "type": "field",
             "attrs": {
               "name": "singularName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "tableName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "pluralName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "description",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "dataSource",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "enableSoftDelete",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "module",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -3158,63 +3158,63 @@
                     "type": "field",
                     "attrs": {
                       "name": "singularName",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "tableName",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "pluralName",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "displayName",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "description",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "dataSource",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "enableSoftDelete",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "module",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "isUserKey",
-                      "filterable": true
+                      "isSearchable": true
                     }
                   }
                 ]
@@ -3250,42 +3250,42 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "type",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "region",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "bucketName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "isPublic",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "localPath",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -3324,7 +3324,7 @@
                     "type": "field",
                     "attrs": {
                       "name": "name",
-              "filterable": true
+              "isSearchable": true
 
                     }
                   },
@@ -3332,7 +3332,7 @@
                     "type": "field",
                     "attrs": {
                       "name": "type",
-              "filterable": true
+              "isSearchable": true
 
                     }
                   },
@@ -3340,7 +3340,7 @@
                     "type": "field",
                     "attrs": {
                       "name": "region",
-              "filterable": true
+              "isSearchable": true
 
                     }
                   },
@@ -3348,7 +3348,7 @@
                     "type": "field",
                     "attrs": {
                       "name": "bucketName",
-              "filterable": true
+              "isSearchable": true
 
                     }
                   },
@@ -3356,7 +3356,7 @@
                     "type": "field",
                     "attrs": {
                       "name": "isPublic",
-              "filterable": true
+              "isSearchable": true
 
                     }
                   },
@@ -3364,7 +3364,7 @@
                     "type": "field",
                     "attrs": {
                       "name": "localPath",
-              "filterable": true
+              "isSearchable": true
 
                     }
                   }
@@ -3401,49 +3401,49 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "type",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "context",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "layout",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "module",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "model",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -3620,42 +3620,42 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "type",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "module",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "model",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "view",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -3867,7 +3867,7 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "filterable": true,
+              "isSearchable": true,
               "widget": "HarishShortText"
             }
           },
@@ -3875,42 +3875,42 @@
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "sequenceNumber",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "module",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "parentMenuItem",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "action",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "roles",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -4063,7 +4063,7 @@
             "type": "field",
             "attrs": {
               "name": "entityId",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
@@ -4071,7 +4071,7 @@
             "attrs": {
               "name": "relativeUri",
               "renderMode": "image",
-              "filterable": true
+              "isSearchable": true
 
             }
           },
@@ -4079,7 +4079,7 @@
             "type": "field",
             "attrs": {
               "name": "modelMetadata",
-              "filterable": true
+              "isSearchable": true
 
             }
           },
@@ -4087,7 +4087,7 @@
             "type": "field",
             "attrs": {
               "name": "mediaStorageProviderMetadata",
-              "filterable": true
+              "isSearchable": true
 
             }
           },
@@ -4095,7 +4095,7 @@
             "type": "field",
             "attrs": {
               "name": "fieldMetadata",
-              "filterable": true
+              "isSearchable": true
 
             }
           }
@@ -4305,266 +4305,266 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "type",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "ormType",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "model",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "defaultValue",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "regexPattern",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "regexPatternNotMatchingErrorMsg",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "required",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "unique",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "encrypt",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "encryptionType",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "decryptWhen",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "index",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "length",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "max",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "min",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "private",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "mediaTypes",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "mediaMaxSizeKb",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "mediaStorageProvider",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationType",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationCoModelSingularName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationCreateInverse",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationCascade",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationModelModuleName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationCoModelFieldName",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "selectionDynamicProvider",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "selectionDynamicProviderCtxt",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "selectionStaticValues",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "selectionValueType",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "computedFieldValueProvider",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "computedFieldValueProviderCtxt",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "computedFieldValueType",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "uuid",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "isSystem",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "isMarkedForRemoval",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "columnName",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -4860,35 +4860,35 @@
             "type": "field",
             "attrs": {
               "name": "username",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "email",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "mobile",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "lastLoginProvider",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "active",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -5118,7 +5118,7 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -5194,14 +5194,14 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "permissions",
-              "filterable": true,
+              "isSearchable": true,
               "renderMode": "checkbox",
               "inlineCreate": "true"
             }
@@ -5210,14 +5210,14 @@
             "type": "field",
             "attrs": {
               "name": "users",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "menuItems",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -5388,49 +5388,49 @@
             "type": "field",
             "attrs": {
               "name": "messageId",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "stage",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "startedAt",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "finishedAt",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "elapsedMillis",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "parentEntityId",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "parentEntity",
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
@@ -5438,7 +5438,7 @@
             "attrs": {
               "name": "mqMessageQueue",
               "label": "Queue",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -5600,7 +5600,7 @@
             "attrs": {
               "name": "name",
               "label": "Queue Name",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
@@ -5797,49 +5797,49 @@
                             "type": "field",
                             "attrs": {
                               "name": "messageId",
-                              "filterable": true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "stage",
-                              "filterable": true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "startedAt",
-                              "filterable": true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "finishedAt",
-                              "filterable": true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "elapsedMillis",
-                              "filterable": true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "parentEntityId",
-                              "filterable": true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "parentEntity",
-                              "filterable": true
+                              "isSearchable": true
                             }
                           },
                           {
@@ -5847,7 +5847,7 @@
                             "attrs": {
                               "name": "mqMessageQueue",
                               "label": "Queue",
-                              "filterable": true
+                              "isSearchable": true
                             }
                           }
                         ]
@@ -5888,7 +5888,7 @@
             "attrs": {
               "name": "appTitle",
               "label": "App Name",
-              "filterable": true
+              "isSearchable": true
             }
           }
         ]
