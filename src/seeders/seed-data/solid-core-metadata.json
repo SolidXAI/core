@@ -2600,7 +2600,7 @@
             "isSystem": true
           },
           {
-            "name": "securityRule",
+            "name": "securityRuleConfig",
             "displayName": "Security Rule",
             "type": "json",
             "ormType": "text",

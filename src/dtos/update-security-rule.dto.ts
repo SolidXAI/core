@@ -35,5 +35,5 @@ export class UpdateSecurityRuleDto {
     @IsOptional()
     @IsJSON()
     @ApiProperty()
-    securityRule: any;
+    securityRuleConfig: any;
 }
