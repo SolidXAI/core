@@ -221,7 +221,9 @@ export * from './services/security-rule.service'
 export * from './services/request-context.service'
 
 // Repositories
+export * from './repository/solid-base.repository'
 export * from './repository/security-rule.repository'
+
 
 //softDeleteAwareEventSubscriber.subscriber.ts
 export * from './subscribers/model.subscriber'
