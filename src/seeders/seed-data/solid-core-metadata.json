@@ -2552,7 +2552,8 @@
             "index": true,
             "private": false,
             "encrypt": false,
-            "isSystem": true
+            "isSystem": true,
+            "isUserKey": true
           },
           {
             "name": "description",
@@ -6868,7 +6869,7 @@
                              {
                                "type": "field",
                                "attrs": {
-                                 "name": "securityRule"
+                                 "name": "securityRuleConfig"
                                }
                              }
      
