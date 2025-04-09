@@ -449,6 +449,13 @@ export class ModuleMetadataSeederService {
             // const fieldsMetadata = modelMetdata.fields;
             // delete modelMetdata['fields'];
             const { fields: fieldsMetadata, ...modelMetaDataWithoutFields } = modelMetadata;
+
+            // Load and set the parent model if it exists.
+            if (modelMetadata.isChild && modelMetadata.parentModelUserKey) {
+                const parentModel = await this.modelMetadataService.findOneByUserKey(modelMetadata.parentModelUserKey);
+                modelMetaDataWithoutFields['parentModel'] = parentModel;
+            }
+
             await this.modelMetadataService.upsert(modelMetaDataWithoutFields);
             const model = await this.modelMetadataService.findOneBySingularName(modelMetadata.singularName)
 

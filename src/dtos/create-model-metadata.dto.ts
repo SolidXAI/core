@@ -103,4 +103,9 @@ export class CreateModelMetadataDto {
     @IsInt()
     @IsOptional()
     parentModelId: number;
+
+    @ApiProperty({ description: 'Parent model user key' })
+    @IsString()
+    @IsOptional()
+    parentModelUserKey: string;
 }
