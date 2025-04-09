@@ -108,13 +108,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     }
 
     // We also need to fetch a map of fields.
-    const fields = await this.fieldMetadataRepo.find({
-      where: {
-        model: {
-          singularName: modelName,
-        }
-      }
-    });
+    const fields = await this.loadFieldHierarchy(modelName);
     const fieldsMap = new Map<string, FieldMetadata>();
     for (let i = 0; i < fields.length; i++) {
       const field = fields[i];
@@ -177,6 +171,31 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     }
 
     return r;
+  }
+
+  private async loadFieldHierarchy(modelName: any) {
+    const model = await this.modelMetadataRepo.findOne({
+      where: {
+        singularName: modelName,
+      },
+      relations: {
+        fields: true,
+        parentModel: {
+          fields: true,
+        }
+      }
+    });
+    const fields = [];
+    if (model) {
+      // Add the fields of the current model
+      fields.push(...model.fields);
+
+      // Add the fields of the parent model
+      if (model.parentModel) {
+        fields.push(...model.parentModel.fields);
+      }
+    }
+    return fields;        
   }
 
   async findOneByUserKey(name: string, relations = {}) {

@@ -307,6 +307,35 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "isChild",
+            "displayName": "Is Child Model",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "parentModel",
+            "displayName": "Parent Model",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "modelMetadata",
+            "relationCreateInverse": true,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ]
       },

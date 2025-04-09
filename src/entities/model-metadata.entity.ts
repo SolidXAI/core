@@ -56,4 +56,10 @@ export class ModelMetadata extends CommonEntity {
 
     @Column({ default: false })
     isSystem: boolean;
+
+    @Column({ default: false })
+    isChild: boolean;
+
+    @ManyToOne(() => ModelMetadata, { onDelete: 'CASCADE' })
+    parentModel: ModelMetadata;
 }
