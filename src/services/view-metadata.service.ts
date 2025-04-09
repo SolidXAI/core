@@ -17,6 +17,7 @@ import { ViewMetadata } from '../entities/view-metadata.entity';
 import { ActionMetadataService } from './action-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
+import { UserViewMetadataService } from './user-view-metadata.service';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -29,6 +30,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     readonly crudHelperService: CrudHelperService,
     readonly actionMetadataService: ActionMetadataService,
     readonly introspectService: SolidIntrospectService,
+    readonly userViewMetadataService: UserViewMetadataService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     @InjectRepository(ViewMetadata, 'default')
@@ -45,7 +47,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
 
   // START: Custom Service Methods
   async getLayout(query) {
-    let { modelName, moduleName, viewType, populate } = query;
+    let { modelName, moduleName, viewType, populate, userId } = query;
 
     // modelName = camelize(modelName);
 
@@ -68,8 +70,27 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       throw new BadRequestException(`Unable to identify view for module: ${moduleName}, model: ${modelName} and viewType: ${viewType}`);
     }
 
+    if (!userId) {
+      throw new BadRequestException(`Unable to identify user for module: ${moduleName}, model: ${modelName} and viewType: ${viewType}`);
+    }
+
+    const userLayout = await this.userViewMetadataService.repo.findOne({
+      where: {
+        user: { id: userId },
+        viewMetadata: { id: entity.id },
+      },
+    });
+
+
+    if (userLayout) {
+      entity.layout = JSON.parse(userLayout.layout);
+    } else {
+      entity.layout = JSON.parse(entity.layout);
+    }
+
+
     // If view entity found then convert layout from "string" to "json".
-    entity.layout = JSON.parse(entity.layout);
+    //pass user id 
     if (entity?.layout?.attrs?.createAction) {
       const actionName: string = entity.layout.attrs.createAction;
       entity.layout.attrs.createAction = await this.actionMetadataService.findOneByUserKey(actionName)

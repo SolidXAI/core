@@ -141,6 +141,9 @@ import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
 import { MediaRepository } from './repository/media.repository';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { UserViewMetadata } from './entities/user-view-metadata.entity';
+import { UserViewMetadataService } from './services/user-view-metadata.service';
+import { UserViewMetadataController } from './controllers/user-view-metadata.controller';
 
 
 @Global()
@@ -185,6 +188,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     HttpModule,
     ConfigModule,
     TypeOrmModule.forFeature([Setting]),
+    TypeOrmModule.forFeature([UserViewMetadata]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -210,6 +214,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     RoleMetadataController,
     UserController,
     SettingController,
+    UserViewMetadataController,
   ],
   providers: [
     {
@@ -303,7 +308,8 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     FileStorageProvider,
     FileS3StorageProvider,
     MediaRepository,
-    ViewMetadataSubsciber
+    ViewMetadataSubsciber,
+    UserViewMetadataService
   ],
   exports: [
     ModuleMetadataService,

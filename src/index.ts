@@ -100,6 +100,7 @@ export * from './entities/user-password-history.entity'
 export * from './entities/user.entity'
 export * from './entities/view-metadata.entity'
 export * from './entities/setting.entity'
+export * from './entities/user-view-metadata.entity'
 
 export * from './enums/auth-type.enum'
 

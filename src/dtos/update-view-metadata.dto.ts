@@ -1,50 +1,66 @@
-import { IsInt, IsOptional, IsString, Matches, IsNotEmpty, IsJSON } from 'class-validator';
+import { IsInt, IsOptional, IsString, Matches, IsNotEmpty, IsJSON, ValidateNested, IsArray } from 'class-validator';
+import { ApiProperty } from '@nestjs/swagger';
+import { Type } from 'class-transformer';
+import { UpdateUserViewMetadataDto } from 'src/dtos/update-user-view-metadata.dto';
+
 export class UpdateViewMetadataDto {
     @IsOptional()
     @IsInt()
     id: number;
-
-    @IsOptional()
     @IsNotEmpty()
+    @IsOptional()
     @Matches(/[a-z]+(-[a-z]+)*/)
     @IsString()
+    @ApiProperty()
     name: string;
-
-    @IsOptional()
     @IsNotEmpty()
+    @IsOptional()
     @IsString()
+    @ApiProperty()
     displayName: string;
-
-    @IsOptional()
     @IsNotEmpty()
+    @IsOptional()
     @IsString()
+    @ApiProperty()
     type: string;
-
-    @IsOptional()
     @IsNotEmpty()
+    @IsOptional()
     @IsJSON()
+    @ApiProperty()
     context: any;
-
-    @IsOptional()
     @IsNotEmpty()
+    @IsOptional()
     @IsJSON()
+    @ApiProperty()
     layout: any;
-
     @IsOptional()
-    @IsNotEmpty()
+    @IsInt()
+    @ApiProperty()
     moduleId: number;
-
-    @IsOptional()
     @IsString()
     @IsOptional()
+    @ApiProperty()
     moduleUserKey: string;
-
     @IsOptional()
-    @IsNotEmpty()
+    @IsInt()
+    @ApiProperty()
     modelId: number;
-
-    @IsOptional()
     @IsString()
     @IsOptional()
+    @ApiProperty()
     modelUserKey: string;
+    @IsOptional()
+    @ApiProperty()
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => UpdateUserViewMetadataDto)
+    userViewMetadata: UpdateUserViewMetadataDto[];
+    @IsOptional()
+    @IsArray()
+    @ApiProperty()
+    userViewMetadataIds: number[];
+    @IsString()
+    @IsOptional()
+    @ApiProperty()
+    userViewMetadataCommand: string;
 }
