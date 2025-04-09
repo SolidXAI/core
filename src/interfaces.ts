@@ -10,6 +10,7 @@ import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
 import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
+import { Readable } from 'stream';
 import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
 
 export interface FieldCrudManager {
@@ -111,7 +112,10 @@ export interface IMail {
     subject: string,
     body: string,
     shouldQueueEmails: boolean,
-    attachments?: MailAttachmentWrapper[],
+    wrapperAttachments?: MailAttachmentWrapper[],
+    attachments?: MailAttachment[],
+    parentEntity?: any,
+    parentEntityId?: any,
   ): Promise<void>;
 
   sendEmailUsingTemplate(
@@ -119,6 +123,10 @@ export interface IMail {
     templateName: string,
     templateParams: any,
     shouldQueueEmails: boolean,
+    wrapperAttachments?: MailAttachmentWrapper[],
+    attachments?: MailAttachment[],
+    parentEntity?: any,
+    parentEntityId?: any,
   ): Promise<void>;
 }
 
@@ -140,8 +148,10 @@ export interface MailAttachmentWrapper {
 
 export interface MailAttachment {
   filename: string;
-  templatePath: string;
-  templateParams: any;
+  templatePath?: string;
+  templateParams?: any;
+  content?: string | Buffer;
+  contentType?: string;
 }
 
 export enum BrokerType {

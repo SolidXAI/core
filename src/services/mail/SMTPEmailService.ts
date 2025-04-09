@@ -9,6 +9,9 @@ import { IMail } from "../../interfaces";
 
 const nodemailer = require("nodemailer");
 
+export interface SMTPMailAttachment {
+
+}
 
 @Injectable()
 export class SMTPEMailService implements IMail {
@@ -32,7 +35,7 @@ export class SMTPEMailService implements IMail {
         });
     }
 
-    async sendEmailUsingTemplate(to: string, templateName: string, templateParams: any, shouldQueueEmails = false, parentEntity = null, parentEntityId = null): Promise<void> {
+    async sendEmailUsingTemplate(to: string, templateName: string, templateParams: any, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments = []): Promise<void> {
         // Load template and evaluate it. 
         const emailTemplate = await this.emailTemplateService.findOneByName(templateName);
         if (!emailTemplate) {
@@ -48,10 +51,10 @@ export class SMTPEMailService implements IMail {
         const subject = subjectTemplate(templateParams);
 
         // Finally send the email.
-        await this.sendEmail(to, subject, body, shouldQueueEmails, parentEntity, parentEntityId);
+        await this.sendEmail(to, subject, body, shouldQueueEmails, parentEntity, parentEntityId, attachments);
     }
 
-    async sendEmail(to: string, subject: string, body: string, shouldQueueEmails = false, parentEntity = null, parentEntityId = null): Promise<void> {
+    async sendEmail(to: string, subject: string, body: string, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments = []): Promise<void> {
         const message = {
             payload: {
                 from: this.commonConfiguration.smtpMail.from,
@@ -61,6 +64,7 @@ export class SMTPEMailService implements IMail {
             },
             parentEntity: parentEntity,
             parentEntityId: parentEntityId,
+            attachments: attachments
         };
 
         // Send using queue if the developer has explicitly invoked with true.
@@ -77,14 +81,14 @@ export class SMTPEMailService implements IMail {
         }
     }
 
-    async sendEmailAsynchronously(message) {
+    private async sendEmailAsynchronously(message) {
         const { to, subject, body } = message.payload;
         // this.notificationPublisherService.publish(message);
         this.emailPublisher.publish(message);
         this.logger.debug(`Queueing email to ${to} with subject ${subject} and body ${body}`);
     }
 
-    async sendEmailSynchronously(message: QueueMessage<any>): Promise<void> {
+    private async sendEmailSynchronously(message: QueueMessage<any>): Promise<void> {
         const { from, to, subject, body } = message.payload;
         // throw new Error('Random error....');
         const r = await this.transporter.sendMail({
