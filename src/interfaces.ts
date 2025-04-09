@@ -73,7 +73,7 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
 
   value(optionValue: string, ctxt: T): Promise<ISelectionProviderValues | any>;
 
-  values(query: string, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
+  values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
 }
 
 export interface IComputedFieldProvider<T> {
