@@ -6720,6 +6720,7 @@
           "readonly": false
         },
         "onFieldChange": "emailFormTypeChangeHandler",
+        "onFormLayoutLoad": "emailFormTypeLoad",
         "children": [
           {
             "type": "sheet",

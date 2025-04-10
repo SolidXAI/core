@@ -13,7 +13,7 @@ import { MediaStorageProviderMetadataService } from './media-storage-provider-me
 import { ConfigService } from '@nestjs/config';
 import { FileService } from './file.service';
 import { MediaService } from './media.service';
-import { DiscoveryService } from '@nestjs/core';
+import { DiscoveryService, ModuleRef } from '@nestjs/core';
 import { CrudHelperService } from './crud-helper.service';
 
 @Injectable()
@@ -31,8 +31,9 @@ export class EmailTemplateService extends CRUDService<EmailTemplate>{
     readonly entityManager: EntityManager,
     @InjectRepository(EmailTemplate, 'default')
     readonly repo: Repository<EmailTemplate>,
+    readonly moduleRef: ModuleRef,
     ) {
-        super(modelMetadataService, moduleMetadataService, mediaStorageProviderService, configService, fileService, mediaService, discoveryService, crudHelperService, entityManager, repo, 'emailTemplate', 'app-builder');
+        super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'emailTemplate', 'app-builder', moduleRef);
     }
     async findOneByName(name: string, relations: any = {}) {
         const entity = await this.repo.findOne({
