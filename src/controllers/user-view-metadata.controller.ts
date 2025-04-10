@@ -5,6 +5,8 @@ import { UserViewMetadataService } from '../services/user-view-metadata.service'
 import { CreateUserViewMetadataDto } from '../dtos/create-user-view-metadata.dto';
 import { UpdateUserViewMetadataDto } from '../dtos/update-user-view-metadata.dto';
 import { UpsertUserViewMetadataDto } from 'src/dtos/upsert-user-view-metadata.dto';
+import { ActiveUser } from 'src/decorators/active-user.decorator';
+import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -92,8 +94,8 @@ export class UserViewMetadataController {
 
   @ApiBearerAuth("jwt")
   @Post('/upsert')
-  async upsert(@Body() query: UpsertUserViewMetadataDto) {
-    return this.service.upsert(query);
+  async upsert(@Body() query: UpsertUserViewMetadataDto, @ActiveUser() activeUser: ActiveUserData) {
+    return this.service.upsert(query, activeUser);
   }
 
 }

@@ -46,8 +46,8 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
   }
 
   // START: Custom Service Methods
-  async getLayout(query) {
-    let { modelName, moduleName, viewType, populate, userId } = query;
+  async getLayout(query, activeUser) {
+    let { modelName, moduleName, viewType, populate } = query;
 
     // modelName = camelize(modelName);
 
@@ -70,13 +70,13 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       throw new BadRequestException(`Unable to identify view for module: ${moduleName}, model: ${modelName} and viewType: ${viewType}`);
     }
 
-    if (!userId) {
+    if (!activeUser?.sub) {
       throw new BadRequestException(`Unable to identify user for module: ${moduleName}, model: ${modelName} and viewType: ${viewType}`);
     }
 
     const userLayout = await this.userViewMetadataService.repo.findOne({
       where: {
-        user: { id: userId },
+        user: { id: activeUser?.sub },
         viewMetadata: { id: entity.id },
       },
     });

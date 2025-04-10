@@ -933,7 +933,7 @@ export class AuthenticationService {
                 email: user.email,
                 mobile: user.mobile,
                 username: user.username,
-                forcePasswordChange: user.forcePasswordChange,
+                // forcePasswordChange: user.forcePasswordChange,
                 id: user.id,
                 roles: user.roles.map((role, idx, roles) => role.name)
             },
