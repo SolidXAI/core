@@ -5922,14 +5922,14 @@
                         "attrs": {
                           "name": "group-1",
                           "label": "",
-                          "className": "col-6"
+                          "className": "col-12"
                         },
                         "children": [
                           {
                             "type": "field",
                             "attrs": {
                               "name": "permissions",
-                              "renderMode": "autocomplete",
+                              "renderMode": "inputSwitch",
                               "showLabel": false
                             }
                           }
