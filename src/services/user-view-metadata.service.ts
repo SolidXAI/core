@@ -13,6 +13,7 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 
 import { UserViewMetadata } from '../entities/user-view-metadata.entity';
 import { UpsertUserViewMetadataDto } from 'src/dtos/upsert-user-view-metadata.dto';
+import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 
 @Injectable()
 export class UserViewMetadataService extends CRUDService<UserViewMetadata> {
@@ -33,9 +34,9 @@ export class UserViewMetadataService extends CRUDService<UserViewMetadata> {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'userViewMetadata', 'solid-core', moduleRef);
   }
 
-  async upsert(query: UpsertUserViewMetadataDto) {
+  async upsert(query: UpsertUserViewMetadataDto, activeUser: ActiveUserData) {
     const existing = await this.repo.findOne({
-      where: { user: { id: query.userId }, viewMetadata: { id: query.viewMetadataId } }
+      where: { user: { id: activeUser?.sub }, viewMetadata: { id: query.viewMetadataId } }
     });
 
     if (existing) {
@@ -43,7 +44,7 @@ export class UserViewMetadataService extends CRUDService<UserViewMetadata> {
       return await this.repo.save(existing);
     } else {
       const newEntry = this.repo.create({
-        user: { id: query.userId },
+        user: { id: activeUser?.sub },
         viewMetadata: { id: query.viewMetadataId },
         layout: JSON.parse(query.layout)
       });
