@@ -100,6 +100,7 @@ export * from './entities/user-password-history.entity'
 export * from './entities/user.entity'
 export * from './entities/view-metadata.entity'
 export * from './entities/setting.entity'
+export * from './entities/user-view-metadata.entity'
 
 export * from './enums/auth-type.enum'
 
@@ -218,6 +219,9 @@ export * from './services/setting.service'
 //softDeleteAwareEventSubscriber.subscriber.ts
 export * from './subscribers/model.subscriber'
 export * from './subscribers/softDeleteAwareEventSubscriber.subscriber' //rename
+export * from './subscribers/view-metadata.subscriber' //rename
+
+
 
 export * from './transformers/array-transformer'
 export * from './transformers/boolean-transformer'

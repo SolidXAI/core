@@ -1,32 +1,27 @@
 import { Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { DiscoveryService } from "@nestjs/core";
-import { EntityManager, Repository } from 'typeorm';
+import { CrudHelperService } from "src/services/crud-helper.service";
 import { CRUDService } from 'src/services/crud.service';
+import { FileService } from "src/services/file.service";
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { MediaStorageProviderMetadataService } from 'src/services/media-storage-provider-metadata.service';
-import { ConfigService } from '@nestjs/config';
-import { MediaService } from "src/services/media.service";
-import { FileService } from "src/services/file.service";
-import { CrudHelperService } from "src/services/crud-helper.service";
+import { EntityManager, Repository } from 'typeorm';
 
 
-import { User } from '../entities/user.entity';
 import { OauthUserDto } from '../dtos/oauth-user-dto';
 import { RoleMetadata } from '../entities/role-metadata.entity';
+import { User } from '../entities/user.entity';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
-import { classify } from '@angular-devkit/core/src/utils/strings';
 
 @Injectable()
 export class UserService extends CRUDService<User> {
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
-    readonly mediaStorageProviderService: MediaStorageProviderMetadataService,
     readonly configService: ConfigService,
     readonly fileService: FileService,
-    readonly mediaService: MediaService,
     readonly discoveryService: DiscoveryService,
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
@@ -35,8 +30,10 @@ export class UserService extends CRUDService<User> {
     readonly repo: Repository<User>,
     @InjectRepository(RoleMetadata)
     private readonly roleRepository: Repository<RoleMetadata>,
+    readonly moduleRef: ModuleRef
+
   ) {
-    super(modelMetadataService, moduleMetadataService, mediaStorageProviderService, configService, fileService, mediaService, discoveryService, crudHelperService, entityManager, repo, 'user', 'solid-core');
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'user', 'solid-core', moduleRef);
   }
 
 
@@ -75,7 +72,7 @@ export class UserService extends CRUDService<User> {
     // return entity;
   }
 
-  async updateUser(id: any, updateDto, files,solidRequestContext :any = {}) {
+  async updateUser(id: any, updateDto, files, solidRequestContext: any = {}) {
     const user = await this.repo.findOne({
       where: { id: id },
       relations: {
@@ -85,7 +82,7 @@ export class UserService extends CRUDService<User> {
     if (!user) {
       throw new Error(`User not found.`);
     }
-    const roles  = updateDto.roles ? updateDto.roles :[]; 
+    const roles = updateDto.roles ? updateDto.roles : [];
     await this.addRolesToUser(user.username, roles);
     await this.update(id, updateDto, files, true);
   }

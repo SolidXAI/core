@@ -137,6 +137,13 @@ import { SettingService } from './services/setting.service';
 import { SettingController } from './controllers/setting.controller';
 import { ModuleMetadataHelperService } from './helpers/module-metadata-helper.service';
 import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
+import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
+import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
+import { MediaRepository } from './repository/media.repository';
+import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { UserViewMetadata } from './entities/user-view-metadata.entity';
+import { UserViewMetadataService } from './services/user-view-metadata.service';
+import { UserViewMetadataController } from './controllers/user-view-metadata.controller';
 
 
 @Global()
@@ -181,6 +188,7 @@ import { ConcatComputedFieldProvider } from './services/computed-fields/concat-c
     HttpModule,
     ConfigModule,
     TypeOrmModule.forFeature([Setting]),
+    TypeOrmModule.forFeature([UserViewMetadata]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -206,6 +214,7 @@ import { ConcatComputedFieldProvider } from './services/computed-fields/concat-c
     RoleMetadataController,
     UserController,
     SettingController,
+    UserViewMetadataController,
   ],
   providers: [
     {
@@ -296,6 +305,11 @@ import { ConcatComputedFieldProvider } from './services/computed-fields/concat-c
     UserService,
     SettingService,
     ConcatComputedFieldProvider,
+    FileStorageProvider,
+    FileS3StorageProvider,
+    MediaRepository,
+    ViewMetadataSubsciber,
+    UserViewMetadataService
   ],
   exports: [
     ModuleMetadataService,

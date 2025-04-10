@@ -1,6 +1,6 @@
 import { BadRequestException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
-import { DiscoveryService } from "@nestjs/core";
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { Repository } from "typeorm/repository/Repository";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
@@ -31,30 +31,26 @@ import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCr
 import { FieldCrudManager } from "../interfaces";
 import { CrudHelperService } from "./crud-helper.service";
 import { FileService } from "./file.service";
-import { MediaStorageProviderMetadataService } from "./media-storage-provider-metadata.service";
-import { MediaService } from "./media.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
-import { SolidRequestContextDto } from "src/dtos/solid-request-context.dto";
 
 const DEFAULT_LIMIT = 10;
 const DEFAULT_OFFSET = 0;
-export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
+export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
     constructor(
         readonly modelMetadataService: ModelMetadataService,
         readonly moduleMetadataService: ModuleMetadataService,
-        readonly mediaStorageProviderService: MediaStorageProviderMetadataService,
         readonly configService: ConfigService,
         readonly fileService: FileService,
-        readonly mediaService: MediaService,
         readonly discoveryService: DiscoveryService,
         readonly crudHelperService: CrudHelperService,
         readonly entityManager: EntityManager,
         readonly repo: Repository<T>,
         readonly modelName: string,
         readonly moduleName: string,
+        readonly moduleRef: ModuleRef
         //We can just have the Model Entity here
     ) { }
 
@@ -160,7 +156,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
 
                 // Get the storage provider implementation
-                const storageProvider = getMediaStorageProvider(this.configService, this.fileService, this.mediaService, storageProviderType);
+                const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
 
                 //Commented the below code since we will be direclty images from server on call from ui 
                 // await storageProvider.delete(savedEntity, mediaField);
@@ -414,7 +410,6 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
     }
 
-
     async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}) {
         const alias = 'entity';
         // Extract the required keys from the input query
@@ -428,13 +423,19 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
             }
         }
 
+        // Exclude one-to-many and many-to-one relations from the initial filter query, since they will be queried separately
+        const relationsExcludedFromInitialQuery = this.relationsExcludedFromInitialQuery(model, basicFilterDto.populate);
+        basicFilterDto = this.getRevisedFilterDto(basicFilterDto, relationsExcludedFromInitialQuery);
+        
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
         qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-
+        
         if (basicFilterDto.groupBy) {
+            const relationsExcludedFromInitialQuery = this.relationsExcludedFromInitialQuery(model, groupFilter.populate);
+            groupFilter = this.getRevisedFilterDto(groupFilter, relationsExcludedFromInitialQuery);
             // Get the records and the count
-            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia);
+            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia, relationsExcludedFromInitialQuery);
             return {
                 groupMeta,
                 groupRecords,
@@ -442,7 +443,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
         else {
             // Get the records and the count
-            const { meta, records } = await this.handleNonGroupFind(qb, populateMedia, offset, limit);
+            const { meta, records } = await this.handleNonGroupFind(qb, populateMedia, offset, limit, alias, relationsExcludedFromInitialQuery);
             return {
                 meta,
                 records,
@@ -450,8 +451,27 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
     }
 
-    private async handleNonGroupFind(qb: SelectQueryBuilder<T>, populateMedia: string[], offset: number, limit: number) {
+    private getRevisedFilterDto(basicFilterDto: BasicFilterDto, relationsExcludedFromInitialQuery: string[]): BasicFilterDto {
+        const normalizedPopulate = this.crudHelperService.normalize(basicFilterDto.populate);
+        if (normalizedPopulate.length === 0 || relationsExcludedFromInitialQuery.length === 0) return basicFilterDto;
+        return  { ...basicFilterDto, populate: normalizedPopulate.filter(populate => !relationsExcludedFromInitialQuery.includes(populate)) };
+    }
+
+    private relationsExcludedFromInitialQuery(model: ModelMetadata, relationsToBePopulated: string[] = []): string[] {
+        const  relationToBeExcluded =
+         model.fields
+        .filter(field => field.type === 'relation' && [RelationType.manyTomany, RelationType.oneToMany].includes(field.relationType as RelationType))
+        .map(field => field.name);
+        return relationsToBePopulated.filter(relation => relationToBeExcluded.includes(relation));
+    }
+
+    private async handleNonGroupFind(qb: SelectQueryBuilder<T>, populateMedia: string[], offset: number, limit: number, alias: string, relationsExcludedFromInitialQuery: string[]) {
         const [entities, count] = await qb.getManyAndCount();
+
+        // Populate the excluded relations for the entities
+        if (relationsExcludedFromInitialQuery.length > 0) {
+            await this.populateExcludedRelations(entities, relationsExcludedFromInitialQuery, alias);
+        }
 
         // Populate the entity with the media
         if (populateMedia && populateMedia.length > 0) {
@@ -461,7 +481,36 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[]) {
+    private async populateExcludedRelations(entities: T[], relationsExcludedFromInitialQuery: string[], alias: string) {
+        //@ts-ignore
+        const ids = entities.map(entity => entity.id);
+
+        // Fire a query to get the records from the relation entity which match the ids
+        // Create a map with key as the entity id and value as the qb records
+        const relationEntitiesMap = {};
+        for (const relation of relationsExcludedFromInitialQuery) {
+            const qb = this.repo.createQueryBuilder(`${alias}`)
+                .leftJoinAndSelect(`${alias}.${relation}`, relation)
+                .where(`${alias}.id IN (:...ids)`, { ids })
+                // .limit(DEFAULT_LIMIT)
+                // .offset(DEFAULT_OFFSET);
+            const relationEntities = await qb.getMany();
+            relationEntitiesMap[relation] = relationEntities;
+        }
+
+        // Iterate over the map and assign the relation entities to the entity
+        for (const relation of relationsExcludedFromInitialQuery) {
+            for (const entity of entities) {
+                const entityRelations = relationEntitiesMap[relation]
+                    //@ts-ignore
+                    .filter((joinedEntity: T) => joinedEntity.id === entity.id)
+                    .flatMap((joinedEntity: T) => joinedEntity[relation]);
+                entity[relation] = entityRelations;
+            }
+        }
+    }
+
+    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[], relationsExcludedFromInitialQuery: string[]) {
         const groupByResult = await qb.getRawMany();
 
         const groupMeta = [];
@@ -470,15 +519,14 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         for (const group of groupByResult) {
             if (populateGroup) {
                 let groupByQb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias);
-                // For the group by records, apply the basic filter
-                // const basicFilterDto = {
-                //     limit: DEFAULT_LIMIT,
-                //     offset: DEFAULT_OFFSET,
-                // };
                 groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
                 const [entities, count] = await groupByQb.getManyAndCount();
 
+                // Populate the excluded relations for the entities
+                if (relationsExcludedFromInitialQuery.length > 0) {
+                    await this.populateExcludedRelations(entities, relationsExcludedFromInitialQuery, alias);
+                }
 
                 // Populate the entity with the media
                 if (populateMedia && populateMedia.length > 0) {
@@ -533,7 +581,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 const media = await Promise.all(mediaFields.map(async (mediaField) => {
                     const storageProviderMetadata = mediaField.mediaStorageProvider;
                     const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
-                    const storageProvider = getMediaStorageProvider(this.configService, this.fileService, this.mediaService, storageProviderType);
+                    const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
                     const mediaResult = await storageProvider.retrieve(entity, mediaField);
                     mediaObj[mediaField.name] = mediaResult;
                 }));
@@ -585,7 +633,7 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
                 }
                 const storageProviderMetadata = mediaField.mediaStorageProvider;
                 const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
-                const storageProvider = getMediaStorageProvider(this.configService, this.fileService, this.mediaService, storageProviderType);
+                const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
                 const mediaResult = await storageProvider.retrieve(entity, mediaField);
                 let obj = { [mediaField.name]: mediaResult }
                 mediaObj[mediaField.name] = mediaResult;
@@ -701,8 +749,17 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         // return removedEntities
     }
 
-    async recover(id: number) {
+    async recover(id: number,solidRequestContext: any = {}) {
         try {
+            const loadedmodel = await this.loadModel();
+            // Check wheather user has update permission for model
+            if (solidRequestContext.activeUser) {
+                const hasPermission = this.crudHelperService.hasRecoverPermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
+                if (!hasPermission) {
+                    throw new BadRequestException('Forbidden');
+                }
+            }
+
             const softDeletedRows = await this.repo.findOne({
                 where: {
                     //@ts-ignore
@@ -732,8 +789,17 @@ export class CRUDService<T> { //Add two generic value i.e Person,CreatePersonDto
         }
     }
 
-    async recoverMany(ids: number[]) {
+    async recoverMany(ids: number[],solidRequestContext: any = {}) {
         try {
+            const loadedmodel = await this.loadModel();
+            // Check wheather user has update permission for model
+            if (solidRequestContext.activeUser) {
+                const hasPermission = this.crudHelperService.hasRecoverPermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
+                if (!hasPermission) {
+                    throw new BadRequestException('Forbidden');
+                }
+            }
+
             if (!ids || ids.length === 0) {
                 throw new Error("No IDs provided for recovery.");
             }
