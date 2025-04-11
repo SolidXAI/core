@@ -104,6 +104,7 @@ export * from './entities/view-metadata.entity'
 export * from './entities/setting.entity'
 export * from './entities/user-view-metadata.entity'
 export * from './entities/security-rule.entity'
+export * from './entities/saved-filters.entity'
 
 export * from './enums/auth-type.enum'
 

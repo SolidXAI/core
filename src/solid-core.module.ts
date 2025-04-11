@@ -150,6 +150,9 @@ import { SecurityRuleController } from './controllers/security-rule.controller';
 import { RequestContextService } from './services/request-context.service';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
+import { SavedFilters } from './entities/saved-filters.entity';
+import { SavedFiltersService } from './services/saved-filters.service';
+import { SavedFiltersController } from './controllers/saved-filters.controller';
 
 
 @Global()
@@ -196,6 +199,7 @@ import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
     TypeOrmModule.forFeature([Setting]),
     TypeOrmModule.forFeature([UserViewMetadata]),
     TypeOrmModule.forFeature([SecurityRule]),
+    TypeOrmModule.forFeature([SavedFilters]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -223,6 +227,7 @@ import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
     SettingController,
     UserViewMetadataController,
     SecurityRuleController,
+    SavedFiltersController
   ],
   providers: [
     {
@@ -322,6 +327,7 @@ import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
     SecurityRuleRepository,
     SecurityRuleSubscriber,
     RequestContextService,
+    SavedFiltersService
   ],
   exports: [
     ModuleMetadataService,

@@ -2560,6 +2560,130 @@
         ]
       },
       {
+        "singularName": "savedFilters",
+        "pluralName": "savedFilterss",
+        "displayName": "Saved Filters",
+        "description": "This is used to maintain user saved filters",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_saved_fitlers",
+        "userKeyFieldUserKey": "filterQueryJson",
+        "fields": [
+          {
+            "name": "user",
+            "displayName": "User",
+            "description": "This is the user id field",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "bondTransactionDetailLogs",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "user",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "restrict",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
+          },
+          {
+            "name": "model",
+            "displayName": "Model",
+            "description": "This is the model related to saved filter.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "savedFilters",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "modelMetadata",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "restrict",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
+          },
+          {
+            "name": "view",
+            "displayName": "View",
+            "description": "This is the view related to saved filter.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "savedFilters",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "viewMetadata",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "restrict",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
+          },
+          {
+            "name": "filterQueryJson",
+            "displayName": "Filter Query Json",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "isPrivate",
+            "displayName": "Is Private",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          }
+        ]
+      },
+      {
         "singularName": "securityRule",
         "tableName": "ss_security_rule",
         "pluralName": "securityRules",
@@ -3077,6 +3201,19 @@
       "modelUserKey": "menuItemMetadata"
     },
     {
+      "displayName": "Saved Filters list action",
+      "name": "savedFilters-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "savedFilters-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters"
+    },
+    {
       "displayName": "Media list action",
       "name": "media-list-action",
       "type": "solid",
@@ -3308,6 +3445,14 @@
       "name": "action-metadata",
       "sequenceNumber": 6,
       "actionUserKey": "actionMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layout-builder-menu-item"
+    },
+    {
+      "displayName": "Saved Filters",
+      "name": "savedFilters-metadata",
+      "sequenceNumber": 7,
+      "actionUserKey": "savedFilters-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "layout-builder-menu-item"
     },
@@ -3839,6 +3984,244 @@
       }
     },
     {
+      "name": "savedFilters-list-view",
+      "displayName": "Saved Filters list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "view",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "filterQueryJson",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "savedFilters-form-view",
+      "displayName": "Saved Filters form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Solid Saved Filter Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "filterQueryJson"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "view"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "model"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "user"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "savedFilters-list-view",
+      "displayName": "Saved Filters list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "view",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "filterQueryJson",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "savedFilters-form-view",
+      "displayName": "Saved Filters form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Solid Saved Filter Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "filterQueryJson"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "view"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "model"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "user"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "name": "mediaStorageProviderMetadata-list-view",
       "displayName": "Solid Media Storage Provider Metadata Model",
       "type": "list",
@@ -3938,42 +4321,42 @@
                     "type": "field",
                     "attrs": {
                       "name": "name",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "type",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "region",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "bucketName",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "isPublic",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "localPath",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   }
                 ]
@@ -4805,6 +5188,7 @@
         ]
       }
     },
+    
     {
       "name": "media-list-view",
       "displayName": "Solid Media Model",
@@ -4843,28 +5227,28 @@
             "attrs": {
               "name": "relativeUri",
               "renderMode": "image",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "modelMetadata",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "mediaStorageProviderMetadata",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "fieldMetadata",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -4887,6 +5271,7 @@
           "edit": true,
           "delete": true,
           "groupBy": "mimeType",
+          "grouped": false,
           "draggable": true,
           "allowedViews": [
             "list",
