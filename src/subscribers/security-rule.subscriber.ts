@@ -62,12 +62,12 @@ export class SecurityRuleSubscriber implements EntitySubscriberInterface<Securit
         if (metaData.securityRule) {
             const securityRuleIndex = metaData.securityRules?.findIndex((ruleFromFile: { name: string }) => ruleFromFile.name === securityRule.name);
             const {id, roleId, modelMetadataId, ...requiredDto} = await this.securityRuleRepo.toDto(securityRule)
-            metaData.securityRules[securityRuleIndex] = requiredDto
+            metaData.securityRules[securityRuleIndex] = {requiredDto, securityRuleConfig: JSON.parse(securityRule.securityRuleConfig)}
         }
         else {
             const securityRules = []
             const {id, roleId, modelMetadataId, ...requiredDto} = await this.securityRuleRepo.toDto(securityRule)
-            securityRules.push(requiredDto)
+            securityRules.push({...requiredDto, securityRuleConfig: JSON.parse(securityRule.securityRuleConfig)})
             metaData.securityRules = securityRules
         }
         // Write the updated object back to the file
