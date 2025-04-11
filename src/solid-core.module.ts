@@ -141,6 +141,9 @@ import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
 import { MediaRepository } from './repository/media.repository';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { SavedFilters } from './entities/saved-filters.entity';
+import { SavedFiltersService } from './services/saved-filters.service';
+import { SavedFiltersController } from './controllers/saved-filters.controller';
 
 
 @Global()
@@ -185,6 +188,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     HttpModule,
     ConfigModule,
     TypeOrmModule.forFeature([Setting]),
+    TypeOrmModule.forFeature([SavedFilters]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -210,6 +214,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     RoleMetadataController,
     UserController,
     SettingController,
+    SavedFiltersController,
   ],
   providers: [
     {
@@ -303,7 +308,8 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     FileStorageProvider,
     FileS3StorageProvider,
     MediaRepository,
-    ViewMetadataSubsciber
+    ViewMetadataSubsciber,
+    SavedFiltersService
   ],
   exports: [
     ModuleMetadataService,
