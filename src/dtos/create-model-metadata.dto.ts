@@ -94,4 +94,18 @@ export class CreateModelMetadataDto {
     @ApiProperty({ description: 'System models are not included in the code generation, the assumption being that system models have manually written code.', })
     @IsBoolean()
     isSystem: boolean;
+
+    @ApiProperty({ description: 'Child models are not included in the code generation, the assumption being that child models have manually written code.', })
+    @IsBoolean()
+    isChild: boolean;
+
+    @ApiProperty({ description: 'Parent model id' })
+    @IsInt()
+    @IsOptional()
+    parentModelId: number;
+
+    @ApiProperty({ description: 'Parent model user key' })
+    @IsString()
+    @IsOptional()
+    parentModelUserKey: string;
 }

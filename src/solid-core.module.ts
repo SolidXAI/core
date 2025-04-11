@@ -144,6 +144,12 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { UserViewMetadata } from './entities/user-view-metadata.entity';
 import { UserViewMetadataService } from './services/user-view-metadata.service';
 import { UserViewMetadataController } from './controllers/user-view-metadata.controller';
+import { SecurityRule } from './entities/security-rule.entity';
+import { SecurityRuleService } from './services/security-rule.service';
+import { SecurityRuleController } from './controllers/security-rule.controller';
+import { RequestContextService } from './services/request-context.service';
+import { SecurityRuleRepository } from './repository/security-rule.repository';
+import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 
 
 @Global()
@@ -189,6 +195,7 @@ import { UserViewMetadataController } from './controllers/user-view-metadata.con
     ConfigModule,
     TypeOrmModule.forFeature([Setting]),
     TypeOrmModule.forFeature([UserViewMetadata]),
+    TypeOrmModule.forFeature([SecurityRule]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -215,6 +222,7 @@ import { UserViewMetadataController } from './controllers/user-view-metadata.con
     UserController,
     SettingController,
     UserViewMetadataController,
+    SecurityRuleController,
   ],
   providers: [
     {
@@ -309,7 +317,11 @@ import { UserViewMetadataController } from './controllers/user-view-metadata.con
     FileS3StorageProvider,
     MediaRepository,
     ViewMetadataSubsciber,
-    UserViewMetadataService
+    UserViewMetadataService,
+    SecurityRuleService,
+    SecurityRuleRepository,
+    SecurityRuleSubscriber,
+    RequestContextService,
   ],
   exports: [
     ModuleMetadataService,
@@ -337,6 +349,8 @@ import { UserViewMetadataController } from './controllers/user-view-metadata.con
     MqMessageService,
     RefreshModelCommand,
     RefreshModuleCommand,
+    RequestContextService,
+    SecurityRuleRepository,
   ],
 })
 export class SolidCoreModule { }

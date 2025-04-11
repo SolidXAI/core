@@ -307,6 +307,35 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "isChild",
+            "displayName": "Is Child Model",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "parentModel",
+            "displayName": "Parent Model",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "modelMetadata",
+            "relationCreateInverse": true,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ]
       },
@@ -2531,6 +2560,90 @@
         ]
       },
       {
+        "singularName": "securityRule",
+        "tableName": "ss_security_rule",
+        "pluralName": "securityRules",
+        "displayName": "Security rules",
+        "description": "Model to capture all the security rules",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "userKeyFieldUserKey": "name",
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "isUserKey": true
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "role",
+            "displayName": "Role",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "roleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "modelMetadata",
+            "displayName": "Model Metadata",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "modelMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "securityRuleConfig",
+            "displayName": "Security Rule",
+            "type": "json",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
+      },
+      {
         "singularName": "emailTemplate",
         "tableName": "ss_email_template",
         "pluralName": "emailTemplates",
@@ -3094,6 +3207,19 @@
       "modelUserKey": "setting"
     },
     {
+      "displayName": "Security rules list view",
+      "name": "securityRule-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "securityRule-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule"
+    },
+    {
       "displayName": "Email list action",
       "name": "email-list-action",
       "type": "solid",
@@ -3246,6 +3372,14 @@
       "name": "permissionMetadata-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "permissionMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
+      "displayName": "Security rules",
+      "name": "securityRule-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "securityRule-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "iam-menu-item"
     },
@@ -6668,6 +6802,136 @@
           }
         ]
       }
+    },
+    {
+      "name": "securityRule-list-view",
+      "displayName": "Security rules",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id",
+              "label": "Id",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+           {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "label": "Name",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+     }
+    },
+    {
+      "name": "securityRule-form-view",
+      "displayName": "Security rules",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule",
+      "layout":{
+        "type": "form",
+        "attrs": {
+           "name": "form-1",
+           "label": "Security rules",
+           "className": "grid"
+        },
+        "children": [
+           {
+              "type": "sheet",
+              "attrs": {
+                 "name": "sheet-1"
+              },
+              "children": [
+                 {
+                    "type": "row",
+                    "attrs": {
+                       "name": "group-1",
+                       "label": "",
+                       "className": ""
+                    },
+                      "children": [
+                       {
+                          "type": "column",
+                          "attrs": {
+                             "name": "group-1",
+                             "label": "",
+                             "className": "col-6"
+                          },
+                          "children": [
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "name"
+                               }
+                             },
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "description"
+                               }
+                             },
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "securityRuleConfig"
+                               }
+                             }
+     
+                          ]
+                       },
+                       {
+                          "type": "column",
+                          "attrs": {
+                             "name": "group-2",
+                             "label": "",
+                             "className": "col-6"
+                          },
+                          "children": [
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "role"
+                               }
+                             },
+                             {
+                               "type": "field",
+                               "attrs": {
+                                 "name": "modelMetadata"
+                               }
+                             }
+                          ]
+                       }
+                    ]
+                 }
+              ]
+           }
+        ]
+     }
     },
     {
       "name": "email-list-view",

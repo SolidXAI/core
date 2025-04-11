@@ -10,6 +10,7 @@ import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
 import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
+import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -46,6 +47,7 @@ export interface ModuleMetadataConfiguration {
     emailTemplates?: CreateEmailTemplateDto[],
     smsTemplates?: CreateSmsTemplateDto[],
     mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[]
+    securityRules?: CreateSecurityRuleDto[],
 }
 
 export interface CodeGenerationOptions {

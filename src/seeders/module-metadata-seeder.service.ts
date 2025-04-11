@@ -32,6 +32,8 @@ import commonConfig from 'src/config/common.config';
 import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { SettingService } from 'src/services/setting.service';
 import { Setting } from 'src/entities/setting.entity';
+import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
+import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
 
 @Injectable()
 export class ModuleMetadataSeederService {
@@ -62,6 +64,7 @@ export class ModuleMetadataSeederService {
         private readonly service: SettingService,
         @InjectRepository(Setting, 'default')
         readonly settingsRepo: Repository<Setting>,
+        readonly securityRuleRepo: SecurityRuleRepository,
     ) { }
 
     async seed() {
@@ -190,10 +193,16 @@ export class ModuleMetadataSeederService {
             await this.seedSmsTemplates(smsTemplates);
             this.logger.debug(`[End] Processing sms templates for ${moduleMetadata.name}`);
 
-            // Sms templates
+            // Settings
             this.logger.debug(`[Start] Processing settings for ${moduleMetadata.name}`);
             await this.seedSettings(settingsSeederData);
             this.logger.debug(`[End] Processing settings for ${moduleMetadata.name}`);
+
+            // Security rules
+            this.logger.debug(`[Start] Processing security rules for ${moduleMetadata.name}`);
+            const securityRules: CreateSecurityRuleDto[] = overallMetadata.securityRules;
+            await this.seedSecurityRules(securityRules);
+            this.logger.debug(`[End] Processing security rules for ${moduleMetadata.name}`);
 
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
 
@@ -449,6 +458,13 @@ export class ModuleMetadataSeederService {
             // const fieldsMetadata = modelMetdata.fields;
             // delete modelMetdata['fields'];
             const { fields: fieldsMetadata, ...modelMetaDataWithoutFields } = modelMetadata;
+
+            // Load and set the parent model if it exists.
+            if (modelMetadata.isChild && modelMetadata.parentModelUserKey) {
+                const parentModel = await this.modelMetadataService.findOneByUserKey(modelMetadata.parentModelUserKey);
+                modelMetaDataWithoutFields['parentModel'] = parentModel;
+            }
+
             await this.modelMetadataService.upsert(modelMetaDataWithoutFields);
             const model = await this.modelMetadataService.findOneBySingularName(modelMetadata.singularName)
 
@@ -486,4 +502,15 @@ export class ModuleMetadataSeederService {
             this.service.create(createDto);
         }
     }
+
+    async seedSecurityRules(rulesDto: CreateSecurityRuleDto[]) {
+        if (!rulesDto || rulesDto.length === 0) {
+            this.logger.debug(`No security rules found to seed`);
+            return;
+        }
+        for (const dto of rulesDto) {
+            await this.securityRuleRepo.upsertWithDto({...dto, securityRuleConfig: JSON.stringify(dto.securityRuleConfig)});
+        }
+    }
+
 }
