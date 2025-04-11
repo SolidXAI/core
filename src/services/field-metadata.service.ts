@@ -739,6 +739,7 @@ export class FieldMetadataService {
                     "relationCoModelSingularName",
                     "relationCoModelColumnName",
                     "relationModelModuleName",
+                    "relationCascade",
                     "required",
                     "unique",
                     "index",

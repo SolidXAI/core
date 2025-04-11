@@ -17,6 +17,7 @@ import { ViewMetadata } from '../entities/view-metadata.entity';
 import { ActionMetadataService } from './action-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
+import { UserViewMetadataService } from './user-view-metadata.service';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -29,6 +30,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     readonly crudHelperService: CrudHelperService,
     readonly actionMetadataService: ActionMetadataService,
     readonly introspectService: SolidIntrospectService,
+    readonly userViewMetadataService: UserViewMetadataService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     @InjectRepository(ViewMetadata, 'default')
@@ -44,7 +46,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
   }
 
   // START: Custom Service Methods
-  async getLayout(query) {
+  async getLayout(query, activeUser) {
     let { modelName, moduleName, viewType, populate } = query;
 
     // modelName = camelize(modelName);
@@ -68,8 +70,27 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       throw new BadRequestException(`Unable to identify view for module: ${moduleName}, model: ${modelName} and viewType: ${viewType}`);
     }
 
+    if (!activeUser?.sub) {
+      throw new BadRequestException(`Unable to identify user for module: ${moduleName}, model: ${modelName} and viewType: ${viewType}`);
+    }
+
+    const userLayout = await this.userViewMetadataService.repo.findOne({
+      where: {
+        user: { id: activeUser?.sub },
+        viewMetadata: { id: entity.id },
+      },
+    });
+
+
+    if (userLayout) {
+      entity.layout = JSON.parse(userLayout.layout);
+    } else {
+      entity.layout = JSON.parse(entity.layout);
+    }
+
+
     // If view entity found then convert layout from "string" to "json".
-    entity.layout = JSON.parse(entity.layout);
+    //pass user id 
     if (entity?.layout?.attrs?.createAction) {
       const actionName: string = entity.layout.attrs.createAction;
       entity.layout.attrs.createAction = await this.actionMetadataService.findOneByUserKey(actionName)
@@ -87,13 +108,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     }
 
     // We also need to fetch a map of fields.
-    const fields = await this.fieldMetadataRepo.find({
-      where: {
-        model: {
-          singularName: modelName,
-        }
-      }
-    });
+    const fields = await this.loadFieldHierarchy(modelName);
     const fieldsMap = new Map<string, FieldMetadata>();
     for (let i = 0; i < fields.length; i++) {
       const field = fields[i];
@@ -131,7 +146,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       // for workflowFields of type selectionStatic we simply return the key/values from field metadata AS-IS
       if (workflowField.type === 'selectionStatic') {
         solidFormViewWorkflowData = workflowField.selectionStaticValues.map(item => {
-          const [label, value] = item.split(":");
+          const [value,label] = item.split(":");
           return { label, value };
         });
       }
@@ -156,6 +171,31 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     }
 
     return r;
+  }
+
+  private async loadFieldHierarchy(modelName: any) {
+    const model = await this.modelMetadataRepo.findOne({
+      where: {
+        singularName: modelName,
+      },
+      relations: {
+        fields: true,
+        parentModel: {
+          fields: true,
+        }
+      }
+    });
+    const fields = [];
+    if (model) {
+      // Add the fields of the current model
+      fields.push(...model.fields);
+
+      // Add the fields of the parent model
+      if (model.parentModel) {
+        fields.push(...model.parentModel.fields);
+      }
+    }
+    return fields;        
   }
 
   async findOneByUserKey(name: string, relations = {}) {

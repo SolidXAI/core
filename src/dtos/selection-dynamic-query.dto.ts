@@ -20,7 +20,7 @@ export class SelectionDynamicQueryDto extends PaginationQueryDto {
     @ApiProperty({ description: "Search query string", type: String })
     @IsString()
     @IsOptional()
-    query?: string = '';
+    query?: any;
 
     @ApiProperty({ description: "Value of a single dynamic option", type: String })
     @IsString()

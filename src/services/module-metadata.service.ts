@@ -150,6 +150,7 @@ export class ModuleMetadataService {
         emailTemplates: [],
         smsTemplates: [],
         mediaStorageProviders: [],
+        securityRules: [],
       };
 
       // Convert the object to JSON string

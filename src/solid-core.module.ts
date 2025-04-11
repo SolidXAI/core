@@ -144,6 +144,15 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { SavedFilters } from './entities/saved-filters.entity';
 import { SavedFiltersService } from './services/saved-filters.service';
 import { SavedFiltersController } from './controllers/saved-filters.controller';
+import { UserViewMetadata } from './entities/user-view-metadata.entity';
+import { UserViewMetadataService } from './services/user-view-metadata.service';
+import { UserViewMetadataController } from './controllers/user-view-metadata.controller';
+import { SecurityRule } from './entities/security-rule.entity';
+import { SecurityRuleService } from './services/security-rule.service';
+import { SecurityRuleController } from './controllers/security-rule.controller';
+import { RequestContextService } from './services/request-context.service';
+import { SecurityRuleRepository } from './repository/security-rule.repository';
+import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 
 
 @Global()
@@ -189,6 +198,8 @@ import { SavedFiltersController } from './controllers/saved-filters.controller';
     ConfigModule,
     TypeOrmModule.forFeature([Setting]),
     TypeOrmModule.forFeature([SavedFilters]),
+    TypeOrmModule.forFeature([UserViewMetadata]),
+    TypeOrmModule.forFeature([SecurityRule]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -215,6 +226,8 @@ import { SavedFiltersController } from './controllers/saved-filters.controller';
     UserController,
     SettingController,
     SavedFiltersController,
+    UserViewMetadataController,
+    SecurityRuleController,
   ],
   providers: [
     {
@@ -309,7 +322,12 @@ import { SavedFiltersController } from './controllers/saved-filters.controller';
     FileS3StorageProvider,
     MediaRepository,
     ViewMetadataSubsciber,
-    SavedFiltersService
+    SavedFiltersService,
+    UserViewMetadataService,
+    SecurityRuleService,
+    SecurityRuleRepository,
+    SecurityRuleSubscriber,
+    RequestContextService,
   ],
   exports: [
     ModuleMetadataService,
@@ -337,6 +355,8 @@ import { SavedFiltersController } from './controllers/saved-filters.controller';
     MqMessageService,
     RefreshModelCommand,
     RefreshModuleCommand,
+    RequestContextService,
+    SecurityRuleRepository,
   ],
 })
 export class SolidCoreModule { }

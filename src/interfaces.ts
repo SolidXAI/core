@@ -10,6 +10,7 @@ import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
 import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
+import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -46,6 +47,7 @@ export interface ModuleMetadataConfiguration {
     emailTemplates?: CreateEmailTemplateDto[],
     smsTemplates?: CreateSmsTemplateDto[],
     mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[]
+    securityRules?: CreateSecurityRuleDto[],
 }
 
 export interface CodeGenerationOptions {
@@ -73,7 +75,7 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
 
   value(optionValue: string, ctxt: T): Promise<ISelectionProviderValues | any>;
 
-  values(query: string, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
+  values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
 }
 
 export interface IComputedFieldProvider<T> {

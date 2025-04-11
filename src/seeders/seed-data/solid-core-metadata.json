@@ -307,6 +307,35 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "isChild",
+            "displayName": "Is Child Model",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "parentModel",
+            "displayName": "Parent Model",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "modelMetadata",
+            "relationCreateInverse": true,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ]
       },
@@ -1074,6 +1103,81 @@
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
             "isSystem": true
+          },
+          {
+            "name": "userViewMetadata",
+            "displayName": "User View Metadata",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "one-to-many",
+            "relationCoModelSingularName": "userViewMetadata",
+            "relationCoModelFieldName": "viewMetadata",
+            "relationCreateInverse": true,
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "userViewMetadata",
+        "tableName": "ss_user_view_metadata",
+        "pluralName": "userViewMetadatas",
+        "displayName": "User View Metadata",
+        "description": "Model to capture all views which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "view",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "viewMetadata",
+            "displayName": "View Metadata",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "viewMetadata",
+            "relationCreateInverse": true,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "user",
+            "displayName": "User",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "user",
+            "relationCreateInverse": true,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "layout",
+            "displayName": "Layout",
+            "type": "json",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "layout",
+            "defaultValue": "{}",
+            "isSystem": true
           }
         ]
       },
@@ -1360,10 +1464,11 @@
             "encrypt": false,
             "relationType": "many-to-many",
             "relationCoModelSingularName": "roleMetadata",
-            "relationCoModelFieldName": "roles",
+            "relationCoModelFieldName": "users",
             "relationCreateInverse": true,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
+            "isRelationManyToManyOwner": true,
             "isSystem": true
           }
         ]
@@ -1896,6 +2001,22 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "userViewMetadata",
+            "displayName": "User View Metadata",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "one-to-many",
+            "relationCoModelSingularName": "userViewMetadata",
+            "relationCoModelFieldName": "user",
+            "relationCreateInverse": true,
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ]
       },
@@ -1980,6 +2101,7 @@
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
+            "isRelationManyToManyOwner": false,
             "isSystem": true
           },
           {
@@ -2438,6 +2560,406 @@
         ]
       },
       {
+        "singularName": "securityRule",
+        "tableName": "ss_security_rule",
+        "pluralName": "securityRules",
+        "displayName": "Security rules",
+        "description": "Model to capture all the security rules",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "userKeyFieldUserKey": "name",
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "isUserKey": true
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "role",
+            "displayName": "Role",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "roleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "modelMetadata",
+            "displayName": "Model Metadata",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "modelMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "securityRuleConfig",
+            "displayName": "Security Rule",
+            "type": "json",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "emailTemplate",
+        "tableName": "ss_email_template",
+        "pluralName": "emailTemplates",
+        "displayName": "Email Template",
+        "description": "Model to capture all email template which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "name",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "name",
+            "isSystem": true,
+            "regexPattern": "[a-z]+(-[a-z]+)*",
+            "regexPatternNotMatchingErrorMsg": "Only kebab case allowed for name, also only lower case."
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "display_name",
+            "isSystem": true
+          },
+          {
+            "name": "body",
+            "displayName": "Body",
+            "type": "longText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "body",
+            "isSystem": true
+          },
+          {
+            "name": "type",
+            "displayName": "Type",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": false,
+            "index": false,
+            "isSystem": true,
+            "columnName": "type",
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "text:Text",
+              "html:HTML"
+            ]
+          },
+          {
+            "name": "subject",
+            "displayName": "Subject",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "subject",
+            "defaultValue": "{}",
+            "isSystem": true
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "description",
+            "isSystem": true
+          },
+          {
+            "name": "active",
+            "displayName": "Active",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "active",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "emailAttachment",
+        "tableName": "ss_email_attachment",
+        "pluralName": "emailAttachments",
+        "displayName": "Email Attachment",
+        "description": "Model to capture all email attachment which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "name",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "name",
+            "isSystem": true,
+            "regexPattern": "[a-z]+(-[a-z]+)*",
+            "regexPatternNotMatchingErrorMsg": "Only kebab case allowed for name, also only lower case."
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "display_name",
+            "isSystem": true
+          },
+          {
+            "name": "relativePath",
+            "displayName": "Relative Path",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "relativePath",
+            "isSystem": true
+          },
+          {
+            "name": "url",
+            "displayName": "Url",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "url",
+            "isSystem": true
+          },
+          {
+            "name": "template",
+            "displayName": "Template",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "template",
+            "isSystem": true
+          },
+          {
+            "name": "emailTemplate",
+            "displayName": "Email Template",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationModelSingularName": "emailTemplate",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationTypeManyToManyOwner": true,
+            "relationModelModuleName": "solid-core"
+          }
+        ]
+      },
+      {
+        "singularName": "smsTemplate",
+        "tableName": "ss_sms_template",
+        "pluralName": "smsTemplates",
+        "displayName": "SMS Template",
+        "description": "Model to capture all sms template which are configured in the system",
+        "dataSource": "default",
+        "userKeyFieldUserKey": "name",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "name",
+            "isSystem": true,
+            "regexPattern": "[a-z]+(-[a-z]+)*",
+            "regexPatternNotMatchingErrorMsg": "Only kebab case allowed for name, also only lower case."
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "display_name",
+            "isSystem": true
+          },
+          {
+            "name": "body",
+            "displayName": "Body",
+            "type": "longText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "body",
+            "isSystem": true
+          },
+          {
+            "name": "type",
+            "displayName": "Type",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": false,
+            "index": false,
+            "isSystem": true,
+            "columnName": "type",
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "text:Text",
+              "html:HTML"
+            ]
+          },
+          {
+            "name": "smsProviderTemplateId",
+            "displayName": "SMS Provider Template Id",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "description",
+            "isSystem": true
+          },
+          {
+            "name": "active",
+            "displayName": "Active",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "active",
+            "isSystem": true
+          }
+        ]
+      },
+      {
         "singularName": "savedFilters",
         "pluralName": "savedFilterss",
         "displayName": "Saved Filters",
@@ -2640,6 +3162,19 @@
       "modelUserKey": "viewMetadata"
     },
     {
+      "displayName": "User View Metadata list action",
+      "name": "userViewMetadata-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "userViewMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "userViewMetadata"
+    },
+    {
       "displayName": "Action Metadata list action",
       "name": "actionMetadata-list-action",
       "type": "solid",
@@ -2807,6 +3342,45 @@
       "viewUserKey": "settings-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "setting"
+    },
+    {
+      "displayName": "Security rules list view",
+      "name": "securityRule-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "securityRule-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule"
+    },
+    {
+      "displayName": "Email list action",
+      "name": "email-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "email-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "emailTemplate"
+    },
+    {
+      "displayName": "SMS list action",
+      "name": "sms-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "sms-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "smsTemplate"
     }
   ],
   "menus": [
@@ -2875,6 +3449,14 @@
       "parentMenuItemUserKey": "layout-builder-menu-item"
     },
     {
+      "displayName": "User View",
+      "name": "user-view-metadata",
+      "sequenceNumber": 7,
+      "actionUserKey": "userViewMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layout-builder-menu-item"
+    },
+    {
       "displayName": "Saved Filters",
       "name": "savedFilters-metadata",
       "sequenceNumber": 7,
@@ -2939,6 +3521,14 @@
       "parentMenuItemUserKey": "iam-menu-item"
     },
     {
+      "displayName": "Security rules",
+      "name": "securityRule-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "securityRule-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
       "displayName": "Queues",
       "name": "queues-menu-item",
       "sequenceNumber": 3,
@@ -2961,6 +3551,30 @@
       "actionUserKey": "mqMessageQueue-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "queues-menu-item"
+    },
+    {
+      "displayName": "Notification",
+      "name": "notification-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "notification-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Email",
+      "name": "email-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "email-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "notification-menu-item"
+    },
+    {
+      "displayName": "SMS",
+      "name": "sms-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "sms-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "notification-menu-item"
     }
   ],
   "views": [
@@ -3853,6 +4467,170 @@
       }
     },
     {
+      "name": "userViewMetadata-list-view",
+      "displayName": "User View Metadata list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "userViewMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "viewMetadata"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "layout"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "userViewMetadata-form-view",
+      "displayName": "User View Metadata form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "userViewMetadata",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "User View Metadata",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-1",
+                      "label": "General Info"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "page-1-row-1",
+                          "label": "",
+                          "className": ""
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-1-row-1-col-1",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "view"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-1-row-1-col-2",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "user"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-2",
+                      "label": "Layout"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "page-2-row-1",
+                          "label": "",
+                          "className": ""
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "page-2-row-1-col-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "layout",
+                                  "height": "80vh"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "name": "actionMetadata-list-view",
       "displayName": "Action Metadata list view",
       "type": "list",
@@ -4291,7 +5069,6 @@
         ]
       }
     },
-    
     {
       "name": "media-list-view",
       "displayName": "Solid Media Model",
@@ -5544,14 +6321,14 @@
                         "attrs": {
                           "name": "group-1",
                           "label": "",
-                          "className": "col-6"
+                          "className": "col-12"
                         },
                         "children": [
                           {
                             "type": "field",
                             "attrs": {
                               "name": "permissions",
-                              "renderMode": "autocomplete",
+                              "renderMode": "inputSwitch",
                               "showLabel": false
                             }
                           }
@@ -6290,6 +7067,393 @@
           }
         ]
       }
+    },
+    {
+      "name": "securityRule-list-view",
+      "displayName": "Security rules",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id",
+              "label": "Id",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "label": "Name",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "securityRule-form-view",
+      "displayName": "Security rules",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Security rules",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": ""
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "name"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "description"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "securityRuleConfig"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "role"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "modelMetadata"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "email-list-view",
+      "displayName": "Email",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "emailTemplate",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "label": "Email",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "email-form-view",
+      "displayName": "Email",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "emailTemplate",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Email",
+          "className": "grid",
+          "disabled": false,
+          "readonly": false
+        },
+        "onFieldChange": "emailFormTypeChangeHandler",
+        "onFormLayoutLoad": "emailFormTypeLoad",
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name",
+                      "label": "Name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "displayName",
+                      "label": "Display Name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "type",
+                      "label": "Type"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "body",
+                      "label": "Body"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "subject",
+                      "label": "Subject"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "description",
+                      "label": "Description"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "active",
+                      "label": "Active"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "sms-list-view",
+      "displayName": "SMS Template",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "smsTemplate",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "label": "Name",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "sms-form-view",
+      "displayName": "SMS Template",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "smsTemplate",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Email",
+          "className": "grid",
+          "disabled": false,
+          "readonly": false
+        },
+        "onFieldChange": "emailFormTypeChangeHandler",
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name",
+                      "label": "Name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "displayName",
+                      "label": "Display Name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "type",
+                      "label": "Type"
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "body",
+                      "label": "Body"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "description",
+                      "label": "Description"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "active",
+                      "label": "Active"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "emailTemplates": [
@@ -6299,7 +7463,8 @@
       "body": "on-force-password-change.handlebars.html",
       "subject": "{{solidAppName}} - Your New Account.",
       "description": "When using password based signUp, if the user does not specify the password of the new account being created the system automatically triggers a force password change email.",
-      "active": true
+      "active": true,
+      "type": "text"
     },
     {
       "name": "otp-on-register",
@@ -6307,7 +7472,8 @@
       "body": "otp-on-register.handlebars.html",
       "subject": "{{solidAppName}} - Verify Your New Account.",
       "description": "This template is used to generate the account verification email sent to users to verify their email address when they register.",
-      "active": true
+      "active": true,
+      "type": "text"
     },
     {
       "name": "otp-on-login",
@@ -6315,7 +7481,8 @@
       "body": "otp-on-login.handlebars.html",
       "subject": "{{solidAppName}} - Verification Token For Your Login.",
       "description": "This template is used to send the email with the OTP when logging in.",
-      "active": true
+      "active": true,
+      "type": "text"
     },
     {
       "name": "forgot-password",
@@ -6323,7 +7490,8 @@
       "body": "forgot-password.handlebars.html",
       "subject": "{{solidAppName}} - Password Reset Instructions.",
       "description": "This template is used to send the verification token required by users to reset their password.",
-      "active": true
+      "active": true,
+      "type": "text"
     }
   ],
   "smsTemplates": [
@@ -6333,7 +7501,8 @@
       "body": "otp-on-register.handlebars.txt",
       "description": "This template is used to generate the account verification sms sent to users to verify their mobile number when they register.",
       "smsProviderTemplateId": "666bd246d6fc051047560595",
-      "active": true
+      "active": true,
+      "type": "text"
     },
     {
       "name": "otp-on-login",
@@ -6341,7 +7510,8 @@
       "body": "otp-on-login.handlebars.txt",
       "description": "This template is used to send the sms with the OTP when logging in.",
       "smsProviderTemplateId": "666bd246d6fc051047560595",
-      "active": true
+      "active": true,
+      "type": "text"
     },
     {
       "name": "forgot-password",
@@ -6349,7 +7519,8 @@
       "body": "forgot-password.handlebars.txt",
       "description": "This template is used to send the verification token required by users to reset their password.",
       "smsProviderTemplateId": "666bd246d6fc051047560595",
-      "active": true
+      "active": true,
+      "type": "text"
     }
   ],
   "mediaStorageProviders": [

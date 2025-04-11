@@ -1,6 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
+import { SecurityRule } from 'src/entities/security-rule.entity';
 
 type ControllerMetadata = {
   name: string;
@@ -14,6 +15,23 @@ export enum RESERVED_SOLID_KEYWORDS {
   dataSource = "dataSource",
   repository = "repository",
   entityManager = "entityManager",
+  actionMetadata = "actionMetadata",
+  emailAttachment = "emailAttachment",
+  emailTemplate = "emailTemplate",
+  listOfValues = "listOfValues",
+  mediaStorageProvider = "mediaStorageProvider",
+  media = "media",
+  menuItemMetadata = "menuItemMetadata",
+  mqMessageQueue = "mqMessageQueue",
+  mqMessage = "mqMessage",
+  permissionMetadata = "permissionMetadata",
+  roleMetadata = "roleMetadata",
+  securityRule = "securityRule",
+  setting = "setting",
+  smsTemplate = "smsTemplate",
+  userPasswordHistory = "userPasswordHistory",
+  userMetadata = "userMetadata",
+  user = "user",
 }
 
 @Injectable()
@@ -24,6 +42,7 @@ export class SolidRegistry {
   private solidDatabaseModules: Set<InstanceWrapper> = new Set();
   private controllers: Set<ControllerMetadata> = new Set();
   private modules : Set<InstanceWrapper> = new Set();
+  private securityRules: SecurityRule[] = [];
 
   registerController(name: string, methodNames: string[]): void {
     this.controllers.add({ name: name, methods: methodNames });
@@ -91,5 +110,20 @@ export class SolidRegistry {
   getModule(name: string): InstanceWrapper {
     const module = this.getModules().filter((module) => module.name === name).pop();
     return module
+  }
+
+  registerSecurityRules(securityRules: SecurityRule[]) {
+    this.securityRules = securityRules;
+  }
+
+  getSecurityRules(modelSingularName:string, roleNames: string[] = []): SecurityRule[] {
+    // If no role is provided, return all security rules for the model
+    if (roleNames.length === 0) {
+      return this.securityRules.filter((rule) => rule.modelMetadata.singularName === modelSingularName);
+    }
+    // If roles are provided, filter the security rules by model and roles
+    return this.securityRules.filter((rule) => {
+      return rule.modelMetadata.singularName === modelSingularName && roleNames.includes(rule.role.name);
+    });
   }
 }

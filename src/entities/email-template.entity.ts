@@ -1,28 +1,24 @@
 import { CommonEntity } from 'src/entities/common.entity';
-import { Column, Entity, OneToMany } from 'typeorm';
+import { Column, Entity, OneToMany, Index } from 'typeorm';
 import { EmailAttachment } from './email-attachment.entity';
-
 
 @Entity("ss_email_template")
 export class EmailTemplate extends CommonEntity {
-    @Column({ unique: true })
+    @Index({ unique: true })
+    @Column({ name: "name", type: "varchar", unique: true })
     name: string;
-
-    @Column()
+    @Column({ name: "display_name", type: "varchar" })
     displayName: string;
-
-    @Column({ type: 'text' })
+    @Column({ name: "body", type: "varchar", default: '' })
     body: string;
-
-    @Column({ length: 128 })
-    subject: string;
-
-    @Column({ type: 'text', nullable: true })
+    @Column({ name: "subject", type: "varchar", default: "{}" })
+    subject: string = "{}";
+    @Column({ name: "description", type: "text", nullable: true })
     description: string;
-
-    @Column({ default: false })
-    active: boolean;
-
+    @Column({ name: "active", type: "boolean", nullable: true, default: true })
+    active: boolean = true;
     @OneToMany(() => EmailAttachment, (attachment) => attachment.emailTemplate, { cascade: true })
     attachments: EmailAttachment[];
+    @Column({ name: "type", type: "varchar", nullable: true })
+    type: string;
 }
