@@ -1,7 +1,7 @@
-import { CommonEntity } from 'src/entities/common.entity'
-import {Entity, Column, Index, JoinColumn, ManyToOne} from 'typeorm';
+import { CommonEntity } from 'src/entities/common.entity';
+import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { RoleMetadata } from 'src/entities/role-metadata.entity';
-import { ModelMetadata } from 'src/entities/model-metadata.entity'
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 
 @Entity("ss_security_rule")
 export class SecurityRule extends CommonEntity {
@@ -21,4 +21,5 @@ export class SecurityRule extends CommonEntity {
     modelMetadata: ModelMetadata;
     @Column({ type: "text" })
     securityRuleConfig: any;
+
 }

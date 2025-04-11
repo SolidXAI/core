@@ -149,6 +149,7 @@ import { SecurityRuleService } from './services/security-rule.service';
 import { SecurityRuleController } from './controllers/security-rule.controller';
 import { RequestContextService } from './services/request-context.service';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
+import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 
 
 @Global()
@@ -319,6 +320,7 @@ import { SecurityRuleRepository } from './repository/security-rule.repository';
     UserViewMetadataService,
     SecurityRuleService,
     SecurityRuleRepository,
+    SecurityRuleSubscriber,
     RequestContextService,
   ],
   exports: [
