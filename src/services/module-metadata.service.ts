@@ -375,7 +375,7 @@ export class ModuleMetadataService {
         modelId: model.id,
         dryRun: options.dryRun,
       };
-      const output = await this.modelMetadataService.generateCode(codeGenerationOptions);
+      const output = await this.modelMetadataService.handleGenerateCode(codeGenerationOptions);
       this.logger.debug(`Schematic output : ${output}`);
       outputLines.push(output)
     }

@@ -33,7 +33,7 @@ export class RefreshModelCommand extends CommandRunner {
       modelUserKey: options.name,
       dryRun: options.dryRun,
     };
-    await this.modelMetadataService.generateCode(codeGenerationOptions);
+    await this.modelMetadataService.handleGenerateCode(codeGenerationOptions);
   }
 
   @Option({
