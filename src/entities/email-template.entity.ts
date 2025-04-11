@@ -9,7 +9,7 @@ export class EmailTemplate extends CommonEntity {
     name: string;
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;
-    @Column({ name: "body", type: "varchar" })
+    @Column({ name: "body", type: "varchar", default: '' })
     body: string;
     @Column({ name: "subject", type: "varchar", default: "{}" })
     subject: string = "{}";
