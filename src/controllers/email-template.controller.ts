@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaginationQueryDto } from 'src/dtos/pagination-query.dto';
 import { Roles } from 'src/decorators/roles.decorator';
@@ -12,48 +12,67 @@ import { Public } from 'src/decorators/public.decorator';
 // TODO: esInterop not working somehow, defaulted to using the require syntax to import Mailgen. Figure a better way to do this. 
 // import { Mailgen } from 'mailgen';
 import Mailgen = require('mailgen');
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
 
-@Controller('email-templates')
+@Controller('email-template')
 @ApiTags("Common")
 export class EmailTemplateController {
-  constructor(private readonly emailTemplateService: EmailTemplateService) { }
+  constructor(private readonly service: EmailTemplateService) { }
 
-  @ApiBearerAuth("jwt")
-  @Roles('Admin')
-  @Post()
-  create(@Body() dto: CreateEmailTemplateDto) {
-    return this.emailTemplateService.create(dto);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Roles('Admin')
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'offset', required: false, type: Number })
-  @Get()
-  findAll(@Query() paginationQuery: PaginationQueryDto) {
-    return this.emailTemplateService.findAll(paginationQuery);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Roles('Admin')
-  @Get(':id')
-  findOne(@Param('id') id: string) {
-    return this.emailTemplateService.findOne(+id);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Patch(':id')
-  update(@Param('id') id: string, @Body() dto: UpdateEmailTemplateDto) {
-    return this.emailTemplateService.update(+id, dto);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Delete(':id')
-  async delete(@Param('id') id: number) {
-    return this.emailTemplateService.remove(+id);
-  }
-
+   @Public()
+    @Post()
+    @UseInterceptors(AnyFilesInterceptor())
+    create(@Body() createDto: CreateEmailTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+      return this.service.create(createDto, files);
+    }
+  
+    @Public()
+    @Post('/bulk')
+    @UseInterceptors(AnyFilesInterceptor())
+    insertMany(@Body() createDtos: CreateEmailTemplateDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+      return this.service.insertMany(createDtos, filesArray);
+    }
+  
+    @Public()
+    @Put(':id')
+    @UseInterceptors(AnyFilesInterceptor())
+    update(@Param('id') id: number, @Body() updateDto: UpdateEmailTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+      return this.service.update(id, updateDto, files);
+    }
+  
+    @Public()
+    @ApiQuery({ name: 'showSoftDeleted', required: false, type: Boolean })
+    @ApiQuery({ name: 'showOnlySoftDeleted', required: false, type: Boolean })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    @ApiQuery({ name: 'offset', required: false, type: Number })
+    @ApiQuery({ name: 'fields', required: false, type: Array })
+    @ApiQuery({ name: 'sort', required: false, type: Array })
+    @ApiQuery({ name: 'groupBy', required: false, type: Array })
+    @ApiQuery({ name: 'populate', required: false, type: Array })
+    @ApiQuery({ name: 'populateMedia', required: false, type: Array })
+    @ApiQuery({ name: 'filters', required: false, type: Array })
+    @Get()
+    async findMany(@Query() query: any) {
+      return this.service.find(query);
+    }
+  
+    @Public()
+    @Get(':id')
+    async findOne(@Param('id') id: string, @Query() query: any) {
+      return this.service.findOne(+id, query);
+    }
+  
+    @Delete('/bulk')
+    async deleteMany(@Body() ids: number[]) {
+      return this.service.deleteMany(ids);
+    }
+  
+    @Public()
+    @Delete(':id')
+    async delete(@Param('id') id: number) {
+      return this.service.delete(id);
+    }
   // /api/email-templates/mailgen-template/otp-template
   // @ApiBearerAuth("jwt")
   // @Roles('Admin')
