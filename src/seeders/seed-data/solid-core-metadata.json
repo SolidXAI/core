@@ -313,7 +313,7 @@
             "displayName": "Is Child Model",
             "type": "boolean",
             "ormType": "boolean",
-            "defaultValue": "false",
+            "defaultValue": false,
             "required": false,
             "unique": false,
             "index": false,
@@ -1468,8 +1468,8 @@
             "relationCreateInverse": true,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
-            "isRelationManyToManyOwner": true,
-            "isSystem": true
+            "isSystem": true,
+            "isRelationManyToManyOwner": true
           }
         ]
       },
@@ -1792,7 +1792,8 @@
             "relationCreateInverse": true,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
-            "isSystem": true
+            "isSystem": true,
+            "isRelationManyToManyOwner": true
           },
           {
             "name": "forgotPasswordConfirmedAt",
@@ -2085,7 +2086,8 @@
             "relationCoModelSingularName": "permissionMetadata",
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
-            "isSystem": true
+            "isSystem": true,
+            "isRelationManyToManyOwner": true
           },
           {
             "name": "users",
@@ -2101,8 +2103,8 @@
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
-            "isRelationManyToManyOwner": false,
-            "isSystem": true
+            "isSystem": true,
+            "isRelationManyToManyOwner": false
           },
           {
             "name": "menuItems",
@@ -2118,7 +2120,8 @@
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
-            "isSystem": true
+            "isSystem": true,
+            "isRelationManyToManyOwner": false
           }
         ]
       },
@@ -3082,6 +3085,107 @@
             "isSystem": false
           }
         ]
+      },
+      {
+        "singularName": "listOfValues",
+        "pluralName": "listOfValuess",
+        "displayName": "List of Values ",
+        "description": "This is used to maintain List Of Values",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_list_of_values",
+        "userKeyFieldUserKey": "type",
+        "fields": [
+          {
+            "name": "type",
+            "displayName": "Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "value",
+            "displayName": "Value",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "display",
+            "displayName": "Display",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "default",
+            "displayName": "Default",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "sequence",
+            "displayName": "Sequence",
+            "type": "int",
+            "ormType": "int",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          }
+        ]
       }
     ]
   },
@@ -3381,6 +3485,19 @@
       "viewUserKey": "sms-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "smsTemplate"
+    },
+    {
+      "displayName": "List of Values",
+      "name": "list-of-values-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "listOfValues-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues"
     }
   ],
   "menus": [
@@ -3453,14 +3570,6 @@
       "name": "user-view-metadata",
       "sequenceNumber": 7,
       "actionUserKey": "userViewMetadata-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layout-builder-menu-item"
-    },
-    {
-      "displayName": "Saved Filters",
-      "name": "savedFilters-metadata",
-      "sequenceNumber": 7,
-      "actionUserKey": "savedFilters-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "layout-builder-menu-item"
     },
@@ -3575,6 +3684,30 @@
       "actionUserKey": "sms-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "notification-menu-item"
+    },
+    {
+      "displayName": "Other",
+      "name": "other-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "other-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Saved Filters",
+      "name": "savedFilters-metadata",
+      "sequenceNumber": 7,
+      "actionUserKey": "savedFilters-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "List of Values",
+      "name": "list-of-values-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "list-of-values-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
     }
   ],
   "views": [
@@ -4093,6 +4226,145 @@
                     "type": "field",
                     "attrs": {
                       "name": "user"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "listOfValues-list-view",
+      "displayName": "List of Values list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "value",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "display",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "default",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequence",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "listOfValues-form-view",
+      "displayName": "List of Values form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Solid List of Values Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "type"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "value"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "display"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "description"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "default"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "sequence"
                     }
                   }
                 ]
@@ -7529,5 +7801,15 @@
       "type": "filesystem"
     }
   ],
-  "checksums": []
+  "checksums": [],
+  "listOfValues": [
+    {
+      "type": "industry",
+      "value": "IT",
+      "display": "IT",
+      "description": "Insdustry It list of value",
+      "default": true,
+      "sequence": 1
+    }
+  ]
 }

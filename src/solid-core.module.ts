@@ -153,6 +153,7 @@ import { SecurityRuleController } from './controllers/security-rule.controller';
 import { RequestContextService } from './services/request-context.service';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
+import { ListOfValuesController } from './controllers/list-of-values.controller';
 
 
 @Global()
@@ -200,6 +201,7 @@ import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
     TypeOrmModule.forFeature([SavedFilters]),
     TypeOrmModule.forFeature([UserViewMetadata]),
     TypeOrmModule.forFeature([SecurityRule]),
+    TypeOrmModule.forFeature([ListOfValues]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -228,6 +230,7 @@ import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
     SavedFiltersController,
     UserViewMetadataController,
     SecurityRuleController,
+    ListOfValuesController,
   ],
   providers: [
     {

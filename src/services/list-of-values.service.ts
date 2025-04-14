@@ -1,54 +1,62 @@
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository } from "typeorm";
-import { ListOfValues } from "../entities/list-of-values.entity";
-import { PaginationQueryDto } from "src/dtos/pagination-query.dto";
-import { Injectable, NotFoundException } from "@nestjs/common";
+import { Injectable } from '@nestjs/common';
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { EntityManager, Repository } from 'typeorm';
+
+import { CRUDService } from 'src/services/crud.service';
+import { ModelMetadataService } from 'src/services/model-metadata.service';
+import { ModuleMetadataService } from 'src/services/module-metadata.service';
+import { ConfigService } from '@nestjs/config';
+import { FileService } from 'src/services/file.service';
+import { CrudHelperService } from 'src/services/crud-helper.service';
+
+
+import { ListOfValues } from '../entities/list-of-values.entity';
 
 @Injectable()
-export class ListOfValuesService {
-    constructor(
-        @InjectRepository(ListOfValues)
-        private readonly listOfValuesRepo: Repository<ListOfValues>,
-    ) { }
+export class ListOfValuesService extends CRUDService<ListOfValues> {
+  constructor(
+    readonly modelMetadataService: ModelMetadataService,
+    readonly moduleMetadataService: ModuleMetadataService,
+    readonly configService: ConfigService,
+    readonly fileService: FileService,
+    readonly discoveryService: DiscoveryService,
+    readonly crudHelperService: CrudHelperService,
+    @InjectEntityManager()
+    readonly entityManager: EntityManager,
+    @InjectRepository(ListOfValues, 'default')
+    readonly repo: Repository<ListOfValues>,
+    readonly moduleRef: ModuleRef
 
-    findAll(paginationQuery: PaginationQueryDto) {
-        const { limit, offset } = paginationQuery;
-        return this.listOfValuesRepo.find({
-            relations: {},
-            skip: offset,
-            take: limit,
-        });
-    }
+  ) {
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'listOfValues', 'solid-core', moduleRef);
+  }
+  async findOneByValueAndType(lovValue: string, lovType: string) {
+    return await this.repo.findOne({
+      where: {
+        value: lovValue,
+        type: lovType,
+      },
+    });
+  }
+  async upsert(updateListOfValuesDto: any) {
+    // First check if module already exists using name
+    const existingListOfValue = await this.repo.findOne({
+      where: {
+        value: updateListOfValuesDto.value
+      }
+    })
 
-    async findOneByValueAndType(lovValue: string, lovType: string) {
-        return await this.listOfValuesRepo.findOne({
-            where: {
-                value: lovValue,
-                type: lovType,
-            },
-        });
+    // if found
+    if (existingListOfValue) {
+      const updatedListOfValuesDto = { ...existingListOfValue, ...updateListOfValuesDto };
+      return this.repo.save(updatedListOfValuesDto);
     }
+    // if not found - create new 
+    else {
+      const listOfValue = this.repo.create(updateListOfValuesDto);
+      return this.repo.save(listOfValue);
+    }
+  }
 
-    async findOne(id: number, relations = {}) {
-        const lov = await this.listOfValuesRepo.findOne({
-            where: {
-                id: id,
-            },
-            relations: relations,
-        });
-        if (!lov) {
-            throw new NotFoundException(`list of values #${id} not found`);
-        }
-        return lov;
-    }
-
-    async create(createDto: any) {
-        const lov = this.listOfValuesRepo.create(createDto);
-        return this.listOfValuesRepo.save(lov);
-    }
-
-    async remove(id: number) {
-        const lov = await this.findOne(id);
-        return this.listOfValuesRepo.remove(lov);
-    }
 }

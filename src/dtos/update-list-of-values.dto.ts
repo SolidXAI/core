@@ -1,23 +1,30 @@
+import { IsInt,IsOptional, IsString, IsNotEmpty, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
-import { IsNotEmpty, IsBoolean, IsOptional, IsInt } from 'class-validator';
-export class CreateListOfValuesDto {
+export class UpdateListOfValuesDto {
+    @IsOptional()
+    @IsInt()
+    id: number;
+
 @IsNotEmpty()
+@IsOptional()
 @IsString()
 @ApiProperty()
 type: string;
 
 @IsNotEmpty()
+@IsOptional()
 @IsString()
 @ApiProperty()
 value: string;
 
 @IsNotEmpty()
+@IsOptional()
 @IsString()
 @ApiProperty()
 display: string;
 
 @IsNotEmpty()
+@IsOptional()
 @IsString()
 @ApiProperty()
 description: string;
@@ -25,7 +32,7 @@ description: string;
 @IsOptional()
 @IsBoolean()
 @ApiProperty()
-default: boolean = false;
+default: boolean;
 
 @IsOptional()
 @IsInt()
