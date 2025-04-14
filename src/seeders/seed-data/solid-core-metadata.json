@@ -4881,7 +4881,7 @@
         "type": "kanban",
         "attrs": {
           "swimlanesCount": 10,
-          "recordsInSwimlane": 5,
+          "recordsInSwimlane": 20,
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -4913,7 +4913,7 @@
                     "attrs": {
                       "name": "col-1",
                       "label": "",
-                      "className": "col-6"
+                      "className": "col-12"
                     },
                     "children": [
                       {
