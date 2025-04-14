@@ -7,11 +7,10 @@ import { CreateMenuItemMetadataDto } from './dtos/create-menu-item-metadata.dto'
 import { DatasourceType } from './dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from './dtos/create-module-metadata.dto';
 import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
+import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
 import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
-import { Readable } from 'stream';
-import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
