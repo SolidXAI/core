@@ -153,6 +153,7 @@ import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { SavedFilters } from './entities/saved-filters.entity';
 import { SavedFiltersService } from './services/saved-filters.service';
 import { SavedFiltersController } from './controllers/saved-filters.controller';
+import { ListOfValuesController } from './controllers/list-of-values.controller';
 
 
 @Global()
@@ -200,6 +201,7 @@ import { SavedFiltersController } from './controllers/saved-filters.controller';
     TypeOrmModule.forFeature([UserViewMetadata]),
     TypeOrmModule.forFeature([SecurityRule]),
     TypeOrmModule.forFeature([SavedFilters]),
+    TypeOrmModule.forFeature([ListOfValues]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -227,7 +229,8 @@ import { SavedFiltersController } from './controllers/saved-filters.controller';
     SettingController,
     UserViewMetadataController,
     SecurityRuleController,
-    SavedFiltersController
+    SavedFiltersController,
+    ListOfValuesController
   ],
   providers: [
     {

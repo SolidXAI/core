@@ -34,6 +34,8 @@ import { SettingService } from 'src/services/setting.service';
 import { Setting } from 'src/entities/setting.entity';
 import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
 import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
+import { ListOfValuesService } from 'src/services/list-of-values.service';
+import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
 
 @Injectable()
 export class ModuleMetadataSeederService {
@@ -53,6 +55,7 @@ export class ModuleMetadataSeederService {
         private readonly mediaStorageProviderSeederService: MediaStorageProviderMetadataSeederService,
         private readonly emailTemplateService: EmailTemplateService,
         private readonly smsTemplateService: SmsTemplateService,
+        private readonly listOfValuesService: ListOfValuesService,
         @InjectRepository(PermissionMetadata)
         private readonly permissionRepo: Repository<PermissionMetadata>,
         private readonly solidRegistry: SolidRegistry,
@@ -61,7 +64,7 @@ export class ModuleMetadataSeederService {
         @Inject(iamConfig.KEY) private readonly iamConfiguration: ConfigType<typeof iamConfig>,
         @Inject(commonConfig.KEY)
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
-        private readonly service: SettingService,
+        private readonly seetingService: SettingService,
         @InjectRepository(Setting, 'default')
         readonly settingsRepo: Repository<Setting>,
         readonly securityRuleRepo: SecurityRuleRepository,
@@ -203,6 +206,12 @@ export class ModuleMetadataSeederService {
             const securityRules: CreateSecurityRuleDto[] = overallMetadata.securityRules;
             await this.seedSecurityRules(securityRules);
             this.logger.debug(`[End] Processing security rules for ${moduleMetadata.name}`);
+
+            // List Of Values
+            this.logger.debug(`[Start] Processing security rules for ${moduleMetadata.name}`);
+            const listOfValues: CreateListOfValuesDto[] = overallMetadata.listOfValues;
+            await this.seedListOfValues(listOfValues);
+            this.logger.debug(`[End] Processing List Of Values for ${moduleMetadata.name}`);
 
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
 
@@ -499,7 +508,7 @@ export class ModuleMetadataSeederService {
     async seedSettings(createDto: CreateSettingDto) {
         const settingsArray: any[] = await this.settingsRepo.find();
         if (!settingsArray || settingsArray.length === 0) {
-            this.service.create(createDto);
+            this.seetingService.create(createDto);
         }
     }
 
@@ -509,7 +518,17 @@ export class ModuleMetadataSeederService {
             return;
         }
         for (const dto of rulesDto) {
-            await this.securityRuleRepo.upsertWithDto({...dto, securityRuleConfig: JSON.stringify(dto.securityRuleConfig)});
+            await this.securityRuleRepo.upsertWithDto({ ...dto, securityRuleConfig: JSON.stringify(dto.securityRuleConfig) });
+        }
+    }
+
+    async seedListOfValues(listOfValuesDto: CreateListOfValuesDto[]) {
+        if (!listOfValuesDto || listOfValuesDto.length === 0) {
+            this.logger.debug(`No List Of Values found to seed`);
+            return;
+        }
+        for (let j = 0; j < listOfValuesDto.length; j++) {
+            await this.listOfValuesService.upsert(listOfValuesDto);
         }
     }
 
