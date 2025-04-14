@@ -5,13 +5,9 @@ import { EmailQueuePublisher } from 'src/jobs/email-publisher.service';
 import commonConfig from 'src/config/common.config';
 import { EmailTemplateService } from '../email-template.service';
 import Handlebars from "handlebars";
-import { IMail } from "../../interfaces";
+import { IMail, MailAttachment } from "../../interfaces";
 
 const nodemailer = require("nodemailer");
-
-export interface SMTPMailAttachment {
-
-}
 
 @Injectable()
 export class SMTPEMailService implements IMail {
@@ -60,11 +56,11 @@ export class SMTPEMailService implements IMail {
                 from: this.commonConfiguration.smtpMail.from,
                 to: to,
                 subject: subject,
-                body: body
+                body: body,
+                attachments: attachments
             },
             parentEntity: parentEntity,
             parentEntityId: parentEntityId,
-            attachments: attachments
         };
 
         // Send using queue if the developer has explicitly invoked with true.
@@ -81,21 +77,37 @@ export class SMTPEMailService implements IMail {
         }
     }
 
-    private async sendEmailAsynchronously(message) {
+    async sendEmailAsynchronously(message) {
         const { to, subject, body } = message.payload;
         // this.notificationPublisherService.publish(message);
         this.emailPublisher.publish(message);
         this.logger.debug(`Queueing email to ${to} with subject ${subject} and body ${body}`);
     }
 
-    private async sendEmailSynchronously(message: QueueMessage<any>): Promise<void> {
-        const { from, to, subject, body } = message.payload;
+    async sendEmailSynchronously(message: QueueMessage<any>): Promise<void> {
+        const { from, to, subject, body, attachments } = message.payload;
+
+        const attachmentsList = attachments.map((attachment: MailAttachment) => {
+            const attachmentEntry = {
+                filename: attachment.filename,
+                contentType: attachment.contentType,
+            } 
+            if (attachment.path) {
+                attachmentEntry['path'] = attachment.path;
+            }
+            if (attachment.content) {
+                attachmentEntry['content'] = attachment.content;
+            }
+            return attachmentEntry;
+        });
+
         // throw new Error('Random error....');
         const r = await this.transporter.sendMail({
             from: from,
             to: to,
             subject: subject,
-            html: body
+            html: body,
+            attachments: attachmentsList,
         });
         // this.logger.debug(`Sending email to ${to} with subject ${subject} and body ${body}`);
         this.logger.debug(`Sending email to ${to} with subject ${subject}`);

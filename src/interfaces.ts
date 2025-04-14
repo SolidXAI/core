@@ -152,6 +152,7 @@ export interface MailAttachment {
   templateParams?: any;
   content?: string | Buffer;
   contentType?: string;
+  path?: string;
 }
 
 export enum BrokerType {
