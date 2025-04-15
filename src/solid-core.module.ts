@@ -141,6 +141,9 @@ import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
 import { MediaRepository } from './repository/media.repository';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { SavedFilters } from './entities/saved-filters.entity';
+import { SavedFiltersService } from './services/saved-filters.service';
+import { SavedFiltersController } from './controllers/saved-filters.controller';
 import { UserViewMetadata } from './entities/user-view-metadata.entity';
 import { UserViewMetadataService } from './services/user-view-metadata.service';
 import { UserViewMetadataController } from './controllers/user-view-metadata.controller';
@@ -150,9 +153,6 @@ import { SecurityRuleController } from './controllers/security-rule.controller';
 import { RequestContextService } from './services/request-context.service';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
-import { SavedFilters } from './entities/saved-filters.entity';
-import { SavedFiltersService } from './services/saved-filters.service';
-import { SavedFiltersController } from './controllers/saved-filters.controller';
 import { ListOfValuesController } from './controllers/list-of-values.controller';
 
 
@@ -198,6 +198,7 @@ import { ListOfValuesController } from './controllers/list-of-values.controller'
     HttpModule,
     ConfigModule,
     TypeOrmModule.forFeature([Setting]),
+    TypeOrmModule.forFeature([SavedFilters]),
     TypeOrmModule.forFeature([UserViewMetadata]),
     TypeOrmModule.forFeature([SecurityRule]),
     TypeOrmModule.forFeature([SavedFilters]),
@@ -227,6 +228,7 @@ import { ListOfValuesController } from './controllers/list-of-values.controller'
     RoleMetadataController,
     UserController,
     SettingController,
+    SavedFiltersController,
     UserViewMetadataController,
     SecurityRuleController,
     SavedFiltersController,
@@ -325,6 +327,7 @@ import { ListOfValuesController } from './controllers/list-of-values.controller'
     FileS3StorageProvider,
     MediaRepository,
     ViewMetadataSubsciber,
+    SavedFiltersService,
     UserViewMetadataService,
     SecurityRuleService,
     SecurityRuleRepository,
