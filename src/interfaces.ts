@@ -7,10 +7,10 @@ import { CreateMenuItemMetadataDto } from './dtos/create-menu-item-metadata.dto'
 import { DatasourceType } from './dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from './dtos/create-module-metadata.dto';
 import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
+import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
 import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
-import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -111,7 +111,10 @@ export interface IMail {
     subject: string,
     body: string,
     shouldQueueEmails: boolean,
-    attachments?: MailAttachmentWrapper[],
+    wrapperAttachments?: MailAttachmentWrapper[],
+    attachments?: MailAttachment[],
+    parentEntity?: any,
+    parentEntityId?: any,
   ): Promise<void>;
 
   sendEmailUsingTemplate(
@@ -119,6 +122,10 @@ export interface IMail {
     templateName: string,
     templateParams: any,
     shouldQueueEmails: boolean,
+    wrapperAttachments?: MailAttachmentWrapper[],
+    attachments?: MailAttachment[],
+    parentEntity?: any,
+    parentEntityId?: any,
   ): Promise<void>;
 }
 
@@ -140,8 +147,11 @@ export interface MailAttachmentWrapper {
 
 export interface MailAttachment {
   filename: string;
-  templatePath: string;
-  templateParams: any;
+  templatePath?: string;
+  templateParams?: any;
+  content?: string | Buffer;
+  contentType?: string;
+  path?: string;
 }
 
 export enum BrokerType {
