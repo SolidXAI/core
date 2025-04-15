@@ -1,23 +1,18 @@
-import { CommonEntity } from "src/entities/common.entity";
-import { Column, Entity } from "typeorm";
+import { CommonEntity } from 'src/entities/common.entity'
+import {Entity, Column} from 'typeorm'
 
 @Entity("ss_list_of_values")
 export class ListOfValues extends CommonEntity {
-    @Column({ name: "type" })
+    @Column({ type: "varchar" })
     type: string;
-
-    @Column({ name: "value" })
+    @Column({ type: "varchar" })
     value: string;
-
-    @Column({ name: "display" })
+    @Column({ type: "varchar" })
     display: string;
-
-    @Column({ name: "description" })
+    @Column({ type: "varchar" })
     description: string;
-
-    @Column({ name: "default" })
-    default: boolean;
-
-    @Column({ name: "sequence" })
+    @Column({ type: "boolean", nullable: true, default: false })
+    default: boolean = false;
+    @Column({ type: "int", nullable: true })
     sequence: number;
 }

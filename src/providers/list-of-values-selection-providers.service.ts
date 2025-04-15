@@ -32,8 +32,8 @@ export class ListOfValuesSelectionProvider implements ISelectionProvider<ListOfV
 
     async values(query: string, ctxt: ListOfValuesProviderContext): Promise<readonly ISelectionProviderValues[]> {
         const paginatedQuery = new PaginationQueryDto(DEFAULT_LIMIT, 0);
-        const lovs = await this.listOfValuesService.findAll(paginatedQuery);
-        const selectionValues = lovs.map(lov => {
+        const lovs = await this.listOfValuesService.find(paginatedQuery);
+        const selectionValues = lovs.records.map(lov => {
             return {
                 label: lov.display,
                 value: lov.value

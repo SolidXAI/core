@@ -313,7 +313,7 @@
             "displayName": "Is Child Model",
             "type": "boolean",
             "ormType": "boolean",
-            "defaultValue": "false",
+            "defaultValue": false,
             "required": false,
             "unique": false,
             "index": false,
@@ -1468,8 +1468,8 @@
             "relationCreateInverse": true,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
-            "isRelationManyToManyOwner": true,
-            "isSystem": true
+            "isSystem": true,
+            "isRelationManyToManyOwner": true
           }
         ]
       },
@@ -1792,7 +1792,8 @@
             "relationCreateInverse": true,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
-            "isSystem": true
+            "isSystem": true,
+            "isRelationManyToManyOwner": true
           },
           {
             "name": "forgotPasswordConfirmedAt",
@@ -2085,7 +2086,8 @@
             "relationCoModelSingularName": "permissionMetadata",
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
-            "isSystem": true
+            "isSystem": true,
+            "isRelationManyToManyOwner": true
           },
           {
             "name": "users",
@@ -2101,8 +2103,8 @@
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
-            "isRelationManyToManyOwner": false,
-            "isSystem": true
+            "isSystem": true,
+            "isRelationManyToManyOwner": false
           },
           {
             "name": "menuItems",
@@ -2118,7 +2120,8 @@
             "relationCreateInverse": false,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
-            "isSystem": true
+            "isSystem": true,
+            "isRelationManyToManyOwner": false
           }
         ]
       },
@@ -2560,6 +2563,130 @@
         ]
       },
       {
+        "singularName": "savedFilters",
+        "pluralName": "savedFilterss",
+        "displayName": "Saved Filters",
+        "description": "This is used to maintain user saved filters",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_saved_fitlers",
+        "userKeyFieldUserKey": "filterQueryJson",
+        "fields": [
+          {
+            "name": "user",
+            "displayName": "User",
+            "description": "This is the user id field",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "bondTransactionDetailLogs",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "user",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "restrict",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
+          },
+          {
+            "name": "model",
+            "displayName": "Model",
+            "description": "This is the model related to saved filter.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "savedFilters",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "modelMetadata",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "restrict",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
+          },
+          {
+            "name": "view",
+            "displayName": "View",
+            "description": "This is the view related to saved filter.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "savedFilters",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "viewMetadata",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "restrict",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
+          },
+          {
+            "name": "filterQueryJson",
+            "displayName": "Filter Query Json",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "isPrivate",
+            "displayName": "Is Private",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          }
+        ]
+      },
+      {
         "singularName": "securityRule",
         "tableName": "ss_security_rule",
         "pluralName": "securityRules",
@@ -2958,6 +3085,231 @@
             "isSystem": true
           }
         ]
+      },
+      {
+        "singularName": "savedFilters",
+        "pluralName": "savedFilterss",
+        "displayName": "Saved Filters",
+        "description": "This is used to maintain user saved filters",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_saved_fitlers",
+        "userKeyFieldUserKey": "filterQueryJson",
+        "fields": [
+          {
+            "name": "user",
+            "displayName": "User",
+            "description": "This is the user id field",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "bondTransactionDetailLogs",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "user",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "restrict",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
+          },
+          {
+            "name": "model",
+            "displayName": "Model",
+            "description": "This is the model related to saved filter.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "savedFilters",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "modelMetadata",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "restrict",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
+          },
+          {
+            "name": "view",
+            "displayName": "View",
+            "description": "This is the view related to saved filter.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "savedFilters",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "viewMetadata",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "restrict",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
+          },
+          {
+            "name": "filterQueryJson",
+            "displayName": "Filter Query Json",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "isPrivate",
+            "displayName": "Is Private",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          }
+        ]
+      },
+      {
+        "singularName": "listOfValues",
+        "pluralName": "listOfValuess",
+        "displayName": "List of Values ",
+        "description": "This is used to maintain List Of Values",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_list_of_values",
+        "userKeyFieldUserKey": "type",
+        "fields": [
+          {
+            "name": "type",
+            "displayName": "Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "value",
+            "displayName": "Value",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "display",
+            "displayName": "Display",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "default",
+            "displayName": "Default",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "sequence",
+            "displayName": "Sequence",
+            "type": "int",
+            "ormType": "int",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          }
+        ]
       }
     ]
   },
@@ -3075,6 +3427,19 @@
       "viewUserKey": "menuItemMetadata-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "menuItemMetadata"
+    },
+    {
+      "displayName": "Saved Filters list action",
+      "name": "savedFilters-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "savedFilters-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters"
     },
     {
       "displayName": "Media list action",
@@ -3244,6 +3609,19 @@
       "viewUserKey": "sms-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "smsTemplate"
+    },
+    {
+      "displayName": "List of Values",
+      "name": "list-of-values-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "listOfValues-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues"
     }
   ],
   "menus": [
@@ -3308,6 +3686,14 @@
       "name": "action-metadata",
       "sequenceNumber": 6,
       "actionUserKey": "actionMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layout-builder-menu-item"
+    },
+    {
+      "displayName": "Saved Filters",
+      "name": "savedFilters-metadata",
+      "sequenceNumber": 7,
+      "actionUserKey": "savedFilters-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "layout-builder-menu-item"
     },
@@ -3430,6 +3816,30 @@
       "actionUserKey": "sms-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "notification-menu-item"
+    },
+    {
+      "displayName": "Other",
+      "name": "other-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "other-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Saved Filters",
+      "name": "savedFilters-metadata",
+      "sequenceNumber": 7,
+      "actionUserKey": "savedFilters-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "List of Values",
+      "name": "list-of-values-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "list-of-values-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
     }
   ],
   "views": [
@@ -3492,49 +3902,49 @@
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "description",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "menuIconUrl",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "menuSequenceNumber",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "defaultDataSource",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "isSystem",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -3573,42 +3983,42 @@
                     "type": "field",
                     "attrs": {
                       "name": "displayName",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "name",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "description",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "menuIconUrl",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "menuSequenceNumber",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "defaultDataSource",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
@@ -3684,56 +4094,56 @@
             "type": "field",
             "attrs": {
               "name": "singularName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "tableName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "pluralName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "description",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "dataSource",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "enableSoftDelete",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "module",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -3772,63 +4182,698 @@
                     "type": "field",
                     "attrs": {
                       "name": "singularName",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "tableName",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "pluralName",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "displayName",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "description",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "dataSource",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "enableSoftDelete",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "module",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "isUserKey",
-                      "isSearchable" : true
+                      "isSearchable": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "savedFilters-list-view",
+      "displayName": "Saved Filters list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "view",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "filterQueryJson",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "savedFilters-form-view",
+      "displayName": "Saved Filters form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Solid Saved Filter Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "filterQueryJson"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "view"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "model"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "user"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "listOfValues-list-view",
+      "displayName": "List of Values list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "value",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "display",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "default",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequence",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "listOfValues-form-view",
+      "displayName": "List of Values form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Solid List of Values Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "type"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "value"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "display"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "description"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "default"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "sequence"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "savedFilters-list-view",
+      "displayName": "Saved Filters list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "view",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "filterQueryJson",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "savedFilters-form-view",
+      "displayName": "Saved Filters form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Solid Saved Filter Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "filterQueryJson"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "view"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "model"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "user"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "savedFilters-list-view",
+      "displayName": "Saved Filters list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "view",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "filterQueryJson",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "savedFilters-form-view",
+      "displayName": "Saved Filters form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Solid Saved Filter Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "name"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "filterQueryJson"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "view"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "model"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "user"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "listOfValues-list-view",
+      "displayName": "List of Values list view",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "value",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "display",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "default",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequence",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "listOfValues-form-view",
+      "displayName": "List of Values form view",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Solid List of Values Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "type"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "value"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "display"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "description"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "default"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "sequence"
                     }
                   }
                 ]
@@ -3864,42 +4909,42 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "type",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "region",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "bucketName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "isPublic",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "localPath",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -3938,42 +4983,42 @@
                     "type": "field",
                     "attrs": {
                       "name": "name",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "type",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "region",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "bucketName",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "isPublic",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
                       "name": "localPath",
-                      "isSearchable" : true
+                      "isSearchable": true
                     }
                   }
                 ]
@@ -4009,49 +5054,49 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "type",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "context",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "layout",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "module",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "model",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -4392,42 +5437,42 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "type",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "module",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "model",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "view",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -4639,7 +5684,7 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable" : true,
+              "isSearchable": true,
               "widget": "HarishShortText"
             }
           },
@@ -4647,42 +5692,42 @@
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "sequenceNumber",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "module",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "parentMenuItem",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "action",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "roles",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -4805,6 +5850,7 @@
         ]
       }
     },
+    
     {
       "name": "media-list-view",
       "displayName": "Solid Media Model",
@@ -4835,7 +5881,7 @@
             "type": "field",
             "attrs": {
               "name": "entityId",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
@@ -4843,28 +5889,28 @@
             "attrs": {
               "name": "relativeUri",
               "renderMode": "image",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "modelMetadata",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "mediaStorageProviderMetadata",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "fieldMetadata",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -4887,6 +5933,7 @@
           "edit": true,
           "delete": true,
           "groupBy": "mimeType",
+          "grouped": false,
           "draggable": true,
           "allowedViews": [
             "list",
@@ -5073,266 +6120,266 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "displayName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "type",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "ormType",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "model",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "defaultValue",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "regexPattern",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "regexPatternNotMatchingErrorMsg",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "required",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "unique",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "encrypt",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "encryptionType",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "decryptWhen",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "index",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "length",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "max",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "min",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "private",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "mediaTypes",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "mediaMaxSizeKb",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "mediaStorageProvider",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationType",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationCoModelSingularName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationCreateInverse",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationCascade",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationModelModuleName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationCoModelFieldName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "selectionDynamicProvider",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "selectionDynamicProviderCtxt",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "selectionStaticValues",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "selectionValueType",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "computedFieldValueProvider",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "computedFieldValueProviderCtxt",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "computedFieldValueType",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "uuid",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "isSystem",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "isMarkedForRemoval",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "columnName",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -5628,35 +6675,35 @@
             "type": "field",
             "attrs": {
               "name": "username",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "email",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "mobile",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "lastLoginProvider",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "active",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -5886,7 +6933,7 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -5962,14 +7009,14 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "permissions",
-              "isSearchable" : true,
+              "isSearchable": true,
               "renderMode": "checkbox",
               "inlineCreate": "true"
             }
@@ -5978,14 +7025,14 @@
             "type": "field",
             "attrs": {
               "name": "users",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "menuItems",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -6156,49 +7203,49 @@
             "type": "field",
             "attrs": {
               "name": "messageId",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "stage",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "startedAt",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "finishedAt",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "elapsedMillis",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "parentEntityId",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "parentEntity",
-              "isSearchable" : true
+              "isSearchable": true
             }
           },
           {
@@ -6206,7 +7253,7 @@
             "attrs": {
               "name": "mqMessageQueue",
               "label": "Queue",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -6368,7 +7415,7 @@
             "attrs": {
               "name": "name",
               "label": "Queue Name",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -6565,49 +7612,49 @@
                             "type": "field",
                             "attrs": {
                               "name": "messageId",
-                              "isSearchable" : true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "stage",
-                              "isSearchable" : true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "startedAt",
-                              "isSearchable" : true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "finishedAt",
-                              "isSearchable" : true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "elapsedMillis",
-                              "isSearchable" : true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "parentEntityId",
-                              "isSearchable" : true
+                              "isSearchable": true
                             }
                           },
                           {
                             "type": "field",
                             "attrs": {
                               "name": "parentEntity",
-                              "isSearchable" : true
+                              "isSearchable": true
                             }
                           },
                           {
@@ -6615,7 +7662,7 @@
                             "attrs": {
                               "name": "mqMessageQueue",
                               "label": "Queue",
-                              "isSearchable" : true
+                              "isSearchable": true
                             }
                           }
                         ]
@@ -6656,7 +7703,7 @@
             "attrs": {
               "name": "appTitle",
               "label": "App Name",
-              "isSearchable" : true
+              "isSearchable": true
             }
           }
         ]
@@ -6834,7 +7881,7 @@
               "filterable": true
             }
           },
-           {
+          {
             "type": "field",
             "attrs": {
               "name": "name",
@@ -6844,7 +7891,7 @@
             }
           }
         ]
-     }
+      }
     },
     {
       "name": "securityRule-form-view",
@@ -6853,85 +7900,84 @@
       "context": "{}",
       "moduleUserKey": "solid-core",
       "modelUserKey": "securityRule",
-      "layout":{
+      "layout": {
         "type": "form",
         "attrs": {
-           "name": "form-1",
-           "label": "Security rules",
-           "className": "grid"
+          "name": "form-1",
+          "label": "Security rules",
+          "className": "grid"
         },
         "children": [
-           {
-              "type": "sheet",
-              "attrs": {
-                 "name": "sheet-1"
-              },
-              "children": [
-                 {
-                    "type": "row",
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": ""
+                },
+                "children": [
+                  {
+                    "type": "column",
                     "attrs": {
-                       "name": "group-1",
-                       "label": "",
-                       "className": ""
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-6"
                     },
-                      "children": [
-                       {
-                          "type": "column",
-                          "attrs": {
-                             "name": "group-1",
-                             "label": "",
-                             "className": "col-6"
-                          },
-                          "children": [
-                             {
-                               "type": "field",
-                               "attrs": {
-                                 "name": "name"
-                               }
-                             },
-                             {
-                               "type": "field",
-                               "attrs": {
-                                 "name": "description"
-                               }
-                             },
-                             {
-                               "type": "field",
-                               "attrs": {
-                                 "name": "securityRuleConfig"
-                               }
-                             }
-     
-                          ]
-                       },
-                       {
-                          "type": "column",
-                          "attrs": {
-                             "name": "group-2",
-                             "label": "",
-                             "className": "col-6"
-                          },
-                          "children": [
-                             {
-                               "type": "field",
-                               "attrs": {
-                                 "name": "role"
-                               }
-                             },
-                             {
-                               "type": "field",
-                               "attrs": {
-                                 "name": "modelMetadata"
-                               }
-                             }
-                          ]
-                       }
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "name"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "description"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "securityRuleConfig"
+                        }
+                      }
                     ]
-                 }
-              ]
-           }
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "role"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "modelMetadata"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
         ]
-     }
+      }
     },
     {
       "name": "email-list-view",
@@ -7265,5 +8311,15 @@
       "type": "filesystem"
     }
   ],
-  "checksums": []
+  "checksums": [],
+  "listOfValues": [
+    {
+      "type": "industry",
+      "value": "IT",
+      "display": "IT",
+      "description": "Insdustry It list of value",
+      "default": true,
+      "sequence": 1
+    }
+  ]
 }
