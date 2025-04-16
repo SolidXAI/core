@@ -899,7 +899,7 @@ export class ModelMetadataService {
     }
 
     const query = {
-      populate: ["module", "fields"]
+      populate: ["module", "fields", "parentModel"]
     };
     const model = options.modelId ? await this.findOne(options.modelId, query) : await this.findOneByUserKey(options.modelUserKey, query.populate);
 
@@ -921,7 +921,8 @@ export class ModelMetadataService {
         dataSource: model.dataSource,
         table: model.tableName,
         fields: fieldsForRefresh,
-        modelEnableSoftDelete: model.enableSoftDelete
+        modelEnableSoftDelete: model.enableSoftDelete,
+        parentModel: model.parentModel?.singularName
       },
       dryRun
     );
