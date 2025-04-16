@@ -68,9 +68,9 @@ export class FieldMetadataService {
                     private: false,
                     encrypt: false,
                     model: relationModel,
-                    columnName:null,
+                    columnName: null,
                     relationJoinTableName: null,
-                    id : null,
+                    id: null,
                 }
 
                 // Load the inverse field, 
@@ -98,9 +98,9 @@ export class FieldMetadataService {
                     private: false,
                     encrypt: false,
                     model: relationModel,
-                    columnName:null,
+                    columnName: null,
                     relationJoinTableName: null,
-                    id : null,
+                    id: null,
                 }
 
                 // Load the inverse field, 
@@ -129,10 +129,10 @@ export class FieldMetadataService {
                     private: false,
                     encrypt: false,
                     model: relationModel,
-                    columnName:null,
+                    columnName: null,
                     relationJoinTableName: null,
                     isRelationManyToManyOwner: false,
-                    id : null,
+                    id: null,
                 }
                 const savedField = await this.saveInverseField(fieldRepository, relationModel, inverseFieldManyToMany);
                 return savedField;
@@ -141,7 +141,7 @@ export class FieldMetadataService {
                 throw new Error(`Invalid relation type for field ${field.name} with relation type  ${field.relationType}`);
         }
     }
-    
+
     private async getRelationModel(modelRepository: Repository<ModelMetadata>, field: FieldMetadata, moduleName: string) {
         return await modelRepository.findOne({
             where: {
@@ -750,6 +750,7 @@ export class FieldMetadataService {
                     "columnName",
                     "relationJoinTableName",
                     "isRelationManyToManyOwner",
+                    "relationFieldFixedFilter"
                 ];
 
             case SolidFieldType.mediaSingle:
@@ -1080,7 +1081,7 @@ export class FieldMetadataService {
         fieldsRequiredBasedOnType.forEach((requiredField) => {
             fieldObject[requiredField] = field[requiredField];
         });
-        
+
         if (field.type == "mediaSingle" || field.type == "mediaMultiple") {
             if (field.mediaStorageProvider) {
                 delete fieldObject.mediaStorageProviderId

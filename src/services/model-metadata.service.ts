@@ -330,7 +330,7 @@ export class ModelMetadataService {
         where: {
           id: modelId,
         },
-        relations: ["fields", "fields.mediaStorageProvider", "module"], //FIXME: Check with jenender and change to relations to avoid confusion
+        relations: ["fields", "fields.mediaStorageProvider", "module", "parentModel"], //FIXME: Check with jenender and change to relations to avoid confusion
       });
 
       const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
@@ -345,6 +345,8 @@ export class ModelMetadataService {
         dataSourceType: model.dataSourceType,
         tableName: model.tableName,
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
+        isChild: model?.isChild,
+        parentModelUserKey: model?.parentModel?.singularName,
         fields: []
       }
 
@@ -595,7 +597,7 @@ export class ModelMetadataService {
         where: {
           id: modelId,
         },
-        relations: ["fields", "fields.mediaStorageProvider", "module"], //FIXME: Check with jenender and change to relations to avoid confusion
+        relations: ["fields", "fields.mediaStorageProvider", "module" , "parentModel"], //FIXME: Check with jenender and change to relations to avoid confusion
       });
 
       const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
@@ -610,6 +612,8 @@ export class ModelMetadataService {
         dataSourceType: model.dataSourceType,
         tableName: model.tableName,
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
+        isChild: model.isChild,
+        parentModelUserKey: model.parentModel.singularName,
         fields: []
       }
 
