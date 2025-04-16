@@ -39,6 +39,7 @@ import {
     RegistrationValidationSource,
     TransactionalRegistrationValidationSource
 } from "../constants";
+import { SettingService } from './setting.service';
 
 enum LoginProvider {
     LOCAL = 'local',
@@ -70,6 +71,7 @@ export class AuthenticationService {
         private readonly mailService: SMTPEMailService,
         private readonly smsService: Msg91OTPService,
         private readonly eventEmitter: EventEmitter2,
+        private readonly settingService: SettingService,
     ) { }
 
     async resolveUser(username: string, email: string) {
@@ -107,7 +109,7 @@ export class AuthenticationService {
 
     async signUp(signUpDto: SignUpDto, activeUser: ActiveUserData = null): Promise<User> {
         // If public registrations are disabled and no activeUser is present when invoking signUp then we throw an exception.
-        if (!this.iamConfiguration.allowPublicRegistration && !activeUser) {
+        if (!(await this.settingService.getConfigValue('allowPublicRegistration')) && !activeUser) {
             throw new BadRequestException('Public registrations are disabled.');
         }
 
@@ -133,13 +135,14 @@ export class AuthenticationService {
                 user.forcePasswordChange = true;
             }
             user.password = pwd;
-            user.active = this.iamConfiguration.activateUserOnRegistration;
+            user.active = await this.settingService.getConfigValue('activateUserOnRegistration');
             const savedUser = await this.userRepository.save(user);
 
             // Also assign a default role to the newly created user. 
             let roles = [];
-            if (this.iamConfiguration.defaultRole) {
-                roles.push(this.iamConfiguration.defaultRole);
+            const defaultRole = await this.settingService.getConfigValue('defaultRole');
+            if (defaultRole) {
+                roles.push(defaultRole);
             }
             // Default Internal user role assigned 
             roles.push("Internal User");
@@ -244,7 +247,7 @@ export class AuthenticationService {
                 user = this.createUser(signUpDto);
                 this.populateVerificationTokens(finalRegistrationVerificationSources, user);
                 await this.userRepository.save(user);
-                await this.userService.addRoleToUser(user.username, this.iamConfiguration.defaultRole);
+                await this.userService.addRoleToUser(user.username, await this.settingService.getConfigValue('defaultRole'));
             }
             else {
                 this.populateVerificationTokens(finalRegistrationVerificationSources, user);
@@ -363,7 +366,7 @@ export class AuthenticationService {
             user.emailVerifiedOnRegistrationAt = new Date();
             user.emailVerificationTokenOnRegistration = null;
             user.emailVerificationTokenOnRegistrationExpiresAt = null;
-            user.active = this.iamConfiguration.activateUserOnRegistration && this.areRegistrationValidationSourcesVerified(user);
+            user.active = await this.settingService.getConfigValue('activateUserOnRegistration') && this.areRegistrationValidationSourcesVerified(user);
             const savedUser: User = await this.userRepository.save(user);
             this.triggerRegistrationEvent(savedUser);
             return { active: savedUser.active, message: `User registration verified for ${confirmSignUpDto.type}` }
@@ -385,7 +388,7 @@ export class AuthenticationService {
             user.mobileVerifiedOnRegistrationAt = new Date();
             user.mobileVerificationTokenOnRegistration = null;
             user.mobileVerificationTokenOnRegistrationExpiresAt = null;
-            user.active = this.iamConfiguration.activateUserOnRegistration && this.areRegistrationValidationSourcesVerified(user);
+            user.active = await this.settingService.getConfigValue('activateUserOnRegistration') && this.areRegistrationValidationSourcesVerified(user);
             const savedUser: User = await this.userRepository.save(user);
             this.triggerRegistrationEvent(savedUser);
             return { active: savedUser.active, message: `User registration verified for ${confirmSignUpDto.type}` }
@@ -942,8 +945,8 @@ export class AuthenticationService {
 
     }
 
-    private isPasswordlessRegistrationEnabled() {
-        return this.iamConfiguration.passwordlessRegistration;
+    private async isPasswordlessRegistrationEnabled() {
+        return this.settingService.getConfigValue('passwordlessRegistration');
     }
 
     //FIXME - Pending implementation
