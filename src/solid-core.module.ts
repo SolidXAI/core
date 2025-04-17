@@ -154,6 +154,12 @@ import { RequestContextService } from './services/request-context.service';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ListOfValuesController } from './controllers/list-of-values.controller';
+import { ChatterMessage } from './entities/chatter-message.entity';
+import { ChatterMessageService } from './services/chatter-message.service';
+import { ChatterMessageController } from './controllers/chatter-message.controller';
+import { ChatterMessageDetails } from './entities/chatter-message-details.entity';
+import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
+import { ChatterMessageDetailsController } from './controllers/chatter-message-details.controller';
 
 
 @Global()
@@ -203,6 +209,8 @@ import { ListOfValuesController } from './controllers/list-of-values.controller'
     TypeOrmModule.forFeature([SecurityRule]),
     TypeOrmModule.forFeature([SavedFilters]),
     TypeOrmModule.forFeature([ListOfValues]),
+    TypeOrmModule.forFeature([ChatterMessage]),
+    TypeOrmModule.forFeature([ChatterMessageDetails]),
     // TypeOrmModule.forFeature([User]),
   ],
   controllers: [
@@ -232,7 +240,9 @@ import { ListOfValuesController } from './controllers/list-of-values.controller'
     UserViewMetadataController,
     SecurityRuleController,
     SavedFiltersController,
-    ListOfValuesController
+    ListOfValuesController,
+    ChatterMessageController,
+    ChatterMessageDetailsController
   ],
   providers: [
     {
@@ -333,7 +343,9 @@ import { ListOfValuesController } from './controllers/list-of-values.controller'
     SecurityRuleRepository,
     SecurityRuleSubscriber,
     RequestContextService,
-    SavedFiltersService
+    SavedFiltersService,
+    ChatterMessageService,
+    ChatterMessageDetailsService
   ],
   exports: [
     ModuleMetadataService,

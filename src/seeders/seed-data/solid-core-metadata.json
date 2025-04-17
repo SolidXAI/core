@@ -3310,6 +3310,232 @@
             "isSystem": false
           }
         ]
+      },
+      {
+        "singularName": "chatterMessage",
+        "pluralName": "chatterMessages",
+        "displayName": "Chatter Message",
+        "description": "This is used to maintain Chatter Messages",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_chatter_message",
+        "fields": [
+          {
+            "name": "messageType",
+            "displayName": "Message Type",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "index": true,
+            "isSystem": false,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "audit:audit",
+              "custom:custom"
+            ]
+          },
+          {
+            "name": "messageSubType",
+            "displayName": "Message Sub Type",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "index": false,
+            "isSystem": false,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "audit_insert:audit_insert",
+              "audit_update:audit_update",
+              "audit_delete:audit_delete"
+            ]
+          },
+          {
+            "name": "messageBody",
+            "displayName": "Message Body",
+            "type": "longText",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "coModelEntityId",
+            "displayName": "CoModel Entity Id",
+            "type": "int",
+            "ormType": "integer",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "coModelName",
+            "displayName": "CoModel Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "messageAttachments",
+            "displayName": "Message Attachments",
+            "description": null,
+            "type": "mediaMultiple",
+            "ormType": "varchar",
+            "isSystem": false,
+            "mediaTypes": [
+              "image",
+              "file"
+            ],
+            "mediaMaxSizeKb": 102400,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "mediaStorageProviderUserKey": "default-filesystem"
+          },
+          {
+            "name": "user",
+            "displayName": "User",
+            "description": null,
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "user",
+            "relationCoModelColumnName": "",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": "",
+            "isRelationManyToManyOwner": null
+          }
+        ]
+      },
+      {
+        "singularName": "chatterMessageDetails",
+        "pluralName": "chatterMessageDetails",
+        "displayName": "Chatter Message Details",
+        "description": "This is used to maintain Chatter Message Details",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_chatter_message_details",
+        "fields": [
+          {
+            "name": "oldValue",
+            "displayName": "Old Value",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "newValue",
+            "displayName": "New Value",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "oldValueDisplay",
+            "displayName": "Old Value Display",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "newValueDisplay",
+            "displayName": "New Value Display",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "fieldName",
+            "displayName": "Field Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "chatterMessage",
+            "displayName": "Chatter Message",
+            "description": null,
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "chatterMessage",
+            "relationCoModelColumnName": "",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": "",
+            "isRelationManyToManyOwner": null
+          }
+        ]
       }
     ]
   },
