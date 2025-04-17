@@ -3886,7 +3886,7 @@
                 "body": "",
                 "confirmBtnLabel": "Generate Code",
                 "cancelBtnLabel": "Cancel",
-                "customComponent": "../extension/solid-core/moduleMetadata/list/GenerateModuleCodeRowAction",
+                "customComponent": "GenerateModuleCodeRowAction",
                 "customComponentIsSystem": true,
                 "endpoint": ""
               }
@@ -4078,7 +4078,7 @@
                 "body": "",
                 "confirmBtnLabel": "Generate Code",
                 "cancelBtnLabel": "Cancel",
-                "customComponent": "../extension/solid-core/modelMetadata/list/GenerateModelCodeRowAction",
+                "customComponent": "GenerateModelCodeRowAction",
                 "customComponentIsSystem": true,
                 "endpoint": ""
               }
