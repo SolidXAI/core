@@ -855,9 +855,7 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName",
-                    "isUserKey"
-
+                    "columnName"
                 ];
 
             case SolidFieldType.selectionDynamic:

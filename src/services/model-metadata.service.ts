@@ -622,8 +622,8 @@ export class ModelMetadataService {
         dataSourceType: model.dataSourceType,
         tableName: model.tableName,
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
-        isChild: model.isChild,
-        parentModelUserKey: model.parentModel.singularName,
+        isChild: model?.isChild,
+        parentModelUserKey: model?.parentModel?.singularName,
         fields: []
       }
 

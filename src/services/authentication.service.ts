@@ -975,7 +975,14 @@ export class AuthenticationService {
         const tokens = await this.generateTokens(user);
 
         const response = {
-            ...user,
+            user: {
+                email: user.email,
+                mobile: user.mobile,
+                username: user.username,
+                // forcePasswordChange: user.forcePasswordChange,
+                id: user.id,
+                roles: user.roles.map((role, idx, roles) => role.name)
+            },
             ...tokens
         }
         return response;
