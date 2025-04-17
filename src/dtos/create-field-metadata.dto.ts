@@ -321,9 +321,14 @@ export class CreateFieldMetadataDto {
   @IsOptional()
   relationCoModelFieldName: string;
 
-  @ApiProperty({description: 'Only for type=relation, many-to-many. This field is used to set the owner of the many-to-many relation'})
+  @ApiProperty({ description: 'Only for type=relation, many-to-many. This field is used to set the owner of the many-to-many relation' })
   @IsOptional()
   isRelationManyToManyOwner: boolean;
+
+
+  @ApiProperty({ description: 'Only for type=relation, many-to-many. This field is used to store fixed filters that needs to applied on related model' })
+  @IsOptional()
+  relationFieldFixedFilter: string;
 
   @ApiProperty({
     description:

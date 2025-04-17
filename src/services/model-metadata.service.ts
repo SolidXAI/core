@@ -184,6 +184,16 @@ export class ModelMetadataService {
         relations: {},
       });
     createDto['module'] = resolvedModule;
+
+    const resolvedParentModel = await this.dataSource
+      .getRepository(ModelMetadata)
+      .findOne({
+        where: {
+          id: createDto['parentModelId'],
+        },
+        relations: {},
+      });
+    createDto['parentModel'] = resolvedParentModel;
     const { fields: fieldsMetadata, ...modelMetaDataWithoutFields } = createDto;
     const modelMetadata = this.modelMetadataRepo.create(modelMetaDataWithoutFields);
     let model = await manager.save(modelMetadata);
@@ -330,7 +340,7 @@ export class ModelMetadataService {
         where: {
           id: modelId,
         },
-        relations: ["fields", "fields.mediaStorageProvider", "module"], //FIXME: Check with jenender and change to relations to avoid confusion
+        relations: ["fields", "fields.mediaStorageProvider", "module", "parentModel"], //FIXME: Check with jenender and change to relations to avoid confusion
       });
 
       const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
@@ -345,6 +355,8 @@ export class ModelMetadataService {
         dataSourceType: model.dataSourceType,
         tableName: model.tableName,
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
+        isChild: model?.isChild,
+        parentModelUserKey: model?.parentModel?.singularName,
         fields: []
       }
 
@@ -595,7 +607,7 @@ export class ModelMetadataService {
         where: {
           id: modelId,
         },
-        relations: ["fields", "fields.mediaStorageProvider", "module"], //FIXME: Check with jenender and change to relations to avoid confusion
+        relations: ["fields", "fields.mediaStorageProvider", "module", "parentModel"], //FIXME: Check with jenender and change to relations to avoid confusion
       });
 
       const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
@@ -610,6 +622,8 @@ export class ModelMetadataService {
         dataSourceType: model.dataSourceType,
         tableName: model.tableName,
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
+        isChild: model.isChild,
+        parentModelUserKey: model.parentModel.singularName,
         fields: []
       }
 
@@ -895,7 +909,7 @@ export class ModelMetadataService {
     }
 
     const query = {
-      populate: ["module", "fields"]
+      populate: ["module", "fields", "parentModel"]
     };
     const model = options.modelId ? await this.findOne(options.modelId, query) : await this.findOneByUserKey(options.modelUserKey, query.populate);
 
@@ -917,7 +931,8 @@ export class ModelMetadataService {
         dataSource: model.dataSource,
         table: model.tableName,
         fields: fieldsForRefresh,
-        modelEnableSoftDelete: model.enableSoftDelete
+        modelEnableSoftDelete: model.enableSoftDelete,
+        parentModel: model.parentModel?.singularName
       },
       dryRun
     );
