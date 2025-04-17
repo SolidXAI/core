@@ -200,4 +200,30 @@ export class SettingService extends CRUDService<Setting> {
     
     return [...settingsToUpdate, ...settingsToCreate];
   }
+
+  async getAllSettings(): Promise<Record<string, any>> {
+    const settingsArray = await this.repo.find();
+    const settingsMap: Record<string, any> = {};
+    
+    for (const setting of settingsArray) {
+      if (setting.keys && setting.values !== undefined && setting.values !== null) {
+        const value = setting.values;
+        
+        if (value === 'true' || value === 'false') {
+          settingsMap[setting.keys] = value === 'true';
+        }
+        else if (!isNaN(Number(value)) && value.trim() !== '') {
+          settingsMap[setting.keys] = Number(value);
+        }
+        else if (value.includes(',')) {
+          settingsMap[setting.keys] = value.split(',').map(item => item.trim());
+        }
+        else {
+          settingsMap[setting.keys] = value;
+        }
+      }
+    }
+    
+    return settingsMap;
+  }
 }

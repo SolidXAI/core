@@ -46,7 +46,12 @@ export class SettingController {
   @Get('/wrapped')
   async wrapSettings() {
       return this.service.wrapSettings();
-  }  
+  }
+
+  @Get()
+  async getAllSettings() {
+    return this.service.getAllSettings();
+  }
     
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, type: Boolean })
