@@ -4,6 +4,9 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { ChatterMessageService } from '../services/chatter-message.service';
 import { CreateChatterMessageDto } from '../dtos/create-chatter-message.dto';
 import { UpdateChatterMessageDto } from '../dtos/update-chatter-message.dto';
+import { PostChatterMessageDto } from '../dtos/post-chatter-message.dto';
+import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
+import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -89,5 +92,14 @@ export class ChatterMessageController {
     return this.service.delete(id);
   }
 
-
+  @ApiBearerAuth("jwt")
+  @Post('post')
+  @UseInterceptors(AnyFilesInterceptor())
+  async postMessage(
+    @Body() postDto: PostChatterMessageDto,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto
+  ) {
+    return this.service.postMessage(postDto, solidRequestContext, files);
+  }
 }

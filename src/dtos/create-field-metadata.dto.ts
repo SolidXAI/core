@@ -405,4 +405,8 @@ export class CreateFieldMetadataDto {
   @IsString()
   @IsOptional()
   relationJoinTableName: string
+
+  @IsOptional()
+  @IsBoolean()
+  enableAuditTracking?: boolean;
 }
