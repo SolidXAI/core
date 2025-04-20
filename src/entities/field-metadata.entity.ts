@@ -102,6 +102,12 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'is_relation_many_to_many_owner', nullable: true })
     isRelationManyToManyOwner: boolean;
 
+    // We can store a filter json like this {"fieldName": ${someVarWhichWillComeFromParentModel... or can be hard coded...}}
+    // {"type": "INDUSTRY"} .... Eg. static fixedFilter 
+    // {"country_id", "${country}"} ... Eg. dynamic fixedFilter 
+    @Column({ name: 'relation_Field_Fixed_Filter', nullable: true })
+    relationFieldFixedFilter: string;
+
     @Column({ name: 'selection_dynamic_provider', nullable: true })
     selectionDynamicProvider: string;
 

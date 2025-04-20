@@ -14,6 +14,7 @@ type FieldOptions = {
   dataSource: string;
   fields: any[]; //FIXME This type can be improved
   modelEnableSoftDelete?: boolean;
+  parentModel?: string;
 };
 export const REMOVE_FIELDS_COMMAND = 'remove-fields';
 export const REFRESH_MODEL_COMMAND = 'refresh-model';
@@ -68,6 +69,10 @@ export class SchematicService {
 
       if (fieldOptions.modelEnableSoftDelete) {
         modelCommand += ` --model-enable-soft-delete=${fieldOptions.modelEnableSoftDelete}`;
+      }
+      
+      if (fieldOptions.parentModel) {
+        modelCommand += ` --parent-model=${fieldOptions.parentModel}`;
       }
       
       let fieldCommand = fieldOptions.fields

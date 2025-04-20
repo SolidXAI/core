@@ -727,6 +727,18 @@
             "isSystem": true
           },
           {
+            "name": "relationFieldFixedFilter",
+            "displayName": "App Description",
+            "type": "longText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
             "name": "selectionDynamicProvider",
             "displayName": "Selection Dynamic Provider",
             "type": "shortText",
@@ -3707,7 +3719,7 @@
                 "body": "",
                 "confirmBtnLabel": "Generate Code",
                 "cancelBtnLabel": "Cancel",
-                "customComponent": "../extension/solid-core/moduleMetadata/list/GenerateModuleCodeRowAction",
+                "customComponent": "GenerateModuleCodeRowAction",
                 "customComponentIsSystem": true,
                 "endpoint": ""
               }
@@ -3899,7 +3911,7 @@
                 "body": "",
                 "confirmBtnLabel": "Generate Code",
                 "cancelBtnLabel": "Cancel",
-                "customComponent": "../extension/solid-core/modelMetadata/list/GenerateModelCodeRowAction",
+                "customComponent": "GenerateModelCodeRowAction",
                 "customComponentIsSystem": true,
                 "endpoint": ""
               }
@@ -5517,9 +5529,8 @@
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable": true,
-              "widget": "HarishShortText"
-            }
+              "isSearchable": true
+                        }
           },
           {
             "type": "field",
@@ -6508,7 +6519,8 @@
             "type": "field",
             "attrs": {
               "name": "username",
-              "isSearchable": true
+              "isSearchable": true,
+              "widget": "SolidUserNameAvatarWidget"
             }
           },
           {
