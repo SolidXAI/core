@@ -150,6 +150,11 @@ export class CrudHelperService {
         return queryBuilder.expressionMap.joinAttributes.some(join => join.entityOrProperty === joinProperty);
     }
 
+    private hasJoins(queryBuilder: SelectQueryBuilder<any>): boolean {
+        return queryBuilder.expressionMap.joinAttributes.length > 0;
+    }
+
+
     buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
         const { fields, sort, groupBy, populate = [] } = basicFilterDto;
@@ -210,9 +215,10 @@ export class CrudHelperService {
                 qb.addGroupBy(`${entityAlias}.${field}`);
             });
         }
-        // Apply the pagination options
-        if (limit) qb.limit(limit);
-        if (offset) qb.offset(offset);
+        
+        // Apply the pagination options & handle the case when the query has joins
+        if (limit) this.hasJoins(qb) ? qb.take(limit) : qb.limit(limit);
+        if (offset) this.hasJoins(qb) ? qb.skip(offset): qb.offset(offset);
         return qb;
     }
 
