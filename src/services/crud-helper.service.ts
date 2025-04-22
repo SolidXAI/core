@@ -52,7 +52,8 @@ export class CrudHelperService {
                     return;
                 }
                 else { // Recursively call the applyFilters method to handle nested conditions
-                    selectQb.leftJoin(`${alias}.${key}`, key);
+                    const joinField = `${alias}.${key}`;
+                    if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, key);
                     this.applyFilters(qb, primaryFilterObj, key, selectQb);
                 }
             });
@@ -168,6 +169,11 @@ export class CrudHelperService {
             throw new Error('buildFilterQuery: Only 1 Group by field is supported currently');
         }
 
+        // Depending upon the populate option, apply the join clause
+        if (normalizedPopulate && normalizedPopulate.length) {
+            this.buildPopulateQuery(normalizedPopulate, entityAlias, qb);
+        }
+
         if (filters) {
             qb.where(new Brackets(whereQb => {
                 this.applyFilters(whereQb, filters, entityAlias, qb);
@@ -180,11 +186,6 @@ export class CrudHelperService {
                 // If the field contains a (, do not prefix the entity alias
                 return this.wrapFieldWithAlias(field, entityAlias);
             }));
-        }
-
-        // Depending upon the populate option, apply the join clause
-        if (normalizedPopulate && normalizedPopulate.length) {
-            this.buildPopulateQuery(normalizedPopulate, entityAlias, qb);
         }
 
         // Depending upon the order option, apply the order by clause
