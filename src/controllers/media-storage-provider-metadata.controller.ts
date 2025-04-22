@@ -57,8 +57,8 @@ export class MediaStorageProviderMetadataController {
 
     @ApiBearerAuth("jwt")
     @Delete(':id')
-    remove(@Param('id') id: number) {
-        return this.mediaStorageProviderService.remove(id);
+    delete(@Param('id') id: number) {
+        return this.mediaStorageProviderService.delete(id);
     }
 
 }
