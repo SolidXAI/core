@@ -179,11 +179,7 @@ export class CrudHelperService {
 
         // Depending upon the populate option, apply the join clause
         if (normalizedPopulate && normalizedPopulate.length) {
-            normalizedPopulate.forEach((relation) => {
-                // Check if the relation is already joined, if not then join it
-                const joinProperty = `${entityAlias}.${relation}`;
-                if (!this.isRelationJoined(qb, joinProperty)) qb.leftJoinAndSelect(joinProperty, relation);
-            });
+            this.buildPopulateQuery(normalizedPopulate, entityAlias, qb);
         }
 
         // Depending upon the order option, apply the order by clause
@@ -218,6 +214,33 @@ export class CrudHelperService {
         if (limit) qb.limit(limit);
         if (offset) qb.offset(offset);
         return qb;
+    }
+
+    private buildPopulateQuery(normalizedPopulate: string[], entityAlias: string, qb: SelectQueryBuilder<any>) {
+        normalizedPopulate.forEach((relation) => {
+            // Check if the relation is already joined, if not then join it
+            // const joinProperty = `${entityAlias}.${relation}`;
+            // if (!this.isRelationJoined(qb, joinProperty)) 
+            this.buildJoinQueryForRelation(qb, entityAlias, relation);
+        });
+        return qb;
+    }
+
+    private buildJoinQueryForRelation(qb: SelectQueryBuilder<any>, entityAlias: string, relation: string) {
+        // We split the joinProperty to get the alias of the entity we are joining
+        const relationParts = relation.split('.');
+        let parentAlias = entityAlias;
+        relationParts.forEach((part, i) => {
+            const joinProperty = `${parentAlias}.${part}`;
+            // Check if the relation is already joined, if not then join it
+            if (!this.isRelationJoined(qb, joinProperty)) {
+                const joinAlias = relationParts.slice(0, i + 1).join('_');
+                qb.leftJoinAndSelect(joinProperty, joinAlias); // TODO : Have kept the alias same as the relation name, but it can be changed to something else
+            }
+            parentAlias = part; // Update the parent alias for the next iteration
+        });
+        return qb;
+        // qb.leftJoinAndSelect(joinProperty, relation)
     }
 
     private wrapFieldWithAlias(field: string, entityAlias: string): string {

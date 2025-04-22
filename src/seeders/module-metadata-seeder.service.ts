@@ -208,7 +208,7 @@ export class ModuleMetadataSeederService {
             this.logger.debug(`[End] Processing security rules for ${moduleMetadata.name}`);
 
             // List Of Values
-            this.logger.debug(`[Start] Processing security rules for ${moduleMetadata.name}`);
+            this.logger.debug(`[Start] Processing List Of Values for ${moduleMetadata.name}`);
             const listOfValues: CreateListOfValuesDto[] = overallMetadata.listOfValues;
             await this.seedListOfValues(listOfValues);
             this.logger.debug(`[End] Processing List Of Values for ${moduleMetadata.name}`);
