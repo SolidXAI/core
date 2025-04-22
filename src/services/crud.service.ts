@@ -99,20 +99,6 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         }
     }
 
-    // private async loadInverseRelationFields() {
-    //     const fieldMetadataRepo = this.entityManager.getRepository(FieldMetadata);
-    //     // Since the fields in the dto could be a result of being on a inverse side of a relation, we need to get the field configuration from the inverse side to process it
-    //     const inverseRelationFields = await fieldMetadataRepo.find({
-    //         where: {
-    //             type: 'relation',
-    //             relationCoModelSingularName: this.modelName,
-    //             relationCreateInverse: true,
-    //         },
-    //         relations: ['model'],
-    //     });
-    //     return inverseRelationFields;
-    // }
-
     private async loadModel() {
         return await this.modelMetadataService.findOneBySingularName(this.modelName, {
             fields: {
