@@ -5355,7 +5355,7 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "view"
+                                  "name": "viewMetadata"
                                 }
                               }
                             ]
