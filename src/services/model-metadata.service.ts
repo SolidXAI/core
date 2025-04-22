@@ -897,7 +897,7 @@ export class ModelMetadataService {
     // Remove the fields from the database as well. This also checks, if the field is marked for removal
     fieldsForRemoval.forEach((field: FieldMetadata) => {
       if (field.isMarkedForRemoval) {
-        this.fieldMetadataService.remove(field.id);
+        this.fieldMetadataService.delete(field.id);
       }
     });
     return removeOutput;
