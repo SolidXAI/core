@@ -5355,7 +5355,7 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "view"
+                                  "name": "viewMetadata"
                                 }
                               }
                             ]
@@ -5813,7 +5813,7 @@
                     "type": "field",
                     "attrs": {
                       "name": "roles",
-                      "renderMode": "checkbox",
+                      "widget": "checkbox",
                       "inlineCreateAutoSave": "true",
                       "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
                       "inlineCreate": "true",
@@ -5899,7 +5899,7 @@
             "type": "field",
             "attrs": {
               "name": "relativeUri",
-              "renderMode": "image",
+              "widget": "image",
               "isSearchable": true
             }
           },
@@ -5986,7 +5986,7 @@
                         "attrs": {
                           "name": "relativeUri",
                           "label": "relativeUri",
-                          "renderMode": "image"
+                          "widget": "image"
                         }
                       },
                       {
@@ -7029,7 +7029,7 @@
             "attrs": {
               "name": "permissions",
               "isSearchable": true,
-              "renderMode": "checkbox",
+              "widget": "checkbox",
               "inlineCreate": "true"
             }
           },
@@ -7122,7 +7122,7 @@
                             "type": "field",
                             "attrs": {
                               "name": "permissions",
-                              "renderMode": "inputSwitch",
+                              "widget": "inputSwitch",
                               "showLabel": false
                             }
                           }

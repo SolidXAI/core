@@ -145,7 +145,7 @@ export class MediaStorageProviderMetadataService {
         return removedEntities
     }
 
-    async remove(id: number) {
+    async delete(id: number) {
         const lov = await this.findOne(id);
         return this.mediaStorageProviderRepo.remove(lov);
     }
