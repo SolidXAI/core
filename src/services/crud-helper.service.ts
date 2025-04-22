@@ -224,9 +224,6 @@ export class CrudHelperService {
 
     private buildPopulateQuery(normalizedPopulate: string[], entityAlias: string, qb: SelectQueryBuilder<any>) {
         normalizedPopulate.forEach((relation) => {
-            // Check if the relation is already joined, if not then join it
-            // const joinProperty = `${entityAlias}.${relation}`;
-            // if (!this.isRelationJoined(qb, joinProperty)) 
             this.buildJoinQueryForRelation(qb, entityAlias, relation);
         });
         return qb;
@@ -241,12 +238,11 @@ export class CrudHelperService {
             // Check if the relation is already joined, if not then join it
             if (!this.isRelationJoined(qb, joinProperty)) {
                 const joinAlias = relationParts.slice(0, i + 1).join('_');
-                qb.leftJoinAndSelect(joinProperty, joinAlias); // TODO : Have kept the alias same as the relation name, but it can be changed to something else
+                qb.leftJoinAndSelect(joinProperty, joinAlias); 
             }
             parentAlias = part; // Update the parent alias for the next iteration
         });
         return qb;
-        // qb.leftJoinAndSelect(joinProperty, relation)
     }
 
     private wrapFieldWithAlias(field: string, entityAlias: string): string {
