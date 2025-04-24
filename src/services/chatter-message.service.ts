@@ -108,8 +108,12 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     chatterMessage.coModelName = model.singularName;
     chatterMessage.messageBody = `New ${model.displayName} created`;
     
-    const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
-    chatterMessage.user = { id: userId } as any;
+    if (activeUser) {
+        const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
+        chatterMessage.user = { id: userId } as any;
+    } else {
+        chatterMessage.user = null;
+    }
 
     const savedMessage = await this.repo.save(chatterMessage);
 
@@ -178,8 +182,12 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
     chatterMessage.coModelName = model.singularName;
     chatterMessage.messageBody = `${model.displayName} updated`;
     
-    const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
-    chatterMessage.user = { id: userId } as any;
+    if (activeUser) {
+        const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
+        chatterMessage.user = { id: userId } as any;
+    } else {
+        chatterMessage.user = null;
+    }
 
     const savedMessage = await this.repo.save(chatterMessage);
 
@@ -195,7 +203,7 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
     }
 }
 
-async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata, activeUser: any, messageQueue: boolean = false) {
+async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata, databaseEntity: any, activeUser: any, messageQueue: boolean = false) {
     const model = await this.modelMetadataRepo.findOne({
         where: {
             displayName: metadata.name
@@ -213,12 +221,16 @@ async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata, activeUser
     const chatterMessage = new ChatterMessage();
     chatterMessage.messageType = 'audit';
     chatterMessage.messageSubType = 'delete';
-    chatterMessage.coModelEntityId = entity.id;
+    chatterMessage.coModelEntityId = databaseEntity.id;
     chatterMessage.coModelName = model.singularName;
     chatterMessage.messageBody = `${model.displayName} deleted`;
     
-    const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
-    chatterMessage.user = { id: userId } as any;
+    if (activeUser) {
+        const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
+        chatterMessage.user = { id: userId } as any;
+    } else {
+        chatterMessage.user = null;
+    }
 
     await this.repo.save(chatterMessage);
 }

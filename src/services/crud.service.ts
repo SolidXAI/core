@@ -68,7 +68,9 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Check wheather user has create permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasCreatePermissionOnModel(solidRequestContext.activeUser, model.singularName);
-            this.userContextService.setUser(solidRequestContext.activeUser);
+            if (this.userContextService) {
+                this.userContextService.setUser(solidRequestContext.activeUser);
+            }
             if (!hasPermission) {
                 throw new BadRequestException('Forbidden');
             }
@@ -163,7 +165,9 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasUpdatePermissionOnModel(solidRequestContext.activeUser, model.singularName);
-            this.userContextService.setUser(solidRequestContext.activeUser);
+            if (this.userContextService) {
+                this.userContextService.setUser(solidRequestContext.activeUser);
+            }
             if (!hasPermission) {
                 throw new BadRequestException('Forbidden');
             }

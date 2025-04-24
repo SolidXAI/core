@@ -67,7 +67,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
     async afterRemove(event: RemoveEvent<any>) {
         if (await this.shouldTrackAudit(event.entity, event.metadata)) {
             const activeUser = this.userContextService.getUser();
-            await this.chatterMessageService.postAuditMessageOnDelete(event.entity, event.metadata, activeUser);
+            await this.chatterMessageService.postAuditMessageOnDelete(event.entity, event.metadata, event.databaseEntity, activeUser);
         }
     }
 } 

@@ -31,20 +31,4 @@ export class ChatterMessageDetailsService extends CRUDService<ChatterMessageDeta
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'chatterMessageDetails', 'solid-core', moduleRef, userContextService);
   }
-
-  async findWithNestedRelations(coModelName: string, coModelEntityId: number) {
-    return this.repo.find({
-      relations: {
-        chatterMessage: {
-          user: true
-        }
-      },
-      where: {
-        chatterMessage: {
-          coModelName,
-          coModelEntityId
-        }
-      }
-    });
-  }
 }
