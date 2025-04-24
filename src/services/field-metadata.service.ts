@@ -308,7 +308,7 @@ export class FieldMetadataService {
     //     return this.moduleMetadataRepo.save(country);
     // }
 
-    async remove(id: number) {
+    async delete(id: number) {
         const entity = await this.findOne(id);
         return this.fieldMetadataRepo.remove(entity);
     }
@@ -855,9 +855,7 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName",
-                    "isUserKey"
-
+                    "columnName"
                 ];
 
             case SolidFieldType.selectionDynamic:

@@ -622,8 +622,8 @@ export class ModelMetadataService {
         dataSourceType: model.dataSourceType,
         tableName: model.tableName,
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
-        isChild: model.isChild,
-        parentModelUserKey: model.parentModel.singularName,
+        isChild: model?.isChild,
+        parentModelUserKey: model?.parentModel?.singularName,
         fields: []
       }
 
@@ -897,7 +897,7 @@ export class ModelMetadataService {
     // Remove the fields from the database as well. This also checks, if the field is marked for removal
     fieldsForRemoval.forEach((field: FieldMetadata) => {
       if (field.isMarkedForRemoval) {
-        this.fieldMetadataService.remove(field.id);
+        this.fieldMetadataService.delete(field.id);
       }
     });
     return removeOutput;
@@ -909,7 +909,7 @@ export class ModelMetadataService {
     }
 
     const query = {
-      populate: ["module", "fields", "parentModel"]
+      populate: ["module", "fields", "parentModel", "parentModel.module"]
     };
     const model = options.modelId ? await this.findOne(options.modelId, query) : await this.findOneByUserKey(options.modelUserKey, query.populate);
 
@@ -932,7 +932,9 @@ export class ModelMetadataService {
         table: model.tableName,
         fields: fieldsForRefresh,
         modelEnableSoftDelete: model.enableSoftDelete,
-        parentModel: model.parentModel?.singularName
+        parentModel: model.parentModel?.singularName,
+        parentModule: model.parentModel?.module?.name,
+
       },
       dryRun
     );

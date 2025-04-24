@@ -15,6 +15,7 @@ type FieldOptions = {
   fields: any[]; //FIXME This type can be improved
   modelEnableSoftDelete?: boolean;
   parentModel?: string;
+  parentModule?: string;
 };
 export const REMOVE_FIELDS_COMMAND = 'remove-fields';
 export const REFRESH_MODEL_COMMAND = 'refresh-model';
@@ -31,7 +32,7 @@ enum SYSTEM_FIELDS_TO_IGNORE_FOR_CODE_GENERATION {
 export class SchematicService {
   private readonly logger = new Logger(SchematicService.name);
   private readonly SCHEMATIC_PROJECT = '@solidstarters/solid-code-builder';
-  constructor(private readonly commandService: CommandService) {}
+  constructor(private readonly commandService: CommandService) { }
 
   async executeSchematicCommand(
     command: string,
@@ -62,7 +63,7 @@ export class SchematicService {
       if (fieldOptions.table) {
         modelCommand += ` --table=${fieldOptions.table}`;
       }
-      
+
       if (fieldOptions.dataSource) {
         modelCommand += ` --data-source=${fieldOptions.dataSource}`;
       }
@@ -70,26 +71,29 @@ export class SchematicService {
       if (fieldOptions.modelEnableSoftDelete) {
         modelCommand += ` --model-enable-soft-delete=${fieldOptions.modelEnableSoftDelete}`;
       }
-      
+
       if (fieldOptions.parentModel) {
         modelCommand += ` --parent-model=${fieldOptions.parentModel}`;
       }
-      
+      if (fieldOptions.parentModule) {
+        modelCommand += ` --parent-module=${fieldOptions.parentModule}`;
+      }
+
       let fieldCommand = fieldOptions.fields
         .filter((field) => {
           return !Object.values(SYSTEM_FIELDS_TO_IGNORE_FOR_CODE_GENERATION).includes(field.name);
-        }) 
+        })
         .map((field) => {
           return `--fields='${JSON.stringify(field)}'`;
         })
         .join(' ');
-      const schematicCommand =  modelCommand + ' ' + fieldCommand;
+      const schematicCommand = modelCommand + ' ' + fieldCommand;
       // console.log('schematicCommand', schematicCommand);
       return schematicCommand;
     } else if (command === ADD_MODULE_COMMAND) {
       const moduleOptions = options as GenerateModuleOptions;
       // console.log('moduleOptions', moduleOptions);
-      const schematicCommand =  ` ${baseCommand} --module=${moduleOptions.module}`;
+      const schematicCommand = ` ${baseCommand} --module=${moduleOptions.module}`;
       // console.log('schematicCommand', schematicCommand);
       this.logger.debug('schematicCommand', schematicCommand);
       return schematicCommand;
@@ -97,5 +101,5 @@ export class SchematicService {
       throw new Error('Schematic command not supported.');
     }
   }
-  
+
 }

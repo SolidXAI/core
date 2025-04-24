@@ -52,7 +52,8 @@ export class CrudHelperService {
                     return;
                 }
                 else { // Recursively call the applyFilters method to handle nested conditions
-                    selectQb.leftJoin(`${alias}.${key}`, key);
+                    const joinField = `${alias}.${key}`;
+                    if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, key);
                     this.applyFilters(qb, primaryFilterObj, key, selectQb);
                 }
             });
@@ -150,6 +151,11 @@ export class CrudHelperService {
         return queryBuilder.expressionMap.joinAttributes.some(join => join.entityOrProperty === joinProperty);
     }
 
+    private hasJoins(queryBuilder: SelectQueryBuilder<any>): boolean {
+        return queryBuilder.expressionMap.joinAttributes.length > 0;
+    }
+
+
     buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
         const { fields, sort, groupBy, populate = [] } = basicFilterDto;
@@ -161,6 +167,11 @@ export class CrudHelperService {
         const normalizedGroupBy = this.normalize(groupBy);
         if (normalizedGroupBy.length > 1) {
             throw new Error('buildFilterQuery: Only 1 Group by field is supported currently');
+        }
+
+        // Depending upon the populate option, apply the join clause
+        if (normalizedPopulate && normalizedPopulate.length) {
+            this.buildPopulateQuery(normalizedPopulate, entityAlias, qb);
         }
 
         if (filters) {
@@ -175,15 +186,6 @@ export class CrudHelperService {
                 // If the field contains a (, do not prefix the entity alias
                 return this.wrapFieldWithAlias(field, entityAlias);
             }));
-        }
-
-        // Depending upon the populate option, apply the join clause
-        if (normalizedPopulate && normalizedPopulate.length) {
-            normalizedPopulate.forEach((relation) => {
-                // Check if the relation is already joined, if not then join it
-                const joinProperty = `${entityAlias}.${relation}`;
-                if (!this.isRelationJoined(qb, joinProperty)) qb.leftJoinAndSelect(joinProperty, relation);
-            });
         }
 
         // Depending upon the order option, apply the order by clause
@@ -214,9 +216,33 @@ export class CrudHelperService {
                 qb.addGroupBy(`${entityAlias}.${field}`);
             });
         }
-        // Apply the pagination options
-        if (limit) qb.limit(limit);
-        if (offset) qb.offset(offset);
+        
+        // Apply the pagination options & handle the case when the query has joins
+        if (limit) this.hasJoins(qb) ? qb.take(limit) : qb.limit(limit);
+        if (offset) this.hasJoins(qb) ? qb.skip(offset): qb.offset(offset);
+        return qb;
+    }
+
+    private buildPopulateQuery(normalizedPopulate: string[], entityAlias: string, qb: SelectQueryBuilder<any>) {
+        normalizedPopulate.forEach((relation) => {
+            this.buildJoinQueryForRelation(qb, entityAlias, relation);
+        });
+        return qb;
+    }
+
+    private buildJoinQueryForRelation(qb: SelectQueryBuilder<any>, entityAlias: string, relation: string) {
+        // We split the joinProperty to get the alias of the entity we are joining
+        const relationParts = relation.split('.');
+        let parentAlias = entityAlias;
+        relationParts.forEach((part, i) => {
+            const joinProperty = `${parentAlias}.${part}`;
+            // Check if the relation is already joined, if not then join it
+            if (!this.isRelationJoined(qb, joinProperty)) {
+                const joinAlias = relationParts.slice(0, i + 1).join('_');
+                qb.leftJoinAndSelect(joinProperty, joinAlias); 
+            }
+            parentAlias = part; // Update the parent alias for the next iteration
+        });
         return qb;
     }
 

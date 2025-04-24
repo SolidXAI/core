@@ -82,7 +82,7 @@ export class ModuleMetadataController {
 
   @ApiBearerAuth("jwt")
   @Delete(':id')
-  remove(@Param('id') id: number) {
+  delete(@Param('id') id: number) {
     return this.moduleMetadataService.remove(id);
   }
 }
