@@ -3,6 +3,7 @@ import { registerAs } from '@nestjs/config';
 export const iamConfig = registerAs('iam', () => {
     return {
         passwordlessRegistration: (process.env.IAM_PASSWORD_LESS_REGISTRATION ?? 'false') === 'true',
+        iamPasswordRegistrationEnabled: (process.env.IAM_PASSWORD_REGISTRATION_ENABLED ?? 'true') === 'true',
         passwordlessRegistrationValidateWhat: (process.env.IAM_PASSWORD_LESS_REGISTRATION_VALIDATE_WHAT ?? 'email').split(',').map((item) => item.trim()),
         allowPublicRegistration: (process.env.IAM_ALLOW_PUBLIC_REGISTRATION ?? 'true') === 'true',
         activateUserOnRegistration: (process.env.IAM_ACTIVATE_USER_ON_REGISTRATION ?? 'true') === 'true',
