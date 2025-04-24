@@ -5,7 +5,7 @@ import {Entity, Column, Index} from 'typeorm'
 export class Setting extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar", nullable: true })
-    keys: string;
+    key: string;
     @Column({ type: "varchar", nullable: true })
-    values: string;
+    value: string;
 }

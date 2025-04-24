@@ -2380,8 +2380,8 @@
         "userKeyFieldUserKey": "username",
         "fields": [
           {
-            "name": "keys",
-            "displayName": "Keys",
+            "name": "key",
+            "displayName": "Key",
             "type": "shortText",
             "ormType": "varchar",
             "length": 128,
@@ -2393,8 +2393,8 @@
             "isSystem": true
           },
           {
-            "name": "values",
-            "displayName": "Values",
+            "name": "value",
+            "displayName": "Value",
             "type": "longText",
             "ormType": "varchar",
             "length": 128,

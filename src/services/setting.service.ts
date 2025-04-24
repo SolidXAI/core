@@ -58,14 +58,14 @@ export class SettingService extends CRUDService<Setting> {
     };
 
     const existingSettings = await this.repo.find();
-    const existingKeys = new Set(existingSettings.map(s => s.keys));
+    const existingKeys = new Set(existingSettings.map(s => s.key));
 
     const settingsToInsert: Setting[] = [];
     for (const [key, value] of Object.entries(settingsSeederData)) {
       if (!existingKeys.has(key)) {
         const setting = new Setting();
-        setting.keys = key;
-        setting.values = typeof value === 'boolean' ? value.toString() : 
+        setting.key = key;
+        setting.value = typeof value === 'boolean' ? value.toString() : 
                         Array.isArray(value) ? value.join(',') : 
                         value === null || value === undefined ? '' : String(value);
         settingsToInsert.push(setting);
@@ -86,20 +86,20 @@ export class SettingService extends CRUDService<Setting> {
     
     const settingsMap: Record<string, any> = {};
     for (const setting of settingsArray) {
-      if (setting.keys && setting.values !== undefined && setting.values !== null) {
-        let value = setting.values;
+      if (setting.key && setting.value !== undefined && setting.value !== null) {
+        let value = setting.value;
         
         if (value === 'true' || value === 'false') {
-          settingsMap[setting.keys] = value === 'true';
+          settingsMap[setting.key] = value === 'true';
         }
         else if (!isNaN(Number(value)) && value.trim() !== '') {
-          settingsMap[setting.keys] = Number(value);
+          settingsMap[setting.key] = Number(value);
         }
         else if (value.includes(',')) {
-          settingsMap[setting.keys] = value.split(',').map(item => item.trim());
+          settingsMap[setting.key] = value.split(',').map(item => item.trim());
         }
         else {
-          settingsMap[setting.keys] = value;
+          settingsMap[setting.key] = value;
         }
       }
     }
@@ -137,10 +137,10 @@ export class SettingService extends CRUDService<Setting> {
   async getConfigValue(settingKey: string) {
     try {
         const settingsArray: Setting[] = await this.repo.find();
-        const settingEntry = settingsArray.find(setting => setting.keys === settingKey);
+        const settingEntry = settingsArray.find(setting => setting.key === settingKey);
         
-        if (settingEntry && settingEntry.values !== null && settingEntry.values !== undefined) {
-            const value = settingEntry.values;
+        if (settingEntry && settingEntry.value !== null && settingEntry.value !== undefined) {
+            const value = settingEntry.value;
             
             if (value === 'true' || value === 'false') {
                 return value === 'true';
@@ -166,7 +166,7 @@ export class SettingService extends CRUDService<Setting> {
 
   async updateSettings(settings: Record<string, any>): Promise<Setting[]> {
     const existingSettings = await this.repo.find();
-    const existingKeys = new Set(existingSettings.map(s => s.keys));
+    const existingKeys = new Set(existingSettings.map(s => s.key));
     
     const settingsToUpdate: Setting[] = [];
     const settingsToCreate: Setting[] = [];
@@ -177,15 +177,15 @@ export class SettingService extends CRUDService<Setting> {
                          value === null || value === undefined ? '' : String(value);
 
       if (existingKeys.has(key)) {
-        const existingSetting = existingSettings.find(s => s.keys === key);
+        const existingSetting = existingSettings.find(s => s.key === key);
         if (existingSetting) {
-          existingSetting.values = stringValue;
+          existingSetting.value = stringValue;
           settingsToUpdate.push(existingSetting);
         }
       } else {
         const newSetting = new Setting();
-        newSetting.keys = key;
-        newSetting.values = stringValue;
+        newSetting.key = key;
+        newSetting.value = stringValue;
         settingsToCreate.push(newSetting);
       }
     }
@@ -206,20 +206,20 @@ export class SettingService extends CRUDService<Setting> {
     const settingsMap: Record<string, any> = {};
     
     for (const setting of settingsArray) {
-      if (setting.keys && setting.values !== undefined && setting.values !== null) {
-        const value = setting.values;
+      if (setting.key && setting.value !== undefined && setting.value !== null) {
+        const value = setting.value;
         
         if (value === 'true' || value === 'false') {
-          settingsMap[setting.keys] = value === 'true';
+          settingsMap[setting.key] = value === 'true';
         }
         else if (!isNaN(Number(value)) && value.trim() !== '') {
-          settingsMap[setting.keys] = Number(value);
+          settingsMap[setting.key] = Number(value);
         }
         else if (value.includes(',')) {
-          settingsMap[setting.keys] = value.split(',').map(item => item.trim());
+          settingsMap[setting.key] = value.split(',').map(item => item.trim());
         }
         else {
-          settingsMap[setting.keys] = value;
+          settingsMap[setting.key] = value;
         }
       }
     }

@@ -8,10 +8,9 @@ export class UpdateSettingDto {
     @IsOptional()
     @IsString()
     @ApiProperty()
-    keys: string;
+    key: string;
     @IsOptional()
     @IsString()
     @ApiProperty()
-    values: string;
-
+    value: string;
 }
