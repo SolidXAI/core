@@ -89,5 +89,13 @@ export class ChatterMessageDetailsController {
     return this.service.delete(id);
   }
 
+  @ApiBearerAuth("jwt")
+  @Get('getAudits/:coModelName/:coModelEntityId')
+  async findByModel(
+    @Param('coModelName') coModelName: string,
+    @Param('coModelEntityId') coModelEntityId: number
+  ) {
+    return this.service.findWithNestedRelations(coModelName, coModelEntityId);
+  }
 
 }

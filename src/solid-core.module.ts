@@ -161,6 +161,7 @@ import { ChatterMessageDetails } from './entities/chatter-message-details.entity
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageDetailsController } from './controllers/chatter-message-details.controller';
 import { AuditSubscriber } from './subscribers/audit.subscriber';
+import { UserContextService } from './services/user-context.service';
 
 @Global()
 @Module({
@@ -347,6 +348,7 @@ import { AuditSubscriber } from './subscribers/audit.subscriber';
     ChatterMessageService,
     ChatterMessageDetailsService,
     AuditSubscriber,
+    UserContextService,
   ],
   exports: [
     ModuleMetadataService,

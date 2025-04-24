@@ -16,7 +16,7 @@ import { getMediaStorageProvider } from './mediaStorageProviders';
 import { MediaStorageProviderType } from '../dtos/create-media-storage-provider-metadata.dto';
 import { ChatterMessageDetails } from '../entities/chatter-message-details.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
-
+import { UserContextService } from './user-context.service';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage>{
   constructor(
@@ -35,9 +35,9 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     readonly moduleRef: ModuleRef,
     @InjectRepository(ModelMetadata)
     private readonly modelMetadataRepo: Repository<ModelMetadata>,
-
+    readonly userContextService: UserContextService
  ) {
-   super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
+   super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'chatterMessage', 'solid-core', moduleRef, userContextService);
  }
 
  async postMessage(postDto: PostChatterMessageDto, solidRequestContext: SolidRequestContextDto, files: Express.Multer.File[] = []) {
@@ -81,7 +81,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     return savedMessage;
  }
 
- async postAuditMessageOnInsert(entity: any, metadata: EntityMetadata) {
+ async postAuditMessageOnInsert(entity: any, metadata: EntityMetadata, activeUser: any, messageQueue: boolean = false) {
     const model = await this.modelMetadataRepo.findOne({
         where: {
             displayName: metadata.name
@@ -107,8 +107,9 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     chatterMessage.coModelEntityId = entity.id;
     chatterMessage.coModelName = model.singularName;
     chatterMessage.messageBody = `New ${model.displayName} created`;
-    // For audit messages, we'll use null since they are system-generated
-    chatterMessage.user = null;
+    
+    const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
+    chatterMessage.user = { id: userId } as any;
 
     const savedMessage = await this.repo.save(chatterMessage);
 
@@ -127,7 +128,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     }
 }
 
-async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEntity: any) {
+async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEntity: any, activeUser: any, messageQueue: boolean = false) {
     const model = await this.modelMetadataRepo.findOne({
         where: {
             displayName: metadata.name
@@ -147,6 +148,19 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
         !['oneToMany', 'mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type)
     );
 
+    const relationFields = auditFields.filter(field => 
+        field.type === 'relation'
+    );
+    if (relationFields.length > 0) {
+        const populatedEntity = await this.entityManager.findOne(metadata.target, {
+            where: { id: databaseEntity.id },
+            relations: relationFields.map(field => field.name)
+        });
+        if (populatedEntity) {
+            databaseEntity = populatedEntity;
+        }
+    }
+
     const changedFields = auditFields.filter(field => {
         const newValue = entity[field.name];
         const oldValue = databaseEntity[field.name];
@@ -163,8 +177,9 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
     chatterMessage.coModelEntityId = entity.id;
     chatterMessage.coModelName = model.singularName;
     chatterMessage.messageBody = `${model.displayName} updated`;
-    // For audit messages, we'll use null since they are system-generated
-    chatterMessage.user = null;
+    
+    const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
+    chatterMessage.user = { id: userId } as any;
 
     const savedMessage = await this.repo.save(chatterMessage);
 
@@ -180,7 +195,7 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
     }
 }
 
-async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata) {
+async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata, activeUser: any, messageQueue: boolean = false) {
     const model = await this.modelMetadataRepo.findOne({
         where: {
             displayName: metadata.name
@@ -201,8 +216,9 @@ async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata) {
     chatterMessage.coModelEntityId = entity.id;
     chatterMessage.coModelName = model.singularName;
     chatterMessage.messageBody = `${model.displayName} deleted`;
-    // For audit messages, we'll use a system user ID or leave it null
-    chatterMessage.user = null;
+    
+    const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
+    chatterMessage.user = { id: userId } as any;
 
     await this.repo.save(chatterMessage);
 }
@@ -213,16 +229,18 @@ private formatFieldValue(field: any, value: any): string {
     }
 
     if (field.type === 'selectionStatic' || field.type === 'selectionDynamic') {
-        return `${value.value}`;
+        return `${value}`;
     }
 
-    if (field.type === 'manyToOne') {
-        return value.value;
+    if (field.type === 'relation') {
+        if (field.relationType === "many-to-one") {
+            return value.id;
+        }
+        if (field.relationType === 'manyToMany') {
+            return value.map(item => item.id).join(', ');
+        }
     }
 
-    if (field.type === 'manyToMany') {
-        return '';
-    }
 
     return value.toString();
 }
@@ -233,16 +251,18 @@ private formatFieldValueDisplay(field: any, value: any): string {
     }
 
     if (field.type === 'selectionStatic' || field.type === 'selectionDynamic') {
-        return `${value.value}`;
+        return `${value}`;
     }
 
-    if (field.type === 'manyToOne') {
-        return value.value;
+    if (field.type === 'relation') {
+        if (field.relationType === "many-to-one") {
+            return value.name;
+        }
+        if (field.relationType === 'many-toMany') {
+            return value.map(item => item.name).join(', ');
+        }
     }
 
-    if (field.type === 'manyToMany') {
-        return '';
-    }
 
     return value.toString();
 }
