@@ -3322,6 +3322,232 @@
             "isSystem": false
           }
         ]
+      },
+      {
+        "singularName": "chatterMessage",
+        "pluralName": "chatterMessages",
+        "displayName": "Chatter Message",
+        "description": "This is used to maintain Chatter Messages",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_chatter_message",
+        "fields": [
+          {
+            "name": "messageType",
+            "displayName": "Message Type",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "index": true,
+            "isSystem": false,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "audit:audit",
+              "custom:custom"
+            ]
+          },
+          {
+            "name": "messageSubType",
+            "displayName": "Message Sub Type",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "index": false,
+            "isSystem": false,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "audit_insert:audit_insert",
+              "audit_update:audit_update",
+              "audit_delete:audit_delete"
+            ]
+          },
+          {
+            "name": "messageBody",
+            "displayName": "Message Body",
+            "type": "longText",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "coModelEntityId",
+            "displayName": "CoModel Entity Id",
+            "type": "int",
+            "ormType": "integer",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "coModelName",
+            "displayName": "CoModel Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "messageAttachments",
+            "displayName": "Message Attachments",
+            "description": null,
+            "type": "mediaMultiple",
+            "ormType": "varchar",
+            "isSystem": false,
+            "mediaTypes": [
+              "image",
+              "file"
+            ],
+            "mediaMaxSizeKb": 102400,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "mediaStorageProviderUserKey": "default-filesystem"
+          },
+          {
+            "name": "user",
+            "displayName": "User",
+            "description": null,
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "user",
+            "relationCoModelColumnName": "",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": "",
+            "isRelationManyToManyOwner": null
+          }
+        ]
+      },
+      {
+        "singularName": "chatterMessageDetails",
+        "pluralName": "chatterMessageDetails",
+        "displayName": "Chatter Message Details",
+        "description": "This is used to maintain Chatter Message Details",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_chatter_message_details",
+        "fields": [
+          {
+            "name": "oldValue",
+            "displayName": "Old Value",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "newValue",
+            "displayName": "New Value",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "oldValueDisplay",
+            "displayName": "Old Value Display",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "newValueDisplay",
+            "displayName": "New Value Display",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "fieldName",
+            "displayName": "Field Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "chatterMessage",
+            "displayName": "Chatter Message",
+            "description": null,
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "chatterMessage",
+            "relationCoModelColumnName": "",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": "",
+            "isRelationManyToManyOwner": null
+          }
+        ]
       }
     ]
   },
@@ -3478,6 +3704,32 @@
       "viewUserKey": "mediaStorageProviderMetadata-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "mediaStorageProviderMetadata"
+    },
+    {
+      "displayName": "Chatter Message list action",
+      "name": "chatter-message-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": false,
+      "serverEndpoint": "",
+      "viewUserKey": "chatter-message-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "chatterMessage"
+    },
+    {
+      "displayName": "Chatter Message Details list action",
+      "name": "chatter-message-details-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": false,
+      "serverEndpoint": "",
+      "viewUserKey": "chatter-message-details-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "chatterMessageDetails"
     },
     {
       "displayName": "User list action",
@@ -3718,11 +3970,11 @@
       "parentMenuItemUserKey": "layout-builder-menu-item"
     },
     {
-      "displayName": "Media & other",
+      "displayName": "Media",
       "name": "media-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "media-root",
-      "moduleUserKey": "solid-core",
+      "moduleUserKey": "solid-core",                                             
       "parentMenuItemUserKey": ""
     },
     {
@@ -3850,6 +4102,22 @@
       "name": "list-of-values-menu-item",
       "sequenceNumber": 1,
       "actionUserKey": "list-of-values-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Chatter Message",
+      "name": "chatter-message-menu-item",
+      "sequenceNumber": 8,
+      "actionUserKey": "chatter-message-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Chatter Message Details",
+      "name": "chatter-message-details",
+      "sequenceNumber": 9,
+      "actionUserKey": "chatter-message-details-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     }
@@ -5030,6 +5298,254 @@
                     "type": "field",
                     "attrs": {
                       "name": "localPath",
+                      "isSearchable": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "chatter-message-details-list-view",
+      "displayName": "Chatter Message Details Model",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "chatterMessageDetails",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "fieldName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "oldValueDisplay",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "newValueDisplay",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "oldValue",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "newValue",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "chatter-message-details-form-view",
+      "displayName": "Chatter Message Details Model",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "chatterMessageDetails",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Chatter Message Details Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "fieldName",
+                      "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "oldValueDisplay",
+                      "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "newValueDisplay",
+                      "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "oldValue",
+                      "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "newValue",
+                      "isSearchable": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "chatter-message-list-view",
+      "displayName": "Chatter Message Model",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "chatterMessage",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "messageType",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "messageSubType",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "coModelEntityId",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "coModelName",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "chatter-message-form-view",
+      "displayName": "Chatter Message Model",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "chatterMessage",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Chatter Message Model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "messageType",
+                      "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "messageSubType",
+                      "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "coModelEntityId",
+                      "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "coModelName",
                       "isSearchable": true
                     }
                   }
