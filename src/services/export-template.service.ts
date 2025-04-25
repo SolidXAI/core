@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DiscoveryService } from "@nestjs/core";
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 
@@ -55,10 +55,8 @@ export class ExportTemplateService extends CRUDService<ExportTemplate>{
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
-    readonly mediaStorageProviderService: MediaStorageProviderMetadataService,
     readonly configService: ConfigService,
     readonly fileService: FileService,
-    readonly mediaService: MediaService,
     readonly discoveryService: DiscoveryService,
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
@@ -66,7 +64,8 @@ export class ExportTemplateService extends CRUDService<ExportTemplate>{
     @InjectRepository(ExportTemplate, 'default')
     readonly repo: Repository<ExportTemplate>,
     readonly exportTransactionService: ExportTransactionService,
+    readonly moduleRef: ModuleRef
  ) {
-   super(modelMetadataService, moduleMetadataService, mediaStorageProviderService, configService, fileService, mediaService, discoveryService, crudHelperService,entityManager, repo, 'exportTemplate', 'solid-core');
+   super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService,entityManager, repo, 'exportTemplate', 'solid-core',moduleRef);
  }
 }

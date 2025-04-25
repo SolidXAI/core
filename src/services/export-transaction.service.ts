@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DiscoveryService } from "@nestjs/core";
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 
@@ -53,10 +53,8 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
-    readonly mediaStorageProviderService: MediaStorageProviderMetadataService,
     readonly configService: ConfigService,
     readonly fileService: FileService,
-    readonly mediaService: MediaService,
     readonly discoveryService: DiscoveryService,
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
@@ -69,8 +67,9 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     // readonly fieldMetadataService: FieldMetadataService,
     @InjectRepository(FieldMetadata, 'default')
     readonly fieldRepo: Repository<FieldMetadata>,
+    readonly moduleRef: ModuleRef
   ) {
-    super(modelMetadataService, moduleMetadataService, mediaStorageProviderService, configService, fileService, mediaService, discoveryService, crudHelperService, entityManager, repo, 'exportTransaction', 'solid-core');
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'exportTransaction', 'solid-core',moduleRef);
   }
 
   // Return the export stream
@@ -167,7 +166,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
 
     // // Get the storage provider implementation
-    const storageProvider = getMediaStorageProvider(this.configService, this.fileService, this.mediaService, storageProviderType);
+    const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
 
     //Commented the below code since we will be direclty images from server on call from ui 
     await storageProvider.storeStreams([[exportStream, fileName]], exportTransaction, exportedFileMediaField)
