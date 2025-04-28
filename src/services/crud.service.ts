@@ -497,6 +497,11 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     }
 
     private async handlePopulateMedia(populateMedia: string[], entities: T[]) {
+        // Revised logic to handle nested media population
+        // 1. For the nested populateMedia field, get the field metadata information i.e (traverse the field tree)
+        // 2. For each media field, get the storage provider and retrieve the media
+        // 3. Load the entity graph i.e (load the entity and its relations i.e (-1 path of the populateMedia field expression)) 
+
         const model = await this.modelMetadataService.findOneBySingularName(this.modelName, {
             fields: {
                 model: true,
@@ -554,29 +559,30 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         }
         // Populate the entity with the media
         if (populateMedia.length > 0) {
-            const model = await this.modelMetadataService.findOneBySingularName(this.modelName, {
-                fields: {
-                    model: true,
-                    mediaStorageProvider: true,
-                },
-                module: true,
-            });
-            const mediaObj: Record<string, any> = {};
-            for (const mediaField of model.fields.filter(field => field.type === 'mediaSingle' || field.type === 'mediaMultiple')) {
-                if (!populateMedia.includes(mediaField.name)) {
-                    continue;
-                }
-                const storageProviderMetadata = mediaField.mediaStorageProvider;
-                const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
-                const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
-                const mediaResult = await storageProvider.retrieve(entity, mediaField);
-                let obj = { [mediaField.name]: mediaResult }
-                mediaObj[mediaField.name] = mediaResult;
-                // entity['media'][mediaField.name] = await storageProvider.retrieve(entity, mediaField);
-            }
-            if (Object.keys(mediaObj).length > 0) {
-                entity['_media'] = mediaObj;
-            }
+            this.handlePopulateMedia(populateMedia, [entity]);
+            // const model = await this.modelMetadataService.findOneBySingularName(this.modelName, {
+            //     fields: {
+            //         model: true,
+            //         mediaStorageProvider: true,
+            //     },
+            //     module: true,
+            // });
+            // const mediaObj: Record<string, any> = {};
+            // for (const mediaField of model.fields.filter(field => field.type === 'mediaSingle' || field.type === 'mediaMultiple')) {
+            //     if (!populateMedia.includes(mediaField.name)) {
+            //         continue;
+            //     }
+            //     const storageProviderMetadata = mediaField.mediaStorageProvider;
+            //     const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
+            //     const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
+            //     const mediaResult = await storageProvider.retrieve(entity, mediaField);
+            //     let obj = { [mediaField.name]: mediaResult }
+            //     mediaObj[mediaField.name] = mediaResult;
+            //     // entity['media'][mediaField.name] = await storageProvider.retrieve(entity, mediaField);
+            // }
+            // if (Object.keys(mediaObj).length > 0) {
+            //     entity['_media'] = mediaObj;
+            // }
         }
         return entity;
     }
