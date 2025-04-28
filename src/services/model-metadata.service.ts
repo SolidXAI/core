@@ -717,21 +717,22 @@ export class ModelMetadataService {
     return this.modelMetadataRepo.remove(entity);
   }
 
-  async generateCode(options: CodeGenerationOptions): Promise<string> {
-    const query = {
-      populate: ["module", "fields"]
-    };
+  async handleGenerateCode(options: CodeGenerationOptions): Promise<string> {
+    const { model, removeFieldCodeOuput, refreshModelCodeOutput } = await this.generateCode(options);
 
-    const model = options.modelId
-      ? await this.findOne(options.modelId, query)
-      : await this.findOneByUserKey(options.modelUserKey, query.populate);
+    // Generate the code for models which are linked to fields having an inverse relation
+    const coModelSingularNames = model.fields.
+                          filter(field => field.type === SolidFieldType.relation && field.relationCreateInverse === true)
+                          .map(field => field.relationCoModelSingularName);
 
-    options.fieldIdsForRemoval = model.fields
-      .filter(field => field.isMarkedForRemoval)
-      .map(field => field.id);
-
-    const refreshModelCodeOutput = await this.generateModelCode(options);
-    const removeFieldCodeOuput = await this.generateRemoveFieldsCode(options);
+    for (const singularName of coModelSingularNames) {
+      const coModel = await this.findOneBySingularName(singularName);
+      const inverseOptions: CodeGenerationOptions = {
+        modelId: coModel.id,
+        dryRun: options.dryRun
+      };
+      await this.generateCode(inverseOptions);
+    }                      
 
     const jsonFieldsList = model.fields.filter((field: FieldMetadata) => field.isSystem !== true);
 
@@ -874,6 +875,24 @@ export class ModelMetadataService {
     }
 
     return `${removeFieldCodeOuput} \n ${refreshModelCodeOutput}`;
+  }
+
+  private async generateCode(options: CodeGenerationOptions) {
+    const query = {
+      populate: ["module", "fields"]
+    };
+
+    const model = options.modelId
+      ? await this.findOne(options.modelId, query)
+      : await this.findOneByUserKey(options.modelUserKey, query.populate);
+
+    options.fieldIdsForRemoval = model.fields
+      .filter(field => field.isMarkedForRemoval)
+      .map(field => field.id);
+
+    const refreshModelCodeOutput = await this.generateModelCode(options);
+    const removeFieldCodeOuput = await this.generateRemoveFieldsCode(options);
+    return { model, removeFieldCodeOuput, refreshModelCodeOutput };
   }
 
   async generateRemoveFieldsCode(options: CodeGenerationOptions): Promise<string> {
