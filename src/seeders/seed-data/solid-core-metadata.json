@@ -8674,13 +8674,5 @@
   ],
   "checksums": [],
   "listOfValues": [
-    {
-      "type": "industry",
-      "value": "IT",
-      "display": "IT",
-      "description": "Insdustry It list of value",
-      "default": true,
-      "sequence": 1
-    }
   ]
 }
