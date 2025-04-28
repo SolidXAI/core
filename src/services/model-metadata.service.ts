@@ -740,8 +740,7 @@ export class ModelMetadataService {
       type: "field",
       attrs: {
         name: `${field.name}`,
-        sortable: true,
-        filterable: true
+        isSearchable: true,
       }
     }));
 
