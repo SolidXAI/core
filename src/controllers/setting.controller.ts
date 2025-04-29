@@ -6,6 +6,7 @@ import { CreateSettingDto } from '../dtos/create-setting.dto';
 import { UpdateSettingDto } from '../dtos/update-setting.dto';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
+import { UpdateSettingsDto } from 'src/dtos/update-settings.dto';
 
 @ApiTags('Solid') 
 @Controller('setting') //FIXME: Change this to the model plural name 
@@ -45,7 +46,12 @@ export class SettingController {
   @Get('/wrapped')
   async wrapSettings() {
       return this.service.wrapSettings();
-  }  
+  }
+
+  @Get()
+  async getAllSettings() {
+    return this.service.getAllSettings();
+  }
     
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, type: Boolean })
@@ -78,5 +84,11 @@ export class SettingController {
   @Delete(':id')
   async delete(@Param('id') id: number,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
     return this.service.delete(id,solidRequestContext);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Post('/bulk-update')
+  async updateSettings(@Body() updateSettingsDto: UpdateSettingsDto) {
+    return this.service.updateSettings(updateSettingsDto.settings);
   }
 }

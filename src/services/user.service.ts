@@ -1,5 +1,5 @@
-import { Injectable } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
+import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { ConfigService, ConfigType } from '@nestjs/config';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { CrudHelperService } from "src/services/crud-helper.service";
@@ -14,6 +14,7 @@ import { OauthUserDto } from '../dtos/oauth-user-dto';
 import { RoleMetadata } from '../entities/role-metadata.entity';
 import { User } from '../entities/user.entity';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
+import { iamConfig } from 'src/config/iam.config';
 
 @Injectable()
 export class UserService extends CRUDService<User> {
@@ -30,8 +31,10 @@ export class UserService extends CRUDService<User> {
     readonly repo: Repository<User>,
     @InjectRepository(RoleMetadata)
     private readonly roleRepository: Repository<RoleMetadata>,
-    readonly moduleRef: ModuleRef
-
+    readonly moduleRef: ModuleRef,
+    @Inject(iamConfig.KEY)
+    private readonly iamConfiguration: ConfigType<typeof iamConfig>,
+    
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'user', 'solid-core', moduleRef);
   }
@@ -195,7 +198,10 @@ export class UserService extends CRUDService<User> {
       user.googleId = oauthUserDto.providerId;
       user.googleProfilePicture = oauthUserDto.picture;
 
-      return await this.repo.save(user);
+      const savedUser = await this.repo.save(user);
+
+      // Initialize the user roles
+      this.initializeRolesForNewUser([this.iamConfiguration.defaultRole], savedUser);
     }
     // else we update the user and store the generated code & access token. 
     else {
@@ -230,4 +236,21 @@ export class UserService extends CRUDService<User> {
     const matchingPermssions = activeUser.permissions.filter((p) => query.permissionNames.includes(p));
     return matchingPermssions
   }
+
+  initializeRolesForNewUser(roles: string[], user: User) {
+    if (!user.id) {
+        throw new BadRequestException('User must exist before initializing roles');
+    }
+    let userRoles = [];
+    // Default Internal user role assigned 
+    userRoles.push("Internal User");
+    if (roles) {
+        userRoles = [...userRoles, ...roles];
+    }
+    userRoles = Array.from(new Set([...userRoles]));
+    if (userRoles.length > 0) {
+        this.addRolesToUser(user.username, userRoles);
+    }
+ }
+
 }

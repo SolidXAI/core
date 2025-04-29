@@ -74,24 +74,6 @@ export class ModuleMetadataSeederService {
 
         const typedSolidCoreMetadata: any = solidCoreMetadata;
 
-        const settingsSeederData: any = {
-            iamAllowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
-            iamPasswordRegistrationEnabled: true,
-            iamPasswordLessRegistrationEnabled: this.iamConfiguration.passwordlessRegistration,
-            iamActivateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
-            iamGoogleOAuthEnabled: false,
-            authPagesLayout: "center",
-            authPagesTheme: "light",
-            appTitle: process.env.SOLID_APP_NAME || "Solid App",
-            appLogo: "",
-            appDescription: "",
-            appTnc: "",
-            appPrivacyPolicy: "",
-            iamDefaultRole: this.iamConfiguration.defaultRole,
-            shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
-            shouldQueueSms: this.commonConfiguration.shouldQueueSms
-        }
-
         // Run the permissions seeder. 
         // await this.permissionsSeederService.seed();
         this.logger.log(`Seeding permissions`);
@@ -198,7 +180,7 @@ export class ModuleMetadataSeederService {
 
             // Settings
             this.logger.debug(`[Start] Processing settings for ${moduleMetadata.name}`);
-            await this.seedSettings(settingsSeederData);
+            await this.seetingService.seedDefaultSettings();
             this.logger.debug(`[End] Processing settings for ${moduleMetadata.name}`);
 
             // Security rules
