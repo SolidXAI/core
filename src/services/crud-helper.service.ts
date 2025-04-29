@@ -165,8 +165,10 @@ export class CrudHelperService {
         const normalizedPopulate = this.normalize(populate);
         const normalizedPopulateMedia = this.normalize(populateMedia);
 
-        // if normalizedPopulateMedia, has any nested media paths, then add then to populate exlucding the last part
-        this.additionalRelationsRequiredForMediaPopulation(normalizedPopulateMedia);
+        // if normalizedPopulateMedia, has any nested media paths, then add then to populate excluding the last part
+        const additionalPopulate = this.additionalRelationsRequiredForMediaPopulation(normalizedPopulateMedia);
+        // Add the additional populate relations to the normalizedPopulate, if they are not already present
+        normalizedPopulate.push(...additionalPopulate.filter((relation) => !normalizedPopulate.includes(relation)));
 
         const normalizedSort = this.normalize(sort);
         const normalizedGroupBy = this.normalize(groupBy);
