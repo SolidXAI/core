@@ -511,6 +511,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             }
             entity['_media'] = mediaObj;
         }
+        return entities;
    } 
 
     private async getMediaObject(mediaFieldPath: string, model: ModelMetadata, entity: T) {
@@ -582,7 +583,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             }
         }
 
-        const entity = await this.repo.findOne({
+        let entity = await this.repo.findOne({
             where: {
                 //@ts-ignore
                 id: id,
@@ -595,7 +596,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         }
         // Populate the entity with the media
         if (normalizedPopulateMedia.length > 0) {
-            this.handlePopulateMedia(normalizedPopulateMedia, [entity]);
+            const populatedEntities = await this.handlePopulateMedia(normalizedPopulateMedia, [entity]);
+            entity = populatedEntities[0] as Awaited<T>;
         }
         return entity;
     }
