@@ -163,3 +163,7 @@ export interface QueuesModuleOptions {
   type: BrokerType;
   queueName: string;
 }
+
+export type MediaWithFullUrl = Media & {
+  _full_url: string;
+};
