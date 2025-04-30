@@ -500,7 +500,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             where: {
                 singularName: this.modelName,
             },
-            relations: ['fields', 'fields.mediaStorageProvider','module'],
+            relations: ['fields', 'fields.mediaStorageProvider', 'fields.model','module'],
         });
 
         // Will iterate through every entity &  all populateMedia & call getMediaDetails for each field
@@ -516,7 +516,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     private async getMediaObject(mediaFieldPath: string, model: ModelMetadata, entity: T) {
         if (mediaFieldPath.includes('.')) { // mediaFieldPath is a nested field
             const pathParts = mediaFieldPath.split('.');
-            const mediaFieldMetadata = this.getFieldMetadataRecursively(pathParts, model.fields);
+            const mediaFieldMetadata = await this.getFieldMetadataRecursively(pathParts, model.fields);
             if (!mediaFieldMetadata) {
                 throw new BadRequestException(`Media field ${mediaFieldPath} not found in model ${this.modelName}`);
             }
@@ -817,7 +817,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     
         const relationCoModel = await this.entityManager.getRepository(ModelMetadata).findOne({
             where: { singularName: field.relationCoModelSingularName },
-            relations: ['fields'],
+            relations: ['fields', 'fields.mediaStorageProvider', 'fields.model'],
         });
     
         if (!relationCoModel) {
