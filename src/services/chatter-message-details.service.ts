@@ -11,7 +11,6 @@ import { FileService } from 'src/services/file.service';
 import { CrudHelperService } from 'src/services/crud-helper.service';
 
 import { ChatterMessageDetails } from '../entities/chatter-message-details.entity';
-import { UserContextService } from './user-context.service';
 
 @Injectable()
 export class ChatterMessageDetailsService extends CRUDService<ChatterMessageDetails>{
@@ -27,8 +26,7 @@ export class ChatterMessageDetailsService extends CRUDService<ChatterMessageDeta
     @InjectRepository(ChatterMessageDetails, 'default')
     readonly repo: Repository<ChatterMessageDetails>,
     readonly moduleRef: ModuleRef,
-    readonly userContextService: UserContextService
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'chatterMessageDetails', 'solid-core', moduleRef, userContextService);
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'chatterMessageDetails', 'solid-core', moduleRef);
   }
 }

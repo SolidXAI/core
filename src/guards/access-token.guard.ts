@@ -12,6 +12,7 @@ import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { jwtConfig } from '../config/iam.config';
 import { REQUEST_USER_KEY } from "../constants";
 import { PermissionMetadataService } from '../services/permission-metadata.service';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
@@ -20,6 +21,7 @@ export class AccessTokenGuard implements CanActivate {
     @Inject(jwtConfig.KEY)
     private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     private readonly permissionsService: PermissionMetadataService,
+    private readonly cls: ClsService
   ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -40,6 +42,7 @@ export class AccessTokenGuard implements CanActivate {
       payload.permissions = permissions.map((permission) => permission.name);
 
       request[REQUEST_USER_KEY] = payload;
+      this.cls.set(REQUEST_USER_KEY, payload);
       // console.log(`About to set payload in the request user key:`);
       // console.log(payload);
     } catch {

@@ -51,6 +51,7 @@
     "mailgen": "^2.0.28",
     "mongoose": "^8.7.0",
     "mysql2": "^3.13.0",
+    "nestjs-cls": "^5.4.3",
     "nodemailer": "^6.9.13",
     "passport": "^0.7.0",
     "passport-google-oauth2": "^0.2.0",

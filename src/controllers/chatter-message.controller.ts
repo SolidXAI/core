@@ -98,8 +98,7 @@ export class ChatterMessageController {
   async postMessage(
     @Body() postDto: PostChatterMessageDto,
     @UploadedFiles() files: Array<Express.Multer.File>,
-    @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto
   ) {
-    return this.service.postMessage(postDto, solidRequestContext, files);
+    return this.service.postMessage(postDto, files);
   }
 }

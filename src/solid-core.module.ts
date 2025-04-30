@@ -161,7 +161,7 @@ import { ChatterMessageDetails } from './entities/chatter-message-details.entity
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageDetailsController } from './controllers/chatter-message-details.controller';
 import { AuditSubscriber } from './subscribers/audit.subscriber';
-import { UserContextService } from './services/user-context.service';
+import { ClsModule } from 'nestjs-cls';
 
 @Global()
 @Module({
@@ -213,6 +213,10 @@ import { UserContextService } from './services/user-context.service';
     TypeOrmModule.forFeature([ChatterMessage]),
     TypeOrmModule.forFeature([ChatterMessageDetails]),
     // TypeOrmModule.forFeature([User]),
+    ClsModule.forRoot({
+      middleware: {
+        mount: true,
+      }}),
   ],
   controllers: [
     ModuleMetadataController,
@@ -348,7 +352,6 @@ import { UserContextService } from './services/user-context.service';
     ChatterMessageService,
     ChatterMessageDetailsService,
     AuditSubscriber,
-    UserContextService,
   ],
   exports: [
     ModuleMetadataService,
