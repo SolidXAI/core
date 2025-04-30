@@ -40,19 +40,22 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
    super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'chatterMessage', 'solid-core', moduleRef, userContextService);
  }
 
- async postMessage(postDto: PostChatterMessageDto, solidRequestContext: SolidRequestContextDto, files: Express.Multer.File[] = []) {
+ async postMessage(postDto: PostChatterMessageDto, solidRequestContext: SolidRequestContextDto = null, files: Express.Multer.File[] = []) {
     const chatterMessage = new ChatterMessage();
     chatterMessage.messageType = 'custom';
-    chatterMessage.messageSubType = postDto.messageSubType || 'general';
+    chatterMessage.messageSubType = postDto.messageSubType || 'post_message';
     chatterMessage.messageBody = postDto.messageBody;
     chatterMessage.coModelEntityId = postDto.coModelEntityId;
     chatterMessage.coModelName = postDto.coModelName;
-    
-    const userId = typeof solidRequestContext.activeUser === 'object' 
-        ? solidRequestContext.activeUser.sub 
-        : solidRequestContext.activeUser;
-    
-    chatterMessage.user = { id: userId } as any;
+    if (solidRequestContext?.activeUser) {
+        const userId = typeof solidRequestContext?.activeUser === 'object' 
+            ? solidRequestContext?.activeUser.sub 
+            : solidRequestContext?.activeUser;
+        
+        chatterMessage.user = { id: userId } as any;
+    } else {
+        chatterMessage.user = null;
+    }
 
     const savedMessage = await this.repo.save(chatterMessage);
 
