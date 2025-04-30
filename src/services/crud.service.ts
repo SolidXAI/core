@@ -564,6 +564,15 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     async findOne(id: number, query: any, solidRequestContext: any = {}) {
         const { populate = [], fields = [], populateMedia = [] } = query;
 
+        // const normalizedFields = this.crudHelperService.normalize(fields);
+        const normalizedPopulate = this.crudHelperService.normalize(populate);
+        const normalizedPopulateMedia = this.crudHelperService.normalize(populateMedia);
+
+        // if normalizedPopulateMedia, has any nested media paths, then add then to populate excluding the last part
+        const additionalPopulate = this.crudHelperService.additionalRelationsRequiredForMediaPopulation(normalizedPopulateMedia);
+        // Add the additional populate relations to the normalizedPopulate, if they are not already present
+        normalizedPopulate.push(...additionalPopulate.filter((relation) => !normalizedPopulate.includes(relation)));
+
         const model = await this.loadModel();
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
@@ -578,15 +587,15 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 //@ts-ignore
                 id: id,
             },
-            relations: populate,
+            relations: normalizedPopulate,
             select: fields,
         });
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
         // Populate the entity with the media
-        if (populateMedia.length > 0) {
-            this.handlePopulateMedia(populateMedia, [entity]);
+        if (normalizedPopulateMedia.length > 0) {
+            this.handlePopulateMedia(normalizedPopulateMedia, [entity]);
         }
         return entity;
     }

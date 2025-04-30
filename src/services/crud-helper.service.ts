@@ -230,7 +230,7 @@ export class CrudHelperService {
         return qb;
     }
 
-    private additionalRelationsRequiredForMediaPopulation(normalizedPopulateMedia: string[]) {
+    additionalRelationsRequiredForMediaPopulation(normalizedPopulateMedia: string[]) {
         // Populate relations containing the media field
         return normalizedPopulateMedia
         .filter(pm => pm.includes("."))
