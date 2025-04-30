@@ -228,7 +228,6 @@ export * from './services/security-rule.service'
 export * from './services/request-context.service'
 export * from './services/chatter-message.service'
 export * from './services/chatter-message-details.service'
-export * from './services/user-context.service'
 // Repositories
 export * from './repository/solid-base.repository'
 export * from './repository/security-rule.repository'

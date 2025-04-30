@@ -34,7 +34,6 @@ import { FileService } from "./file.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
-import { UserContextService } from "./user-context.service";
 import { Optional } from "@nestjs/common";
 const DEFAULT_LIMIT = 10;
 const DEFAULT_OFFSET = 0;
@@ -52,7 +51,6 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         readonly modelName: string,
         readonly moduleName: string,
         readonly moduleRef: ModuleRef,
-        @Optional() readonly userContextService?: UserContextService
         //We can just have the Model Entity here
     ) { }
 
@@ -68,9 +66,6 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Check wheather user has create permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasCreatePermissionOnModel(solidRequestContext.activeUser, model.singularName);
-            if (this.userContextService) {
-                this.userContextService.setUser(solidRequestContext.activeUser);
-            }
             if (!hasPermission) {
                 throw new BadRequestException('Forbidden');
             }
@@ -165,9 +160,6 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasUpdatePermissionOnModel(solidRequestContext.activeUser, model.singularName);
-            if (this.userContextService) {
-                this.userContextService.setUser(solidRequestContext.activeUser);
-            }
             if (!hasPermission) {
                 throw new BadRequestException('Forbidden');
             }

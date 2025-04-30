@@ -5,7 +5,6 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { UserContextService } from '../services/user-context.service';
 @Injectable()
 @EventSubscriber()
 export class AuditSubscriber implements EntitySubscriberInterface {
@@ -15,7 +14,6 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         private readonly chatterMessageService: ChatterMessageService,
         @InjectRepository(ModelMetadata)
         private readonly modelMetadataRepo: Repository<ModelMetadata>,
-        private readonly userContextService: UserContextService
     ) {
         connection.subscribers.push(this);
     }
@@ -37,7 +35,8 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
         const auditFields = model.fields.filter(field => 
             field.enableAuditTracking && 
-            !['oneToMany', 'mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type)
+            !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
+            !(field.type === 'relation' && field.relationType === 'one-to-many')
         );
 
         if (auditFields.length === 0) {
@@ -52,22 +51,19 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
     async afterInsert(event: InsertEvent<any>) {
         if (await this.shouldTrackAudit(event.entity, event.metadata)) {
-            const activeUser = this.userContextService.getUser();
-            await this.chatterMessageService.postAuditMessageOnInsert(event.entity, event.metadata, activeUser);
+            await this.chatterMessageService.postAuditMessageOnInsert(event.entity, event.metadata);
         }
     }
 
     async afterUpdate(event: UpdateEvent<any>) {
         if (await this.shouldTrackAudit(event.entity, event.metadata)) {
-            const activeUser = this.userContextService.getUser();
-            await this.chatterMessageService.postAuditMessageOnUpdate(event.entity, event.metadata, event.databaseEntity, activeUser);
+            await this.chatterMessageService.postAuditMessageOnUpdate(event.entity, event.metadata, event.databaseEntity);
         }
     }
 
     async afterRemove(event: RemoveEvent<any>) {
         if (await this.shouldTrackAudit(event.entity, event.metadata)) {
-            const activeUser = this.userContextService.getUser();
-            await this.chatterMessageService.postAuditMessageOnDelete(event.entity, event.metadata, event.databaseEntity, activeUser);
+            await this.chatterMessageService.postAuditMessageOnDelete(event.entity, event.metadata, event.databaseEntity);
         }
     }
 } 
