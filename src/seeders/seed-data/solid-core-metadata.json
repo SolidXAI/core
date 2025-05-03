@@ -910,6 +910,20 @@
             "encrypt": false,
             "columnName": "relation_join_table_name",
             "isSystem": true
+          },
+          {
+            "name": "isMultiselect",
+            "displayName": "Is Multiselect",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "is_multiselect",
+            "isSystem": true
           }
         ]
       },
@@ -3807,7 +3821,7 @@
       "name": "media-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "media-root",
-      "moduleUserKey": "solid-core",                                             
+      "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
     },
     {
@@ -6046,7 +6060,7 @@
             "attrs": {
               "name": "name",
               "isSearchable": true
-                        }
+            }
           },
           {
             "type": "field",

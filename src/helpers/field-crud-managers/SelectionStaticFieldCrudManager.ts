@@ -7,6 +7,7 @@ export interface SelectionStaticFieldOptions {
     selectionValueType: SelectionValueType;
     required: boolean | undefined | null;
     fieldName: string;
+    isMultiSelect: boolean | undefined | null;
 }
 
 export class SelectionStaticFieldCrudManager implements FieldCrudManager {
@@ -14,9 +15,30 @@ export class SelectionStaticFieldCrudManager implements FieldCrudManager {
     constructor(private readonly options: SelectionStaticFieldOptions) {
     }
 
-    validate(dto: any): ValidationError[] {
-        const fieldValue: any = dto[this.options.fieldName];
-        return this.applyValidations(fieldValue);
+    async validate(dto: any): Promise<ValidationError[]> {
+         const fieldValue: any = dto[this.options.fieldName];
+        // return this.applyValidations(fieldValue);
+        const isMultiSelect = this.options?.isMultiSelect;
+        if (isMultiSelect) {
+            let values: any[];
+    
+            try {
+                // Try to parse the field value, which should be a JSON stringified array
+                values = JSON.parse(fieldValue);
+            } catch {
+                // If parsing fails, fallback to a single value
+                values = [fieldValue];
+            }
+    
+            // Apply validations to each value asynchronously
+            const allErrors = await Promise.all(values.map(value => this.applyValidations(value)));
+    
+            // Flatten the array of errors and return
+            return allErrors.flat();
+        } else {
+            // For non-multi-select, apply validations to the single field value
+            return this.applyValidations(fieldValue);
+        }
     }
 
     private applyValidations(fieldValue: any): ValidationError[] {

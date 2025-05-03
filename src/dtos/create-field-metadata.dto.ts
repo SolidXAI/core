@@ -409,4 +409,9 @@ export class CreateFieldMetadataDto {
   @IsOptional()
   @IsBoolean()
   enableAuditTracking?: boolean;
+
+  @IsOptional()
+  @ApiProperty({ description: 'Is Multiselect Field', })
+  @IsBoolean()
+  isMultiselect: boolean;
 }
