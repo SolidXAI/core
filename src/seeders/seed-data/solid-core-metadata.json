@@ -3987,22 +3987,6 @@
                 "customComponentIsSystem": true
               }
             }
-          ],
-          "headerButtons": [
-            {
-              "attrs": {
-                "className": "pi pi-cog",
-                "label": "Generate Code"
-              },
-              "action": {
-                "title": "",
-                "body": "",
-                "confirmBtnLabel": "Generate Code",
-                "cancelBtnLabel": "Cancel",
-                "customComponent": "GenerateModuleCode",
-                "endpoint": ""
-              }
-            }
           ]
         },
         "children": [
@@ -4164,18 +4148,6 @@
           "edit": true,
           "delete": true,
           "rowButtons": [
-            {
-              "attrs": {
-                "className": "pi pi-cog",
-                "label": "Generate Code",
-                "action": "GenerateModelCodeRowAction",
-                "customComponentIsSystem": true,
-                "actionInContextMenu": true,
-                "openInPopup": true
-              }
-            }
-          ],
-          "headerButtons": [
             {
               "attrs": {
                 "className": "pi pi-cog",
