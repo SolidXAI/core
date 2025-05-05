@@ -16,7 +16,7 @@ import { getMediaStorageProvider } from './mediaStorageProviders';
 import { MediaStorageProviderType } from '../dtos/create-media-storage-provider-metadata.dto';
 import { ChatterMessageDetails } from '../entities/chatter-message-details.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
-import { UserContextService } from './user-context.service';
+import { RequestContextService } from './request-context.service';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage>{
   constructor(
@@ -35,24 +35,27 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     readonly moduleRef: ModuleRef,
     @InjectRepository(ModelMetadata)
     private readonly modelMetadataRepo: Repository<ModelMetadata>,
-    readonly userContextService: UserContextService
+    readonly requestContextService: RequestContextService
  ) {
-   super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'chatterMessage', 'solid-core', moduleRef, userContextService);
+   super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
  }
 
- async postMessage(postDto: PostChatterMessageDto, solidRequestContext: SolidRequestContextDto, files: Express.Multer.File[] = []) {
+ async postMessage(postDto: PostChatterMessageDto, files: Express.Multer.File[] = []) {
     const chatterMessage = new ChatterMessage();
     chatterMessage.messageType = 'custom';
-    chatterMessage.messageSubType = postDto.messageSubType || 'general';
+    chatterMessage.messageSubType = postDto.messageSubType || 'post_message';
     chatterMessage.messageBody = postDto.messageBody;
     chatterMessage.coModelEntityId = postDto.coModelEntityId;
     chatterMessage.coModelName = postDto.coModelName;
     
-    const userId = typeof solidRequestContext.activeUser === 'object' 
-        ? solidRequestContext.activeUser.sub 
-        : solidRequestContext.activeUser;
-    
-    chatterMessage.user = { id: userId } as any;
+    const activeUser = this.requestContextService.getActiveUser();
+
+    if (activeUser) {
+        const userId = activeUser?.sub;
+        chatterMessage.user = { id: userId } as any;
+    } else {
+        chatterMessage.user = null;
+    }
 
     const savedMessage = await this.repo.save(chatterMessage);
 
@@ -81,7 +84,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     return savedMessage;
  }
 
- async postAuditMessageOnInsert(entity: any, metadata: EntityMetadata, activeUser: any, messageQueue: boolean = false) {
+ async postAuditMessageOnInsert(entity: any, metadata: EntityMetadata, messageQueue: boolean = false) {
     const model = await this.modelMetadataRepo.findOne({
         where: {
             displayName: metadata.name
@@ -98,8 +101,11 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
 
     const auditFields = model.fields.filter(field => 
         field.enableAuditTracking && 
-        !['oneToMany', 'mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type)
+        !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
+        !(field.type === 'relation' && field.relationType === 'one-to-many')
     );
+
+    const activeUser = this.requestContextService.getActiveUser();
 
     const chatterMessage = new ChatterMessage();
     chatterMessage.messageType = 'audit';
@@ -109,7 +115,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     chatterMessage.messageBody = `New ${model.displayName} created`;
     
     if (activeUser) {
-        const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
+        const userId = activeUser?.sub;
         chatterMessage.user = { id: userId } as any;
     } else {
         chatterMessage.user = null;
@@ -132,7 +138,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     }
 }
 
-async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEntity: any, activeUser: any, messageQueue: boolean = false) {
+async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEntity: any, messageQueue: boolean = false) {
     const model = await this.modelMetadataRepo.findOne({
         where: {
             displayName: metadata.name
@@ -149,7 +155,8 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
 
     const auditFields = model.fields.filter(field => 
         field.enableAuditTracking && 
-        !['oneToMany', 'mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type)
+        !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
+        !(field.type === 'relation' && field.relationType === 'one-to-many')
     );
 
     const relationFields = auditFields.filter(field => 
@@ -164,16 +171,16 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
             databaseEntity = populatedEntity;
         }
     }
-
     const changedFields = auditFields.filter(field => {
         const newValue = entity[field.name];
         const oldValue = databaseEntity[field.name];
         return this.hasValueChanged(newValue, oldValue);
     });
-
+    
     if (changedFields.length === 0) {
         return;
     }
+    const activeUser = this.requestContextService.getActiveUser();
 
     const chatterMessage = new ChatterMessage();
     chatterMessage.messageType = 'audit';
@@ -183,7 +190,7 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
     chatterMessage.messageBody = `${model.displayName} updated`;
     
     if (activeUser) {
-        const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
+        const userId = activeUser?.sub;
         chatterMessage.user = { id: userId } as any;
     } else {
         chatterMessage.user = null;
@@ -203,7 +210,7 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
     }
 }
 
-async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata, databaseEntity: any, activeUser: any, messageQueue: boolean = false) {
+async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata, databaseEntity: any, messageQueue: boolean = false) {
     const model = await this.modelMetadataRepo.findOne({
         where: {
             displayName: metadata.name
@@ -225,8 +232,10 @@ async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata, databaseEn
     chatterMessage.coModelName = model.singularName;
     chatterMessage.messageBody = `${model.displayName} deleted`;
     
+    const activeUser = this.requestContextService.getActiveUser();
+
     if (activeUser) {
-        const userId = typeof activeUser === 'object' ? activeUser.sub : activeUser;
+        const userId = activeUser?.sub;
         chatterMessage.user = { id: userId } as any;
     } else {
         chatterMessage.user = null;
