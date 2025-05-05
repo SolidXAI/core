@@ -867,7 +867,7 @@ export class FieldMetadataService {
                     "decryptWhen",
                     "columnName",
                     "enableAuditTracking",
-                    "isMultiselect"
+                    "isMultiSelect"
                 ];
 
             case SolidFieldType.selectionDynamic:
@@ -891,7 +891,7 @@ export class FieldMetadataService {
                     "columnName",
                     "isUserKey",
                     "enableAuditTracking",
-                    "isMultiselect"
+                    "isMultiSelect"
                 ];
             case SolidFieldType.computed:
                 return [

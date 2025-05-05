@@ -912,8 +912,8 @@
             "isSystem": true
           },
           {
-            "name": "isMultiselect",
-            "displayName": "Is Multiselect",
+            "name": "isMultiSelect",
+            "displayName": "Is MultiSelect",
             "type": "boolean",
             "ormType": "boolean",
             "defaultValue": "false",
@@ -922,7 +922,7 @@
             "index": false,
             "private": false,
             "encrypt": false,
-            "columnName": "is_multiselect",
+            "columnName": "is_multiSelect",
             "isSystem": true
           }
         ]

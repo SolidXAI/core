@@ -366,7 +366,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 //     Validation against the selectionStatic values. No transformation is required
                 //     If the value is not in the selectionStatic values, then throw
                 //     Also validate against the selectionType
-                const options = { ...commonOptions, selectionStaticValues: fieldMetadata.selectionStaticValues, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, isMultiSelect: fieldMetadata.isMultiselect};
+                const options = { ...commonOptions, selectionStaticValues: fieldMetadata.selectionStaticValues, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, isMultiSelect: fieldMetadata.isMultiSelect};
                 return new SelectionStaticFieldCrudManager(options);
             }
             case SolidFieldType.selectionDynamic: {// [HOLD]
@@ -375,7 +375,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 //     dataSource: string; // The name of the selection provider
                 //     filterSchema : json // This is a custom json object that every data source will handle accordingly. We could validate the query against the selection provider
                 //     values : string[]; // The values returned by the selection provider
-                const options = { ...commonOptions, selectionDynamicProvider: fieldMetadata.selectionDynamicProvider, selectionDynamicProviderCtxt: fieldMetadata.selectionDynamicProviderCtxt, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, discoveryService: this.discoveryService, isMultiSelect: fieldMetadata.isMultiselect};
+                const options = { ...commonOptions, selectionDynamicProvider: fieldMetadata.selectionDynamicProvider, selectionDynamicProviderCtxt: fieldMetadata.selectionDynamicProviderCtxt, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, discoveryService: this.discoveryService, isMultiSelect: fieldMetadata.isMultiSelect};
                 return new SelectionDynamicFieldCrudManager(options);
             }
             case SolidFieldType.uuid: {
