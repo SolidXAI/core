@@ -184,16 +184,19 @@ export class ModelMetadataService {
         relations: {},
       });
     createDto['module'] = resolvedModule;
+    
+    if (createDto['parentModelId']) {
+      const resolvedParentModel = await this.dataSource
+        .getRepository(ModelMetadata)
+        .findOne({
+          where: {
+            id: createDto['parentModelId'],
+          },
+          relations: {},
+        });
+      createDto['parentModel'] = resolvedParentModel;
+    }
 
-    const resolvedParentModel = await this.dataSource
-      .getRepository(ModelMetadata)
-      .findOne({
-        where: {
-          id: createDto['parentModelId'],
-        },
-        relations: {},
-      });
-    createDto['parentModel'] = resolvedParentModel;
     const { fields: fieldsMetadata, ...modelMetaDataWithoutFields } = createDto;
     const modelMetadata = this.modelMetadataRepo.create(modelMetaDataWithoutFields);
     let model = await manager.save(modelMetadata);
@@ -515,8 +518,8 @@ export class ModelMetadataService {
 
     // Generate the code for models which are linked to fields having an inverse relation
     const coModelSingularNames = model.fields.
-                          filter(field => field.type === SolidFieldType.relation && field.relationCreateInverse === true)
-                          .map(field => field.relationCoModelSingularName);
+      filter(field => field.type === SolidFieldType.relation && field.relationCreateInverse === true)
+      .map(field => field.relationCoModelSingularName);
 
     for (const singularName of coModelSingularNames) {
       const coModel = await this.findOneBySingularName(singularName);
@@ -525,7 +528,7 @@ export class ModelMetadataService {
         dryRun: options.dryRun
       };
       await this.generateCode(inverseOptions);
-    }                      
+    }
 
     await this.generateVAMConfig(model.id);
 
