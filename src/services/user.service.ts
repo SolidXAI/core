@@ -34,7 +34,7 @@ export class UserService extends CRUDService<User> {
     readonly moduleRef: ModuleRef,
     @Inject(iamConfig.KEY)
     private readonly iamConfiguration: ConfigType<typeof iamConfig>,
-    
+
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'user', 'solid-core', moduleRef);
   }
@@ -237,20 +237,20 @@ export class UserService extends CRUDService<User> {
     return matchingPermssions
   }
 
-  initializeRolesForNewUser(roles: string[], user: User) {
+  async initializeRolesForNewUser(roles: string[], user: User) {
     if (!user.id) {
-        throw new BadRequestException('User must exist before initializing roles');
+      throw new BadRequestException('User must exist before initializing roles');
     }
     let userRoles = [];
     // Default Internal user role assigned 
     userRoles.push("Internal User");
     if (roles) {
-        userRoles = [...userRoles, ...roles];
+      userRoles = [...userRoles, ...roles];
     }
     userRoles = Array.from(new Set([...userRoles]));
     if (userRoles.length > 0) {
-        this.addRolesToUser(user.username, userRoles);
+      await this.addRolesToUser(user.username, userRoles);
     }
- }
+  }
 
 }
