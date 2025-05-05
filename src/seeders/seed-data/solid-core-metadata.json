@@ -3807,7 +3807,7 @@
       "name": "media-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "media-root",
-      "moduleUserKey": "solid-core",                                             
+      "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
     },
     {
@@ -3980,16 +3980,11 @@
             {
               "attrs": {
                 "className": "pi pi-cog",
-                "label": "Generate Code"
-              },
-              "action": {
-                "title": "",
-                "body": "",
-                "confirmBtnLabel": "Generate Code",
-                "cancelBtnLabel": "Cancel",
-                "customComponent": "GenerateModuleCodeRowAction",
-                "customComponentIsSystem": true,
-                "endpoint": ""
+                "label": "Generate Code",
+                "action": "GenerateModuleCodeRowAction",
+                "openInPopup": true,
+                "actionInContextMenu": true,
+                "customComponentIsSystem": true
               }
             }
           ],
@@ -4172,16 +4167,11 @@
             {
               "attrs": {
                 "className": "pi pi-cog",
-                "label": "Generate Code"
-              },
-              "action": {
-                "title": "",
-                "body": "",
-                "confirmBtnLabel": "Generate Code",
-                "cancelBtnLabel": "Cancel",
-                "customComponent": "GenerateModelCodeRowAction",
+                "label": "Generate Code",
+                "action": "GenerateModelCodeRowAction",
                 "customComponentIsSystem": true,
-                "endpoint": ""
+                "actionInContextMenu": true,
+                "openInPopup": true
               }
             }
           ],
@@ -4189,15 +4179,11 @@
             {
               "attrs": {
                 "className": "pi pi-cog",
-                "label": "Generate Code"
-              },
-              "action": {
-                "title": "",
-                "body": "",
-                "confirmBtnLabel": "Generate Code",
-                "cancelBtnLabel": "Cancel",
-                "customComponent": "GenerateModelCode",
-                "endpoint": ""
+                "label": "Generate Code",
+                "action": "GenerateModelCodeRowAction",
+                "customComponentIsSystem": true,
+                "actionInContextMenu": true,
+                "openInPopup": true
               }
             }
           ]
@@ -6046,7 +6032,7 @@
             "attrs": {
               "name": "name",
               "isSearchable": true
-                        }
+            }
           },
           {
             "type": "field",
@@ -6210,7 +6196,6 @@
         ]
       }
     },
-    
     {
       "name": "media-list-view",
       "displayName": "Solid Media Model",
@@ -8673,6 +8658,5 @@
     }
   ],
   "checksums": [],
-  "listOfValues": [
-  ]
+  "listOfValues": []
 }
