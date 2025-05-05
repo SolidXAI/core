@@ -910,6 +910,20 @@
             "encrypt": false,
             "columnName": "relation_join_table_name",
             "isSystem": true
+          },
+          {
+            "name": "isMultiSelect",
+            "displayName": "Is MultiSelect",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "is_multiSelect",
+            "isSystem": true
           }
         ]
       },

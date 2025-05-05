@@ -155,4 +155,7 @@ export class FieldMetadata extends CommonEntity {
 
     @Column({ name: 'enable_audit_tracking', default: false })
     enableAuditTracking: boolean;
+
+    @Column({ name: "is_multiSelect", default: false })
+    isMultiSelect: boolean;
 }
