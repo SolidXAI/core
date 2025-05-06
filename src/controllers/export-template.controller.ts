@@ -84,7 +84,7 @@ export class ExportTemplateController {
     // ✅ Set response headers for streaming
     res.setHeader('Content-Disposition', `attachment; filename="${exportFileInfo.fileName}"`);
     res.setHeader('Content-Type', exportFileInfo.mimeType);
-    
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
     // Pipe the strea to the response as an excel file
     exportFileInfo.exportStream.pipe(res);
   }
