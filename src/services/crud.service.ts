@@ -520,7 +520,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             // Populate the media field entities with the full URL
             for (const mediaFieldEntity of mediaFieldEntities) {
                 const mediaWithFullUrl = await this.getMediaWithFullUrl(mediaFieldEntity, mediaFieldMetadata);
-                this.appendMediaKey(mediaFieldEntity, mediaWithFullUrl);
+                this.appendMediaKey(mediaWithFullUrl, mediaFieldEntity, mediaFieldPath);
+                // mediaFieldEntity['_media'][mediaFieldPath] = mediaWithFullUrl
             }
         }
         else {
@@ -530,18 +531,21 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 throw new BadRequestException(`Media field ${mediaFieldPath} not found in model ${this.modelName}`);
             }
             const mediaWithFullUrl = await this.getMediaWithFullUrl(entity, mediaFieldMetadata);
-            this.appendMediaKey(entity, mediaWithFullUrl);
+            this.appendMediaKey(mediaWithFullUrl, entity, mediaFieldPath);
+            // entity['_media'][mediaFieldPath] = mediaWithFullUrl;
         }
     }
 
-    // Add the media with full URL to the entity
-    private appendMediaKey(entity: T, mediaWithFullUrl: MediaWithFullUrl[]) {
+    // // Add the media with full URL to the entity
+    private appendMediaKey(mediaWithFullUrl: MediaWithFullUrl[], entity: T, mediaFieldPath: string) {
         // if _media key already exists, append the new media to the existing array
         if (entity['_media']) {
-            entity['_media'] = [...entity['_media'], ...mediaWithFullUrl];
+            entity['_media'][mediaFieldPath] = mediaWithFullUrl;
         }
         else {
-            entity['_media'] = mediaWithFullUrl;
+            entity['_media'] = {
+                [mediaFieldPath]: mediaWithFullUrl
+            };
         } 
     }
 
