@@ -520,7 +520,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             // Populate the media field entities with the full URL
             for (const mediaFieldEntity of mediaFieldEntities) {
                 const mediaWithFullUrl = await this.getMediaWithFullUrl(mediaFieldEntity, mediaFieldMetadata);
-                this.appendMediaKey(mediaWithFullUrl, mediaFieldEntity, mediaFieldPath);
+                this.appendMediaKey(mediaWithFullUrl, mediaFieldEntity,  mediaFieldMetadata.name);
                 // mediaFieldEntity['_media'][mediaFieldPath] = mediaWithFullUrl
             }
         }
