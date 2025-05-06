@@ -34,8 +34,7 @@ import { FileService } from "./file.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
-const DEFAULT_LIMIT = 10;
-const DEFAULT_OFFSET = 0;
+import { isArray } from "class-validator";
 export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
     constructor(
@@ -497,16 +496,15 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
 
         // Will iterate through every entity &  all populateMedia & call getMediaDetails for each field
         for (const entity of entities) {
-            const mediaObj: Record<string, any> = {};
             for (const mediaFieldPath of populateMedia) {
-                mediaObj[mediaFieldPath]  = await this.getMediaObject(mediaFieldPath, model, entity);
+                await this.populateMediaObject(mediaFieldPath, model, entity);
             }
-            entity['_media'] = mediaObj;
         }
         return entities;
    } 
 
-    private async getMediaObject(mediaFieldPath: string, model: ModelMetadata, entity: T) {
+    // Adds the media with full URL to the entity / nested entity
+    private async populateMediaObject(mediaFieldPath: string, model: ModelMetadata, entity: T) {
         if (mediaFieldPath.includes('.')) { // mediaFieldPath is a nested field
             const pathParts = mediaFieldPath.split('.');
             const mediaFieldMetadata = await this.getFieldMetadataRecursively(pathParts, model.fields);
@@ -515,12 +513,15 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             }
 
             // We can assume that the media field entity model is already populated as part of the entity data
-            const mediaFieldEntity = this.getMediaFieldEntity(entity, pathParts);
-            if (!mediaFieldEntity) {
+            const mediaFieldEntities = this.getMediaFieldEntities(entity, pathParts);
+            if (!mediaFieldEntities || mediaFieldEntities.length === 0) {
                 throw new BadRequestException(`Media field path ${mediaFieldPath} is not populated in model ${this.modelName}`);
             }
-            const mediaWithFullUrl = await this.getMediaWithFullUrl(mediaFieldEntity, mediaFieldMetadata);
-            return mediaWithFullUrl;
+            // Populate the media field entities with the full URL
+            for (const mediaFieldEntity of mediaFieldEntities) {
+                const mediaWithFullUrl = await this.getMediaWithFullUrl(mediaFieldEntity, mediaFieldMetadata);
+                this.appendMediaKey(mediaFieldEntity, mediaWithFullUrl);
+            }
         }
         else {
             // mediaFieldPath is a single field
@@ -529,29 +530,40 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 throw new BadRequestException(`Media field ${mediaFieldPath} not found in model ${this.modelName}`);
             }
             const mediaWithFullUrl = await this.getMediaWithFullUrl(entity, mediaFieldMetadata);
-            return mediaWithFullUrl;
+            this.appendMediaKey(entity, mediaWithFullUrl);
         }
     }
 
-    private getMediaFieldEntity(entity: T, mediaPathParts: string[]) {
-        let mediaFieldEntity = entity;
+    // Add the media with full URL to the entity
+    private appendMediaKey(entity: T, mediaWithFullUrl: MediaWithFullUrl[]) {
+        // if _media key already exists, append the new media to the existing array
+        if (entity['_media']) {
+            entity['_media'] = [...entity['_media'], ...mediaWithFullUrl];
+        }
+        else {
+            entity['_media'] = mediaWithFullUrl;
+        } 
+    }
+
+    private getMediaFieldEntities(entity: T, mediaPathParts: string[]): T[] {
+        let entityPart = entity;
         for (let i = 0; i < mediaPathParts.length - 1; i++) {
             const pathPart = mediaPathParts[i];
-            if (mediaFieldEntity[pathPart]) {
-                mediaFieldEntity = mediaFieldEntity[pathPart];
+            if (entity[pathPart]) {
+                entityPart = entity[pathPart];
             } else {
                 throw new BadRequestException(`Media field ${pathPart} not found in entity ${JSON.stringify(entity)}`);
             }
         }
-        return mediaFieldEntity;
+        return isArray(entityPart) ? entityPart : [entityPart];
     }
 
-    async getMediaWithFullUrl(mediaEntity: any, mediaFieldMetadata: FieldMetadata): Promise<MediaWithFullUrl>{
+    async getMediaWithFullUrl(mediaEntity: any, mediaFieldMetadata: FieldMetadata): Promise<MediaWithFullUrl[]>{
             const storageProviderMetadata = mediaFieldMetadata.mediaStorageProvider;
             const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
             const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
             const mediaDetails = await storageProvider.retrieve(mediaEntity, mediaFieldMetadata);
-            return mediaDetails as MediaWithFullUrl;
+            return mediaDetails as MediaWithFullUrl[];
     }
 
     async findOne(id: number, query: any, solidRequestContext: any = {}) {
