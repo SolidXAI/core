@@ -231,7 +231,7 @@ export class ModelMetadataService {
     // Now that we have created fields & model update the model to stamp the userKeyField. 
     if (userKeyField) {
       modelMetaDataWithoutFields['userKeyField'] = userKeyField;
-      const updatedModelMetadataDto = this.modelMetadataRepo.create(modelMetaDataWithoutFields);
+      const updatedModelMetadataDto = this.modelMetadataRepo.merge(model, modelMetaDataWithoutFields);
       model = await manager.save(updatedModelMetadataDto);
     }
 
