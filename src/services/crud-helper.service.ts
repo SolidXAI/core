@@ -158,11 +158,18 @@ export class CrudHelperService {
 
     buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
-        const { fields, sort, groupBy, populate = [] } = basicFilterDto;
+        const { fields, sort, groupBy, populate = [], populateMedia=[] } = basicFilterDto;
 
         // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
         const normalizedFields = this.normalize(fields);
         const normalizedPopulate = this.normalize(populate);
+        const normalizedPopulateMedia = this.normalize(populateMedia);
+
+        // if normalizedPopulateMedia, has any nested media paths, then add then to populate excluding the last part
+        const additionalPopulate = this.additionalRelationsRequiredForMediaPopulation(normalizedPopulateMedia);
+        // Add the additional populate relations to the normalizedPopulate, if they are not already present
+        normalizedPopulate.push(...additionalPopulate.filter((relation) => !normalizedPopulate.includes(relation)));
+
         const normalizedSort = this.normalize(sort);
         const normalizedGroupBy = this.normalize(groupBy);
         if (normalizedGroupBy.length > 1) {
@@ -221,6 +228,17 @@ export class CrudHelperService {
         if (limit) this.hasJoins(qb) ? qb.take(limit) : qb.limit(limit);
         if (offset) this.hasJoins(qb) ? qb.skip(offset): qb.offset(offset);
         return qb;
+    }
+
+    additionalRelationsRequiredForMediaPopulation(normalizedPopulateMedia: string[]) {
+        // Populate relations containing the media field
+        return normalizedPopulateMedia
+        .filter(pm => pm.includes("."))
+        .map((pm) => {
+            const mediaPathParts = pm.split('.');
+            if (mediaPathParts.length <= 1) return pm;
+            return  mediaPathParts.slice(0, -1).join('.');
+        });
     }
 
     private buildPopulateQuery(normalizedPopulate: string[], entityAlias: string, qb: SelectQueryBuilder<any>) {

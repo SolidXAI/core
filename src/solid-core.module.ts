@@ -161,7 +161,6 @@ import { ChatterMessageDetails } from './entities/chatter-message-details.entity
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageDetailsController } from './controllers/chatter-message-details.controller';
 import { AuditSubscriber } from './subscribers/audit.subscriber';
-import { UserContextService } from './services/user-context.service';
 import { ExportTemplate } from './entities/export-template.entity';
 import { ExportTemplateService } from './services/export-template.service';
 import { ExportTemplateController } from './controllers/export-template.controller';
@@ -170,6 +169,7 @@ import { ExportTransactionService } from './services/export-transaction.service'
 import { ExportTransactionController } from './controllers/export-transaction.controller';
 import { ExcelService } from './services/excel.service';
 import { CsvService } from './services/csv.service';
+import { ClsModule } from 'nestjs-cls';
 
 
 @Global()
@@ -224,6 +224,10 @@ import { CsvService } from './services/csv.service';
     TypeOrmModule.forFeature([ExportTemplate]),
     TypeOrmModule.forFeature([ExportTransaction]),
     // TypeOrmModule.forFeature([User]),
+    ClsModule.forRoot({
+      middleware: {
+        mount: true,
+      }}),
   ],
   controllers: [
     ModuleMetadataController,
@@ -361,7 +365,6 @@ import { CsvService } from './services/csv.service';
     ChatterMessageService,
     ChatterMessageDetailsService,
     AuditSubscriber,
-    UserContextService,
     ExportTemplateService,
     ExportTransactionService,
     ExcelService,

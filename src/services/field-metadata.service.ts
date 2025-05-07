@@ -503,6 +503,7 @@ export class FieldMetadataService {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.bigint:
@@ -521,7 +522,8 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "enableAuditTracking"
                 ];
 
             // case SolidFieldType.float:
@@ -560,7 +562,8 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.shortText:
@@ -582,7 +585,8 @@ export class FieldMetadataService {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "isUserKey"
+                    "isUserKey",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.longtext:
@@ -665,7 +669,8 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.date:
@@ -684,7 +689,8 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.datetime:
@@ -703,7 +709,8 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.time:
@@ -722,7 +729,8 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.relation:
@@ -750,7 +758,8 @@ export class FieldMetadataService {
                     "columnName",
                     "relationJoinTableName",
                     "isRelationManyToManyOwner",
-                    "relationFieldFixedFilter"
+                    "relationFieldFixedFilter",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.mediaSingle:
@@ -812,7 +821,8 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.password:
@@ -855,7 +865,9 @@ export class FieldMetadataService {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "enableAuditTracking",
+                    "isMultiSelect"
                 ];
 
             case SolidFieldType.selectionDynamic:
@@ -877,8 +889,9 @@ export class FieldMetadataService {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "isUserKey"
-
+                    "isUserKey",
+                    "enableAuditTracking",
+                    "isMultiSelect"
                 ];
             case SolidFieldType.computed:
                 return [

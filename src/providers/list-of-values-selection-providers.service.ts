@@ -4,6 +4,8 @@ import { PaginationQueryDto } from "src/dtos/pagination-query.dto";
 import { SelectionProvider } from "src/decorators/selection-provider.decorator";
 import { Injectable } from "@nestjs/common";
 import { ISelectionProvider, ISelectionProviderContext, ISelectionProviderValues } from "../interfaces";
+import { filter } from "rxjs";
+import { BasicFilterDto } from "src/dtos/basic-filters.dto";
 
 interface ListOfValuesProviderContext extends ISelectionProviderContext {
     type: string;
@@ -31,8 +33,23 @@ export class ListOfValuesSelectionProvider implements ISelectionProvider<ListOfV
     }
 
     async values(query: string, ctxt: ListOfValuesProviderContext): Promise<readonly ISelectionProviderValues[]> {
-        const paginatedQuery = new PaginationQueryDto(DEFAULT_LIMIT, 0);
-        const lovs = await this.listOfValuesService.find(paginatedQuery);
+        const basicFilterQuery = new BasicFilterDto(DEFAULT_LIMIT, 0);
+        if (ctxt.type) {
+            basicFilterQuery.filters = {
+                type: {
+                    $eq: ctxt.type
+                }
+            };
+        }
+        if (query) {
+            basicFilterQuery.filters = {
+                ...basicFilterQuery.filters,
+                display: {
+                    $containsi: `%${query}%`
+                }
+            };
+        }
+        const lovs = await this.listOfValuesService.find(basicFilterQuery);
         const selectionValues = lovs.records.map(lov => {
             return {
                 label: lov.display,

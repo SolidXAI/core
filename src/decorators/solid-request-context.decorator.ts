@@ -6,7 +6,8 @@ import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 export const SolidRequestContextDecorator = createParamDecorator(
   (data: unknown, ctx: ExecutionContext): SolidRequestContextDto => {
     const request = ctx.switchToHttp().getRequest();
-    const activeUser: ActiveUserData | undefined = request[REQUEST_USER_KEY]; // Get active user
+    // TODO idealiy we should use RequestContextService and getActiveUser method. (Works for async scenarios too)
+    const activeUser: ActiveUserData | undefined = request[REQUEST_USER_KEY];
 
     // Create a new instance of SolidRequestContextDto and stamp user data
     const solidRequestContext = new SolidRequestContextDto();

@@ -1,4 +1,4 @@
-import { BadRequestException } from "@nestjs/common";
+import { BadRequestException, Optional } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
@@ -28,16 +28,13 @@ import { SelectionDynamicFieldCrudManager } from "../helpers/field-crud-managers
 import { SelectionStaticFieldCrudManager } from "../helpers/field-crud-managers/SelectionStaticFieldCrudManager";
 import { ShortTextFieldCrudManager } from "../helpers/field-crud-managers/ShortTextFieldCrudManager";
 import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCrudManager";
-import { FieldCrudManager } from "../interfaces";
+import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
 import { CrudHelperService } from "./crud-helper.service";
 import { FileService } from "./file.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
-import { UserContextService } from "./user-context.service";
-import { Optional } from "@nestjs/common";
-const DEFAULT_LIMIT = 10;
-const DEFAULT_OFFSET = 0;
+import { isArray } from "class-validator";
 export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
     constructor(
@@ -52,7 +49,6 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         readonly modelName: string,
         readonly moduleName: string,
         readonly moduleRef: ModuleRef,
-        @Optional() readonly userContextService?: UserContextService
         //We can just have the Model Entity here
     ) { }
 
@@ -68,9 +64,6 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Check wheather user has create permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasCreatePermissionOnModel(solidRequestContext.activeUser, model.singularName);
-            if (this.userContextService) {
-                this.userContextService.setUser(solidRequestContext.activeUser);
-            }
             if (!hasPermission) {
                 throw new BadRequestException('Forbidden');
             }
@@ -165,9 +158,6 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasUpdatePermissionOnModel(solidRequestContext.activeUser, model.singularName);
-            if (this.userContextService) {
-                this.userContextService.setUser(solidRequestContext.activeUser);
-            }
             if (!hasPermission) {
                 throw new BadRequestException('Forbidden');
             }
@@ -375,7 +365,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 //     Validation against the selectionStatic values. No transformation is required
                 //     If the value is not in the selectionStatic values, then throw
                 //     Also validate against the selectionType
-                const options = { ...commonOptions, selectionStaticValues: fieldMetadata.selectionStaticValues, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType };
+                const options = { ...commonOptions, selectionStaticValues: fieldMetadata.selectionStaticValues, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, isMultiSelect: fieldMetadata.isMultiSelect};
                 return new SelectionStaticFieldCrudManager(options);
             }
             case SolidFieldType.selectionDynamic: {// [HOLD]
@@ -384,7 +374,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 //     dataSource: string; // The name of the selection provider
                 //     filterSchema : json // This is a custom json object that every data source will handle accordingly. We could validate the query against the selection provider
                 //     values : string[]; // The values returned by the selection provider
-                const options = { ...commonOptions, selectionDynamicProvider: fieldMetadata.selectionDynamicProvider, selectionDynamicProviderCtxt: fieldMetadata.selectionDynamicProviderCtxt, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, discoveryService: this.discoveryService };
+                const options = { ...commonOptions, selectionDynamicProvider: fieldMetadata.selectionDynamicProvider, selectionDynamicProviderCtxt: fieldMetadata.selectionDynamicProviderCtxt, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, discoveryService: this.discoveryService, isMultiSelect: fieldMetadata.isMultiSelect};
                 return new SelectionDynamicFieldCrudManager(options);
             }
             case SolidFieldType.uuid: {
@@ -496,41 +486,101 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return r;
     }
 
-    private async handlePopulateMedia(populateMedia: string[], entities: T[]) {
-        const model = await this.modelMetadataService.findOneBySingularName(this.modelName, {
-            fields: {
-                model: true,
-                mediaStorageProvider: true,
+   private async handlePopulateMedia(populateMedia: string[], entities: T[]) {
+        const model = await this.entityManager.getRepository(ModelMetadata).findOne({
+            where: {
+                singularName: this.modelName,
             },
-            module: true,
+            relations: ['fields', 'fields.mediaStorageProvider', 'fields.model','module'],
         });
 
-        const mediaFields = model.fields.filter(field => (field.type === 'mediaSingle' || field.type === 'mediaMultiple') && populateMedia.includes(field.name)
-        );
-
-        if (mediaFields.length > 0) {
-            // Map over all entities and retrieve media in parallel for each entity
-            await Promise.all(entities.map(async (entity) => {
-                const mediaObj: Record<string, any> = {};
-                // Retrieve media for each media field in parallel
-                const media = await Promise.all(mediaFields.map(async (mediaField) => {
-                    const storageProviderMetadata = mediaField.mediaStorageProvider;
-                    const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
-                    const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
-                    const mediaResult = await storageProvider.retrieve(entity, mediaField);
-                    mediaObj[mediaField.name] = mediaResult;
-                }));
-
-                // If media is found, assign to _media field
-                if (media.length > 0) {
-                    entity['_media'] = mediaObj;
-                }
-            }));
+        // Will iterate through every entity &  all populateMedia & call getMediaDetails for each field
+        for (const entity of entities) {
+            for (const mediaFieldPath of populateMedia) {
+                await this.populateMediaObject(mediaFieldPath, model, entity);
+            }
         }
+        return entities;
+   } 
+
+    // Adds the media with full URL to the entity / nested entity
+    private async populateMediaObject(mediaFieldPath: string, model: ModelMetadata, entity: T) {
+        if (mediaFieldPath.includes('.')) { // mediaFieldPath is a nested field
+            const pathParts = mediaFieldPath.split('.');
+            const mediaFieldMetadata = await this.getFieldMetadataRecursively(pathParts, model.fields);
+            if (!mediaFieldMetadata) {
+                throw new BadRequestException(`Media field ${mediaFieldPath} not found in model ${this.modelName}`);
+            }
+
+            // We can assume that the media field entity model is already populated as part of the entity data
+            const mediaFieldEntities = this.getMediaFieldEntities(entity, pathParts);
+            if (!mediaFieldEntities || mediaFieldEntities.length === 0) {
+                throw new BadRequestException(`Media field path ${mediaFieldPath} is not populated in model ${this.modelName}`);
+            }
+            // Populate the media field entities with the full URL
+            for (const mediaFieldEntity of mediaFieldEntities) {
+                const mediaWithFullUrl = await this.getMediaWithFullUrl(mediaFieldEntity, mediaFieldMetadata);
+                this.appendMediaKey(mediaWithFullUrl, mediaFieldEntity,  mediaFieldMetadata.name);
+                // mediaFieldEntity['_media'][mediaFieldPath] = mediaWithFullUrl
+            }
+        }
+        else {
+            // mediaFieldPath is a single field
+            const mediaFieldMetadata = model.fields.find(field => field.name === mediaFieldPath);
+            if (!mediaFieldMetadata) {
+                throw new BadRequestException(`Media field ${mediaFieldPath} not found in model ${this.modelName}`);
+            }
+            const mediaWithFullUrl = await this.getMediaWithFullUrl(entity, mediaFieldMetadata);
+            this.appendMediaKey(mediaWithFullUrl, entity, mediaFieldPath);
+            // entity['_media'][mediaFieldPath] = mediaWithFullUrl;
+        }
+    }
+
+    // // Add the media with full URL to the entity
+    private appendMediaKey(mediaWithFullUrl: MediaWithFullUrl[], entity: T, mediaFieldPath: string) {
+        // if _media key already exists, append the new media to the existing array
+        if (entity['_media']) {
+            entity['_media'][mediaFieldPath] = mediaWithFullUrl;
+        }
+        else {
+            entity['_media'] = {
+                [mediaFieldPath]: mediaWithFullUrl
+            };
+        } 
+    }
+
+    private getMediaFieldEntities(entity: T, mediaPathParts: string[]): T[] {
+        let entityPart = entity;
+        for (let i = 0; i < mediaPathParts.length - 1; i++) {
+            const pathPart = mediaPathParts[i];
+            if (entity[pathPart]) {
+                entityPart = entity[pathPart];
+            } else {
+                throw new BadRequestException(`Media field ${pathPart} not found in entity ${JSON.stringify(entity)}`);
+            }
+        }
+        return isArray(entityPart) ? entityPart : [entityPart];
+    }
+
+    async getMediaWithFullUrl(mediaEntity: any, mediaFieldMetadata: FieldMetadata): Promise<MediaWithFullUrl[]>{
+            const storageProviderMetadata = mediaFieldMetadata.mediaStorageProvider;
+            const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
+            const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
+            const mediaDetails = await storageProvider.retrieve(mediaEntity, mediaFieldMetadata);
+            return mediaDetails as MediaWithFullUrl[];
     }
 
     async findOne(id: number, query: any, solidRequestContext: any = {}) {
         const { populate = [], fields = [], populateMedia = [] } = query;
+
+        // const normalizedFields = this.crudHelperService.normalize(fields);
+        const normalizedPopulate = this.crudHelperService.normalize(populate);
+        const normalizedPopulateMedia = this.crudHelperService.normalize(populateMedia);
+
+        // if normalizedPopulateMedia, has any nested media paths, then add then to populate excluding the last part
+        const additionalPopulate = this.crudHelperService.additionalRelationsRequiredForMediaPopulation(normalizedPopulateMedia);
+        // Add the additional populate relations to the normalizedPopulate, if they are not already present
+        normalizedPopulate.push(...additionalPopulate.filter((relation) => !normalizedPopulate.includes(relation)));
 
         const model = await this.loadModel();
         // Check wheather user has update permission for model
@@ -541,42 +591,21 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             }
         }
 
-        const entity = await this.repo.findOne({
+        let entity = await this.repo.findOne({
             where: {
                 //@ts-ignore
                 id: id,
             },
-            relations: populate,
+            relations: normalizedPopulate,
             select: fields,
         });
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
         // Populate the entity with the media
-        if (populateMedia.length > 0) {
-            const model = await this.modelMetadataService.findOneBySingularName(this.modelName, {
-                fields: {
-                    model: true,
-                    mediaStorageProvider: true,
-                },
-                module: true,
-            });
-            const mediaObj: Record<string, any> = {};
-            for (const mediaField of model.fields.filter(field => field.type === 'mediaSingle' || field.type === 'mediaMultiple')) {
-                if (!populateMedia.includes(mediaField.name)) {
-                    continue;
-                }
-                const storageProviderMetadata = mediaField.mediaStorageProvider;
-                const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
-                const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
-                const mediaResult = await storageProvider.retrieve(entity, mediaField);
-                let obj = { [mediaField.name]: mediaResult }
-                mediaObj[mediaField.name] = mediaResult;
-                // entity['media'][mediaField.name] = await storageProvider.retrieve(entity, mediaField);
-            }
-            if (Object.keys(mediaObj).length > 0) {
-                entity['_media'] = mediaObj;
-            }
+        if (normalizedPopulateMedia.length > 0) {
+            const populatedEntities = await this.handlePopulateMedia(normalizedPopulateMedia, [entity]);
+            entity = populatedEntities[0] as Awaited<T>;
         }
         return entity;
     }
@@ -775,4 +804,37 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     }
 
 
+    async getFieldMetadataRecursively(pathParts: string[], fields: FieldMetadata[]) {
+        if (!pathParts || pathParts.length === 0) {
+            throw new BadRequestException('Path parts cannot be empty');
+        }
+    
+        const [currentPart, ...remainingParts] = pathParts;
+        const field = fields.find(field => field.name === currentPart);
+    
+        if (!field) {
+            throw new BadRequestException(`Field ${currentPart} not found in model ${this.modelName}`);
+        }
+    
+        // Base case: last part, return the field
+        if (remainingParts.length === 0) {
+            return field;
+        }
+    
+        if (!field.relationCoModelSingularName) {
+            throw new BadRequestException(`Field ${field.name} does not define a relationCoModelSingularName`);
+        }
+    
+        const relationCoModel = await this.entityManager.getRepository(ModelMetadata).findOne({
+            where: { singularName: field.relationCoModelSingularName },
+            relations: ['fields', 'fields.mediaStorageProvider', 'fields.model'],
+        });
+    
+        if (!relationCoModel) {
+            throw new BadRequestException(`Model ${field.relationCoModelSingularName} not found`);
+        }
+    
+        return this.getFieldMetadataRecursively(remainingParts, relationCoModel.fields);
+    }
 }
+

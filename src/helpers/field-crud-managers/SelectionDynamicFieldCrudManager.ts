@@ -10,6 +10,7 @@ export interface SelectionDynamicFieldOptions {
     selectionDynamicProviderCtxt: any;
     fieldName: string;
     discoveryService: DiscoveryService;
+    isMultiSelect: boolean | undefined | null;
 }
 
 export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
@@ -19,7 +20,30 @@ export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
 
     async validate(dto: any): Promise<ValidationError[]> {
         const fieldValue: any = dto[this.options.fieldName];
+        const isMultiSelect = this.options?.isMultiSelect;
+
+        // return this.applyValidations(fieldValue);
+        // Handle multi-select scenario
+    if (isMultiSelect) {
+        let values: any[];
+
+        try {
+            // Try to parse the field value, which should be a JSON stringified array
+            values = JSON.parse(fieldValue);
+        } catch {
+            // If parsing fails, fallback to a single value
+            values = [fieldValue];
+        }
+
+        // Apply validations to each value asynchronously
+        const allErrors = await Promise.all(values.map(value => this.applyValidations(value)));
+
+        // Flatten the array of errors and return
+        return allErrors.flat();
+    } else {
+        // For non-multi-select, apply validations to the single field value
         return this.applyValidations(fieldValue);
+    }
     }
 
     private async applyValidations(fieldValue: any): Promise<ValidationError[]> {

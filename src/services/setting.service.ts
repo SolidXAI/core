@@ -47,9 +47,13 @@ export class SettingService extends CRUDService<Setting> {
       iamGoogleOAuthEnabled: false,
       authPagesLayout: "center",
       authPagesTheme: "light",
-      appTitle: process.env.SOLID_APP_NAME || "Solid App",
       appLogo: "",
-      appDescription: "",
+      appLogoPosition: "in_form_view",
+      showAuthContent: false,
+      appTitle: process.env.SOLID_APP_NAME || "Solid App",
+      appSubtitle: process.env.SOLID_APP_SUBTITLE || "Lorem Ipsum",
+      appDescription: process.env.SOLID_APP_DESCRIPTION || "lorem ipsum",
+      showLegalLinks: false,
       appTnc: "",
       appPrivacyPolicy: "",
       defaultRole: this.iamConfiguration.defaultRole,
@@ -65,9 +69,9 @@ export class SettingService extends CRUDService<Setting> {
       if (!existingKeys.has(key)) {
         const setting = new Setting();
         setting.key = key;
-        setting.value = typeof value === 'boolean' ? value.toString() : 
-                        Array.isArray(value) ? value.join(',') : 
-                        value === null || value === undefined ? '' : String(value);
+        setting.value = typeof value === 'boolean' ? value.toString() :
+          Array.isArray(value) ? value.join(',') :
+            value === null || value === undefined ? '' : String(value);
         settingsToInsert.push(setting);
       }
     }
@@ -79,16 +83,16 @@ export class SettingService extends CRUDService<Setting> {
 
   async wrapSettings(): Promise<Record<string, any>> {
     const settingsArray: Setting[] = await this.repo.find();
-    
+
     if (!settingsArray || settingsArray.length === 0) {
       return this.getDefaultSettings();
     }
-    
+
     const settingsMap: Record<string, any> = {};
     for (const setting of settingsArray) {
       if (setting.key && setting.value !== undefined && setting.value !== null) {
         let value = setting.value;
-        
+
         if (value === 'true' || value === 'false') {
           settingsMap[setting.key] = value === 'true';
         }
@@ -103,17 +107,17 @@ export class SettingService extends CRUDService<Setting> {
         }
       }
     }
-    
+
     const defaultSettings = this.getDefaultSettings();
-    
+
     const mergedSettings = Object.keys(defaultSettings).reduce((acc, key) => {
       acc[key] = settingsMap[key] !== undefined ? settingsMap[key] : defaultSettings[key];
       return acc;
     }, {} as Record<string, any>);
-    
+
     return mergedSettings;
   }
-  
+
   private getDefaultSettings(): Record<string, any> {
     return {
       allowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
@@ -123,9 +127,13 @@ export class SettingService extends CRUDService<Setting> {
       iamGoogleOAuthEnabled: false,
       authPagesLayout: "center",
       authPagesTheme: "light",
-      appTitle: process.env.SOLID_APP_NAME || "Solid App",
       appLogo: "",
+      appLogoPosition: "in_form_view", //in_form_view | in_image_view
+      showAuthContent: false,
+      appTitle: process.env.SOLID_APP_NAME || "Solid App",
+      appSubtitle: "",
       appDescription: "",
+      showLegalLinks: false,
       appTnc: "",
       appPrivacyPolicy: "",
       defaultRole: this.iamConfiguration.defaultRole,
@@ -136,45 +144,45 @@ export class SettingService extends CRUDService<Setting> {
 
   async getConfigValue(settingKey: string) {
     try {
-        const settingsArray: Setting[] = await this.repo.find();
-        const settingEntry = settingsArray.find(setting => setting.key === settingKey);
-        
-        if (settingEntry && settingEntry.value !== null && settingEntry.value !== undefined) {
-            const value = settingEntry.value;
-            
-            if (value === 'true' || value === 'false') {
-                return value === 'true';
-            }
-            else if (!isNaN(Number(value)) && value.trim() !== '') {
-                return Number(value);
-            }
-            else if (value.includes(',')) {
-                return value.split(',').map(item => item.trim());
-            }
-            else {
-                return value;
-            }
+      const settingsArray: Setting[] = await this.repo.find();
+      const settingEntry = settingsArray.find(setting => setting.key === settingKey);
+
+      if (settingEntry && settingEntry.value !== null && settingEntry.value !== undefined) {
+        const value = settingEntry.value;
+
+        if (value === 'true' || value === 'false') {
+          return value === 'true';
         }
-        
-        const defaultSettings = this.getDefaultSettings();
-        return defaultSettings[settingKey];
+        else if (!isNaN(Number(value)) && value.trim() !== '') {
+          return Number(value);
+        }
+        else if (value.includes(',')) {
+          return value.split(',').map(item => item.trim());
+        }
+        else {
+          return value;
+        }
+      }
+
+      const defaultSettings = this.getDefaultSettings();
+      return defaultSettings[settingKey];
     } catch (error) {
-        const defaultSettings = this.getDefaultSettings();
-        return defaultSettings[settingKey];
+      const defaultSettings = this.getDefaultSettings();
+      return defaultSettings[settingKey];
     }
   }
 
   async updateSettings(settings: Record<string, any>): Promise<Setting[]> {
     const existingSettings = await this.repo.find();
     const existingKeys = new Set(existingSettings.map(s => s.key));
-    
+
     const settingsToUpdate: Setting[] = [];
     const settingsToCreate: Setting[] = [];
-    
+
     for (const [key, value] of Object.entries(settings)) {
-      const stringValue = typeof value === 'boolean' ? value.toString() : 
-                         Array.isArray(value) ? value.join(',') : 
-                         value === null || value === undefined ? '' : String(value);
+      const stringValue = typeof value === 'boolean' ? value.toString() :
+        Array.isArray(value) ? value.join(',') :
+          value === null || value === undefined ? '' : String(value);
 
       if (existingKeys.has(key)) {
         const existingSetting = existingSettings.find(s => s.key === key);
@@ -189,26 +197,26 @@ export class SettingService extends CRUDService<Setting> {
         settingsToCreate.push(newSetting);
       }
     }
-    
+
     if (settingsToUpdate.length > 0) {
       await this.repo.save(settingsToUpdate);
     }
-    
+
     if (settingsToCreate.length > 0) {
       await this.repo.save(settingsToCreate);
     }
-    
+
     return [...settingsToUpdate, ...settingsToCreate];
   }
 
   async getAllSettings(): Promise<Record<string, any>> {
     const settingsArray = await this.repo.find();
     const settingsMap: Record<string, any> = {};
-    
+
     for (const setting of settingsArray) {
       if (setting.key && setting.value !== undefined && setting.value !== null) {
         const value = setting.value;
-        
+
         if (value === 'true' || value === 'false') {
           settingsMap[setting.key] = value === 'true';
         }
@@ -223,7 +231,7 @@ export class SettingService extends CRUDService<Setting> {
         }
       }
     }
-    
+
     return settingsMap;
   }
 }
