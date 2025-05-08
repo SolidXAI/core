@@ -80,6 +80,7 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       .getProviders()
       .filter((provider) => this.isModule(provider));
     this.solidRegistry.registerModules(allModules);
+
   }
 
   // This method identifies a provider as a seeder if it has a seed method i.e duck typing

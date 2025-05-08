@@ -111,6 +111,8 @@ export * from './entities/security-rule.entity'
 export * from './entities/saved-filters.entity'
 export * from './entities/chatter-message.entity'
 export * from './entities/chatter-message-details.entity'
+export * from './entities/export-template.entity'
+export * from './entities/export-transaction.entity'
 
 export * from './enums/auth-type.enum'
 

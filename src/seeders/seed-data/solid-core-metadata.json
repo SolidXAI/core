@@ -2828,7 +2828,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationModelSingularName": "emailTemplate",
+            "relationCoModelSingularName": "emailTemplate",
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationTypeManyToManyOwner": true,
@@ -3393,6 +3393,188 @@
             "columnName": null,
             "relationJoinTableName": "",
             "isRelationManyToManyOwner": null
+          }
+        ]
+      },
+      {
+        "singularName": "exportTemplate",
+        "tableName": "ss_export_template",
+        "pluralName": "exportTemplates",
+        "displayName": "Export Templates",
+        "description": "Model to capture all information related to an file export template",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "userKeyFieldUserKey": "templateName",
+        "fields": [
+          {
+            "name": "templateName",
+            "displayName": "Template Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": true,  
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "templateFormat",
+            "displayName": "Template Format",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 25,
+            "required": true,
+            "index": false,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "csv:csv",
+              "excel:excel"
+            ]
+          },
+          {
+            "name": "notifyOnEmail",
+            "displayName": "Notify On Email",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "modelMetadata",
+            "displayName": "Related Model Metadata",
+            "type": "relation",
+            "ormType": "int",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "modelMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "fields",
+            "displayName": "Fields",
+            "type": "json",
+            "ormType": "varchar",
+            "length": 2056,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "exportTransaction",
+        "tableName": "ss_export_transaction",
+        "pluralName": "exportTransactions",
+        "displayName": "Export Transactions",
+        "description": "Model to capture all information related to a file export transaction",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "userKeyFieldUserKey": "exportTransactionId",
+        "fields": [
+          {
+            "name": "datetime",
+            "displayName": "Transaction Date Time",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "exportTransactionId",
+            "displayName": "Transaction Id",
+            "type":"computed",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "computedFieldValueType": "string",
+            "computedFieldValueProvider": "UuidExternalIdComputedFieldProvider",
+            "computedFieldValueProviderCtxt": "{\"prefix\": \"export_transaction\"}"
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 25,
+            "required": true,
+            "index": true,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "started:started",
+              "failed:failed",
+              "finished:finished"
+            ]
+          },
+          {
+            "name": "exportedFile",
+            "displayName": "Exported File",
+            "type": "mediaSingle",
+            "required": false,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "mediaStorageProviderUserKey": "default-filesystem"
+          },
+          {
+            "name": "error",
+            "displayName": "Error",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "exportTemplate",
+            "displayName": "Related Export Template",
+            "type": "relation",
+            "ormType": "int",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "exportTemplate",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ]
       }

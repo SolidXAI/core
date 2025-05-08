@@ -161,7 +161,16 @@ import { ChatterMessageDetails } from './entities/chatter-message-details.entity
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageDetailsController } from './controllers/chatter-message-details.controller';
 import { AuditSubscriber } from './subscribers/audit.subscriber';
+import { ExportTemplate } from './entities/export-template.entity';
+import { ExportTemplateService } from './services/export-template.service';
+import { ExportTemplateController } from './controllers/export-template.controller';
+import { ExportTransaction } from './entities/export-transaction.entity';
+import { ExportTransactionService } from './services/export-transaction.service';
+import { ExportTransactionController } from './controllers/export-transaction.controller';
+import { ExcelService } from './services/excel.service';
+import { CsvService } from './services/csv.service';
 import { ClsModule } from 'nestjs-cls';
+
 
 @Global()
 @Module({
@@ -212,6 +221,8 @@ import { ClsModule } from 'nestjs-cls';
     TypeOrmModule.forFeature([ListOfValues]),
     TypeOrmModule.forFeature([ChatterMessage]),
     TypeOrmModule.forFeature([ChatterMessageDetails]),
+    TypeOrmModule.forFeature([ExportTemplate]),
+    TypeOrmModule.forFeature([ExportTransaction]),
     // TypeOrmModule.forFeature([User]),
     ClsModule.forRoot({
       middleware: {
@@ -247,7 +258,9 @@ import { ClsModule } from 'nestjs-cls';
     SavedFiltersController,
     ListOfValuesController,
     ChatterMessageController,
-    ChatterMessageDetailsController
+    ChatterMessageDetailsController,
+    ExportTemplateController,
+    ExportTransactionController,
   ],
   providers: [
     {
@@ -352,6 +365,10 @@ import { ClsModule } from 'nestjs-cls';
     ChatterMessageService,
     ChatterMessageDetailsService,
     AuditSubscriber,
+    ExportTemplateService,
+    ExportTransactionService,
+    ExcelService,
+    CsvService,
   ],
   exports: [
     ModuleMetadataService,
