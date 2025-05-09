@@ -72,7 +72,7 @@ export class ModuleMetadataSeederService {
 
     async seed() {
 
-        const typedSolidCoreMetadata: any = solidCoreMetadata;
+        const typedSolidCoreMetadata: any = structuredClone(solidCoreMetadata);
 
         // Run the permissions seeder. 
         // await this.permissionsSeederService.seed();
