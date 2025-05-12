@@ -11,7 +11,7 @@ interface ListOfValuesProviderContext extends ISelectionProviderContext {
     type: string;
 }
 
-const DEFAULT_LIMIT = 10;
+const DEFAULT_LIMIT = 100;
 
 @SelectionProvider()
 @Injectable()

@@ -58,7 +58,7 @@ export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
 
     private async isValidSelectionValue(fieldValue: any, selectionDynamicProvider: string): Promise<boolean> {
         const providerInstance = this.providerInstance<any>(selectionDynamicProvider);
-        const values = await providerInstance.values('', this.options.selectionDynamicProviderCtxt);
+        const values = await providerInstance.values('', JSON.parse(this.options.selectionDynamicProviderCtxt));
         // return values.map(v => v.split(":")[0]).includes(fieldValue);
         return values.map(v => v.value).includes(fieldValue);
     }
