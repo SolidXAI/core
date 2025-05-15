@@ -515,7 +515,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             // We can assume that the media field entity model is already populated as part of the entity data
             const mediaFieldEntities = this.getMediaFieldEntities(entity, pathParts);
             if (!mediaFieldEntities || mediaFieldEntities.length === 0) {
-                throw new BadRequestException(`Media field path ${mediaFieldPath} is not populated in model ${this.modelName}`);
+               return ;//no need to populate data if relation not exists
             }
             // Populate the media field entities with the full URL
             for (const mediaFieldEntity of mediaFieldEntities) {
