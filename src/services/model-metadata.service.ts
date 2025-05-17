@@ -594,6 +594,10 @@ export class ModelMetadataService {
         column2Fields.push(formViewLayoutFields[i]);
       }
     }
+    const viewName = `${model.singularName}-list-view`;
+    const formViewName = `${model.singularName}-form-view`;
+    const menuName = `${model.singularName}-menu-item`;
+
     const action = {
       displayName: `${model.displayName} List View`,
       name: `${model.singularName}-list-view`,
@@ -679,10 +683,29 @@ export class ModelMetadataService {
         ]
       }
     };
+
+    // Utility function to check if an item with the same name already exists
+  const notExists = (arr: any[], name: string) => !arr.some(item => item.name === name);
+
+  if (notExists(metaData.menus, menuName)) {
     metaData.menus.push(menu);
+  }
+
+  if (notExists(metaData.actions, viewName)) {
     metaData.actions.push(action);
+  }
+
+  if (notExists(metaData.views, viewName)) {
     metaData.views.push(modelListview);
+  }
+
+  if (notExists(metaData.views, formViewName)) {
     metaData.views.push(modelFormView);
+  }
+    // metaData.menus.push(menu);
+    // metaData.actions.push(action);
+    // metaData.views.push(modelListview);
+    // metaData.views.push(modelFormView);
   }
 
   //Populate the View, Actions and Menus in the database
