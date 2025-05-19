@@ -182,7 +182,7 @@ export class CrudHelperService {
         }
 
         if (filters) {
-            qb.where(new Brackets(whereQb => {
+            qb.andWhere(new Brackets(whereQb => {
                 this.applyFilters(whereQb, filters, entityAlias, qb);
             }));
         }
