@@ -53,7 +53,7 @@ export class CrudHelperService {
                 }
                 else { // Recursively call the applyFilters method to handle nested conditions
                     const joinField = `${alias}.${key}`;
-                    if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, key);
+                        if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, key);
                     this.applyFilters(qb, primaryFilterObj, key, selectQb);
                 }
             });
@@ -258,6 +258,11 @@ export class CrudHelperService {
             if (!this.isRelationJoined(qb, joinProperty)) {
                 const joinAlias = relationParts.slice(0, i + 1).join('_');
                 qb.leftJoinAndSelect(joinProperty, joinAlias); 
+            }
+            else {
+                // Since in populate, we are create a unique alias based on the relation path
+                //If the join is already present, it is probably because of the relation being passed in the where filter i.e applyFilters method
+                qb.addSelect(`${part}`); 
             }
             parentAlias = part; // Update the parent alias for the next iteration
         });
