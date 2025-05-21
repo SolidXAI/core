@@ -59,7 +59,7 @@ export class SecurityRuleSubscriber implements EntitySubscriberInterface<Securit
         }
         const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
-        if (metaData.securityRule) {
+        if (metaData.securityRules) {
             const securityRuleIndex = metaData.securityRules?.findIndex((ruleFromFile: { name: string }) => ruleFromFile.name === securityRule.name);
             const {id, roleId, modelMetadataId, ...requiredDto} = await this.securityRuleRepo.toDto(securityRule)
             metaData.securityRules[securityRuleIndex] = {requiredDto, securityRuleConfig: JSON.parse(securityRule.securityRuleConfig)}
