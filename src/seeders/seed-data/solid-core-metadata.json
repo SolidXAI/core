@@ -264,6 +264,20 @@
             "isSystem": true
           },
           {
+            "name": "draftPublishWorkflow",
+            "displayName": "Draft Publish Workflow",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "draftPublishWorkflow",
+            "isSystem": true
+          },
+          {
             "name": "module",
             "displayName": "Module",
             "type": "relation",
@@ -3414,7 +3428,7 @@
             "ormType": "varchar",
             "length": 256,
             "required": true,
-            "unique": true,  
+            "unique": true,
             "index": true,
             "private": false,
             "encrypt": false,
@@ -3506,7 +3520,7 @@
           {
             "name": "exportTransactionId",
             "displayName": "Transaction Id",
-            "type":"computed",
+            "type": "computed",
             "ormType": "varchar",
             "length": 128,
             "required": true,
@@ -3574,6 +3588,61 @@
             "relationCreateInverse": false,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "locale",
+        "pluralName": "locales",
+        "displayName": "locale",
+        "description": "This is used to maintain model locales",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_locale",
+        "fields": [
+          {
+            "name": "locale",
+            "displayName": "Locale",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "index": true,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "in:in",
+              "en:en",
+              "fr:fr"
+            ],
+            "isUserKey": false
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "isUserKey": false
+          },
+          {
+            "name": "isDefault",
+            "displayName": "Is Default",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
             "isSystem": true
           }
         ]
@@ -3761,6 +3830,19 @@
       "modelUserKey": "chatterMessageDetails"
     },
     {
+      "displayName": "locale list action",
+      "name": "locale-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": false,
+      "serverEndpoint": "",
+      "viewUserKey": "locale-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "locale"
+    },
+    {
       "displayName": "User list action",
       "name": "user-list-action",
       "type": "solid",
@@ -3915,6 +3997,19 @@
       "viewUserKey": "listOfValues-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "listOfValues"
+    },
+    {
+      "displayName": "locale List View",
+      "name": "locale-list-view",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/locale/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "locale-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "locale"
     }
   ],
   "menus": [
@@ -4147,6 +4242,14 @@
       "name": "chatter-message-details",
       "sequenceNumber": 9,
       "actionUserKey": "chatter-message-details-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Locale",
+      "name": "locale",
+      "sequenceNumber": 10,
+      "actionUserKey": "locale-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     }
@@ -5533,6 +5636,109 @@
                     "type": "field",
                     "attrs": {
                       "name": "coModelName",
+                      "isSearchable": true
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "locale-list-view",
+      "displayName": "Locale Model",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "locale",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "locale",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isDefault",
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "locale-form-view",
+      "displayName": "locale Model",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "locale",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "locale model",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "locale",
+                      "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "displayName",
+                      "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "isDefault",
                       "isSearchable": true
                     }
                   }

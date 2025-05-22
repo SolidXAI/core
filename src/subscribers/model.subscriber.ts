@@ -66,6 +66,22 @@ export class ModelSubscriber implements EntitySubscriberInterface<ModelMetadata>
         isSystem: true,
         model: event.entity,
       },
+      {
+        name: "publishedAt",
+        displayName: "Published At",
+        type: "datetime",
+        ormType: "timestamp",
+        isSystem: true,
+        model: event.entity,
+      },
+      {
+        name: "locale",
+        displayName: "locale",
+        type: "string",
+        ormType: "varchar",
+        isSystem: true,
+        model: event.entity,
+      }
     ];
     await transactionManager.save(FieldMetadata, systemFieldsMetadata);
     // Save to the database.

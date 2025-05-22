@@ -398,7 +398,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         const alias = 'entity';
         // Extract the required keys from the input query
         let { limit, offset, populateMedia, populateGroup, groupFilter } = basicFilterDto;
-        const {singularName} = await this.loadModel();
+        const {singularName,internationalisation,draftPublishWorkflow} = await this.loadModel();
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasReadPermissionOnModel(solidRequestContext.activeUser, singularName);
@@ -409,11 +409,11 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
 
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
-        qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-        
+        qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias,internationalisation,draftPublishWorkflow);
+
         if (basicFilterDto.groupBy) {
             // Get the records and the count
-            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia);
+            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia,internationalisation,draftPublishWorkflow);
             return {
                 groupMeta,
                 groupRecords,
@@ -440,7 +440,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[]) {
+    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[],internationalisation:boolean,draftPublishWorkflow:boolean) {
         const groupByResult = await qb.getRawMany();
 
         const groupMeta = [];
@@ -449,7 +449,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         for (const group of groupByResult) {
             if (populateGroup) {
                 let groupByQb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias);
-                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
+                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias,internationalisation,draftPublishWorkflow);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
                 const [entities, count] = await groupByQb.getManyAndCount();
 

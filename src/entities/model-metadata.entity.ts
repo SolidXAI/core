@@ -39,6 +39,9 @@ export class ModelMetadata extends CommonEntity {
     @Column({ name: "internationalisation", default: false })
     internationalisation: boolean;
 
+    @Column({ name: "draftPublishWorkflow", default: false })
+    draftPublishWorkflow: boolean;
+
     @OneToMany(() => FieldMetadata, (field) => field.model)
     fields: FieldMetadata[];
 

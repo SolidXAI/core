@@ -156,9 +156,9 @@ export class CrudHelperService {
     }
 
 
-    buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
+    buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string,internationalisation?:boolean,draftPublishWorkflow?:boolean): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
-        const { fields, sort, groupBy, populate = [], populateMedia=[] } = basicFilterDto;
+        const { fields, sort, groupBy, populate = [], populateMedia=[],locale,status } = basicFilterDto;
 
         // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
         const normalizedFields = this.normalize(fields);
@@ -187,6 +187,16 @@ export class CrudHelperService {
             }));
         }
 
+        if (internationalisation && locale) {
+            qb.andWhere(`${entityAlias}.localeName = :locale`, { locale: locale });
+        }   
+        if( draftPublishWorkflow && status){
+              if (basicFilterDto.status === 'publish') {
+                qb.andWhere(`${entityAlias}.publishedAt IS NOT NULL`);
+            } else if (basicFilterDto.status === 'draft') {
+                qb.andWhere(`${entityAlias}.publishedAt IS NULL`);
+            }
+        }
         // Depending upon the select option, apply the select clause
         if (normalizedFields && normalizedFields.length) {
             qb.select(normalizedFields.map(field => {
@@ -223,7 +233,7 @@ export class CrudHelperService {
                 qb.addGroupBy(`${entityAlias}.${field}`);
             });
         }
-        
+         
         // Apply the pagination options & handle the case when the query has joins
         if (limit) this.hasJoins(qb) ? qb.take(limit) : qb.limit(limit);
         if (offset) this.hasJoins(qb) ? qb.skip(offset): qb.offset(offset);

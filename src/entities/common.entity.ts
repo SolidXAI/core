@@ -1,4 +1,5 @@
-import { PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn } from "typeorm"
+import { PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index, ManyToOne, JoinColumn } from "typeorm"
+import { Locale } from "./locale.entity";
 
 export abstract class CommonEntity {
     @PrimaryGeneratedColumn({ type: 'integer' })
@@ -15,4 +16,10 @@ export abstract class CommonEntity {
 
     @Column({ name: "deletedTracker", default: "not-deleted" })
     deletedTracker: string;
+
+    @Column({  type: "timestamp", name:'published_at', default:null })
+    publishedAt: Date;
+
+    @Column({ type: "varchar",default:null })
+    localeName: string;
 }

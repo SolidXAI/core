@@ -160,6 +160,9 @@ import { ChatterMessageController } from './controllers/chatter-message.controll
 import { ChatterMessageDetails } from './entities/chatter-message-details.entity';
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageDetailsController } from './controllers/chatter-message-details.controller';
+import { Locale } from './entities/locale.entity';
+import { LocaleService } from './services/locale.service';
+import { LocaleController } from './controllers/locale.controller';
 import { AuditSubscriber } from './subscribers/audit.subscriber';
 import { ExportTemplate } from './entities/export-template.entity';
 import { ExportTemplateService } from './services/export-template.service';
@@ -221,6 +224,7 @@ import { ClsModule } from 'nestjs-cls';
     TypeOrmModule.forFeature([ListOfValues]),
     TypeOrmModule.forFeature([ChatterMessage]),
     TypeOrmModule.forFeature([ChatterMessageDetails]),
+    TypeOrmModule.forFeature([Locale]),
     TypeOrmModule.forFeature([ExportTemplate]),
     TypeOrmModule.forFeature([ExportTransaction]),
     // TypeOrmModule.forFeature([User]),
@@ -259,6 +263,7 @@ import { ClsModule } from 'nestjs-cls';
     ListOfValuesController,
     ChatterMessageController,
     ChatterMessageDetailsController,
+    LocaleController,
     ExportTemplateController,
     ExportTransactionController,
   ],
@@ -364,6 +369,7 @@ import { ClsModule } from 'nestjs-cls';
     SavedFiltersService,
     ChatterMessageService,
     ChatterMessageDetailsService,
+    LocaleService,
     AuditSubscriber,
     ExportTemplateService,
     ExportTransactionService,
