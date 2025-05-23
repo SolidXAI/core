@@ -49,7 +49,7 @@ export class SecurityRuleSubscriber implements EntitySubscriberInterface<Securit
             }
         });
 
-        const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(populatedModelMetadata.module.name);
+        const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(populatedModelMetadata.module.name);
         try {
             await fs.access(filePath);
         } catch (error) {
