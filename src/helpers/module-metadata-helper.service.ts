@@ -24,12 +24,12 @@ export class ModuleMetadataHelperService {
         const filePath = path.join(folderPath, `${moduleName}-metadata.json`);
         // Check if filePath exists
         const fileExists = await this.fileService.fileExists(filePath);
-        this.logger.log(`File exists: ${fileExists} at ${filePath}`);
+        this.logger.debug(`File exists: ${fileExists} at ${filePath}`);
         if (!fileExists) {
             // If the module is solid-core, try the fallback path, in case the current root directory is the solid core project
             if (moduleName === SOLID_CORE_MODULE_NAME) {
                 const fallbackPath = path.resolve(process.cwd(), 'src', SOLID_CORE_MODULE_NAME, 'seeders', 'seed-data', `${moduleName}-metadata.json`);
-                this.logger.log(`Fallback path: ${fallbackPath}`);
+                this.logger.debug(`Fallback path: ${fallbackPath}`);
                 return fallbackPath;
             }
         }
