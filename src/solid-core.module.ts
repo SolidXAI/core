@@ -170,6 +170,7 @@ import { ExportTransactionController } from './controllers/export-transaction.co
 import { ExcelService } from './services/excel.service';
 import { CsvService } from './services/csv.service';
 import { ClsModule } from 'nestjs-cls';
+import { FieldRepository } from './repository/field.repository';
 
 
 @Global()
@@ -369,6 +370,7 @@ import { ClsModule } from 'nestjs-cls';
     ExportTransactionService,
     ExcelService,
     CsvService,
+    FieldRepository
   ],
   exports: [
     ModuleMetadataService,
@@ -398,6 +400,7 @@ import { ClsModule } from 'nestjs-cls';
     RefreshModuleCommand,
     RequestContextService,
     SecurityRuleRepository,
+    FieldRepository
   ],
 })
 export class SolidCoreModule { }
