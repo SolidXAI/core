@@ -158,7 +158,7 @@ export class ModuleMetadataService {
 
       // Create the folder path inside 'module-metadata'
       const folderPath = path.resolve(process.cwd(), 'module-metadata', module.name);
-      const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(module.name);
+      const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(module.name);
 
       // Ensure the folder exists
       await fs.mkdir(folderPath, { recursive: true });
@@ -211,7 +211,7 @@ export class ModuleMetadataService {
 
   async updateInFile(module: ModuleMetadata) {
     try {
-      const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(module.name);
+      const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(module.name);
 
       // Read the existing JSON file
       let metaData;
