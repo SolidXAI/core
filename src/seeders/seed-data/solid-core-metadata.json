@@ -3414,7 +3414,7 @@
             "ormType": "varchar",
             "length": 256,
             "required": true,
-            "unique": true,  
+            "unique": true,
             "index": true,
             "private": false,
             "encrypt": false,
@@ -3506,7 +3506,7 @@
           {
             "name": "exportTransactionId",
             "displayName": "Transaction Id",
-            "type":"computed",
+            "type": "computed",
             "ormType": "varchar",
             "length": 128,
             "required": true,
@@ -3589,39 +3589,39 @@
         "isSystem": true,
         "userKeyFieldUserKey": "importTransactionId",
         "fields": [
-         {
-          "name": "status",
-          "displayName": "Status",
-          "type": "selectionStatic",
-          "ormType": "varchar",
-          "length": 25,
-          "required": false,
-          "index": true,
-          "isSystem": true,
-          "selectionValueType": "string",
-          "selectionStaticValues": [
-            "draft:draft",
-            "mapping_created:mapping_created",
-            "import_started:import_started",
-            "import_succeeded:import_succeeded",
-            "import_failed:import_failed"
-          ],
-          "defaultValue": "draft"
-         },
-         {
-          "name": "importTransactionId",
-          "displayName": "Transaction Id",
-          "type":"shortText",
-          "ormType": "varchar",
-          "length": 128,
-          "required": false,
-          "unique": true,
-          "index": true,
-          "private": false,
-          "encrypt": false,
-          "isSystem": true
-         },
-         {
+          {
+            "name": "status",
+            "displayName": "Status",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 25,
+            "required": false,
+            "index": true,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "draft:draft",
+              "mapping_created:mapping_created",
+              "import_started:import_started",
+              "import_succeeded:import_succeeded",
+              "import_failed:import_failed"
+            ],
+            "defaultValue": "draft"
+          },
+          {
+            "name": "importTransactionId",
+            "displayName": "Transaction Id",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
             "name": "fileLocation",
             "displayName": "File Location",
             "type": "mediaSingle",
@@ -3632,9 +3632,9 @@
             "encrypt": false,
             "isSystem": true,
             "mediaStorageProviderUserKey": "default-filesystem"
-         },
-         {
-           "name": "mapping",
+          },
+          {
+            "name": "mapping",
             "displayName": "Mapping",
             "type": "json",
             "ormType": "text",
@@ -3711,7 +3711,7 @@
           {
             "name": "importTransactionErrorLogId",
             "displayName": "Import Transaction Error Log Id",
-            "type":"shortText",
+            "type": "shortText",
             "ormType": "varchar",
             "length": 256,
             "required": true,
@@ -4127,6 +4127,19 @@
       "viewUserKey": "listOfValues-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "listOfValues"
+    },
+    {
+      "displayName": "Import Transactions List View",
+      "name": "importTransaction-list-view",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/importTransaction/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "importTransaction-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "importTransaction"
     }
   ],
   "menus": [
@@ -4361,6 +4374,14 @@
       "actionUserKey": "chatter-message-details-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Import Transactions",
+      "name": "importTransaction-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "importTransaction-list-view",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
     }
   ],
   "views": [
@@ -8955,6 +8976,106 @@
                       "name": "active",
                       "label": "Active"
                     }
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "importTransaction-list-view",
+      "displayName": "Import Transactions",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "importTransaction",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "importTransactionErrorLog",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "importTransaction-form-view",
+      "displayName": "Import Transactions",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "importTransaction",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Import Transactions",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "importTransactionErrorLog"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": []
                   }
                 ]
               }
