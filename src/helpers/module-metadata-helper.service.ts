@@ -28,7 +28,7 @@ export class ModuleMetadataHelperService {
         if (!fileExists) {
             // If the module is solid-core, try the fallback path, in case the current root directory is the solid core project
             if (moduleName === SOLID_CORE_MODULE_NAME) {
-                const fallbackPath = path.resolve(process.cwd(), 'src', SOLID_CORE_MODULE_NAME, 'seeders', 'seed-data', `${moduleName}-metadata.json`);
+                const fallbackPath = path.resolve(process.cwd(), 'src', 'seeders', 'seed-data', `${moduleName}-metadata.json`);
                 this.logger.debug(`Fallback path: ${fallbackPath}`);
                 return fallbackPath;
             }
