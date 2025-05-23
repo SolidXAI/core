@@ -233,6 +233,7 @@ export * from './services/chatter-message-details.service'
 // Repositories
 export * from './repository/solid-base.repository'
 export * from './repository/security-rule.repository'
+export * from './repository/field.repository'
 
 
 //softDeleteAwareEventSubscriber.subscriber.ts

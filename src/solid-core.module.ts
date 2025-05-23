@@ -170,6 +170,7 @@ import { ExportTransactionController } from './controllers/export-transaction.co
 import { ExcelService } from './services/excel.service';
 import { CsvService } from './services/csv.service';
 import { ClsModule } from 'nestjs-cls';
+import { FieldRepository } from './repository/field.repository';
 import { ImportTransaction } from './entities/import-transaction.entity';
 import { ImportTransactionService } from './services/import-transaction.service';
 import { ImportTransactionController } from './controllers/import-transaction.controller';
@@ -379,6 +380,7 @@ import { ImportTransactionErrorLogController } from './controllers/import-transa
     ExportTransactionService,
     ExcelService,
     CsvService,
+    FieldRepository
     ImportTransactionService,
     ImportTransactionErrorLogService,
   ],
@@ -410,6 +412,7 @@ import { ImportTransactionErrorLogController } from './controllers/import-transa
     RefreshModuleCommand,
     RequestContextService,
     SecurityRuleRepository,
+    FieldRepository
   ],
 })
 export class SolidCoreModule { }
