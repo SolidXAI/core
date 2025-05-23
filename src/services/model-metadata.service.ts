@@ -247,7 +247,7 @@ export class ModelMetadataService {
         relations: ["fields", "fields.mediaStorageProvider", "module", "parentModel"], //FIXME: Check with jenender and change to relations to avoid confusion
       });
 
-      const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
+      const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
       const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
       const modelMetaData = {
@@ -406,7 +406,7 @@ export class ModelMetadataService {
         relations: ["fields", "fields.mediaStorageProvider", "module", "parentModel"], //FIXME: Check with jenender and change to relations to avoid confusion
       });
 
-      const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
+      const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
       const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
       const modelMetaData = {
@@ -557,7 +557,7 @@ export class ModelMetadataService {
 
   private async populateVAMConfigInFile(model: ModelMetadata) {
     try {
-      const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
+      const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
       const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
       const listViewLayoutFields = [{ type: "field", attrs: { name: `id`, sortable: true, filterable: true } }];
