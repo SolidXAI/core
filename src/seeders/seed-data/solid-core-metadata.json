@@ -3663,23 +3663,6 @@
             "isSystem": true
           },
           {
-            "name": "moduleMetadata",
-            "displayName": "Related Module Metadata",
-            "type": "relation",
-            "ormType": "int",
-            "required": false,
-            "unique": false,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "relationType": "many-to-one",
-            "relationCoModelSingularName": "",
-            "relationCreateInverse": false,
-            "relationCascade": "cascade",
-            "relationModelModuleName": "solid-core",
-            "isSystem": true
-          },
-          {
             "name": "importTransactionErrorLog",
             "displayName": "Related Import Transaction Error Log",
             "type": "relation",

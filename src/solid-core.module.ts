@@ -380,7 +380,7 @@ import { ImportTransactionErrorLogController } from './controllers/import-transa
     ExportTransactionService,
     ExcelService,
     CsvService,
-    FieldRepository
+    FieldRepository,
     ImportTransactionService,
     ImportTransactionErrorLogService,
   ],
