@@ -35,6 +35,7 @@ export class ImportTransactionController {
   @ApiBearerAuth("jwt")
   @Get('/import-instructions/:modelMetadataId')
   async getImportInstructions(@Param('modelMetadataId') modelMetadataId: number) {
+    // return this.service.getImportInstructions(modelMetadataId);
     return this.service.getImportInstructions(modelMetadataId);
   }
 
