@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, InternalServerErrorException, Res } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { ImportTransactionService } from '../services/import-transaction.service';
+import { ImportFormat, ImportTransactionService } from '../services/import-transaction.service';
 import { CreateImportTransactionDto } from '../dtos/create-import-transaction.dto';
 import { UpdateImportTransactionDto } from '../dtos/update-import-transaction.dto';
+import { Response } from 'express';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -14,6 +15,28 @@ enum ShowSoftDeleted {
 @Controller('import-transaction')
 export class ImportTransactionController {
   constructor(private readonly service: ImportTransactionService) {}
+
+  @ApiBearerAuth("jwt")
+  @Get('/import-template/:modelMetadataId/:format')
+  async getImportTemplate(@Param('modelMetadataId') modelMetadataId: number, @Param('format') format: string, @Res() res: Response) {
+    const importTemplateFileInfo =  await this.service.getImportTemplate(+modelMetadataId, format as ImportFormat);
+    if (importTemplateFileInfo.stream === null) {
+      throw new InternalServerErrorException("Sample Import template stream is null");
+    }
+
+    // ✅ Set response headers for streaming
+    res.setHeader('Content-Disposition', `attachment; filename="${importTemplateFileInfo.fileName}"`);
+    res.setHeader('Content-Type', importTemplateFileInfo.mimeType);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
+    // Pipe the stream to the response as an excel file
+    importTemplateFileInfo.stream.pipe(res);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Get('/import-instructions/:modelMetadataId')
+  async getImportInstructions(@Param('modelMetadataId') modelMetadataId: number) {
+    return this.service.getImportInstructions(modelMetadataId);
+  }
 
   @ApiBearerAuth("jwt")
   @Post()
@@ -88,6 +111,5 @@ export class ImportTransactionController {
   async delete(@Param('id') id: number) {
     return this.service.delete(id);
   }
-
 
 }
