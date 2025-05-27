@@ -75,8 +75,9 @@ export class ExportTemplateController {
 
   @ApiBearerAuth("jwt")
   @Post(':id/startExport/sync')
-  async startExportSync(@Param('id') id: number, @Res() res: Response) {
-    const exportFileInfo = await this.service.startExportSync(+id);
+  async startExportSync(@Param('id') id: number, @Body() body: any, @Res() res: Response) {
+    const filters = body?.filters;
+    const exportFileInfo = await this.service.startExportSync(+id, filters);
     if (exportFileInfo.exportStream === null) {
       throw new InternalServerErrorException("Export stream is null");
     }
@@ -91,8 +92,9 @@ export class ExportTemplateController {
 
   @ApiBearerAuth("jwt")
   @Post(':id/startExport/async')
-  async startExportAsync(@Param('id') id: number) {
-    return this.service.startExportAsync(+id);
+  async startExportAsync(@Param('id') id: number, @Body() body: any) {
+    const filters = body?.filters;
+    return this.service.startExportAsync(+id, filters);
   }
 
 }

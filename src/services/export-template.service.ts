@@ -21,7 +21,7 @@ import { ExportTransactionFileInfo, ExportTransactionService } from './export-tr
 
 @Injectable()
 export class ExportTemplateService extends CRUDService<ExportTemplate>{
-  async startExportSync(id: number): Promise<ExportTransactionFileInfo> {
+  async startExportSync(id: number, filters:any): Promise<ExportTransactionFileInfo> {
     // Create the export transaction entry, with status 'started'
     const exportTransaction: CreateExportTransactionDto =  await this.exportTransactionService.toDto({
       datetime: new Date(),
@@ -31,12 +31,12 @@ export class ExportTemplateService extends CRUDService<ExportTemplate>{
     const exportTransactionEntity = await this.exportTransactionService.create(exportTransaction);
 
     // Trigger the export process
-    const exportFileInfo = await this.exportTransactionService.triggerExportSync(exportTransactionEntity.id);
+    const exportFileInfo = await this.exportTransactionService.triggerExportSync(exportTransactionEntity.id, filters);
     // It should return the export transaction id
     return exportFileInfo;
   }
 
-  async startExportAsync(id: number): Promise<ExportTransaction>{
+  async startExportAsync(id: number, filters:any): Promise<ExportTransaction>{
     // Create the export transaction entry, with status 'started'
     const exportTransaction: CreateExportTransactionDto =  await this.exportTransactionService.toDto({
       datetime: new Date(),
@@ -46,7 +46,7 @@ export class ExportTemplateService extends CRUDService<ExportTemplate>{
     const exportTransactionEntity = await this.exportTransactionService.create(exportTransaction);
 
     // Trigger the export process
-    this.exportTransactionService.triggerExportAsync(exportTransactionEntity.id);
+    this.exportTransactionService.triggerExportAsync(exportTransactionEntity.id, filters);
 
     // It should return the export transaction id, so client can use this to check the status
     return exportTransactionEntity;
