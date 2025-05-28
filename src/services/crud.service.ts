@@ -386,7 +386,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
 
                 //    The value will be computed by the computed provider
                 //    Invoke the appropriate computed provider, get the value and add to the dto
-                const options = { ...commonOptions, computedFieldProvider: fieldMetadata.computedFieldValueProvider, computedFieldValueProviderCtxt: fieldMetadata.computedFieldValueProviderCtxt, computedFieldValueType: fieldMetadata.computedFieldValueType as ComputedFieldValueType, discoveryService: this.discoveryService };
+                const options = { ...commonOptions, computedFieldProvider: fieldMetadata.computedFieldValueProvider, computedFieldValueProviderCtxt: fieldMetadata.computedFieldValueProviderCtxt, computedFieldValueType: fieldMetadata.computedFieldValueType as ComputedFieldValueType, discoveryService: this.discoveryService, skipComputation: isPartialUpdate };
                 return new ComputedFieldCrudManager(options);
             }
             default:

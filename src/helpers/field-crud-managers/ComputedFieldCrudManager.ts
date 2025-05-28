@@ -8,6 +8,7 @@ export interface ComputedFieldOptions {
     computedFieldValueProviderCtxt: any;
     fieldName: string;
     discoveryService: DiscoveryService;
+    skipComputation: boolean;
 }
 
 export class ComputedFieldCrudManager implements FieldCrudManager {
@@ -20,6 +21,9 @@ export class ComputedFieldCrudManager implements FieldCrudManager {
     }
 
     async transformForCreate(dto: any): Promise<any> {
+        if (this.options.skipComputation) {
+            return dto; // Skip computation if the flag is set
+        }
         const ctxt = this.options.computedFieldValueProviderCtxt ? JSON.parse(this.options.computedFieldValueProviderCtxt) : {};
         dto[this.options.fieldName] = await this.computeValue(dto, ctxt);
         return dto;
