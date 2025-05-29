@@ -23,6 +23,6 @@ export abstract class CommonEntity {
     @Column({ type: "varchar", name: 'locale_name', default: null })
     localeName: string;
 
-    @Column({ type: "int", name: 'default_locale_id', default: null })
+    @Column({ type: "int", name: 'default_entity_locale_id', default: null })
     defaultEntityLocaleId: number;
 }

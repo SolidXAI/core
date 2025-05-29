@@ -41,7 +41,6 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     @InjectRepository(ModelMetadata)
     private readonly modelMetadataRepo: Repository<ModelMetadata>,
     readonly moduleRef: ModuleRef
-
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'viewMetadata', 'app-builder', moduleRef);
   }
@@ -146,7 +145,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       // for workflowFields of type selectionStatic we simply return the key/values from field metadata AS-IS
       if (workflowField.type === 'selectionStatic') {
         solidFormViewWorkflowData = workflowField.selectionStaticValues.map(item => {
-          const [value,label] = item.split(":");
+          const [value, label] = item.split(":");
           return { label, value };
         });
       }
@@ -173,29 +172,57 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
      *    {locale: 'fr', displayName: 'French', isDefault: 'no', defaultEntityLocaleId: ''}
      * ]
      */
+
     const applicableLocales: any = []
-    if (id === 'new') {
-      const allLocales = await this.entityManager.getRepository(Locale).find({});
-      allLocales.forEach(locale => {
-        applicableLocales.push({
-          locale: locale.locale,
-          displayName: locale.displayName,
-          isDefault: locale.isDefault ? 'yes' : 'no',
-          defaultEntityLocaleId: ''
-        });
-      });
-    }
-    else {
+    if (entity.model.internationalisation) {
       const allLocales = await this.entityManager.getRepository(Locale).find({});
 
-      // Fetch the record in this model where locale is default locale.
-      
+      if (id === 'new') {
+        allLocales.forEach(locale => {
+          applicableLocales.push({
+            locale: locale.locale,
+            displayName: locale.displayName,
+            isDefault: locale.isDefault ? 'yes' : 'no',
+            defaultEntityLocaleId: ''
+          });
+        });
+      }
+      else {
+
+
+        const defaultLocale = allLocales.find(locale => locale.isDefault);
+
+        // const currentEntityTarget = this.getEntityTarget(classify(this.options.modelSingularName));
+        // const currentEntityRepository = this.options.entityManager.getRepository(currentEntityTarget);
+
+
+        // We are in edit mode, the id that is being edited could be a record tagged with the default locale or it could be tagged with a non-default locale.
+        const entityRecord = await this.entityManager.getRepository(modelName).findOne({
+          where: {
+            id: id,
+          }
+        });
+
+        //  Resolve the default entity locale id....
+        let defaultEntityLocaleId = null;
+        if (entityRecord.localeName === defaultLocale) {
+          defaultEntityLocaleId = entityRecord.id;
+        }
+        else {
+          defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
+        }
+
+        // Now we query for all records in the same model matching the defaultEntityLocaleId
+
+      }
+
     }
 
     const r = {
       'solidView': entity,
       'solidFieldsMetadata': Object.fromEntries(fieldsMap),
-      'solidFormViewWorkflowData': solidFormViewWorkflowData
+      'solidFormViewWorkflowData': solidFormViewWorkflowData,
+      'applicableLocales': applicableLocales
     }
 
     return r;
@@ -223,7 +250,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
         fields.push(...model.parentModel.fields);
       }
     }
-    return fields;        
+    return fields;
   }
 
   async findOneByUserKey(name: string, relations = {}) {
