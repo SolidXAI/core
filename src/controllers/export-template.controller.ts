@@ -5,6 +5,7 @@ import { ExportTemplateService } from '../services/export-template.service';
 import { CreateExportTemplateDto } from '../dtos/create-export-template.dto';
 import { UpdateExportTemplateDto } from '../dtos/update-export-template.dto';
 import { Response } from 'express';
+import { StartExportSyncDto } from 'src/dtos/export.dto';
 
 @ApiTags('Solid') 
 @Controller('export-template') //FIXME: Change this to the model plural name 
@@ -74,14 +75,19 @@ export class ExportTemplateController {
   }
 
   @ApiBearerAuth("jwt")
-  @Post(':id/startExport/sync')
-  async startExportSync(@Param('id') id: number, @Body() body: any, @Res() res: Response) {
-    const filters = body?.filters;
-    const exportFileInfo = await this.service.startExportSync(+id, filters);
+  @Post('/startExport/sync')
+  async startExportSync(@Body() dto: StartExportSyncDto, @Res() res: Response) {
+    const { filters, ...rest } = dto;
+    let updateDto = { ...rest };
+    // Check if templateName is present → create template
+    if (updateDto?.templateName) {
+      const newTemplate = await this.service.create(updateDto, []);
+      updateDto = { ...updateDto, id: newTemplate.id };
+    }
+    const exportFileInfo = await this.service.startExportSync(updateDto, filters);
     if (exportFileInfo.exportStream === null) {
       throw new InternalServerErrorException("Export stream is null");
     }
-
     // ✅ Set response headers for streaming
     res.setHeader('Content-Disposition', `attachment; filename="${exportFileInfo.fileName}"`);
     res.setHeader('Content-Type', exportFileInfo.mimeType);
@@ -91,10 +97,15 @@ export class ExportTemplateController {
   }
 
   @ApiBearerAuth("jwt")
-  @Post(':id/startExport/async')
-  async startExportAsync(@Param('id') id: number, @Body() body: any) {
-    const filters = body?.filters;
-    return this.service.startExportAsync(+id, filters);
+  @Post('/startExport/async')
+  async startExportAsync(@Body() dto: StartExportSyncDto) {
+    const { filters, ...rest } = dto;
+    let updateDto = { ...rest };
+    if (updateDto.templateName) {
+      const newTemplate = await this.service.create(updateDto, []);
+      updateDto = { ...updateDto, id: newTemplate.id };
+    }
+    return this.service.startExportAsync(updateDto, filters);
   }
 
 }
