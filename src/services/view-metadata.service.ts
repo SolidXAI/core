@@ -18,6 +18,7 @@ import { ActionMetadataService } from './action-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
 import { UserViewMetadataService } from './user-view-metadata.service';
+import { Locale } from 'src/entities/locale.entity';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -47,11 +48,11 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
 
   // START: Custom Service Methods
   async getLayout(query, activeUser) {
-    let { modelName, moduleName, viewType, populate } = query;
+    let { modelName, moduleName, viewType, id, populate } = query;
 
     // modelName = camelize(modelName);
 
-    // Fetch the view based on module, model & view name.
+    // 1. Fetch the view based on module, model & view name.
     const entity = await this.repo.findOne({
       where: {
         model: { singularName: modelName },
@@ -60,7 +61,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       },
       relations: {
         model: {
-          userKeyField: true,  // Nested population of 'someOtherEntity' within 'model'
+          userKeyField: true,
         },
         module: true,
       }
@@ -69,19 +70,18 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     if (!entity) {
       throw new BadRequestException(`Unable to identify view for module: ${moduleName}, model: ${modelName} and viewType: ${viewType}`);
     }
-
     if (!activeUser?.sub) {
       throw new BadRequestException(`Unable to identify user for module: ${moduleName}, model: ${modelName} and viewType: ${viewType}`);
     }
 
+    // 2. See if we have a user specific layout for this view.
     const userLayout = await this.userViewMetadataService.repo.findOne({
       where: {
         user: { id: activeUser?.sub },
         viewMetadata: { id: entity.id },
       },
     });
-
-
+    // Based on where we found the layout we are converting it from string to json.
     if (userLayout) {
       entity.layout = JSON.parse(userLayout.layout);
     } else {
@@ -89,8 +89,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     }
 
 
-    // If view entity found then convert layout from "string" to "json".
-    //pass user id 
+    // 3. We are resolving the create & edit actions if specified in the layout.
     if (entity?.layout?.attrs?.createAction) {
       const actionName: string = entity.layout.attrs.createAction;
       entity.layout.attrs.createAction = await this.actionMetadataService.findOneByUserKey(actionName)
@@ -100,14 +99,14 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       entity.layout.attrs.editAction = await this.actionMetadataService.findOneByUserKey(actionName)
     }
 
-    // for form views, we need to check if "workflow" field is configured, if configured then return an extra metadata "solidFormViewWorkflowData"
+    // 4. For form views we need to fetch the workflow field metadata if specified.
     let workflowFieldName = null;
     let workflowField = null;
     if (viewType === 'form') {
       workflowFieldName = entity.layout?.attrs?.workflowField;
     }
 
-    // We also need to fetch a map of fields.
+    // 5. Create an easy to use map of field metadata, rather than sending an array of fields it becomes easier to use in the frontend.
     const fields = await this.loadFieldHierarchy(modelName);
     const fieldsMap = new Map<string, FieldMetadata>();
     for (let i = 0; i < fields.length; i++) {
@@ -139,6 +138,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       }
     }
 
+    // 6. Use the resolved workflowField to populate workflow specific metadata.
     // Check if we were able to resolve an actual workflowField.
     let solidFormViewWorkflowData = [];
     if (viewType === 'form' && workflowField) {
@@ -161,7 +161,35 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
         // iterate over the comodel records extracting the label & value. 
         solidFormViewWorkflowData = records.map(item => ({ 'label': item[workflowFielUserkey], 'value': item['id'] }))
       }
+    }
 
+    // 7. If this model supports internationalisation, we need to load the locales applicable with the id of an actual record for each locale if present.
+    // This is the shape of locales that will be returned 
+    /**
+     * [
+     *    {locale: 'en', displayName: 'English', isDefault: 'yes', defaultEntityLocaleId: ''}, 
+     *    {locale: 'en-IN', displayName: 'English (India)', isDefault: 'no', defaultEntityLocaleId: '1'}, 
+     *    {locale: 'en-SG', displayName: 'English (Singapore)', isDefault: 'no', defaultEntityLocaleId: ''}, 
+     *    {locale: 'fr', displayName: 'French', isDefault: 'no', defaultEntityLocaleId: ''}
+     * ]
+     */
+    const applicableLocales: any = []
+    if (id === 'new') {
+      const allLocales = await this.entityManager.getRepository(Locale).find({});
+      allLocales.forEach(locale => {
+        applicableLocales.push({
+          locale: locale.locale,
+          displayName: locale.displayName,
+          isDefault: locale.isDefault ? 'yes' : 'no',
+          defaultEntityLocaleId: ''
+        });
+      });
+    }
+    else {
+      const allLocales = await this.entityManager.getRepository(Locale).find({});
+
+      // Fetch the record in this model where locale is default locale.
+      
     }
 
     const r = {

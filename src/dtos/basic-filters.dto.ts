@@ -63,5 +63,5 @@ export class BasicFilterDto extends PaginationQueryDto {
 
     // @IsOptional()
     // @ApiProperty({ description: "default locale id" })
-    // readonly defaultLocaleId?: number;
+    // readonly defaultEntityLocaleId?: number;
 }

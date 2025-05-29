@@ -24,5 +24,5 @@ export abstract class CommonEntity {
     localeName: string;
 
     @Column({ type: "int", name: 'default_locale_id', default: null })
-    defaultLocaleId: number;
+    defaultEntityLocaleId: number;
 }
