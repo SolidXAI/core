@@ -3564,7 +3564,7 @@
             "displayName": "Related Export Template",
             "type": "relation",
             "ormType": "int",
-            "required": true,
+            "required": false,
             "unique": false,
             "index": true,
             "private": false,
