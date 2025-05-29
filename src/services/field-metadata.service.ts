@@ -89,7 +89,7 @@ export class FieldMetadataService {
                     relationType: RelationType.manyToOne,
                     relationCoModelSingularName: modelName,
                     relationCreateInverse: true,
-                    relationCascade: null,
+                    relationCascade: field.relationCascade,
                     relationModelModuleName: moduleName,
                     relationCoModelFieldName: field.name,
                     required: false,
