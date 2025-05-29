@@ -398,7 +398,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         const alias = 'entity';
         // Extract the required keys from the input query
         let { limit, offset, populateMedia, populateGroup, groupFilter } = basicFilterDto;
-        const { singularName, internationalisation, draftPublishWorkflow, defaultLocaleId } = await this.loadModel();
+        const { singularName, internationalisation, draftPublishWorkflow } = await this.loadModel();
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasReadPermissionOnModel(solidRequestContext.activeUser, singularName);

@@ -15,7 +15,7 @@ enum ShowSoftDeleted {
 @ApiTags('Solid Core')
 @Controller('locale')
 export class LocaleController {
-  constructor(private readonly service: LocaleService) {}
+  constructor(private readonly service: LocaleService) { }
 
   @ApiBearerAuth("jwt")
   @Post()
@@ -57,20 +57,20 @@ export class LocaleController {
   async recover(@Param('id') id: number) {
     return this.service.recover(id);
   }
-    
+
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({ name: 'fields', required: false, type: Array })
-  @ApiQuery({ name: 'sort', required: false, type: Array }) 
+  @ApiQuery({ name: 'sort', required: false, type: Array })
   @ApiQuery({ name: 'groupBy', required: false, type: Array })
   @ApiQuery({ name: 'populate', required: false, type: Array })
   @ApiQuery({ name: 'populateMedia', required: false, type: Array })
   @ApiQuery({ name: 'filters', required: false, type: Array })
   @Get()
-  async findMany(@Query() query: any) { 
-    return this.service.find(query);  
+  async findMany(@Query() query: any) {
+    return this.service.find(query);
   }
 
   @ApiBearerAuth("jwt")
@@ -90,4 +90,5 @@ export class LocaleController {
   async delete(@Param('id') id: number) {
     return this.service.delete(id);
   }
+
 }

@@ -33,7 +33,6 @@ export class BasicFilterDto extends PaginationQueryDto {
     @ApiProperty({ description: "populateMedia" })
     readonly populateMedia?: string[];
 
-
     // @IsOptional()
     // @ApiProperty({ description: "filters" })
     // readonly filters: any[];
@@ -62,7 +61,7 @@ export class BasicFilterDto extends PaginationQueryDto {
     @ApiProperty({ description: "status publish draft" })
     readonly status?: string;
 
-    @IsOptional()
-    @ApiProperty({ description: "default locale id" })
-    readonly defaultLocaleId?: number;
+    // @IsOptional()
+    // @ApiProperty({ description: "default locale id" })
+    // readonly defaultLocaleId?: number;
 }
