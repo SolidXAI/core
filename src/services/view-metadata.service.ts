@@ -1,3 +1,4 @@
+import { Logger } from '@nestjs/common';
 import { BadRequestException, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
@@ -19,6 +20,8 @@ import { SolidIntrospectService } from './solid-introspect.service';
 import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
 import { UserViewMetadataService } from './user-view-metadata.service';
 import { Locale } from 'src/entities/locale.entity';
+import { SolidRegistry } from 'src/helpers/solid-registry';
+import { classify } from '@angular-devkit/core/src/utils/strings';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -44,6 +47,8 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'viewMetadata', 'app-builder', moduleRef);
   }
+
+  private readonly logger = new Logger(ViewMetadataService.name);
 
   // START: Custom Service Methods
   async getLayout(query, activeUser) {
@@ -166,10 +171,10 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     // This is the shape of locales that will be returned 
     /**
      * [
-     *    {locale: 'en', displayName: 'English', isDefault: 'yes', defaultEntityLocaleId: ''}, 
-     *    {locale: 'en-IN', displayName: 'English (India)', isDefault: 'no', defaultEntityLocaleId: '1'}, 
-     *    {locale: 'en-SG', displayName: 'English (Singapore)', isDefault: 'no', defaultEntityLocaleId: ''}, 
-     *    {locale: 'fr', displayName: 'French', isDefault: 'no', defaultEntityLocaleId: ''}
+     *    {locale: 'en', displayName: 'English', isDefault: 'yes', defaultEntityLocaleId: '', entityId: '1'}, 
+     *    {locale: 'en-IN', displayName: 'English (India)', isDefault: 'no', defaultEntityLocaleId: '1', entityId: '2'}, 
+     *    {locale: 'en-SG', displayName: 'English (Singapore)', isDefault: 'no', defaultEntityLocaleId: '', entityId: '3'}, 
+     *    {locale: 'fr', displayName: 'French', isDefault: 'no', defaultEntityLocaleId: '', entityId: ''}
      * ]
      */
 
@@ -183,21 +188,22 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
             locale: locale.locale,
             displayName: locale.displayName,
             isDefault: locale.isDefault ? 'yes' : 'no',
-            defaultEntityLocaleId: ''
+            defaultEntityLocaleId: null,
+            entityId: null
           });
         });
       }
       else {
-
-
         const defaultLocale = allLocales.find(locale => locale.isDefault);
+        this.logger.debug(`Default locale is: ${defaultLocale.locale}`);
 
-        // const currentEntityTarget = this.getEntityTarget(classify(this.options.modelSingularName));
-        // const currentEntityRepository = this.options.entityManager.getRepository(currentEntityTarget);
-
+        // Get hold of the repository for the current model
+        const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
+        const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
+        const currentEntityRepository = this.entityManager.getRepository(currentEntityTarget);
 
         // We are in edit mode, the id that is being edited could be a record tagged with the default locale or it could be tagged with a non-default locale.
-        const entityRecord = await this.entityManager.getRepository(modelName).findOne({
+        const entityRecord = await currentEntityRepository.findOne({
           where: {
             id: id,
           }
@@ -205,17 +211,40 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
 
         //  Resolve the default entity locale id....
         let defaultEntityLocaleId = null;
-        if (entityRecord.localeName === defaultLocale) {
+        if (entityRecord.localeName === defaultLocale.locale) {
           defaultEntityLocaleId = entityRecord.id;
+          this.logger.debug(`You are editing a record tagged with the default locale: ${entityRecord.localeName}.`);
         }
         else {
           defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
+          this.logger.debug(`You are editing a record tagged with the non-default locale: ${entityRecord.localeName}. `);
         }
+        this.logger.debug(`Identified default Entity Locale Id: ${defaultEntityLocaleId}`);
 
         // Now we query for all records in the same model matching the defaultEntityLocaleId
+        // Get all records mathcing the defaultEntityLocaleId or where the id is same as the defaultEntityLocaleId
+        const entityRecordsInAllLocales = await currentEntityRepository.find({
+          where: [
+            { defaultEntityLocaleId: defaultEntityLocaleId },
+            { id: defaultEntityLocaleId }
+          ],
+        });
+        this.logger.debug(`Found ${entityRecordsInAllLocales.length} records in all locales for the defaultEntityLocaleId: ${defaultEntityLocaleId}`);
 
+        // Loop over all locales and populate the applicableLocales array
+        for (const locale of allLocales) {
+          // Find the record in the entityRecordsInAllLocales that matches the current locale
+          const matchingRecord = entityRecordsInAllLocales.find(record => record.localeName === locale.locale);
+
+          applicableLocales.push({
+            locale: locale.locale,
+            displayName: locale.displayName,
+            isDefault: locale.isDefault ? 'yes' : 'no',
+            defaultEntityLocaleId: defaultEntityLocaleId,
+            entityId: (matchingRecord ? matchingRecord.id : null)
+          });
+        }
       }
-
     }
 
     const r = {
