@@ -859,29 +859,43 @@ export class AuthenticationService {
     }
 
     async generateTokens(user: User) {
-        const refreshTokenId = randomUUID();
-
-        // const userRoleNames = user.roles.map((role) => role.name).join(';')
-        const userRoleNames = user.roles.map((role) => role.name);
 
         const [accessToken, refreshToken] = await Promise.all([
-            this.signToken<Partial<ActiveUserData>>(
-                user.id,
-                this.jwtConfiguration.accessTokenTtl,
-                { username: user.username, email: user.email, roles: userRoleNames },
-            ),
-            this.signToken(user.id, this.jwtConfiguration.refreshTokenTtl, {
-                refreshTokenId,
-            }),
+            this.generateAccessToken(user),
+            this.generateRefreshToken(user),
         ]);
-
-        // store the refresh token id in the redis storage.
-        await this.refreshTokenIdsStorage.insert(user.id, refreshTokenId);
 
         return {
             accessToken,
             refreshToken,
         };
+    }
+
+    async generateAccessToken(user: User) {
+
+        // const userRoleNames = user.roles.map((role) => role.name).join(';')
+        const userRoleNames = user.roles.map((role) => role.name);
+
+        const accessToken = await this.signToken<Partial<ActiveUserData>>(
+            user.id,
+            this.jwtConfiguration.accessTokenTtl,
+            { username: user.username, email: user.email, roles: userRoleNames },
+        );
+
+        return accessToken;
+    }
+
+    async generateRefreshToken(user: User) {
+        const refreshTokenId = randomUUID();
+
+        const refreshToken = await this.signToken(user.id, this.jwtConfiguration.refreshTokenTtl, {
+            refreshTokenId,
+        })
+
+        // store the refresh token id in the redis storage.
+        await this.refreshTokenIdsStorage.insert(user.id, refreshToken);
+
+        return refreshToken;
     }
 
     async refreshTokens(refreshTokenDto: RefreshTokenDto) {
@@ -904,14 +918,21 @@ export class AuthenticationService {
                 throw new UnauthorizedException();
             }
 
-            const isValid = await this.refreshTokenIdsStorage.validate(user.id, refreshTokenId);
-            if (isValid) {
-                // Refresh token rotation.
-                await this.refreshTokenIdsStorage.invalidate(user.id);
-            } else {
-                throw new Error('Refresh token is invalid');
-            }
-            return this.generateTokens(user);
+            // TODO: Replace the if else condition below with a call to validateAndRotate - Done
+            // const isValid = await this.refreshTokenIdsStorage.validate(user.id, refreshTokenId);
+            // if (isValid) {
+            //     // Refresh token rotation.
+            //     await this.refreshTokenIdsStorage.invalidate(user.id);
+            // } else {
+            //     throw new Error('Refresh token is invalid');
+            // }
+
+            const currentRefreshToken = await this.refreshTokenIdsStorage.validateAndRotate(user, refreshTokenDto.refreshToken);
+
+            return {
+                accessToken: await this.generateAccessToken(user),
+                refreshToken: currentRefreshToken,
+            };
         } catch (err) {
             if (err instanceof InvalidatedRefreshTokenError) {
                 // Take action: notify user that his refresh token might have been stolen?
