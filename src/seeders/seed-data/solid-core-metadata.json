@@ -7840,7 +7840,7 @@
                             "type": "field",
                             "attrs": {
                               "name": "permissions",
-                              "widget": "inputSwitch",
+                              "editWidget": "inputSwitch",
                               "showLabel": false
                             }
                           }
