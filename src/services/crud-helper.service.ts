@@ -158,7 +158,7 @@ export class CrudHelperService {
 
     buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string,internationalisation?:boolean,draftPublishWorkflow?:boolean): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
-        const { fields, sort, groupBy, populate = [], populateMedia=[],locale,status } = basicFilterDto;
+        const { fields, sort, groupBy, populate = [], populateMedia=[],locale,status,defaultLocaleId } = basicFilterDto;
 
         // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
         const normalizedFields = this.normalize(fields);
@@ -187,11 +187,20 @@ export class CrudHelperService {
             }));
         }
 
-        if (internationalisation && locale) {
-            qb.andWhere(`${entityAlias}.localeName = :locale`, { locale: locale });
+        if (internationalisation && locale && defaultLocaleId) {
+            // Filter by both locale name and default locale ID
+            qb.andWhere(`${entityAlias}.localeName = :locale`, { locale });
+            qb.andWhere(`${entityAlias}.defaultLocalId = :queryLocaleId`, {
+                queryLocaleId: defaultLocaleId,
+            });
+        }
+
+        if (internationalisation && locale) { 
+           qb.andWhere(`${entityAlias}.localeName = :locale`, { locale: locale }); //fallback to locale if defaultLocaleId is not provided
         }   
+
         if( draftPublishWorkflow && status){
-              if (basicFilterDto.status === 'publish') {
+              if (basicFilterDto.status === 'published') {
                 qb.andWhere(`${entityAlias}.publishedAt IS NOT NULL`);
             } else if (basicFilterDto.status === 'draft') {
                 qb.andWhere(`${entityAlias}.publishedAt IS NULL`);

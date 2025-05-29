@@ -75,10 +75,18 @@ export class ModelSubscriber implements EntitySubscriberInterface<ModelMetadata>
         model: event.entity,
       },
       {
-        name: "locale",
+        name: "localeName",
         displayName: "locale",
         type: "string",
         ormType: "varchar",
+        isSystem: true,
+        model: event.entity,
+      },
+      {
+        name: "defaultLocaleId",
+        displayName: "default locale id",
+        type: "int",
+        ormType: "int",
         isSystem: true,
         model: event.entity,
       }

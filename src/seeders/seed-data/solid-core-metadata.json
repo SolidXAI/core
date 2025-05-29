@@ -3612,9 +3612,10 @@
             "isSystem": true,
             "selectionValueType": "string",
             "selectionStaticValues": [
-              "in:in",
-              "en:en",
-              "fr:fr"
+              "en-In:en-In",
+              "en-Us:en-Us",
+              "hi-In:hi-In",
+              "ma-In:ma-In"
             ],
             "isUserKey": false
           },

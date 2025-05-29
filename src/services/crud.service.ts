@@ -398,7 +398,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         const alias = 'entity';
         // Extract the required keys from the input query
         let { limit, offset, populateMedia, populateGroup, groupFilter } = basicFilterDto;
-        const {singularName,internationalisation,draftPublishWorkflow} = await this.loadModel();
+        const {singularName,internationalisation,draftPublishWorkflow,defaultLocalId} = await this.loadModel();
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasReadPermissionOnModel(solidRequestContext.activeUser, singularName);
@@ -410,7 +410,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
         qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias,internationalisation,draftPublishWorkflow);
-
+        
         if (basicFilterDto.groupBy) {
             // Get the records and the count
             const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia,internationalisation,draftPublishWorkflow);

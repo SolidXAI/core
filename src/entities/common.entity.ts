@@ -20,6 +20,9 @@ export abstract class CommonEntity {
     @Column({  type: "timestamp", name:'published_at', default:null })
     publishedAt: Date;
 
-    @Column({ type: "varchar",default:null })
+    @Column({ type: "varchar",name:'locale_name', default:null })
     localeName: string;
+
+    @Column({ type: "int" ,name:'default_locale_id', default:null })
+    defaultLocalId: number;
 }
