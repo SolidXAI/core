@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, Repository } from 'typeorm';
@@ -47,6 +47,21 @@ export enum ImportFormat {
   EXCEL = 'excel',
 }
 
+export interface ImportMappingInfo {
+  sampleImportedRecordInfo: SampleImportedRecordInfo[];
+  importableFields: ImportableFieldInfo[];
+}
+
+export interface SampleImportedRecordInfo {
+  cellHeader : string; // The header of the cell in the import file
+  cellValue: string; // The value of the cell in the import file
+  defaultMappedFieldName: string; // The default mapped field name in the model metadata
+}
+export interface ImportableFieldInfo {
+  name: string;
+  displayName: string;
+}
+
 @Injectable()
 export class ImportTransactionService extends CRUDService<ImportTransaction> {
   constructor(
@@ -63,32 +78,52 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     readonly moduleRef: ModuleRef,
     readonly excelService: ExcelService,
     readonly csvService: CsvService,
-
+    
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'importTransaction', 'solid-core', moduleRef);
   }
+  
+  private readonly logger = new Logger(ImportTransactionService.name);
+  saveImportMapping(arg0: number) {
+    throw new Error('Method not implemented.');
+  }
 
-  //   Standard Instuctions: 
+  async getImportMappingInfo(importTransactionId: number): Promise<ImportMappingInfo> {
+    // Read the file associated with the import transaction
+    // Call import transaction service findOne with populatemedata for the import transaction ID
+    const importTransaction = await this.findOne(importTransactionId, {
+      populate : ['modelMetadata', 'modelMetadata.fields'],
+      populateMedia: ['fileLocation'],
+    });
+    if (!importTransaction) {
+      throw new Error(`Import transaction with ID ${importTransactionId} not found.`);
+    }
 
-  // 1. CSV or Excel (based on radio button selected) template: "Download". 
+    // Add all the fields other than media fields, computed fields, password fields, rich text fields, uuid fields as importable fields
+    const importableFields: ImportableFieldInfo[] = this.fieldsAllowedForImport(importTransaction.modelMetadata.fields).map(field => ({
+      name: field.name,
+      displayName: field.displayName,
+    }));
 
-  //    The download button / link should invoke an endpoint which dynamically generates an empty CSV or Excel with the respective headers and downloads it. 
+    // Read the file url
+    const fileUrl = importTransaction['_media']['fileLocation'][0]['_full_url'];
+    if (!fileUrl) {
+      throw new Error(`File URL for import transaction with ID ${importTransactionId} not found.`);
+    }
+    this.logger.debug(`File URL for import transaction with ID ${importTransactionId}: ${fileUrl}`);
+  
 
-  // 2. Required / mandatory fields: <unordered-list-of-field-names>
+    // Depending upon the file format, read the file and extract the headers
+    
 
-  // 3. Date fields: <unordered-list-of-field-names> (end this with a message saying "Use dd-MM-yyyy as the format to specify data in this field for example 11th of July 2025 should be formatted as 11-07-2025")
-
-  // 4. Datetime fields: similar approach as above with different format.
-
-  // 5. Numeric fields: <unordered-list-of-field-names> ("These fields will not allow any non-numeric data")
-
-  // 6. Email fields: <unordered-list-of-field-names> ("These fields will only allow valid email addresses") 
-
-  // 7. RegEx: <unordered-list-of-field-names> ("These fields will only allow data that matches the specified regex pattern. The regex pattern is specified in the field metadata and can be viewed in the field details section.") 
-
-  // 8. Json : <unordered-list-of-field-names> ("These fields will only allow valid JSON data. The JSON structure is specified in the field metadata and can be viewed in the field details section.")
-
-  // 9. Boolean: <unordered-list-of-field-names> ("These fields will only allow Y or N values")
+    // Extract the headers from the file
+    // Extract the 1st row of the file to get sample data
+    // Create a response of type ImportMappingInfo
+    return {
+      sampleImportedRecordInfo: [], // This will hold the sample data from the file
+      importableFields: importableFields, // This will hold the fields that can be imported
+    } ;
+  }
 
   async getImportInstructions(modelMetadataId: number): Promise<ImportInstructionsResponseDto> {
     // Load the model metadata for the given ID
@@ -203,8 +238,11 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       field.type !== SolidFieldType.computed && // Exclude computed fields
       field.type !== SolidFieldType.password &&
       field.type !== SolidFieldType.richText &&
-      field.type !== SolidFieldType.uuid
+      field.type !== SolidFieldType.uuid &&
+      field.isSystem !== true // Exclude system fields
     );
   }
+
+
 
 }

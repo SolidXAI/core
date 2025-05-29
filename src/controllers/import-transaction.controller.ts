@@ -102,6 +102,18 @@ export class ImportTransactionController {
   }
 
   @ApiBearerAuth("jwt")
+  @Get(':id/import-mapping-info')
+  async getImportMappingInfo(@Param('id') id: string) {
+    return this.service.getImportMappingInfo(+id);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Post(':id/import-mapping')
+  async saveImportMapping(@Param('id') id: string) {
+    return this.service.saveImportMapping(+id);
+  }
+
+  @ApiBearerAuth("jwt")
   @Delete('/bulk')
   async deleteMany(@Body() ids: number[]) {
     return this.service.deleteMany(ids);
