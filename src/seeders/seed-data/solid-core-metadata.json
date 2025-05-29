@@ -3604,20 +3604,16 @@
           {
             "name": "locale",
             "displayName": "Locale",
-            "type": "selectionStatic",
+            "type": "selectionDynamic",
             "ormType": "varchar",
             "length": 256,
             "required": true,
             "index": true,
             "isSystem": true,
             "selectionValueType": "string",
-            "selectionStaticValues": [
-              "en-In:en-In",
-              "en-Us:en-Us",
-              "hi-In:hi-In",
-              "ma-In:ma-In"
-            ],
-            "isUserKey": false
+            "selectionDynamicProvider": "LocaleListSelectionProvider",
+            "selectionDynamicProviderCtxt": "{}",
+            "isUserKey": true
           },
           {
             "name": "displayName",

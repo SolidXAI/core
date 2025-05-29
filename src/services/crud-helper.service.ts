@@ -156,9 +156,9 @@ export class CrudHelperService {
     }
 
 
-    buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string,internationalisation?:boolean,draftPublishWorkflow?:boolean): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
+    buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string, internationalisation?: boolean, draftPublishWorkflow?: boolean): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
-        const { fields, sort, groupBy, populate = [], populateMedia=[],locale,status,defaultLocaleId } = basicFilterDto;
+        const { fields, sort, groupBy, populate = [], populateMedia = [], locale, status, defaultLocaleId } = basicFilterDto;
 
         // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
         const normalizedFields = this.normalize(fields);
@@ -190,17 +190,17 @@ export class CrudHelperService {
         if (internationalisation && locale && defaultLocaleId) {
             // Filter by both locale name and default locale ID
             qb.andWhere(`${entityAlias}.localeName = :locale`, { locale });
-            qb.andWhere(`${entityAlias}.defaultLocalId = :queryLocaleId`, {
+            qb.andWhere(`${entityAlias}.defaultLocaleId = :queryLocaleId`, {
                 queryLocaleId: defaultLocaleId,
             });
         }
 
-        if (internationalisation && locale) { 
-           qb.andWhere(`${entityAlias}.localeName = :locale`, { locale: locale }); //fallback to locale if defaultLocaleId is not provided
-        }   
+        if (internationalisation && locale) {
+            qb.andWhere(`${entityAlias}.localeName = :locale`, { locale: locale }); //fallback to locale if defaultLocaleId is not provided
+        }
 
-        if( draftPublishWorkflow && status){
-              if (basicFilterDto.status === 'published') {
+        if (draftPublishWorkflow && status) {
+            if (basicFilterDto.status === 'published') {
                 qb.andWhere(`${entityAlias}.publishedAt IS NOT NULL`);
             } else if (basicFilterDto.status === 'draft') {
                 qb.andWhere(`${entityAlias}.publishedAt IS NULL`);
@@ -242,22 +242,22 @@ export class CrudHelperService {
                 qb.addGroupBy(`${entityAlias}.${field}`);
             });
         }
-         
+
         // Apply the pagination options & handle the case when the query has joins
         if (limit) this.hasJoins(qb) ? qb.take(limit) : qb.limit(limit);
-        if (offset) this.hasJoins(qb) ? qb.skip(offset): qb.offset(offset);
+        if (offset) this.hasJoins(qb) ? qb.skip(offset) : qb.offset(offset);
         return qb;
     }
 
     additionalRelationsRequiredForMediaPopulation(normalizedPopulateMedia: string[]) {
         // Populate relations containing the media field
         return normalizedPopulateMedia
-        .filter(pm => pm.includes("."))
-        .map((pm) => {
-            const mediaPathParts = pm.split('.');
-            if (mediaPathParts.length <= 1) return pm;
-            return  mediaPathParts.slice(0, -1).join('.');
-        });
+            .filter(pm => pm.includes("."))
+            .map((pm) => {
+                const mediaPathParts = pm.split('.');
+                if (mediaPathParts.length <= 1) return pm;
+                return mediaPathParts.slice(0, -1).join('.');
+            });
     }
 
     private buildPopulateQuery(normalizedPopulate: string[], entityAlias: string, qb: SelectQueryBuilder<any>) {
@@ -276,7 +276,7 @@ export class CrudHelperService {
             // Check if the relation is already joined, if not then join it
             if (!this.isRelationJoined(qb, joinProperty)) {
                 const joinAlias = relationParts.slice(0, i + 1).join('_');
-                qb.leftJoinAndSelect(joinProperty, joinAlias); 
+                qb.leftJoinAndSelect(joinProperty, joinAlias);
             }
             parentAlias = part; // Update the parent alias for the next iteration
         });

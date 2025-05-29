@@ -17,13 +17,8 @@ export class ModuleMetadataHelperService {
     }
 
     getModuleMetadataFilePath(moduleName: string): string {
-        if (moduleName === `${process.env.DEFAULT_MODULE_NAME}`) {
-            return `src/seeders/seed-data/${moduleName}-metadata.json`
-        }else {
-            //return `module-metadata/${dasherize(moduleName)}/${dasherize(moduleName)}-metadata.json;`
-            const folderPath = path.resolve(process.cwd(), 'module-metadata', moduleName);
-            const filePath = path.join(folderPath, `${moduleName}-metadata.json`);
-            return filePath;
-        }   
+        const folderPath = path.resolve(process.cwd(), 'module-metadata', moduleName);
+        const filePath = path.join(folderPath, `${moduleName}-metadata.json`);
+        return filePath;
     }
 }

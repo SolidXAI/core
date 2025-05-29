@@ -173,6 +173,7 @@ import { ExportTransactionController } from './controllers/export-transaction.co
 import { ExcelService } from './services/excel.service';
 import { CsvService } from './services/csv.service';
 import { ClsModule } from 'nestjs-cls';
+import { LocaleListSelectionProvider } from './services/selection-providers/locale-list-selection-provider.service';
 
 
 @Global()
@@ -337,6 +338,7 @@ import { ClsModule } from 'nestjs-cls';
     PdfService,
     UuidExternalIdComputedFieldProvider,
     ListOfModelsSelectionProvider,
+    LocaleListSelectionProvider,
     SoftDeleteAwareEventSubscriber,
     AccessTokenGuard,
     AuthenticationService,
