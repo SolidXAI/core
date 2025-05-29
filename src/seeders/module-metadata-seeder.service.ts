@@ -219,6 +219,16 @@ export class ModuleMetadataSeederService {
             'FieldMetadataController.getSelectionDynamicValues',
             'FieldMetadataController.getSelectionDynamicValue',
             'FieldMetadataController.findFieldDefaultMetaData',
+            'SavedFiltersController.delete',
+            'SavedFiltersController.deleteMany',
+            'SavedFiltersController.findOne',
+            'SavedFiltersController.findMany',
+            'SavedFiltersController.recover',
+            'SavedFiltersController.recoverMany',
+            'SavedFiltersController.partialUpdate',
+            'SavedFiltersController.update',
+            'SavedFiltersController.insertMany',
+            'SavedFiltersController.create'
         ]
         await this.roleService.addPermissionToRole('Internal User', internalRolePermission);
         await this.roleService.addPermissionToRole('Public', ['SettingController.wrapSettings']);
