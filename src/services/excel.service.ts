@@ -3,61 +3,22 @@ import * as ExcelJS from 'exceljs';
 import { PassThrough, Readable } from 'stream';
 
 
+export interface ExcelReadOptions {
+  pageSize?: number; // Number of records per page
+  hasHeaderRow?: boolean; // Whether the first row contains headers
+  providedHeaders?: string[]; // Custom headers if hasHeaderRow is false
+}
+
+const DEFAULT_PAGE_SIZE = 100; // Default page size if not provided
+
+export interface ExcelReadResult {
+  headers: string[]; // Headers of the Excel file
+  data: Record<string, any>[]; // Data records in the current page
+}
+
 @Injectable()
 export class ExcelService {
   private logger = new Logger(ExcelService.name);
-  // Sample JSON data
-  // const jsonData = [
-  //   { id: 1, name: 'John Doe', age: 25, email: 'john@example.com' },
-  //   { id: 2, name: 'Jane Doe', age: 28, email: 'jane@example.com' },
-  //   { id: 3, name: 'Alice Smith', age: 30, email: 'alice@example.com' }
-  // ];
-
-  // public async createExcelFromJson(data: any[], fileName: string) {
-  //   const workbook = new ExcelJS.Workbook();
-  //   const worksheet = workbook.addWorksheet('Data');
-
-  //   // Define Columns (Header)
-  //   worksheet.columns = Object.keys(data[0]).map((key) => ({
-  //     header: key.toUpperCase(), // Convert header names to uppercase
-  //     key: key,
-  //     width: 20, // Set column width
-  //   }));
-
-  //   // Add Data Rows
-  //   data.forEach((item) => {
-  //     worksheet.addRow(item);
-  //   });
-
-  //   // Apply basic formatting
-  //   worksheet.getRow(1).font = { bold: true }; // Make headers bold
-
-  //   // Save file
-  //   await workbook.xlsx.writeFile(fileName);
-  //   this.logger.log(`✅ Excel file "${fileName}" created successfully!`);
-  //   // console.log(`✅ Excel file "${fileName}" created successfully!`);
-  // }
-
-  // public async createExcelStreamFromJson(data: any[]): Promise<Readable> {
-  //   const passThrough = new PassThrough(); // Stream to pipe data
-  //   const workbook = new ExcelJS.stream.xlsx.WorkbookWriter({ stream: passThrough });
-  //   const worksheet = workbook.addWorksheet('Data');
-  //   worksheet.columns = Object.keys(data[0]).map((key) => ({
-  //     header: key.toUpperCase(),
-  //     key: key,
-  //     width: 20,
-  //   }));
-
-  //   data.forEach((item) => {
-  //     worksheet.addRow(item);
-  //   });
-
-  //   worksheet.getRow(1).font = { bold: true };
-
-  //   await workbook.commit();
-  //   return passThrough;
-  // }
-
 
   public async createExcelStream(
     getDataRecords: (chunkIndex: number, chunkSize: number) => Promise<any[]>,
@@ -121,6 +82,69 @@ export class ExcelService {
       throw error;
     }
     return passThrough; // Return streaming response
+  }
+
+  public async *readExcelInPagesFromStream(
+    stream: Readable,
+    options?: ExcelReadOptions
+  ): AsyncGenerator<ExcelReadResult> {
+    const { pageSize = DEFAULT_PAGE_SIZE, hasHeaderRow = true, providedHeaders = [] } = options || {};
+    const workbookReader = new ExcelJS.stream.xlsx.WorkbookReader(stream, {});
+
+    let headers: string[] = [];
+    let page: Record<string, any>[] = [];
+    let isFirstRow = true;
+    let hasYieldedData = false;
+
+    for await (const worksheet of workbookReader) {
+      for await (const row of worksheet) {
+        const values = Array.isArray(row.values) ? row.values.slice(1) : [];
+
+        if (isFirstRow) {
+          isFirstRow = false;
+
+          if (hasHeaderRow) {
+            headers = values.map(v => v?.toString().trim() || '');
+            continue;
+          } else if (providedHeaders.length) {
+            headers = providedHeaders;
+          } else {
+            headers = values.map((_, idx) => `${idx}`);
+          }
+        }
+
+        while (values.length < headers.length) values.push(null);
+        if (values.length > headers.length) values.length = headers.length;
+
+        const record = headers.reduce((acc, key, i) => {
+          acc[key] = values[i] ?? null;
+          return acc;
+        }, {} as Record<string, any>);
+
+        if (Object.values(record).every(v => v === null || v === '')) continue;
+
+        page.push(record);
+
+        if (page.length === pageSize) {
+          yield { headers, data: page };
+          hasYieldedData = true;
+          page = [];
+        }
+      }
+
+      // Optional: break if only processing first worksheet
+      // break;
+    }
+
+    if (page.length > 0) {
+      yield { headers, data: page };
+      hasYieldedData = true;
+    }
+
+    // ✅ Yield headers with empty data if only headers were found
+    if (!hasYieldedData && headers.length > 0) {
+      yield { headers, data: [] };
+    }
   }
 
 }
