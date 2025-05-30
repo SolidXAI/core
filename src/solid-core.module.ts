@@ -171,6 +171,12 @@ import { ExcelService } from './services/excel.service';
 import { CsvService } from './services/csv.service';
 import { ClsModule } from 'nestjs-cls';
 import { FieldRepository } from './repository/field.repository';
+import { ImportTransaction } from './entities/import-transaction.entity';
+import { ImportTransactionService } from './services/import-transaction.service';
+import { ImportTransactionController } from './controllers/import-transaction.controller';
+import { ImportTransactionErrorLog } from './entities/import-transaction-error-log.entity';
+import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
+import { ImportTransactionErrorLogController } from './controllers/import-transaction-error-log.controller';
 
 
 @Global()
@@ -229,6 +235,8 @@ import { FieldRepository } from './repository/field.repository';
       middleware: {
         mount: true,
       }}),
+    TypeOrmModule.forFeature([ImportTransaction]),
+    TypeOrmModule.forFeature([ImportTransactionErrorLog]),
   ],
   controllers: [
     ModuleMetadataController,
@@ -262,6 +270,8 @@ import { FieldRepository } from './repository/field.repository';
     ChatterMessageDetailsController,
     ExportTemplateController,
     ExportTransactionController,
+    ImportTransactionController,
+    ImportTransactionErrorLogController,
   ],
   providers: [
     {
@@ -370,7 +380,9 @@ import { FieldRepository } from './repository/field.repository';
     ExportTransactionService,
     ExcelService,
     CsvService,
-    FieldRepository
+    FieldRepository,
+    ImportTransactionService,
+    ImportTransactionErrorLogService,
   ],
   exports: [
     ModuleMetadataService,
