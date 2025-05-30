@@ -42,12 +42,14 @@ export class ExcelService {
       const worksheet = workbook.addWorksheet('Data');
 
       // If headers are provided, use them;
+      let isHeaderWritten = false;
       if (headers.length > 0) {
         worksheet.columns = headers.map((header) => ({
           header: header, // Convert header names to uppercase
           key: header,
           width: 20, // Set column width
         }));
+        isHeaderWritten = true; // Mark headers as written
       }
 
       // ✅ If no data loader provided, write only headers and finish
@@ -65,6 +67,15 @@ export class ExcelService {
       while (true) {
         const records = await getDataRecords(chunkIndex, chunkSize); // Fetch chunked data
         if (records.length === 0) break; // Stop if no more records
+
+        if (!isHeaderWritten) { // Falback because without columns being set, ExcelJS won't write data correctly
+          worksheet.columns = Object.keys(records[0]).map((key) => ({
+            header: key.toUpperCase(),
+            key: key,
+            width: 20,
+          }));
+          isHeaderWritten = true;
+        }
 
         records.forEach((item) => {
           worksheet.addRow(item).commit(); // Commit each row immediately
