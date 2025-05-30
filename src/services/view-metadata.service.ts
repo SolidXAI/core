@@ -208,41 +208,44 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
             id: id,
           }
         });
-
+        if(entityRecord){
         //  Resolve the default entity locale id....
-        let defaultEntityLocaleId = null;
-        if (entityRecord.localeName === defaultLocale.locale) {
-          defaultEntityLocaleId = entityRecord.id;
-          this.logger.debug(`You are editing a record tagged with the default locale: ${entityRecord.localeName}.`);
-        }
-        else {
-          defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
-          this.logger.debug(`You are editing a record tagged with the non-default locale: ${entityRecord.localeName}. `);
-        }
-        this.logger.debug(`Identified default Entity Locale Id: ${defaultEntityLocaleId}`);
+          let defaultEntityLocaleId = null;
+          if (entityRecord.localeName === defaultLocale.locale) {
+            defaultEntityLocaleId = entityRecord.id;
+            this.logger.debug(`You are editing a record tagged with the default locale: ${entityRecord.localeName}.`);
+          }
+          else {
+            defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
+            this.logger.debug(`You are editing a record tagged with the non-default locale: ${entityRecord.localeName}. `);
+          }
+          this.logger.debug(`Identified default Entity Locale Id: ${defaultEntityLocaleId}`);
 
-        // Now we query for all records in the same model matching the defaultEntityLocaleId
-        // Get all records mathcing the defaultEntityLocaleId or where the id is same as the defaultEntityLocaleId
-        const entityRecordsInAllLocales = await currentEntityRepository.find({
-          where: [
-            { defaultEntityLocaleId: defaultEntityLocaleId },
-            { id: defaultEntityLocaleId }
-          ],
-        });
-        this.logger.debug(`Found ${entityRecordsInAllLocales.length} records in all locales for the defaultEntityLocaleId: ${defaultEntityLocaleId}`);
-
-        // Loop over all locales and populate the applicableLocales array
-        for (const locale of allLocales) {
-          // Find the record in the entityRecordsInAllLocales that matches the current locale
-          const matchingRecord = entityRecordsInAllLocales.find(record => record.localeName === locale.locale);
-
-          applicableLocales.push({
-            locale: locale.locale,
-            displayName: locale.displayName,
-            isDefault: locale.isDefault ? 'yes' : 'no',
-            defaultEntityLocaleId: defaultEntityLocaleId,
-            entityId: (matchingRecord ? matchingRecord.id : null)
+          // Now we query for all records in the same model matching the defaultEntityLocaleId
+          // Get all records mathcing the defaultEntityLocaleId or where the id is same as the defaultEntityLocaleId
+          const entityRecordsInAllLocales = await currentEntityRepository.find({
+            where: [
+              { defaultEntityLocaleId: defaultEntityLocaleId },
+              { id: defaultEntityLocaleId }
+            ],
           });
+          this.logger.debug(`Found ${entityRecordsInAllLocales.length} records in all locales for the defaultEntityLocaleId: ${defaultEntityLocaleId}`);
+
+          // Loop over all locales and populate the applicableLocales array
+          for (const locale of allLocales) {
+            // Find the record in the entityRecordsInAllLocales that matches the current locale
+            const matchingRecord = entityRecordsInAllLocales.find(record => record.localeName === locale.locale);
+
+            applicableLocales.push({
+              locale: locale.locale,
+              displayName: locale.displayName,
+              isDefault: locale.isDefault ? 'yes' : 'no',
+              defaultEntityLocaleId: defaultEntityLocaleId,
+              entityId: (matchingRecord ? matchingRecord.id : null)
+            });
+          }
+        }else{
+          this.logger.warn(`No record found for id: ${id} in model: ${modelName}. Cannot determine applicable locales.`);
         }
       }
     }
