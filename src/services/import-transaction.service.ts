@@ -1,23 +1,25 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 
+import { ConfigService } from '@nestjs/config';
+import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
+import { FileService } from 'src/services/file.service';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { ConfigService } from '@nestjs/config';
-import { FileService } from 'src/services/file.service';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 
 
-import { ImportTransaction } from '../entities/import-transaction.entity';
+import { HttpService } from '@nestjs/axios';
 import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
-import { FieldMetadata } from 'src/entities/field-metadata.entity';
-import { Field } from 'mysql2';
-import { ExcelService } from './excel.service';
-import { CsvService } from './csv.service';
 import { ImportInstructionsResponseDto, StandardImportInstructionsResponseDto } from 'src/dtos/import-instructions.dto';
+import { FieldMetadata } from 'src/entities/field-metadata.entity';
+import { MediaWithFullUrl } from 'src/interfaces';
+import { Readable } from 'stream';
+import { ImportTransaction } from '../entities/import-transaction.entity';
+import { CsvService } from './csv.service';
+import { ExcelService } from './excel.service';
 
 interface ImportTemplateFileInfo {
   stream: NodeJS.ReadableStream;
@@ -25,41 +27,27 @@ interface ImportTemplateFileInfo {
   mimeType: string;
 }
 
-// export interface ImportInstruction {
-//   standard: Record<StandardImportInstructionKeys, any>;
-//   custom: string[];
-// }
-
-// enum StandardImportInstructionKeys {
-//   REQUIRED_FIELDS = 'requiredFields',
-//   DATE_FIELDS = 'dateFields',
-//   DATE_TIME_FIELDS = 'dateTimeFields',
-//   NUMBER_FIELDS = 'numberFields',
-//   EMAIL_FIELDS = 'emailFields',
-//   REGEX_FIELDS = 'regexFields',
-//   JSON_FIELDS = 'jsonFields',
-//   BOOLEAN_FIELDS = 'booleanFields',
-// }
-
-
 export enum ImportFormat {
   CSV = 'csv',
   EXCEL = 'excel',
 }
-
 export interface ImportMappingInfo {
   sampleImportedRecordInfo: SampleImportedRecordInfo[];
   importableFields: ImportableFieldInfo[];
 }
-
 export interface SampleImportedRecordInfo {
-  cellHeader : string; // The header of the cell in the import file
+  cellHeader: string; // The header of the cell in the import file
   cellValue: string; // The value of the cell in the import file
   defaultMappedFieldName: string; // The default mapped field name in the model metadata
 }
 export interface ImportableFieldInfo {
   name: string;
   displayName: string;
+}
+
+export interface ImportReadResult {
+  headers: string[]; // Headers of the CSV file
+  data: Record<string, any>[]; // Data records in the current page
 }
 
 @Injectable()
@@ -78,51 +66,96 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     readonly moduleRef: ModuleRef,
     readonly excelService: ExcelService,
     readonly csvService: CsvService,
-    
+    readonly httpService: HttpService
+
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'importTransaction', 'solid-core', moduleRef);
   }
-  
+
   private readonly logger = new Logger(ImportTransactionService.name);
   saveImportMapping(arg0: number) {
     throw new Error('Method not implemented.');
   }
 
   async getImportMappingInfo(importTransactionId: number): Promise<ImportMappingInfo> {
-    // Read the file associated with the import transaction
-    // Call import transaction service findOne with populatemedata for the import transaction ID
+    // Load the import transaction for the given ID
     const importTransaction = await this.findOne(importTransactionId, {
-      populate : ['modelMetadata', 'modelMetadata.fields'],
+      populate: ['modelMetadata', 'modelMetadata.fields'],
       populateMedia: ['fileLocation'],
     });
     if (!importTransaction) {
       throw new Error(`Import transaction with ID ${importTransactionId} not found.`);
     }
 
-    // Add all the fields other than media fields, computed fields, password fields, rich text fields, uuid fields as importable fields
+    // Get all the importable fields from the model metadata
     const importableFields: ImportableFieldInfo[] = this.fieldsAllowedForImport(importTransaction.modelMetadata.fields).map(field => ({
       name: field.name,
       displayName: field.displayName,
     }));
 
-    // Read the file url
-    const fileUrl = importTransaction['_media']['fileLocation'][0]['_full_url'];
-    if (!fileUrl) {
-      throw new Error(`File URL for import transaction with ID ${importTransactionId} not found.`);
+    // Get the import file stream for the import transaction
+    const importFileMediaObject = importTransaction['_media']['fileLocation'][0] as MediaWithFullUrl; // Since there can be only one fileLocation, we can safely access the first element
+    if (!importFileMediaObject) {
+      throw new Error(`Import file for transaction ID ${importTransactionId} not found.`);
     }
-    this.logger.debug(`File URL for import transaction with ID ${importTransactionId}: ${fileUrl}`);
-  
+    const importFileStream = await this.getImportFileStream(importFileMediaObject);
 
-    // Depending upon the file format, read the file and extract the headers
-    
+    // Get a sample of records from the import file
+    const sampleRecord = await this.getFileRecordsSample(importFileStream, importFileMediaObject.mimeType);
 
-    // Extract the headers from the file
-    // Extract the 1st row of the file to get sample data
-    // Create a response of type ImportMappingInfo
+    // Convert sampleRecord to the format required for SampleImportedRecordInfo
+    const wrappedRecords: SampleImportedRecordInfo[] = sampleRecord.data.map((record: Record<string, any>) => {
+      return Object.entries(record).map(([key, value]) => ({
+        cellHeader: key,
+        cellValue: value,
+        defaultMappedFieldName: importableFields.find(field => field.displayName === key)?.name || '',
+      }));
+    }).flat();
+
+    //     for await (const page of this.csvService.readCsvInPagesFromStream(importFileStream)) {
+    //   // await dbService.bulkInsert(page);
+    // }
+
     return {
-      sampleImportedRecordInfo: [], // This will hold the sample data from the file
+      sampleImportedRecordInfo: wrappedRecords, // This will hold the sample data from the file
       importableFields: importableFields, // This will hold the fields that can be imported
-    } ;
+    };
+  }
+
+  private async getFileRecordsSample(importFileStream: Readable, mimeType: string): Promise<ImportReadResult> {
+    // Depending upon the mime type of the file, read the file in pages
+    // For CSV files, use the csvService to read the file in pages
+    // For Excel files, use the excelService to read the file in pages
+    if (mimeType === 'text/csv') {
+      const generator = this.csvService.readCsvInPagesFromStream(importFileStream, { pageSize: 1 });
+      const firstRecord = await generator.next(); // Get the first record to extract headers and sample data
+      return firstRecord.value;
+    } else if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+      const generator = this.excelService.readExcelInPagesFromStream(importFileStream, { pageSize: 1 });
+      const firstRecord = await generator.next(); // Get the first record to extract headers and sample data
+      return firstRecord.value;
+    }
+    else { // If the file is neither CSV nor Excel, throw an error
+      throw new Error(`Unsupported file type: ${mimeType}`);
+    }
+  }
+
+  private async getImportFileStream(importFileMediaObject: MediaWithFullUrl): Promise<Readable> {
+    const fileUrl = importFileMediaObject['_full_url'];
+    const mimeType = importFileMediaObject['mimeType'];
+    if (!fileUrl) {
+      throw new Error(`File URL  ${fileUrl} not found.`);
+    }
+    // From the file URL, convert the file URL to a readable stream using nestjs http service and axios
+    const fileUrlResponse = await this.httpService.axiosRef.get(fileUrl, {
+      responseType: 'stream',
+    });
+
+    if (!fileUrlResponse || !fileUrlResponse.data) {
+      throw new Error(`Failed to read file from URL: ${fileUrl}`);
+    }
+    // fileUrlResponse.data is a Node.js Readable stream
+    return fileUrlResponse.data;
   }
 
   async getImportInstructions(modelMetadataId: number): Promise<ImportInstructionsResponseDto> {
@@ -160,11 +193,11 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       }
       if ([SolidFieldType.bigint, SolidFieldType.int, SolidFieldType.decimal].includes(field.type as SolidFieldType)) {
         standardInstructions.numberFields.push(field.displayName);
-      } 
+      }
       if (field.type === SolidFieldType.email) {
         standardInstructions.emailFields.push(field.displayName);
       }
-      if (field.regexPattern ) {
+      if (field.regexPattern) {
         standardInstructions.regexFields.push({
           fieldName: field.displayName,
           regexPattern: field.regexPattern,
@@ -184,7 +217,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     return {
       standard: standardInstructions,
       custom: customInstructions,
-    } ;
+    };
   }
 
   /**
