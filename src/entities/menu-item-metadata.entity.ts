@@ -2,34 +2,34 @@ import { CommonEntity } from "src/entities/common.entity"
 import { Entity, Column, ManyToOne, Index, JoinTable, ManyToMany, JoinColumn } from "typeorm";
 import { ModuleMetadata } from 'src/entities/module-metadata.entity';
 import { ActionMetadata } from 'src/entities/action-metadata.entity';
-import { RoleMetadata } from "./role-metadata.entity";
+import { RoleMetadata } from 'src/entities/role-metadata.entity';
+
 @Entity("ss_menu_item_metadata")
 export class MenuItemMetadata extends CommonEntity {
+    @Index({ unique: true })
     @Column({ name: "name", type: "varchar", unique: true })
     name: string;
-
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;
-
-    @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })
     @Index()
-    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE" })
+    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
+    @JoinColumn({ referencedColumnName: 'id' })
     module: ModuleMetadata;
-
-    @JoinColumn({ name: 'parent_menu_item_id', referencedColumnName: 'id' })
     @Index()
-    @ManyToOne(() => MenuItemMetadata, { onDelete: "CASCADE" })
+    @ManyToOne(() => MenuItemMetadata, { onDelete: "CASCADE", nullable: true })
+    @JoinColumn({ referencedColumnName: 'id' })
     parentMenuItem: MenuItemMetadata;
-
-    @JoinColumn({ name: 'action_id', referencedColumnName: 'id' })
     @Index()
-    @ManyToOne(() => ActionMetadata, { onDelete: "CASCADE" })
+    @ManyToOne(() => ActionMetadata, { onDelete: "CASCADE", nullable: true })
+    @JoinColumn({ referencedColumnName: 'id' })
     action: ActionMetadata;
-
-    @ManyToMany(() => RoleMetadata, roleMetadata => roleMetadata.menuItems, { cascade: true })
+    @ManyToMany(() => RoleMetadata, roleMetadata => roleMetadata.users, { cascade: true })
     @JoinTable()
     roles: RoleMetadata[];
-
     @Column({ name: "sequence_number", type: "int", nullable: true })
     sequenceNumber: number;
+
+    @Column({ name: "icon_name", type: "varchar", nullable: true })
+    iconName: string;
+
 }
