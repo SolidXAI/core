@@ -232,10 +232,26 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
+
+        // If the model has internationalisation enabled, delete children with defaultEntityLocaleId === this entity's id
+        if (model.internationalisation) {
+            // Find all child entities where defaultEntityLocaleId === this entity's id
+            const childEntities = await this.repo.find({
+                where: { defaultEntityLocaleId: id } as any
+            });
+
+            if (childEntities.length > 0) {
+                if (model.enableSoftDelete === true) {
+                    await this.repo.softRemove(childEntities);
+                } else {
+                    await this.repo.remove(childEntities);
+                }
+            }
+        }
+
         if (model.enableSoftDelete === true) {
             await this.repo.softRemove(entity);
             return this.repo.save(entity);
-
         } else {
             return this.repo.remove(entity);
         }
