@@ -108,9 +108,15 @@ export class ImportTransactionController {
   }
 
   @ApiBearerAuth("jwt")
-  @Post(':id/import-mapping')
-  async saveImportMapping(@Param('id') id: string) {
-    return this.service.saveImportMapping(+id);
+  @Post(':id/start-import/sync')
+  async startImportSync(@Param('id') id: string) {
+    return this.service.startImportSync(+id);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Post(':id/start-import/async')
+  async startImportAsync(@Param('id') id: string) {
+    return this.service.startImportAsync(+id);
   }
 
   @ApiBearerAuth("jwt")

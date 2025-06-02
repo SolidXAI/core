@@ -11,15 +11,18 @@ import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
+import { classify } from '@angular-devkit/core/src/utils/strings';
 import { HttpService } from '@nestjs/axios';
 import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
 import { ImportInstructionsResponseDto, StandardImportInstructionsResponseDto } from 'src/dtos/import-instructions.dto';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
+import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { MediaWithFullUrl } from 'src/interfaces';
 import { Readable } from 'stream';
 import { ImportTransaction } from '../entities/import-transaction.entity';
 import { CsvService } from './csv.service';
 import { ExcelService } from './excel.service';
+import { SolidIntrospectService } from './solid-introspect.service';
 
 interface ImportTemplateFileInfo {
   stream: NodeJS.ReadableStream;
@@ -45,9 +48,14 @@ export interface ImportableFieldInfo {
   displayName: string;
 }
 
-export interface ImportReadResult {
+export interface ImportPaginatedReadResult {
   headers: string[]; // Headers of the CSV file
   data: Record<string, any>[]; // Data records in the current page
+}
+
+interface ImportMapping {
+  header: string; // The name of the field in the import file
+  fieldName: string; // The name of the field in the model metadata to which the imported field is mapped
 }
 
 @Injectable()
@@ -66,96 +74,55 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     readonly moduleRef: ModuleRef,
     readonly excelService: ExcelService,
     readonly csvService: CsvService,
-    readonly httpService: HttpService
-
+    readonly httpService: HttpService,
+    readonly introspectService: SolidIntrospectService,
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'importTransaction', 'solid-core', moduleRef);
   }
 
   private readonly logger = new Logger(ImportTransactionService.name);
-  saveImportMapping(arg0: number) {
-    throw new Error('Method not implemented.');
-  }
 
-  async getImportMappingInfo(importTransactionId: number): Promise<ImportMappingInfo> {
-    // Load the import transaction for the given ID
-    const importTransaction = await this.findOne(importTransactionId, {
-      populate: ['modelMetadata', 'modelMetadata.fields'],
-      populateMedia: ['fileLocation'],
+  /**
+ * This method is used to return a csv / excel template for the import transaction
+ * It will contain the display names of the fields in the header row
+ * @param modelMetadataId 
+ */
+  async getImportTemplate(modelMetadataId: number, format: ImportFormat = ImportFormat.CSV): Promise<ImportTemplateFileInfo> {
+    // Load the model metadata for the given ID
+    const modelMetadata = await this.modelMetadataService.findOne(modelMetadataId, {
+      populate: ['fields'],
     });
-    if (!importTransaction) {
-      throw new Error(`Import transaction with ID ${importTransactionId} not found.`);
+    if (!modelMetadata) {
+      throw new Error(`Model metadata with ID ${modelMetadataId} not found.`);
+    }
+    // Create a header row with the display names of the fields, excluding the media fields,computed fields
+    const headers = this.fieldsAllowedForImport(modelMetadata.fields)
+      .map(field => field.displayName);
+
+    // Depending on the format, generate the template
+    if (format === ImportFormat.CSV) {
+      const stream = await this.csvService.createCsvStream(null, 0, headers); // Create a CSV stream with the header row
+      const fileName = `${modelMetadata.singularName}-import-template.csv`;
+      const mimeType = 'text/csv';
+      return {
+        stream,
+        fileName,
+        mimeType,
+      };
+    } else if (format === ImportFormat.EXCEL) {
+      const stream = await this.excelService.createExcelStream(null, 0, headers); // Create an Excel stream with the header row
+      const fileName = `${modelMetadata.singularName}-import-template.xlsx`;
+      // Set the MIME type for Excel files
+      const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
+      return {
+        stream,
+        fileName,
+        mimeType,
+      };
+    } else {
+      throw new Error(`Unsupported import format: ${format}`);
     }
 
-    // Get all the importable fields from the model metadata
-    const importableFields: ImportableFieldInfo[] = this.fieldsAllowedForImport(importTransaction.modelMetadata.fields).map(field => ({
-      name: field.name,
-      displayName: field.displayName,
-    }));
-
-    // Get the import file stream for the import transaction
-    const importFileMediaObject = importTransaction['_media']['fileLocation'][0] as MediaWithFullUrl; // Since there can be only one fileLocation, we can safely access the first element
-    if (!importFileMediaObject) {
-      throw new Error(`Import file for transaction ID ${importTransactionId} not found.`);
-    }
-    const importFileStream = await this.getImportFileStream(importFileMediaObject);
-
-    // Get a sample of records from the import file
-    const sampleRecord = await this.getFileRecordsSample(importFileStream, importFileMediaObject.mimeType);
-
-    // Convert sampleRecord to the format required for SampleImportedRecordInfo
-    const wrappedRecords: SampleImportedRecordInfo[] = sampleRecord.data.map((record: Record<string, any>) => {
-      return Object.entries(record).map(([key, value]) => ({
-        cellHeader: key,
-        cellValue: value,
-        defaultMappedFieldName: importableFields.find(field => field.displayName === key)?.name || '',
-      }));
-    }).flat();
-
-    //     for await (const page of this.csvService.readCsvInPagesFromStream(importFileStream)) {
-    //   // await dbService.bulkInsert(page);
-    // }
-
-    return {
-      sampleImportedRecordInfo: wrappedRecords, // This will hold the sample data from the file
-      importableFields: importableFields, // This will hold the fields that can be imported
-    };
-  }
-
-  private async getFileRecordsSample(importFileStream: Readable, mimeType: string): Promise<ImportReadResult> {
-    // Depending upon the mime type of the file, read the file in pages
-    // For CSV files, use the csvService to read the file in pages
-    // For Excel files, use the excelService to read the file in pages
-    if (mimeType === 'text/csv') {
-      const generator = this.csvService.readCsvInPagesFromStream(importFileStream, { pageSize: 1 });
-      const firstRecord = await generator.next(); // Get the first record to extract headers and sample data
-      return firstRecord.value;
-    } else if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-      const generator = this.excelService.readExcelInPagesFromStream(importFileStream, { pageSize: 1 });
-      const firstRecord = await generator.next(); // Get the first record to extract headers and sample data
-      return firstRecord.value;
-    }
-    else { // If the file is neither CSV nor Excel, throw an error
-      throw new Error(`Unsupported file type: ${mimeType}`);
-    }
-  }
-
-  private async getImportFileStream(importFileMediaObject: MediaWithFullUrl): Promise<Readable> {
-    const fileUrl = importFileMediaObject['_full_url'];
-    const mimeType = importFileMediaObject['mimeType'];
-    if (!fileUrl) {
-      throw new Error(`File URL  ${fileUrl} not found.`);
-    }
-    // From the file URL, convert the file URL to a readable stream using nestjs http service and axios
-    const fileUrlResponse = await this.httpService.axiosRef.get(fileUrl, {
-      responseType: 'stream',
-    });
-
-    if (!fileUrlResponse || !fileUrlResponse.data) {
-      throw new Error(`Failed to read file from URL: ${fileUrl}`);
-    }
-    // fileUrlResponse.data is a Node.js Readable stream
-    return fileUrlResponse.data;
   }
 
   async getImportInstructions(modelMetadataId: number): Promise<ImportInstructionsResponseDto> {
@@ -220,47 +187,76 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     };
   }
 
-  /**
-   * This method is used to return a csv / excel template for the import transaction
-   * It will contain the display names of the fields in the header row
-   * @param modelMetadataId 
-   */
-  async getImportTemplate(modelMetadataId: number, format: ImportFormat = ImportFormat.CSV): Promise<ImportTemplateFileInfo> {
-    // Load the model metadata for the given ID
-    const modelMetadata = await this.modelMetadataService.findOne(modelMetadataId, {
-      populate: ['fields'],
+  async getImportMappingInfo(importTransactionId: number): Promise<ImportMappingInfo> {
+    // Load the import transaction for the given ID
+    const importTransaction = await this.loadImportTransaction(importTransactionId);
+
+    // Get all the importable fields from the model metadata
+    const importableFields: ImportableFieldInfo[] = this.fieldsAllowedForImport(importTransaction.modelMetadata.fields).map(field => ({
+      name: field.name,
+      displayName: field.displayName,
+    }));
+
+    // Get the import file media object from the import transaction
+    const importFileMediaObject = this.getImportFileObject(importTransaction);
+
+    // Get the import file stream for the import transaction
+    const importFileStream = await this.getImportFileStream(importFileMediaObject);
+
+    // Get a sample of records from the import file
+    const sampleRecord = await this.getFileRecordsSample(importFileStream, importFileMediaObject.mimeType);
+
+    // Convert sampleRecord to the format required for SampleImportedRecordInfo
+    const wrappedRecords: SampleImportedRecordInfo[] = sampleRecord.data.map((record: Record<string, any>) => {
+      return Object.entries(record).map(([key, value]) => ({
+        cellHeader: key,
+        cellValue: value,
+        defaultMappedFieldName: importableFields.find(field => field.displayName === key)?.name || '',
+      }));
+    }).flat();
+
+    //     for await (const page of this.csvService.readCsvInPagesFromStream(importFileStream)) {
+    //   // await dbService.bulkInsert(page);
+    // }
+
+    return {
+      sampleImportedRecordInfo: wrappedRecords, // This will hold the sample data from the file
+      importableFields: importableFields, // This will hold the fields that can be imported
+    };
+  }
+
+  async startImportSync(importTransactionId: number): Promise<Array<number>> {
+    // Load the import transaction for the given ID
+    const importTransaction = await this.loadImportTransaction(importTransactionId);
+
+    // Get the import file media object from the import transaction
+    const importFileMediaObject = this.getImportFileObject(importTransaction);
+
+    // Get the import file stream for the import transaction
+    const importFileStream = await this.getImportFileStream(importFileMediaObject);
+
+    const ids = await this.writeFileRecordsToDb(
+      importFileStream,
+      importFileMediaObject.mimeType,
+      JSON.parse(importTransaction.mapping) as ImportMapping[], // Parse the mapping from the import transaction
+      importTransaction.modelMetadata,
+    );
+    return ids; // Return the IDs of the created records
+  }
+
+  startImportAsync(importTransactionId: number): Promise<void> {
+    throw new Error('Method not implemented.');
+  }
+
+  private async loadImportTransaction(importTransactionId: number) {
+    const importTransaction = await this.findOne(importTransactionId, {
+      populate: ['modelMetadata', 'modelMetadata.fields'],
+      populateMedia: ['fileLocation'],
     });
-    if (!modelMetadata) {
-      throw new Error(`Model metadata with ID ${modelMetadataId} not found.`);
+    if (!importTransaction) {
+      throw new Error(`Import transaction with ID ${importTransactionId} not found.`);
     }
-    // Create a header row with the display names of the fields, excluding the media fields,computed fields
-    const headers = this.fieldsAllowedForImport(modelMetadata.fields)
-      .map(field => field.displayName);
-
-    // Depending on the format, generate the template
-    if (format === ImportFormat.CSV) {
-      const stream = await this.csvService.createCsvStream(null, 0, headers); // Create a CSV stream with the header row
-      const fileName = `${modelMetadata.singularName}-import-template.csv`;
-      const mimeType = 'text/csv';
-      return {
-        stream,
-        fileName,
-        mimeType,
-      };
-    } else if (format === ImportFormat.EXCEL) {
-      const stream = await this.excelService.createExcelStream(null, 0, headers); // Create an Excel stream with the header row
-      const fileName = `${modelMetadata.singularName}-import-template.xlsx`;
-      // Set the MIME type for Excel files
-      const mimeType = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet';
-      return {
-        stream,
-        fileName,
-        mimeType,
-      };
-    } else {
-      throw new Error(`Unsupported import format: ${format}`);
-    }
-
+    return importTransaction;
   }
 
   private fieldsAllowedForImport(fields: FieldMetadata[]): FieldMetadata[] {
@@ -276,6 +272,125 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     );
   }
 
+  private async getFileRecordsSample(importFileStream: Readable, mimeType: string): Promise<ImportPaginatedReadResult> {
+    // Depending upon the mime type of the file, read the file in pages
+    // For CSV files, use the csvService to read the file in pages
+    // For Excel files, use the excelService to read the file in pages
+    if (mimeType === 'text/csv') {
+      const generator = this.csvService.readCsvInPagesFromStream(importFileStream, { pageSize: 1 });
+      const firstRecord = await generator.next(); // Get the first record to extract headers and sample data
+      return firstRecord.value;
+    } else if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+      const generator = this.excelService.readExcelInPagesFromStream(importFileStream, { pageSize: 1 });
+      const firstRecord = await generator.next(); // Get the first record to extract headers and sample data
+      return firstRecord.value;
+    }
+    else { // If the file is neither CSV nor Excel, throw an error
+      throw new Error(`Unsupported file type: ${mimeType}`);
+    }
+  }
 
+  private getImportFileObject(importTransaction: ImportTransaction): MediaWithFullUrl {
+    const importFileMediaObject = importTransaction['_media']['fileLocation'][0] as MediaWithFullUrl; // Since there can be only one fileLocation, we can safely access the first element
+    if (!importFileMediaObject) {
+      throw new Error(`Import file for transaction ID ${importTransaction.id} not found.`);
+    }
+    return importFileMediaObject;
+  }
 
+  private async getImportFileStream(importFileMediaObject: MediaWithFullUrl): Promise<Readable> {
+    const fileUrl = importFileMediaObject['_full_url'];
+    const mimeType = importFileMediaObject['mimeType'];
+    if (!fileUrl) {
+      throw new Error(`File URL  ${fileUrl} not found.`);
+    }
+    // From the file URL, convert the file URL to a readable stream using nestjs http service and axios
+    const fileUrlResponse = await this.httpService.axiosRef.get(fileUrl, {
+      responseType: 'stream',
+    });
+
+    if (!fileUrlResponse || !fileUrlResponse.data) {
+      throw new Error(`Failed to read file from URL: ${fileUrl}`);
+    }
+    // fileUrlResponse.data is a Node.js Readable stream
+    return fileUrlResponse.data;
+  }
+
+  private async writeFileRecordsToDb(
+    importFileStream: Readable,
+    mimeType: string,
+    mapping: ImportMapping[],
+    modelMetadataWithFields: ModelMetadata,
+  ): Promise<Array<number>> {
+    // Get the model service for the model metadata name
+    const modelServiceWrapper = this.introspectService.getProvider(`${classify(modelMetadataWithFields.singularName)}Service`);
+    const modelService = modelServiceWrapper.instance as CRUDService<any>;
+
+    // Depending upon the mime type of the file, read the file in pages
+    // For CSV files, use the csvService to read the file in pages
+    // For Excel files, use the excelService to read the file in pages
+    if (mimeType === 'text/csv') {
+      // Read the csv file in pages
+      for await (const page of this.csvService.readCsvInPagesFromStream(importFileStream)) {
+        // Convert the paginated result to DTOs
+        const dtos = this.convertPaginatedResultToDtos(page, modelMetadataWithFields, mapping);
+        // Use the model service to create the records in the database
+        const createdRecords = await modelService.insertMany(dtos, [], {});
+        // Set the solidRequestContext to null, as this is a background job;
+        // Return the IDs of the created records
+        return createdRecords.map(record => record.id);
+      }
+    }
+    else if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
+      // Read the excel file in pages
+      for await (const page of this.excelService.readExcelInPagesFromStream(importFileStream)) {
+        // Convert the paginated result to DTOs
+        const dtos = this.convertPaginatedResultToDtos(page, modelMetadataWithFields, mapping);
+        // Use the model service to create the records in the database
+        const createdRecords = await modelService.insertMany(dtos, [], {});
+        // Set the solidRequestContext to null, as this is a background job;
+        // Return the IDs of the created records
+        return createdRecords.map(record => record.id);
+      }
+    } else { // If the file is neither CSV nor Excel, throw an error
+      throw new Error(`Unsupported file type: ${mimeType}`);
+    }
+
+  }
+
+  // This method will 
+  private convertPaginatedResultToDtos(importPaginatedResult: ImportPaginatedReadResult, modelMetadataWithFields: ModelMetadata, mapping: ImportMapping[]): Record<string, any>[] {
+    const dtos = [];
+    // Iterate through the data records in the importPaginatedResult
+    for (const record of importPaginatedResult.data) {
+      // For every key in the record, get the corresponding field from the mapping, if the field is not found in mapping, skip the field
+      dtos.push(this.convertImportedRecordToDto(record, mapping, modelMetadataWithFields));
+    }
+    return dtos;
+  }
+
+  private convertImportedRecordToDto(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata) {
+    // Create a new record object
+    const dtoRecord: Record<string, any> = {};
+
+    // Using the saved mapping, populate the dtoRecord w.r.t the record and fields
+    for (const key in record) {
+      const mappedField = mapping.find(m => m.header === key);
+      if (mappedField) {
+        // If the field is found in the mapping, get the field metadata from the model metadata
+        const fieldMetadata = modelMetadataWithFields.fields.find(f => f.name === mappedField.fieldName);
+        if (fieldMetadata) {
+          // If the field is found in the model metadata, set the value in the dtoRecord
+          this.populateDto(dtoRecord, fieldMetadata, record, key);
+        } else {
+          this.logger.warn(`Field ${mappedField.fieldName} not found in model metadata ${modelMetadataWithFields.singularName}`);
+        }
+      }
+    }
+    return dtoRecord;
+  }
+
+  private populateDto(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
+    dtoRecord[fieldMetadata.name] = record[key];
+  }
 }
