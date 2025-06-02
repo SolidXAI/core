@@ -13,7 +13,7 @@ import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
 import { HttpService } from '@nestjs/axios';
-import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
+import { RelationFieldsCommand, RelationType, SolidFieldType } from 'src/dtos/create-field-metadata.dto';
 import { ImportInstructionsResponseDto, StandardImportInstructionsResponseDto } from 'src/dtos/import-instructions.dto';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
@@ -76,6 +76,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     readonly csvService: CsvService,
     readonly httpService: HttpService,
     readonly introspectService: SolidIntrospectService,
+    // readonly fieldMetadataService: FieldMetadataService,
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'importTransaction', 'solid-core', moduleRef);
   }
@@ -323,8 +324,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     modelMetadataWithFields: ModelMetadata,
   ): Promise<Array<number>> {
     // Get the model service for the model metadata name
-    const modelServiceWrapper = this.introspectService.getProvider(`${classify(modelMetadataWithFields.singularName)}Service`);
-    const modelService = modelServiceWrapper.instance as CRUDService<any>;
+    const modelService = this.getModelService(modelMetadataWithFields.singularName);
 
     // Depending upon the mime type of the file, read the file in pages
     // For CSV files, use the csvService to read the file in pages
@@ -333,7 +333,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       // Read the csv file in pages
       for await (const page of this.csvService.readCsvInPagesFromStream(importFileStream)) {
         // Convert the paginated result to DTOs
-        const dtos = this.convertPaginatedResultToDtos(page, modelMetadataWithFields, mapping);
+        const dtos = await this.convertPaginatedResultToDtos(page, modelMetadataWithFields, mapping);
         // Use the model service to create the records in the database
         const createdRecords = await modelService.insertMany(dtos, [], {});
         // Set the solidRequestContext to null, as this is a background job;
@@ -345,7 +345,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       // Read the excel file in pages
       for await (const page of this.excelService.readExcelInPagesFromStream(importFileStream)) {
         // Convert the paginated result to DTOs
-        const dtos = this.convertPaginatedResultToDtos(page, modelMetadataWithFields, mapping);
+        const dtos = await this.convertPaginatedResultToDtos(page, modelMetadataWithFields, mapping);
         // Use the model service to create the records in the database
         const createdRecords = await modelService.insertMany(dtos, [], {});
         // Set the solidRequestContext to null, as this is a background job;
@@ -355,21 +355,31 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     } else { // If the file is neither CSV nor Excel, throw an error
       throw new Error(`Unsupported file type: ${mimeType}`);
     }
+  }
 
+  private getModelService(modelSingularName: string): CRUDService<any> {
+    // Get the model service for the model metadata name
+    const modelServiceWrapper = this.introspectService.getProvider(`${classify(modelSingularName)}Service`);
+    const modelService = modelServiceWrapper.instance as CRUDService<any>;
+    if (!modelService) {
+      throw new Error(`Model service for ${modelSingularName} not found.`);
+    }
+    return modelService;
   }
 
   // This method will 
-  private convertPaginatedResultToDtos(importPaginatedResult: ImportPaginatedReadResult, modelMetadataWithFields: ModelMetadata, mapping: ImportMapping[]): Record<string, any>[] {
+  private async convertPaginatedResultToDtos(importPaginatedResult: ImportPaginatedReadResult, modelMetadataWithFields: ModelMetadata, mapping: ImportMapping[]){
     const dtos = [];
     // Iterate through the data records in the importPaginatedResult
     for (const record of importPaginatedResult.data) {
       // For every key in the record, get the corresponding field from the mapping, if the field is not found in mapping, skip the field
-      dtos.push(this.convertImportedRecordToDto(record, mapping, modelMetadataWithFields));
+      const dto = await this.convertImportedRecordToDto(record, mapping, modelMetadataWithFields);
+      dtos.push(dto);
     }
     return dtos;
   }
 
-  private convertImportedRecordToDto(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata) {
+  private async convertImportedRecordToDto(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata) {
     // Create a new record object
     const dtoRecord: Record<string, any> = {};
 
@@ -379,9 +389,10 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       if (mappedField) {
         // If the field is found in the mapping, get the field metadata from the model metadata
         const fieldMetadata = modelMetadataWithFields.fields.find(f => f.name === mappedField.fieldName);
+        // const userKeyField = modelMetadataWithFields.fields.find(f => f.isUserKey === true); // Assuming userKey is a field in the model metadata
         if (fieldMetadata) {
           // If the field is found in the model metadata, set the value in the dtoRecord
-          this.populateDto(dtoRecord, fieldMetadata, record, key);
+          await this.populateDto(dtoRecord, fieldMetadata, record, key);
         } else {
           this.logger.warn(`Field ${mappedField.fieldName} not found in model metadata ${modelMetadataWithFields.singularName}`);
         }
@@ -390,7 +401,69 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     return dtoRecord;
   }
 
-  private populateDto(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
-    dtoRecord[fieldMetadata.name] = record[key];
+  private async populateDto(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string): Promise<Record<string, any>> {
+    const fieldType = fieldMetadata.type;
+    // const userKeyFieldName = userKeyField?.name || 'id'; // Default to 'id' if not found
+
+    switch (fieldType) {
+      case SolidFieldType.relation: {
+        // Get the coModelService for the related model
+        if (!fieldMetadata.relationCoModelSingularName) {
+          throw new Error(`Relation coModelSingularName is not defined for relation field ${fieldMetadata.name}`);
+        }
+        const coModelService = this.getModelService(fieldMetadata.relationCoModelSingularName);
+        const userKeyFilterDto = {
+          filters: {
+            modelMetadata: {
+              singularName: {
+                $eq: fieldMetadata.relationCoModelSingularName, // Filter by the related model's singular name
+              }
+            },
+            isUserKey: true, // Assuming the userKey field is marked as isUserKey in the model metadata
+          },  
+        }
+        // const coModelUserKeyFieldResult = await this.fieldMetadataService.findMany(userKeyFilterDto)
+        // if (!coModelUserKeyFieldResult || !coModelUserKeyFieldResult.records || coModelUserKeyFieldResult.records.length === 0 ) {
+        //   throw new Error(`Missing userKey in model ${fieldMetadata.relationCoModelSingularName}`);
+        // }
+        // const userKeyField = coModelUserKeyFieldResult.records.map(record => record[userKeyFieldName]).pop(); // Get the userKey field from the related model metadata
+        // const userKeyFieldName = userKeyField?.name || 'id'; // Assuming the userKey field is the first field in the related model metadata 
+        const userKeyFieldName = 'id';
+
+        // For many-to-many or one-to-many relations, we expect the record cell to contains a comma-separated list of userKeys
+        const relationUserKeys = record[key] ? String(record[key]).split(',').map((userKey: string) => userKey.trim()) : [];
+
+        // Set the relation basic filter dto filters with the userkeys and call the find method of the model service to get the related records
+        const relationFilterDto = {
+          filters: {
+            [userKeyFieldName]: {
+              $in: relationUserKeys, // Use the userKeyFieldName to filter by userKeys
+            },
+          },
+        }
+
+        // From the userKeys, we will get the IDs of the related records using the userKeyFieldName and throw an error if any of the userKeys is not found
+        const relatedRecordsResult = await coModelService.find(relationFilterDto);
+        if (!relatedRecordsResult || !relatedRecordsResult.records || relatedRecordsResult.records.length === 0 || relatedRecordsResult.records.length !== relationUserKeys.length) {
+          throw new Error(`Missing related records found for userKeys: ${relationUserKeys.join(', ')} in model ${fieldMetadata.relationCoModelSingularName}`);
+        }
+        const relatedRecordsIds = relatedRecordsResult.records.map(record => record[userKeyFieldName]);
+        if (fieldMetadata.relationType === RelationType.manyTomany || fieldMetadata.relationType === RelationType.oneToMany) {
+          // We will then set the dtoRecord ids, commmand e.g authorsIds: number[];authorsCommand: string;
+          dtoRecord[`${fieldMetadata.name}Ids`] = relatedRecordsIds;
+          dtoRecord[`${fieldMetadata.name}Command`] = RelationFieldsCommand.set; // Assuming we want to add the related records
+        }
+        else if (fieldMetadata.relationType === RelationType.manyToOne) {
+          // We will then set the dtoRecord id
+          dtoRecord[`${fieldMetadata.name}Id`] = relatedRecordsIds.pop(); // For many-to-one relation, we expect only one related record, so we can safely pop the last element
+        }
+        return dtoRecord;
+      }
+      default:
+        dtoRecord[fieldMetadata.name] = record[key];
+        return dtoRecord;
+    }
   }
+
+
 }
