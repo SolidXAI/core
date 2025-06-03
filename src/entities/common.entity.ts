@@ -18,7 +18,7 @@ export abstract class CommonEntity {
     deletedTracker: string;
 
     @Column({ type: "timestamp", name: 'published_at', default: null ,nullable: true})
-    publishedAt: Date | null;
+    publishedAt: Date;
 
     @Column({ type: "varchar", name: 'locale_name', default: null })
     localeName: string;
