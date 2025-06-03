@@ -1496,6 +1496,19 @@
             "relationModelModuleName": "solid-core",
             "isSystem": true,
             "isRelationManyToManyOwner": true
+          },
+          {
+            "name": "iconName",
+            "displayName": "Icon",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "icon_name",
+            "isSystem": true
           }
         ]
       },
@@ -6564,6 +6577,24 @@
                           }
                         ]
                       }
+                    }
+                  }
+                ]
+              },
+              {
+                "type": "group",
+                "attrs": {
+                  "name": "group-1",
+                  "label": "",
+                  "className": "col-6"
+                },
+                "children": [
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "iconName",
+                      "editWidget" : "SolidIconEditWidget",
+                      "viewWidget" : "SolidIconViewWidget"
                     }
                   }
                 ]

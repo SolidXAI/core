@@ -178,6 +178,8 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
         title: rootItem.displayName || rootItem.name,
         path: path,
         key: rootItem.name.toLowerCase().replace(/\s+/g, '-'),
+        icon : rootItem.iconName,
+        // iconVariant : rootItem.iconVariant
       }
       if (children.length > 0) {
         data["children"] = this.buildMenuTree(children, allMenuItems, activeUser);
