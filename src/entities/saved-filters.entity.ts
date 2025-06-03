@@ -7,7 +7,7 @@ import { ViewMetadata } from 'src/entities/view-metadata.entity'
 @Entity("ss_saved_fitlers")
 export class SavedFilters extends CommonEntity {
     @Column({ type: "text", nullable: true })
-    filterQueryJson: string;
+    filterQueryJson: any;
     @Column({ type: "varchar" })
     name: string;
     @Column({ type: "boolean", nullable: true, default: false })

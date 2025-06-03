@@ -53,7 +53,7 @@ export class CrudHelperService {
                 }
                 else { // Recursively call the applyFilters method to handle nested conditions
                     const joinField = `${alias}.${key}`;
-                        if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, key);
+                    if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, key);
                     this.applyFilters(qb, primaryFilterObj, key, selectQb);
                 }
             });
@@ -158,7 +158,7 @@ export class CrudHelperService {
 
     buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string): SelectQueryBuilder<any> { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
-        const { fields, sort, groupBy, populate = [], populateMedia=[] } = basicFilterDto;
+        const { fields, sort, groupBy, populate = [], populateMedia = [] } = basicFilterDto;
 
         // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
         const normalizedFields = this.normalize(fields);
@@ -223,22 +223,22 @@ export class CrudHelperService {
                 qb.addGroupBy(`${entityAlias}.${field}`);
             });
         }
-        
+
         // Apply the pagination options & handle the case when the query has joins
         if (limit) this.hasJoins(qb) ? qb.take(limit) : qb.limit(limit);
-        if (offset) this.hasJoins(qb) ? qb.skip(offset): qb.offset(offset);
+        if (offset) this.hasJoins(qb) ? qb.skip(offset) : qb.offset(offset);
         return qb;
     }
 
     additionalRelationsRequiredForMediaPopulation(normalizedPopulateMedia: string[]) {
         // Populate relations containing the media field
         return normalizedPopulateMedia
-        .filter(pm => pm.includes("."))
-        .map((pm) => {
-            const mediaPathParts = pm.split('.');
-            if (mediaPathParts.length <= 1) return pm;
-            return  mediaPathParts.slice(0, -1).join('.');
-        });
+            .filter(pm => pm.includes("."))
+            .map((pm) => {
+                const mediaPathParts = pm.split('.');
+                if (mediaPathParts.length <= 1) return pm;
+                return mediaPathParts.slice(0, -1).join('.');
+            });
     }
 
     private buildPopulateQuery(normalizedPopulate: string[], entityAlias: string, qb: SelectQueryBuilder<any>) {
@@ -257,12 +257,12 @@ export class CrudHelperService {
             // Check if the relation is already joined, if not then join it
             if (!this.isRelationJoined(qb, joinProperty)) {
                 const joinAlias = relationParts.slice(0, i + 1).join('_');
-                qb.leftJoinAndSelect(joinProperty, joinAlias); 
+                qb.leftJoinAndSelect(joinProperty, joinAlias);
             }
             else {
                 // Since in populate, we are create a unique alias based on the relation path
                 //If the join is already present, it is probably because of the relation being passed in the where filter i.e applyFilters method
-                qb.addSelect(`${part}`); 
+                qb.addSelect(`${part}`);
             }
             parentAlias = part; // Update the parent alias for the next iteration
         });
@@ -332,6 +332,31 @@ export class CrudHelperService {
         };
     }
 
+    async countGroupedRecords(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string) { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
+        const { limit, offset, ...rest } = basicFilterDto;
+
+        const filteredDto = { ...rest, limit: undefined, offset: undefined };
+
+        const filteredQB = this.buildFilterQuery(qb, filteredDto as BasicFilterDto, entityAlias);
+
+        // Select only the group field and count distinct rows
+        const groupByField = filteredDto.groupBy;
+
+        if (!groupByField || (Array.isArray(groupByField) && groupByField.length !== 1)) {
+            throw new Error('Exactly one groupBy field is required to count grouped records.');
+        }
+
+         const field = Array.isArray(groupByField) ? groupByField[0] : groupByField;
+          const rawResults = await filteredQB
+        .select([]) // Remove prior select fields
+        .addSelect(`${entityAlias}.${field}`, 'groupField')
+        .groupBy(`${entityAlias}.${field}`)
+        .limit(undefined) // Important: prevent LIMIT 1 from propagating
+        .offset(undefined)
+        .getRawMany();
+
+        return rawResults.length;
+    }
 
     hasReadPermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
         const permissionNames = [`${classify(modelName)}Controller.findOne`, `${classify(modelName)}Controller.findMany`];

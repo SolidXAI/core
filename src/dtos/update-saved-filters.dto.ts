@@ -1,4 +1,4 @@
-import { IsInt,IsOptional, IsString, IsNotEmpty, IsBoolean } from 'class-validator';
+import { IsInt,IsOptional, IsString, IsNotEmpty, IsBoolean, IsJSON } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateSavedFiltersDto {
@@ -6,9 +6,9 @@ export class UpdateSavedFiltersDto {
     @IsInt()
     id: number;
     @IsOptional()
-    @IsString()
+    @IsJSON()
     @ApiProperty()
-    filterQueryJson: string;
+    filterQueryJson: any;
     @IsNotEmpty()
     @IsOptional()
     @IsString()
