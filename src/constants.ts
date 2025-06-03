@@ -24,3 +24,5 @@ export enum ForgotPasswordSendVerificationTokenOn {
   EMAIL = 'email',
   MOBILE = 'mobile',
 }
+
+export const SOLID_CORE_MODULE_NAME = 'solid-core';

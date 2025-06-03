@@ -69,7 +69,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         streamPairs.forEach(async (pair) => {
             const stream = pair[0];
             const fileName = pair[1];
-            this.fileService.writeStreamToFile(stream, fileName);
+            this.fileService.writeStreamToFile(stream, this.getFullFilePath(fileName));
             const mediaEntity = await this.mediaRepository.createMedia({
                 entityId: entity.id,
                 modelMetadataId: mediaFieldMetadata.model.id,

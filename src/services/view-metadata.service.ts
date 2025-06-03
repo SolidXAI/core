@@ -50,6 +50,68 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
 
   private readonly logger = new Logger(ViewMetadataService.name);
 
+  //for locales 
+  private async getEntityRecordsInAllLocales(
+  modelName: string,
+  id: string,
+  defaultEntityLocaleIdFromQuery?: string
+): Promise<{ records: any[], defaultEntityLocaleId: string | null }> {
+  const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
+  const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
+  const currentEntityRepository = this.entityManager.getRepository(currentEntityTarget);
+
+  // Case 1: Creating a new record with no defaultEntityLocaleId to clone
+  if (id === 'new' && !defaultEntityLocaleIdFromQuery) {
+    this.logger.debug(`Creating new record without cloning from any defaultEntityLocaleId.`);
+    return { records: [], defaultEntityLocaleId: null };
+  }
+
+  // Case 2: Creating a new record and cloning from an existing defaultEntityLocaleId
+  if (id === 'new' && defaultEntityLocaleIdFromQuery) {
+    this.logger.debug(`Creating new record by cloning translations from defaultEntityLocaleId: ${defaultEntityLocaleIdFromQuery}`);
+
+    const records = await currentEntityRepository.find({
+      where: [
+        { defaultEntityLocaleId: defaultEntityLocaleIdFromQuery },
+        { id: defaultEntityLocaleIdFromQuery }
+      ]
+    });
+
+    this.logger.debug(`Found ${records.length} cloned records for new entity.`);
+    return { records, defaultEntityLocaleId: defaultEntityLocaleIdFromQuery };
+  }
+
+  // Case 3: Editing an existing entity
+  const entityRecord = await currentEntityRepository.findOne({ where: { id } });
+
+  if (!entityRecord) {
+    this.logger.warn(`No entity found for id ${id}`);
+    return { records: [], defaultEntityLocaleId: null };
+  }
+
+  const defaultLocale = await this.entityManager.getRepository(Locale).findOne({ where: { isDefault: true } });
+
+  let defaultEntityLocaleId: string;
+  if (entityRecord.localeName === defaultLocale?.locale) {
+    defaultEntityLocaleId = entityRecord.id;
+    this.logger.debug(`Editing default locale record with id ${defaultEntityLocaleId}`);
+  } else {
+    defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
+    this.logger.debug(`Editing non-default locale record. DefaultEntityLocaleId: ${defaultEntityLocaleId}`);
+  }
+
+  const records = await currentEntityRepository.find({
+    where: [
+      { defaultEntityLocaleId: defaultEntityLocaleId },
+      { id: defaultEntityLocaleId }
+    ]
+  });
+
+  this.logger.debug(`Found ${records.length} records in all locales for existing entity.`);
+
+  return { records, defaultEntityLocaleId };
+}
+
   // START: Custom Service Methods
   async getLayout(query, activeUser) {
     let { modelName, moduleName, viewType, id, populate } = query;
@@ -179,74 +241,90 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
      */
 
     const applicableLocales: any = []
-    if (entity.model.internationalisation) {
+    // if (entity.model.internationalisation) {
+    //   const allLocales = await this.entityManager.getRepository(Locale).find({});
+
+    //   if (id === 'new') {
+    //     allLocales.forEach(locale => {
+    //       applicableLocales.push({
+    //         locale: locale.locale,
+    //         displayName: locale.displayName,
+    //         isDefault: locale.isDefault ? 'yes' : 'no',
+    //         defaultEntityLocaleId: null,
+    //         entityId: null
+    //       });
+    //     });
+    //   }
+    //   else {
+    //     const defaultLocale = allLocales.find(locale => locale.isDefault);
+    //     this.logger.debug(`Default locale is: ${defaultLocale.locale}`);
+
+    //     // Get hold of the repository for the current model
+    //     const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
+    //     const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
+    //     const currentEntityRepository = this.entityManager.getRepository(currentEntityTarget);
+
+    //     // We are in edit mode, the id that is being edited could be a record tagged with the default locale or it could be tagged with a non-default locale.
+    //     const entityRecord = await currentEntityRepository.findOne({
+    //       where: {
+    //         id: id,
+    //       }
+    //     });
+    //     if(entityRecord){
+    //     //  Resolve the default entity locale id....
+    //       let defaultEntityLocaleId = null;
+    //       if (entityRecord.localeName === defaultLocale.locale) {
+    //         defaultEntityLocaleId = entityRecord.id;
+    //         this.logger.debug(`You are editing a record tagged with the default locale: ${entityRecord.localeName}.`);
+    //       }
+    //       else {
+    //         defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
+    //         this.logger.debug(`You are editing a record tagged with the non-default locale: ${entityRecord.localeName}. `);
+    //       }
+    //       this.logger.debug(`Identified default Entity Locale Id: ${defaultEntityLocaleId}`);
+
+    //       // Now we query for all records in the same model matching the defaultEntityLocaleId
+    //       // Get all records mathcing the defaultEntityLocaleId or where the id is same as the defaultEntityLocaleId
+    //       const entityRecordsInAllLocales = await currentEntityRepository.find({
+    //         where: [
+    //           { defaultEntityLocaleId: defaultEntityLocaleId },
+    //           { id: defaultEntityLocaleId }
+    //         ],
+    //       });
+    //       this.logger.debug(`Found ${entityRecordsInAllLocales.length} records in all locales for the defaultEntityLocaleId: ${defaultEntityLocaleId}`);
+
+    //       // Loop over all locales and populate the applicableLocales array
+    //       for (const locale of allLocales) {
+    //         // Find the record in the entityRecordsInAllLocales that matches the current locale
+    //         const matchingRecord = entityRecordsInAllLocales.find(record => record.localeName === locale.locale);
+
+    //         applicableLocales.push({
+    //           locale: locale.locale,
+    //           displayName: locale.displayName,
+    //           isDefault: locale.isDefault ? 'yes' : 'no',
+    //           defaultEntityLocaleId: defaultEntityLocaleId,
+    //           entityId: (matchingRecord ? matchingRecord.id : null)
+    //         });
+    //       }
+    //     }else{
+    //       this.logger.warn(`No record found for id: ${id} in model: ${modelName}. Cannot determine applicable locales.`);
+    //     }
+    //   }
+    // }
+    if(entity.model.internationalisation){
+      const defaultEntityLocaleIdFromQuery = query?.defaultEntityLocaleId;
+      const { records: entityRecordsInAllLocales, defaultEntityLocaleId } =
+      await this.getEntityRecordsInAllLocales(modelName, id, defaultEntityLocaleIdFromQuery);
       const allLocales = await this.entityManager.getRepository(Locale).find({});
-
-      if (id === 'new') {
-        allLocales.forEach(locale => {
-          applicableLocales.push({
-            locale: locale.locale,
-            displayName: locale.displayName,
-            isDefault: locale.isDefault ? 'yes' : 'no',
-            defaultEntityLocaleId: null,
-            entityId: null
-          });
+      for (const locale of allLocales) {
+        const matchingRecord = entityRecordsInAllLocales.find(record => record.localeName === locale.locale);
+        applicableLocales.push({
+          locale: locale.locale,
+          displayName: locale.displayName,
+          isDefault: locale.isDefault ? 'yes' : 'no',
+          defaultEntityLocaleId: defaultEntityLocaleId,
+          entityId: matchingRecord ? matchingRecord.id : null
         });
-      }
-      else {
-        const defaultLocale = allLocales.find(locale => locale.isDefault);
-        this.logger.debug(`Default locale is: ${defaultLocale.locale}`);
-
-        // Get hold of the repository for the current model
-        const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
-        const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
-        const currentEntityRepository = this.entityManager.getRepository(currentEntityTarget);
-
-        // We are in edit mode, the id that is being edited could be a record tagged with the default locale or it could be tagged with a non-default locale.
-        const entityRecord = await currentEntityRepository.findOne({
-          where: {
-            id: id,
-          }
-        });
-        if(entityRecord){
-        //  Resolve the default entity locale id....
-          let defaultEntityLocaleId = null;
-          if (entityRecord.localeName === defaultLocale.locale) {
-            defaultEntityLocaleId = entityRecord.id;
-            this.logger.debug(`You are editing a record tagged with the default locale: ${entityRecord.localeName}.`);
-          }
-          else {
-            defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
-            this.logger.debug(`You are editing a record tagged with the non-default locale: ${entityRecord.localeName}. `);
-          }
-          this.logger.debug(`Identified default Entity Locale Id: ${defaultEntityLocaleId}`);
-
-          // Now we query for all records in the same model matching the defaultEntityLocaleId
-          // Get all records mathcing the defaultEntityLocaleId or where the id is same as the defaultEntityLocaleId
-          const entityRecordsInAllLocales = await currentEntityRepository.find({
-            where: [
-              { defaultEntityLocaleId: defaultEntityLocaleId },
-              { id: defaultEntityLocaleId }
-            ],
-          });
-          this.logger.debug(`Found ${entityRecordsInAllLocales.length} records in all locales for the defaultEntityLocaleId: ${defaultEntityLocaleId}`);
-
-          // Loop over all locales and populate the applicableLocales array
-          for (const locale of allLocales) {
-            // Find the record in the entityRecordsInAllLocales that matches the current locale
-            const matchingRecord = entityRecordsInAllLocales.find(record => record.localeName === locale.locale);
-
-            applicableLocales.push({
-              locale: locale.locale,
-              displayName: locale.displayName,
-              isDefault: locale.isDefault ? 'yes' : 'no',
-              defaultEntityLocaleId: defaultEntityLocaleId,
-              entityId: (matchingRecord ? matchingRecord.id : null)
-            });
-          }
-        }else{
-          this.logger.warn(`No record found for id: ${id} in model: ${modelName}. Cannot determine applicable locales.`);
-        }
       }
     }
 

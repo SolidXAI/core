@@ -77,7 +77,7 @@ export class ModelSubscriber implements EntitySubscriberInterface<ModelMetadata>
       {
         name: "localeName",
         displayName: "Locale",
-        type: "string",
+        type: "shortText",
         ormType: "varchar",
         isSystem: true,
         model: event.entity,
@@ -86,7 +86,7 @@ export class ModelSubscriber implements EntitySubscriberInterface<ModelMetadata>
         name: "defaultEntityLocaleId",
         displayName: "Default Entity Locale Id",
         type: "int",
-        ormType: "int",
+        ormType: "integer",
         isSystem: true,
         model: event.entity,
       }

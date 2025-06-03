@@ -58,7 +58,8 @@ export class SettingService extends CRUDService<Setting> {
       appPrivacyPolicy: "",
       defaultRole: this.iamConfiguration.defaultRole,
       shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
-      shouldQueueSms: this.commonConfiguration.shouldQueueSms
+      shouldQueueSms: this.commonConfiguration.shouldQueueSms,
+      enableDarkMode: true
     };
 
     const existingSettings = await this.repo.find();
@@ -138,7 +139,8 @@ export class SettingService extends CRUDService<Setting> {
       appPrivacyPolicy: "",
       defaultRole: this.iamConfiguration.defaultRole,
       shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
-      shouldQueueSms: this.commonConfiguration.shouldQueueSms
+      shouldQueueSms: this.commonConfiguration.shouldQueueSms,
+      enableDarkMode: true
     };
   }
 

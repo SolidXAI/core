@@ -26,6 +26,8 @@ import { CsvService } from './csv.service';
 import { ExcelService } from './excel.service';
 import { getMediaStorageProvider } from './mediaStorageProviders';
 import { SolidIntrospectService } from './solid-introspect.service';
+import { ModelMetadata } from 'src/entities/model-metadata.entity';
+import { UpdateExportTemplateDto } from 'src/dtos/update-export-template.dto';
 
 const EXPORT_CHUNK_SIZE = 100;
 enum ExportStatus {
@@ -67,19 +69,30 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     // readonly fieldMetadataService: FieldMetadataService,
     @InjectRepository(FieldMetadata, 'default')
     readonly fieldRepo: Repository<FieldMetadata>,
+    @InjectRepository(ModelMetadata, 'default')
+    readonly ModelMetadataRepo : Repository<ModelMetadata>,
     readonly moduleRef: ModuleRef
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'exportTransaction', 'solid-core',moduleRef);
   }
 
   // Return the export stream
-  async triggerExportSync(id: number): Promise<ExportTransactionFileInfo> {
+  async triggerExportSync(id: number, exportTransactionEntity: any, updateDto: UpdateExportTemplateDto , filters: any): Promise<ExportTransactionFileInfo> {
     try {
-      const loadedExportTransaction = await this.loadExportTransaction(id);
-      const { exportStream, templateName, uuid, exportTransaction } = await this.getExportStreamDetails(loadedExportTransaction);
+      // const loadedExportTransaction = await this.loadExportTransaction(id);
+      // from updateDto, get modelId and get modelMetadata
+      const modeldata = await this.ModelMetadataRepo.findOne({
+        where: { id:  updateDto?.modelMetadataId},
+        relations: { fields: true},
+      })
+      const modelName = modeldata?.singularName;
+      const modelTemplateName = modelName;
+      const fields = JSON.parse(updateDto?.fields);
+      const templateFormat = updateDto?.templateFormat;
+      const { exportStream, templateName, uuid, exportTransaction } = await this.getExportStreamDetails(modelName, modelTemplateName, fields, modeldata, templateFormat, id, exportTransactionEntity, filters);
       this.updateExportTransaction(id, ExportStatus.COMPLETED);
-      const fileName = this.getFileName(templateName, uuid, loadedExportTransaction.exportTemplate.templateFormat);
-      const mimeType = this.getMimeType(loadedExportTransaction.exportTemplate.templateFormat);
+      const fileName = this.getFileName(templateName, uuid, templateFormat);
+      const mimeType = this.getMimeType(templateFormat);
       return { exportStream, fileName, mimeType, exportTransaction };
     } catch (error) {
       this.updateExportTransaction(id, ExportStatus.FAILED, error.message);
@@ -88,13 +101,22 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
   }
 
   // Store the export stream using the appropriate storage provider
-  async triggerExportAsync(id: number): Promise<void> {
+  async triggerExportAsync(id: number, exportTransactionEntity: any, updateDto: UpdateExportTemplateDto, filters:any): Promise<void> {
     try {
-      const loadedExportTransaction = await this.loadExportTransaction(id)
-      const { exportStream, templateName, uuid, exportTransaction } = await this.getExportStreamDetails(loadedExportTransaction);
-      const fileFormat = loadedExportTransaction.exportTemplate.templateFormat;
+      // const loadedExportTransaction = await this.loadExportTransaction(id)
+      // from updateDto, get modelId and get modelMetadata
+      const modeldata = await this.ModelMetadataRepo.findOne({
+        where: { id:  updateDto?.modelMetadataId},
+        relations: { fields: true},
+      })
+      const modelName = modeldata?.singularName;
+      const modelTemplateName = modelName;
+      const fields = JSON.parse(updateDto?.fields);
+      const templateFormat = updateDto?.templateFormat;
+      const { exportStream, templateName, uuid, exportTransaction } = await this.getExportStreamDetails(modelName, modelTemplateName, fields, modeldata, templateFormat, id, exportTransactionEntity, filters);
+      // const fileFormat = loadedExportTransaction.exportTemplate.templateFormat;
       // Store the file using the appropriate storage provider
-      await this.storeExportStream(exportStream, exportTransaction, this.getFileName(templateName, uuid, fileFormat));
+      await this.storeExportStream(exportStream, exportTransaction, this.getFileName(templateName, uuid, templateFormat));
       this.updateExportTransaction(id, ExportStatus.COMPLETED);
     } catch (error) {
       this.updateExportTransaction(id, ExportStatus.FAILED, error.message);
@@ -106,7 +128,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
   private async loadExportTransaction(id: number) {
     return await this.repo.findOne({
       where: { id: id },
-      relations: { exportTemplate: { modelMetadata: true } },
+      relations: { exportTemplate: { modelMetadata: {fields: true} }},
     }
     );
   }
@@ -115,22 +137,26 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     await this.repo.update(id, { status, error });
   }
 
-  private async getExportStreamDetails(exportTransaction: ExportTransaction) {
+  private async getExportStreamDetails(modelName: string, templateName: string, fields:any, modelData:any, templateFormat:string, id:number, exportTransaction: any, filters: any) {
     // Get the columns which need to be exported & the model id
-    const fields = JSON.parse(exportTransaction.exportTemplate.fields);
+    // const fields = JSON.parse(exportTransaction.exportTemplate.fields);
 
-    // Get the appropriate service for the model by trying to fetch a model service matching a particular name
-    const modelName = exportTransaction.exportTemplate.modelMetadata.singularName;
-    const modelService = this.introspectService.getProvider(`${classify(modelName)}Service`);
-    const templateName = exportTransaction.exportTemplate.templateName;
-    const uuid = exportTransaction.exportTransactionId; //TODO can be renamed to exportTransactionUUID
-
+    // // Get the appropriate service for the model by trying to fetch a model service matching a particular name
+    // const modelName = exportTransaction.exportTemplate.modelMetadata.singularName;
+     const modelService = this.introspectService.getProvider(`${classify(modelName)}Service`);
+    // const templateName = exportTransaction.exportTemplate.templateName;
+     const uuid = String(id); //TODO can be renamed to exportTransactionUUID
+    // const modelData = exportTransaction.exportTemplate.modelMetadata;
 
     // Get the data records function
-    const dataRecordsFunc = await this.getDataRecordsFunc(fields, modelService);
+    //const dataRecordsFunc = await this.getDataRecordsFunc(fields, modelService,modelData, filters);
+    const dataRecordsFunc = await this.getDataRecordsFunc(fields, modelService, modelData, filters);
 
     // Get the export passthru stream (since it is a passthru stream, nothing is stored in memory & it is streamed directly when the stream is read)
-    let exportStream = await this.getExportStream(exportTransaction.exportTemplate.templateFormat, dataRecordsFunc);
+    // let exportStream = await this.getExportStream(exportTransaction.exportTemplate.templateFormat, dataRecordsFunc);
+    // return { exportStream, templateName, uuid, exportTransaction };
+
+    let exportStream = await this.getExportStream(templateFormat, dataRecordsFunc);
     return { exportStream, templateName, uuid, exportTransaction };
   }
 
@@ -181,20 +207,78 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     return (fileFormat === ExportFormat.EXCEL) ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv';
   }
 
-  private async getDataRecordsFunc(fields: any, modelService: InstanceWrapper<any>): Promise<(chunkIndex: number, chunkSize: number) => Promise<any[]>> {
+  private async getDataRecordsFunc(fields: any, modelService: InstanceWrapper<any>, modelMetadata: any, filters:any): Promise<(chunkIndex: number, chunkSize: number) => Promise<any[]>> {
     // Return a function which will take the chunkIndex & chunkSize and return the data
+    // Get the relation fields to populate
+    const relatedFieldNames = modelMetadata?.fields
+    .filter((field: { relationType: any; }) => field.relationType !== null)
+    .map((field: { name: any; }) => field.name);
+
+    //Get the model metadata of relation field with userKey details
+    const relatedModelsUserKeyMap = new Map<string, string>();
+    for (const field of modelMetadata?.fields || []) {
+      if (field.relationType && field.relationCoModelSingularName && fields.includes(field.name)) {
+        const relatedModelMetadata = await this.ModelMetadataRepo.findOne({
+          where: { singularName: field.relationCoModelSingularName },
+          relations: ['userKeyField'],
+        });
+
+        if (relatedModelMetadata?.userKeyField?.name) {
+          relatedModelsUserKeyMap.set(field.name, relatedModelMetadata.userKeyField.name);
+        }
+      }
+    }
+
     return async (chunkIndex: number, chunkSize: number) => {
       const offset = chunkIndex * chunkSize;
       const recordFilterDto: BasicFilterDto = {
-        fields,
         limit: chunkSize,
         offset,
+        populate: relatedFieldNames
       };
+      const cleanedFilters = cleanNullsFromObject(filters);
+
+      if (cleanedFilters && Object.keys(cleanedFilters).length > 0) {
+        recordFilterDto.filters = cleanedFilters;
+      }
+
+      //Get the non relation fields which are in fields array passed to this function
+      const nonRelationalFieldSet = new Set(
+        modelMetadata?.fields
+          .filter((field: { name: any; relationType: any; }) => fields.includes(field.name) && field.relationType === null)
+          .map((field: { name: any; }) => field.name)
+      );
       const data = await modelService.instance.find(recordFilterDto);
       const records = data.records ?? [];
-      return records;
-    }
+    const cleanedRecords = records.map((record: Record<string, any>) => {
+      const newRecord: Record<string, any> = {};
+    
+      // Include non-relational fields
+      for (const key of nonRelationalFieldSet as Set<string>) {
+        newRecord[key] = record[key];
+      }
+    
+      // Include userKey from each related field
+      for (const [relatedFieldName, userKeyFieldName] of relatedModelsUserKeyMap.entries()) {
+        const relatedData = record[relatedFieldName];
+    
+        if (Array.isArray(relatedData)) {
+          // For many-to-many or one-to-many
+          const values = relatedData.map(item => item?.[userKeyFieldName]).filter(Boolean);
+          newRecord[relatedFieldName] = values.join(', ');
+        } else if (relatedData && typeof relatedData === 'object') {
+          // For many-to-one or one-to-one
+          newRecord[relatedFieldName] = relatedData?.[userKeyFieldName] ?? null;
+        } else {
+          newRecord[relatedFieldName] = null;
+        }
+      }
+    
+      return newRecord;
+    });
+    return cleanedRecords
   }
+}
 
   async toDto(data: Partial<CreateExportTransactionDto>): Promise<CreateExportTransactionDto> {
     const dto = new CreateExportTransactionDto(data);
@@ -206,3 +290,30 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     return dto;
   }
 }
+
+function cleanNullsFromObject(obj: any): any {
+  if (Array.isArray(obj)) {
+    return obj
+      .filter(item => item !== null && item !== undefined)
+      .map(cleanNullsFromObject);
+  } else if (typeof obj === 'object' && obj !== null) {
+    const newObj: any = {};
+    for (const key in obj) {
+      const value = obj[key];
+      if (value !== null && value !== undefined) {
+        const cleanedValue = cleanNullsFromObject(value);
+        // Only assign non-empty objects/arrays or non-null primitives
+        if (
+          (typeof cleanedValue === 'object' && Object.keys(cleanedValue).length > 0) ||
+          (Array.isArray(cleanedValue) && cleanedValue.length > 0) ||
+          typeof cleanedValue !== 'object'
+        ) {
+          newObj[key] = cleanedValue;
+        }
+      }
+    }
+    return newObj;
+  }
+  return obj;
+}
+

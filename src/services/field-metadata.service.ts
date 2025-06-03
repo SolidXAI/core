@@ -89,7 +89,7 @@ export class FieldMetadataService {
                     relationType: RelationType.manyToOne,
                     relationCoModelSingularName: modelName,
                     relationCreateInverse: true,
-                    relationCascade: null,
+                    relationCascade: field.relationCascade,
                     relationModelModuleName: moduleName,
                     relationCoModelFieldName: field.name,
                     required: false,
@@ -1056,7 +1056,7 @@ export class FieldMetadataService {
 
     private async updateRelationInverseFieldInFile(savedInverseField: FieldMetadata, inverseModelName: string, moduleName: string) {
         try {
-            const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
+            const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
             const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
             // Create the config object for the inverse field

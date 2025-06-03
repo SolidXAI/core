@@ -37,7 +37,7 @@ export class ViewMetadataSubsciber implements EntitySubscriberInterface<ViewMeta
         if (!viewMetadata) {
             throw new Error(`View metadata not found for id ${event.entity.id}`);
         }
-        const filePath = this.moduleMetadataHelperService.getModuleMetadataFilePath(viewMetadata.model.module.name);
+        const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(viewMetadata.model.module.name);
         try {
             await fs.access(filePath);
         } catch (error) {

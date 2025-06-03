@@ -173,6 +173,13 @@ import { ExportTransactionController } from './controllers/export-transaction.co
 import { ExcelService } from './services/excel.service';
 import { CsvService } from './services/csv.service';
 import { ClsModule } from 'nestjs-cls';
+import { FieldRepository } from './repository/field.repository';
+import { ImportTransaction } from './entities/import-transaction.entity';
+import { ImportTransactionService } from './services/import-transaction.service';
+import { ImportTransactionController } from './controllers/import-transaction.controller';
+import { ImportTransactionErrorLog } from './entities/import-transaction-error-log.entity';
+import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
+import { ImportTransactionErrorLogController } from './controllers/import-transaction-error-log.controller';
 import { LocaleListSelectionProvider } from './services/selection-providers/locale-list-selection-provider.service';
 
 
@@ -233,6 +240,8 @@ import { LocaleListSelectionProvider } from './services/selection-providers/loca
       middleware: {
         mount: true,
       }}),
+    TypeOrmModule.forFeature([ImportTransaction]),
+    TypeOrmModule.forFeature([ImportTransactionErrorLog]),
   ],
   controllers: [
     ModuleMetadataController,
@@ -267,6 +276,8 @@ import { LocaleListSelectionProvider } from './services/selection-providers/loca
     LocaleController,
     ExportTemplateController,
     ExportTransactionController,
+    ImportTransactionController,
+    ImportTransactionErrorLogController,
   ],
   providers: [
     {
@@ -377,6 +388,9 @@ import { LocaleListSelectionProvider } from './services/selection-providers/loca
     ExportTransactionService,
     ExcelService,
     CsvService,
+    FieldRepository,
+    ImportTransactionService,
+    ImportTransactionErrorLogService,
   ],
   exports: [
     ModuleMetadataService,
@@ -406,6 +420,7 @@ import { LocaleListSelectionProvider } from './services/selection-providers/loca
     RefreshModuleCommand,
     RequestContextService,
     SecurityRuleRepository,
+    FieldRepository
   ],
 })
 export class SolidCoreModule { }
