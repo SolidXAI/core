@@ -637,7 +637,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
 
         // Process each createDto in parallel
         const createAndSavePromises = createDtos.map(async (createDto, index) => {
-            const files = filesArray[index];
+            const files = []; // TODO, This is set, because we are not supporting files for insertMany currently
             let hasMediaFields = false;
 
             // Process each field

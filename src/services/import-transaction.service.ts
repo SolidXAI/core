@@ -368,7 +368,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   }
 
   // This method will 
-  private async convertPaginatedResultToDtos(importPaginatedResult: ImportPaginatedReadResult, modelMetadataWithFields: ModelMetadata, mapping: ImportMapping[]){
+  private async convertPaginatedResultToDtos(importPaginatedResult: ImportPaginatedReadResult, modelMetadataWithFields: ModelMetadata, mapping: ImportMapping[]) {
     const dtos = [];
     // Iterate through the data records in the importPaginatedResult
     for (const record of importPaginatedResult.data) {
@@ -407,63 +407,67 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
 
     switch (fieldType) {
       case SolidFieldType.relation: {
-        // Get the coModelService for the related model
-        if (!fieldMetadata.relationCoModelSingularName) {
-          throw new Error(`Relation coModelSingularName is not defined for relation field ${fieldMetadata.name}`);
-        }
-        const coModelService = this.getModelService(fieldMetadata.relationCoModelSingularName);
-        const userKeyFilterDto = {
-          filters: {
-            modelMetadata: {
-              singularName: {
-                $eq: fieldMetadata.relationCoModelSingularName, // Filter by the related model's singular name
-              }
-            },
-            isUserKey: true, // Assuming the userKey field is marked as isUserKey in the model metadata
-          },  
-        }
-        // const coModelUserKeyFieldResult = await this.fieldMetadataService.findMany(userKeyFilterDto)
-        // if (!coModelUserKeyFieldResult || !coModelUserKeyFieldResult.records || coModelUserKeyFieldResult.records.length === 0 ) {
-        //   throw new Error(`Missing userKey in model ${fieldMetadata.relationCoModelSingularName}`);
-        // }
-        // const userKeyField = coModelUserKeyFieldResult.records.map(record => record[userKeyFieldName]).pop(); // Get the userKey field from the related model metadata
-        // const userKeyFieldName = userKeyField?.name || 'id'; // Assuming the userKey field is the first field in the related model metadata 
-        const userKeyFieldName = 'id';
-
-        // For many-to-many or one-to-many relations, we expect the record cell to contains a comma-separated list of userKeys
-        const relationUserKeys = record[key] ? String(record[key]).split(',').map((userKey: string) => userKey.trim()) : [];
-
-        // Set the relation basic filter dto filters with the userkeys and call the find method of the model service to get the related records
-        const relationFilterDto = {
-          filters: {
-            [userKeyFieldName]: {
-              $in: relationUserKeys, // Use the userKeyFieldName to filter by userKeys
-            },
-          },
-        }
-
-        // From the userKeys, we will get the IDs of the related records using the userKeyFieldName and throw an error if any of the userKeys is not found
-        const relatedRecordsResult = await coModelService.find(relationFilterDto);
-        if (!relatedRecordsResult || !relatedRecordsResult.records || relatedRecordsResult.records.length === 0 || relatedRecordsResult.records.length !== relationUserKeys.length) {
-          throw new Error(`Missing related records found for userKeys: ${relationUserKeys.join(', ')} in model ${fieldMetadata.relationCoModelSingularName}`);
-        }
-        const relatedRecordsIds = relatedRecordsResult.records.map(record => record[userKeyFieldName]);
-        if (fieldMetadata.relationType === RelationType.manyTomany || fieldMetadata.relationType === RelationType.oneToMany) {
-          // We will then set the dtoRecord ids, commmand e.g authorsIds: number[];authorsCommand: string;
-          dtoRecord[`${fieldMetadata.name}Ids`] = relatedRecordsIds;
-          dtoRecord[`${fieldMetadata.name}Command`] = RelationFieldsCommand.set; // Assuming we want to add the related records
-        }
-        else if (fieldMetadata.relationType === RelationType.manyToOne) {
-          // We will then set the dtoRecord id
-          dtoRecord[`${fieldMetadata.name}Id`] = relatedRecordsIds.pop(); // For many-to-one relation, we expect only one related record, so we can safely pop the last element
-        }
-        return dtoRecord;
+        return await this.populateDtoForRelations(fieldMetadata, record, key, dtoRecord);
       }
+      case SolidFieldType.date: return this.populateDtoForDate(record, key, fieldMetadata, dtoRecord);
+      case SolidFieldType.datetime: return this.populateDtoForDate(record, key, fieldMetadata, dtoRecord);
       default:
         dtoRecord[fieldMetadata.name] = record[key];
         return dtoRecord;
     }
   }
 
+  private populateDtoForDate(record: Record<string, any>, key: string, fieldMetadata: FieldMetadata, dtoRecord: Record<string, any>) {
+    {
+      const dateValue = new Date(record[key]);
+      if (isNaN(dateValue.getTime())) {
+        throw new Error(`Invalid date value for field ${fieldMetadata.name}: ${record[key]}`);
+      }
+      dtoRecord[fieldMetadata.name] = dateValue;
+      return dtoRecord;
+    }
+  }
 
+  private async populateDtoForRelations(fieldMetadata: FieldMetadata, record: Record<string, any>, key: string, dtoRecord: Record<string, any>) {
+    if (!fieldMetadata.relationCoModelSingularName) {
+      throw new Error(`Relation coModelSingularName is not defined for relation field ${fieldMetadata.name}`);
+    }
+
+    const relatedRecordsIds = await this.getRelatedEntityIdsFromUserKeys(fieldMetadata, record, key);
+
+    if (fieldMetadata.relationType === RelationType.manyTomany || fieldMetadata.relationType === RelationType.oneToMany) {
+      dtoRecord[`${fieldMetadata.name}Ids`] = relatedRecordsIds;
+      dtoRecord[`${fieldMetadata.name}Command`] = RelationFieldsCommand.set; // Reset the relation field association with the related records IDs
+    }
+    else if (fieldMetadata.relationType === RelationType.manyToOne) {
+      dtoRecord[`${fieldMetadata.name}Id`] = relatedRecordsIds.pop(); // For many-to-one relations, we need only one ID
+    }
+    return dtoRecord;
+  }
+
+  private async getRelatedEntityIdsFromUserKeys(fieldMetadata: FieldMetadata, record: Record<string, any>, key: string): Promise<Array<number>> {
+    const coModelService = this.getModelService(fieldMetadata.relationCoModelSingularName);
+    const coModelWithUserKeyField = await this.modelMetadataService.findOneBySingularName(fieldMetadata.relationCoModelSingularName, ['userKeyField']);
+    const coModelUserKeyFieldName = coModelWithUserKeyField?.userKeyField?.name || 'id'; // Default to 'id' if not found
+
+    // For many-to-many or one-to-many relations, we expect the record cell to contains a comma-separated list of userKeys
+    const relationUserKeys = record[key] ? String(record[key]).split(',').map((userKey: string) => userKey.trim()) : [];
+
+    // Set the relation basic filter dto filters with the userkeys and call the find method of the model service to get the related records
+    const relationFilterDto = {
+      filters: {
+        [coModelUserKeyFieldName]: {
+          $in: relationUserKeys, // Use the userKeyFieldName to filter by userKeys
+        },
+      },
+    };
+
+    // From the userKeys, we will get the IDs of the related records using the userKeyFieldName and throw an error if any of the userKeys is not found
+    const relatedRecordsResult = await coModelService.find(relationFilterDto);
+    if (!relatedRecordsResult || !relatedRecordsResult.records || relatedRecordsResult.records.length === 0 || relatedRecordsResult.records.length !== relationUserKeys.length) {
+      throw new Error(`Missing related records found for userKeys: ${relationUserKeys.join(', ')} in model ${fieldMetadata.relationCoModelSingularName}`);
+    }
+    const relatedRecordsIds = relatedRecordsResult.records.map(record => record.id);
+    return relatedRecordsIds;
+  }
 }
