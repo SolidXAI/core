@@ -59,7 +59,8 @@ export class SettingService extends CRUDService<Setting> {
       defaultRole: this.iamConfiguration.defaultRole,
       shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
       shouldQueueSms: this.commonConfiguration.shouldQueueSms,
-      enableDarkMode: true
+      enableDarkMode: true,
+      copyright : ""
     };
 
     const existingSettings = await this.repo.find();
@@ -140,7 +141,8 @@ export class SettingService extends CRUDService<Setting> {
       defaultRole: this.iamConfiguration.defaultRole,
       shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
       shouldQueueSms: this.commonConfiguration.shouldQueueSms,
-      enableDarkMode: true
+      enableDarkMode: true,
+      copyright : ""
     };
   }
 
