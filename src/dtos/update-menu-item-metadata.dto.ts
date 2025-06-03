@@ -1,64 +1,71 @@
 import { IsInt, IsOptional, IsString, Matches, IsNotEmpty, ValidateNested, IsArray, IsNumber } from 'class-validator';
 import { Transform, Type } from 'class-transformer';
-import { UpdateRoleMetadataDto } from './update-role-metadata.dto';
 import arrayTransformer from '../transformers/array-transformer';
+import { ApiProperty } from '@nestjs/swagger';
+import { UpdateRoleMetadataDto } from 'src/dtos/update-role-metadata.dto';
+
 export class UpdateMenuItemMetadataDto {
     @IsOptional()
     @IsInt()
     id: number;
-
-    @IsOptional()
     @IsNotEmpty()
+    @IsOptional()
     @Matches(/[a-z]+(-[a-z]+)*/)
     @IsString()
+    @ApiProperty()
     name: string;
-
-    @IsOptional()
     @IsNotEmpty()
+    @IsOptional()
     @IsString()
+    @ApiProperty()
     displayName: string;
-
     @IsOptional()
     @IsInt()
+    @ApiProperty()
     moduleId: number;
-
     @IsString()
     @IsOptional()
+    @ApiProperty()
     moduleUserKey: string;
-
     @IsOptional()
     @IsInt()
+    @ApiProperty()
     parentMenuItemId: number;
-
     @IsString()
     @IsOptional()
+    @ApiProperty()
     parentMenuItemUserKey: string;
-
     @IsOptional()
     @IsInt()
+    @ApiProperty()
     actionId: number;
-
     @IsString()
     @IsOptional()
+    @ApiProperty()
     actionUserKey: string;
-
-    @IsOptional()
-    @IsArray()
     @Transform(arrayTransformer)
+    @IsOptional()
+    @ApiProperty()
+    @IsArray()
     @ValidateNested({ each: true })
     @Type(() => UpdateRoleMetadataDto)
     roles: UpdateRoleMetadataDto[];
-
     @IsOptional()
     @IsArray()
+    @ApiProperty()
     rolesIds: number[];
-
     @IsString()
     @IsOptional()
+    @ApiProperty()
     rolesCommand: string;
-
     @IsOptional()
     @IsNumber()
+    @ApiProperty()
     sequenceNumber: number;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    iconName: string;
 
 }
