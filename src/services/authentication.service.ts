@@ -362,6 +362,7 @@ export class AuthenticationService {
                     solidAppName: process.env.SOLID_APP_NAME,
                     solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
                     firstName: user.username,
+                    fullName: user.fullName,
                     emailVerificationTokenOnRegistration: user.emailVerificationTokenOnRegistration,
                 },
                 this.commonConfiguration.shouldQueueEmails,
@@ -377,7 +378,8 @@ export class AuthenticationService {
                     solidAppName: process.env.SOLID_APP_NAME,
                     otp: user.mobileVerificationTokenOnRegistration,
                     mobileVerificationTokenOnRegistration: user.mobileVerificationTokenOnRegistration,
-                    firstName: user.username
+                    firstName: user.username,
+                    fullName: user.fullName,
                 }
             );
         }
@@ -541,7 +543,8 @@ export class AuthenticationService {
                     solidAppName: process.env.SOLID_APP_NAME,
                     solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
                     firstName: user.username,
-                    emailVerificationTokenOnLogin: user.emailVerificationTokenOnLogin
+                    emailVerificationTokenOnLogin: user.emailVerificationTokenOnLogin,
+                    fullName: user.fullName,
                 },
                 this.commonConfiguration.shouldQueueEmails,
                 'user',
@@ -556,7 +559,8 @@ export class AuthenticationService {
                     solidAppName: process.env.SOLID_APP_NAME,
                     otp: user.mobileVerificationTokenOnLogin,
                     mobileVerificationTokenOnLogin: user.mobileVerificationTokenOnLogin,
-                    firstName: user.username
+                    firstName: user.username,
+                    fullName: user.fullName,
                 }
             );
         }
@@ -739,6 +743,7 @@ export class AuthenticationService {
                     solidAppName: process.env.SOLID_APP_NAME,
                     solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
                     firstName: user.username,
+                    fullName: user.fullName,
                     // TODO: Need to prefix this with the page url where the forgot password page will open up.
                     passwordResetLink: `${process.env.IAM_FRONTEND_APP_FORGOT_PASSWORD_PAGE_URL}?token=${user.verificationTokenOnForgotPassword}&username=${user.username}`
                 },
