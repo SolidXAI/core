@@ -37,6 +37,8 @@ export class ViewMetadataSubsciber implements EntitySubscriberInterface<ViewMeta
         if (!viewMetadata) {
             throw new Error(`View metadata not found for id ${event.entity.id}`);
         }
+        if(viewMetadata.model.module.name != "solid-core"){
+
         const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(viewMetadata.model.module.name);
         try {
             await fs.access(filePath);
@@ -53,6 +55,7 @@ export class ViewMetadataSubsciber implements EntitySubscriberInterface<ViewMeta
         }
         // Write the updated object back to the file
         const updatedContent = JSON.stringify(metaData, null, 2);
-        await fs.writeFile(filePath, updatedContent);
+        await fs.writeFile(filePath, updatedContent);   
+        }
     }
 }
