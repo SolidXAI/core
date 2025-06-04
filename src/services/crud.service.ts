@@ -426,13 +426,15 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
         qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-
+        if(internationalisation && draftPublishWorkflow){
+            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias,internationalisation, draftPublishWorkflow,this.moduleRef);
+        }
 
         if (basicFilterDto.groupBy) {
             // Get the records and the count
-            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia, internationalisation, draftPublishWorkflow);
+            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia);
             const totalGroups = await this.crudHelperService.countGroupedRecords(qb, basicFilterDto, alias);
-            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow);
+            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
 
             return {
                 meta: {
@@ -463,7 +465,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[], internationalisation: boolean, draftPublishWorkflow: boolean) {
+    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[]) {
         const groupByResult = await qb.getRawMany();
 
         const groupMeta = [];
@@ -472,7 +474,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         for (const group of groupByResult) {
             if (populateGroup) {
                 let groupByQb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias);
-                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias, internationalisation, draftPublishWorkflow);
+                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
                 const [entities, count] = await groupByQb.getManyAndCount();
 

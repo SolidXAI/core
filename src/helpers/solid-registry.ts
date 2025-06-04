@@ -3,6 +3,7 @@ import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { EntityManager } from 'typeorm';
+import { Locale } from 'src/entities/locale.entity';
 
 type ControllerMetadata = {
   name: string;
@@ -33,6 +34,7 @@ export enum RESERVED_SOLID_KEYWORDS {
   userPasswordHistory = "userPasswordHistory",
   userMetadata = "userMetadata",
   user = "user",
+  locale = "locale"
 }
 
 @Injectable()
@@ -44,6 +46,7 @@ export class SolidRegistry {
   private controllers: Set<ControllerMetadata> = new Set();
   private modules: Set<InstanceWrapper> = new Set();
   private securityRules: SecurityRule[] = [];
+  private locales : Locale[] = [];
 
   registerController(name: string, methodNames: string[]): void {
     this.controllers.add({ name: name, methods: methodNames });
@@ -115,6 +118,15 @@ export class SolidRegistry {
 
   registerSecurityRules(securityRules: SecurityRule[]) {
     this.securityRules = securityRules;
+  }
+
+  registerlocales(locales : Locale[]){
+    this.locales = locales;
+  }
+  
+  //TODO:getlocales from locale model and return default locale where isDefault:true 
+  getDefaultLocale(): Locale | null {
+    return this.locales.find(locale => locale.isDefault === true) || null;
   }
 
   getSecurityRules(modelSingularName: string, roleNames: string[] = []): SecurityRule[] {
