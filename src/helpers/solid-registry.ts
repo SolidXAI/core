@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 import { SecurityRule } from 'src/entities/security-rule.entity';
+import { EntityManager } from 'typeorm';
 
 type ControllerMetadata = {
   name: string;
@@ -41,7 +42,7 @@ export class SolidRegistry {
   private computedFieldProviders: Set<InstanceWrapper> = new Set();
   private solidDatabaseModules: Set<InstanceWrapper> = new Set();
   private controllers: Set<ControllerMetadata> = new Set();
-  private modules : Set<InstanceWrapper> = new Set();
+  private modules: Set<InstanceWrapper> = new Set();
   private securityRules: SecurityRule[] = [];
 
   registerController(name: string, methodNames: string[]): void {
@@ -116,7 +117,7 @@ export class SolidRegistry {
     this.securityRules = securityRules;
   }
 
-  getSecurityRules(modelSingularName:string, roleNames: string[] = []): SecurityRule[] {
+  getSecurityRules(modelSingularName: string, roleNames: string[] = []): SecurityRule[] {
     // If no role is provided, return all security rules for the model
     if (roleNames.length === 0) {
       return this.securityRules.filter((rule) => rule.modelMetadata.singularName === modelSingularName);
@@ -126,4 +127,12 @@ export class SolidRegistry {
       return rule.modelMetadata.singularName === modelSingularName && roleNames.includes(rule.role.name);
     });
   }
+
+  // Returns the entity target class from the entity name
+  getEntityTarget(entityManager: EntityManager, entityName: string): any { //TODO Can be refactored to use this function from crud helper service
+    const entityMetadatas = entityManager.connection.entityMetadatas;
+    const entityMetadata = entityMetadatas.find(em => em.name === entityName);
+    return entityMetadata.target;
+  }
+
 }

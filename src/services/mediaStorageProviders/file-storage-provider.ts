@@ -45,7 +45,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
             await this.fileService.deleteFile(file.path);
 
             // Create an entry in the media table
-            const mediaEntity = await this.mediaRepository.createMedia({
+        const mediaEntity = await this.mediaRepository.createMedia({
                 entityId: entity.id,
                 modelMetadataId: mediaFieldMetadata.model.id,
                 relativeUri: this.getFileName(file),

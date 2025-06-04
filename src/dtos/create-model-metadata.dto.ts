@@ -63,9 +63,13 @@ export class CreateModelMetadataDto {
     @IsBoolean()
     readonly enableAuditTracking: boolean
 
-    @ApiProperty({ description: "Enable Soft Delete" })
+    @ApiProperty({ description: "Internationalisation" })
     @IsBoolean()
     readonly internationalisation: boolean
+
+    @ApiProperty({ description: "Draft publish workflow" })
+    @IsBoolean()
+    readonly draftPublishWorkflow: boolean
 
     @ApiProperty({ description: "Related module id" })
     @IsInt()
