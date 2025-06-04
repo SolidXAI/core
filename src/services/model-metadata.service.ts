@@ -926,7 +926,7 @@ export class ModelMetadataService {
         modelEnableSoftDelete: model.enableSoftDelete,
         parentModel: model.parentModel?.singularName,
         parentModule: model.parentModel?.module?.name,
-
+        draftPublishWorkflowEnabled: model.draftPublishWorkflow,
       },
       dryRun
     );

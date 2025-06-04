@@ -14,8 +14,9 @@ type FieldOptions = {
   dataSource: string;
   fields: any[]; //FIXME This type can be improved
   modelEnableSoftDelete?: boolean;
-  parentModel?: string;
+  parentModel?: string; 
   parentModule?: string;
+  draftPublishWorkflowEnabled?: boolean;
 };
 export const REMOVE_FIELDS_COMMAND = 'remove-fields';
 export const REFRESH_MODEL_COMMAND = 'refresh-model';
@@ -79,6 +80,10 @@ export class SchematicService {
         modelCommand += ` --parent-module=${fieldOptions.parentModule}`;
       }
 
+      if (fieldOptions.draftPublishWorkflowEnabled) {
+        modelCommand += ` --draft-publish-workflow-enabled=${fieldOptions.draftPublishWorkflowEnabled}`;
+      }
+      
       let fieldCommand = fieldOptions.fields
         .filter((field) => {
           return !Object.values(SYSTEM_FIELDS_TO_IGNORE_FOR_CODE_GENERATION).includes(field.name);
