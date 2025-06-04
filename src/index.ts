@@ -259,4 +259,4 @@ export * from './interfaces'
 export * from './solid-core.module'
 
 export * from './winston.logger'
-export * from './transformers/datetime-transformer'
+export { default as datetimeTransformer } from './transformers/datetime-transformer'
