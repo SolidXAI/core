@@ -195,6 +195,7 @@ export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
         return this.options.required;
     }
 
+    // TODO: We have moved this to SolidRegistry service, refactor to use that service.
     // Returns the entity target class from the entity name
     private getEntityTarget(entityName: string): any { //TODO Can be refactored to use this function from crud helper service
         const entityMetadatas = this.options.entityManager.connection.entityMetadatas;

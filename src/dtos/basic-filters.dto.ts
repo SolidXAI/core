@@ -2,6 +2,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { IsEnum, IsOptional } from "class-validator";
 import { PaginationQueryDto } from "./pagination-query.dto";
+import { Timestamp } from "typeorm";
 
 export enum SoftDeleteFilter {
     INCLUSIVE = "inclusive",
@@ -32,7 +33,6 @@ export class BasicFilterDto extends PaginationQueryDto {
     @ApiProperty({ description: "populateMedia" })
     readonly populateMedia?: string[];
 
-
     // @IsOptional()
     // @ApiProperty({ description: "filters" })
     // readonly filters: any[];
@@ -52,4 +52,16 @@ export class BasicFilterDto extends PaginationQueryDto {
     @IsOptional()
     @ApiProperty({ description: "groupFilter" })
     groupFilter?: BasicFilterDto
+
+    @IsOptional()
+    @ApiProperty({ description: "locale" })
+    readonly locale?: string;
+
+    @IsOptional()
+    @ApiProperty({ description: "status publish draft" })
+    readonly status?: string;
+
+    // @IsOptional()
+    // @ApiProperty({ description: "default locale id" })
+    // readonly defaultEntityLocaleId?: number;
 }

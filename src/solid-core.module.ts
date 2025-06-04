@@ -160,6 +160,9 @@ import { ChatterMessageController } from './controllers/chatter-message.controll
 import { ChatterMessageDetails } from './entities/chatter-message-details.entity';
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageDetailsController } from './controllers/chatter-message-details.controller';
+import { Locale } from './entities/locale.entity';
+import { LocaleService } from './services/locale.service';
+import { LocaleController } from './controllers/locale.controller';
 import { AuditSubscriber } from './subscribers/audit.subscriber';
 import { ExportTemplate } from './entities/export-template.entity';
 import { ExportTemplateService } from './services/export-template.service';
@@ -177,6 +180,7 @@ import { ImportTransactionController } from './controllers/import-transaction.co
 import { ImportTransactionErrorLog } from './entities/import-transaction-error-log.entity';
 import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
 import { ImportTransactionErrorLogController } from './controllers/import-transaction-error-log.controller';
+import { LocaleListSelectionProvider } from './services/selection-providers/locale-list-selection-provider.service';
 
 
 @Global()
@@ -228,6 +232,7 @@ import { ImportTransactionErrorLogController } from './controllers/import-transa
     TypeOrmModule.forFeature([ListOfValues]),
     TypeOrmModule.forFeature([ChatterMessage]),
     TypeOrmModule.forFeature([ChatterMessageDetails]),
+    TypeOrmModule.forFeature([Locale]),
     TypeOrmModule.forFeature([ExportTemplate]),
     TypeOrmModule.forFeature([ExportTransaction]),
     // TypeOrmModule.forFeature([User]),
@@ -268,6 +273,7 @@ import { ImportTransactionErrorLogController } from './controllers/import-transa
     ListOfValuesController,
     ChatterMessageController,
     ChatterMessageDetailsController,
+    LocaleController,
     ExportTemplateController,
     ExportTransactionController,
     ImportTransactionController,
@@ -343,6 +349,7 @@ import { ImportTransactionErrorLogController } from './controllers/import-transa
     PdfService,
     UuidExternalIdComputedFieldProvider,
     ListOfModelsSelectionProvider,
+    LocaleListSelectionProvider,
     SoftDeleteAwareEventSubscriber,
     AccessTokenGuard,
     AuthenticationService,
@@ -375,6 +382,7 @@ import { ImportTransactionErrorLogController } from './controllers/import-transa
     SavedFiltersService,
     ChatterMessageService,
     ChatterMessageDetailsService,
+    LocaleService,
     AuditSubscriber,
     ExportTemplateService,
     ExportTransactionService,

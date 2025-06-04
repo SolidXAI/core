@@ -35,5 +35,4 @@ export class ModuleMetadataHelperService {
         }
         return filePath;
     }
-
 }

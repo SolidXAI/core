@@ -52,7 +52,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         //We can just have the Model Entity here
     ) { }
 
-    async create(createDto: any, files: Express.Multer.File[] = [],solidRequestContext :any = {}): Promise<T> {
+    async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
         // This class will be extended by the generated service class i.e PersonService
         // The data required to identify the model and module name will be passed from the generate CrudService subclass
         //TODO: Algorithm to create the entity
@@ -215,7 +215,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 throw new BadRequestException('Forbidden');
             }
         }
-        
+
         const model = await this.modelMetadataService.findOneBySingularName(this.modelName, {
             fields: {
                 model: true,
@@ -232,10 +232,26 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
+
+        // If the model has internationalisation enabled, delete children with defaultEntityLocaleId === this entity's id
+        if (model.internationalisation) {
+            // Find all child entities where defaultEntityLocaleId === this entity's id
+            const childEntities = await this.repo.find({
+                where: { defaultEntityLocaleId: id } as any
+            });
+
+            if (childEntities.length > 0) {
+                if (model.enableSoftDelete === true) {
+                    await this.repo.softRemove(childEntities);
+                } else {
+                    await this.repo.remove(childEntities);
+                }
+            }
+        }
+
         if (model.enableSoftDelete === true) {
             await this.repo.softRemove(entity);
             return this.repo.save(entity);
-
         } else {
             return this.repo.remove(entity);
         }
@@ -365,7 +381,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 //     Validation against the selectionStatic values. No transformation is required
                 //     If the value is not in the selectionStatic values, then throw
                 //     Also validate against the selectionType
-                const options = { ...commonOptions, selectionStaticValues: fieldMetadata.selectionStaticValues, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, isMultiSelect: fieldMetadata.isMultiSelect};
+                const options = { ...commonOptions, selectionStaticValues: fieldMetadata.selectionStaticValues, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, isMultiSelect: fieldMetadata.isMultiSelect };
                 return new SelectionStaticFieldCrudManager(options);
             }
             case SolidFieldType.selectionDynamic: {// [HOLD]
@@ -374,7 +390,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 //     dataSource: string; // The name of the selection provider
                 //     filterSchema : json // This is a custom json object that every data source will handle accordingly. We could validate the query against the selection provider
                 //     values : string[]; // The values returned by the selection provider
-                const options = { ...commonOptions, selectionDynamicProvider: fieldMetadata.selectionDynamicProvider, selectionDynamicProviderCtxt: fieldMetadata.selectionDynamicProviderCtxt, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, discoveryService: this.discoveryService, isMultiSelect: fieldMetadata.isMultiSelect};
+                const options = { ...commonOptions, selectionDynamicProvider: fieldMetadata.selectionDynamicProvider, selectionDynamicProviderCtxt: fieldMetadata.selectionDynamicProviderCtxt, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, discoveryService: this.discoveryService, isMultiSelect: fieldMetadata.isMultiSelect };
                 return new SelectionDynamicFieldCrudManager(options);
             }
             case SolidFieldType.uuid: {
@@ -398,7 +414,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         const alias = 'entity';
         // Extract the required keys from the input query
         let { limit, offset, populateMedia, populateGroup, groupFilter } = basicFilterDto;
-        const {singularName} = await this.loadModel();
+        const { singularName, internationalisation, draftPublishWorkflow } = await this.loadModel();
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasReadPermissionOnModel(solidRequestContext.activeUser, singularName);
@@ -409,11 +425,11 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
 
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
-        qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-        
+        qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow);
+
         if (basicFilterDto.groupBy) {
             // Get the records and the count
-            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia);
+            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia, internationalisation, draftPublishWorkflow);
             return {
                 groupMeta,
                 groupRecords,
@@ -440,7 +456,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[]) {
+    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[], internationalisation: boolean, draftPublishWorkflow: boolean) {
         const groupByResult = await qb.getRawMany();
 
         const groupMeta = [];
@@ -449,7 +465,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         for (const group of groupByResult) {
             if (populateGroup) {
                 let groupByQb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias);
-                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
+                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias, internationalisation, draftPublishWorkflow);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
                 const [entities, count] = await groupByQb.getManyAndCount();
 
@@ -486,12 +502,12 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return r;
     }
 
-   private async handlePopulateMedia(populateMedia: string[], entities: T[]) {
+    private async handlePopulateMedia(populateMedia: string[], entities: T[]) {
         const model = await this.entityManager.getRepository(ModelMetadata).findOne({
             where: {
                 singularName: this.modelName,
             },
-            relations: ['fields', 'fields.mediaStorageProvider', 'fields.model','module'],
+            relations: ['fields', 'fields.mediaStorageProvider', 'fields.model', 'module'],
         });
 
         // Will iterate through every entity &  all populateMedia & call getMediaDetails for each field
@@ -501,7 +517,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             }
         }
         return entities;
-   } 
+    }
 
     // Adds the media with full URL to the entity / nested entity
     private async populateMediaObject(mediaFieldPath: string, model: ModelMetadata, entity: T) {
@@ -515,12 +531,12 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             // We can assume that the media field entity model is already populated as part of the entity data
             const mediaFieldEntities = this.getMediaFieldEntities(entity, pathParts);
             if (!mediaFieldEntities || mediaFieldEntities.length === 0) {
-               return ;//no need to populate data if relation not exists
+                return;//no need to populate data if relation not exists
             }
             // Populate the media field entities with the full URL
             for (const mediaFieldEntity of mediaFieldEntities) {
                 const mediaWithFullUrl = await this.getMediaWithFullUrl(mediaFieldEntity, mediaFieldMetadata);
-                this.appendMediaKey(mediaWithFullUrl, mediaFieldEntity,  mediaFieldMetadata.name);
+                this.appendMediaKey(mediaWithFullUrl, mediaFieldEntity, mediaFieldMetadata.name);
                 // mediaFieldEntity['_media'][mediaFieldPath] = mediaWithFullUrl
             }
         }
@@ -546,7 +562,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             entity['_media'] = {
                 [mediaFieldPath]: mediaWithFullUrl
             };
-        } 
+        }
     }
 
     private getMediaFieldEntities(entity: T, mediaPathParts: string[]): T[] {
@@ -562,12 +578,12 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return isArray(entityPart) ? entityPart : [entityPart];
     }
 
-    async getMediaWithFullUrl(mediaEntity: any, mediaFieldMetadata: FieldMetadata): Promise<MediaWithFullUrl[]>{
-            const storageProviderMetadata = mediaFieldMetadata.mediaStorageProvider;
-            const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
-            const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
-            const mediaDetails = await storageProvider.retrieve(mediaEntity, mediaFieldMetadata);
-            return mediaDetails as MediaWithFullUrl[];
+    async getMediaWithFullUrl(mediaEntity: any, mediaFieldMetadata: FieldMetadata): Promise<MediaWithFullUrl[]> {
+        const storageProviderMetadata = mediaFieldMetadata.mediaStorageProvider;
+        const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
+        const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
+        const mediaDetails = await storageProvider.retrieve(mediaEntity, mediaFieldMetadata);
+        return mediaDetails as MediaWithFullUrl[];
     }
 
     async findOne(id: number, query: any, solidRequestContext: any = {}) {
@@ -610,7 +626,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return entity;
     }
 
-    async insertMany(createDtos: any[], filesArray: Express.Multer.File[][] = [],solidRequestContext: any = {}): Promise<T[]> {
+    async insertMany(createDtos: any[], filesArray: Express.Multer.File[][] = [], solidRequestContext: any = {}): Promise<T[]> {
 
 
         // if (createDtos.length !== filesArray.length) {
@@ -669,7 +685,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return savedEntities;
     }
 
-    async deleteMany(ids: number[],solidRequestContext: any = {}): Promise<any> {
+    async deleteMany(ids: number[], solidRequestContext: any = {}): Promise<any> {
 
         if (!ids || ids.length === 0) {
             throw new Error('At least one ID is required for deletion');
@@ -713,7 +729,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // return removedEntities
     }
 
-    async recover(id: number,solidRequestContext: any = {}) {
+    async recover(id: number, solidRequestContext: any = {}) {
         try {
             const loadedmodel = await this.loadModel();
             // Check wheather user has update permission for model
@@ -753,7 +769,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         }
     }
 
-    async recoverMany(ids: number[],solidRequestContext: any = {}) {
+    async recoverMany(ids: number[], solidRequestContext: any = {}) {
         try {
             const loadedmodel = await this.loadModel();
             // Check wheather user has update permission for model
@@ -808,32 +824,32 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         if (!pathParts || pathParts.length === 0) {
             throw new BadRequestException('Path parts cannot be empty');
         }
-    
+
         const [currentPart, ...remainingParts] = pathParts;
         const field = fields.find(field => field.name === currentPart);
-    
+
         if (!field) {
             throw new BadRequestException(`Field ${currentPart} not found in model ${this.modelName}`);
         }
-    
+
         // Base case: last part, return the field
         if (remainingParts.length === 0) {
             return field;
         }
-    
+
         if (!field.relationCoModelSingularName) {
             throw new BadRequestException(`Field ${field.name} does not define a relationCoModelSingularName`);
         }
-    
+
         const relationCoModel = await this.entityManager.getRepository(ModelMetadata).findOne({
             where: { singularName: field.relationCoModelSingularName },
             relations: ['fields', 'fields.mediaStorageProvider', 'fields.model'],
         });
-    
+
         if (!relationCoModel) {
             throw new BadRequestException(`Model ${field.relationCoModelSingularName} not found`);
         }
-    
+
         return this.getFieldMetadataRecursively(remainingParts, relationCoModel.fields);
     }
 }
