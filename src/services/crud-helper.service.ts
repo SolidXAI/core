@@ -53,7 +53,7 @@ export class CrudHelperService {
                 }
                 else { // Recursively call the applyFilters method to handle nested conditions
                     const joinField = `${alias}.${key}`;
-                        if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, key);
+                    if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, key);
                     this.applyFilters(qb, primaryFilterObj, key, selectQb);
                 }
             });
@@ -280,7 +280,7 @@ export class CrudHelperService {
             else {
                 // Since in populate, we are create a unique alias based on the relation path
                 //If the join is already present, it is probably because of the relation being passed in the where filter i.e applyFilters method
-                qb.addSelect(`${part}`); 
+                qb.addSelect(`${part}`);
             }
             parentAlias = part; // Update the parent alias for the next iteration
         });
@@ -350,6 +350,31 @@ export class CrudHelperService {
         };
     }
 
+    async countGroupedRecords(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string) { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
+        const { limit, offset, ...rest } = basicFilterDto;
+
+        const filteredDto = { ...rest, limit: undefined, offset: undefined };
+
+        const filteredQB = this.buildFilterQuery(qb, filteredDto as BasicFilterDto, entityAlias);
+
+        // Select only the group field and count distinct rows
+        const groupByField = filteredDto.groupBy;
+
+        if (!groupByField || (Array.isArray(groupByField) && groupByField.length !== 1)) {
+            throw new Error('Exactly one groupBy field is required to count grouped records.');
+        }
+
+         const field = Array.isArray(groupByField) ? groupByField[0] : groupByField;
+          const rawResults = await filteredQB
+        .select([]) // Remove prior select fields
+        .addSelect(`${entityAlias}.${field}`, 'groupField')
+        .groupBy(`${entityAlias}.${field}`)
+        .limit(undefined) // Important: prevent LIMIT 1 from propagating
+        .offset(undefined)
+        .getRawMany();
+
+        return rawResults.length;
+    }
 
     hasReadPermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
         const permissionNames = [`${classify(modelName)}Controller.findOne`, `${classify(modelName)}Controller.findMany`];

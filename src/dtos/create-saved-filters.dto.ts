@@ -1,12 +1,12 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
-import { IsOptional, IsNotEmpty, IsBoolean, IsInt } from 'class-validator';
+import { IsOptional, IsNotEmpty, IsBoolean, IsInt, IsJSON } from 'class-validator';
 
 export class CreateSavedFiltersDto {
     @IsOptional()
-    @IsString()
+    @IsJSON()
     @ApiProperty()
-    filterQueryJson: string;
+    filterQueryJson: any;
     @IsNotEmpty()
     @IsString()
     @ApiProperty()

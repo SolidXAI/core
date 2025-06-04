@@ -2536,7 +2536,7 @@
           {
             "name": "filterQueryJson",
             "displayName": "Filter Query Json",
-            "type": "longText",
+            "type": "json",
             "ormType": "text",
             "required": false,
             "unique": false,
@@ -4884,13 +4884,6 @@
             "type": "field",
             "attrs": {
               "name": "view",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "filterQueryJson",
               "isSearchable": true
             }
           }
