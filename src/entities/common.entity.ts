@@ -26,9 +26,9 @@ export abstract class CommonEntity {
     @Column({ type: "int", name: 'default_entity_locale_id', default: null })
     defaultEntityLocaleId: number;
 
-    @ManyToOne(require('./user.entity').User, { nullable: true })
+    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
     createdBy: User;
 
-    @ManyToOne(require('./user.entity').User, { nullable: true })
+    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
     updatedBy: User;    
 }

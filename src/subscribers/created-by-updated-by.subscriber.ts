@@ -16,24 +16,28 @@ export class CreatedByUpdatedBySubscriber implements EntitySubscriberInterface {
         this.dataSource.subscribers.push(this);
     }
 
-    async afterInsert(event: InsertEvent<any>) {
-        this.stampUserField(event, true);
+    async beforeInsert(event: InsertEvent<any>) {
+        await this.stampUserField(event, true);
     }
 
-    async afterUpdate(event: UpdateEvent<any>) {
-        this.stampUserField(event, false);
+    async beforeUpdate(event: UpdateEvent<any>) {
+        await this.stampUserField(event, false);
     }
 
-    private stampUserField(event: InsertEvent<any> | UpdateEvent<any>, isInsert: boolean): void {
+    private async stampUserField(event: InsertEvent<any> | UpdateEvent<any>, isInsert: boolean){
+        if (!event.entity) {
+            return;
+        }
         // Get the current active user details from the request context
         const activeUserOrUndefined = this.requestContextService.getActiveUser;
         if (!activeUserOrUndefined) {
             return;
         }
 
-        const loadedUser = this.loadUser(activeUserOrUndefined as unknown as ActiveUserData);
+        const loadedUser = await this.loadUser(activeUserOrUndefined as unknown as ActiveUserData);
         if (isInsert) {
             event.entity.createdBy = loadedUser;
+            event.entity.updatedBy = loadedUser; // For insert, we set both createdBy and updatedBy to the same user
         }
         else {
             event.entity.updatedBy = loadedUser;

@@ -181,6 +181,7 @@ import { ImportTransactionErrorLog } from './entities/import-transaction-error-l
 import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
 import { ImportTransactionErrorLogController } from './controllers/import-transaction-error-log.controller';
 import { LocaleListSelectionProvider } from './services/selection-providers/locale-list-selection-provider.service';
+import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-by.subscriber';
 
 
 @Global()
@@ -391,6 +392,7 @@ import { LocaleListSelectionProvider } from './services/selection-providers/loca
     FieldRepository,
     ImportTransactionService,
     ImportTransactionErrorLogService,
+    CreatedByUpdatedBySubscriber,
   ],
   exports: [
     ModuleMetadataService,
