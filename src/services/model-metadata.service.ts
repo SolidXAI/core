@@ -184,7 +184,7 @@ export class ModelMetadataService {
         relations: {},
       });
     createDto['module'] = resolvedModule;
-    
+
     if (createDto['parentModelId']) {
       const resolvedParentModel = await this.dataSource
         .getRepository(ModelMetadata)
@@ -261,6 +261,7 @@ export class ModelMetadataService {
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
         isChild: model?.isChild,
         parentModelUserKey: model?.parentModel?.singularName,
+        enableAuditTracking: model?.enableAuditTracking,
         fields: []
       }
 
@@ -420,6 +421,7 @@ export class ModelMetadataService {
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
         isChild: model?.isChild,
         parentModelUserKey: model?.parentModel?.singularName,
+        enableAuditTracking: model?.enableAuditTracking,
         fields: []
       }
 
@@ -685,23 +687,23 @@ export class ModelMetadataService {
     };
 
     // Utility function to check if an item with the same name already exists
-  const notExists = (arr: any[], name: string) => !arr.some(item => item.name === name);
+    const notExists = (arr: any[], name: string) => !arr.some(item => item.name === name);
 
-  if (notExists(metaData.menus, menuName)) {
-    metaData.menus.push(menu);
-  }
+    if (notExists(metaData.menus, menuName)) {
+      metaData.menus.push(menu);
+    }
 
-  if (notExists(metaData.actions, viewName)) {
-    metaData.actions.push(action);
-  }
+    if (notExists(metaData.actions, viewName)) {
+      metaData.actions.push(action);
+    }
 
-  if (notExists(metaData.views, viewName)) {
-    metaData.views.push(modelListview);
-  }
+    if (notExists(metaData.views, viewName)) {
+      metaData.views.push(modelListview);
+    }
 
-  if (notExists(metaData.views, formViewName)) {
-    metaData.views.push(modelFormView);
-  }
+    if (notExists(metaData.views, formViewName)) {
+      metaData.views.push(modelFormView);
+    }
     // metaData.menus.push(menu);
     // metaData.actions.push(action);
     // metaData.views.push(modelListview);

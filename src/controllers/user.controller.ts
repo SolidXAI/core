@@ -11,7 +11,7 @@ import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 
-@ApiTags('Solid')
+@ApiTags('Solid Core')
 @Controller('user') //FIXME: Change this to the model plural name 
 export class UserController {
   constructor(private readonly service: UserService) { }

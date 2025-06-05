@@ -43,9 +43,9 @@ export interface ModuleMetadataConfiguration {
     moduleMetadata?: CreateModuleMetadataDto,
     roles?: CreateRoleMetadataDto[],
     users?: SignUpDto[],
-    actions?: CreateActionMetadataDto[],
-    menus?: CreateMenuItemMetadataDto[],
-    views?: CreateViewMetadataDto[],
+    actions?: any[],
+    menus?: any[],
+    views?: any[],
     emailTemplates?: CreateEmailTemplateDto[],
     smsTemplates?: CreateSmsTemplateDto[],
     mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[]

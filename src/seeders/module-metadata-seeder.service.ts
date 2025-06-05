@@ -409,8 +409,10 @@ export class ModuleMetadataSeederService {
             viewData['model'] = await this.modelMetadataService.findOneByUserKey(viewData.modelUserKey);
             // await this.solidViewService.upsert(viewData);
             // First check if module already exists using name
-            await this.solidViewService.createIfNotPresent(viewData);
 
+            // Changed the below to upsert as now we are saving modifications to the view json to file system also.
+            // await this.solidViewService.createIfNotPresent(viewData);
+            await this.solidViewService.upsert(viewData);
         }
     }
 

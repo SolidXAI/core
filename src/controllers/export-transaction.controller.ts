@@ -5,7 +5,7 @@ import { ExportTransactionService } from '../services/export-transaction.service
 import { CreateExportTransactionDto } from '../dtos/create-export-transaction.dto';
 import { UpdateExportTransactionDto } from '../dtos/update-export-transaction.dto';
 
-@ApiTags('Solid') 
+@ApiTags('Solid Core') 
 @Controller('export-transaction') //FIXME: Change this to the model plural name 
 export class ExportTransactionController {
   constructor(private readonly service: ExportTransactionService) {}
