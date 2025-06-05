@@ -88,7 +88,8 @@ export class SettingController {
 
   @ApiBearerAuth("jwt")
   @Post('/bulk-update')
-  async updateSettings(@Body() updateSettingsDto: UpdateSettingsDto) {
-    return this.service.updateSettings(updateSettingsDto.settings);
+  @UseInterceptors(AnyFilesInterceptor())
+  async updateSettings(@Body() updateSettingsDto: UpdateSettingsDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+    return this.service.updateSettings(updateSettingsDto.settings, files);
   }
 }
