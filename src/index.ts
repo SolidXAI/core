@@ -242,7 +242,7 @@ export * from './repository/field.repository'
 
 //softDeleteAwareEventSubscriber.subscriber.ts
 export * from './subscribers/model.subscriber'
-export * from './subscribers/softDeleteAwareEventSubscriber.subscriber' //rename
+export * from './subscribers/soft-delete-aware-event.subscriber' //rename
 export * from './subscribers/view-metadata.subscriber' //rename
 export * from './subscribers/audit.subscriber'
 

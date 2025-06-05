@@ -119,7 +119,7 @@ import { Msg91OTPService } from './services/sms/Msg91OTPService';
 import { Msg91SMSService } from './services/sms/Msg91SMSService';
 // import { UserService } from './services/user.service';
 import { Msg91WhatsappService } from './services/whatsapp/Msg91WhatsappService';
-import { SoftDeleteAwareEventSubscriber } from './subscribers/softDeleteAwareEventSubscriber.subscriber';
+import { SoftDeleteAwareEventSubscriber } from './subscribers/soft-delete-aware-event.subscriber';
 
 import { PermissionMetadataController } from './controllers/permission-metadata.controller';
 import { PermissionMetadata } from './entities/permission-metadata.entity';
