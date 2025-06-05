@@ -182,6 +182,8 @@ import { ImportTransactionErrorLogService } from './services/import-transaction-
 import { ImportTransactionErrorLogController } from './controllers/import-transaction-error-log.controller';
 import { LocaleListSelectionProvider } from './services/selection-providers/locale-list-selection-provider.service';
 import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-by.subscriber';
+import { SystemFieldsSeederService } from './seeders/system-fields-seeder.service';
+import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
 
 
 @Global()
@@ -300,6 +302,7 @@ import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-b
     ModuleMetadataService,
     ModuleMetadataHelperService,
     ModelMetadataService,
+    ModelMetadataHelperService,
     FieldMetadataService,
     RemoveFieldsCommand,
     RefreshModelCommand,
@@ -393,6 +396,8 @@ import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-b
     ImportTransactionService,
     ImportTransactionErrorLogService,
     CreatedByUpdatedBySubscriber,
+    SystemFieldsSeederService,
+    
   ],
   exports: [
     ModuleMetadataService,

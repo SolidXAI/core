@@ -1,0 +1,107 @@
+// Return the system fields metadata for a model
+
+import { Injectable, Logger } from "@nestjs/common";
+import { SolidRegistry } from "./solid-registry";
+import { In } from "typeorm";
+
+@Injectable()
+export class ModelMetadataHelperService {
+    private readonly logger = new Logger(ModelMetadataHelperService.name);
+
+    constructor(private readonly registry: SolidRegistry) {
+    }
+
+    getSystemFieldsMetadata(): any[] {
+        const systemFieldsMetadata = [
+            {
+                name: "id",
+                displayName: "Id",
+                type: "int",
+                ormType: "bigint",
+                isSystem: true,
+            },
+            {
+                name: "createdAt",
+                displayName: "Created At",
+                type: "datetime",
+                ormType: "timestamp",
+                isSystem: true,
+            },
+            {
+                name: "updatedAt",
+                displayName: "Updated At",
+                type: "datetime",
+                ormType: "timestamp",
+                isSystem: true,
+            },
+            {
+                name: "deletedAt",
+                displayName: "Deleted At",
+                type: "datetime",
+                ormType: "timestamp",
+                isSystem: true,
+            },
+            {
+                name: "deletedTracker",
+                displayName: "Deleted Tracker",
+                type: "shortText",
+                ormType: "varchar",
+                isSystem: true,
+            },
+            {
+                name: "publishedAt",
+                displayName: "Published At",
+                type: "datetime",
+                ormType: "timestamp",
+                isSystem: true,
+            },
+            {
+                name: "localeName",
+                displayName: "Locale",
+                type: "shortText",
+                ormType: "varchar",
+                isSystem: true,
+            },
+            {
+                name: "defaultEntityLocaleId",
+                displayName: "Default Entity Locale Id",
+                type: "int",
+                ormType: "integer",
+                isSystem: true,
+            },
+            {
+                name: "createdBy",
+                displayName: "Created By",
+                type: "relation",
+                ormType: "int",
+                isSystem: true,
+                relationType: "many-to-one",
+                relationCoModelSingularName: "user",
+                relationCreateInverse: false,
+                relationCascade: "restrict",
+                relationModelModuleName: "solid-core"
+            },
+            {
+                name: "updatedBy",
+                displayName: "Updated By",
+                type: "relation",
+                ormType: "int",
+                isSystem: true,
+                relationType: "many-to-one",
+                relationCoModelSingularName: "user",
+                relationCreateInverse: false,
+                relationCascade: "restrict",
+                relationModelModuleName: "solid-core"
+            },
+        ]
+
+        // Do an additional check and add a warning if the common entity keys and system field metadata keys don't match exactly
+        const commonEntityKeys = this.registry.getCommonEntityKeys();
+        const systemFieldNames = systemFieldsMetadata.map(field => field.name);
+        const missingKeys = commonEntityKeys.filter(key => !systemFieldNames.includes(key));
+        this.logger.warn(`Missing system fields metadata for common entity keys: ${missingKeys.join(', ')}`);
+        return systemFieldsMetadata;
+    }
+
+
+}
