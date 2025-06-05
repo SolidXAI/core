@@ -67,6 +67,14 @@ export class ModelSubscriber implements EntitySubscriberInterface<ModelMetadata>
         model: event.entity,
       },
       {
+        name: "deletedTracker",
+        displayName: "Deleted Tracker",
+        type: "shortText",
+        ormType: "varchar",
+        isSystem: true,
+        model: event.entity,
+      },
+      {
         name: "publishedAt",
         displayName: "Published At",
         type: "datetime",
@@ -89,7 +97,33 @@ export class ModelSubscriber implements EntitySubscriberInterface<ModelMetadata>
         ormType: "integer",
         isSystem: true,
         model: event.entity,
-      }
+      },
+      {
+        name: "createdBy",
+        displayName: "Created By",
+        type: "relation",
+        ormType: "int",
+        isSystem: true,
+        model: event.entity,
+        relationType: "many-to-one",
+        relationCoModelSingularName: "user",
+        relationCreateInverse: false,
+        relationCascade: "restrict",
+        relationModelModuleName: "solid-core"
+      },
+      {
+        name: "updatedBy",
+        displayName: "Updated By",
+        type: "relation",
+        ormType: "int",
+        isSystem: true,
+        model: event.entity,
+        relationType: "many-to-one",
+        relationCoModelSingularName: "user",
+        relationCreateInverse: false,
+        relationCascade: "restrict",
+        relationModelModuleName: "solid-core"
+      },
     ];
     await transactionManager.save(FieldMetadata, systemFieldsMetadata);
     // Save to the database.
