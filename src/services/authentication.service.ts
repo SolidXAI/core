@@ -362,7 +362,7 @@ export class AuthenticationService {
                     solidAppName: process.env.SOLID_APP_NAME,
                     solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
                     firstName: user.username,
-                    fullName: user.fullName,
+                    fullName: user.fullName ? user.fullName : user.username,
                     emailVerificationTokenOnRegistration: user.emailVerificationTokenOnRegistration,
                 },
                 this.commonConfiguration.shouldQueueEmails,
@@ -379,7 +379,7 @@ export class AuthenticationService {
                     otp: user.mobileVerificationTokenOnRegistration,
                     mobileVerificationTokenOnRegistration: user.mobileVerificationTokenOnRegistration,
                     firstName: user.username,
-                    fullName: user.fullName,
+                    fullName: user.fullName ? user.fullName : user.username,
                 }
             );
         }
@@ -544,7 +544,7 @@ export class AuthenticationService {
                     solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
                     firstName: user.username,
                     emailVerificationTokenOnLogin: user.emailVerificationTokenOnLogin,
-                    fullName: user.fullName,
+                    fullName: user.fullName ? user.fullName : user.username,
                 },
                 this.commonConfiguration.shouldQueueEmails,
                 'user',
@@ -560,7 +560,7 @@ export class AuthenticationService {
                     otp: user.mobileVerificationTokenOnLogin,
                     mobileVerificationTokenOnLogin: user.mobileVerificationTokenOnLogin,
                     firstName: user.username,
-                    fullName: user.fullName,
+                    fullName: user.fullName ? user.fullName : user.username,
                 }
             );
         }
