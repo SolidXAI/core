@@ -37,22 +37,26 @@ export class ViewMetadataSubsciber implements EntitySubscriberInterface<ViewMeta
         if (!viewMetadata) {
             throw new Error(`View metadata not found for id ${event.entity.id}`);
         }
-        const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(viewMetadata.model.module.name);
-        try {
-            await fs.access(filePath);
-        } catch (error) {
-            this.logger.error(`File not found at path: ${filePath}`);
-            return;
-        }
-        const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
-        // Update the view metadata in the module metadata
-        const viewMetadataIndex = metaData.views.findIndex((view: { name: string }) => view.name === event.entity.name);
-        if (viewMetadataIndex !== -1) {
-            metaData.views[viewMetadataIndex].layout = JSON.parse(event.entity.layout);
+        // solid-core module metadata file is stored in the npm package when installed, so we do not propogate those changes to the solid-core-metadata.json file
+        if (viewMetadata.model.module.name != "solid-core") {
+            const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(viewMetadata.model.module.name);
+            try {
+                await fs.access(filePath);
+            } catch (error) {
+                this.logger.error(`File not found at path: ${filePath}`);
+                return;
+            }
+            const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
+
+            // Update the view metadata in the module metadata
+            const viewMetadataIndex = metaData.views.findIndex((view: { name: string }) => view.name === event.entity.name);
+            if (viewMetadataIndex !== -1) {
+                metaData.views[viewMetadataIndex].layout = JSON.parse(event.entity.layout);
+            }
+            // Write the updated object back to the file
+            const updatedContent = JSON.stringify(metaData, null, 2);
+            await fs.writeFile(filePath, updatedContent);
         }
-        // Write the updated object back to the file
-        const updatedContent = JSON.stringify(metaData, null, 2);
-        await fs.writeFile(filePath, updatedContent);
     }
 }

@@ -1,7 +1,6 @@
-import { IsNotEmpty, IsObject } from 'class-validator';
+import { IsObject, IsOptional } from 'class-validator';
 
 export class UpdateSettingsDto {
-    @IsObject()
-    @IsNotEmpty()
+    @IsOptional()
     settings: Record<string, any>;
 } 

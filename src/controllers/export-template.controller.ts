@@ -7,7 +7,7 @@ import { UpdateExportTemplateDto } from '../dtos/update-export-template.dto';
 import { Response } from 'express';
 import { StartExportSyncDto } from 'src/dtos/export.dto';
 
-@ApiTags('Solid') 
+@ApiTags('Solid Core') 
 @Controller('export-template') //FIXME: Change this to the model plural name 
 export class ExportTemplateController { 
   constructor(private readonly service: ExportTemplateService) {}

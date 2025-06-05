@@ -131,6 +131,7 @@ export class ModuleMetadataService {
   async createInFile(module: ModuleMetadata) {
     try {
       // Prepare the metadata JSON structure
+
       const moduleMetaDataJson: ModuleMetadataConfiguration = {
         moduleMetadata: {
           name: module?.name,
@@ -144,8 +145,31 @@ export class ModuleMetadataService {
         },
         roles: [],
         users: [],
-        actions: [],
-        menus: [],
+        actions: [
+          {
+            displayName: `${module?.name} Home`,
+            name: `${module?.name}-home-action`,
+            type: "custom",
+            domain: "",
+            context: "",
+            customComponent: `/admin/core/${module?.name}/home`,
+            customIsModal: true,
+            serverEndpoint: "",
+            viewUserKey: "",
+            moduleUserKey: module?.name,
+            modelUserKey: ""
+          }
+        ],
+        menus: [
+          {
+            displayName: "Home",
+            name: `${module?.name}-home-menu`,
+            sequenceNumber: 1,
+            actionUserKey: `${module?.name}-home-action`,
+            moduleUserKey: module?.name,
+            parentMenuItemUserKey: ""
+          }
+        ],
         views: [],
         emailTemplates: [],
         smsTemplates: [],
@@ -325,7 +349,7 @@ export class ModuleMetadataService {
     return true
   }
 
-  async generateCode(options: CodeGenerationOptions): Promise<string> {    
+  async generateCode(options: CodeGenerationOptions): Promise<string> {
     if (!options.moduleId && !options.moduleUserKey) {
       throw new BadRequestException('Module ID or Module Name is required for generating code');
     }
@@ -338,7 +362,7 @@ export class ModuleMetadataService {
 
     // Check if the module name already exists and is loaded
     const moduleInstance = this.solidRegistry.getModule(`${classify(module.name)}Module`);
-    
+
     if (!moduleInstance) {
       const addModuleOutput = await this.generateAddModuleCode(options);
       const refreshModuleOutput = await this.generateRefreshModuleCode(options);

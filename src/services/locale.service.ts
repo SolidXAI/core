@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef  } from "@nestjs/core";
 import { EntityManager, Repository } from 'typeorm';
@@ -12,8 +12,9 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { RequestContextService } from './request-context.service';
 import { Locale } from 'src/entities/locale.entity';
+import { SolidRegistry } from 'src/helpers/solid-registry';
 @Injectable()
-export class LocaleService extends CRUDService<Locale>{
+export class LocaleService extends CRUDService<Locale> implements OnApplicationBootstrap{
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
@@ -29,9 +30,19 @@ export class LocaleService extends CRUDService<Locale>{
     readonly moduleRef: ModuleRef,
     @InjectRepository(ModelMetadata)
     private readonly modelMetadataRepo: Repository<ModelMetadata>,
-    readonly requestContextService: RequestContextService
+    readonly requestContextService: RequestContextService,
+    readonly solidRegistry: SolidRegistry,
  ) {
    super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'locale', 'solid-core', moduleRef);
  }
-
+  private readonly logger = new Logger(LocaleService.name)
+  onApplicationBootstrap() {
+    // Load the security rules from the database
+    this.loadLocales();
+  }
+   async loadLocales() {
+    const locales = await this.repo.find();
+    this.logger.debug(`Loaded ${locales.length} locales into registry`);
+    this.solidRegistry.registerlocales(locales);
+  }
 }
