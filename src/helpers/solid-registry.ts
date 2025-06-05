@@ -1,8 +1,9 @@
 import { Injectable } from '@nestjs/common';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
+import { CommonEntity } from 'src/entities/common.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { EntityManager } from 'typeorm';
+import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 import { Locale } from 'src/entities/locale.entity';
 
 type ControllerMetadata = {
@@ -145,6 +146,10 @@ export class SolidRegistry {
     const entityMetadatas = entityManager.connection.entityMetadatas;
     const entityMetadata = entityMetadatas.find(em => em.name === entityName);
     return entityMetadata.target;
+  }
+
+  getCommonEntityKeys(): (keyof CommonEntity) [] {
+        return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
   }
 
 }

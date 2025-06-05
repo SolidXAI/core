@@ -1,9 +1,9 @@
-import { DataSource, EntitySubscriberInterface, EventSubscriber, InsertEvent, UpdateEvent } from 'typeorm';
-import { ModelMetadata } from '../entities/model-metadata.entity';
-import { FieldMetadata } from '../entities/field-metadata.entity';
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { RemoveFieldsCommand } from '../commands/remove-fields.command';
+import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
+import { DataSource, EntitySubscriberInterface, EventSubscriber, InsertEvent } from 'typeorm';
+import { FieldMetadata } from '../entities/field-metadata.entity';
+import { ModelMetadata } from '../entities/model-metadata.entity';
 
 @EventSubscriber()
 @Injectable()
@@ -13,7 +13,7 @@ export class ModelSubscriber implements EntitySubscriberInterface<ModelMetadata>
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-
+    private readonly modelHelperService: ModelMetadataHelperService,
   ) {
     this.dataSource.subscribers.push(this);
   }
@@ -25,76 +25,22 @@ export class ModelSubscriber implements EntitySubscriberInterface<ModelMetadata>
   async afterInsert(event: InsertEvent<ModelMetadata>): Promise<void> {
     this.logger.debug(`[ModelSubscriber] getting invoked for insert on model: ${event.entity.singularName}`);
 
-    // const fieldMetadataRepo = event.manager.getRepository(FieldMetadata);
-    // const fieldMetadataRepo = this.dataSource.getRepository(FieldMetadata);
     const transactionManager = event.queryRunner?.manager;
     if (!transactionManager) {
       throw new NotFoundException(`Trnasaction Manager not found`);
-
     }
 
-    const systemFieldsMetadata = [
-      {
-        name: "id",
-        displayName: "Id",
-        type: "int",
-        ormType: "bigint",
-        isSystem: true,
-        model: event.entity,
-      },
-      {
-        name: "createdAt",
-        displayName: "Created At",
-        type: "datetime",
-        ormType: "timestamp",
-        isSystem: true,
-        model: event.entity,
-      },
-      {
-        name: "updatedAt",
-        displayName: "Updated At",
-        type: "datetime",
-        ormType: "timestamp",
-        isSystem: true,
-        model: event.entity,
-      },
-      {
-        name: "deletedAt",
-        displayName: "Deleted At",
-        type: "datetime",
-        ormType: "timestamp",
-        isSystem: true,
-        model: event.entity,
-      },
-      {
-        name: "publishedAt",
-        displayName: "Published At",
-        type: "datetime",
-        ormType: "timestamp",
-        isSystem: true,
-        model: event.entity,
-      },
-      {
-        name: "localeName",
-        displayName: "Locale",
-        type: "shortText",
-        ormType: "varchar",
-        isSystem: true,
-        model: event.entity,
-      },
-      {
-        name: "defaultEntityLocaleId",
-        displayName: "Default Entity Locale Id",
-        type: "int",
-        ormType: "integer",
-        isSystem: true,
-        model: event.entity,
-      }
-    ];
-    await transactionManager.save(FieldMetadata, systemFieldsMetadata);
-    // Save to the database.
-    // fieldMetadataRepo.save(systemFieldsMetadata);
-
+    await transactionManager.save(FieldMetadata, this.systemFieldMetadataToBeAdded(event));
   }
 
+
+  private systemFieldMetadataToBeAdded(event: InsertEvent<ModelMetadata>) {
+    const systemFieldsDefaultMetadata = this.modelHelperService.getSystemFieldsMetadata();
+    // map and add the model as event.entity for the above metadata
+    const systemFieldsMetadata = systemFieldsDefaultMetadata.map(field => ({
+      ...field,
+      model: event.entity,
+    }));
+    return systemFieldsMetadata;
+  }
 }

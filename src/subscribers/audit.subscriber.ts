@@ -1,21 +1,20 @@
-import { Connection, EntitySubscriberInterface, EventSubscriber, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
-import { ChatterMessageService } from '../services/chatter-message.service';
-import { EntityMetadata } from 'typeorm';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ModelMetadata } from '../entities/model-metadata.entity';
-import { Repository } from 'typeorm';
 import { Injectable } from '@nestjs/common';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { DataSource, EntityMetadata, EntitySubscriberInterface, EventSubscriber, InsertEvent, RemoveEvent, Repository, UpdateEvent } from 'typeorm';
+import { ModelMetadata } from '../entities/model-metadata.entity';
+import { ChatterMessageService } from '../services/chatter-message.service';
 @Injectable()
 @EventSubscriber()
 export class AuditSubscriber implements EntitySubscriberInterface {
-    
+
     constructor(
-        private readonly connection: Connection,    
+        @InjectDataSource()
+        private readonly dataSource: DataSource,
         private readonly chatterMessageService: ChatterMessageService,
         @InjectRepository(ModelMetadata)
         private readonly modelMetadataRepo: Repository<ModelMetadata>,
     ) {
-        connection.subscribers.push(this);
+        this.dataSource.subscribers.push(this);
     }
 
     private async shouldTrackAudit(entity: any, metadata: EntityMetadata): Promise<boolean> {
@@ -33,8 +32,8 @@ export class AuditSubscriber implements EntitySubscriberInterface {
             return false;
         }
 
-        const auditFields = model.fields.filter(field => 
-            field.enableAuditTracking && 
+        const auditFields = model.fields.filter(field =>
+            field.enableAuditTracking &&
             !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
             !(field.type === 'relation' && field.relationType === 'one-to-many')
         );

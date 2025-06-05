@@ -119,7 +119,7 @@ import { Msg91OTPService } from './services/sms/Msg91OTPService';
 import { Msg91SMSService } from './services/sms/Msg91SMSService';
 // import { UserService } from './services/user.service';
 import { Msg91WhatsappService } from './services/whatsapp/Msg91WhatsappService';
-import { SoftDeleteAwareEventSubscriber } from './subscribers/softDeleteAwareEventSubscriber.subscriber';
+import { SoftDeleteAwareEventSubscriber } from './subscribers/soft-delete-aware-event.subscriber';
 
 import { PermissionMetadataController } from './controllers/permission-metadata.controller';
 import { PermissionMetadata } from './entities/permission-metadata.entity';
@@ -181,6 +181,9 @@ import { ImportTransactionErrorLog } from './entities/import-transaction-error-l
 import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
 import { ImportTransactionErrorLogController } from './controllers/import-transaction-error-log.controller';
 import { LocaleListSelectionProvider } from './services/selection-providers/locale-list-selection-provider.service';
+import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-by.subscriber';
+import { SystemFieldsSeederService } from './seeders/system-fields-seeder.service';
+import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
 
 
 @Global()
@@ -299,6 +302,7 @@ import { LocaleListSelectionProvider } from './services/selection-providers/loca
     ModuleMetadataService,
     ModuleMetadataHelperService,
     ModelMetadataService,
+    ModelMetadataHelperService,
     FieldMetadataService,
     RemoveFieldsCommand,
     RefreshModelCommand,
@@ -391,6 +395,9 @@ import { LocaleListSelectionProvider } from './services/selection-providers/loca
     FieldRepository,
     ImportTransactionService,
     ImportTransactionErrorLogService,
+    CreatedByUpdatedBySubscriber,
+    SystemFieldsSeederService,
+    
   ],
   exports: [
     ModuleMetadataService,

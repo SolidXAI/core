@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { CommandService } from './command.service';
 import { snakeCase } from "lodash";
+import { CommonEntity } from 'src/entities/common.entity';
+import { SolidRegistry } from './solid-registry';
 
 export const ADD_MODULE_COMMAND = 'add-module';
 export type GenerateModuleOptions = {
@@ -21,19 +23,12 @@ type FieldOptions = {
 export const REMOVE_FIELDS_COMMAND = 'remove-fields';
 export const REFRESH_MODEL_COMMAND = 'refresh-model';
 
-enum SYSTEM_FIELDS_TO_IGNORE_FOR_CODE_GENERATION {
-  ID = 'id',
-  CREATED_AT = 'createdAt',
-  UPDATED_AT = 'updatedAt',
-  DELETED_AT = 'deletedAt'
-}
-
 //TODO Rename to CodeBuilder service
 @Injectable()
 export class SchematicService {
   private readonly logger = new Logger(SchematicService.name);
   private readonly SCHEMATIC_PROJECT = '@solidstarters/solid-code-builder';
-  constructor(private readonly commandService: CommandService) { }
+  constructor(private readonly commandService: CommandService, private readonly solidRegistry: SolidRegistry) { }
 
   async executeSchematicCommand(
     command: string,
@@ -86,7 +81,7 @@ export class SchematicService {
       
       let fieldCommand = fieldOptions.fields
         .filter((field) => {
-          return !Object.values(SYSTEM_FIELDS_TO_IGNORE_FOR_CODE_GENERATION).includes(field.name);
+          return !this.solidRegistry.getCommonEntityKeys().includes(field.name);
         })
         .map((field) => {
           return `--fields='${JSON.stringify(field)}'`;
@@ -106,5 +101,4 @@ export class SchematicService {
       throw new Error('Schematic command not supported.');
     }
   }
-
 }
