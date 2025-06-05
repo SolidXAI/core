@@ -99,7 +99,9 @@ export class ModelMetadataHelperService {
         const commonEntityKeys = this.registry.getCommonEntityKeys();
         const systemFieldNames = systemFieldsMetadata.map(field => field.name);
         const missingKeys = commonEntityKeys.filter(key => !systemFieldNames.includes(key));
-        this.logger.warn(`Missing system fields metadata for common entity keys: ${missingKeys.join(', ')}`);
+        if (missingKeys.length > 0) {
+            this.logger.warn(`Missing system fields metadata for common entity keys: ${missingKeys.join(', ')}`);
+        }
         return systemFieldsMetadata;
     }
 
