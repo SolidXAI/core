@@ -109,8 +109,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         });
     }
 
-    private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean, isPartialUpdate: boolean = false) {
-        const fieldManager: FieldCrudManager = this.fieldCrudManager(field, this.entityManager, isPartialUpdate);
+    private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean, isPartialUpdate: boolean = false, isUpdate: boolean = false) {
+        const fieldManager: FieldCrudManager = this.fieldCrudManager(field, this.entityManager, isPartialUpdate, isUpdate);
         const validationErrors = fieldManager.validate(dto, files);
         const errors = (validationErrors instanceof Promise) ? await validationErrors : validationErrors;
         if (errors.length > 0) {
@@ -150,10 +150,11 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     }
 
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
-    async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate: boolean = false, solidRequestContext: any = {}): Promise<T> {
+    async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate: boolean = false, solidRequestContext: any = {}, isUpdate: boolean = false): Promise<T> {
         if (!id) {
             throw new Error('Id is required for update');
         }
+        isUpdate = true;
         const model = await this.loadModel();
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
@@ -185,7 +186,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // 2. Loop through the fields with a switch statement
         // 3. Handle the fields based on field type
         for (const field of fieldsToProcess) {
-            const transformed = await this.validateAndTransformDto(field, updateDto, files, hasMediaFields, isPartialUpdate);
+            const transformed = await this.validateAndTransformDto(field, updateDto, files, hasMediaFields, isPartialUpdate, isUpdate);
             updateDto = transformed.dto;
             hasMediaFields = transformed.hasMediaFields;
         }
@@ -257,8 +258,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         }
     }
 
-    private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false): FieldCrudManager {
-        const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name };
+    private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false): FieldCrudManager {
+        const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name, isUpdate};
         switch (fieldMetadata.type) {
             case SolidFieldType.shortText: {
                 const options = { ...commonOptions, length: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern };
