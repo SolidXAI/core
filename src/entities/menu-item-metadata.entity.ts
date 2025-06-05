@@ -23,7 +23,7 @@ export class MenuItemMetadata extends CommonEntity {
     @ManyToOne(() => ActionMetadata, { onDelete: "CASCADE", nullable: true })
     @JoinColumn({ referencedColumnName: 'id' })
     action: ActionMetadata;
-    @ManyToMany(() => RoleMetadata, roleMetadata => roleMetadata.users, { cascade: true })
+    @ManyToMany(() => RoleMetadata, roleMetadata => roleMetadata.menuItems, { cascade: true })
     @JoinTable()
     roles: RoleMetadata[];
     @Column({ name: "sequence_number", type: "int", nullable: true })
