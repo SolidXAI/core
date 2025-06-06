@@ -27,7 +27,26 @@ export class FieldMetadataSubscriber implements EntitySubscriberInterface<FieldM
       const relationCoModelSingularName = event.entity.relationCoModelSingularName;
       const relationCoModelFieldName = event.entity.relationCoModelFieldName;
 
-      // Find the above field and mark it for removal.
+      // Load the field metadata for the co-model.
+      const coModelFieldMetadata = await this.dataSource
+        .getRepository(FieldMetadata)
+        .findOne({
+          where: {
+            name: relationCoModelFieldName,
+            type: 'relation',
+            relationType: 'one-to-many',
+            model : {
+              singularName: relationCoModelSingularName
+            }
+          },
+        });
+       
+      // Mark the co-model isMarkedForRemoval field for removal.
+      if (coModelFieldMetadata) {
+        coModelFieldMetadata.isMarkedForRemoval = true;
+        await this.dataSource.getRepository(FieldMetadata).save(coModelFieldMetadata);
+        this.logger.debug(`Marked field ${coModelFieldMetadata.name} in model ${relationCoModelSingularName} for removal.`);
+      }  
     }
   }
 }
