@@ -262,6 +262,9 @@ export class ModelMetadataService {
         isChild: model?.isChild,
         parentModelUserKey: model?.parentModel?.singularName,
         enableAuditTracking: model?.enableAuditTracking,
+        enableSoftDelete: model?.enableSoftDelete,
+        draftPublishWorkflow: model?.draftPublishWorkflow,
+        internationalisation: model?.internationalisation,
         fields: []
       }
 
@@ -422,6 +425,9 @@ export class ModelMetadataService {
         isChild: model?.isChild,
         parentModelUserKey: model?.parentModel?.singularName,
         enableAuditTracking: model?.enableAuditTracking,
+        enableSoftDelete: model?.enableSoftDelete,
+        draftPublishWorkflow: model?.draftPublishWorkflow,
+        internationalisation: model?.internationalisation,
         fields: []
       }
 
