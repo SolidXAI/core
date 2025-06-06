@@ -35,18 +35,18 @@ export class FieldMetadataSubscriber implements EntitySubscriberInterface<FieldM
             name: relationCoModelFieldName,
             type: 'relation',
             relationType: 'one-to-many',
-            model : {
+            model: {
               singularName: relationCoModelSingularName
             }
           },
         });
-       
+
       // Mark the co-model isMarkedForRemoval field for removal.
       if (coModelFieldMetadata) {
         coModelFieldMetadata.isMarkedForRemoval = true;
         await this.dataSource.getRepository(FieldMetadata).save(coModelFieldMetadata);
         this.logger.debug(`Marked field ${coModelFieldMetadata.name} in model ${relationCoModelSingularName} for removal.`);
-      }  
+      }
     }
   }
 }
