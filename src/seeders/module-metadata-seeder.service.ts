@@ -36,6 +36,7 @@ import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
 import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
 import { ListOfValuesService } from 'src/services/list-of-values.service';
 import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
+import { SystemFieldsSeederService } from './system-fields-seeder.service';
 
 @Injectable()
 export class ModuleMetadataSeederService {
@@ -68,6 +69,7 @@ export class ModuleMetadataSeederService {
         @InjectRepository(Setting, 'default')
         readonly settingsRepo: Repository<Setting>,
         readonly securityRuleRepo: SecurityRuleRepository,
+        readonly systemFieldsSeederService: SystemFieldsSeederService
     ) { }
 
     async seed() {
@@ -82,6 +84,10 @@ export class ModuleMetadataSeederService {
         // TODO: move this also the main loop processing. Generate the media storage providers required by default
         this.logger.log(`Seeding media storage providers`);
         await this.mediaStorageProviderSeederService.seed();
+
+        // Seed any missing system fields metadata for all models.
+        this.logger.log(`Seeding system fields metadata`);
+        await this.systemFieldsSeederService.seed();
 
         // Read the module metadata from a file specified in the .env 
         // Add the core json file as the first entry in the above array.

@@ -29,7 +29,7 @@ export class CreatedByUpdatedBySubscriber implements EntitySubscriberInterface {
             return;
         }
         // Get the current active user details from the request context
-        const activeUserOrUndefined = this.requestContextService.getActiveUser;
+        const activeUserOrUndefined = this.requestContextService.getActiveUser();
         if (!activeUserOrUndefined) {
             return;
         }
