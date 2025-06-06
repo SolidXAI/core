@@ -149,7 +149,8 @@ export class SolidRegistry {
   }
 
   getCommonEntityKeys(): (keyof CommonEntity) [] {
-        return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
+    return [ 'id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt'];
+        // return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
   }
 
 }
