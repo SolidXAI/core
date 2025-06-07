@@ -1,10 +1,10 @@
 import { Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
 import { v4 as uuidv4 } from 'uuid';
-import { QueuesModuleOptions } from "../interfaces";
-import { QueueMessage, QueuePublisher } from '../interfaces/mq';
-import { MqMessageQueueService } from './mq-message-queue.service';
-import { MqMessageService } from './mq-message.service';
+import { QueuesModuleOptions } from "../../interfaces";
+import { QueueMessage, QueuePublisher } from '../../interfaces/mq';
+import { MqMessageQueueService } from '../mq-message-queue.service';
+import { MqMessageService } from '../mq-message.service';
 
 export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TODO This can be made a generic type for better type visibility
     private readonly logger = new Logger(RabbitMqPublisher.name);
@@ -137,6 +137,4 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TOD
         }
 
     }
-    
-
 }

@@ -1,9 +1,9 @@
 import { Logger, OnModuleInit } from '@nestjs/common';
 import * as amqp from 'amqplib';
-import { QueuesModuleOptions } from "../interfaces";
-import { QueueMessage, QueueSubscriber } from '../interfaces/mq';
-import { MqMessageQueueService } from './mq-message-queue.service';
-import { MqMessageService } from './mq-message.service';
+import { QueuesModuleOptions } from "../../interfaces";
+import { QueueMessage, QueueSubscriber } from '../../interfaces/mq';
+import { MqMessageQueueService } from '../mq-message-queue.service';
+import { MqMessageService } from '../mq-message.service';
 
 
 export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscriber<T> { // TODO This can be made a generic type for better type visibility
@@ -16,7 +16,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         protected readonly mqMessageQueueService: MqMessageQueueService,
     ) {
         this.url = process.env.QUEUES_RABBIT_MQ_URL;
-        this.serviceRole = process.env.SERVICE_ROLE;
+        this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
         if (!this.url) {
             this.logger.debug('RabbitMqPublisher url is not defined in the environment variables');
         }
