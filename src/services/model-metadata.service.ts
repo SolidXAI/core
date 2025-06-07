@@ -433,12 +433,12 @@ export class ModelMetadataService {
 
       for (let i = 0; i < model.fields.length; i++) {
         const field = model.fields[i];
-        if (!field.isSystem ) {
+        if (!field.isSystem) {
 
-            const fieldObject: Record<string, any> = await this.fieldMetadataService.createFieldConfig(field);
-            if (field.isMarkedForRemoval) {
+          const fieldObject: Record<string, any> = await this.fieldMetadataService.createFieldConfig(field);
+          if (field.isMarkedForRemoval) {
             fieldObject.isMarkedForRemoval = true;
-            }
+          }
           modelMetaData.fields.push(fieldObject);
         }
       }
@@ -542,6 +542,7 @@ export class ModelMetadataService {
     }
 
     await this.generateVAMConfig(model.id);
+
 
     return `${removeFieldCodeOuput} \n ${refreshModelCodeOutput}`;
   }
@@ -903,6 +904,34 @@ export class ModelMetadataService {
         this.fieldMetadataService.delete(field.id);
       }
     });
+
+    // Remove the fields from metadata json file 
+
+    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
+    const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
+
+    // Check if the model already exists in `models`
+    const existingModelIndex = metaData.moduleMetadata.models.findIndex(
+      (existingModel: any) => existingModel.singularName === model.singularName
+    );
+
+    const modelMetaData = metaData.moduleMetadata.models[existingModelIndex];
+
+    // Remove fields marked for removal from modelMetaData.fields
+    modelMetaData.fields = modelMetaData.fields.filter((field: any) => field.isMarkedForRemoval !== true);
+
+    if (existingModelIndex !== -1) {
+      // Update the existing model
+      metaData.moduleMetadata.models[existingModelIndex] = modelMetaData;
+    } else {
+      // Add the new model
+      metaData.moduleMetadata.models.push(modelMetaData);
+    }
+
+    // Write the updated object back to the file
+    const updatedContent = JSON.stringify(metaData, null, 2);
+    await fs.writeFile(filePath, updatedContent);
+
     return removeOutput;
   }
 
