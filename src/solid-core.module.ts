@@ -42,7 +42,7 @@ import { RefreshModelCommand } from './commands/refresh-model.command';
 import { MediaController } from './controllers/media.controller';
 
 import { RefreshModuleCommand } from './commands/refresh-module.command';
-import { ModelSubscriber } from './subscribers/model.subscriber';
+import { ModelMetadataSubscriber } from './subscribers/model-metadata.subscriber';
 
 import { ViewMetadataController } from './controllers/view-metadata.controller';
 import { ViewMetadata } from './entities/view-metadata.entity';
@@ -320,7 +320,7 @@ import { ModelMetadataHelperService } from './helpers/model-metadata-helper.serv
     ModuleMetadataSeederService,
     ListOfValuesService,
     ListOfValuesSelectionProvider,
-    ModelSubscriber,
+    ModelMetadataSubscriber,
     ViewMetadataService,
     ActionMetadataService,
     MenuItemMetadataService,
