@@ -433,9 +433,12 @@ export class ModelMetadataService {
 
       for (let i = 0; i < model.fields.length; i++) {
         const field = model.fields[i];
-        if (!field.isSystem && !field.isMarkedForRemoval) {
+        if (!field.isSystem ) {
 
-          const fieldObject: Record<string, any> = await this.fieldMetadataService.createFieldConfig(field);
+            const fieldObject: Record<string, any> = await this.fieldMetadataService.createFieldConfig(field);
+            if (field.isMarkedForRemoval) {
+            fieldObject.isMarkedForRemoval = true;
+            }
           modelMetaData.fields.push(fieldObject);
         }
       }
