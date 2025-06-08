@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Public } from 'src/decorators/public.decorator';
@@ -13,13 +13,13 @@ import { TestQueueDbPublisher } from 'src/jobs/queue-test-db-publisher.service';
 export class QueuesTestController {
 
     constructor(
-        private readonly publisher: TestQueuePublisher,
+        private readonly publisherRmq: TestQueuePublisher,
         private readonly publisherDb: TestQueueDbPublisher
     ) { }
 
     @Public()
-    @Get()
-    async getHello() {
+    @Get(':messageBroker')
+    async getHello(@Param('messageBroker') messageBroker: string) {
         const pubsubMessage = 'A hopping-good time!';
         const m = {
             payload: {
@@ -30,7 +30,12 @@ export class QueuesTestController {
             parentEntity: 'feeType',
             parentEntityId: 23,
         };
-        await this.publisherDb.publish(m);
+        if (messageBroker === 'rabbitmq') {
+            await this.publisherRmq.publish(m);
+        }
+        if (messageBroker === 'database') {
+            await this.publisherDb.publish(m);
+        }
 
         return {};
     }

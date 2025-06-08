@@ -74,14 +74,6 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
     async onModuleInit(): Promise<void> {
         // we will start subscriber only if the current service role is subscriber. 
         if (['both', 'subscriber'].includes(this.serviceRole)) {
-            // if (!this.url) {
-            //     this.logger.error('DatabaseSubscriber url is not defined in the environment variables');
-            //     throw new Error('DatabaseSubscriber url is not defined in the environment variables');
-            // }
-            // if (!this.url) {
-            //     this.logger.warn(`Unable to create DatabaseSubscriber instance: ${JSON.stringify(this.options())} as rabbitmq url is not configured.`);
-            //     return;
-            // }
 
             const options = this.options();
 
@@ -100,7 +92,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
             // start the loop
             poll();
 
-            this.logger.debug(`DatabaseSubscriber ready to consume messages: ${JSON.stringify(this.options())} and url: ${this.url}`);
+            this.logger.debug(`DatabaseSubscriber ready to consume messages: ${JSON.stringify(this.options())}`);
         }
     }
 

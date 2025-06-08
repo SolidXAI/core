@@ -5,7 +5,7 @@ import { QueueMessage, QueuePublisher } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
 
-export abstract class DatabasePublisher<T> implements QueuePublisher<T> { // TODO This can be made a generic type for better type visibility
+export abstract class DatabasePublisher<T> implements QueuePublisher<T> {
     private readonly logger = new Logger(DatabasePublisher.name);
     private readonly url: string;
     private readonly serviceRole: string;
@@ -14,11 +14,7 @@ export abstract class DatabasePublisher<T> implements QueuePublisher<T> { // TOD
         protected readonly mqMessageService: MqMessageService,
         protected readonly mqMessageQueueService: MqMessageQueueService,
     ) {
-        this.url = process.env.QUEUES_RABBIT_MQ_URL;
         this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
-        if (!this.url) {
-            this.logger.debug('DatabasePublisher url is not defined in the environment variables');
-        }
         if (!this.serviceRole) {
             this.logger.debug('Queue service Role is not defined in the environment variables');
         }
@@ -28,10 +24,6 @@ export abstract class DatabasePublisher<T> implements QueuePublisher<T> { // TOD
     abstract options(): QueuesModuleOptions;
 
     async publish(message: QueueMessage<T>): Promise<string> {
-        if (!this.url) {
-            this.logger.error('DatabasePublisher url is not defined in the environment variables');
-            throw new Error('DatabasePublisher url is not defined in the environment variables');
-        }
         if (!this.serviceRole) {
             this.logger.error('Queue service Role is not defined in the environment variables');
             throw new Error('Queue service Role is not defined in the environment variables');
@@ -67,6 +59,7 @@ export abstract class DatabasePublisher<T> implements QueuePublisher<T> { // TOD
 
             // 2. Next create an entry in the mqMessage table. 
             await this.mqMessageService.create({
+                messageBroker: this.options().type,
                 messageId: message.messageId,
                 retryCount: message.retryCount,
                 retryInterval: message.retryInterval,

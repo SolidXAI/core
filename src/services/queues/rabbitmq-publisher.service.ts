@@ -6,7 +6,7 @@ import { QueueMessage, QueuePublisher } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
 
-export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TODO This can be made a generic type for better type visibility
+export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> {
     private readonly logger = new Logger(RabbitMqPublisher.name);
     private readonly url: string;
     private readonly serviceRole: string;
@@ -138,6 +138,7 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TOD
 
             // 2. Next create an entry in the mqMessage table. 
             await this.mqMessageService.create({
+                messageBroker: this.options().type,
                 messageId: message.messageId,
                 retryCount: message.retryCount,
                 retryInterval: message.retryInterval,

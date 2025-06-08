@@ -2252,6 +2252,16 @@
             "isSystem": true
           },
           {
+            "name": "messageBroker",
+            "displayName": "Message Broker",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": false,
+            "isSystem": true
+          },
+          {
             "name": "retryCount",
             "displayName": "Retry Count",
             "type": "int",
@@ -8166,6 +8176,13 @@
           {
             "type": "field",
             "attrs": {
+              "name": "messageBroker",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "stage",
               "isSearchable": true
             }
@@ -8273,6 +8290,20 @@
                                 "attrs": {
                                   "name": "messageType",
                                   "label": "Message Type"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "messageId",
+                                  "label": "Message Id"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "messageBroker",
+                                  "label": "Message Broker"
                                 }
                               },
                               {

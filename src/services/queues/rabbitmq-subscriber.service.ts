@@ -48,16 +48,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
 
     async onModuleInit(): Promise<void> {
         // we will start subscriber only if the current service role is subscriber. 
-        if (['both', 'subscriber'].includes(this.serviceRole)) {
-            if (!this.url) {
-                this.logger.error('RabbitMqPublisher url is not defined in the environment variables');
-                throw new Error('RabbitMqPublisher url is not defined in the environment variables');
-            }
-
-            if (!this.url) {
-                this.logger.warn(`Unable to create RabbitMqSubscriber instance: ${JSON.stringify(this.options())} as rabbitmq url is not configured.`);
-                return;
-            }
+        if (this.url && ['both', 'subscriber'].includes(this.serviceRole)) {
 
             // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${url}`);
             // const connection = await amqp.connect(this.url);
