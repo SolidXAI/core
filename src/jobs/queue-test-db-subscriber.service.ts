@@ -2,14 +2,15 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { RabbitMqSubscriber } from 'src/services/queues/rabbitmq-subscriber.service';
 import { QueueMessage } from 'src/interfaces/mq';
-import testQueueConfig from './test-queue.config';
+import testQueueConfig from './test-queue-db.config';
 import { MqMessageService } from '../services/mq-message.service';
 import { MqMessageQueueService } from '../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../interfaces";
+import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
 
 @Injectable()
-export class TestQueueSubscriber extends RabbitMqSubscriber<any> {
-    private readonly testQueueLogger = new Logger(TestQueueSubscriber.name);
+export class TestQueueDbSubscriber extends DatabaseSubscriber<any> {
+    private readonly testQueueLogger = new Logger(TestQueueDbSubscriber.name);
     constructor(
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,

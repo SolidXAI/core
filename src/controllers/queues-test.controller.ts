@@ -4,6 +4,7 @@ import { Auth } from 'src/decorators/auth.decorator';
 import { Public } from 'src/decorators/public.decorator';
 import { AuthType } from 'src/enums/auth-type.enum';
 import { TestQueuePublisher } from '../jobs/queue-test-publisher.service';
+import { TestQueueDbPublisher } from 'src/jobs/queue-test-db-publisher.service';
 
 
 @Auth(AuthType.None)
@@ -11,7 +12,10 @@ import { TestQueuePublisher } from '../jobs/queue-test-publisher.service';
 @ApiTags("Queues")
 export class QueuesTestController {
 
-    constructor(private readonly publisher: TestQueuePublisher) { }
+    constructor(
+        private readonly publisher: TestQueuePublisher,
+        private readonly publisherDb: TestQueueDbPublisher
+    ) { }
 
     @Public()
     @Get()
@@ -23,10 +27,10 @@ export class QueuesTestController {
                 lastName: 'Patel',
                 age: 40
             },
-            parentEntity: 'Address',
+            parentEntity: 'feeType',
             parentEntityId: 23,
         };
-        await this.publisher.publish(m);
+        await this.publisherDb.publish(m);
 
         return {};
     }

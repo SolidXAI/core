@@ -28,6 +28,22 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TOD
 
     abstract options(): QueuesModuleOptions;
 
+    async establishConnection(): Promise<amqp.Connection> {
+
+        const url = new URL(this.url);
+
+        const connection = await amqp.connect({
+            protocol: url.protocol.replace(':', ''),
+            hostname: url.hostname,
+            port: parseInt(url.port),
+            username: url.username,
+            password: url.password,
+            frameMax: 131072,
+        });
+
+        return connection
+    }
+
     async publish(message: QueueMessage<T>): Promise<string> {
         if (!this.url) {
             this.logger.error('RabbitMqPublisher url is not defined in the environment variables');
@@ -44,7 +60,8 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TOD
 
         this.logger.debug(`RabbitMqPublisher publishing with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
 
-        const connection = await amqp.connect(this.url);
+        // const connection = await amqp.connect(this.url);
+        const connection = await this.establishConnection();
         // this.logger.debug(`RabbitMqPublisher publisher connected options: ${JSON.stringify(this.options())} and url: ${url}`);
 
         const channel = await connection.createChannel();

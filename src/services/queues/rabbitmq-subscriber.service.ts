@@ -30,6 +30,22 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
 
     abstract options(): QueuesModuleOptions;
 
+    async establishConnection(): Promise<amqp.Connection> {
+
+        const url = new URL(this.url);
+
+        const connection = await amqp.connect({
+            protocol: url.protocol.replace(':', ''),
+            hostname: url.hostname,
+            port: parseInt(url.port),
+            username: url.username,
+            password: url.password,
+            frameMax: 131072,
+        });
+
+        return connection
+    }
+
     async onModuleInit(): Promise<void> {
         // we will start subscriber only if the current service role is subscriber. 
         if (['both', 'subscriber'].includes(this.serviceRole)) {
@@ -37,14 +53,15 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 this.logger.error('RabbitMqPublisher url is not defined in the environment variables');
                 throw new Error('RabbitMqPublisher url is not defined in the environment variables');
             }
-    
+
             if (!this.url) {
                 this.logger.warn(`Unable to create RabbitMqSubscriber instance: ${JSON.stringify(this.options())} as rabbitmq url is not configured.`);
                 return;
             }
 
             // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${url}`);
-            const connection = await amqp.connect(this.url);
+            // const connection = await amqp.connect(this.url);
+            const connection = await this.establishConnection();
             // this.logger.debug(`RabbitMqSubscriber connection established: ${JSON.stringify(this.options())} and url: ${url}`);
 
             const channel = await connection.createChannel();
@@ -115,7 +132,6 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
 
             this.logger.debug(`RabbitMqSubscriber ready to consume messages: ${JSON.stringify(this.options())} and url: ${this.url}`);
         }
-
     }
 
     /**
