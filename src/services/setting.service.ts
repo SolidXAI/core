@@ -49,6 +49,7 @@ export class SettingService extends CRUDService<Setting> {
       authPagesTheme: "light",
       appLogo: "",
       companylogo: "",
+      favicon: "",
       appLogoPosition: "in_form_view",
       showAuthContent: false,
       appTitle: process.env.SOLID_APP_NAME || "Solid App",
@@ -132,6 +133,7 @@ export class SettingService extends CRUDService<Setting> {
       authPagesTheme: "light",
       appLogo: "",
       companylogo: "",
+      favicon: "",
       appLogoPosition: "in_form_view", //in_form_view | in_image_view
       showAuthContent: false,
       appTitle: process.env.SOLID_APP_NAME || "Solid App",
