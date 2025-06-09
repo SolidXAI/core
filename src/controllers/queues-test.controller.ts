@@ -4,7 +4,7 @@ import { Auth } from 'src/decorators/auth.decorator';
 import { Public } from 'src/decorators/public.decorator';
 import { AuthType } from 'src/enums/auth-type.enum';
 import { TestQueuePublisher } from '../jobs/queue-test-publisher.service';
-import { TestQueueDbPublisher } from 'src/jobs/queue-test-db-publisher.service';
+import { TestQueueDbPublisher } from 'src/jobs/database/queue-test-db-publisher.service';
 
 
 @Auth(AuthType.None)
