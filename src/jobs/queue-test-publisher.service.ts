@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { RabbitMqPublisher } from 'src/services/queues/rabbitmq-publisher.service';
-import testQueueConfig from './test-queue.config';
+import testQueueConfig from './test-queue-options';
 import { MqMessageQueueService } from '../services/mq-message-queue.service';
 import { MqMessageService } from '../services/mq-message.service';
 import { QueuesModuleOptions } from "../interfaces";

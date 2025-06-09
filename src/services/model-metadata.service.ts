@@ -24,6 +24,7 @@ import { CrudHelperService } from './crud-helper.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
 import { RoleMetadataService } from './role-metadata.service';
+import { GenerateCodePublisher } from 'src/jobs/database/generate-code-publisher.service';
 
 @Injectable()
 export class ModelMetadataService {
@@ -41,6 +42,7 @@ export class ModelMetadataService {
     private readonly fieldMetadataService: FieldMetadataService,
     private readonly roleService: RoleMetadataService,
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
+    private readonly generateCodePublihser: GenerateCodePublisher,
   ) { }
 
   async findMany(basicFilterDto: BasicFilterDto) {
@@ -288,7 +290,6 @@ export class ModelMetadataService {
     }
   }
 
-
   async updateInDb(manager: EntityManager, id: number, updateModelMetaDataDto: UpdateModelMetaDataDto) {
 
     const { fields: fieldsMetadata, ...modelMetaDataWithoutFields } = updateModelMetaDataDto;
@@ -397,8 +398,6 @@ export class ModelMetadataService {
     return updatedModel;
 
   }
-
-
 
   async updateInFile(modelId: any, repo: Repository<ModelMetadata>) {
     try {
@@ -518,37 +517,51 @@ export class ModelMetadataService {
     return removedEntities
   }
 
-
   async remove(id: number) {
     const entity = await this.findOne(id);
     return this.modelMetadataRepo.remove(entity);
   }
 
-  async handleGenerateCode(options: CodeGenerationOptions): Promise<string> {
-    const { model, removeFieldCodeOuput, refreshModelCodeOutput } = await this.generateCode(options);
-
-    // Generate the code for models which are linked to fields having an inverse relation
-    const coModelSingularNames = model.fields.
-      filter(field => field.type === SolidFieldType.relation && field.relationCreateInverse === true)
-      .map(field => field.relationCoModelSingularName);
-
-    for (const singularName of coModelSingularNames) {
-      const coModel = await this.findOneBySingularName(singularName);
-      const inverseOptions: CodeGenerationOptions = {
-        modelId: coModel.id,
-        dryRun: options.dryRun
-      };
-      await this.generateCode(inverseOptions);
+  async handleGenerateCode(options: CodeGenerationOptions): Promise<any> {
+    // see if the model record exists. 
+    const model = await this.modelMetadataRepo.findOne({
+      where: {
+        id: options.modelId,
+      },
+    });
+    if (!model) {
+      throw new NotFoundException(`Model record with #${options.modelId} not found`);
     }
 
-    await this.generateVAMConfig(model.id);
+    const m = {
+      payload: options,
+      parentEntity: model.singularName,
+      parentEntityId: options.modelId,
+    };
 
+    const messageId = await this.generateCodePublihser.publish(m);
 
-    return `${removeFieldCodeOuput} \n ${refreshModelCodeOutput}`;
+    return { messageId: messageId };
+
+    // const { model, removeFieldCodeOuput, refreshModelCodeOutput } = await this.generateCode(options);
+    // // Generate the code for models which are linked to fields having an inverse relation
+    // const coModelSingularNames = model.fields.
+    //   filter(field => field.type === SolidFieldType.relation && field.relationCreateInverse === true)
+    //   .map(field => field.relationCoModelSingularName);
+    // for (const singularName of coModelSingularNames) {
+    //   const coModel = await this.findOneBySingularName(singularName);
+    //   const inverseOptions: CodeGenerationOptions = {
+    //     modelId: coModel.id,
+    //     dryRun: options.dryRun
+    //   };
+    //   await this.generateCode(inverseOptions);
+    // }
+    // await this.generateVAMConfig(model.id);
+    // return `${removeFieldCodeOuput} \n ${refreshModelCodeOutput}`;
   }
 
   // Generate the View, Action and Menu configuration for the model
-  private async generateVAMConfig(modelId: number) {
+  async generateVAMConfig(modelId: number) {
     try {
       return await this.dataSource.transaction(async (manager: EntityManager) => {
         const modelRepository = manager.getRepository(ModelMetadata);
@@ -862,7 +875,7 @@ export class ModelMetadataService {
     }
   }
 
-  private async generateCode(options: CodeGenerationOptions) {
+  async generateCode(options: CodeGenerationOptions) {
     const query = {
       populate: ["module", "fields"]
     };

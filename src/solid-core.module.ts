@@ -186,6 +186,8 @@ import { LocaleListSelectionProvider } from './services/selection-providers/loca
 import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-by.subscriber';
 import { SystemFieldsSeederService } from './seeders/system-fields-seeder.service';
 import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
+import { GenerateCodePublisher } from './jobs/database/generate-code-publisher.service';
+import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber.service';
 
 
 @Global()
@@ -369,6 +371,8 @@ import { ModelMetadataHelperService } from './helpers/model-metadata-helper.serv
     TestQueueSubscriber,
     TestQueueDbPublisher,
     TestQueueDbSubscriber,
+    GenerateCodePublisher,
+    GenerateCodeSubscriber,    
     MqMessageQueueService,
     MqMessageService,
     PermissionMetadataService,

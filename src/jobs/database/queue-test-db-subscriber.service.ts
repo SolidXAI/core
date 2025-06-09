@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 
 import { QueueMessage } from 'src/interfaces/mq';
-import testQueueConfig from './test-queue-db.config';
+import testQueueConfig from './test-queue-db-options';
 import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../../interfaces";
