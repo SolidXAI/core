@@ -598,7 +598,7 @@ export class ModelMetadataService {
 
     // Delete actions
     const actionRepo = this.dataSource.getRepository(ActionMetadata);
-    const action = await actionRepo.findOne({where: { model: { id: modelEntity.id } }});
+    const action = await actionRepo.findOne({ where: { model: { id: modelEntity.id } } });
     await actionRepo.delete({ model: { id: modelEntity.id } });
 
     // Delete menu items
@@ -606,6 +606,26 @@ export class ModelMetadataService {
     await menuItemRepo.delete({ action: { id: action?.id } });
 
     // <moduleName>-metadata.json | Remove references to this model in the model metadata, menu, action & view sections. | Automatic
+
+
+    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.singularName);
+    const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
+
+
+    // Check if the model already exists in `models`
+    const existingModelIndex = metaData.moduleMetadata.models.findIndex(
+      (existingModel: any) => existingModel.singularName === modelEntity.singularName
+    );
+
+    if (existingModelIndex !== -1) {
+      metaData.moduleMetadata.models.splice(existingModelIndex, 1);
+    }
+
+    const updatedContent = JSON.stringify(metaData, null, 2);
+    await fs.writeFile(filePath, updatedContent);
+
+
+
 
     // <moduleName>.module.ts | Remove all references and imports of the above files. | Manual (X)
 
