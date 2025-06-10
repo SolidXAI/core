@@ -19,6 +19,10 @@ export class ModuleMetadataHelperService {
         return JSON.parse(fileContent);
     }
 
+    async getModulePath(moduleName: string): Promise<string> {
+        return path.resolve(process.cwd(), 'src', moduleName);
+    }
+
     async getModuleMetadataFilePath(moduleName: string): Promise<string> {
         const folderPath = path.resolve(process.cwd(), 'module-metadata', moduleName);
         const filePath = path.join(folderPath, `${moduleName}-metadata.json`);
