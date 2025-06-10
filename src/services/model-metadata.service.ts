@@ -26,7 +26,7 @@ import { MediaStorageProviderMetadataService } from './media-storage-provider-me
 import { RoleMetadataService } from './role-metadata.service';
 import { GenerateCodePublisher } from 'src/jobs/database/generate-code-publisher.service';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
-import { classify } from '@angular-devkit/core/src/utils/strings';
+import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
 
 @Injectable()
 export class ModelMetadataService {
@@ -497,7 +497,9 @@ export class ModelMetadataService {
   async removeBySingularName(singularName: string) {
     try {
       const entity = await this.findOneBySingularName(singularName);
-      return this.modelMetadataRepo.remove(entity);
+      await this.cleanupOnDelete(entity.id);
+      const r = await this.modelMetadataRepo.remove(entity);
+      return r;
     } catch (error) {
     }
   }
@@ -518,7 +520,9 @@ export class ModelMetadataService {
       // if (!entity) {
       //   throw new Error(`Entity with id ${ id } not found`);
       // }
-      removedEntities.push(await this.modelMetadataRepo.remove(entity));
+      await this.cleanupOnDelete(entity.id);
+      const r = await this.modelMetadataRepo.remove(entity);
+      removedEntities.push(r);
     }
 
     return removedEntities
@@ -526,41 +530,63 @@ export class ModelMetadataService {
 
   async remove(id: number) {
     const entity = await this.findOne(id);
-    return this.modelMetadataRepo.remove(entity);
+    await this.cleanupOnDelete(entity.id);
+    const r = await this.modelMetadataRepo.remove(entity);
+    return r
   }
 
-  async cleanupOnDelete(modelEntity: ModelMetadata) {
+  async cleanupOnDelete(modelEntityId: number) {
+    const modelEntity = await this.modelMetadataRepo.findOne({
+      where: {
+        // @ts-ignore
+        id: modelEntityId,
+      },
+      relations: ['module']
+    });
+
+    if (!modelEntity) {
+      this.logger.log(`Invalid modelEntityId: ${modelEntityId} unable to resolve model metadata`);
+      return;
+    }
+    if (modelEntity.id !== modelEntityId) {
+      this.logger.log(`Invalid modelEntityId: ${modelEntityId} unable to resolve model metadata id ${modelEntity.id} not matching with the one passed as argument ${modelEntityId}`);
+      return;
+    }
+
+    this.logger.log(`Cleaning up for model: ${modelEntity.singularName} belonging to module: ${modelEntity.module.name}`);
+
     const modulePath = await this.moduleMetadataHelperService.getModulePath(modelEntity.module.name);
+    // /Users/harishpatel/Code/javascript/school-fees-portal/solid-api/src/solid-core
     this.logger.log(`Module path: ${modulePath}`);
 
     const filesToDelete = [];
     // <singularName>.entity.ts | The TypeORM model that needs to be deleted. | Automatic
-    const entityFilePath = `${modulePath}/entities/${modelEntity.singularName}.entity.ts`;
+    const entityFilePath = `${modulePath}/entities/${dasherize(modelEntity.singularName)}.entity.ts`;
     filesToDelete.push(entityFilePath);
     this.logger.log(`About to delete entity file path: ${entityFilePath}`);
 
     // <singularName>.create.dto.ts | The TypeORM model that needs to be deleted. | Automatic
-    const createDtoFilePath = `${modulePath}/dtos/create-${modelEntity.singularName}.dto.ts`;
+    const createDtoFilePath = `${modulePath}/dtos/create-${dasherize(modelEntity.singularName)}.dto.ts`;
     filesToDelete.push(createDtoFilePath);
     this.logger.log(`About to delete create DTO file path: ${createDtoFilePath}`);
 
     // <singularName>.update.dto.ts | The TypeORM model that needs to be deleted. | Automatic
-    const updateDtoFilePath = `${modulePath}/dtos/update-${modelEntity.singularName}.dto.ts`;
+    const updateDtoFilePath = `${modulePath}/dtos/update-${dasherize(modelEntity.singularName)}.dto.ts`;
     filesToDelete.push(updateDtoFilePath);
     this.logger.log(`About to delete update DTO file path: ${updateDtoFilePath}`);
 
     // <singularName>.repository.ts | The TypeORM model that needs to be deleted. | Automatic
-    const repositoryFilePath = `${modulePath}/repositories/${modelEntity.singularName}.repository.ts`;
+    const repositoryFilePath = `${modulePath}/repositories/${dasherize(modelEntity.singularName)}.repository.ts`;
     filesToDelete.push(repositoryFilePath);
     this.logger.log(`About to delete repository file path: ${repositoryFilePath}`);
 
     // <singularName>.service.ts | The TypeORM model that needs to be deleted. | Automatic
-    const serviceFilePath = `${modulePath}/services/${modelEntity.singularName}.service.ts`;
+    const serviceFilePath = `${modulePath}/services/${dasherize(modelEntity.singularName)}.service.ts`;
     filesToDelete.push(serviceFilePath);
     this.logger.log(`About to delete service file path: ${serviceFilePath}`);
 
     // <singularName>.controller.ts | The TypeORM model that needs to be deleted. | Automatic
-    const controllerFilePath = `${modulePath}/controllers/${modelEntity.singularName}.controller.ts`;
+    const controllerFilePath = `${modulePath}/controllers/${dasherize(modelEntity.singularName)}.controller.ts`;
     filesToDelete.push(controllerFilePath);
     this.logger.log(`About to delete controller file path: ${controllerFilePath}`);
 
@@ -576,7 +602,7 @@ export class ModelMetadataService {
 
     // Delete the permissions, menu, actions & views related to this model.
     const controllerName = `${classify(modelEntity.singularName)}Controller`;
-    const permissions = [
+    const permissionNames = [
       `${controllerName}.delete`,
       `${controllerName}.deleteMany`,
       `${controllerName}.findOne`,
@@ -589,12 +615,23 @@ export class ModelMetadataService {
       `${controllerName}.create`,
     ];
     const permissionsRepo = this.dataSource.getRepository(PermissionMetadata);
-    // TODO: check if this removes the relevant entries from all roles.... 
-    permissionsRepo.delete({ name: In(permissions) });
+    const permissionsToDelete = await permissionsRepo.find({
+      where: { name: In(permissionNames) },
+      relations: ['roles'],
+    });
 
-    // Delete view 
-    const viewRepo = this.dataSource.getRepository(ViewMetadata);
-    await viewRepo.delete({ model: { id: modelEntity.id } })
+    // Remove role associations first
+    for (const permission of permissionsToDelete) {
+      if (permission.roles?.length) {
+        await this.dataSource
+          .createQueryBuilder()
+          .relation(PermissionMetadata, 'roles')
+          .of(permission) // permission instance or its ID
+          .remove(permission.roles); // remove all linked roles
+      }
+    }
+
+    await permissionsRepo.remove(permissionsToDelete);
 
     // Delete actions
     const actionRepo = this.dataSource.getRepository(ActionMetadata);
@@ -603,37 +640,72 @@ export class ModelMetadataService {
 
     // Delete menu items
     const menuItemRepo = this.dataSource.getRepository(MenuItemMetadata);
-    await menuItemRepo.delete({ action: { id: action?.id } });
+    const menuItems = await menuItemRepo.find({ where: { action: { id: action.id } } });
+    for (let i = 0; i < menuItems.length; i++) {
+      const menuItem = menuItems[i];
+      await menuItemRepo.remove(menuItem);
+    }
+
+    // Delete view 
+    const viewRepo = this.dataSource.getRepository(ViewMetadata);
+    await viewRepo.delete({ model: { id: modelEntity.id } })
 
     // <moduleName>-metadata.json | Remove references to this model in the model metadata, menu, action & view sections. | Automatic
-
-
-    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.singularName);
+    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.module.name);
     const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
-
-
-    // Check if the model already exists in `models`
     const existingModelIndex = metaData.moduleMetadata.models.findIndex(
       (existingModel: any) => existingModel.singularName === modelEntity.singularName
     );
-
     if (existingModelIndex !== -1) {
       metaData.moduleMetadata.models.splice(existingModelIndex, 1);
     }
-
     const updatedContent = JSON.stringify(metaData, null, 2);
     await fs.writeFile(filePath, updatedContent);
 
-
-
-
     // <moduleName>.module.ts | Remove all references and imports of the above files. | Manual (X)
+    // const moduleFilePath = path.resolve(modulePath, `${dasherize(modelEntity.module.name)}.module.ts`);
+
+    // this.logger.log(`Working on module file ${moduleFilePath}`);
+    // const project = new Project();
+    // const sourceFile = project.addSourceFileAtPath(moduleFilePath);
+
+    // // Remove import declarations related to deleted files
+    // sourceFile.getImportDeclarations().forEach(importDecl => {
+    //   const moduleSpecifier = importDecl.getModuleSpecifierValue();
+    //   const resolvedPath = importDecl.getModuleSpecifierSourceFile()?.getFilePath() || '';
+    //   if (filesToDelete.some(file => resolvedPath.endsWith(file))) {
+    //     importDecl.remove();
+    //   }
+    // });
+
+    // // Remove identifiers from `@Module` metadata (imports, providers, controllers)
+    // const moduleDecorator = sourceFile.getFirstDescendantByKind(SyntaxKind.Decorator);
+    // const objectLiteral = moduleDecorator?.getCallExpression()?.getArguments()?.[0];
+
+    // if (objectLiteral && objectLiteral.getKind() === SyntaxKind.ObjectLiteralExpression) {
+    //   const objectLiteralExpr = objectLiteral.asKindOrThrow(SyntaxKind.ObjectLiteralExpression);
+
+    //   for (const propName of ['imports', 'providers', 'controllers', 'exports']) {
+    //     const prop = objectLiteralExpr.getProperty(propName);
+    //     if (prop && prop.getKind() === SyntaxKind.PropertyAssignment) {
+    //       const elements = prop.getFirstDescendantByKind(SyntaxKind.ArrayLiteralExpression);
+    //       elements?.getElements().forEach(el => {
+    //         const text = el.getText();
+    //         if (filesToDelete.some(file => text.toLowerCase().includes(file.split('.')[0]))) {
+    //           // @ts-ignore
+    //           el.remove();
+    //         }
+    //       });
+    //     }
+    //   }
+    // }
+
+    // // Save changes
+    // sourceFile.saveSync();
 
     // Run seeder to reflect the removal. 
 
     // - | Drop database table | Removes the database table from the DB, this is a very risky step. Best to review all relations to other models etc and then do this manually | Manual (X)
-
-
 
   }
 
