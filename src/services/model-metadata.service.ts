@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
-import { DataSource, EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
+import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
@@ -25,6 +25,8 @@ import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
 import { RoleMetadataService } from './role-metadata.service';
 import { GenerateCodePublisher } from 'src/jobs/database/generate-code-publisher.service';
+import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
+import { classify } from '@angular-devkit/core/src/utils/strings';
 
 @Injectable()
 export class ModelMetadataService {
@@ -522,6 +524,94 @@ export class ModelMetadataService {
     return this.modelMetadataRepo.remove(entity);
   }
 
+  async cleanupOnDelete(modelEntity: ModelMetadata) {
+    const modulePath = await this.moduleMetadataHelperService.getModulePath(modelEntity.module.name);
+    this.logger.log(`Module path: ${modulePath}`);
+
+    const filesToDelete = [];
+    // <singularName>.entity.ts | The TypeORM model that needs to be deleted. | Automatic
+    const entityFilePath = `${modulePath}/entities/${modelEntity.singularName}.entity.ts`;
+    filesToDelete.push(entityFilePath);
+    this.logger.log(`About to delete entity file path: ${entityFilePath}`);
+
+    // <singularName>.create.dto.ts | The TypeORM model that needs to be deleted. | Automatic
+    const createDtoFilePath = `${modulePath}/dtos/create-${modelEntity.singularName}.dto.ts`;
+    filesToDelete.push(createDtoFilePath);
+    this.logger.log(`About to delete create DTO file path: ${createDtoFilePath}`);
+
+    // <singularName>.update.dto.ts | The TypeORM model that needs to be deleted. | Automatic
+    const updateDtoFilePath = `${modulePath}/dtos/update-${modelEntity.singularName}.dto.ts`;
+    filesToDelete.push(updateDtoFilePath);
+    this.logger.log(`About to delete update DTO file path: ${updateDtoFilePath}`);
+
+    // <singularName>.repository.ts | The TypeORM model that needs to be deleted. | Automatic
+    const repositoryFilePath = `${modulePath}/repositories/${modelEntity.singularName}.repository.ts`;
+    filesToDelete.push(repositoryFilePath);
+    this.logger.log(`About to delete repository file path: ${repositoryFilePath}`);
+
+    // <singularName>.service.ts | The TypeORM model that needs to be deleted. | Automatic
+    const serviceFilePath = `${modulePath}/services/${modelEntity.singularName}.service.ts`;
+    filesToDelete.push(serviceFilePath);
+    this.logger.log(`About to delete service file path: ${serviceFilePath}`);
+
+    // <singularName>.controller.ts | The TypeORM model that needs to be deleted. | Automatic
+    const controllerFilePath = `${modulePath}/controllers/${modelEntity.singularName}.controller.ts`;
+    filesToDelete.push(controllerFilePath);
+    this.logger.log(`About to delete controller file path: ${controllerFilePath}`);
+
+    for (let i = 0; i < filesToDelete.length; i++) {
+      const fileToDelete = filesToDelete[i];
+      try {
+        await fs.unlink(fileToDelete);
+        this.logger.log(`Deleted file: ${fileToDelete}`);
+      } catch (error) {
+        this.logger.error(`Error deleting file: ${fileToDelete}`, error);
+      }
+    }
+
+    // Delete the permissions, menu, actions & views related to this model.
+    const controllerName = `${classify(modelEntity.singularName)}Controller`;
+    const permissions = [
+      `${controllerName}.delete`,
+      `${controllerName}.deleteMany`,
+      `${controllerName}.findOne`,
+      `${controllerName}.findMany`,
+      `${controllerName}.recover`,
+      `${controllerName}.recoverMany`,
+      `${controllerName}.partialUpdate`,
+      `${controllerName}.update`,
+      `${controllerName}.insertMany`,
+      `${controllerName}.create`,
+    ];
+    const permissionsRepo = this.dataSource.getRepository(PermissionMetadata);
+    // TODO: check if this removes the relevant entries from all roles.... 
+    permissionsRepo.delete({ name: In(permissions) });
+
+    // Delete view 
+    const viewRepo = this.dataSource.getRepository(ViewMetadata);
+    await viewRepo.delete({ model: { id: modelEntity.id } })
+
+    // Delete actions
+    const actionRepo = this.dataSource.getRepository(ActionMetadata);
+    const action = await actionRepo.findOne({where: { model: { id: modelEntity.id } }});
+    await actionRepo.delete({ model: { id: modelEntity.id } });
+
+    // Delete menu items
+    const menuItemRepo = this.dataSource.getRepository(MenuItemMetadata);
+    await menuItemRepo.delete({ action: { id: action?.id } });
+
+    // <moduleName>-metadata.json | Remove references to this model in the model metadata, menu, action & view sections. | Automatic
+
+    // <moduleName>.module.ts | Remove all references and imports of the above files. | Manual (X)
+
+    // Run seeder to reflect the removal. 
+
+    // - | Drop database table | Removes the database table from the DB, this is a very risky step. Best to review all relations to other models etc and then do this manually | Manual (X)
+
+
+
+  }
+
   async handleGenerateCode(options: CodeGenerationOptions): Promise<any> {
     // // see if the model record exists. 
     // const model = await this.modelMetadataRepo.findOne({
@@ -550,7 +640,7 @@ export class ModelMetadataService {
       filter(field => field.type === SolidFieldType.relation && field.relationCreateInverse === true)
       .map(field => field.relationCoModelSingularName);
 
-      for (const singularName of coModelSingularNames) {
+    for (const singularName of coModelSingularNames) {
       const coModel = await this.findOneBySingularName(singularName);
       const inverseOptions: CodeGenerationOptions = {
         modelId: coModel.id,
