@@ -162,7 +162,8 @@ export class FieldMetadataService {
         });
 
         if (existingInverseField) {
-            const updatedField = fieldRepository.merge(existingInverseField, inverseField);
+            const { id, ...inverseFieldKeys } = inverseField;
+            const updatedField = { ...existingInverseField, ...inverseFieldKeys };
             const savedField = await fieldRepository.save(updatedField);
             return savedField;
         }
