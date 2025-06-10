@@ -407,6 +407,11 @@ export class ModelMetadataService {
           id: modelId,
         },
         relations: ["fields", "fields.mediaStorageProvider", "module", "parentModel"], //FIXME: Check with jenender and change to relations to avoid confusion
+        order: {
+          fields: {
+            id: "ASC",
+          },
+        },
       });
 
       const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
@@ -550,7 +555,7 @@ export class ModelMetadataService {
       filter(field => field.type === SolidFieldType.relation && field.relationCreateInverse === true)
       .map(field => field.relationCoModelSingularName);
 
-      for (const singularName of coModelSingularNames) {
+    for (const singularName of coModelSingularNames) {
       const coModel = await this.findOneBySingularName(singularName);
       const inverseOptions: CodeGenerationOptions = {
         modelId: coModel.id,
