@@ -16,7 +16,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         protected readonly mqMessageQueueService: MqMessageQueueService,
     ) {
         this.url = process.env.QUEUES_RABBIT_MQ_URL;
-        this.serviceRole = process.env.SERVICE_ROLE;
+        this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
         if (!this.url) {
             this.logger.debug('RabbitMqPublisher url is not defined in the environment variables');
         }
