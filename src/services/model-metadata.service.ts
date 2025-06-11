@@ -640,10 +640,12 @@ export class ModelMetadataService {
 
     // Delete menu items
     const menuItemRepo = this.dataSource.getRepository(MenuItemMetadata);
-    const menuItems = await menuItemRepo.find({ where: { action: { id: action.id } } });
-    for (let i = 0; i < menuItems.length; i++) {
-      const menuItem = menuItems[i];
-      await menuItemRepo.remove(menuItem);
+    if (action) {
+      const menuItems = await menuItemRepo.find({ where: { action: { id: action.id } } });
+      for (let i = 0; i < menuItems.length; i++) {
+        const menuItem = menuItems[i];
+        await menuItemRepo.remove(menuItem);
+      }
     }
 
     // Delete view 
