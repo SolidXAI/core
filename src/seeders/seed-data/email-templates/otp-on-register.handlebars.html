@@ -116,24 +116,40 @@
 <body>
     <div class="email-wrapper">
         <!-- Logo outside the box -->
+        {{#if companyLogoUrl}}
         <div class="logo">
-            <img src="https://yourcompany.com/logo.png" alt="Company Logo" />
+            <img src="{{companyLogoUrl}}" alt="Company Logo" />
+            <!-- {{else}}
+//fallback svg logo here
+            {{/if}} -->
         </div>
+        {{/if}}
 
         <!-- Content Box -->
         <div class="content-box">
-            <h2 class="title">Hi, {{ fullName }}</h2>
+            <h2 class="title">Hi {{ fullName }},</h2>
             <p class="intro">
-                To get started with {{ solidAppName }}, please verify your account using the
-                below verification code.
+                Thank you for signing up for <strong>{{ solidAppName }}!</strong>
+            </p>
+            <p class="intro" style="margin-top: 10px;">
+                To complete your registration, please use the following One-Time Password (OTP) to verify your email
+                address:
             </p>
             <div class="button-container">
                 <div class="button">
                     {{ emailVerificationTokenOnRegistration }}
                 </div>
             </div>
+            <p class="intro">
+                This code is valid for 10 minutes. Please do not share this code with anyone.
+            </p>
             <p class="footer-text">
-                If you have any questions, just reply to this email—we’re happy to help.
+                If you did not attempt to sign up, please disregard this email.
+            </p>
+            <p class="intro">
+                Regards,
+                <br />
+                The {{ solidAppName }} Team.
             </p>
         </div>
 

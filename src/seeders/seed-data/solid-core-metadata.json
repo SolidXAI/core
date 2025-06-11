@@ -9300,7 +9300,7 @@
       "name": "on-force-password-change",
       "displayName": "Default: On Force Password Change",
       "body": "on-force-password-change.handlebars.html",
-      "subject": "{{solidAppName}} - Your New Account.",
+      "subject": "Welcome to {{solidAppName}}!",
       "description": "When using password based signUp, if the user does not specify the password of the new account being created the system automatically triggers a force password change email.",
       "active": true,
       "type": "text"
@@ -9309,7 +9309,7 @@
       "name": "otp-on-register",
       "displayName": "Default: Otp On Register",
       "body": "otp-on-register.handlebars.html",
-      "subject": "{{solidAppName}} - Verify Your New Account.",
+      "subject": "Verify Your Email for {{solidAppName}}",
       "description": "This template is used to generate the account verification email sent to users to verify their email address when they register.",
       "active": true,
       "type": "text"
@@ -9318,7 +9318,7 @@
       "name": "otp-on-login",
       "displayName": "Default: Otp On Login",
       "body": "otp-on-login.handlebars.html",
-      "subject": "{{solidAppName}} - Verification Token For Your Login.",
+      "subject": "Your One-Time Password for {{solidAppName}}",
       "description": "This template is used to send the email with the OTP when logging in.",
       "active": true,
       "type": "text"
@@ -9327,7 +9327,7 @@
       "name": "forgot-password",
       "displayName": "Default: Forgot Password",
       "body": "forgot-password.handlebars.html",
-      "subject": "{{solidAppName}} - Password Reset Instructions.",
+      "subject": "Reset Your Password for {{solidAppName}}",
       "description": "This template is used to send the verification token required by users to reset their password.",
       "active": true,
       "type": "text"
