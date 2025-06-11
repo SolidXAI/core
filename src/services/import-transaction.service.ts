@@ -435,6 +435,9 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     }
 
     const relatedRecordsIds = await this.getRelatedEntityIdsFromUserKeys(fieldMetadata, record, key);
+    if (relatedRecordsIds.length === 0) {
+      return dtoRecord; // If no related records found, return the dtoRecord as is
+    }
 
     if (fieldMetadata.relationType === RelationType.manyTomany || fieldMetadata.relationType === RelationType.oneToMany) {
       dtoRecord[`${fieldMetadata.name}Ids`] = relatedRecordsIds;
@@ -447,12 +450,14 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   }
 
   private async getRelatedEntityIdsFromUserKeys(fieldMetadata: FieldMetadata, record: Record<string, any>, key: string): Promise<Array<number>> {
+    // For many-to-many or one-to-many relations, we expect the record cell to contains a comma-separated list of userKeys
+    const relationUserKeys = record[key] ? String(record[key]).split(',').map((userKey: string) => userKey.trim()) : [];
+    if (relationUserKeys.length === 0) return [];
+
     const coModelService = this.getModelService(fieldMetadata.relationCoModelSingularName);
     const coModelWithUserKeyField = await this.modelMetadataService.findOneBySingularName(fieldMetadata.relationCoModelSingularName, ['userKeyField']);
     const coModelUserKeyFieldName = coModelWithUserKeyField?.userKeyField?.name || 'id'; // Default to 'id' if not found
 
-    // For many-to-many or one-to-many relations, we expect the record cell to contains a comma-separated list of userKeys
-    const relationUserKeys = record[key] ? String(record[key]).split(',').map((userKey: string) => userKey.trim()) : [];
 
     // Set the relation basic filter dto filters with the userkeys and call the find method of the model service to get the related records
     const relationFilterDto = {
