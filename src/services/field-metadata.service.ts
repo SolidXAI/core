@@ -162,9 +162,10 @@ export class FieldMetadataService {
         });
 
         if (existingInverseField) {
-            const updatedField = fieldRepository.merge(existingInverseField, inverseField);
-            const savedField = await fieldRepository.save(updatedField);
-            return savedField;
+            // const updatedField = fieldRepository.merge(existingInverseField, inverseField);
+            // const savedField = await fieldRepository.save(updatedField);
+            // return savedField;
+            return existingInverseField;
         }
         else {
             const savedField = await fieldRepository.save(fieldRepository.create(inverseField));
