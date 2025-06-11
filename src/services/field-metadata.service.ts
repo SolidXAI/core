@@ -162,10 +162,7 @@ export class FieldMetadataService {
         });
 
         if (existingInverseField) {
-            const { id, ...inverseFieldKeys } = inverseField;
-            const updatedField = { ...existingInverseField, ...inverseFieldKeys };
-            const savedField = await fieldRepository.save(updatedField);
-            return savedField;
+            return existingInverseField; // No need to update if it already exists
         }
         else {
             const savedField = await fieldRepository.save(fieldRepository.create(inverseField));
