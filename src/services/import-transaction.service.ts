@@ -58,6 +58,11 @@ interface ImportMapping {
   fieldName: string; // The name of the field in the model metadata to which the imported field is mapped
 }
 
+interface ImportSyncResult {
+  status: string; // The status of the import transaction
+  importedIds: Array<number>; // The IDs of the records created during the import
+}
+
 @Injectable()
 export class ImportTransactionService extends CRUDService<ImportTransaction> {
   constructor(
@@ -227,7 +232,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     };
   }
 
-  async startImportSync(importTransactionId: number): Promise<Array<number>> {
+  async startImportSync(importTransactionId: number): Promise<ImportSyncResult> {
     // Load the import transaction for the given ID
     const importTransaction = await this.loadImportTransaction(importTransactionId);
 
@@ -243,7 +248,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       JSON.parse(importTransaction.mapping) as ImportMapping[], // Parse the mapping from the import transaction
       importTransaction.modelMetadata,
     );
-    return ids; // Return the IDs of the created records
+    return {status: importTransaction.status, importedIds: ids}; // Return the IDs of the created records
   }
 
   startImportAsync(importTransactionId: number): Promise<void> {
