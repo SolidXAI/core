@@ -58,7 +58,7 @@ interface ImportMapping {
   fieldName: string; // The name of the field in the model metadata to which the imported field is mapped
 }
 
-interface ImportSyncResult {
+export interface ImportSyncResult {
   status: string; // The status of the import transaction
   importedIds: Array<number>; // The IDs of the records created during the import
 }
