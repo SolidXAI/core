@@ -196,6 +196,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     const importableFields: ImportableFieldInfo[] = this.fieldsAllowedForImport(importTransaction.modelMetadata.fields).map(field => ({
       name: field.name,
       displayName: field.displayName,
+      required: field.required,
     }));
 
     // Get the import file media object from the import transaction
