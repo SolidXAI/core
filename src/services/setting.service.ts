@@ -188,7 +188,10 @@ export class SettingService extends CRUDService<Setting> {
     if (files && files.length > 0) {
       for (const file of files) {
         const key = file.fieldname;
-        const fileStoragePath = `${this.configService.get('app-builder.fileStorageDir')}/${file.filename}-${file.originalname}`;
+        const relativePath = `${file.filename}-${file.originalname}`;
+        const fileStoragePath = `${this.configService.get('app-builder.fileStorageDir')}/${relativePath}`;
+        const baseUrl = process.env.BASE_URL || '';
+        const fullUrl = `${baseUrl}/${fileStoragePath}`;
         
         await this.fileService.copyFile(file.path, fileStoragePath);
         await this.fileService.deleteFile(file.path);
@@ -196,13 +199,13 @@ export class SettingService extends CRUDService<Setting> {
         if (existingKeys.has(key)) {
           const existingSetting = existingSettings.find(s => s.key === key);
           if (existingSetting) {
-            existingSetting.value = fileStoragePath;
+            existingSetting.value = fullUrl;
             settingsToUpdate.push(existingSetting);
           }
         } else {
           const newSetting = new Setting();
           newSetting.key = key;
-          newSetting.value = fileStoragePath;
+          newSetting.value = fullUrl;
           settingsToCreate.push(newSetting);
         }
       }
