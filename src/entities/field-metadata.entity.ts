@@ -105,7 +105,7 @@ export class FieldMetadata extends CommonEntity {
     // We can store a filter json like this {"fieldName": ${someVarWhichWillComeFromParentModel... or can be hard coded...}}
     // {"type": "INDUSTRY"} .... Eg. static fixedFilter 
     // {"country_id", "${country}"} ... Eg. dynamic fixedFilter 
-    @Column({ name: 'relation_Field_Fixed_Filter', nullable: true })
+    @Column({ name: 'relation_field_fixed_filter', nullable: true })
     relationFieldFixedFilter: string;
 
     @Column({ name: 'selection_dynamic_provider', nullable: true })

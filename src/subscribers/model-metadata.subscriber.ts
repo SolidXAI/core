@@ -7,8 +7,8 @@ import { ModelMetadata } from '../entities/model-metadata.entity';
 
 @EventSubscriber()
 @Injectable()
-export class ModelSubscriber implements EntitySubscriberInterface<ModelMetadata> {
-  private readonly logger = new Logger(ModelSubscriber.name);
+export class ModelMetadataSubscriber implements EntitySubscriberInterface<ModelMetadata> {
+  private readonly logger = new Logger(ModelMetadataSubscriber.name);
 
   constructor(
     @InjectDataSource()

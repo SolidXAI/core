@@ -158,6 +158,7 @@ export interface MailAttachment {
 
 export enum BrokerType {
   RabbitMQ = 'rabbitmq',
+  Database = 'database'
 }
 
 export interface QueuesModuleOptions {

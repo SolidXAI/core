@@ -1,12 +1,12 @@
 import { Logger } from '@nestjs/common';
 import * as amqp from 'amqplib';
 import { v4 as uuidv4 } from 'uuid';
-import { QueuesModuleOptions } from "../interfaces";
-import { QueueMessage, QueuePublisher } from '../interfaces/mq';
-import { MqMessageQueueService } from './mq-message-queue.service';
-import { MqMessageService } from './mq-message.service';
+import { QueuesModuleOptions } from "../../interfaces";
+import { QueueMessage, QueuePublisher } from '../../interfaces/mq';
+import { MqMessageQueueService } from '../mq-message-queue.service';
+import { MqMessageService } from '../mq-message.service';
 
-export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TODO This can be made a generic type for better type visibility
+export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> {
     private readonly logger = new Logger(RabbitMqPublisher.name);
     private readonly url: string;
     private readonly serviceRole: string;
@@ -28,6 +28,22 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TOD
 
     abstract options(): QueuesModuleOptions;
 
+    async establishConnection(): Promise<amqp.Connection> {
+
+        const url = new URL(this.url);
+
+        const connection = await amqp.connect({
+            protocol: url.protocol.replace(':', ''),
+            hostname: url.hostname,
+            port: parseInt(url.port),
+            username: url.username,
+            password: url.password,
+            frameMax: 131072,
+        });
+
+        return connection
+    }
+
     async publish(message: QueueMessage<T>): Promise<string> {
         if (!this.url) {
             this.logger.error('RabbitMqPublisher url is not defined in the environment variables');
@@ -44,7 +60,8 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TOD
 
         this.logger.debug(`RabbitMqPublisher publishing with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
 
-        const connection = await amqp.connect(this.url);
+        // const connection = await amqp.connect(this.url);
+        const connection = await this.establishConnection();
         // this.logger.debug(`RabbitMqPublisher publisher connected options: ${JSON.stringify(this.options())} and url: ${url}`);
 
         const channel = await connection.createChannel();
@@ -121,6 +138,7 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TOD
 
             // 2. Next create an entry in the mqMessage table. 
             await this.mqMessageService.create({
+                messageBroker: this.options().type,
                 messageId: message.messageId,
                 retryCount: message.retryCount,
                 retryInterval: message.retryInterval,
@@ -137,6 +155,4 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> { // TOD
         }
 
     }
-    
-
 }
