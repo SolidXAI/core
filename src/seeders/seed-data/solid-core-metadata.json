@@ -8754,6 +8754,13 @@
                   {
                     "type": "field",
                     "attrs": {
+                      "name": "forceChangePasswordOnFirstLogin",
+                      "label": "Force Password Change On First Login"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
                       "name": "iamPasswordRegistrationEnabled",
                       "label": "Iam Password Registration Enabled"
                     }

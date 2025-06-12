@@ -12,7 +12,7 @@ export const iamConfig = registerAs('iam', () => {
         defaultRole: process.env.IAM_DEFAULT_ROLE ?? 'Public',
         dummyOtp: process.env.IAM_OTP_DUMMY,
         forgotPasswordSendVerificationTokenOn: process.env.IAM_FORGOT_PASSWORD_SEND_VERIFICATION_TOKEN_ON ?? 'email',
-
+        forceChangePasswordOnFirstLogin:true,
         googleOauth: {
             clientID: process.env.IAM_GOOGLE_OAUTH_CLIENT_ID,
             clientSecret: process.env.IAM_GOOGLE_OAUTH_CLIENT_SECRET,

@@ -44,7 +44,6 @@ export class AccessTokenGuard implements CanActivate {
       request[REQUEST_USER_KEY] = payload;
       this.cls.set(REQUEST_USER_KEY, payload);
       // console.log(`About to set payload in the request user key:`);
-      // console.log(payload);
     } catch {
       throw new UnauthorizedException();
     }
