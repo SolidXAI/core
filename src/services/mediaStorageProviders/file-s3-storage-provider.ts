@@ -44,9 +44,9 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             // Store the file in the configured S3 Bucket
             let awsFileUrl;
             if (mediaFieldMetadata.mediaStorageProvider.isPublic === true) {
-                awsFileUrl = await this.fileService.copyToS3(file.path, file.mimetype, fileName, mediaFieldMetadata.mediaStorageProvider.bucketName,);
-            } else {
                 awsFileUrl = await this.fileService.copyToS3WithPublic(file.path, file.mimetype, fileName, mediaFieldMetadata.mediaStorageProvider.bucketName,);
+            } else {
+                awsFileUrl = await this.fileService.copyToS3(file.path, file.mimetype, fileName, mediaFieldMetadata.mediaStorageProvider.bucketName,);
             }
             await this.fileService.deleteFile(file.path);
 
