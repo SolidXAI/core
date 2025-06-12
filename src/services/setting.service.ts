@@ -180,7 +180,7 @@ export class SettingService extends CRUDService<Setting> {
     }
   }
 
-  async updateSettings(settings: any = {}, files: Array<Express.Multer.File> = []): Promise<Setting[]> {
+  async updateSettings(settings: Record<string, any> = {}, files: Array<Express.Multer.File> = []): Promise<Setting[]> {
     const existingSettings = await this.repo.find();
     const existingKeys = new Set(existingSettings.map(s => s.key));
 
@@ -213,7 +213,14 @@ export class SettingService extends CRUDService<Setting> {
       }
     }
 
-    for (const [key, value] of Object.entries(JSON.parse(settings))) {
+    let parsedSettings: Record<string, any>;
+    try {
+      parsedSettings = typeof settings === 'string' ? JSON.parse(settings) : settings;
+    } catch (error) {
+      parsedSettings = {};
+    }
+
+    for (const [key, value] of Object.entries(parsedSettings)) {
       if (files && files.some(f => f.fieldname === key)) {
         continue;
       }
