@@ -411,16 +411,41 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     const fieldType = fieldMetadata.type;
     // const userKeyFieldName = userKeyField?.name || 'id'; // Default to 'id' if not found
 
+    // TODO Move this logic to field crud managers i.e add a parse method to the field crud manager interface
     switch (fieldType) {
       case SolidFieldType.relation: {
         return await this.populateDtoForRelations(fieldMetadata, record, key, dtoRecord);
       }
-      case SolidFieldType.date: return this.populateDtoForDate(record, key, fieldMetadata, dtoRecord);
+      case SolidFieldType.date: 
       case SolidFieldType.datetime: return this.populateDtoForDate(record, key, fieldMetadata, dtoRecord);
+      case SolidFieldType.int:
+      case SolidFieldType.bigint:
+      case SolidFieldType.decimal:
+        return this.populateDtoForNumber(dtoRecord, fieldMetadata, record, key); 
+      case SolidFieldType.boolean:
+        return this.populateDtoForBoolean(dtoRecord, fieldMetadata, record, key);  
       default:
         dtoRecord[fieldMetadata.name] = record[key];
         return dtoRecord;
     }
+  }
+
+  private populateDtoForBoolean(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
+    const booleanValue = Boolean(record[key]);
+    if (typeof booleanValue !== 'boolean') {
+      throw new Error(`Invalid boolean value for field ${fieldMetadata.name}: ${record[key]}`);
+    }
+    dtoRecord[fieldMetadata.name] = booleanValue;
+    return dtoRecord;
+  }
+
+  private populateDtoForNumber(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
+    const numberValue = Number(record[key]);
+    if (isNaN(numberValue)) {
+      throw new Error(`Invalid number value for field ${fieldMetadata.name}: ${record[key]}`);
+    }
+    dtoRecord[fieldMetadata.name] = numberValue;
+    return dtoRecord;
   }
 
   private populateDtoForDate(record: Record<string, any>, key: string, fieldMetadata: FieldMetadata, dtoRecord: Record<string, any>) {
