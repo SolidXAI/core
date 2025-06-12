@@ -248,6 +248,12 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       JSON.parse(importTransaction.mapping) as ImportMapping[], // Parse the mapping from the import transaction
       importTransaction.modelMetadata,
     );
+
+    // Update the import transaction status to 'completed'
+    importTransaction.status = 'import_succeeded';
+    // Save the import transaction
+    await this.repo.save(importTransaction);
+
     return {status: importTransaction.status, importedIds: ids}; // Return the IDs of the created records
   }
 
@@ -331,7 +337,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   ): Promise<Array<number>> {
     // Get the model service for the model metadata name
     const modelService = this.getModelService(modelMetadataWithFields.singularName);
-
+    const createdRecordIds = [];
     // Depending upon the mime type of the file, read the file in pages
     // For CSV files, use the csvService to read the file in pages
     // For Excel files, use the excelService to read the file in pages
@@ -344,7 +350,9 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         const createdRecords = await modelService.insertMany(dtos, [], {});
         // Set the solidRequestContext to null, as this is a background job;
         // Return the IDs of the created records
-        return createdRecords.map(record => record.id);
+        const newIds = createdRecords.map(record => record.id);
+        // Add the new IDs to the createdRecordIds array
+        createdRecordIds.push(...newIds);
       }
     }
     else if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
@@ -356,11 +364,13 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         const createdRecords = await modelService.insertMany(dtos, [], {});
         // Set the solidRequestContext to null, as this is a background job;
         // Return the IDs of the created records
-        return createdRecords.map(record => record.id);
+        const newIds = createdRecords.map(record => record.id);
+        createdRecordIds.push(...newIds);
       }
     } else { // If the file is neither CSV nor Excel, throw an error
       throw new Error(`Unsupported file type: ${mimeType}`);
     }
+    return createdRecordIds; // Return the IDs of the created records
   }
 
   private getModelService(modelSingularName: string): CRUDService<any> {
