@@ -42,7 +42,7 @@ import { RefreshModelCommand } from './commands/refresh-model.command';
 import { MediaController } from './controllers/media.controller';
 
 import { RefreshModuleCommand } from './commands/refresh-module.command';
-import { ModelSubscriber } from './subscribers/model.subscriber';
+import { ModelMetadataSubscriber } from './subscribers/model-metadata.subscriber';
 
 import { ViewMetadataController } from './controllers/view-metadata.controller';
 import { ViewMetadata } from './entities/view-metadata.entity';
@@ -88,7 +88,9 @@ import { EmailQueueSubscriber } from './jobs/email-subscriber.service';
 import { OTPQueuePublisher } from './jobs/otp-publisher.service';
 import { OTPQueueSubscriber } from './jobs/otp-subscriber.service';
 import { TestQueuePublisher } from './jobs/queue-test-publisher.service';
+import { TestQueueDbPublisher } from './jobs/database/queue-test-db-publisher.service';
 import { TestQueueSubscriber } from './jobs/queue-test-subscriber.service';
+import { TestQueueDbSubscriber } from './jobs/database/queue-test-db-subscriber.service';
 import { SmsQueuePublisher } from './jobs/sms-publisher.service';
 import { SmsQueueSubscriber } from './jobs/sms-subscriber.service';
 import { WhatsappQueuePublisher } from './jobs/whatsapp-publisher.service';
@@ -184,6 +186,8 @@ import { LocaleListSelectionProvider } from './services/selection-providers/loca
 import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-by.subscriber';
 import { SystemFieldsSeederService } from './seeders/system-fields-seeder.service';
 import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
+import { GenerateCodePublisher } from './jobs/database/generate-code-publisher.service';
+import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber.service';
 
 
 @Global()
@@ -320,7 +324,7 @@ import { ModelMetadataHelperService } from './helpers/model-metadata-helper.serv
     ModuleMetadataSeederService,
     ListOfValuesService,
     ListOfValuesSelectionProvider,
-    ModelSubscriber,
+    ModelMetadataSubscriber,
     ViewMetadataService,
     ActionMetadataService,
     MenuItemMetadataService,
@@ -365,6 +369,10 @@ import { ModelMetadataHelperService } from './helpers/model-metadata-helper.serv
     UserRegistrationListener,
     TestQueuePublisher,
     TestQueueSubscriber,
+    TestQueueDbPublisher,
+    TestQueueDbSubscriber,
+    GenerateCodePublisher,
+    GenerateCodeSubscriber,    
     MqMessageQueueService,
     MqMessageService,
     PermissionMetadataService,

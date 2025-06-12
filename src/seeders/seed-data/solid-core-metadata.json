@@ -2252,6 +2252,16 @@
             "isSystem": true
           },
           {
+            "name": "messageBroker",
+            "displayName": "Message Broker",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": false,
+            "isSystem": true
+          },
+          {
             "name": "retryCount",
             "displayName": "Retry Count",
             "type": "int",
@@ -6796,8 +6806,8 @@
                     "type": "field",
                     "attrs": {
                       "name": "iconName",
-                      "editWidget" : "SolidIconEditWidget",
-                      "viewWidget" : "SolidIconViewWidget"
+                      "editWidget": "SolidIconEditWidget",
+                      "viewWidget": "SolidIconViewWidget"
                     }
                   }
                 ]
@@ -8151,8 +8161,8 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
+          "create": false,
+          "edit": false,
           "delete": false
         },
         "children": [
@@ -8160,6 +8170,13 @@
             "type": "field",
             "attrs": {
               "name": "messageId",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "messageBroker",
               "isSearchable": true
             }
           },
@@ -8229,6 +8246,8 @@
           "name": "form-1",
           "label": "Mq Message",
           "className": "grid",
+          "workflowField": "stage",
+          "workflowFieldUpdateEnabled": true,
           "disabled": true,
           "readonly": true
         },
@@ -8240,103 +8259,213 @@
             },
             "children": [
               {
-                "type": "group",
+                "type": "notebook",
                 "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-6"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "messageType",
-                      "label": "Message Type"
-                    }
+                      "name": "general-info",
+                      "label": "General Info"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-1",
+                          "className": ""
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "col-1",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "messageType",
+                                  "label": "Message Type"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "messageId",
+                                  "label": "Message Id"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "messageBroker",
+                                  "label": "Message Broker"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "retryCount",
+                                  "label": "Retry Count"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "retryInterval",
+                                  "label": "Retry Interval"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "startedAt",
+                                  "label": "Started At"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "finishedAt",
+                                  "label": "Finished At"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "elapsedMillis",
+                                  "label": "Elapsed Millis"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "parentEntityId",
+                                  "label": "Parent Entity Id"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "parentEntity",
+                                  "label": "Parent Entity"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "mqMessageQueue",
+                                  "label": "Message Queue"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "retryCount",
-                      "label": "Retry Count"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "retryInterval",
-                      "label": "Retry Interval"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "stage",
-                      "label": "Stage"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "startedAt",
-                      "label": "Started At"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "finishedAt",
-                      "label": "Finished At"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "elapsedMillis",
-                      "label": "Elapsed Millis"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "parentEntityId",
-                      "label": "Parent Entity Id"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "parentEntity",
-                      "label": "Parent Entity"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "mqMessageQueue",
-                      "label": "Message Queue"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "input",
+                      "name": "input-tab",
                       "label": "Input"
-                    }
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "input-row"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "input-col",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "input",
+                                  "label": "Input"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "output",
+                      "name": "output-tab",
                       "label": "Output"
-                    }
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "output-row"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "output-col",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "output",
+                                  "label": "Output"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "error",
+                      "name": "error-tab",
                       "label": "Error"
-                    }
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "error-row"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "error-col",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "error",
+                                  "label": "Error"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               }
@@ -8362,8 +8491,8 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
+          "create": false,
+          "edit": false,
           "delete": false
         },
         "children": [
@@ -8392,7 +8521,7 @@
           "label": "Mq Message Queue",
           "className": "grid",
           "disabled": false,
-          "readonly": false
+          "readonly": true
         },
         "children": [
           {
@@ -8402,229 +8531,160 @@
             },
             "children": [
               {
-                "type": "group",
+                "type": "notebook",
                 "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-6"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "name",
-                      "label": "Queue Name"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "description",
-                      "label": "Queue Description"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "mqMessages",
-                      "label": "mqMessages",
-                      "inlineCreate": "true",
-                      "inlineCreateLayout": {
-                        "type": "form",
+                      "name": "page-general-info",
+                      "label": "General Info"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
                         "attrs": {
-                          "name": "form-1",
-                          "label": "Mq Message",
-                          "className": "grid",
-                          "disabled": true,
-                          "readonly": true
+                          "name": "row-1"
                         },
                         "children": [
                           {
-                            "type": "sheet",
+                            "type": "column",
                             "attrs": {
-                              "name": "sheet-1"
+                              "name": "col-1",
+                              "className": "col-6"
                             },
                             "children": [
                               {
-                                "type": "group",
+                                "type": "field",
                                 "attrs": {
-                                  "name": "group-1",
-                                  "label": "",
-                                  "className": "col-6"
-                                },
-                                "children": [
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "messageType",
-                                      "label": "Message Type"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "retryCount",
-                                      "label": "Retry Count"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "retryInterval",
-                                      "label": "Retry Interval"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "stage",
-                                      "label": "Stage"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "startedAt",
-                                      "label": "Started At"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "finishedAt",
-                                      "label": "Finished At"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "elapsedMillis",
-                                      "label": "Elapsed Millis"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "parentEntityId",
-                                      "label": "Parent Entity Id"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "parentEntity",
-                                      "label": "Parent Entity"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "mqMessageQueue",
-                                      "label": "Message Queue"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "input",
-                                      "label": "Input"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "output",
-                                      "label": "Output"
-                                    }
-                                  },
-                                  {
-                                    "type": "field",
-                                    "attrs": {
-                                      "name": "error",
-                                      "label": "Error"
-                                    }
-                                  }
-                                ]
+                                  "name": "name",
+                                  "label": "Queue Name"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "col-2",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "description",
+                                  "label": "Queue Description"
+                                }
                               }
                             ]
                           }
                         ]
-                      },
-                      "inlineListLayout": {
-                        "type": "list",
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-messages",
+                      "label": "Messages"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
                         "attrs": {
-                          "pagination": true,
-                          "pageSizeOptions": [
-                            10,
-                            25,
-                            50
-                          ],
-                          "enableGlobalSearch": true,
-                          "create": true,
-                          "edit": true,
-                          "delete": false
+                          "name": "row-2"
                         },
                         "children": [
                           {
-                            "type": "field",
+                            "type": "column",
                             "attrs": {
-                              "name": "messageId",
-                              "isSearchable": true
-                            }
-                          },
-                          {
-                            "type": "field",
-                            "attrs": {
-                              "name": "stage",
-                              "isSearchable": true
-                            }
-                          },
-                          {
-                            "type": "field",
-                            "attrs": {
-                              "name": "startedAt",
-                              "isSearchable": true
-                            }
-                          },
-                          {
-                            "type": "field",
-                            "attrs": {
-                              "name": "finishedAt",
-                              "isSearchable": true
-                            }
-                          },
-                          {
-                            "type": "field",
-                            "attrs": {
-                              "name": "elapsedMillis",
-                              "isSearchable": true
-                            }
-                          },
-                          {
-                            "type": "field",
-                            "attrs": {
-                              "name": "parentEntityId",
-                              "isSearchable": true
-                            }
-                          },
-                          {
-                            "type": "field",
-                            "attrs": {
-                              "name": "parentEntity",
-                              "isSearchable": true
-                            }
-                          },
-                          {
-                            "type": "field",
-                            "attrs": {
-                              "name": "mqMessageQueue",
-                              "label": "Queue",
-                              "isSearchable": true
-                            }
+                              "name": "col-1",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "mqMessages",
+                                  "label": "mqMessages",
+                                  "inlineCreate": "false",
+                                  "showLabel": false,
+                                  "inlineListLayout": {
+                                    "type": "list",
+                                    "attrs": {
+                                      "pagination": true,
+                                      "pageSizeOptions": [
+                                        10,
+                                        25,
+                                        50
+                                      ],
+                                      "enableGlobalSearch": true,
+                                      "create": false,
+                                      "edit": false,
+                                      "delete": false
+                                    },
+                                    "children": [
+                                      {
+                                        "type": "field",
+                                        "attrs": {
+                                          "name": "messageId",
+                                          "isSearchable": true
+                                        }
+                                      },
+                                      {
+                                        "type": "field",
+                                        "attrs": {
+                                          "name": "stage",
+                                          "isSearchable": true
+                                        }
+                                      },
+                                      {
+                                        "type": "field",
+                                        "attrs": {
+                                          "name": "startedAt",
+                                          "isSearchable": true
+                                        }
+                                      },
+                                      {
+                                        "type": "field",
+                                        "attrs": {
+                                          "name": "finishedAt",
+                                          "isSearchable": true
+                                        }
+                                      },
+                                      {
+                                        "type": "field",
+                                        "attrs": {
+                                          "name": "elapsedMillis",
+                                          "isSearchable": true
+                                        }
+                                      },
+                                      {
+                                        "type": "field",
+                                        "attrs": {
+                                          "name": "parentEntityId",
+                                          "isSearchable": true
+                                        }
+                                      },
+                                      {
+                                        "type": "field",
+                                        "attrs": {
+                                          "name": "parentEntity",
+                                          "isSearchable": true
+                                        }
+                                      }
+                                    ]
+                                  }
+                                }
+                              }
+                            ]
                           }
                         ]
                       }
-                    }
+                    ]
                   }
                 ]
               }

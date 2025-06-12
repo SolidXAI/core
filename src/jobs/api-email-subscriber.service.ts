@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import mailQueueOptions from './api-email-queue-options';
-import { RabbitMqSubscriber } from 'src/services/rabbitmq-subscriber.service';
+import { RabbitMqSubscriber } from 'src/services/queues/rabbitmq-subscriber.service';
 import { QueueMessage } from 'src/interfaces/mq';
 import { ElasticEmailService } from '../services/mail/ElasticEmailService';
 import { MqMessageService } from 'src/services/mq-message.service';

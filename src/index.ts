@@ -214,8 +214,8 @@ export * from './services/mq-message-queue.service'
 export * from './services/mq-message.service'
 export * from './services/pdf.service'
 export * from './services/permission-metadata.service'
-export * from './services/rabbitmq-publisher.service'
-export * from './services/rabbitmq-subscriber.service'
+export * from './services/queues/rabbitmq-publisher.service'
+export * from './services/queues/rabbitmq-subscriber.service'
 export * from './services/refresh-token-ids-storage.service'
 export * from './services/role-metadata.service'
 export * from './services/selection-providers/list-of-models-selection-provider.service'
@@ -241,7 +241,7 @@ export * from './repository/field.repository'
 
 
 //softDeleteAwareEventSubscriber.subscriber.ts
-export * from './subscribers/model.subscriber'
+export * from './subscribers/model-metadata.subscriber'
 export * from './subscribers/soft-delete-aware-event.subscriber' //rename
 export * from './subscribers/view-metadata.subscriber' //rename
 export * from './subscribers/audit.subscriber'

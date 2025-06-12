@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 
 import { QueueMessage } from 'src/interfaces/mq';
-import { RabbitMqSubscriber } from 'src/services/rabbitmq-subscriber.service';
+import { RabbitMqSubscriber } from 'src/services/queues/rabbitmq-subscriber.service';
 import { Msg91OTPService } from '../services/sms/Msg91OTPService';
 import otpQueueOptions from './otp-queue-options';
 import { MqMessageService } from 'src/services/mq-message.service';
