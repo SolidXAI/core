@@ -5,7 +5,7 @@ import commonConfig from "src/config/common.config";
 import { SmsQueuePublisher } from "src/jobs/sms-publisher.service";
 import { QueueMessage } from "src/interfaces/mq";
 import { SmsTemplateService } from "../sms-template.service";
-import { RabbitMqPublisher } from "src/services/rabbitmq-publisher.service";
+import { RabbitMqPublisher } from "src/services/queues/rabbitmq-publisher.service";
 import { ISMS } from "../../interfaces";
 
 export abstract class Msg91BaseSMSService implements ISMS {

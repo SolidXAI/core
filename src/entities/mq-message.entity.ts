@@ -6,6 +6,9 @@ export class MqMessage extends CommonEntity{
 @Column({ type: "varchar", nullable: true })
 messageId: string;
 
+@Column({ type: "varchar", nullable: true })
+messageBroker: string;
+
 @Column({ type: "integer", nullable: true })
 retryCount: number;
 

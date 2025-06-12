@@ -25,6 +25,9 @@ export class ConcatComputedFieldProvider implements IComputedFieldProvider<any> 
         const fields = ctxt.fields;
         const slugify = ctxt.slugify || false;
 
+        if (!Array.isArray(fields) || fields?.length === 0) {
+            return '';
+        }
         let concatenatedString = '';
         for (let i = 0; i < fields.length; i++) {
             const field = fields[i];

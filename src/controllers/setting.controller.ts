@@ -8,7 +8,7 @@ import { SolidRequestContextDecorator } from 'src/decorators/solid-request-conte
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { UpdateSettingsDto } from 'src/dtos/update-settings.dto';
 
-@ApiTags('Solid') 
+@ApiTags('Solid Core') 
 @Controller('setting') //FIXME: Change this to the model plural name 
 export class SettingController {
   constructor(private readonly service: SettingService) {}
@@ -88,7 +88,8 @@ export class SettingController {
 
   @ApiBearerAuth("jwt")
   @Post('/bulk-update')
-  async updateSettings(@Body() updateSettingsDto: UpdateSettingsDto) {
-    return this.service.updateSettings(updateSettingsDto.settings);
+  @UseInterceptors(AnyFilesInterceptor())
+  async updateSettings(@Body() updateSettingsDto: UpdateSettingsDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+    return this.service.updateSettings(updateSettingsDto.settings, files);
   }
 }

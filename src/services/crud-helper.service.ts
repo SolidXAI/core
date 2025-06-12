@@ -2,12 +2,14 @@ import { Brackets, SelectQueryBuilder, WhereExpressionBuilder } from "typeorm";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { classify } from "@angular-devkit/core/src/utils/strings";
 import { ActiveUserData } from "src/interfaces/active-user-data.interface";
+import { SolidRegistry } from "src/helpers/solid-registry";
+import { Logger } from "@nestjs/common";
+
 
 export class CrudHelperService {
     constructor(
-
     ) { }
-
+    private readonly logger = new Logger(CrudHelperService.name);
 
     private orderOptions(sort: any[] = []) {
         const orderOptions = {};
@@ -154,8 +156,8 @@ export class CrudHelperService {
     private hasJoins(queryBuilder: SelectQueryBuilder<any>): boolean {
         return queryBuilder.expressionMap.joinAttributes.length > 0;
     }
-
-    buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string, internationalisation?: boolean, draftPublishWorkflow?: boolean): SelectQueryBuilder<any> { // TODO : Check how to pass a type to SelectQueryBuilder instead of any
+ 
+    buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string, internationalisation?: boolean, draftPublishWorkflow?: boolean,moduleRef?:any): SelectQueryBuilder<any> { // TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
         const { fields, sort, groupBy, populate = [], populateMedia = [], locale, status } = basicFilterDto;
 
@@ -190,10 +192,14 @@ export class CrudHelperService {
         if (internationalisation) {
             // If locale is not provided in the filter dto, then assume it is the default locale to be used. 
             if (!finalLocale) {
-                // TODO: get the default locale from the database.
-                // This should be replaced with the actual default locale from the database, make sure to cache this request.
-                // @Sundaram consult with Oswald and use a registry based approach to fetch the default locale, making sure that it gets cached and we don't have to query again and again.
-                finalLocale = 'en';
+                //Get default locale from registry
+                const solidRegistry = moduleRef.get(SolidRegistry, { strict: false });
+                const defaultLocale = solidRegistry.getDefaultLocale();
+                if(defaultLocale){
+                    finalLocale = defaultLocale.locale;
+                }else{
+                    finalLocale = 'en';
+                }
             }
             qb.andWhere(`${entityAlias}.localeName = :locale`, { locale: finalLocale });
         }

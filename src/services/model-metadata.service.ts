@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
-import { DataSource, EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
+import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
@@ -24,6 +24,9 @@ import { CrudHelperService } from './crud-helper.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
 import { RoleMetadataService } from './role-metadata.service';
+import { GenerateCodePublisher } from 'src/jobs/database/generate-code-publisher.service';
+import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
+import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
 
 @Injectable()
 export class ModelMetadataService {
@@ -41,6 +44,7 @@ export class ModelMetadataService {
     private readonly fieldMetadataService: FieldMetadataService,
     private readonly roleService: RoleMetadataService,
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
+    private readonly generateCodePublihser: GenerateCodePublisher,
   ) { }
 
   async findMany(basicFilterDto: BasicFilterDto) {
@@ -184,7 +188,7 @@ export class ModelMetadataService {
         relations: {},
       });
     createDto['module'] = resolvedModule;
-    
+
     if (createDto['parentModelId']) {
       const resolvedParentModel = await this.dataSource
         .getRepository(ModelMetadata)
@@ -261,6 +265,10 @@ export class ModelMetadataService {
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
         isChild: model?.isChild,
         parentModelUserKey: model?.parentModel?.singularName,
+        enableAuditTracking: model?.enableAuditTracking,
+        enableSoftDelete: model?.enableSoftDelete,
+        draftPublishWorkflow: model?.draftPublishWorkflow,
+        internationalisation: model?.internationalisation,
         fields: []
       }
 
@@ -283,7 +291,6 @@ export class ModelMetadataService {
       throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
     }
   }
-
 
   async updateInDb(manager: EntityManager, id: number, updateModelMetaDataDto: UpdateModelMetaDataDto) {
 
@@ -394,8 +401,6 @@ export class ModelMetadataService {
 
   }
 
-
-
   async updateInFile(modelId: any, repo: Repository<ModelMetadata>) {
     try {
 
@@ -404,6 +409,11 @@ export class ModelMetadataService {
           id: modelId,
         },
         relations: ["fields", "fields.mediaStorageProvider", "module", "parentModel"], //FIXME: Check with jenender and change to relations to avoid confusion
+        order: {
+          fields: {
+            id: "ASC",
+          },
+        },
       });
 
       const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
@@ -420,14 +430,21 @@ export class ModelMetadataService {
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
         isChild: model?.isChild,
         parentModelUserKey: model?.parentModel?.singularName,
+        enableAuditTracking: model?.enableAuditTracking,
+        enableSoftDelete: model?.enableSoftDelete,
+        draftPublishWorkflow: model?.draftPublishWorkflow,
+        internationalisation: model?.internationalisation,
         fields: []
       }
 
       for (let i = 0; i < model.fields.length; i++) {
         const field = model.fields[i];
-        if (!field.isSystem && !field.isMarkedForRemoval) {
+        if (!field.isSystem) {
 
           const fieldObject: Record<string, any> = await this.fieldMetadataService.createFieldConfig(field);
+          if (field.isMarkedForRemoval) {
+            fieldObject.isMarkedForRemoval = true;
+          }
           modelMetaData.fields.push(fieldObject);
         }
       }
@@ -480,7 +497,9 @@ export class ModelMetadataService {
   async removeBySingularName(singularName: string) {
     try {
       const entity = await this.findOneBySingularName(singularName);
-      return this.modelMetadataRepo.remove(entity);
+      await this.cleanupOnDelete(entity.id);
+      const r = await this.modelMetadataRepo.remove(entity);
+      return r;
     } catch (error) {
     }
   }
@@ -501,19 +520,218 @@ export class ModelMetadataService {
       // if (!entity) {
       //   throw new Error(`Entity with id ${ id } not found`);
       // }
-      removedEntities.push(await this.modelMetadataRepo.remove(entity));
+      await this.cleanupOnDelete(entity.id);
+      const r = await this.modelMetadataRepo.remove(entity);
+      removedEntities.push(r);
     }
 
     return removedEntities
   }
 
-
   async remove(id: number) {
     const entity = await this.findOne(id);
-    return this.modelMetadataRepo.remove(entity);
+    await this.cleanupOnDelete(entity.id);
+    const r = await this.modelMetadataRepo.remove(entity);
+    return r
   }
 
-  async handleGenerateCode(options: CodeGenerationOptions): Promise<string> {
+  async cleanupOnDelete(modelEntityId: number) {
+    const modelEntity = await this.modelMetadataRepo.findOne({
+      where: {
+        // @ts-ignore
+        id: modelEntityId,
+      },
+      relations: ['module']
+    });
+
+    if (!modelEntity) {
+      this.logger.log(`Invalid modelEntityId: ${modelEntityId} unable to resolve model metadata`);
+      return;
+    }
+    if (modelEntity.id !== modelEntityId) {
+      this.logger.log(`Invalid modelEntityId: ${modelEntityId} unable to resolve model metadata id ${modelEntity.id} not matching with the one passed as argument ${modelEntityId}`);
+      return;
+    }
+
+    this.logger.log(`Cleaning up for model: ${modelEntity.singularName} belonging to module: ${modelEntity.module.name}`);
+
+    const modulePath = await this.moduleMetadataHelperService.getModulePath(modelEntity.module.name);
+    // /Users/harishpatel/Code/javascript/school-fees-portal/solid-api/src/solid-core
+    this.logger.log(`Module path: ${modulePath}`);
+
+    const filesToDelete = [];
+    // <singularName>.entity.ts | The TypeORM model that needs to be deleted. | Automatic
+    const entityFilePath = `${modulePath}/entities/${dasherize(modelEntity.singularName)}.entity.ts`;
+    filesToDelete.push(entityFilePath);
+    this.logger.log(`About to delete entity file path: ${entityFilePath}`);
+
+    // <singularName>.create.dto.ts | The TypeORM model that needs to be deleted. | Automatic
+    const createDtoFilePath = `${modulePath}/dtos/create-${dasherize(modelEntity.singularName)}.dto.ts`;
+    filesToDelete.push(createDtoFilePath);
+    this.logger.log(`About to delete create DTO file path: ${createDtoFilePath}`);
+
+    // <singularName>.update.dto.ts | The TypeORM model that needs to be deleted. | Automatic
+    const updateDtoFilePath = `${modulePath}/dtos/update-${dasherize(modelEntity.singularName)}.dto.ts`;
+    filesToDelete.push(updateDtoFilePath);
+    this.logger.log(`About to delete update DTO file path: ${updateDtoFilePath}`);
+
+    // <singularName>.repository.ts | The TypeORM model that needs to be deleted. | Automatic
+    const repositoryFilePath = `${modulePath}/repositories/${dasherize(modelEntity.singularName)}.repository.ts`;
+    filesToDelete.push(repositoryFilePath);
+    this.logger.log(`About to delete repository file path: ${repositoryFilePath}`);
+
+    // <singularName>.service.ts | The TypeORM model that needs to be deleted. | Automatic
+    const serviceFilePath = `${modulePath}/services/${dasherize(modelEntity.singularName)}.service.ts`;
+    filesToDelete.push(serviceFilePath);
+    this.logger.log(`About to delete service file path: ${serviceFilePath}`);
+
+    // <singularName>.controller.ts | The TypeORM model that needs to be deleted. | Automatic
+    const controllerFilePath = `${modulePath}/controllers/${dasherize(modelEntity.singularName)}.controller.ts`;
+    filesToDelete.push(controllerFilePath);
+    this.logger.log(`About to delete controller file path: ${controllerFilePath}`);
+
+    for (let i = 0; i < filesToDelete.length; i++) {
+      const fileToDelete = filesToDelete[i];
+      try {
+        await fs.unlink(fileToDelete);
+        this.logger.log(`Deleted file: ${fileToDelete}`);
+      } catch (error) {
+        this.logger.error(`Error deleting file: ${fileToDelete}`, error);
+      }
+    }
+
+    // Delete the permissions, menu, actions & views related to this model.
+    const controllerName = `${classify(modelEntity.singularName)}Controller`;
+    const permissionNames = [
+      `${controllerName}.delete`,
+      `${controllerName}.deleteMany`,
+      `${controllerName}.findOne`,
+      `${controllerName}.findMany`,
+      `${controllerName}.recover`,
+      `${controllerName}.recoverMany`,
+      `${controllerName}.partialUpdate`,
+      `${controllerName}.update`,
+      `${controllerName}.insertMany`,
+      `${controllerName}.create`,
+    ];
+    const permissionsRepo = this.dataSource.getRepository(PermissionMetadata);
+    const permissionsToDelete = await permissionsRepo.find({
+      where: { name: In(permissionNames) },
+      relations: ['roles'],
+    });
+
+    // Remove role associations first
+    for (const permission of permissionsToDelete) {
+      if (permission.roles?.length) {
+        await this.dataSource
+          .createQueryBuilder()
+          .relation(PermissionMetadata, 'roles')
+          .of(permission) // permission instance or its ID
+          .remove(permission.roles); // remove all linked roles
+      }
+    }
+
+    await permissionsRepo.remove(permissionsToDelete);
+
+    // Delete actions
+    const actionRepo = this.dataSource.getRepository(ActionMetadata);
+    const action = await actionRepo.findOne({ where: { model: { id: modelEntity.id } } });
+    await actionRepo.delete({ model: { id: modelEntity.id } });
+
+    // Delete menu items
+    const menuItemRepo = this.dataSource.getRepository(MenuItemMetadata);
+    if (action) {
+      const menuItems = await menuItemRepo.find({ where: { action: { id: action.id } } });
+      for (let i = 0; i < menuItems.length; i++) {
+        const menuItem = menuItems[i];
+        await menuItemRepo.remove(menuItem);
+      }
+    }
+
+    // Delete view 
+    const viewRepo = this.dataSource.getRepository(ViewMetadata);
+    await viewRepo.delete({ model: { id: modelEntity.id } })
+
+    // <moduleName>-metadata.json | Remove references to this model in the model metadata, menu, action & view sections. | Automatic
+    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.module.name);
+    const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
+    const existingModelIndex = metaData.moduleMetadata.models.findIndex(
+      (existingModel: any) => existingModel.singularName === modelEntity.singularName
+    );
+    if (existingModelIndex !== -1) {
+      metaData.moduleMetadata.models.splice(existingModelIndex, 1);
+    }
+    const updatedContent = JSON.stringify(metaData, null, 2);
+    await fs.writeFile(filePath, updatedContent);
+
+    // <moduleName>.module.ts | Remove all references and imports of the above files. | Manual (X)
+    // const moduleFilePath = path.resolve(modulePath, `${dasherize(modelEntity.module.name)}.module.ts`);
+
+    // this.logger.log(`Working on module file ${moduleFilePath}`);
+    // const project = new Project();
+    // const sourceFile = project.addSourceFileAtPath(moduleFilePath);
+
+    // // Remove import declarations related to deleted files
+    // sourceFile.getImportDeclarations().forEach(importDecl => {
+    //   const moduleSpecifier = importDecl.getModuleSpecifierValue();
+    //   const resolvedPath = importDecl.getModuleSpecifierSourceFile()?.getFilePath() || '';
+    //   if (filesToDelete.some(file => resolvedPath.endsWith(file))) {
+    //     importDecl.remove();
+    //   }
+    // });
+
+    // // Remove identifiers from `@Module` metadata (imports, providers, controllers)
+    // const moduleDecorator = sourceFile.getFirstDescendantByKind(SyntaxKind.Decorator);
+    // const objectLiteral = moduleDecorator?.getCallExpression()?.getArguments()?.[0];
+
+    // if (objectLiteral && objectLiteral.getKind() === SyntaxKind.ObjectLiteralExpression) {
+    //   const objectLiteralExpr = objectLiteral.asKindOrThrow(SyntaxKind.ObjectLiteralExpression);
+
+    //   for (const propName of ['imports', 'providers', 'controllers', 'exports']) {
+    //     const prop = objectLiteralExpr.getProperty(propName);
+    //     if (prop && prop.getKind() === SyntaxKind.PropertyAssignment) {
+    //       const elements = prop.getFirstDescendantByKind(SyntaxKind.ArrayLiteralExpression);
+    //       elements?.getElements().forEach(el => {
+    //         const text = el.getText();
+    //         if (filesToDelete.some(file => text.toLowerCase().includes(file.split('.')[0]))) {
+    //           // @ts-ignore
+    //           el.remove();
+    //         }
+    //       });
+    //     }
+    //   }
+    // }
+
+    // // Save changes
+    // sourceFile.saveSync();
+
+    // Run seeder to reflect the removal. 
+
+    // - | Drop database table | Removes the database table from the DB, this is a very risky step. Best to review all relations to other models etc and then do this manually | Manual (X)
+
+  }
+
+  async handleGenerateCode(options: CodeGenerationOptions): Promise<any> {
+    // // see if the model record exists. 
+    // const model = await this.modelMetadataRepo.findOne({
+    //   where: {
+    //     id: options.modelId,
+    //   },
+    // });
+    // if (!model) {
+    //   throw new NotFoundException(`Model record with #${options.modelId} not found`);
+    // }
+
+    // const m = {
+    //   payload: options,
+    //   parentEntity: model.singularName,
+    //   parentEntityId: options.modelId,
+    // };
+
+    // const messageId = await this.generateCodePublihser.publish(m);
+
+    // return { messageId: messageId };
+
     const { model, removeFieldCodeOuput, refreshModelCodeOutput } = await this.generateCode(options);
 
     // Generate the code for models which are linked to fields having an inverse relation
@@ -529,14 +747,13 @@ export class ModelMetadataService {
       };
       await this.generateCode(inverseOptions);
     }
-
     await this.generateVAMConfig(model.id);
 
     return `${removeFieldCodeOuput} \n ${refreshModelCodeOutput}`;
   }
 
   // Generate the View, Action and Menu configuration for the model
-  private async generateVAMConfig(modelId: number) {
+  async generateVAMConfig(modelId: number) {
     try {
       return await this.dataSource.transaction(async (manager: EntityManager) => {
         const modelRepository = manager.getRepository(ModelMetadata);
@@ -685,23 +902,23 @@ export class ModelMetadataService {
     };
 
     // Utility function to check if an item with the same name already exists
-  const notExists = (arr: any[], name: string) => !arr.some(item => item.name === name);
+    const notExists = (arr: any[], name: string) => !arr.some(item => item.name === name);
 
-  if (notExists(metaData.menus, menuName)) {
-    metaData.menus.push(menu);
-  }
+    if (notExists(metaData.menus, menuName)) {
+      metaData.menus.push(menu);
+    }
 
-  if (notExists(metaData.actions, viewName)) {
-    metaData.actions.push(action);
-  }
+    if (notExists(metaData.actions, viewName)) {
+      metaData.actions.push(action);
+    }
 
-  if (notExists(metaData.views, viewName)) {
-    metaData.views.push(modelListview);
-  }
+    if (notExists(metaData.views, viewName)) {
+      metaData.views.push(modelListview);
+    }
 
-  if (notExists(metaData.views, formViewName)) {
-    metaData.views.push(modelFormView);
-  }
+    if (notExists(metaData.views, formViewName)) {
+      metaData.views.push(modelFormView);
+    }
     // metaData.menus.push(menu);
     // metaData.actions.push(action);
     // metaData.views.push(modelListview);
@@ -850,7 +1067,7 @@ export class ModelMetadataService {
     }
   }
 
-  private async generateCode(options: CodeGenerationOptions) {
+  async generateCode(options: CodeGenerationOptions) {
     const query = {
       populate: ["module", "fields"]
     };
@@ -892,6 +1109,34 @@ export class ModelMetadataService {
         this.fieldMetadataService.delete(field.id);
       }
     });
+
+    // Remove the fields from metadata json file 
+
+    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
+    const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
+
+    // Check if the model already exists in `models`
+    const existingModelIndex = metaData.moduleMetadata.models.findIndex(
+      (existingModel: any) => existingModel.singularName === model.singularName
+    );
+
+    const modelMetaData = metaData.moduleMetadata.models[existingModelIndex];
+
+    // Remove fields marked for removal from modelMetaData.fields
+    modelMetaData.fields = modelMetaData.fields.filter((field: any) => field.isMarkedForRemoval !== true);
+
+    if (existingModelIndex !== -1) {
+      // Update the existing model
+      metaData.moduleMetadata.models[existingModelIndex] = modelMetaData;
+    } else {
+      // Add the new model
+      metaData.moduleMetadata.models.push(modelMetaData);
+    }
+
+    // Write the updated object back to the file
+    const updatedContent = JSON.stringify(metaData, null, 2);
+    await fs.writeFile(filePath, updatedContent);
+
     return removeOutput;
   }
 
@@ -926,7 +1171,7 @@ export class ModelMetadataService {
         modelEnableSoftDelete: model.enableSoftDelete,
         parentModel: model.parentModel?.singularName,
         parentModule: model.parentModel?.module?.name,
-
+        draftPublishWorkflowEnabled: model.draftPublishWorkflow,
       },
       dryRun
     );

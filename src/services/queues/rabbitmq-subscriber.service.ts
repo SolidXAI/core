@@ -1,9 +1,9 @@
 import { Logger, OnModuleInit } from '@nestjs/common';
 import * as amqp from 'amqplib';
-import { QueuesModuleOptions } from "../interfaces";
-import { QueueMessage, QueueSubscriber } from '../interfaces/mq';
-import { MqMessageQueueService } from './mq-message-queue.service';
-import { MqMessageService } from './mq-message.service';
+import { QueuesModuleOptions } from "../../interfaces";
+import { QueueMessage, QueueSubscriber } from '../../interfaces/mq';
+import { MqMessageQueueService } from '../mq-message-queue.service';
+import { MqMessageService } from '../mq-message.service';
 
 
 export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscriber<T> { // TODO This can be made a generic type for better type visibility
@@ -16,7 +16,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         protected readonly mqMessageQueueService: MqMessageQueueService,
     ) {
         this.url = process.env.QUEUES_RABBIT_MQ_URL;
-        this.serviceRole = process.env.SERVICE_ROLE;
+        this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
         if (!this.url) {
             this.logger.debug('RabbitMqPublisher url is not defined in the environment variables');
         }
@@ -30,21 +30,29 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
 
     abstract options(): QueuesModuleOptions;
 
+    async establishConnection(): Promise<amqp.Connection> {
+
+        const url = new URL(this.url);
+
+        const connection = await amqp.connect({
+            protocol: url.protocol.replace(':', ''),
+            hostname: url.hostname,
+            port: parseInt(url.port),
+            username: url.username,
+            password: url.password,
+            frameMax: 131072,
+        });
+
+        return connection
+    }
+
     async onModuleInit(): Promise<void> {
         // we will start subscriber only if the current service role is subscriber. 
-        if (['both', 'subscriber'].includes(this.serviceRole)) {
-            if (!this.url) {
-                this.logger.error('RabbitMqPublisher url is not defined in the environment variables');
-                throw new Error('RabbitMqPublisher url is not defined in the environment variables');
-            }
-    
-            if (!this.url) {
-                this.logger.warn(`Unable to create RabbitMqSubscriber instance: ${JSON.stringify(this.options())} as rabbitmq url is not configured.`);
-                return;
-            }
+        if (this.url && ['both', 'subscriber'].includes(this.serviceRole)) {
 
             // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${url}`);
-            const connection = await amqp.connect(this.url);
+            // const connection = await amqp.connect(this.url);
+            const connection = await this.establishConnection();
             // this.logger.debug(`RabbitMqSubscriber connection established: ${JSON.stringify(this.options())} and url: ${url}`);
 
             const channel = await connection.createChannel();
@@ -115,7 +123,6 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
 
             this.logger.debug(`RabbitMqSubscriber ready to consume messages: ${JSON.stringify(this.options())} and url: ${this.url}`);
         }
-
     }
 
     /**

@@ -9,6 +9,7 @@ export interface PasswordFieldOptions {
     required: boolean | undefined | null;
     regexPattern: string | undefined | null;
     fieldName: string | undefined | null;
+    isUpdate: Boolean;
 }
 
 export class PasswordFieldCrudManager implements FieldCrudManager {
@@ -24,7 +25,10 @@ export class PasswordFieldCrudManager implements FieldCrudManager {
 
     private applyValidations(fieldValue: any, dto: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.options.fieldName, error: `Field: ${this.options.fieldName} is required` }): "no errors";
+        if (!this.options?.isUpdate && this.isApplyRequiredValidation() && isEmpty(fieldValue)) {
+            errors.push({ field: this.options.fieldName, error: `Field: ${this.options.fieldName} is required` });
+        }
+        // this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.options.fieldName, error: `Field: ${this.options.fieldName} is required` }): "no errors";
         if (isNotEmpty(fieldValue)) {
             errors.push(...this.applyFormatValidations(fieldValue, dto));
         }

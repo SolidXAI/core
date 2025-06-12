@@ -1,8 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { RabbitMqSubscriber } from 'src/services/rabbitmq-subscriber.service';
+import { RabbitMqSubscriber } from 'src/services/queues/rabbitmq-subscriber.service';
 import { QueueMessage } from 'src/interfaces/mq';
-import testQueueConfig from './test-queue.config';
+import testQueueConfig from './test-queue-options';
 import { MqMessageService } from '../services/mq-message.service';
 import { MqMessageQueueService } from '../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../interfaces";
@@ -26,5 +26,13 @@ export class TestQueueSubscriber extends RabbitMqSubscriber<any> {
     subscribe(message: QueueMessage<any>) {
         // console.log(`Received message ${JSON.stringify(message)}`);
         this.testQueueLogger.debug(`Received message: ${JSON.stringify(message)}`);
+
+        return new Promise((resolve, reject) => {
+            // Simulate some processing time
+            setTimeout(() => {
+                this.testQueueLogger.debug(`Processed message: ${JSON.stringify(message)}`);
+                resolve({ status: 'success', messageId: message.messageId, message: `Processed message` });
+            }, 10000); // Simulate 1 second processing time
+        });
     }
 }

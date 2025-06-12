@@ -58,6 +58,11 @@ interface ImportMapping {
   fieldName: string; // The name of the field in the model metadata to which the imported field is mapped
 }
 
+export interface ImportSyncResult {
+  status: string; // The status of the import transaction
+  importedIds: Array<number>; // The IDs of the records created during the import
+}
+
 @Injectable()
 export class ImportTransactionService extends CRUDService<ImportTransaction> {
   constructor(
@@ -196,6 +201,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     const importableFields: ImportableFieldInfo[] = this.fieldsAllowedForImport(importTransaction.modelMetadata.fields).map(field => ({
       name: field.name,
       displayName: field.displayName,
+      required: field.required,
     }));
 
     // Get the import file media object from the import transaction
@@ -226,7 +232,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     };
   }
 
-  async startImportSync(importTransactionId: number): Promise<Array<number>> {
+  async startImportSync(importTransactionId: number): Promise<ImportSyncResult> {
     // Load the import transaction for the given ID
     const importTransaction = await this.loadImportTransaction(importTransactionId);
 
@@ -242,7 +248,13 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       JSON.parse(importTransaction.mapping) as ImportMapping[], // Parse the mapping from the import transaction
       importTransaction.modelMetadata,
     );
-    return ids; // Return the IDs of the created records
+
+    // Update the import transaction status to 'completed'
+    importTransaction.status = 'import_succeeded';
+    // Save the import transaction
+    await this.repo.save(importTransaction);
+
+    return {status: importTransaction.status, importedIds: ids}; // Return the IDs of the created records
   }
 
   startImportAsync(importTransactionId: number): Promise<void> {
@@ -325,7 +337,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   ): Promise<Array<number>> {
     // Get the model service for the model metadata name
     const modelService = this.getModelService(modelMetadataWithFields.singularName);
-
+    const createdRecordIds = [];
     // Depending upon the mime type of the file, read the file in pages
     // For CSV files, use the csvService to read the file in pages
     // For Excel files, use the excelService to read the file in pages
@@ -338,7 +350,9 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         const createdRecords = await modelService.insertMany(dtos, [], {});
         // Set the solidRequestContext to null, as this is a background job;
         // Return the IDs of the created records
-        return createdRecords.map(record => record.id);
+        const newIds = createdRecords.map(record => record.id);
+        // Add the new IDs to the createdRecordIds array
+        createdRecordIds.push(...newIds);
       }
     }
     else if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
@@ -350,11 +364,13 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         const createdRecords = await modelService.insertMany(dtos, [], {});
         // Set the solidRequestContext to null, as this is a background job;
         // Return the IDs of the created records
-        return createdRecords.map(record => record.id);
+        const newIds = createdRecords.map(record => record.id);
+        createdRecordIds.push(...newIds);
       }
     } else { // If the file is neither CSV nor Excel, throw an error
       throw new Error(`Unsupported file type: ${mimeType}`);
     }
+    return createdRecordIds; // Return the IDs of the created records
   }
 
   private getModelService(modelSingularName: string): CRUDService<any> {
@@ -405,16 +421,41 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     const fieldType = fieldMetadata.type;
     // const userKeyFieldName = userKeyField?.name || 'id'; // Default to 'id' if not found
 
+    // TODO Move this logic to field crud managers i.e add a parse method to the field crud manager interface
     switch (fieldType) {
       case SolidFieldType.relation: {
         return await this.populateDtoForRelations(fieldMetadata, record, key, dtoRecord);
       }
-      case SolidFieldType.date: return this.populateDtoForDate(record, key, fieldMetadata, dtoRecord);
+      case SolidFieldType.date: 
       case SolidFieldType.datetime: return this.populateDtoForDate(record, key, fieldMetadata, dtoRecord);
+      case SolidFieldType.int:
+      case SolidFieldType.bigint:
+      case SolidFieldType.decimal:
+        return this.populateDtoForNumber(dtoRecord, fieldMetadata, record, key); 
+      case SolidFieldType.boolean:
+        return this.populateDtoForBoolean(dtoRecord, fieldMetadata, record, key);  
       default:
         dtoRecord[fieldMetadata.name] = record[key];
         return dtoRecord;
     }
+  }
+
+  private populateDtoForBoolean(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
+    const booleanValue = Boolean(record[key]);
+    if (typeof booleanValue !== 'boolean') {
+      throw new Error(`Invalid boolean value for field ${fieldMetadata.name}: ${record[key]}`);
+    }
+    dtoRecord[fieldMetadata.name] = booleanValue;
+    return dtoRecord;
+  }
+
+  private populateDtoForNumber(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
+    const numberValue = Number(record[key]);
+    if (isNaN(numberValue)) {
+      throw new Error(`Invalid number value for field ${fieldMetadata.name}: ${record[key]}`);
+    }
+    dtoRecord[fieldMetadata.name] = numberValue;
+    return dtoRecord;
   }
 
   private populateDtoForDate(record: Record<string, any>, key: string, fieldMetadata: FieldMetadata, dtoRecord: Record<string, any>) {
@@ -434,6 +475,9 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     }
 
     const relatedRecordsIds = await this.getRelatedEntityIdsFromUserKeys(fieldMetadata, record, key);
+    if (relatedRecordsIds.length === 0) {
+      return dtoRecord; // If no related records found, return the dtoRecord as is
+    }
 
     if (fieldMetadata.relationType === RelationType.manyTomany || fieldMetadata.relationType === RelationType.oneToMany) {
       dtoRecord[`${fieldMetadata.name}Ids`] = relatedRecordsIds;
@@ -446,12 +490,14 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   }
 
   private async getRelatedEntityIdsFromUserKeys(fieldMetadata: FieldMetadata, record: Record<string, any>, key: string): Promise<Array<number>> {
+    // For many-to-many or one-to-many relations, we expect the record cell to contains a comma-separated list of userKeys
+    const relationUserKeys = record[key] ? String(record[key]).split(',').map((userKey: string) => userKey.trim()) : [];
+    if (relationUserKeys.length === 0) return [];
+
     const coModelService = this.getModelService(fieldMetadata.relationCoModelSingularName);
     const coModelWithUserKeyField = await this.modelMetadataService.findOneBySingularName(fieldMetadata.relationCoModelSingularName, ['userKeyField']);
     const coModelUserKeyFieldName = coModelWithUserKeyField?.userKeyField?.name || 'id'; // Default to 'id' if not found
 
-    // For many-to-many or one-to-many relations, we expect the record cell to contains a comma-separated list of userKeys
-    const relationUserKeys = record[key] ? String(record[key]).split(',').map((userKey: string) => userKey.trim()) : [];
 
     // Set the relation basic filter dto filters with the userkeys and call the find method of the model service to get the related records
     const relationFilterDto = {

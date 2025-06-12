@@ -1,8 +1,10 @@
 import { Injectable } from '@nestjs/common';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
+import { CommonEntity } from 'src/entities/common.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { EntityManager } from 'typeorm';
+import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
+import { Locale } from 'src/entities/locale.entity';
 
 type ControllerMetadata = {
   name: string;
@@ -33,6 +35,7 @@ export enum RESERVED_SOLID_KEYWORDS {
   userPasswordHistory = "userPasswordHistory",
   userMetadata = "userMetadata",
   user = "user",
+  locale = "locale"
 }
 
 @Injectable()
@@ -44,6 +47,7 @@ export class SolidRegistry {
   private controllers: Set<ControllerMetadata> = new Set();
   private modules: Set<InstanceWrapper> = new Set();
   private securityRules: SecurityRule[] = [];
+  private locales : Locale[] = [];
 
   registerController(name: string, methodNames: string[]): void {
     this.controllers.add({ name: name, methods: methodNames });
@@ -117,6 +121,15 @@ export class SolidRegistry {
     this.securityRules = securityRules;
   }
 
+  registerlocales(locales : Locale[]){
+    this.locales = locales;
+  }
+  
+  //TODO:getlocales from locale model and return default locale where isDefault:true 
+  getDefaultLocale(): Locale | null {
+    return this.locales.find(locale => locale.isDefault === true) || null;
+  }
+
   getSecurityRules(modelSingularName: string, roleNames: string[] = []): SecurityRule[] {
     // If no role is provided, return all security rules for the model
     if (roleNames.length === 0) {
@@ -133,6 +146,11 @@ export class SolidRegistry {
     const entityMetadatas = entityManager.connection.entityMetadatas;
     const entityMetadata = entityMetadatas.find(em => em.name === entityName);
     return entityMetadata.target;
+  }
+
+  getCommonEntityKeys(): (keyof CommonEntity) [] {
+    return [ 'id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt'];
+        // return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
   }
 
 }

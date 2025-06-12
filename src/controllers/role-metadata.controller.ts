@@ -7,7 +7,7 @@ import { UpdateRoleMetadataDto } from '../dtos/update-role-metadata.dto';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 
-@ApiTags('Solid') 
+@ApiTags('Solid Core') 
 @Controller('role-metadata') //FIXME: Change this to the model plural name 
 export class RoleMetadataController {
   constructor(private readonly service: RoleMetadataService) {}

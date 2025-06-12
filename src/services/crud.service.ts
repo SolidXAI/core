@@ -109,8 +109,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         });
     }
 
-    private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean, isPartialUpdate: boolean = false) {
-        const fieldManager: FieldCrudManager = this.fieldCrudManager(field, this.entityManager, isPartialUpdate);
+    private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean, isPartialUpdate: boolean = false, isUpdate: boolean = false) {
+        const fieldManager: FieldCrudManager = this.fieldCrudManager(field, this.entityManager, isPartialUpdate, isUpdate);
         const validationErrors = fieldManager.validate(dto, files);
         const errors = (validationErrors instanceof Promise) ? await validationErrors : validationErrors;
         if (errors.length > 0) {
@@ -150,10 +150,11 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     }
 
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
-    async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate: boolean = false, solidRequestContext: any = {}): Promise<T> {
+    async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate: boolean = false, solidRequestContext: any = {}, isUpdate: boolean = false): Promise<T> {
         if (!id) {
             throw new Error('Id is required for update');
         }
+        isUpdate = true;
         const model = await this.loadModel();
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
@@ -185,7 +186,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // 2. Loop through the fields with a switch statement
         // 3. Handle the fields based on field type
         for (const field of fieldsToProcess) {
-            const transformed = await this.validateAndTransformDto(field, updateDto, files, hasMediaFields, isPartialUpdate);
+            const transformed = await this.validateAndTransformDto(field, updateDto, files, hasMediaFields, isPartialUpdate, isUpdate);
             updateDto = transformed.dto;
             hasMediaFields = transformed.hasMediaFields;
         }
@@ -257,8 +258,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         }
     }
 
-    private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false): FieldCrudManager {
-        const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name };
+    private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false): FieldCrudManager {
+        const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name, isUpdate};
         switch (fieldMetadata.type) {
             case SolidFieldType.shortText: {
                 const options = { ...commonOptions, length: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern };
@@ -426,13 +427,15 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
         qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-
+        if(internationalisation && draftPublishWorkflow){
+            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias,internationalisation, draftPublishWorkflow,this.moduleRef);
+        }
 
         if (basicFilterDto.groupBy) {
             // Get the records and the count
-            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia, internationalisation, draftPublishWorkflow);
+            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia);
             const totalGroups = await this.crudHelperService.countGroupedRecords(qb, basicFilterDto, alias);
-            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow);
+            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
 
             return {
                 meta: {
@@ -463,7 +466,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[], internationalisation: boolean, draftPublishWorkflow: boolean) {
+    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[]) {
         const groupByResult = await qb.getRawMany();
 
         const groupMeta = [];
@@ -472,7 +475,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         for (const group of groupByResult) {
             if (populateGroup) {
                 let groupByQb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias);
-                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias, internationalisation, draftPublishWorkflow);
+                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
                 const [entities, count] = await groupByQb.getManyAndCount();
 

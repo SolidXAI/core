@@ -43,9 +43,9 @@ export interface ModuleMetadataConfiguration {
     moduleMetadata?: CreateModuleMetadataDto,
     roles?: CreateRoleMetadataDto[],
     users?: SignUpDto[],
-    actions?: CreateActionMetadataDto[],
-    menus?: CreateMenuItemMetadataDto[],
-    views?: CreateViewMetadataDto[],
+    actions?: any[],
+    menus?: any[],
+    views?: any[],
     emailTemplates?: CreateEmailTemplateDto[],
     smsTemplates?: CreateSmsTemplateDto[],
     mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[]
@@ -158,6 +158,7 @@ export interface MailAttachment {
 
 export enum BrokerType {
   RabbitMQ = 'rabbitmq',
+  Database = 'database'
 }
 
 export interface QueuesModuleOptions {

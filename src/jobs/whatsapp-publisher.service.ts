@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import { RabbitMqPublisher } from 'src/services/rabbitmq-publisher.service';
+import { RabbitMqPublisher } from 'src/services/queues/rabbitmq-publisher.service';
 import whatsappQueueOptions from './whatsapp-queue-options';
 import { MqMessageService } from 'src/services/mq-message.service';
 import { MqMessageQueueService } from 'src/services/mq-message-queue.service';

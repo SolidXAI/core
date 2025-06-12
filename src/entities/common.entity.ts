@@ -1,5 +1,5 @@
-import { PrimaryGeneratedColumn, Column, CreateDateColumn, UpdateDateColumn, DeleteDateColumn, Index, ManyToOne, JoinColumn } from "typeorm"
-import { Locale } from "./locale.entity";
+import { Column, CreateDateColumn, DeleteDateColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import type { User } from "./user.entity";
 
 export abstract class CommonEntity {
     @PrimaryGeneratedColumn({ type: 'integer' })
@@ -25,4 +25,10 @@ export abstract class CommonEntity {
 
     @Column({ type: "int", name: 'default_entity_locale_id', default: null })
     defaultEntityLocaleId: number;
+
+    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
+    createdBy: User;
+
+    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
+    updatedBy: User;    
 }

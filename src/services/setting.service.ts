@@ -48,6 +48,8 @@ export class SettingService extends CRUDService<Setting> {
       authPagesLayout: "center",
       authPagesTheme: "light",
       appLogo: "",
+      companylogo: "",
+      favicon: "",
       appLogoPosition: "in_form_view",
       showAuthContent: false,
       appTitle: process.env.SOLID_APP_NAME || "Solid App",
@@ -130,6 +132,8 @@ export class SettingService extends CRUDService<Setting> {
       authPagesLayout: "center",
       authPagesTheme: "light",
       appLogo: "",
+      companylogo: "",
+      favicon: "",
       appLogoPosition: "in_form_view", //in_form_view | in_image_view
       showAuthContent: false,
       appTitle: process.env.SOLID_APP_NAME || "Solid App",
@@ -176,14 +180,44 @@ export class SettingService extends CRUDService<Setting> {
     }
   }
 
-  async updateSettings(settings: Record<string, any>): Promise<Setting[]> {
+  async updateSettings(settings: Record<string, any> = {}, files: Array<Express.Multer.File> = []): Promise<Setting[]> {
     const existingSettings = await this.repo.find();
     const existingKeys = new Set(existingSettings.map(s => s.key));
 
     const settingsToUpdate: Setting[] = [];
     const settingsToCreate: Setting[] = [];
 
+    if (files && files.length > 0) {
+      for (const file of files) {
+        const key = file.fieldname;
+        const relativePath = `${file.filename}-${file.originalname}`;
+        const fileStoragePath = `${this.configService.get('app-builder.fileStorageDir')}/${relativePath}`;
+        const baseUrl = process.env.BASE_URL || '';
+        const fullUrl = `${baseUrl}/${fileStoragePath}`;
+        
+        await this.fileService.copyFile(file.path, fileStoragePath);
+        await this.fileService.deleteFile(file.path);
+
+        if (existingKeys.has(key)) {
+          const existingSetting = existingSettings.find(s => s.key === key);
+          if (existingSetting) {
+            existingSetting.value = fullUrl;
+            settingsToUpdate.push(existingSetting);
+          }
+        } else {
+          const newSetting = new Setting();
+          newSetting.key = key;
+          newSetting.value = fullUrl;
+          settingsToCreate.push(newSetting);
+        }
+      }
+    }
+
     for (const [key, value] of Object.entries(settings)) {
+      if (files && files.some(f => f.fieldname === key)) {
+        continue;
+      }
+
       const stringValue = typeof value === 'boolean' ? value.toString() :
         Array.isArray(value) ? value.join(',') :
           value === null || value === undefined ? '' : String(value);

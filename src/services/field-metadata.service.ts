@@ -156,15 +156,13 @@ export class FieldMetadataService {
     private async saveInverseField(fieldRepository: Repository<FieldMetadata>, relationModel: ModelMetadata, inverseField: FieldMetadata): Promise<FieldMetadata> {
         const existingInverseField = await fieldRepository.findOne({
             where: {
-                model: relationModel,
+                model: { id: relationModel.id },
                 name: inverseField.name
             }
         });
 
         if (existingInverseField) {
-            const updatedField = fieldRepository.merge(existingInverseField, inverseField);
-            const savedField = await fieldRepository.save(updatedField);
-            return savedField;
+            return existingInverseField; // No need to update if it already exists
         }
         else {
             const savedField = await fieldRepository.save(fieldRepository.create(inverseField));
@@ -1098,6 +1096,9 @@ export class FieldMetadataService {
                 delete fieldObject.mediaStorageProviderId
                 fieldObject.mediaStorageProviderUserKey = field.mediaStorageProvider.name
             }
+        }
+        if (field.isMarkedForRemoval) {
+            fieldObject.isMarkedForRemoval = field.isMarkedForRemoval;
         }
 
         return fieldObject;
