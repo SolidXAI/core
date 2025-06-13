@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -272,6 +272,88 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     throw new Error('Method not implemented.');
   }
 
+  async exportFailedImportedImports(importTransactionId: number) {
+    // Get the 1st error log entry to determine the headers for the export file
+    const firstErrorLogEntry = await this.entityManager.getRepository(ImportTransactionErrorLog).findOne({
+      where: {
+        importTransaction: { id: importTransactionId },
+      },
+    });
+
+    if (!firstErrorLogEntry) {
+      throw new BadRequestException(`No error log entries found for import transaction ID ${importTransactionId}.`);
+    }
+
+    // Create the headers for the export file
+    const headers = [
+      'rowNumber', // Row number in the import file
+      'errorMessage', // Error message for the failed record
+      'errorTrace', // Error trace for debugging
+      ...Object.keys(firstErrorLogEntry.rowData ? JSON.parse(firstErrorLogEntry.rowData) : {}), // Include all keys from the rowData JSON
+    ];
+
+
+    // Depending upon the format of the import tranaction file, create a readable stream of the error log entries
+    const importTransaction = await this.loadImportTransaction(importTransactionId);
+    const importFileMediaObject = this.getImportFileObject(importTransaction);
+    const mimeType = importFileMediaObject.mimeType;
+    const templateFormat = mimeType === ImportMimeTypes.CSV ? "csv" : "excel";
+    const dataRecordsFunc = async (chunkIndex: number, chunkSize: number): Promise<any[]> => {
+      // Get the error log entries for the import transaction
+      const errorLogEntries = await this.entityManager.getRepository(ImportTransactionErrorLog).find({
+        where: {
+          importTransaction: { id: importTransactionId },
+        },
+        skip: chunkIndex * chunkSize,
+        take: chunkSize,
+      });
+
+      if (!errorLogEntries || errorLogEntries.length === 0) {
+        return []; // Return an empty array if no error log entries found
+      }
+
+      // Read the row data json from the error log entry, parse it and write it as a record to the stream
+      return errorLogEntries.map(entry => {
+        const rowData = entry.rowData ? JSON.parse(entry.rowData) : {};
+        return {
+          rowNumber: entry.rowNumber,
+          errorMessage: entry.errorMessage,
+          errorTrace: entry.errorTrace,
+          ...rowData, // Spread the row data into the record
+        };
+      });
+    };
+
+    // Get the export stream for the failed records
+    const exportStream = await this.getFailedRecordsStream(templateFormat, headers, dataRecordsFunc);
+    if (!exportStream) {
+      throw new BadRequestException(`Failed to create export stream for import transaction ID ${importTransactionId}.`);
+    }
+    // Return the export stream
+    return {
+      stream: exportStream,
+      fileName: `${importTransaction.modelMetadata.singularName}-failed-imports.${templateFormat}`,
+      mimeType: templateFormat === "excel" ? ImportMimeTypes.EXCEL : ImportMimeTypes.CSV,
+    };
+
+  }
+
+  private async getFailedRecordsStream(templateFormat: string, headers: string[], dataRecordsFunc: (chunkIndex: number, chunkSize: number) => Promise<any[]>) {
+    let exportStream = null;
+    switch (templateFormat) {
+      case "excel":
+        exportStream = await this.excelService.createExcelStream(dataRecordsFunc, 100, headers);
+        break;
+      case "csv":
+        exportStream = await this.csvService.createCsvStream(dataRecordsFunc, 100, headers);
+        break;
+      default:
+        throw new Error('Invalid export format');
+    }
+    return exportStream;
+  }
+
+
   private async loadImportTransaction(importTransactionId: number) {
     const importTransaction = await this.findOne(importTransactionId, {
       populate: ['modelMetadata', 'modelMetadata.fields'],
@@ -350,7 +432,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     }
 
     const createdRecordIds = [];
-    const errorLogIds = [];
+    const createdErrorLogIds = [];
 
     // Get the model service for the model metadata name
     const modelService = this.getModelService(importTransaction.modelMetadata.singularName);
@@ -360,14 +442,14 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       for await (const page of this.csvService.readCsvInPagesFromStream(importFileStream)) {
         const { ids, errorLogIds } = await this.importRecords(page, importTransaction, modelService);
         createdRecordIds.push(...ids);
-        errorLogIds.push(...errorLogIds);
+        createdErrorLogIds.push(...errorLogIds);
       }
     }
     else if (mimeType === ImportMimeTypes.EXCEL) {
       for await (const page of this.excelService.readExcelInPagesFromStream(importFileStream)) {
         const { ids, errorLogIds } = await this.importRecords(page, importTransaction, modelService);
         createdRecordIds.push(...ids);
-        errorLogIds.push(...errorLogIds);
+        createdErrorLogIds.push(...errorLogIds);
       }
     } else { // If the file is neither CSV nor Excel, throw an error
       throw new Error(`Unsupported file type: ${mimeType}`);
@@ -375,7 +457,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
 
     return {
       ids: createdRecordIds, // Return the IDs of the created records
-      errorLogIds: errorLogIds, // Return the IDs of the error log entries created during the import
+      errorLogIds: createdErrorLogIds, // Return the IDs of the error log entries created during the import
     }
   }
 
