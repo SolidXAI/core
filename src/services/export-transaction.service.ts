@@ -167,7 +167,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
         exportStream = await this.excelService.createExcelStream(dataRecordsFunc, EXPORT_CHUNK_SIZE);
         break;
       case ExportFormat.CSV:
-        exportStream = await await this.csvService.createCsvStream(dataRecordsFunc, EXPORT_CHUNK_SIZE);
+        exportStream = await this.csvService.createCsvStream(dataRecordsFunc, EXPORT_CHUNK_SIZE);
         break;
       default:
         throw new Error('Invalid export format');
