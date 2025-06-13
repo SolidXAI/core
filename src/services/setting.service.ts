@@ -146,7 +146,8 @@ export class SettingService extends CRUDService<Setting> {
       shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
       shouldQueueSms: this.commonConfiguration.shouldQueueSms,
       enableDarkMode: true,
-      copyright : ""
+      copyright : "",
+      forceChangePasswordOnFirstLogin:true
     };
   }
 
@@ -154,7 +155,7 @@ export class SettingService extends CRUDService<Setting> {
     try {
       const settingsArray: Setting[] = await this.repo.find();
       const settingEntry = settingsArray.find(setting => setting.key === settingKey);
-
+      
       if (settingEntry && settingEntry.value !== null && settingEntry.value !== undefined) {
         const value = settingEntry.value;
 
@@ -213,7 +214,14 @@ export class SettingService extends CRUDService<Setting> {
       }
     }
 
-    for (const [key, value] of Object.entries(settings)) {
+    let parsedSettings: Record<string, any>;
+    try {
+      parsedSettings = typeof settings === 'string' ? JSON.parse(settings) : settings;
+    } catch (error) {
+      parsedSettings = {};
+    }
+
+    for (const [key, value] of Object.entries(parsedSettings)) {
       if (files && files.some(f => f.fieldname === key)) {
         continue;
       }
