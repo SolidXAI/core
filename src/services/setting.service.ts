@@ -213,7 +213,14 @@ export class SettingService extends CRUDService<Setting> {
       }
     }
 
-    for (const [key, value] of Object.entries(settings)) {
+    let parsedSettings: Record<string, any>;
+    try {
+      parsedSettings = typeof settings === 'string' ? JSON.parse(settings) : settings;
+    } catch (error) {
+      parsedSettings = {};
+    }
+
+    for (const [key, value] of Object.entries(parsedSettings)) {
       if (files && files.some(f => f.fieldname === key)) {
         continue;
       }
