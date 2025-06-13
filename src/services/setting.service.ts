@@ -155,6 +155,7 @@ export class SettingService extends CRUDService<Setting> {
     try {
       const settingsArray: Setting[] = await this.repo.find();
       const settingEntry = settingsArray.find(setting => setting.key === settingKey);
+      
       if (settingEntry && settingEntry.value !== null && settingEntry.value !== undefined) {
         const value = settingEntry.value;
 
