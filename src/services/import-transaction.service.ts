@@ -16,9 +16,11 @@ import { HttpService } from '@nestjs/axios';
 import { RelationFieldsCommand, RelationType, SolidFieldType } from 'src/dtos/create-field-metadata.dto';
 import { ImportInstructionsResponseDto, StandardImportInstructionsResponseDto } from 'src/dtos/import-instructions.dto';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
+import { ImportTransactionErrorLog } from 'src/entities/import-transaction-error-log.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { MediaWithFullUrl } from 'src/interfaces';
 import { Readable } from 'stream';
+import { v4 as uuidv4 } from 'uuid';
 import { ImportTransaction } from '../entities/import-transaction.entity';
 import { CsvService } from './csv.service';
 import { ExcelService } from './excel.service';
@@ -33,6 +35,11 @@ interface ImportTemplateFileInfo {
 export enum ImportFormat {
   CSV = 'csv',
   EXCEL = 'excel',
+}
+
+export enum ImportMimeTypes {
+  CSV = 'text/csv',
+  EXCEL = 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
 }
 export interface ImportMappingInfo {
   sampleImportedRecordInfo: SampleImportedRecordInfo[];
@@ -61,6 +68,11 @@ interface ImportMapping {
 export interface ImportSyncResult {
   status: string; // The status of the import transaction
   importedIds: Array<number>; // The IDs of the records created during the import
+}
+
+interface ImportRecordsResult {
+  ids: Array<number>; // The IDs of the records created during the import
+  errorLogIds: Array<number>; // The IDs of the error log entries created during the import
 }
 
 @Injectable()
@@ -242,19 +254,18 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     // Get the import file stream for the import transaction
     const importFileStream = await this.getImportFileStream(importFileMediaObject);
 
-    const ids = await this.writeFileRecordsToDb(
+    const { ids, errorLogIds } = await this.importFromFileToDB(
+      importTransaction,
       importFileStream,
       importFileMediaObject.mimeType,
-      JSON.parse(importTransaction.mapping) as ImportMapping[], // Parse the mapping from the import transaction
-      importTransaction.modelMetadata,
     );
 
     // Update the import transaction status to 'completed'
-    importTransaction.status = 'import_succeeded';
+    (errorLogIds.length > 0) ? importTransaction.status = 'import_failed' : importTransaction.status = 'import_succeeded'; //FIXME: We can probably have import_partially_failed status to differentiate
     // Save the import transaction
     await this.repo.save(importTransaction);
 
-    return {status: importTransaction.status, importedIds: ids}; // Return the IDs of the created records
+    return { status: importTransaction.status, importedIds: ids }; // Return the IDs of the created records
   }
 
   startImportAsync(importTransactionId: number): Promise<void> {
@@ -329,48 +340,96 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     return fileUrlResponse.data;
   }
 
-  private async writeFileRecordsToDb(
+  private async importFromFileToDB(
+    importTransaction: ImportTransaction,
     importFileStream: Readable,
     mimeType: string,
-    mapping: ImportMapping[],
-    modelMetadataWithFields: ModelMetadata,
-  ): Promise<Array<number>> {
-    // Get the model service for the model metadata name
-    const modelService = this.getModelService(modelMetadataWithFields.singularName);
+  ): Promise<ImportRecordsResult> {
+    if (!importTransaction.modelMetadata) {
+      throw new Error(`Model metadata for import transaction ID ${importTransaction.id} not found.`);
+    }
+
     const createdRecordIds = [];
-    // Depending upon the mime type of the file, read the file in pages
-    // For CSV files, use the csvService to read the file in pages
-    // For Excel files, use the excelService to read the file in pages
-    if (mimeType === 'text/csv') {
-      // Read the csv file in pages
+    const errorLogIds = [];
+
+    // Get the model service for the model metadata name
+    const modelService = this.getModelService(importTransaction.modelMetadata.singularName);
+
+    // Depending upon the mime type of the file, read the file in pages and insert the records into the database
+    if (mimeType === ImportMimeTypes.CSV) {
       for await (const page of this.csvService.readCsvInPagesFromStream(importFileStream)) {
-        // Convert the paginated result to DTOs
-        const dtos = await this.convertPaginatedResultToDtos(page, modelMetadataWithFields, mapping);
-        // Use the model service to create the records in the database
-        const createdRecords = await modelService.insertMany(dtos, [], {});
-        // Set the solidRequestContext to null, as this is a background job;
-        // Return the IDs of the created records
-        const newIds = createdRecords.map(record => record.id);
-        // Add the new IDs to the createdRecordIds array
-        createdRecordIds.push(...newIds);
+        const { ids, errorLogIds } = await this.importRecords(page, importTransaction, modelService);
+        createdRecordIds.push(...ids);
+        errorLogIds.push(...errorLogIds);
       }
     }
-    else if (mimeType === 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet') {
-      // Read the excel file in pages
+    else if (mimeType === ImportMimeTypes.EXCEL) {
       for await (const page of this.excelService.readExcelInPagesFromStream(importFileStream)) {
-        // Convert the paginated result to DTOs
-        const dtos = await this.convertPaginatedResultToDtos(page, modelMetadataWithFields, mapping);
-        // Use the model service to create the records in the database
-        const createdRecords = await modelService.insertMany(dtos, [], {});
-        // Set the solidRequestContext to null, as this is a background job;
-        // Return the IDs of the created records
-        const newIds = createdRecords.map(record => record.id);
-        createdRecordIds.push(...newIds);
+        const { ids, errorLogIds } = await this.importRecords(page, importTransaction, modelService);
+        createdRecordIds.push(...ids);
+        errorLogIds.push(...errorLogIds);
       }
     } else { // If the file is neither CSV nor Excel, throw an error
       throw new Error(`Unsupported file type: ${mimeType}`);
     }
-    return createdRecordIds; // Return the IDs of the created records
+
+    return {
+      ids: createdRecordIds, // Return the IDs of the created records
+      errorLogIds: errorLogIds, // Return the IDs of the error log entries created during the import
+    }
+  }
+
+  private async importRecords(page: ImportPaginatedReadResult, importTransaction: ImportTransaction, modelService: CRUDService<any>): Promise<ImportRecordsResult> {
+    if (!importTransaction.modelMetadata || !importTransaction.modelMetadata.fields) {
+      throw new Error(`Model metadata with fields for import transaction ID ${importTransaction.id} not found.`);
+    }
+
+    const ids: Array<number> = [];
+    const errorLogIds: Array<number> = [];
+    for (const record of page.data) {
+      try {
+        const createdRecord = await this.insertRecord(record, JSON.parse(importTransaction.mapping) as ImportMapping[], importTransaction.modelMetadata, modelService);
+        ids.push(createdRecord.id); // Add the ID of the created record to the ids array
+      }
+      catch (error) {
+        this.logger.debug(`Error inserting record: ${JSON.stringify(record)}. Error: ${error.message}`);
+        // Get the Import transaction error log repo
+        const errorLog = await this.createErrorLogEntry(importTransaction, record, error);
+        errorLogIds.push(errorLog.id); // Add the ID of the error log entry to the errorLogIds array
+      }
+    }
+    return {
+      ids: ids, // Return the IDs of the created records
+      errorLogIds: errorLogIds, // Return the IDs of the error log entries created during the import
+    };
+  }
+
+  private async createErrorLogEntry(importTransaction: ImportTransaction, record: Record<string, any>, error: any) {
+    const importTransactionRepo = this.entityManager.getRepository(ImportTransactionErrorLog);
+    // Create a new ImportTransactionErrorLog entry
+    const rowNumber = uuidv4(); // Generate a unique row number or use page.rowNumber if available 
+
+    const errorLogEntry = {
+      importTransactionErrorLogId: `${importTransaction.id}-${rowNumber}`, // FIXME pending to retrieve the row number from the page
+      rowNumber: 1, // FIXME pending to retrieve the row number from the page
+      rowData: JSON.stringify(record), // Store the row data
+      importTransaction: importTransaction, // Link to the import transaction
+      errorMessage: error.message, // Store the error message
+      errorTrace: error.stack || '', // Store the error stack trace if available
+    } as ImportTransactionErrorLog;
+
+    // Save the error log entry to the database
+    const savedEntry = await importTransactionRepo.save(errorLogEntry);
+    return savedEntry; // Return the ID of the saved error log entry
+  }
+
+  //FIXME Currently below method fails if any field in the record is not valid or if the record is not valid. It does not collect the errors for all fields in a record
+  private async insertRecord(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata, modelService: CRUDService<any>): Promise<any> {
+    // Convert the imported record to a DTO
+    const dto = await this.convertImportedRecordToDto(record, mapping, modelMetadataWithFields);
+    // Use the model service to create the record in the database
+    const createdRecord = await modelService.create(dto, [], {}); //FIXME: Need to handle this part alongwith the refactoring of the CRUDService for permissions
+    return createdRecord; // Return the created record
   }
 
   private getModelService(modelSingularName: string): CRUDService<any> {
@@ -383,22 +442,11 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     return modelService;
   }
 
-  // This method will 
-  private async convertPaginatedResultToDtos(importPaginatedResult: ImportPaginatedReadResult, modelMetadataWithFields: ModelMetadata, mapping: ImportMapping[]) {
-    const dtos = [];
-    // Iterate through the data records in the importPaginatedResult
-    for (const record of importPaginatedResult.data) {
-      // For every key in the record, get the corresponding field from the mapping, if the field is not found in mapping, skip the field
-      const dto = await this.convertImportedRecordToDto(record, mapping, modelMetadataWithFields);
-      dtos.push(dto);
-    }
-    return dtos;
-  }
-
   private async convertImportedRecordToDto(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata) {
     // Create a new record object
     const dtoRecord: Record<string, any> = {};
 
+    // Iterate through every cell in the record
     // Using the saved mapping, populate the dtoRecord w.r.t the record and fields
     for (const key in record) {
       const mappedField = mapping.find(m => m.header === key);
@@ -408,7 +456,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         // const userKeyField = modelMetadataWithFields.fields.find(f => f.isUserKey === true); // Assuming userKey is a field in the model metadata
         if (fieldMetadata) {
           // If the field is found in the model metadata, set the value in the dtoRecord
-          await this.populateDto(dtoRecord, fieldMetadata, record, key);
+          await this.populateDtoForACell(dtoRecord, fieldMetadata, record, key);
         } else {
           this.logger.warn(`Field ${mappedField.fieldName} not found in model metadata ${modelMetadataWithFields.singularName}`);
         }
@@ -417,7 +465,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     return dtoRecord;
   }
 
-  private async populateDto(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string): Promise<Record<string, any>> {
+  private async populateDtoForACell(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string): Promise<Record<string, any>> {
     const fieldType = fieldMetadata.type;
     // const userKeyFieldName = userKeyField?.name || 'id'; // Default to 'id' if not found
 
@@ -426,14 +474,14 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       case SolidFieldType.relation: {
         return await this.populateDtoForRelations(fieldMetadata, record, key, dtoRecord);
       }
-      case SolidFieldType.date: 
+      case SolidFieldType.date:
       case SolidFieldType.datetime: return this.populateDtoForDate(record, key, fieldMetadata, dtoRecord);
       case SolidFieldType.int:
       case SolidFieldType.bigint:
       case SolidFieldType.decimal:
-        return this.populateDtoForNumber(dtoRecord, fieldMetadata, record, key); 
+        return this.populateDtoForNumber(dtoRecord, fieldMetadata, record, key);
       case SolidFieldType.boolean:
-        return this.populateDtoForBoolean(dtoRecord, fieldMetadata, record, key);  
+        return this.populateDtoForBoolean(dtoRecord, fieldMetadata, record, key);
       default:
         dtoRecord[fieldMetadata.name] = record[key];
         return dtoRecord;
@@ -443,7 +491,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   private populateDtoForBoolean(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
     const booleanValue = Boolean(record[key]);
     if (typeof booleanValue !== 'boolean') {
-      throw new Error(`Invalid boolean value for field ${fieldMetadata.name}: ${record[key]}`);
+      throw new Error(`Invalid boolean value for cell ${key} with value ${record[key]}`);
     }
     dtoRecord[fieldMetadata.name] = booleanValue;
     return dtoRecord;
@@ -452,7 +500,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   private populateDtoForNumber(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
     const numberValue = Number(record[key]);
     if (isNaN(numberValue)) {
-      throw new Error(`Invalid number value for field ${fieldMetadata.name}: ${record[key]}`);
+      throw new Error(`Invalid number value for cell ${key} with value ${record[key]}`);
     }
     dtoRecord[fieldMetadata.name] = numberValue;
     return dtoRecord;
@@ -462,7 +510,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     {
       const dateValue = new Date(record[key]);
       if (isNaN(dateValue.getTime())) {
-        throw new Error(`Invalid date value for field ${fieldMetadata.name}: ${record[key]}`);
+        throw new Error(`Invalid date value for cell ${key} with value ${record[key]}`);
       }
       dtoRecord[fieldMetadata.name] = dateValue;
       return dtoRecord;
@@ -511,7 +559,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     // From the userKeys, we will get the IDs of the related records using the userKeyFieldName and throw an error if any of the userKeys is not found
     const relatedRecordsResult = await coModelService.find(relationFilterDto);
     if (!relatedRecordsResult || !relatedRecordsResult.records || relatedRecordsResult.records.length === 0 || relatedRecordsResult.records.length !== relationUserKeys.length) {
-      throw new Error(`Missing related records found for userKeys: ${relationUserKeys.join(', ')} in model ${fieldMetadata.relationCoModelSingularName}`);
+      throw new Error(`Invalid related records userKey values found for cell ${key} with value ${record[key]}`);
     }
     const relatedRecordsIds = relatedRecordsResult.records.map(record => record.id);
     return relatedRecordsIds;
