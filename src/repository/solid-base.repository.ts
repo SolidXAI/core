@@ -30,11 +30,10 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
     }
 
     createQueryBuilder(alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<T> {
-        let activeUserOrUndefined = this.requestContextService.getActiveUser();
+        const activeUserOrUndefined = this.requestContextService.getActiveUser();
         const qb = super.createQueryBuilder(alias, queryRunner);
-        if (!activeUserOrUndefined) {
-            return qb;
-        }
+        if (!activeUserOrUndefined) return qb;
+
         return this.securityRuleRepository.applySecurityRules(
             qb,
             this.modelSingularName(),
