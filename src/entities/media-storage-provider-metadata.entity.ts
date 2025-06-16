@@ -4,7 +4,7 @@ import { Column, Entity, Index } from "typeorm";
 @Entity("ss_media_storage_provider_metadata")
 export class MediaStorageProviderMetadata extends CommonEntity {
     @Index({ unique: true })
-    @Column({ })
+    @Column({})
     name: string;
 
     @Column()

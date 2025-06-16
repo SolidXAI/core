@@ -19,14 +19,19 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         readonly fileService: FileService,
         readonly mediaRepository: MediaRepository
     ) { }
+
     storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         throw new Error("Method not implemented.");
     }
+
     async retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         if (!(entity instanceof CommonEntity)) {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
         const media = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
+
+        // TODO: Check if the mediaStorageProvider (s3 in this case) is configured with a public bucket or not. 
+        // If private bucket then we need to return a "signed-url", the timeout for the signed url can be configured in the media storage provider entity and modified using the CRUD interface.
         // Add the full URL to the media
         media.forEach(m => {
             m['_full_url'] = this.getFullFilePath(m);
@@ -71,7 +76,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         if (!(entity instanceof CommonEntity)) {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
-        const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id,['mediaStorageProviderMetadata']);
+        const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
         existingMedia.forEach(media => {
             this.fileService.deleteFromS3(media.relativeUri, mediaFieldMetadata.mediaStorageProvider.bucketName); //TODO

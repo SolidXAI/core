@@ -15,12 +15,12 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
     constructor(
         // @Inject(appBuilderConfig.KEY)
         // private readonly appBuilderConfiguration: ConfigType<typeof appBuilderConfig>,
-        private readonly configService: ConfigService, 
+        private readonly configService: ConfigService,
         readonly fileService: FileService,
         readonly mediaRepository: MediaRepository
-    
+
     ) { }
-    
+
     async retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         if (!(entity instanceof CommonEntity)) {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
@@ -45,7 +45,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
             await this.fileService.deleteFile(file.path);
 
             // Create an entry in the media table
-        const mediaEntity = await this.mediaRepository.createMedia({
+            const mediaEntity = await this.mediaRepository.createMedia({
                 entityId: entity.id,
                 modelMetadataId: mediaFieldMetadata.model.id,
                 relativeUri: this.getFileName(file),
@@ -86,7 +86,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         if (!(entity instanceof CommonEntity)) {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
-        const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id,['mediaStorageProviderMetadata']);
+        const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
         existingMedia.forEach(media => {
             this.fileService.deleteFile(this.getFullFilePath(media.relativeUri));

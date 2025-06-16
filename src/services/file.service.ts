@@ -166,7 +166,7 @@ export class FileService {
   private isValidS3Config(config: AwsS3Config): boolean {
     return !!config.S3_AWS_ACCESS_KEY && !!config.S3_AWS_SECRET_KEY && !!config.S3_AWS_REGION_NAME;
   }
-  
+
   /**
    * Save a stream to a file
    * @param stream - Readable stream
@@ -198,5 +198,4 @@ export class FileService {
       return false;
     }
   }
-  
 }
