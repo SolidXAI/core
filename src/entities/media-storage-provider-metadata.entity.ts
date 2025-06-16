@@ -21,4 +21,7 @@ export class MediaStorageProviderMetadata extends CommonEntity {
 
     @Column({ name: "local_path", nullable: true })
     localPath: string;
+
+    @Column({ name: 'signed_url_expiry', type: 'int', nullable: true, default: 5 }) // default to 1 hour
+    signedUrlExpiry: number;
 }

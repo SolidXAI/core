@@ -1,4 +1,5 @@
-import { IsBoolean, IsEnum, IsNotEmpty, IsOptional, IsString, isBoolean } from "class-validator";
+import { Transform } from "class-transformer";
+import { IsBoolean, IsEnum, IsNotEmpty, IsNumber, IsOptional, IsString, isBoolean } from "class-validator";
 export enum MediaStorageProviderType {
     Filesystem = 'filesystem',
     AwsS3 = 'aws-s3',
@@ -34,4 +35,8 @@ export class CreateMediaStorageProviderMetadataDto {
     @IsString()
     @IsOptional()
     readonly localPath : string;
+
+     @IsOptional()
+     @IsNumber()
+     readonly signedUrlExpiry: number; // stored in minutes
 }

@@ -1,5 +1,5 @@
-import { BadRequestException, Optional } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { BadRequestException, Inject, Optional } from "@nestjs/common";
+import { ConfigService, ConfigType } from "@nestjs/config";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { Repository } from "typeorm/repository/Repository";
@@ -35,8 +35,12 @@ import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
 import { isArray } from "class-validator";
-export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
+import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
+import { getSignedUrl as awsGetSignedUrl } from '@aws-sdk/s3-request-presigner';
 
+export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
+    private readonly s3Client: S3Client;
+    
     constructor(
         readonly modelMetadataService: ModelMetadataService,
         readonly moduleMetadataService: ModuleMetadataService,
@@ -863,4 +867,12 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return this.getFieldMetadataRecursively(remainingParts, relationCoModel.fields);
     }
 }
+    export async function getSignedUrl(s3Client: any, key: string, expiresIn: number, bucketName: string): Promise<string> {
+        const command = new GetObjectCommand({
+        Bucket: bucketName,
+        Key: key,
+        });
+    
+        return awsGetSignedUrl(s3Client, command, { expiresIn });
+    }
 

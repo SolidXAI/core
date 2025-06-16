@@ -1030,6 +1030,19 @@
             "encrypt": false,
             "columnName": "local_path",
             "isSystem": true
+          },
+          {
+            "name": "signedUrlExpiry",
+            "displayName": "Signed Url Expiry Time",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "signed_url_expiry",
+            "isSystem": true
           }
         ]
       },
@@ -5545,6 +5558,13 @@
               "name": "localPath",
               "isSearchable": true
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "signedUrlExpiry",
+              "isSearchable": false
+            }
           }
         ]
       }
@@ -5618,6 +5638,13 @@
                     "attrs": {
                       "name": "localPath",
                       "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "signedUrlExpiry",
+                      "isSearchable": false
                     }
                   }
                 ]
