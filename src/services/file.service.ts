@@ -8,9 +8,6 @@ import path from 'path';
 import { Readable } from 'stream';
 import { getSignedUrl as awsGetSignedUrl } from '@aws-sdk/s3-request-presigner';
 
-
-
-
 @Injectable()
 export class FileService {
 
@@ -199,13 +196,14 @@ export class FileService {
       return false;
     }
   }
-   public async getSignedUrl(key: string, expiresIn: number, bucketName: string): Promise<string> {
-          const command = new GetObjectCommand({
-          Bucket: bucketName,
-          Key: key,
-          });
-      
-          return awsGetSignedUrl(this.s3Client, command, { expiresIn });
-      }
+
+  public async getSignedUrl(key: string, expiresIn: number, bucketName: string): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    });
+
+    return awsGetSignedUrl(this.s3Client, command, { expiresIn });
+  }
 
 }

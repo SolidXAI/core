@@ -37,7 +37,7 @@ import { ModuleMetadataService } from "./module-metadata.service";
 import { isArray } from "class-validator";
 
 export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
-    
+
     constructor(
         readonly modelMetadataService: ModelMetadataService,
         readonly moduleMetadataService: ModuleMetadataService,

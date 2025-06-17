@@ -1,4 +1,4 @@
-import {Inject, Injectable, Logger } from "@nestjs/common";
+import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ConfigService, ConfigType } from "@nestjs/config";
 import { CommonEntity } from "src/entities/common.entity";
 import { FieldMetadata } from "src/entities/field-metadata.entity";
@@ -41,13 +41,13 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             if (storageMeta.isPublic === false) {
                 // Generate signed URL
                 const expiryInSeconds = (storageMeta.signedUrlExpiry ?? 5) * 60; // default 5 min
-                m['_full_url'] = await this.fileService.getSignedUrl( m.relativeUri, expiryInSeconds, storageMeta?.bucketName);
+                m['_full_url'] = await this.fileService.getSignedUrl(m.relativeUri, expiryInSeconds, storageMeta?.bucketName);
             } else {
                 // Public S3 or local filesystem: use normal URL
                 m['_full_url'] = this.getFullFilePath(m);
             }
         }
-    
+
         return media;
         // media.forEach(m => {
         //     m['_full_url'] = this.getFullFilePath(m);
