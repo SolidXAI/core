@@ -7,14 +7,11 @@ import { MediaStorageProvider } from "src/interfaces";
 import { FileService } from "src/services/file.service";
 import { Readable } from "stream";
 import { MediaRepository } from "src/repository/media.repository";
-import { getSignedUrl } from "../crud.service";
-import { S3Client, GetObjectCommand } from '@aws-sdk/client-s3';
 import commonConfig from "src/config/common.config";
 
 @Injectable()
 export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
     private logger = new Logger(FileS3StorageProvider.name);
-    private readonly s3Client: S3Client;
 
     constructor(
         // @Inject(appBuilderConfig.KEY)
@@ -24,15 +21,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         readonly mediaRepository: MediaRepository,
         @Inject(commonConfig.KEY)
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
-    ) { 
-        this.s3Client = new S3Client({
-            region: this.commonConfiguration.awsS3Credentials.S3_AWS_REGION_NAME,
-            credentials: {
-              accessKeyId: this.commonConfiguration.awsS3Credentials.S3_AWS_ACCESS_KEY,
-              secretAccessKey: this.commonConfiguration.awsS3Credentials.S3_AWS_SECRET_KEY,
-            },
-          });
-    }
+    ) { }
 
     storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         throw new Error("Method not implemented.");
@@ -49,10 +38,10 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         // Add the full URL to the media
         for (const m of media) {
             const storageMeta = m.mediaStorageProviderMetadata;
-            if (storageMeta.type === 'aws-s3' && storageMeta.isPublic === false) {
+            if (storageMeta.isPublic === false) {
                 // Generate signed URL
                 const expiryInSeconds = (storageMeta.signedUrlExpiry ?? 5) * 60; // default 5 min
-                m['_full_url'] = await getSignedUrl(this.s3Client, m.relativeUri, expiryInSeconds, storageMeta?.bucketName);
+                m['_full_url'] = await this.fileService.getSignedUrl( m.relativeUri, expiryInSeconds, storageMeta?.bucketName);
             } else {
                 // Public S3 or local filesystem: use normal URL
                 m['_full_url'] = this.getFullFilePath(m);
