@@ -65,11 +65,20 @@ interface ImportMapping {
   fieldName: string; // The name of the field in the model metadata to which the imported field is mapped
 }
 
+export enum ImportTransactionStatus {
+  draft = 'draft',
+  mapping_created = 'mapping_created',
+  import_started = 'import_started',
+  import_succeeded = 'import_succeeded',
+  import_failed = 'import_failed',
+}
+
 export interface ImportSyncResult {
   status: string; // The status of the import transaction
   importedIds: Array<number>; // The IDs of the records created during the import
+  importedCount: number; // The number of records created during the import
+  failedCount: number; // The number of records that failed to import
 }
-
 interface ImportRecordsResult {
   ids: Array<number>; // The IDs of the records created during the import
   errorLogIds: Array<number>; // The IDs of the error log entries created during the import
@@ -261,11 +270,15 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     );
 
     // Update the import transaction status to 'completed'
-    (errorLogIds.length > 0) ? importTransaction.status = 'import_failed' : importTransaction.status = 'import_succeeded'; //FIXME: We can probably have import_partially_failed status to differentiate
+    (errorLogIds.length > 0) ? importTransaction.status = ImportTransactionStatus.import_failed : importTransaction.status = ImportTransactionStatus.import_failed; //FIXME: We can probably have import_partially_failed status to differentiate
     // Save the import transaction
     await this.repo.save(importTransaction);
-
-    return { status: importTransaction.status, importedIds: ids }; // Return the IDs of the created records
+    return {
+      status: importTransaction.status,
+      importedIds: ids, // The IDs of the records created during the import
+      importedCount: ids.length, // The number of records created during the import
+      failedCount: errorLogIds.length, // The number of records that failed to import
+    };
   }
 
   startImportAsync(importTransactionId: number): Promise<void> {
@@ -287,7 +300,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     // Create the headers for the export file
     const headers = [
       ...Object.keys(firstErrorLogEntry.rowData ? JSON.parse(firstErrorLogEntry.rowData) : {}), // Include all keys from the rowData JSON
-      'errorMessage', // Error message for the failed record
+      'Error', // Error message for the failed record
     ];
 
 
@@ -315,7 +328,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         const rowData = entry.rowData ? JSON.parse(entry.rowData) : {};
         return {
           ...rowData, // Spread the row data into the record
-          errorMessage: entry.errorMessage,
+          Error: entry.errorMessage,
         };
       });
     };
