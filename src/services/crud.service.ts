@@ -260,7 +260,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     }
 
     private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false): FieldCrudManager {
-        const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name, isUpdate};
+        const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name, isUpdate };
         switch (fieldMetadata.type) {
             case SolidFieldType.shortText: {
                 const options = { ...commonOptions, length: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern };
@@ -428,8 +428,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
         qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-        if(internationalisation && draftPublishWorkflow){
-            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias,internationalisation, draftPublishWorkflow,this.moduleRef);
+        if (internationalisation && draftPublishWorkflow) {
+            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef);
         }
 
         if (basicFilterDto.groupBy) {
