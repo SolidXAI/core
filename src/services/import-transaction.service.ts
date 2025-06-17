@@ -286,10 +286,8 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
 
     // Create the headers for the export file
     const headers = [
-      'rowNumber', // Row number in the import file
-      'errorMessage', // Error message for the failed record
-      'errorTrace', // Error trace for debugging
       ...Object.keys(firstErrorLogEntry.rowData ? JSON.parse(firstErrorLogEntry.rowData) : {}), // Include all keys from the rowData JSON
+      'errorMessage', // Error message for the failed record
     ];
 
 
@@ -316,10 +314,8 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       return errorLogEntries.map(entry => {
         const rowData = entry.rowData ? JSON.parse(entry.rowData) : {};
         return {
-          rowNumber: entry.rowNumber,
-          errorMessage: entry.errorMessage,
-          errorTrace: entry.errorTrace,
           ...rowData, // Spread the row data into the record
+          errorMessage: entry.errorMessage,
         };
       });
     };
