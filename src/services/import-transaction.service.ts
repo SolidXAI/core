@@ -270,7 +270,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     );
 
     // Update the import transaction status to 'completed'
-    (errorLogIds.length > 0) ? importTransaction.status = ImportTransactionStatus.import_failed : importTransaction.status = ImportTransactionStatus.import_started; //FIXME: We can probably have import_partially_failed status to differentiate
+    (errorLogIds.length > 0) ? importTransaction.status = ImportTransactionStatus.import_failed : importTransaction.status = ImportTransactionStatus.import_succeeded; //FIXME: We can probably have import_partially_failed status to differentiate
     // Save the import transaction
     await this.repo.save(importTransaction);
     return {
