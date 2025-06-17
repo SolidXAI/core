@@ -9,34 +9,34 @@ export class CreateMediaStorageProviderMetadataDto {
     // name
     @IsNotEmpty()
     @IsString()
-    readonly name : string;
+    readonly name: string;
 
     // type filesystem|aws-s3|azure-blob-storage
     @IsNotEmpty()
     @IsEnum(MediaStorageProviderType)
-    readonly type : MediaStorageProviderType;
+    readonly type: MediaStorageProviderType;
 
     // region
     @IsString()
     @IsOptional()
-    readonly region : string;
+    readonly region: string;
 
     // bucketName
     @IsString()
     @IsOptional()
-    readonly bucketName : string;
+    readonly bucketName: string;
 
     // isPublic
     @IsOptional()
     @IsBoolean()
-    readonly isPublic : boolean;
+    readonly isPublic: boolean;
 
     // localPath
     @IsString()
     @IsOptional()
-    readonly localPath : string;
+    readonly localPath: string;
 
-     @IsOptional()
-     @IsNumber()
-     readonly signedUrlExpiry: number; // stored in minutes
+    @IsOptional()
+    @IsNumber()
+    readonly signedUrlExpiry: number; // stored in minutes
 }

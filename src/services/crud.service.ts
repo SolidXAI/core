@@ -40,7 +40,7 @@ import { getSignedUrl as awsGetSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
     private readonly s3Client: S3Client;
-    
+
     constructor(
         readonly modelMetadataService: ModelMetadataService,
         readonly moduleMetadataService: ModuleMetadataService,
@@ -263,7 +263,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     }
 
     private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false): FieldCrudManager {
-        const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name, isUpdate};
+        const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name, isUpdate };
         switch (fieldMetadata.type) {
             case SolidFieldType.shortText: {
                 const options = { ...commonOptions, length: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern };
@@ -431,8 +431,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
         qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-        if(internationalisation && draftPublishWorkflow){
-            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias,internationalisation, draftPublishWorkflow,this.moduleRef);
+        if (internationalisation && draftPublishWorkflow) {
+            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef);
         }
 
         if (basicFilterDto.groupBy) {
@@ -867,12 +867,12 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return this.getFieldMetadataRecursively(remainingParts, relationCoModel.fields);
     }
 }
-    export async function getSignedUrl(s3Client: any, key: string, expiresIn: number, bucketName: string): Promise<string> {
-        const command = new GetObjectCommand({
+export async function getSignedUrl(s3Client: any, key: string, expiresIn: number, bucketName: string): Promise<string> {
+    const command = new GetObjectCommand({
         Bucket: bucketName,
         Key: key,
-        });
-    
-        return awsGetSignedUrl(s3Client, command, { expiresIn });
-    }
+    });
+
+    return awsGetSignedUrl(s3Client, command, { expiresIn });
+}
 
