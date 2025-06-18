@@ -2476,7 +2476,7 @@
             "ormType": "integer",
             "isSystem": false,
             "relationType": "many-to-one",
-            "relationCoModelFieldName": "bondTransactionDetailLogs",
+            "relationCoModelFieldName": "savedFilters",
             "relationCreateInverse": false,
             "relationCoModelSingularName": "user",
             "relationCoModelColumnName": null,
