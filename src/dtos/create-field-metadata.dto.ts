@@ -383,6 +383,9 @@ export class CreateFieldMetadataDto {
   computedFieldValueType: ComputedFieldValueType;
 
   @IsOptional()
+  computedFieldTriggerConfig: ComputedFieldTriggerConfig[];
+
+  @IsOptional()
   @ApiProperty({ description: 'Uuid.', })
   @IsString()
   @IsOptional()

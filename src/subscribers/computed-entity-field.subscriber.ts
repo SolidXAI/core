@@ -30,6 +30,9 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
     }
 
     private async computeValue(databaseEntity: any, currentOperation: ComputedFieldTriggerOperation): Promise<void> {
+        if (!databaseEntity) {
+            return;
+        }
         const currentModelName = camelize(databaseEntity.constructor.name); //Resolve the model name from the entity class name
         const computedFieldsTobeEvaluated = this.getComputedFieldsToBeEvaluated(
             this.solidRegistry.getComputedFieldMetadata(),

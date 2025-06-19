@@ -44,7 +44,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 modelName: field.model.singularName,
                 fieldName: field.name,
                 computedFieldValueType: field.computedFieldValueType as ComputedFieldValueType,
-                computedFieldTriggerConfig: this.parsecomputedFieldTriggerConfig(field.computedFieldTriggerConfig), // Ensure it's a stringified JSON object
+                computedFieldTriggerConfig: field.computedFieldTriggerConfig ?? [], // Ensure it's an array, default to empty if not provided
+                // computedFieldTriggerConfig: this.parsecomputedFieldTriggerConfig(field.computedFieldTriggerConfig), // Ensure it's a stringified JSON object
                 computedFieldValueProvider: this.solidRegistry.getComputedFieldProvider(field.computedFieldValueProvider),
                 computedFieldValueProviderCtxt: field.computedFieldValueProviderCtxt
             };
@@ -54,27 +55,27 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         this.solidRegistry.registerComputedFieldMetadata(computedFieldMetadata);
     }
 
-    private parsecomputedFieldTriggerConfig(config: string): ComputedFieldTriggerConfig[] {
-        try {
-            // Parse the JSON string into an array of ComputedFieldTriggerConfig objects
-            const parsedConfig = JSON.parse(config);
-            // Ensure the parsed config is an array
-            if (!Array.isArray(parsedConfig)) {
-                   throw new Error('Parsed config is not an array');
-            }
-            // Validate each item in the array
-            parsedConfig.forEach(item => {
-                // Check if item keys match the ComputedFieldTriggerConfig interface
-                if (typeof item !== 'object' || !item.moduleName || !item.modelName || !item.operations) {
-                    throw new Error('Invalid ComputedFieldTriggerConfig format');
-                }
-            });
-            return parsedConfig as ComputedFieldTriggerConfig[];
-        } catch (error) {
-            this.logger.error(`Failed to parse computed field trigger config: ${error.message}`);
-            return [];
-        }
-    }
+    // private parsecomputedFieldTriggerConfig(config: string): ComputedFieldTriggerConfig[] {
+    //     try {
+    //         // Parse the JSON string into an array of ComputedFieldTriggerConfig objects
+    //         const parsedConfig = JSON.parse(config);
+    //         // Ensure the parsed config is an array
+    //         if (!Array.isArray(parsedConfig)) {
+    //                throw new Error('Parsed config is not an array');
+    //         }
+    //         // Validate each item in the array
+    //         parsedConfig.forEach(item => {
+    //             // Check if item keys match the ComputedFieldTriggerConfig interface
+    //             if (typeof item !== 'object' || !item.moduleName || !item.modelName || !item.operations) {
+    //                 throw new Error('Invalid ComputedFieldTriggerConfig format');
+    //             }
+    //         });
+    //         return parsedConfig as ComputedFieldTriggerConfig[];
+    //     } catch (error) {
+    //         this.logger.error(`Failed to parse computed field trigger config: ${error.message}`);
+    //         return [];
+    //     }
+    // }
 
     async updateInverseField(field: FieldMetadata, fieldRepository: Repository<FieldMetadata>, modelRepository: Repository<ModelMetadata>) {
         if (!field.model || !field.model.module) {

@@ -188,6 +188,8 @@ import { SystemFieldsSeederService } from './seeders/system-fields-seeder.servic
 import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
 import { GenerateCodePublisher } from './jobs/database/generate-code-publisher.service';
 import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber.service';
+import { FieldMetadataRepository } from './repository/field-metadata.repository';
+import { ComputedEntityFieldSubscriber } from './subscribers/computed-entity-field.subscriber';
 
 
 @Global()
@@ -400,7 +402,8 @@ import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber
     ImportTransactionErrorLogService,
     CreatedByUpdatedBySubscriber,
     SystemFieldsSeederService,
-    
+    FieldMetadataRepository,
+    ComputedEntityFieldSubscriber,
   ],
   exports: [
     ModuleMetadataService,
@@ -430,7 +433,7 @@ import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber
     RefreshModuleCommand,
     RequestContextService,
     SecurityRuleRepository,
-    FieldRepository
+    FieldRepository,
   ],
 })
 export class SolidCoreModule { }
