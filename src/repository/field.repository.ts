@@ -1,8 +1,11 @@
-import { Repository, DataSource } from 'typeorm';
 import { Injectable } from '@nestjs/common';
-import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { InjectRepository } from '@nestjs/typeorm';
+import { FieldMetadata } from 'src/entities/field-metadata.entity';
+import { DataSource, Repository } from 'typeorm';
 
+/**
+ * @deprecated Use `FieldMetadataRepository` instead.
+ */
 @Injectable()
 export class FieldRepository extends Repository<FieldMetadata> {
     constructor(

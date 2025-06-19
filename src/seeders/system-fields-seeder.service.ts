@@ -4,7 +4,7 @@
 import { InjectRepository } from "@nestjs/typeorm";
 import { ModelMetadata } from "src/entities/model-metadata.entity";
 import { ModelMetadataHelperService } from "src/helpers/model-metadata-helper.service";
-import { FieldRepository } from "src/repository/field.repository";
+import { FieldMetadataRepository } from "src/repository/field-metadata.repository";
 import { Repository } from "typeorm";
 
 export class SystemFieldsSeederService {
@@ -15,8 +15,7 @@ export class SystemFieldsSeederService {
       private readonly modelHelperService: ModelMetadataHelperService,
       @InjectRepository(ModelMetadata)
       private readonly modelRepository: Repository<ModelMetadata>, // Replace with actual model repository type
-      @InjectRepository(FieldRepository)
-      private readonly fieldRepository: Repository<FieldRepository>, // Replace with actual field repository type
+      private readonly fieldMetadataRepository: FieldMetadataRepository, // Replace with actual field repository type
    ) {}
   
    async seed() {
@@ -46,7 +45,7 @@ export class SystemFieldsSeederService {
                 ...field,
                 model: model, // Associate the field with the current model
             }));
-            await this.fieldRepository.save(newFields);
+            await this.fieldMetadataRepository.save(newFields);
         }
     }
 }
