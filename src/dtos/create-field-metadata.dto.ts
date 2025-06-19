@@ -171,12 +171,16 @@ export enum ComputedFieldValueType {
   datetime = 'datetime',
 }
 
-export type ComputedFieldTriggerConfig = Record<string, ComputedFieldTriggerOperation[]>;
-
 export enum ComputedFieldTriggerOperation {
     create = "create",
     update = "update",
     delete = "delete",
+}
+
+export interface ComputedFieldTriggerConfig {
+  moduleName: string; // Name of the module where the computed field is defined
+  modelName: string;
+  operations: ComputedFieldTriggerOperation[]; // List of operations where this computed field should be triggered
 }
 
 export class CreateFieldMetadataDto {

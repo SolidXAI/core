@@ -1,25 +1,25 @@
-import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { classify } from '@angular-devkit/core/src/utils/strings';
+import { Injectable, Logger, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
+import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
-import { SolidRegistry } from 'src/helpers/solid-registry';
+import { ComputedFieldMetadata, SolidRegistry } from 'src/helpers/solid-registry';
+import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
-import { CascadeType, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MediaType, PSQLType, RelationType, SelectionValueType, SolidFieldType } from '../dtos/create-field-metadata.dto';
+import { CascadeType, ComputedFieldTriggerConfig, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MediaType, PSQLType, RelationType, SelectionValueType, SolidFieldType } from '../dtos/create-field-metadata.dto';
 import { SelectionDynamicQueryDto } from '../dtos/selection-dynamic-query.dto';
 import { UpdateFieldMetaDataDto } from '../dtos/update-field-metadata.dto';
 import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ISelectionProviderValues } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
-import { classify } from '@angular-devkit/core/src/utils/strings';
 
 
 @Injectable()
-export class FieldMetadataService {
+export class FieldMetadataService implements OnApplicationBootstrap {
     constructor(
-        @InjectRepository(FieldMetadata)
-        private readonly fieldMetadataRepo: Repository<FieldMetadata>,
+        private readonly fieldMetadataRepo: FieldMetadataRepository,
         @InjectDataSource()
         private readonly dataSource: DataSource,
         private readonly solidRegistry: SolidRegistry,
@@ -28,6 +28,53 @@ export class FieldMetadataService {
     ) { }
 
     private logger = new Logger(FieldMetadataService.name);
+
+    onApplicationBootstrap() {
+        this.loadAndRegisterComputedFieldsDetails();
+    }
+
+   async loadAndRegisterComputedFieldsDetails() {
+        // Load all the modules and models and within that load all the computed fields
+        const computedFieldsWithModelAndModule =  await this.fieldMetadataRepo.findComputedFieldsPopulatedWithModelAndModule();
+
+        // Convert the computed fields object above to the ComputedFieldMetadata type
+        const computedFieldMetadata: ComputedFieldMetadata[] = computedFieldsWithModelAndModule.map((field) => {
+            return {
+                moduleName: field.model.module.name,
+                modelName: field.model.singularName,
+                fieldName: field.name,
+                computedFieldValueType: field.computedFieldValueType as ComputedFieldValueType,
+                computedFieldTriggerConfig: this.parsecomputedFieldTriggerConfig(field.computedFieldTriggerConfig), // Ensure it's a stringified JSON object
+                computedFieldValueProvider: this.solidRegistry.getComputedFieldProvider(field.computedFieldValueProvider),
+                computedFieldValueProviderCtxt: field.computedFieldValueProviderCtxt
+            };
+        });
+
+        // Register the computed fields in the SolidRegistry. Capture only computed field related info
+        this.solidRegistry.registerComputedFieldMetadata(computedFieldMetadata);
+    }
+
+    private parsecomputedFieldTriggerConfig(config: string): ComputedFieldTriggerConfig[] {
+        try {
+            // Parse the JSON string into an array of ComputedFieldTriggerConfig objects
+            const parsedConfig = JSON.parse(config);
+            // Ensure the parsed config is an array
+            if (!Array.isArray(parsedConfig)) {
+                   throw new Error('Parsed config is not an array');
+            }
+            // Validate each item in the array
+            parsedConfig.forEach(item => {
+                // Check if item keys match the ComputedFieldTriggerConfig interface
+                if (typeof item !== 'object' || !item.moduleName || !item.modelName || !item.operations) {
+                    throw new Error('Invalid ComputedFieldTriggerConfig format');
+                }
+            });
+            return parsedConfig as ComputedFieldTriggerConfig[];
+        } catch (error) {
+            this.logger.error(`Failed to parse computed field trigger config: ${error.message}`);
+            return [];
+        }
+    }
 
     async updateInverseField(field: FieldMetadata, fieldRepository: Repository<FieldMetadata>, modelRepository: Repository<ModelMetadata>) {
         if (!field.model || !field.model.module) {
