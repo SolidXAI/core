@@ -171,6 +171,14 @@ export enum ComputedFieldValueType {
   datetime = 'datetime',
 }
 
+export type ComputedFieldTriggerConfig = Record<string, ComputedFieldTriggerOperation[]>;
+
+export enum ComputedFieldTriggerOperation {
+    create = "create",
+    update = "update",
+    delete = "delete",
+}
+
 export class CreateFieldMetadataDto {
   @ApiProperty({ description: 'Name of your field, this is also the name of the column or attribute', })
   // @Matches(/[a-z]+(_[a-z]+)*/, { message: 'Field name should follow snake case conventions only with all lower case.', })

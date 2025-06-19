@@ -90,6 +90,16 @@ export interface IComputedFieldProvider<T> {
   computeValue(dto: any, ctxt: T): Promise<string | number>; // FIXME : Improve the types to make it more specific using generics
 }
 
+export interface IEntityComputedFieldProvider<TEntity, TContext> {  
+  help(): string;
+
+  name(): string;
+
+  valueType(): string;
+
+  computeValue(entity: TEntity, ctxt: TContext): Promise<void>; 
+}
+
 export interface ISolidDatabaseModule {
   name(): string;
 

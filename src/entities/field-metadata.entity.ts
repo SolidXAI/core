@@ -132,6 +132,9 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'computed_field_value_type', nullable: true })
     computedFieldValueType: string;
 
+    @Column({ name: 'computed_field_trigger_config', nullable: true })
+    computedFieldTriggerConfig: any; // JSON stringified object
+
     @Column({ name: 'uuid', nullable: true })
     uuid: string;
 

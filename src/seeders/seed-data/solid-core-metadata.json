@@ -845,6 +845,19 @@
             "isSystem": true
           },
           {
+            "name": "computedFieldTriggerConfig",
+            "displayName": "Computed Field Value Trigger Configuration",
+            "type": "json",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "computed_field_trigger_config",
+            "isSystem": true
+          },
+          {
             "name": "uuid",
             "displayName": "UUID",
             "type": "shortText",
