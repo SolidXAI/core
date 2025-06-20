@@ -116,5 +116,17 @@ export class UserController {
     return this.service.removeRoleFromUser(userEmail, roleName);
   }
 
+  @ApiBearerAuth('jwt')
+  @Post('/profile')
+  @UseInterceptors(AnyFilesInterceptor())
+  async updateOwnProfile(
+    @Body() updateDto: UpdateUserDto,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto,
+    @ActiveUser() user: ActiveUserData,
+  ) {
+    return this.service.updateUser(user.sub, updateDto, files, solidRequestContext);
+  }
+
 
 }

@@ -9,11 +9,12 @@ import { CRUDService } from 'src/services/crud.service';
 import { FileService } from 'src/services/file.service';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-
-
 import commonConfig from 'src/config/common.config';
 import { iamConfig } from 'src/config/iam.config';
 import { Setting } from '../entities/setting.entity';
+import { RequestContextService } from './request-context.service';
+import { User } from 'src/entities/user.entity';
+import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 
 @Injectable()
 export class SettingService extends CRUDService<Setting> {
@@ -31,8 +32,9 @@ export class SettingService extends CRUDService<Setting> {
     readonly entityManager: EntityManager,
     @InjectRepository(Setting, 'default')
     readonly repo: Repository<Setting>,
-    readonly moduleRef: ModuleRef
-
+    readonly moduleRef: ModuleRef,
+    private readonly requestContextService: RequestContextService,
+    @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'setting', 'solid-core', moduleRef
     );
@@ -47,22 +49,24 @@ export class SettingService extends CRUDService<Setting> {
       iamGoogleOAuthEnabled: false,
       authPagesLayout: "center",
       authPagesTheme: "light",
-      appLogo: "",
-      companylogo: "",
-      favicon: "",
+      appLogo: null,
+      companylogo: null,
+      favicon: null,
       appLogoPosition: "in_form_view",
       showAuthContent: false,
       appTitle: process.env.SOLID_APP_NAME || "Solid App",
       appSubtitle: process.env.SOLID_APP_SUBTITLE || "Lorem Ipsum",
       appDescription: process.env.SOLID_APP_DESCRIPTION || "lorem ipsum",
       showLegalLinks: false,
-      appTnc: "",
-      appPrivacyPolicy: "",
+      appTnc: null,
+      appPrivacyPolicy: null,
       defaultRole: this.iamConfiguration.defaultRole,
       shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
       shouldQueueSms: this.commonConfiguration.shouldQueueSms,
       enableDarkMode: true,
-      copyright : ""
+      copyright: null,
+      enableUsername: true,
+      enabledNotification: true
     };
 
     const existingSettings = await this.repo.find();
@@ -131,23 +135,25 @@ export class SettingService extends CRUDService<Setting> {
       iamGoogleOAuthEnabled: false,
       authPagesLayout: "center",
       authPagesTheme: "light",
-      appLogo: "",
-      companylogo: "",
-      favicon: "",
+      appLogo: null,
+      companylogo: null,
+      favicon: null,
       appLogoPosition: "in_form_view", //in_form_view | in_image_view
       showAuthContent: false,
       appTitle: process.env.SOLID_APP_NAME || "Solid App",
-      appSubtitle: "",
-      appDescription: "",
+      appSubtitle: null,
+      appDescription: null,
       showLegalLinks: false,
-      appTnc: "",
-      appPrivacyPolicy: "",
+      appTnc: null,
+      appPrivacyPolicy: null,
       defaultRole: this.iamConfiguration.defaultRole,
       shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
       shouldQueueSms: this.commonConfiguration.shouldQueueSms,
       enableDarkMode: true,
-      copyright : "",
-      forceChangePasswordOnFirstLogin:true
+      copyright: null,
+      forceChangePasswordOnFirstLogin: true,
+      enableUsername: true,
+      enabledNotification: true
     };
   }
 
@@ -155,7 +161,7 @@ export class SettingService extends CRUDService<Setting> {
     try {
       const settingsArray: Setting[] = await this.repo.find();
       const settingEntry = settingsArray.find(setting => setting.key === settingKey);
-      
+
       if (settingEntry && settingEntry.value !== null && settingEntry.value !== undefined) {
         const value = settingEntry.value;
 
@@ -181,65 +187,78 @@ export class SettingService extends CRUDService<Setting> {
     }
   }
 
-  async updateSettings(settings: Record<string, any> = {}, files: Array<Express.Multer.File> = []): Promise<Setting[]> {
+  async updateSettings(
+    settings: CreateSettingDto[] = [],
+    uploadedFiles: Array<Express.Multer.File> = []
+  ): Promise<Setting[]> {
+    const activeUser = this.requestContextService.getActiveUser();
+    const userId = activeUser?.sub;
+
     const existingSettings = await this.repo.find();
-    const existingKeys = new Set(existingSettings.map(s => s.key));
 
     const settingsToUpdate: Setting[] = [];
     const settingsToCreate: Setting[] = [];
 
-    if (files && files.length > 0) {
-      for (const file of files) {
-        const key = file.fieldname;
-        const relativePath = `${file.filename}-${file.originalname}`;
-        const fileStoragePath = `${this.configService.get('app-builder.fileStorageDir')}/${relativePath}`;
+    // Handle uploaded files
+    if (uploadedFiles?.length) {
+      for (const file of uploadedFiles) {
+        const settingKey = file.fieldname;
+        const relativeFileName = `${file.filename}-${file.originalname}`;
+        const storagePath = `${this.configService.get('app-builder.fileStorageDir')}/${relativeFileName}`;
         const baseUrl = process.env.BASE_URL || '';
-        const fullUrl = `${baseUrl}/${fileStoragePath}`;
-        
-        await this.fileService.copyFile(file.path, fileStoragePath);
+        const fileUrl = `${baseUrl}/${storagePath}`;
+
+        await this.fileService.copyFile(file.path, storagePath);
         await this.fileService.deleteFile(file.path);
 
-        if (existingKeys.has(key)) {
-          const existingSetting = existingSettings.find(s => s.key === key);
-          if (existingSetting) {
-            existingSetting.value = fullUrl;
-            settingsToUpdate.push(existingSetting);
-          }
+        const matchedDto = settings.find(dto => dto.key === settingKey);
+        const settingType = matchedDto?.type ?? 'system';
+
+        const existingSetting = existingSettings.find(s => s.key === settingKey);
+        if (existingSetting) {
+          existingSetting.value = fileUrl;
+          existingSetting.type = settingType;
+          settingsToUpdate.push(existingSetting);
         } else {
           const newSetting = new Setting();
-          newSetting.key = key;
-          newSetting.value = fullUrl;
+          newSetting.key = settingKey;
+          newSetting.value = fileUrl;
+          newSetting.type = settingType;
+
+          if (settingType === 'user' && userId) {
+            newSetting.user = { id: userId } as any;
+          }
+
           settingsToCreate.push(newSetting);
         }
       }
     }
 
-    let parsedSettings: Record<string, any>;
-    try {
-      parsedSettings = typeof settings === 'string' ? JSON.parse(settings) : settings;
-    } catch (error) {
-      parsedSettings = {};
-    }
-
-    for (const [key, value] of Object.entries(parsedSettings)) {
-      if (files && files.some(f => f.fieldname === key)) {
-        continue;
+    // Handle non-file settings
+    for (const settingDto of settings) {
+      if (uploadedFiles?.some(file => file.fieldname === settingDto.key)) {
+        continue; // skip if already handled via file
       }
 
-      const stringValue = typeof value === 'boolean' ? value.toString() :
-        Array.isArray(value) ? value.join(',') :
-          value === null || value === undefined ? '' : String(value);
+      const key = settingDto.key;
+      const value = settingDto.value ?? '';
+      const settingType = settingDto.type ?? 'system';
 
-      if (existingKeys.has(key)) {
-        const existingSetting = existingSettings.find(s => s.key === key);
-        if (existingSetting) {
-          existingSetting.value = stringValue;
-          settingsToUpdate.push(existingSetting);
-        }
+      const existingSetting = existingSettings.find(s => s.key === key);
+      if (existingSetting) {
+        existingSetting.value = value;
+        existingSetting.type = settingType;
+        settingsToUpdate.push(existingSetting);
       } else {
         const newSetting = new Setting();
         newSetting.key = key;
-        newSetting.value = stringValue;
+        newSetting.value = value;
+        newSetting.type = settingType;
+
+        if (settingType === 'user' && userId) {
+          newSetting.user = { id: userId } as any;
+        }
+
         settingsToCreate.push(newSetting);
       }
     }
@@ -255,29 +274,36 @@ export class SettingService extends CRUDService<Setting> {
     return [...settingsToUpdate, ...settingsToCreate];
   }
 
-  async getAllSettings(): Promise<Record<string, any>> {
-    const settingsArray = await this.repo.find();
-    const settingsMap: Record<string, any> = {};
+  async getAllSettings(): Promise<{ system: Record<string, any>, user: Record<string, any> }> {
+    const settingsArray = await this.repo.find({ relations: ['user'] });
+
+    const system: Record<string, any> = {};
+    const user: Record<string, any> = {};
 
     for (const setting of settingsArray) {
       if (setting.key && setting.value !== undefined && setting.value !== null) {
         const value = setting.value;
+        let parsedValue: any;
 
         if (value === 'true' || value === 'false') {
-          settingsMap[setting.key] = value === 'true';
+          parsedValue = value === 'true';
+        } else if (!isNaN(Number(value)) && value.trim() !== '') {
+          parsedValue = Number(value);
+        } else if (value.includes(',')) {
+          parsedValue = value.split(',').map(item => item.trim());
+        } else {
+          parsedValue = value;
         }
-        else if (!isNaN(Number(value)) && value.trim() !== '') {
-          settingsMap[setting.key] = Number(value);
-        }
-        else if (value.includes(',')) {
-          settingsMap[setting.key] = value.split(',').map(item => item.trim());
-        }
-        else {
-          settingsMap[setting.key] = value;
+
+        if (setting.type === 'user') {
+          user[setting.key] = parsedValue;
+        } else {
+          system[setting.key] = parsedValue;
         }
       }
     }
 
-    return settingsMap;
+    return { system, user };
   }
+
 }

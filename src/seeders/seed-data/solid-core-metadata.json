@@ -1751,6 +1751,18 @@
             "isSystem": true
           },
           {
+            "name": "profilePicture",
+            "displayName": "Profile Picture",
+            "type": "mediaSingle",
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "mediaStorageProviderUserKey": "default-filesystem"
+          },
+          {
             "name": "lastLoginProvider",
             "displayName": "Last Login Provider",
             "type": "shortText",
@@ -2455,6 +2467,47 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "type",
+            "displayName": "Type",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": false,
+            "index": false,
+            "isSystem": true,
+            "columnName": "type",
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "system:System",
+              "user:User"
+            ]
+          },
+          {
+            "name": "user",
+            "displayName": "User",
+            "description": "This is the user id field",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "user",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "restrict",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
           }
         ]
       },
