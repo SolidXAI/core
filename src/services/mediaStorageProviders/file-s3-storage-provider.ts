@@ -40,7 +40,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             const storageMeta = m.mediaStorageProviderMetadata;
             if (storageMeta.isPublic === false) {
                 // Generate signed URL
-                const expiryInSeconds = (storageMeta.signedUrlExpiry ?? 5) * 60; // default 5 min
+                const expiryInSeconds = (storageMeta.signedUrlExpiry ?? 60) * 60; // default 5 min
                 m['_full_url'] = await this.fileService.getSignedUrl(m.relativeUri, expiryInSeconds, storageMeta?.bucketName);
             } else {
                 // Public S3 or local filesystem: use normal URL
