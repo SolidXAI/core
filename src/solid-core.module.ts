@@ -195,6 +195,8 @@ import { ApiEmailQueuePublisherDatabase } from './jobs/database/api-email-publis
 import { ApiEmailQueueSubscriberDatabase } from './jobs/database/api-email-subscriber-database.service';
 import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-database.service';
 import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
+import { SmsQueuePublisherDatabase } from './jobs/database/sms-publisher-database.service';
+import { SmsQueueSubscriberDatabase } from './jobs/database/sms-subscriber-database.service';
 
 
 @Global()
@@ -359,6 +361,8 @@ import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-datab
     ApiEmailQueueSubscriberDatabase,
     SmsQueuePublisher,
     SmsQueueSubscriber,
+    SmsQueuePublisherDatabase,
+    SmsQueueSubscriberDatabase,
     OTPQueuePublisher,
     OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
