@@ -1,5 +1,4 @@
 import { Logger, OnModuleInit } from '@nestjs/common';
-import * as amqp from 'amqplib';
 import { QueuesModuleOptions } from "../../interfaces";
 import { QueueMessage, QueueSubscriber } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';

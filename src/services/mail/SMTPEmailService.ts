@@ -1,11 +1,11 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { QueueMessage } from 'src/interfaces/mq';
-import { EmailQueuePublisher } from 'src/jobs/email-publisher.service';
 import commonConfig from 'src/config/common.config';
 import { EmailTemplateService } from '../email-template.service';
 import Handlebars from "handlebars";
 import { IMail, MailAttachment } from "../../interfaces";
+import { PublisherFactory } from '../queues/publisher-factory.service';
 
 const nodemailer = require("nodemailer");
 
@@ -17,7 +17,9 @@ export class SMTPEMailService implements IMail {
     constructor(
         @Inject(commonConfig.KEY)
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
-        private readonly emailPublisher: EmailQueuePublisher,
+        // private readonly emailPublisher: EmailQueuePublisher,
+        // private readonly emailDbPublisher: EmailQueueDbPublisher,
+        private readonly publisherFactory: PublisherFactory<any>,
         private readonly emailTemplateService: EmailTemplateService,
     ) {
         this.transporter = nodemailer.createTransport({
@@ -50,7 +52,7 @@ export class SMTPEMailService implements IMail {
         await this.sendEmail(to, subject, body, shouldQueueEmails, parentEntity, parentEntityId, attachments);
     }
 
-    async sendEmail(to: string, subject: string, body: string, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments: MailAttachment[] = [], cc: string[]=[]): Promise<void> {
+    async sendEmail(to: string, subject: string, body: string, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments: MailAttachment[] = [], cc: string[] = []): Promise<void> {
         const message = {
             payload: {
                 from: this.commonConfiguration.smtpMail.from,
@@ -81,7 +83,11 @@ export class SMTPEMailService implements IMail {
     async sendEmailAsynchronously(message) {
         const { to, subject, body } = message.payload;
         // this.notificationPublisherService.publish(message);
-        this.emailPublisher.publish(message);
+        // this.emailPublisher.publish(message);
+        // this.emailDbPublisher.publish(message);
+
+        this.publisherFactory.publish(message, 'EmailQueuePublisher');
+
         this.logger.debug(`Queueing email to ${to} with subject ${subject} and body ${body}`);
     }
 
@@ -92,7 +98,7 @@ export class SMTPEMailService implements IMail {
             const attachmentEntry = {
                 filename: attachment.filename,
                 contentType: attachment.contentType,
-            } 
+            }
             if (attachment.path) {
                 attachmentEntry['path'] = attachment.path;
             }

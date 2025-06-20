@@ -24,7 +24,6 @@ import { CrudHelperService } from './crud-helper.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
 import { RoleMetadataService } from './role-metadata.service';
-import { GenerateCodePublisher } from 'src/jobs/database/generate-code-publisher.service';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
 import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
 
@@ -44,7 +43,8 @@ export class ModelMetadataService {
     private readonly fieldMetadataService: FieldMetadataService,
     private readonly roleService: RoleMetadataService,
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
-    private readonly generateCodePublihser: GenerateCodePublisher,
+    // No longer used. 
+    // private readonly generateCodePublihser: GenerateCodePublisherDatabase,
   ) { }
 
   async findMany(basicFilterDto: BasicFilterDto) {

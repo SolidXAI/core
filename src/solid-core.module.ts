@@ -64,7 +64,7 @@ import { MenuItemMetadataController } from './controllers/menu-item-metadata.con
 import { MqMessageQueueController } from './controllers/mq-message-queue.controller';
 import { MqMessageController } from './controllers/mq-message.controller';
 import { OTPAuthenticationController } from './controllers/otp-authentication.controller';
-import { QueuesTestController } from './controllers/queues-test.controller';
+import { TestQueueController } from './controllers/test-queue.controller';
 import { ServiceController } from './controllers/service.controller';
 import { SmsTemplateController } from './controllers/sms-template.controller';
 // import { UserController } from './controllers/user.controller';
@@ -87,10 +87,10 @@ import { EmailQueuePublisher } from './jobs/email-publisher.service';
 import { EmailQueueSubscriber } from './jobs/email-subscriber.service';
 import { OTPQueuePublisher } from './jobs/otp-publisher.service';
 import { OTPQueueSubscriber } from './jobs/otp-subscriber.service';
-import { TestQueuePublisher } from './jobs/queue-test-publisher.service';
-import { TestQueueDbPublisher } from './jobs/database/queue-test-db-publisher.service';
-import { TestQueueSubscriber } from './jobs/queue-test-subscriber.service';
-import { TestQueueDbSubscriber } from './jobs/database/queue-test-db-subscriber.service';
+import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
+import { TestQueuePublisherDatabase } from './jobs/database/test-queue-publisher-database.service';
+import { TestQueueSubscriber } from './jobs/test-queue-subscriber.service';
+import { TestQueueSubscriberDatabase } from './jobs/database/test-queue-subscriber-database.service';
 import { SmsQueuePublisher } from './jobs/sms-publisher.service';
 import { SmsQueueSubscriber } from './jobs/sms-subscriber.service';
 import { WhatsappQueuePublisher } from './jobs/whatsapp-publisher.service';
@@ -186,8 +186,15 @@ import { LocaleListSelectionProvider } from './services/selection-providers/loca
 import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-by.subscriber';
 import { SystemFieldsSeederService } from './seeders/system-fields-seeder.service';
 import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
-import { GenerateCodePublisher } from './jobs/database/generate-code-publisher.service';
-import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber.service';
+import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-publisher-database.service';
+import { GenerateCodeSubscriberDatabase } from './jobs/database/generate-code-subscriber-database.service';
+import { EmailQueueSubscriberDatabase } from './jobs/database/email-subscriber-database.service';
+import { EmailQueuePublisherDatabase } from './jobs/database/email-publisher-database.service';
+import { PublisherFactory } from './services/queues/publisher-factory.service';
+import { ApiEmailQueuePublisherDatabase } from './jobs/database/api-email-publisher-database.service';
+import { ApiEmailQueueSubscriberDatabase } from './jobs/database/api-email-subscriber-database.service';
+import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-database.service';
+import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
 
 
 @Global()
@@ -266,7 +273,7 @@ import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber
     AuthenticationController,
     GoogleAuthenticationController,
     OTPAuthenticationController,
-    QueuesTestController,
+    TestQueueController,
     MqMessageQueueController,
     MqMessageController,
     PermissionMetadataController,
@@ -341,14 +348,21 @@ import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber
     Msg91WhatsappService,
     SmsTemplateService,
     EmailTemplateService,
+    PublisherFactory,
     EmailQueuePublisher,
     EmailQueueSubscriber,
+    EmailQueuePublisherDatabase,
+    EmailQueueSubscriberDatabase,
     ApiEmailQueuePublisher,
     ApiEmailQueueSubscriber,
+    ApiEmailQueuePublisherDatabase,
+    ApiEmailQueueSubscriberDatabase,
     SmsQueuePublisher,
     SmsQueueSubscriber,
     OTPQueuePublisher,
     OTPQueueSubscriber,
+    OTPQueuePublisherDatabase,
+    OTPQueueSubscriberDatabase,
     WhatsappQueuePublisher,
     WhatsappQueueSubscriber,
     EmailTemplateSeederService,
@@ -369,10 +383,10 @@ import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber
     UserRegistrationListener,
     TestQueuePublisher,
     TestQueueSubscriber,
-    TestQueueDbPublisher,
-    TestQueueDbSubscriber,
-    GenerateCodePublisher,
-    GenerateCodeSubscriber,    
+    TestQueuePublisherDatabase,
+    TestQueueSubscriberDatabase,
+    GenerateCodePublisherDatabase,
+    GenerateCodeSubscriberDatabase,    
     MqMessageQueueService,
     MqMessageService,
     PermissionMetadataService,

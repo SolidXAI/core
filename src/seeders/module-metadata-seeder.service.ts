@@ -141,10 +141,21 @@ export class ModuleMetadataSeederService {
             await this.seedMediaStorageProviders(mediaStorageProviders);
             this.logger.debug(`[End] Processing Media Storage Provider for ${moduleMetadata.name}`);
 
-            // TODO: Custom role handling
+            // Custom role handling
             this.logger.debug(`[End] Processing roles for ${moduleMetadata.name}`)
             const roles = overallMetadata.roles;
-            await this.roleService.createRolesIfNotExists(roles);
+
+            // Every role configuration in the seeder json can optionally have a permissions attribute. 
+            // While creating roles we are only passing the role name to be used. 
+            await this.roleService.createRolesIfNotExists(roles.map(role => { return { name: role.name } }));
+
+            // After roles are created, we iterate over all roles and attach permissions (if specified in the seeder json) to the respective role.
+            for (let roleI = 0; roleI < roles.length; roleI++) {
+                const role = roles[roleI];
+                if (role.permissions) {
+                    await this.roleService.addPermissionsToRole(role.name, role.permissions)
+                }
+            }
             this.logger.debug(`[End] Processing roles for ${moduleMetadata.name}`)
 
             // Custom user handling
@@ -365,7 +376,23 @@ export class ModuleMetadataSeederService {
             const menuData = menus[j];
 
             const adminRole = await this.roleService.findRoleByName('Admin');
-            menuData['roles'] = [adminRole]
+
+            const specifiedRoles = menuData['roles'];
+
+            // If the developer has specified roles, then resolve them, making sure that admin role is also given.
+            const specifiedRoleObjects = [adminRole];
+            if (specifiedRoles) {
+                for (let i = 0; i < specifiedRoles.length; i++) {
+                    const specifiedRole = specifiedRoles[i];
+                    const specifiedRoleObject = await this.roleService.findRoleByName(specifiedRole);
+                    if (!specifiedRoleObject) {
+                        throw new Error(`Invalid role: (${specifiedRole}) specified against menu with display name ${menuData.displayName}.`);
+                    }
+                    specifiedRoleObjects.push(specifiedRoleObject);
+                }
+            }
+
+            menuData['roles'] = specifiedRoleObjects;
             menuData['action'] = await this.solidActionService.findOneByUserKey(menuData.actionUserKey);
             menuData['module'] = await this.moduleMetadataService.findOneByUserKey(menuData.moduleUserKey);
 
