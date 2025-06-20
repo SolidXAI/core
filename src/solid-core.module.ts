@@ -197,6 +197,8 @@ import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-databas
 import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
 import { SmsQueuePublisherDatabase } from './jobs/database/sms-publisher-database.service';
 import { SmsQueueSubscriberDatabase } from './jobs/database/sms-subscriber-database.service';
+import { WhatsappQueuePublisherDatabase } from './jobs/database/whatsapp-publisher-database.service';
+import { WhatsappQueueSubscriberDatabase } from './jobs/database/whatsapp-subscriber-database.service';
 
 
 @Global()
@@ -369,6 +371,8 @@ import { SmsQueueSubscriberDatabase } from './jobs/database/sms-subscriber-datab
     OTPQueueSubscriberDatabase,
     WhatsappQueuePublisher,
     WhatsappQueueSubscriber,
+    WhatsappQueuePublisherDatabase,
+    WhatsappQueueSubscriberDatabase,
     EmailTemplateSeederService,
     SmsTemplateSeederService,
     TinyUrlService,
