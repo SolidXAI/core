@@ -91,7 +91,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
             // start the loop
             poll();
 
-            this.logger.debug(`DatabaseSubscriber ready to consume messages: ${JSON.stringify(this.options())}`);
+            this.logger.log(`DatabaseSubscriber ready to consume messages: ${JSON.stringify(this.options())}`);
         }
     }
 
