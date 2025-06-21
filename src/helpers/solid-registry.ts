@@ -39,7 +39,7 @@ export enum RESERVED_SOLID_KEYWORDS {
   locale = "locale"
 }
 
-export interface ComputedFieldMetadata {
+export interface ComputedFieldMetadata<TContext = any> {
   moduleName: string; // Name of the module where the computed field is defined
   modelName: string; // Name of the model where the computed field is defined
   fieldName: string; // Name of the field that is computed
@@ -48,7 +48,7 @@ export interface ComputedFieldMetadata {
   // Example: '{"models": ["User", "Product"], "operations": ["create", "update"]}'
   computedFieldValueProvider: InstanceWrapper; // Name of the provider that computes the field value
   // Example: '{"contextKey": "contextValue"}'
-  computedFieldValueProviderCtxt: string; // Context for the computed field value
+  computedFieldValueProviderCtxt: TContext; // Context for the computed field value
 }
 
 @Injectable()

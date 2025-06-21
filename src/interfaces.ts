@@ -12,6 +12,7 @@ import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
 import { Readable } from 'stream';
+import { ComputedFieldMetadata } from './helpers/solid-registry';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -80,6 +81,9 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
   values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
 }
 
+/**
+ * @deprecated Use `IEntityComputedFieldProvider` instead.
+ */
 export interface IComputedFieldProvider<T> {
   help(): string;
 
@@ -97,7 +101,7 @@ export interface IEntityComputedFieldProvider<TEntity, TContext> {
 
   valueType(): string;
 
-  computeValue(entity: TEntity, ctxt: TContext): Promise<void>; 
+  computeAndSaveValue(entity: TEntity, computedFieldMetadata: ComputedFieldMetadata<TContext>): Promise<void>; 
 }
 
 export interface ISolidDatabaseModule {

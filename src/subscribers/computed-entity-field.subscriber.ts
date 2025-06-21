@@ -52,7 +52,7 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
             const providerInstance = provider.instance as IEntityComputedFieldProvider<any, any>; // IEntityComputedFieldProvider
 
             // FIXME:  await or not, needs to be determined if the computed field has been configured as sync or async
-            await providerInstance.computeValue(databaseEntity, computedField.computedFieldValueProviderCtxt);
+            await providerInstance.computeAndSaveValue(databaseEntity, computedField);
         }
     }
 
