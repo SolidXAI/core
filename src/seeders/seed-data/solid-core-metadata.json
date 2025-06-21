@@ -1754,7 +1754,7 @@
             "name": "profilePicture",
             "displayName": "Profile Picture",
             "type": "mediaSingle",
-            "required": true,
+            "required": false,
             "unique": true,
             "index": false,
             "private": false,

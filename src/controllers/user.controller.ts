@@ -125,8 +125,6 @@ export class UserController {
     @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto,
     @ActiveUser() user: ActiveUserData,
   ) {
-    return this.service.updateUser(user.sub, updateDto, files, solidRequestContext);
+    return this.service.update(user.sub, updateDto, files, true, solidRequestContext);
   }
-
-
 }
