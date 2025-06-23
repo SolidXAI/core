@@ -1,4 +1,4 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { IEntityComputedFieldProvider, QueuesModuleOptions } from "src/interfaces";
 import { QueueMessage } from "src/interfaces/mq";
@@ -10,8 +10,6 @@ import computedFieldEvaluationQueueOptions from "./computed-field-evaluation-que
 
 @Injectable()
 export class ComputedFieldEvaluationSubscriber extends DatabaseSubscriber<ComputedFieldEvaluationPayload> {
-    private readonly computedFieldEvaluationLogger = new Logger(ComputedFieldEvaluationSubscriber.name);
-
     constructor(
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,

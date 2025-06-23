@@ -192,6 +192,7 @@ import { FieldMetadataRepository } from './repository/field-metadata.repository'
 import { ComputedEntityFieldSubscriber } from './subscribers/computed-entity-field.subscriber';
 import { ComputedFieldEvaluationPublisher } from './jobs/database/computed-field-evaluation-publisher.service';
 import { ComputedFieldEvaluationSubscriber } from './jobs/database/computed-field-evaluation-subscriber.service';
+import { ConcatEntityComputedFieldProvider } from './services/computed-fields/entity/concat-entity-computed-field-provider.service';
 
 
 @Global()
@@ -408,6 +409,7 @@ import { ComputedFieldEvaluationSubscriber } from './jobs/database/computed-fiel
     ComputedEntityFieldSubscriber,
     ComputedFieldEvaluationPublisher,
     ComputedFieldEvaluationSubscriber,
+    ConcatEntityComputedFieldProvider,
   ],
   exports: [
     ModuleMetadataService,
