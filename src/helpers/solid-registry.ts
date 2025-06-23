@@ -46,7 +46,7 @@ export interface ComputedFieldMetadata<TContext = any> {
   computedFieldValueType: ComputedFieldValueType; // Type of the computed field value (e.g., string, number, etc.)
   computedFieldTriggerConfig: ComputedFieldTriggerConfig[]; // JSON stringified object containing the trigger configuration
   // Example: '{"models": ["User", "Product"], "operations": ["create", "update"]}'
-  computedFieldValueProvider: InstanceWrapper; // Name of the provider that computes the field value
+  computedFieldValueProviderName: string; // Name of the provider that computes the field value
   // Example: '{"contextKey": "contextValue"}'
   computedFieldValueProviderCtxt: TContext; // Context for the computed field value
 }
@@ -171,12 +171,15 @@ export class SolidRegistry {
     });
   }
 
+  /**
+  * @deprecated You can directly pass the entityName to typeORM, if you are using this just for doing operations against a particular entity.
+  */
   // Returns the entity target class from the entity name
-  getEntityTarget(entityManager: EntityManager, entityName: string): any { //TODO Can be refactored to use this function from crud helper service
-    const entityMetadatas = entityManager.connection.entityMetadatas;
-    const entityMetadata = entityMetadatas.find(em => em.name === entityName);
-    return entityMetadata.target;
-  }
+  // getEntityTarget(entityManager: EntityManager, entityName: string): any { //TODO Can be refactored to use this function from crud helper service
+  //   const entityMetadatas = entityManager.connection.entityMetadatas;
+  //   const entityMetadata = entityMetadatas.find(em => em.name === entityName);
+  //   return entityMetadata.target;
+  // }
 
   getCommonEntityKeys(): (keyof CommonEntity)[] {
     return ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt'];

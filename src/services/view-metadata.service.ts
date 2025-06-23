@@ -57,8 +57,8 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
   defaultEntityLocaleIdFromQuery?: string
 ): Promise<{ records: any[], defaultEntityLocaleId: string | null }> {
   const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
-  const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
-  const currentEntityRepository = this.entityManager.getRepository(currentEntityTarget);
+  // const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
+  const currentEntityRepository = this.entityManager.getRepository(classify(modelName));
 
   // Case 1: Creating a new record with no defaultEntityLocaleId to clone
   if (id === 'new' && !defaultEntityLocaleIdFromQuery) {
