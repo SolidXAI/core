@@ -45,72 +45,72 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     private readonly modelMetadataRepo: Repository<ModelMetadata>,
     readonly moduleRef: ModuleRef
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'viewMetadata', 'app-builder', moduleRef);
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'viewMetadata', 'solid-core', moduleRef);
   }
 
   private readonly logger = new Logger(ViewMetadataService.name);
 
   //for locales 
   private async getEntityRecordsInAllLocales(
-  modelName: string,
-  id: string,
-  defaultEntityLocaleIdFromQuery?: string
-): Promise<{ records: any[], defaultEntityLocaleId: string | null }> {
-  const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
-  const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
-  const currentEntityRepository = this.entityManager.getRepository(currentEntityTarget);
+    modelName: string,
+    id: string,
+    defaultEntityLocaleIdFromQuery?: string
+  ): Promise<{ records: any[], defaultEntityLocaleId: string | null }> {
+    const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
+    const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
+    const currentEntityRepository = this.entityManager.getRepository(currentEntityTarget);
 
-  // Case 1: Creating a new record with no defaultEntityLocaleId to clone
-  if (id === 'new' && !defaultEntityLocaleIdFromQuery) {
-    this.logger.debug(`Creating new record without cloning from any defaultEntityLocaleId.`);
-    return { records: [], defaultEntityLocaleId: null };
-  }
+    // Case 1: Creating a new record with no defaultEntityLocaleId to clone
+    if (id === 'new' && !defaultEntityLocaleIdFromQuery) {
+      this.logger.debug(`Creating new record without cloning from any defaultEntityLocaleId.`);
+      return { records: [], defaultEntityLocaleId: null };
+    }
 
-  // Case 2: Creating a new record and cloning from an existing defaultEntityLocaleId
-  if (id === 'new' && defaultEntityLocaleIdFromQuery) {
-    this.logger.debug(`Creating new record by cloning translations from defaultEntityLocaleId: ${defaultEntityLocaleIdFromQuery}`);
+    // Case 2: Creating a new record and cloning from an existing defaultEntityLocaleId
+    if (id === 'new' && defaultEntityLocaleIdFromQuery) {
+      this.logger.debug(`Creating new record by cloning translations from defaultEntityLocaleId: ${defaultEntityLocaleIdFromQuery}`);
+
+      const records = await currentEntityRepository.find({
+        where: [
+          { defaultEntityLocaleId: defaultEntityLocaleIdFromQuery },
+          { id: defaultEntityLocaleIdFromQuery }
+        ]
+      });
+
+      this.logger.debug(`Found ${records.length} cloned records for new entity.`);
+      return { records, defaultEntityLocaleId: defaultEntityLocaleIdFromQuery };
+    }
+
+    // Case 3: Editing an existing entity
+    const entityRecord = await currentEntityRepository.findOne({ where: { id } });
+
+    if (!entityRecord) {
+      this.logger.warn(`No entity found for id ${id}`);
+      return { records: [], defaultEntityLocaleId: null };
+    }
+
+    const defaultLocale = await this.entityManager.getRepository(Locale).findOne({ where: { isDefault: true } });
+
+    let defaultEntityLocaleId: string;
+    if (entityRecord.localeName === defaultLocale?.locale) {
+      defaultEntityLocaleId = entityRecord.id;
+      this.logger.debug(`Editing default locale record with id ${defaultEntityLocaleId}`);
+    } else {
+      defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
+      this.logger.debug(`Editing non-default locale record. DefaultEntityLocaleId: ${defaultEntityLocaleId}`);
+    }
 
     const records = await currentEntityRepository.find({
       where: [
-        { defaultEntityLocaleId: defaultEntityLocaleIdFromQuery },
-        { id: defaultEntityLocaleIdFromQuery }
+        { defaultEntityLocaleId: defaultEntityLocaleId },
+        { id: defaultEntityLocaleId }
       ]
     });
 
-    this.logger.debug(`Found ${records.length} cloned records for new entity.`);
-    return { records, defaultEntityLocaleId: defaultEntityLocaleIdFromQuery };
+    this.logger.debug(`Found ${records.length} records in all locales for existing entity.`);
+
+    return { records, defaultEntityLocaleId };
   }
-
-  // Case 3: Editing an existing entity
-  const entityRecord = await currentEntityRepository.findOne({ where: { id } });
-
-  if (!entityRecord) {
-    this.logger.warn(`No entity found for id ${id}`);
-    return { records: [], defaultEntityLocaleId: null };
-  }
-
-  const defaultLocale = await this.entityManager.getRepository(Locale).findOne({ where: { isDefault: true } });
-
-  let defaultEntityLocaleId: string;
-  if (entityRecord.localeName === defaultLocale?.locale) {
-    defaultEntityLocaleId = entityRecord.id;
-    this.logger.debug(`Editing default locale record with id ${defaultEntityLocaleId}`);
-  } else {
-    defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
-    this.logger.debug(`Editing non-default locale record. DefaultEntityLocaleId: ${defaultEntityLocaleId}`);
-  }
-
-  const records = await currentEntityRepository.find({
-    where: [
-      { defaultEntityLocaleId: defaultEntityLocaleId },
-      { id: defaultEntityLocaleId }
-    ]
-  });
-
-  this.logger.debug(`Found ${records.length} records in all locales for existing entity.`);
-
-  return { records, defaultEntityLocaleId };
-}
 
   // START: Custom Service Methods
   async getLayout(query, activeUser) {
@@ -311,10 +311,10 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     //     }
     //   }
     // }
-    if(entity.model.internationalisation){
+    if (entity.model.internationalisation) {
       const defaultEntityLocaleIdFromQuery = query?.defaultEntityLocaleId;
       const { records: entityRecordsInAllLocales, defaultEntityLocaleId } =
-      await this.getEntityRecordsInAllLocales(modelName, id, defaultEntityLocaleIdFromQuery);
+        await this.getEntityRecordsInAllLocales(modelName, id, defaultEntityLocaleIdFromQuery);
       const allLocales = await this.entityManager.getRepository(Locale).find({});
       for (const locale of allLocales) {
         const matchingRecord = entityRecordsInAllLocales.find(record => record.localeName === locale.locale);

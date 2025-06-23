@@ -199,6 +199,10 @@ import { SmsQueuePublisherDatabase } from './jobs/database/sms-publisher-databas
 import { SmsQueueSubscriberDatabase } from './jobs/database/sms-subscriber-database.service';
 import { WhatsappQueuePublisherDatabase } from './jobs/database/whatsapp-publisher-database.service';
 import { WhatsappQueueSubscriberDatabase } from './jobs/database/whatsapp-subscriber-database.service';
+import { ScheduledJob } from './entities/scheduled-job.entity';
+import { ScheduledJobController } from './controllers/scheduled-job.controller';
+import { ScheduledJobService } from './services/scheduled-job.service';
+import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
 
 
 @Global()
@@ -221,6 +225,7 @@ import { WhatsappQueueSubscriberDatabase } from './jobs/database/whatsapp-subscr
       MenuItemMetadata,
       MqMessageQueue,
       MqMessage,
+      ScheduledJob,
       PermissionMetadata,
       RoleMetadata
     ]),
@@ -257,7 +262,8 @@ import { WhatsappQueueSubscriberDatabase } from './jobs/database/whatsapp-subscr
     ClsModule.forRoot({
       middleware: {
         mount: true,
-      }}),
+      }
+    }),
     TypeOrmModule.forFeature([ImportTransaction]),
     TypeOrmModule.forFeature([ImportTransactionErrorLog]),
   ],
@@ -280,6 +286,7 @@ import { WhatsappQueueSubscriberDatabase } from './jobs/database/whatsapp-subscr
     TestQueueController,
     MqMessageQueueController,
     MqMessageController,
+    ScheduledJobController,
     PermissionMetadataController,
     RoleMetadataController,
     UserController,
@@ -394,9 +401,11 @@ import { WhatsappQueueSubscriberDatabase } from './jobs/database/whatsapp-subscr
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,
     GenerateCodePublisherDatabase,
-    GenerateCodeSubscriberDatabase,    
+    GenerateCodeSubscriberDatabase,
     MqMessageQueueService,
     MqMessageService,
+    ScheduledJobService,
+    SchedulerServiceImpl,
     PermissionMetadataService,
     RoleMetadataService,
     PermissionMetadataSeederService,
@@ -427,7 +436,6 @@ import { WhatsappQueueSubscriberDatabase } from './jobs/database/whatsapp-subscr
     ImportTransactionErrorLogService,
     CreatedByUpdatedBySubscriber,
     SystemFieldsSeederService,
-    
   ],
   exports: [
     ModuleMetadataService,
@@ -457,7 +465,8 @@ import { WhatsappQueueSubscriberDatabase } from './jobs/database/whatsapp-subscr
     RefreshModuleCommand,
     RequestContextService,
     SecurityRuleRepository,
-    FieldRepository
+    FieldRepository,
+    SchedulerServiceImpl,
   ],
 })
 export class SolidCoreModule { }

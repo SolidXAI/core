@@ -811,35 +811,36 @@ export class ModelMetadataService {
         column2Fields.push(formViewLayoutFields[i]);
       }
     }
+    const actionName = `${model.singularName}-list-action`;
     const viewName = `${model.singularName}-list-view`;
     const formViewName = `${model.singularName}-form-view`;
     const menuName = `${model.singularName}-menu-item`;
 
     const action = {
-      displayName: `${model.displayName} List View`,
-      name: `${model.singularName}-list-view`,
+      displayName: `${model.displayName} List Action`,
+      name: actionName,
       type: "solid",
       domain: "",
       context: "",
       customComponent: `/admin/address-master/${model.singularName}/all`,
       customIsModal: true,
       serverEndpoint: "",
-      viewUserKey: `${model.singularName}-list-view`,
+      viewUserKey: viewName,
       moduleUserKey: `${model.module.name}`,
       modelUserKey: `${model.singularName}`
     };
 
     const menu = {
       displayName: `${model.displayName}`,
-      name: `${model.singularName}-menu-item`,
+      name: menuName,
       sequenceNumber: 1,
-      actionUserKey: `${model.singularName}-list-view`,
+      actionUserKey: actionName,
       moduleUserKey: `${model.module.name}`,
       parentMenuItemUserKey: ""
     };
 
     const modelListview = {
-      name: `${model.singularName}-list-view`,
+      name: viewName,
       displayName: `${model.displayName}`,
       type: "list",
       context: "{}",
@@ -865,7 +866,7 @@ export class ModelMetadataService {
 
 
     const modelFormView = {
-      name: `${model.singularName}-form-view`,
+      name: formViewName,
       displayName: `${model.displayName}`,
       type: "form",
       context: "{}",

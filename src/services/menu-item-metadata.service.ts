@@ -32,7 +32,7 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
     readonly moduleRef: ModuleRef
 
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService,  discoveryService, crudHelperService, entityManager, repo, 'menuItemMetadata', 'app-builder',moduleRef);
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'menuItemMetadata', 'solid-core', moduleRef);
   }
 
 
@@ -178,7 +178,7 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
         title: rootItem.displayName || rootItem.name,
         path: path,
         key: rootItem.name.toLowerCase().replace(/\s+/g, '-'),
-        icon : rootItem.iconName,
+        icon: rootItem.iconName,
         // iconVariant : rootItem.iconVariant
       }
       if (children.length > 0) {

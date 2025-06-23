@@ -5,6 +5,7 @@ import { SecurityRule } from 'src/entities/security-rule.entity';
 import { EntityManager } from 'typeorm';
 import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 import { Locale } from 'src/entities/locale.entity';
+import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
 
 type ControllerMetadata = {
   name: string;
@@ -41,13 +42,14 @@ export enum RESERVED_SOLID_KEYWORDS {
 @Injectable()
 export class SolidRegistry {
   private seeders: Set<InstanceWrapper> = new Set();
+  private scheduledJobProviders: Set<InstanceWrapper> = new Set();
   private selectionProviders: Set<InstanceWrapper> = new Set();
   private computedFieldProviders: Set<InstanceWrapper> = new Set();
   private solidDatabaseModules: Set<InstanceWrapper> = new Set();
   private controllers: Set<ControllerMetadata> = new Set();
   private modules: Set<InstanceWrapper> = new Set();
   private securityRules: SecurityRule[] = [];
-  private locales : Locale[] = [];
+  private locales: Locale[] = [];
 
   registerController(name: string, methodNames: string[]): void {
     this.controllers.add({ name: name, methods: methodNames });
@@ -67,6 +69,10 @@ export class SolidRegistry {
 
   registerComputedFieldProvider(computedFieldProvider: InstanceWrapper): void {
     this.computedFieldProviders.add(computedFieldProvider);
+  }
+
+  registerScheduledJobProvider(scheduledJobProvider: InstanceWrapper): void {
+    this.scheduledJobProviders.add(scheduledJobProvider);
   }
 
   registerSolidDatabaseModule(solidDatabaseModule: InstanceWrapper): void {
@@ -104,6 +110,21 @@ export class SolidRegistry {
     return Array.from(this.computedFieldProviders);
   }
 
+  getScheduledJobProviders(): Array<InstanceWrapper> {
+    return Array.from(this.scheduledJobProviders);
+  }
+
+  getScheduledJobProviderInstance(name: string): IScheduledJob {
+    const scheduledJobProviders = this.getScheduledJobProviders();
+
+    for (let i = 0; i < scheduledJobProviders.length; i++) {
+      const scheduledJobProvider = scheduledJobProviders[i];
+      if (scheduledJobProvider.instance.name() === name) {
+        return scheduledJobProvider.instance;
+      }
+    }
+  }
+
   getSolidDatabaseModules(): Array<InstanceWrapper> {
     return Array.from(this.solidDatabaseModules);
   }
@@ -121,11 +142,11 @@ export class SolidRegistry {
     this.securityRules = securityRules;
   }
 
-  registerlocales(locales : Locale[]){
+  registerlocales(locales: Locale[]) {
     this.locales = locales;
   }
-  
-  //TODO:getlocales from locale model and return default locale where isDefault:true 
+
+  // TODO:getlocales from locale model and return default locale where isDefault:true 
   getDefaultLocale(): Locale | null {
     return this.locales.find(locale => locale.isDefault === true) || null;
   }
@@ -148,9 +169,9 @@ export class SolidRegistry {
     return entityMetadata.target;
   }
 
-  getCommonEntityKeys(): (keyof CommonEntity) [] {
-    return [ 'id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt'];
-        // return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
+  getCommonEntityKeys(): (keyof CommonEntity)[] {
+    return ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt'];
+    // return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
   }
 
 }
