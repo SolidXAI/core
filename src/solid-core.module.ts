@@ -190,6 +190,8 @@ import { GenerateCodePublisher } from './jobs/database/generate-code-publisher.s
 import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber.service';
 import { FieldMetadataRepository } from './repository/field-metadata.repository';
 import { ComputedEntityFieldSubscriber } from './subscribers/computed-entity-field.subscriber';
+import { ComputedFieldEvaluationPublisher } from './jobs/database/computed-field-evaluation-publisher.service';
+import { ComputedFieldEvaluationSubscriber } from './jobs/database/computed-field-evaluation-subscriber.service';
 
 
 @Global()
@@ -404,6 +406,8 @@ import { ComputedEntityFieldSubscriber } from './subscribers/computed-entity-fie
     SystemFieldsSeederService,
     FieldMetadataRepository,
     ComputedEntityFieldSubscriber,
+    ComputedFieldEvaluationPublisher,
+    ComputedFieldEvaluationSubscriber,
   ],
   exports: [
     ModuleMetadataService,

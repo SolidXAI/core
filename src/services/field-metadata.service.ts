@@ -51,7 +51,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 computedFieldValueType: field.computedFieldValueType as ComputedFieldValueType,
                 computedFieldTriggerConfig: field.computedFieldTriggerConfig ?? [defaultComputedFieldTriggerConfig], // Ensure it's an array, default to empty if not provided
                 // computedFieldTriggerConfig: this.parsecomputedFieldTriggerConfig(field.computedFieldTriggerConfig), // Ensure it's a stringified JSON object
-                computedFieldValueProvider: this.solidRegistry.getComputedFieldProvider(field.computedFieldValueProvider),
+                computedFieldValueProviderName: field.computedFieldValueProvider,
                 computedFieldValueProviderCtxt: field.computedFieldValueProviderCtxt ? JSON.parse(field.computedFieldValueProviderCtxt) : {}, // Parse the context if it exists, default to empty object
             };
         });

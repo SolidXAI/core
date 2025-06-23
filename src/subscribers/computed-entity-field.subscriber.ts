@@ -3,8 +3,13 @@ import { Injectable } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
 import { ComputedFieldMetadata, SolidRegistry } from "src/helpers/solid-registry";
-import { IEntityComputedFieldProvider } from "src/interfaces";
+import { ComputedFieldEvaluationPublisher } from "src/jobs/database/computed-field-evaluation-publisher.service";
 import { DataSource, EntitySubscriberInterface, EventSubscriber, InsertEvent, UpdateEvent } from "typeorm";
+
+// Create an interface i.e ComputedFieldEvaluationPayload which has same fields as the ComputedFieldMetadata and an additional field for the database entity
+export interface ComputedFieldEvaluationPayload extends ComputedFieldMetadata {
+    databaseEntity: any;
+}
 
 @Injectable()
 @EventSubscriber()
@@ -12,7 +17,8 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
     constructor(
         @InjectDataSource()
         private readonly dataSource: DataSource,
-        private readonly solidRegistry: SolidRegistry
+        private readonly solidRegistry: SolidRegistry,
+        private readonly computedFieldPublisher: ComputedFieldEvaluationPublisher,
     ) {
         this.dataSource.subscribers.push(this);
     }
@@ -39,20 +45,20 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
             currentOperation,
             currentModelName
         );
-        await this.evaluateComputedFieldProviders(computedFieldsTobeEvaluated, databaseEntity);
+        this.evaluateComputedFieldProviders(computedFieldsTobeEvaluated, databaseEntity);
     }
 
     // Invoke the computeValue method of each computed field provider
     // Pass the database entity and the context to the provider of type IEntityComputedFieldProvider
     private async evaluateComputedFieldProviders(computedFieldsTobeEvaluated: ComputedFieldMetadata[], databaseEntity: any) {
         for (const computedField of computedFieldsTobeEvaluated) {
-            const provider = computedField.computedFieldValueProvider;
-
-            // Get the instance of the provider and assert it is of type IEntityComputedFieldProvider
-            const providerInstance = provider.instance as IEntityComputedFieldProvider<any, any>; // IEntityComputedFieldProvider
-
-            // FIXME:  await or not, needs to be determined if the computed field has been configured as sync or async
-            await providerInstance.computeAndSaveValue(databaseEntity, computedField);
+            const payload = {
+                ...computedField,
+                databaseEntity,
+            }
+            this.computedFieldPublisher.publish({
+                payload
+            });
         }
     }
 
