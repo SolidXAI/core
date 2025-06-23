@@ -93,6 +93,7 @@ export class SchedulerServiceImpl implements ISchedulerService {
                 }
 
                 await handler.executeReminder(job);
+                job.isActive = true;
                 job.lastRunAt = now;
                 job.nextRunAt = this.computeNextRunAt(job, now);
                 await this.scheduledJobRepo.save(job);
