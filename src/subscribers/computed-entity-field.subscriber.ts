@@ -72,28 +72,4 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
             )
         );
     }
-
-    // De-duplicate the computed field providers present for a computed field and get the unique list of computed field providers, based on the provider name
-    // This is needed because multiple computed fields can have the same provider
-    // We can create a set of InstanceWrapper of the provider and then use that to get the unique providers  
-    // private getComputedFieldProviderMap(currentOperation: ComputedFieldTriggerOperation, currentModelName: string) {
-    //     const computedFieldMetadata = this.solidRegistry.getComputedFieldMetadata();
-    //     const computedFieldsTobeEvaluated = this.getComputedFieldsToBeEvaluated(computedFieldMetadata, currentOperation, currentModelName);
-    //     return this.mapByComputedFieldProvider(computedFieldsTobeEvaluated);
-    // }
-
-    // Normalize and create a map by computed provider name within the computedFieldsTobeEvaluated array, to ensure that each computed field provider is unique
-    // This is needed because multiple computed fields can have the same provider, and we want to run the computeValue method of each provider only once
-    // We can create a map of InstanceWrapper of the provider and then use that to get
-    // the unique providers, which will be used to invoke the computeValue method of each provider
-    // private mapByComputedFieldProvider(computedFieldsTobeEvaluated: ComputedFieldMetadata[]) {
-    //     const computedFieldProviderMap: Map<string, ComputedFieldMetadata[]> = new Map();
-    //     for (const computedField of computedFieldsTobeEvaluated) {
-    //         const providerName = computedField.computedFieldValueProvider.name;
-    //         if (!computedFieldProviderMap.has(providerName)) {
-    //             computedFieldProviderMap.set(providerName, []);
-    //         }
-    //         computedFieldProviderMap.get(providerName)?.push(computedField);
-    //     }
-    // }
 }
