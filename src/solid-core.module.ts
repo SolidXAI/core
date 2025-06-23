@@ -204,6 +204,7 @@ import { ScheduledJobController } from './controllers/scheduled-job.controller';
 import { ScheduledJobService } from './services/scheduled-job.service';
 import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
 import { ListOfScheduledJobsSelectionProvider } from './services/selection-providers/list-of-scheduled-jobs-selection-provider.service';
+import { ScheduleModule } from '@nestjs/schedule';
 
 
 @Global()
@@ -267,6 +268,7 @@ import { ListOfScheduledJobsSelectionProvider } from './services/selection-provi
     }),
     TypeOrmModule.forFeature([ImportTransaction]),
     TypeOrmModule.forFeature([ImportTransactionErrorLog]),
+    ScheduleModule.forRoot()
   ],
   controllers: [
     ModuleMetadataController,

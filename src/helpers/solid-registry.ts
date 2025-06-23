@@ -119,7 +119,7 @@ export class SolidRegistry {
 
     for (let i = 0; i < scheduledJobProviders.length; i++) {
       const scheduledJobProvider = scheduledJobProviders[i];
-      if (scheduledJobProvider.instance.name() === name) {
+      if (scheduledJobProvider.name === name) {
         return scheduledJobProvider.instance;
       }
     }
