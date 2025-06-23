@@ -17,15 +17,15 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         this.dataSource.subscribers.push(this);
     }
 
-    async beforeInsert(event: InsertEvent<any>) {
+    async afterInsert(event: InsertEvent<any>) {
         await this.computeValue(event.entity, ComputedFieldTriggerOperation.create);
     }
 
-    async beforeUpdate(event: UpdateEvent<any>) {
+    async afterUpdate(event: UpdateEvent<any>) {
         await this.computeValue(event.databaseEntity, ComputedFieldTriggerOperation.update);
     }
 
-    async beforeRemove(event: any) {
+    async afterRemove(event: any) {
         await this.computeValue(event.databaseEntity, ComputedFieldTriggerOperation.delete);
     }
 

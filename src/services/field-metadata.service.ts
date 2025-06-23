@@ -7,7 +7,7 @@ import { ComputedFieldMetadata, SolidRegistry } from 'src/helpers/solid-registry
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
-import { CascadeType, ComputedFieldTriggerConfig, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MediaType, PSQLType, RelationType, SelectionValueType, SolidFieldType } from '../dtos/create-field-metadata.dto';
+import { CascadeType, ComputedFieldTriggerConfig, ComputedFieldTriggerOperation, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MediaType, PSQLType, RelationType, SelectionValueType, SolidFieldType } from '../dtos/create-field-metadata.dto';
 import { SelectionDynamicQueryDto } from '../dtos/selection-dynamic-query.dto';
 import { UpdateFieldMetaDataDto } from '../dtos/update-field-metadata.dto';
 import { FieldMetadata } from '../entities/field-metadata.entity';
@@ -39,12 +39,17 @@ export class FieldMetadataService implements OnApplicationBootstrap {
 
         // Convert the computed fields object above to the ComputedFieldMetadata type
         const computedFieldMetadata: ComputedFieldMetadata[] = computedFieldsWithModelAndModule.map((field) => {
+            const defaultComputedFieldTriggerConfig: ComputedFieldTriggerConfig = {
+                moduleName: field.model.module.name,
+                modelName: field.model.singularName,
+                operations: [ComputedFieldTriggerOperation.create, ComputedFieldTriggerOperation.update, ComputedFieldTriggerOperation.delete], // Default operations, can be overridden
+            }
             return {
                 moduleName: field.model.module.name,
                 modelName: field.model.singularName,
                 fieldName: field.name,
                 computedFieldValueType: field.computedFieldValueType as ComputedFieldValueType,
-                computedFieldTriggerConfig: field.computedFieldTriggerConfig ?? [], // Ensure it's an array, default to empty if not provided
+                computedFieldTriggerConfig: field.computedFieldTriggerConfig ?? [defaultComputedFieldTriggerConfig], // Ensure it's an array, default to empty if not provided
                 // computedFieldTriggerConfig: this.parsecomputedFieldTriggerConfig(field.computedFieldTriggerConfig), // Ensure it's a stringified JSON object
                 computedFieldValueProvider: this.solidRegistry.getComputedFieldProvider(field.computedFieldValueProvider),
                 computedFieldValueProviderCtxt: field.computedFieldValueProviderCtxt ? JSON.parse(field.computedFieldValueProviderCtxt) : {}, // Parse the context if it exists, default to empty object
