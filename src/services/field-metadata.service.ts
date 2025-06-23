@@ -39,18 +39,17 @@ export class FieldMetadataService implements OnApplicationBootstrap {
 
         // Convert the computed fields object above to the ComputedFieldMetadata type
         const computedFieldMetadata: ComputedFieldMetadata[] = computedFieldsWithModelAndModule.map((field) => {
-            const defaultComputedFieldTriggerConfig: ComputedFieldTriggerConfig = {
-                moduleName: field.model.module.name,
-                modelName: field.model.singularName,
-                operations: [ComputedFieldTriggerOperation.create, ComputedFieldTriggerOperation.update, ComputedFieldTriggerOperation.delete], // Default operations, can be overridden
-            }
+            // const defaultComputedFieldTriggerConfig: ComputedFieldTriggerConfig = {
+            //     moduleName: field.model.module.name,
+            //     modelName: field.model.singularName,
+            //     operations: [ComputedFieldTriggerOperation.create, ComputedFieldTriggerOperation.update, ComputedFieldTriggerOperation.delete], // Default operations, can be overridden
+            // }
             return {
                 moduleName: field.model.module.name,
                 modelName: field.model.singularName,
                 fieldName: field.name,
                 computedFieldValueType: field.computedFieldValueType as ComputedFieldValueType,
-                computedFieldTriggerConfig: field.computedFieldTriggerConfig ?? [defaultComputedFieldTriggerConfig], // Ensure it's an array, default to empty if not provided
-                // computedFieldTriggerConfig: this.parsecomputedFieldTriggerConfig(field.computedFieldTriggerConfig), // Ensure it's a stringified JSON object
+                computedFieldTriggerConfig: field.computedFieldTriggerConfig ?? [], // Ensure it's an array, default to empty if not provided
                 computedFieldValueProviderName: field.computedFieldValueProvider,
                 computedFieldValueProviderCtxt: field.computedFieldValueProviderCtxt ? JSON.parse(field.computedFieldValueProviderCtxt) : {}, // Parse the context if it exists, default to empty object
             };
@@ -59,28 +58,6 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         // Register the computed fields in the SolidRegistry. Capture only computed field related info
         this.solidRegistry.registerComputedFieldMetadata(computedFieldMetadata);
     }
-
-    // private parsecomputedFieldTriggerConfig(config: string): ComputedFieldTriggerConfig[] {
-    //     try {
-    //         // Parse the JSON string into an array of ComputedFieldTriggerConfig objects
-    //         const parsedConfig = JSON.parse(config);
-    //         // Ensure the parsed config is an array
-    //         if (!Array.isArray(parsedConfig)) {
-    //                throw new Error('Parsed config is not an array');
-    //         }
-    //         // Validate each item in the array
-    //         parsedConfig.forEach(item => {
-    //             // Check if item keys match the ComputedFieldTriggerConfig interface
-    //             if (typeof item !== 'object' || !item.moduleName || !item.modelName || !item.operations) {
-    //                 throw new Error('Invalid ComputedFieldTriggerConfig format');
-    //             }
-    //         });
-    //         return parsedConfig as ComputedFieldTriggerConfig[];
-    //     } catch (error) {
-    //         this.logger.error(`Failed to parse computed field trigger config: ${error.message}`);
-    //         return [];
-    //     }
-    // }
 
     async updateInverseField(field: FieldMetadata, fieldRepository: Repository<FieldMetadata>, modelRepository: Repository<ModelMetadata>) {
         if (!field.model || !field.model.module) {
