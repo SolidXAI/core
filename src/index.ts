@@ -13,6 +13,7 @@ export * from './decorators/active-user.decorator'
 export * from './decorators/solid-request-context.decorator'
 export * from './decorators/auth.decorator'
 export * from './decorators/computed-field-provider.decorator'
+export * from './decorators/scheduled-job-provider.decorator'
 export * from './decorators/is-not-in-enum.decorator'
 export * from './decorators/protocol.decorator'
 export * from './decorators/public.decorator'
@@ -159,6 +160,9 @@ export * from './interceptors/wrap-response.interceptor'
 
 export * from './interfaces/active-user-data.interface'
 export * from './interfaces/mq'
+export * from './services/scheduled-jobs/scheduled-job.interface';
+export * from './services/scheduled-jobs/scheduler.interface';
+export * from './services/scheduled-jobs/scheduler.service';
 
 export * from './jobs/api-email-publisher.service'
 export * from './jobs/api-email-queue-options'

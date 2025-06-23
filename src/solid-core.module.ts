@@ -203,6 +203,7 @@ import { ScheduledJob } from './entities/scheduled-job.entity';
 import { ScheduledJobController } from './controllers/scheduled-job.controller';
 import { ScheduledJobService } from './services/scheduled-job.service';
 import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
+import { ListOfScheduledJobsSelectionProvider } from './services/selection-providers/list-of-scheduled-jobs-selection-provider.service';
 
 
 @Global()
@@ -386,6 +387,7 @@ import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.servic
     PdfService,
     UuidExternalIdComputedFieldProvider,
     ListOfModelsSelectionProvider,
+    ListOfScheduledJobsSelectionProvider,
     LocaleListSelectionProvider,
     SoftDeleteAwareEventSubscriber,
     AccessTokenGuard,

@@ -2674,7 +2674,7 @@
             "name": "job",
             "displayName": "Job",
             "description": null,
-            "type": "shortText",
+            "type": "selectionDynamic",
             "ormType": "varchar",
             "isSystem": false,
             "defaultValue": null,
@@ -2689,7 +2689,10 @@
             "decryptWhen": null,
             "columnName": null,
             "isUserKey": false,
-            "enableAuditTracking": false
+            "enableAuditTracking": false,
+            "selectionValueType": "string",
+            "selectionDynamicProvider": "ListOfScheduledJobsSelectionProvider",
+            "selectionDynamicProviderCtxt": "{}"
           }
         ]
       },
