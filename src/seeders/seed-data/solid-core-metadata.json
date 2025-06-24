@@ -4331,6 +4331,45 @@
       "viewUserKey": "userActivityHistory-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "userActivityHistory"
+    },
+    {
+      "displayName": "App Settings",
+      "name": "app-settings-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/core/solid-core/settings/app-settings",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "setting"
+    },
+    {
+      "displayName": "Authentication Settings",
+      "name": "authentication-settings-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/core/solid-core/settings/authentication-settings",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "setting"
+    },
+    {
+      "displayName": "Misc",
+      "name": "misc-settings-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/core/solid-core/settings/misc-settings",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "setting"
     }
   ],
   "menus": [
@@ -4589,6 +4628,38 @@
       "actionUserKey": "userActivityHistory-list-view",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Settings",
+      "name": "settings-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "settings-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "App Settings",
+      "name": "app-settings-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "app-settings-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "settings-menu-item"
+    },
+    {
+      "displayName": "Authentication Settings",
+      "name": "authentication-settings-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "authentication-settings-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "settings-menu-item"
+    },
+    {
+      "displayName": "Misc",
+      "name": "misc-settings-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "misc-settings-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "settings-menu-item"
     }
   ],
   "views": [
