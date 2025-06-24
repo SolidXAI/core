@@ -13,6 +13,7 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 
 import { UserActivityHistory } from '../entities/user-activity-history.entity';
 import { RequestContextService } from './request-context.service';
+import { User } from 'src/entities/user.entity';
 
 @Injectable()
 export class UserActivityHistoryService extends CRUDService<UserActivityHistory> {
@@ -33,10 +34,7 @@ export class UserActivityHistoryService extends CRUDService<UserActivityHistory>
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'userActivityHistory', 'solid-core', moduleRef);
   }
-  async logEvent(event: 'login' | 'logout' | 'tokenRefreshed') {
-    const activeUser = this.requestContextService.getActiveUser();
-    const user = activeUser?.sub;
-
+  async logEvent(event: 'login' | 'logout' | 'tokenRefreshed', user: User) {
     const ip = this.requestContextService.getIp();
     const userAgent = this.requestContextService.getUserAgent();
 

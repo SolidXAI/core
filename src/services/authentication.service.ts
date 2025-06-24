@@ -495,7 +495,7 @@ export class AuthenticationService {
         // TODO: Unset the password etc...
         const tokens = await this.generateTokens(user);
 
-        await this.userActivityHistoryService.logEvent('login');
+        await this.userActivityHistoryService.logEvent('login', user);
 
         return {
             user: {
@@ -964,7 +964,7 @@ export class AuthenticationService {
 
             const currentRefreshToken = await this.refreshTokenIdsStorage.validateAndRotate(user, refreshTokenDto.refreshToken);
             
-            await this.userActivityHistoryService.logEvent('tokenRefreshed');
+            await this.userActivityHistoryService.logEvent('tokenRefreshed', user);
 
             return {
                 accessToken: await this.generateAccessToken(user),
@@ -1064,7 +1064,7 @@ export class AuthenticationService {
             await this.refreshTokenIdsStorage.invalidate(userId); // ← Your existing logic
 
             // Log logout event
-            await this.userActivityHistoryService.logEvent('logout');
+            await this.userActivityHistoryService.logEvent('logout', userId);
 
 
             return { message: 'Logged out successfully' };
