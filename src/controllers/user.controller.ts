@@ -10,6 +10,7 @@ import { ActiveUser } from '../decorators/active-user.decorator';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
+import { UpdateUserProfileDto } from 'src/dtos/update-user-profile.dto';
 
 @ApiTags('Solid Core')
 @Controller('user') //FIXME: Change this to the model plural name 
@@ -116,5 +117,15 @@ export class UserController {
     return this.service.removeRoleFromUser(userEmail, roleName);
   }
 
-
+  @ApiBearerAuth('jwt')
+  @Post('/profile')
+  @UseInterceptors(AnyFilesInterceptor())
+  async updateOwnProfile(
+    @Body() updateDto: UpdateUserProfileDto,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+    @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto,
+    @ActiveUser() user: ActiveUserData,
+  ) {
+    return this.service.update(user.sub, updateDto, files, true, solidRequestContext);
+  }
 }

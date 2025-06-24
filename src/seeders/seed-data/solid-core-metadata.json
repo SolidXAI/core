@@ -1751,6 +1751,18 @@
             "isSystem": true
           },
           {
+            "name": "profilePicture",
+            "displayName": "Profile Picture",
+            "type": "mediaSingle",
+            "required": false,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "mediaStorageProviderUserKey": "default-filesystem"
+          },
+          {
             "name": "lastLoginProvider",
             "displayName": "Last Login Provider",
             "type": "shortText",
@@ -2455,6 +2467,47 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "type",
+            "displayName": "Type",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": false,
+            "index": false,
+            "isSystem": true,
+            "columnName": "type",
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "system:System",
+              "user:User"
+            ]
+          },
+          {
+            "name": "user",
+            "displayName": "User",
+            "description": "This is the user id field",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "user",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
           }
         ]
       },
@@ -9412,6 +9465,106 @@
                         "type": "field",
                         "attrs": {
                           "name": "importTransactionErrorLog"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "setting-list-view",
+      "displayName": "Settings",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "setting",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "setting-form-view",
+      "displayName": "Settings",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "setting",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Settings",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "user"
                         }
                       }
                     ]
