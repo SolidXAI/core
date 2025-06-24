@@ -199,6 +199,12 @@ export class SettingService extends CRUDService<Setting> {
     const settingsToUpdate: Setting[] = [];
     const settingsToCreate: Setting[] = [];
 
+    let user: User | null = null;
+    const hasUserSettings = settings.some(dto => dto.type === 'user');
+    if (hasUserSettings && userId) {
+      user = await this.userRepository.findOne({ where: { id: userId } });
+    }
+
     // Handle uploaded files
     if (uploadedFiles?.length) {
       for (const file of uploadedFiles) {
@@ -225,8 +231,8 @@ export class SettingService extends CRUDService<Setting> {
           newSetting.value = fileUrl;
           newSetting.type = settingType;
 
-          if (settingType === 'user' && userId) {
-            newSetting.user = { id: userId } as any;
+          if (settingType === 'user' && user) {
+            newSetting.user = user;
           }
 
           settingsToCreate.push(newSetting);
@@ -255,8 +261,8 @@ export class SettingService extends CRUDService<Setting> {
         newSetting.value = value;
         newSetting.type = settingType;
 
-        if (settingType === 'user' && userId) {
-          newSetting.user = { id: userId } as any;
+        if (settingType === 'user' && user) {
+          newSetting.user = user;
         }
 
         settingsToCreate.push(newSetting);

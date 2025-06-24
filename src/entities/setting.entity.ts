@@ -11,7 +11,7 @@ export class Setting extends CommonEntity {
     value: string;
     @Column({ name: "type", type: "varchar", nullable: true })
     type: string;
-    @ManyToOne(() => User, { onDelete: "RESTRICT", nullable: true })
+    @ManyToOne(() => User, { onDelete: "CASCADE", nullable: true })
     @JoinColumn()
     user: User;
 }
