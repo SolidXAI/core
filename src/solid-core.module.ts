@@ -188,6 +188,9 @@ import { SystemFieldsSeederService } from './seeders/system-fields-seeder.servic
 import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
 import { GenerateCodePublisher } from './jobs/database/generate-code-publisher.service';
 import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber.service';
+import { UserActivityHistory } from './entities/user-activity-history.entity';
+import { UserActivityHistoryService } from './services/user-activity-history.service';
+import { UserActivityHistoryController } from './controllers/user-activity-history.controller';
 
 
 @Global()
@@ -244,6 +247,7 @@ import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber
     HttpModule,
     ConfigModule,
     ClsModule,
+    TypeOrmModule.forFeature([UserActivityHistory]),
   ],
   controllers: [
     ModuleMetadataController,
@@ -280,6 +284,7 @@ import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber
     ExportTransactionController,
     ImportTransactionController,
     ImportTransactionErrorLogController,
+    UserActivityHistoryController,
   ],
   providers: [
     {
@@ -400,6 +405,7 @@ import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber
     ImportTransactionErrorLogService,
     CreatedByUpdatedBySubscriber,
     SystemFieldsSeederService,
+    UserActivityHistoryService,
     
   ],
   exports: [
@@ -430,7 +436,8 @@ import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber
     RefreshModuleCommand,
     RequestContextService,
     SecurityRuleRepository,
-    FieldRepository
+    FieldRepository,
+    UserActivityHistoryService
   ],
 })
 export class SolidCoreModule { }
