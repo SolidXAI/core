@@ -21,6 +21,7 @@ import { CodeGenerationOptions, ModuleMetadataConfiguration } from '../interface
 import { CrudHelperService } from './crud-helper.service';
 import { ModelMetadataService } from './model-metadata.service';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
+import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 
 @Injectable()
 export class ModuleMetadataService {
@@ -349,6 +350,7 @@ export class ModuleMetadataService {
     return true
   }
 
+  @DisallowInProduction()
   async generateCode(options: CodeGenerationOptions): Promise<string> {
     if (!options.moduleId && !options.moduleUserKey) {
       throw new BadRequestException('Module ID or Module Name is required for generating code');

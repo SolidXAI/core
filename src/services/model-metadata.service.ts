@@ -27,6 +27,7 @@ import { RoleMetadataService } from './role-metadata.service';
 import { GenerateCodePublisher } from 'src/jobs/database/generate-code-publisher.service';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
 import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
+import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 
 @Injectable()
 export class ModelMetadataService {
@@ -711,6 +712,7 @@ export class ModelMetadataService {
 
   }
 
+  @DisallowInProduction()
   async handleGenerateCode(options: CodeGenerationOptions): Promise<any> {
     // // see if the model record exists. 
     // const model = await this.modelMetadataRepo.findOne({
