@@ -227,7 +227,7 @@ export class ModelMetadataService {
       if (fieldMetadata.isUserKey) {
         userKeyField = affectedField;
       }
-      listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, sortable: true, filterable: true } })
+      listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}` } })
       formViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}` } })
 
     }
@@ -777,13 +777,13 @@ export class ModelMetadataService {
       const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
       const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
-      const listViewLayoutFields = [{ type: "field", attrs: { name: `id`, sortable: true, filterable: true } }];
+      const listViewLayoutFields = [{ type: "field", attrs: { name: `id` } }];
       const formViewLayoutFields = [];
 
       for (let i = 0; i < model.fields.length; i++) {
         const field = model.fields[i];
         if (field.isSystem) continue;
-        listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, sortable: true, filterable: true } })
+        listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
         formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
       }
       this.populateVAMConfigInFileInternal(formViewLayoutFields, model, listViewLayoutFields, metaData);
@@ -799,7 +799,7 @@ export class ModelMetadataService {
   }
 
   // Populate the View, Actions and Menus in the config file
-  private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string; sortable: boolean; filterable: boolean; }; }[], metaData: any) {
+  private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string;  }; }[], metaData: any) {
     const column1Fields = [];
     const column2Fields = [];
 
