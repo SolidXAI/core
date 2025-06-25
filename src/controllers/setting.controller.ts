@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, ParseArrayPipe, BadRequestException } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { SettingService } from '../services/setting.service';
@@ -89,7 +89,35 @@ export class SettingController {
   @ApiBearerAuth("jwt")
   @Post('/bulk-update')
   @UseInterceptors(AnyFilesInterceptor())
-  async updateSettings(@Body() updateSettingsDto: UpdateSettingsDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-    return this.service.updateSettings(updateSettingsDto.settings, files);
+  async updateSettings(
+    @Body() body: any,
+    @UploadedFiles() files: Array<Express.Multer.File>
+  ) {
+    let settings: CreateSettingDto[] = [];
+
+    try {
+      settings = typeof body.settings === 'string' ? JSON.parse(body.settings) : body.settings;
+    } catch (e) {
+      throw new BadRequestException('Invalid settings payload');
+    }
+    return this.service.updateSettings(settings, files);
+  }
+
+
+  @ApiBearerAuth("jwt")
+  @Post('/bulk/user')
+  @UseInterceptors(AnyFilesInterceptor())
+  async updateUserSettings(
+    @Body() body: any,
+    @UploadedFiles() files: Array<Express.Multer.File>
+  ) {
+    let settings: CreateSettingDto[] = [];
+
+    try {
+      settings = typeof body.settings === 'string' ? JSON.parse(body.settings) : body.settings;
+    } catch (e) {
+      throw new BadRequestException('Invalid settings payload');
+    }
+    return this.service.updateSettings(settings, files);
   }
 }

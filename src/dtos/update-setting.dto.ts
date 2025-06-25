@@ -1,4 +1,4 @@
-import { IsInt,IsOptional, IsString, IsBoolean } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateSettingDto {
@@ -13,4 +13,16 @@ export class UpdateSettingDto {
     @IsString()
     @ApiProperty()
     value: string;
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    type: string;
+    @IsOptional()
+    @IsInt()
+    @ApiProperty({ description: "This is the user id field" })
+    userId: number;
+    @IsString()
+    @IsOptional()
+    @ApiProperty({ description: "This is the user id field" })
+    userUserKey: string;
 }

@@ -86,6 +86,9 @@ export * from './dtos/update-security-rule.dto'
 export * from './dtos/update-chatter-message.dto'
 export * from './dtos/update-chatter-message-details.dto'
 export * from './dtos/update-locale.dto'
+export * from './dtos/create-user-activity-history.dto'
+export * from './dtos/update-user-activity-history.dto'
+
 export * from './entities/action-metadata.entity'
 export * from './entities/common.entity'
 export * from './entities/email-attachment.entity'
@@ -117,6 +120,8 @@ export * from './entities/export-transaction.entity'
 export * from './entities/import-transaction.entity'
 export * from './entities/import-transaction-error-log.entity'
 export * from './entities/locale.entity'
+export * from './entities/user-activity-history.entity'
+
 export * from './enums/auth-type.enum'
 
 export * from './filters/http-exception.filter'
@@ -234,6 +239,8 @@ export * from './services/request-context.service'
 export * from './services/chatter-message.service'
 export * from './services/chatter-message-details.service'
 export * from './services/locale.service'
+export * from './services/user-activity-history.service'
+
 // Repositories
 export * from './repository/solid-base.repository'
 export * from './repository/security-rule.repository'
