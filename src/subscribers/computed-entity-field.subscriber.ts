@@ -3,6 +3,7 @@ import { Injectable } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
 import { ComputedFieldMetadata, SolidRegistry } from "src/helpers/solid-registry";
+import { IEntityPreComputeFieldProvider } from "src/interfaces";
 import { ComputedFieldEvaluationPublisher } from "src/jobs/database/computed-field-evaluation-publisher.service";
 import { DataSource, EntitySubscriberInterface, EventSubscriber, InsertEvent, UpdateEvent } from "typeorm";
 
@@ -23,43 +24,75 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         this.dataSource.subscribers.push(this);
     }
 
+    async beforeInsert(event: InsertEvent<any>): Promise<any> {
+        await this.handleComputedFieldEvaluation(event.entity, ComputedFieldTriggerOperation.beforeInsert);
+    }
+
+    async beforeUpdate(event: UpdateEvent<any>): Promise<any>{
+        await this.handleComputedFieldEvaluation(event.databaseEntity, ComputedFieldTriggerOperation.beforeUpdate);
+    }
+
     async afterInsert(event: InsertEvent<any>) {
-        await this.computeValue(event.entity, ComputedFieldTriggerOperation.create);
+        await this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterInsert);
     }
 
     async afterUpdate(event: UpdateEvent<any>) {
-        await this.computeValue(event.databaseEntity, ComputedFieldTriggerOperation.update);
+        await this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterUpdate);
     }
 
     async afterRemove(event: any) {
-        await this.computeValue(event.databaseEntity, ComputedFieldTriggerOperation.delete);
+        await this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterRemove);
     }
 
-    private async computeValue(databaseEntity: any, currentOperation: ComputedFieldTriggerOperation): Promise<void> {
-        if (!databaseEntity) {
+    //FIXME: Need to add support for beforeRemmove, beforeSoftRemove, afterSoftRemove, beforeRecover, afterRecover
+
+    private async handleComputedFieldEvaluation(entity: any, currentOperation: ComputedFieldTriggerOperation): Promise<void> {
+        if (!entity) {
             return;
         }
-        const currentModelName = camelize(databaseEntity.constructor.name); //Resolve the model name from the entity class name
+        const currentModelName = camelize(entity.constructor.name); // Resolve the model name from the entity class name
         const computedFieldsTobeEvaluated = this.getComputedFieldsToBeEvaluated(
             this.solidRegistry.getComputedFieldMetadata(),
             currentOperation,
             currentModelName
         );
-        this.evaluateComputedFieldProviders(computedFieldsTobeEvaluated, databaseEntity);
+        for (const computedFieldMetadata of computedFieldsTobeEvaluated) {
+            const computedValue = await this.getComputedValue(computedFieldMetadata, entity); //FIXME: There should some way to check/assert if the provider actually has a postComputeAndSaveValue
+            entity[computedFieldMetadata.fieldName] = computedValue; // Set the computed value on the entity
+        }
     }
 
-    // Invoke the computeValue method of each computed field provider
-    // Pass the database entity and the context to the provider of type IEntityComputedFieldProvider
-    private async evaluateComputedFieldProviders(computedFieldsTobeEvaluated: ComputedFieldMetadata[], databaseEntity: any) {
-        for (const computedField of computedFieldsTobeEvaluated) {
-            const payload = {
-                ...computedField,
-                databaseEntity,
-            }
-            this.computedFieldPublisher.publish({
-                payload
-            });
+    private async handleComputedFieldEvaluationJob(entity: any, currentOperation: ComputedFieldTriggerOperation): Promise<void> {
+        if (!entity) {
+            return;
         }
+        const currentModelName = camelize(entity.constructor.name); //Resolve the model name from the entity class name
+        const computedFieldsTobeEvaluated = this.getComputedFieldsToBeEvaluated(
+            this.solidRegistry.getComputedFieldMetadata(),
+            currentOperation,
+            currentModelName
+        );
+        for (const computedField of computedFieldsTobeEvaluated) {
+            this.enqueueComputedFieldEvaluationJob(computedField, entity);
+        }
+    }
+
+    private async getComputedValue(computedFieldMetadata: ComputedFieldMetadata<any>, entity: any) {
+        const provider = this.solidRegistry.getComputedFieldProvider(computedFieldMetadata.computedFieldValueProviderName);
+        // Get the instance of the provider and assert it is of type IEntityComputedFieldProvider
+        const providerInstance = provider.instance as IEntityPreComputeFieldProvider<any, any, any>; // IEntityComputedFieldProvider
+        const computedValue = await providerInstance.preComputeValue(entity, computedFieldMetadata); //FIXME There should some way to check/assert if the provider actually has a postComputeAndSaveValue
+        return computedValue;
+    }
+
+    private enqueueComputedFieldEvaluationJob(computedField: ComputedFieldMetadata<any>, databaseEntity: any) {
+        const payload = {
+            ...computedField,
+            databaseEntity,
+        };
+        this.computedFieldPublisher.publish({
+            payload
+        });
     }
 
     // Based on the current model name and current operation, identify all the computed providers that need to be evaluated

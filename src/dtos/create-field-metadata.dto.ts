@@ -172,9 +172,12 @@ export enum ComputedFieldValueType {
 }
 
 export enum ComputedFieldTriggerOperation {
-    create = "create",
-    update = "update",
-    delete = "delete",
+    beforeInsert = "before-insert",
+    afterInsert = "after-insert",
+    beforeUpdate = "before-update",
+    afterUpdate = "after-update",
+    beforeRemove = "before-delete",
+    afterRemove = "after-delete",
 }
 
 export interface ComputedFieldTriggerConfig {

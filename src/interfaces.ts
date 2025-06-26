@@ -94,12 +94,18 @@ export interface IComputedFieldProvider<T> {
   computeValue(dto: any, ctxt: T): Promise<string | number>; // FIXME : Improve the types to make it more specific using generics
 }
 
-export interface IEntityComputedFieldProvider<TTriggerEntity, TContext> {  
+export interface IEntityComputedFieldProvider {  
   help(): string;
 
   name(): string;
+}
 
-  computeAndSaveValue(triggerEntity: TTriggerEntity, computedFieldMetadata: ComputedFieldMetadata<TContext>): Promise<void>; 
+export interface IEntityPreComputeFieldProvider<TTriggerEntity, TContext, TValue> extends IEntityComputedFieldProvider {
+  preComputeValue(entity: TTriggerEntity, computedFieldMetadata: ComputedFieldMetadata<TContext>): Promise<TValue>;
+}
+
+export interface IEntityPostComputeFieldProvider<TTriggerEntity, TContext> extends IEntityComputedFieldProvider {
+  postComputeAndSaveValue(triggerEntity: TTriggerEntity, computedFieldMetadata: ComputedFieldMetadata<TContext>): Promise<void>;
 }
 
 export interface ISolidDatabaseModule {
