@@ -10,6 +10,7 @@ import { AuthType } from '../enums/auth-type.enum';
 import { AccessTokenGuard } from './access-token.guard';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { PermissionMetadataService } from '../services/permission-metadata.service';
+import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
@@ -24,7 +25,8 @@ export class AuthenticationGuard implements CanActivate {
   constructor(
     private readonly reflector: Reflector,
     private readonly accessTokenGuard: AccessTokenGuard,
-    private readonly permissionService: PermissionMetadataService
+    private readonly permissionService: PermissionMetadataService,
+    private readonly cls: ClsService,
   ) { }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
@@ -32,6 +34,15 @@ export class AuthenticationGuard implements CanActivate {
     const contextLog = context.getHandler();
     const request = context.switchToHttp().getRequest();
     request['isListedInPublicRole'] = false;
+
+    // Set IP and User-Agent into CLS context
+    const rawIp = request.headers['x-forwarded-for'] || request.socket?.remoteAddress || request.ip;
+    const ip = Array.isArray(rawIp) ? rawIp[0] :
+      typeof rawIp === 'string' ? rawIp.split(',')[0].trim() : '';
+    const userAgent = request.headers['user-agent'] || '';
+
+    this.cls.set('ipAddress', ip);
+    this.cls.set('userAgent', userAgent);
 
     const isPublic = this.reflector.get(IS_PUBLIC_KEY, context.getHandler());
     if (isPublic) {

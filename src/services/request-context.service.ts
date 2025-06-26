@@ -12,4 +12,12 @@ export class RequestContextService {
         return this.cls.get(REQUEST_USER_KEY);
     }
 
+    getIp(): string | undefined {
+        return this.cls.get('ipAddress');
+    }
+
+    getUserAgent(): string | undefined {
+        return this.cls.get('userAgent');
+    }
+
 }

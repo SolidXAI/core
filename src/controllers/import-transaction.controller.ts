@@ -108,6 +108,21 @@ export class ImportTransactionController {
   }
 
   @ApiBearerAuth("jwt")
+  @Get(':id/export-failed-import-records')
+  async exportFailedImportedImports(@Param('id') id: string, @Res() res: Response) {
+    const {stream, fileName, mimeType}  = await this.service.exportFailedImportedImports(+id);
+    if (stream === null) {
+      throw new InternalServerErrorException("Failed records stream is null");
+    }
+    // ✅ Set response headers for streaming
+    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Type', mimeType);
+    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
+    // Pipe the strea to the response as an excel file
+    stream.pipe(res);
+  }
+
+  @ApiBearerAuth("jwt")
   @Post(':id/start-import/sync')
   async startImportSync(@Param('id') id: string) {
     return this.service.startImportSync(+id);

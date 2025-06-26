@@ -1,11 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
+import { ComputedFieldTriggerConfig, ComputedFieldValueType } from 'src/dtos/create-field-metadata.dto';
 import { CommonEntity } from 'src/entities/common.entity';
-import { SecurityRule } from 'src/entities/security-rule.entity';
-import { EntityManager } from 'typeorm';
-import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 import { Locale } from 'src/entities/locale.entity';
+import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
+import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 
 type ControllerMetadata = {
   name: string;
@@ -39,6 +39,18 @@ export enum RESERVED_SOLID_KEYWORDS {
   locale = "locale"
 }
 
+export interface ComputedFieldMetadata<TContext = any> {
+  moduleName: string; // Name of the module where the computed field is defined
+  modelName: string; // Name of the model where the computed field is defined
+  fieldName: string; // Name of the field that is computed
+  computedFieldValueType: ComputedFieldValueType; // Type of the computed field value (e.g., string, number, etc.)
+  computedFieldTriggerConfig: ComputedFieldTriggerConfig[]; // JSON stringified object containing the trigger configuration
+  // Example: '{"models": ["User", "Product"], "operations": ["create", "update"]}'
+  computedFieldValueProviderName: string; // Name of the provider that computes the field value
+  // Example: '{"contextKey": "contextValue"}'
+  computedFieldValueProviderCtxt: TContext; // Context for the computed field value
+}
+
 @Injectable()
 export class SolidRegistry {
   private seeders: Set<InstanceWrapper> = new Set();
@@ -50,6 +62,7 @@ export class SolidRegistry {
   private modules: Set<InstanceWrapper> = new Set();
   private securityRules: SecurityRule[] = [];
   private locales: Locale[] = [];
+  private computedFieldMetadata: ComputedFieldMetadata[] = [];
 
   registerController(name: string, methodNames: string[]): void {
     this.controllers.add({ name: name, methods: methodNames });
@@ -124,6 +137,14 @@ export class SolidRegistry {
       }
     }
   }
+  
+  getComputedFieldProvider(name: string): InstanceWrapper {
+    const provider = this.getComputedFieldProviders().filter((provider) => provider.name === name).pop();
+    if (!provider) {
+      throw new Error(`Computed Field Provider with name ${name} not found`);
+    }
+    return provider
+  }
 
   getSolidDatabaseModules(): Array<InstanceWrapper> {
     return Array.from(this.solidDatabaseModules);
@@ -146,7 +167,15 @@ export class SolidRegistry {
     this.locales = locales;
   }
 
-  // TODO:getlocales from locale model and return default locale where isDefault:true 
+  registerComputedFieldMetadata(computedFieldMetadata: ComputedFieldMetadata[]) {
+    this.computedFieldMetadata = computedFieldMetadata;
+  }
+
+  getComputedFieldMetadata(): ComputedFieldMetadata[] {
+    return this.computedFieldMetadata;
+  }
+
+  //TODO:getlocales from locale model and return default locale where isDefault:true 
   getDefaultLocale(): Locale | null {
     return this.locales.find(locale => locale.isDefault === true) || null;
   }
@@ -162,12 +191,15 @@ export class SolidRegistry {
     });
   }
 
+  /**
+  * @deprecated You can directly pass the entityName to typeORM, if you are using this just for doing operations against a particular entity.
+  */
   // Returns the entity target class from the entity name
-  getEntityTarget(entityManager: EntityManager, entityName: string): any { //TODO Can be refactored to use this function from crud helper service
-    const entityMetadatas = entityManager.connection.entityMetadatas;
-    const entityMetadata = entityMetadatas.find(em => em.name === entityName);
-    return entityMetadata.target;
-  }
+  // getEntityTarget(entityManager: EntityManager, entityName: string): any { //TODO Can be refactored to use this function from crud helper service
+  //   const entityMetadatas = entityManager.connection.entityMetadatas;
+  //   const entityMetadata = entityMetadatas.find(em => em.name === entityName);
+  //   return entityMetadata.target;
+  // }
 
   getCommonEntityKeys(): (keyof CommonEntity)[] {
     return ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt'];

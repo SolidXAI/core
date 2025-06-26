@@ -38,12 +38,12 @@ export class UpdateUserDto {
     @IsOptional()
     @IsBoolean()
     @ApiProperty()
-    forcePasswordChange: boolean = true;
+    forcePasswordChange: boolean;
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
-    lastLoginProvider: string = "local";
+    lastLoginProvider: string;
     @IsOptional()
     @IsString()
     @ApiProperty()
@@ -64,11 +64,11 @@ export class UpdateUserDto {
     @IsOptional()
     @IsBoolean()
     @ApiProperty()
-    active: boolean = true;
+    active: boolean;
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    forgotPasswordConfirmedAt: Date = new Date("1970-01-01T00:00:00.000Z");
+    forgotPasswordConfirmedAt: Date;
     @IsOptional()
     @IsString()
     @ApiProperty()
@@ -76,11 +76,11 @@ export class UpdateUserDto {
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    verificationTokenOnForgotPasswordExpiresAt: Date = new Date("1970-01-01T00:00:00.000Z");
+    verificationTokenOnForgotPasswordExpiresAt: Date;
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    emailVerifiedOnRegistrationAt: Date = new Date("1970-01-01T00:00:00.000Z");
+    emailVerifiedOnRegistrationAt: Date;
     @IsOptional()
     @IsString()
     @ApiProperty()
@@ -88,11 +88,11 @@ export class UpdateUserDto {
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    emailVerificationTokenOnRegistrationExpiresAt: Date = new Date("1970-01-01T00:00:00.000Z");
+    emailVerificationTokenOnRegistrationExpiresAt: Date;
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    mobileVerifiedOnRegistrationAt: Date = new Date("1970-01-01T00:00:00.000Z");
+    mobileVerifiedOnRegistrationAt: Date;
     @IsOptional()
     @IsString()
     @ApiProperty()
@@ -100,11 +100,11 @@ export class UpdateUserDto {
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    mobileVerificationTokenOnRegistrationExpiresAt: Date = new Date("1970-01-01T00:00:00.000Z");
+    mobileVerificationTokenOnRegistrationExpiresAt: Date;
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    emailVerifiedOnLoginAt: Date = new Date("1970-01-01T00:00:00.000Z");
+    emailVerifiedOnLoginAt: Date;
     @IsOptional()
     @IsString()
     @ApiProperty()
@@ -112,11 +112,11 @@ export class UpdateUserDto {
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    emailVerificationTokenOnLoginExpiresAt: Date = new Date("1970-01-01T00:00:00.000Z");
+    emailVerificationTokenOnLoginExpiresAt: Date;
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    mobileVerifiedOnLoginAt: Date = new Date("1970-01-01T00:00:00.000Z");
+    mobileVerifiedOnLoginAt: Date;
     @IsOptional()
     @IsString()
     @ApiProperty()
@@ -124,7 +124,7 @@ export class UpdateUserDto {
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    mobileVerificationTokenOnLoginExpiresAt: Date = new Date("1970-01-01T00:00:00.000Z");
+    mobileVerificationTokenOnLoginExpiresAt: Date;
     @IsOptional()
     @IsString()
     @ApiProperty()

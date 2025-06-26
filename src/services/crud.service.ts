@@ -404,12 +404,20 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
 
                 //    The value will be computed by the computed provider
                 //    Invoke the appropriate computed provider, get the value and add to the dto
-                const options = { ...commonOptions, computedFieldProvider: fieldMetadata.computedFieldValueProvider, computedFieldValueProviderCtxt: fieldMetadata.computedFieldValueProviderCtxt, computedFieldValueType: fieldMetadata.computedFieldValueType as ComputedFieldValueType, discoveryService: this.discoveryService, skipComputation: isPartialUpdate };
+                const options = { ...commonOptions, computedFieldProvider: fieldMetadata.computedFieldValueProvider, computedFieldValueProviderCtxt: fieldMetadata.computedFieldValueProviderCtxt, computedFieldValueType: fieldMetadata.computedFieldValueType as ComputedFieldValueType, discoveryService: this.discoveryService, skipComputation: this.isSkipComputation(isPartialUpdate, fieldMetadata) };
                 return new ComputedFieldCrudManager(options);
             }
             default:
                 return new NoOpsFieldCrudManager();
         }
+    }
+
+    private isSkipComputation(isPartialUpdate: boolean, computedFieldMetadata: FieldMetadata) {
+       if (isPartialUpdate) return true; // If it is a partial update, then skip computation
+       if (computedFieldMetadata.computedFieldTriggerConfig && computedFieldMetadata.computedFieldTriggerConfig.length > 0) {
+           return true; // computedFieldTriggerConfig is a new field introduced as part of the IEntityComputedFieldProvider new interface, so this computation will be skiipped in crud service & will be called in the subscriber instead
+       }
+       return false; // If it is not a partial update, then do not skip computation
     }
 
     async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}) {

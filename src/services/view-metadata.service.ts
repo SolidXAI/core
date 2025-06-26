@@ -1,5 +1,4 @@
-import { Logger } from '@nestjs/common';
-import { BadRequestException, Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
@@ -11,17 +10,16 @@ import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { EntityManager, Repository } from 'typeorm';
 
 
+import { classify } from '@angular-devkit/core/src/utils/strings';
+import { Locale } from 'src/entities/locale.entity';
+import { SolidRegistry } from 'src/helpers/solid-registry';
 import { UpdateViewMetadataDto } from '../dtos/update-view-metadata.dto';
 import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ViewMetadata } from '../entities/view-metadata.entity';
 import { ActionMetadataService } from './action-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
-import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
 import { UserViewMetadataService } from './user-view-metadata.service';
-import { Locale } from 'src/entities/locale.entity';
-import { SolidRegistry } from 'src/helpers/solid-registry';
-import { classify } from '@angular-devkit/core/src/utils/strings';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -52,13 +50,13 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
 
   //for locales 
   private async getEntityRecordsInAllLocales(
-    modelName: string,
-    id: string,
-    defaultEntityLocaleIdFromQuery?: string
-  ): Promise<{ records: any[], defaultEntityLocaleId: string | null }> {
-    const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
-    const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
-    const currentEntityRepository = this.entityManager.getRepository(currentEntityTarget);
+  modelName: string,
+  id: string,
+  defaultEntityLocaleIdFromQuery?: string
+): Promise<{ records: any[], defaultEntityLocaleId: string | null }> {
+  const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
+  // const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
+  const currentEntityRepository = this.entityManager.getRepository(classify(modelName));
 
     // Case 1: Creating a new record with no defaultEntityLocaleId to clone
     if (id === 'new' && !defaultEntityLocaleIdFromQuery) {

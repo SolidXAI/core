@@ -12,6 +12,7 @@ import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
 import { Readable } from 'stream';
+import { ComputedFieldMetadata } from './helpers/solid-registry';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -80,6 +81,9 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
   values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
 }
 
+/**
+ * @deprecated Use `IEntityComputedFieldProvider` instead.
+ */
 export interface IComputedFieldProvider<T> {
   help(): string;
 
@@ -88,6 +92,20 @@ export interface IComputedFieldProvider<T> {
   valueType(): string;
 
   computeValue(dto: any, ctxt: T): Promise<string | number>; // FIXME : Improve the types to make it more specific using generics
+}
+
+export interface IEntityComputedFieldProvider {  
+  help(): string;
+
+  name(): string;
+}
+
+export interface IEntityPreComputeFieldProvider<TTriggerEntity, TContext, TValue> extends IEntityComputedFieldProvider {
+  preComputeValue(entity: TTriggerEntity, computedFieldMetadata: ComputedFieldMetadata<TContext>): Promise<TValue>;
+}
+
+export interface IEntityPostComputeFieldProvider<TTriggerEntity, TContext> extends IEntityComputedFieldProvider {
+  postComputeAndSaveValue(triggerEntity: TTriggerEntity, computedFieldMetadata: ComputedFieldMetadata<TContext>): Promise<void>;
 }
 
 export interface ISolidDatabaseModule {
