@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Logger, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Logger, Param, ParseIntPipe, Post, Put, Query, UseInterceptors } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { PaginationQueryDto } from 'src/dtos/pagination-query.dto';
 import { CreateMediaStorageProviderMetadataDto } from '../dtos/create-media-storage-provider-metadata.dto';
 import { MediaStorageProviderMetadataService } from '../services/media-storage-provider-metadata.service';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { UpdateMediaStorageProviderMetadataDto } from '../dtos/update-media-storage-provider.dto';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('media-storage-provider-metadata')
 @ApiTags("App Builder")
@@ -40,12 +41,14 @@ export class MediaStorageProviderMetadataController {
 
     @ApiBearerAuth("jwt")
     @Post()
+    @UseInterceptors(AnyFilesInterceptor())
     create(@Body() createDto: CreateMediaStorageProviderMetadataDto) {
         // this.logger.log(`Creating a new model: ${JSON.stringify(createDto)}`);
         return this.mediaStorageProviderService.create(createDto);
     }
 
     @Put(':id')
+    @UseInterceptors(AnyFilesInterceptor())
     update(@Param('id') id: number, @Body() updateMediaStorageProviderMetadataDto: UpdateMediaStorageProviderMetadataDto) {
         return this.mediaStorageProviderService.update(id, updateMediaStorageProviderMetadataDto);
     }

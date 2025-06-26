@@ -1,14 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 // import * as AWS from 'aws-sdk';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, ObjectCannedACL } from '@aws-sdk/client-s3';
+import { S3Client, PutObjectCommand, DeleteObjectCommand, ObjectCannedACL, GetObjectCommand } from '@aws-sdk/client-s3';
 import { ConfigType } from '@nestjs/config';
 import commonConfig, { AwsS3Config } from '../config/common.config';
 import path from 'path';
 import { Readable } from 'stream';
-
-
-
+import { getSignedUrl as awsGetSignedUrl } from '@aws-sdk/s3-request-presigner';
 
 @Injectable()
 export class FileService {
@@ -166,7 +164,7 @@ export class FileService {
   private isValidS3Config(config: AwsS3Config): boolean {
     return !!config.S3_AWS_ACCESS_KEY && !!config.S3_AWS_SECRET_KEY && !!config.S3_AWS_REGION_NAME;
   }
-  
+
   /**
    * Save a stream to a file
    * @param stream - Readable stream
@@ -198,5 +196,14 @@ export class FileService {
       return false;
     }
   }
-  
+
+  public async getSignedUrl(key: string, expiresIn: number, bucketName: string): Promise<string> {
+    const command = new GetObjectCommand({
+      Bucket: bucketName,
+      Key: key,
+    });
+
+    return awsGetSignedUrl(this.s3Client, command, { expiresIn });
+  }
+
 }

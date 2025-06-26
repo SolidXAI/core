@@ -28,7 +28,7 @@ export class ActionMetadataService extends CRUDService<ActionMetadata> {
     readonly moduleRef: ModuleRef
 
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'actionMetadata', 'app-builder', moduleRef);
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'actionMetadata', 'solid-core', moduleRef);
   }
 
   async findOneByUserKey(name: string, relations = {}) {

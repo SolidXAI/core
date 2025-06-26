@@ -3,18 +3,18 @@ import { ApiTags } from '@nestjs/swagger';
 import { Auth } from 'src/decorators/auth.decorator';
 import { Public } from 'src/decorators/public.decorator';
 import { AuthType } from 'src/enums/auth-type.enum';
-import { TestQueuePublisher } from '../jobs/queue-test-publisher.service';
-import { TestQueueDbPublisher } from 'src/jobs/database/queue-test-db-publisher.service';
+import { PublisherFactory } from 'src/services/queues/publisher-factory.service';
 
 
 @Auth(AuthType.None)
 @Controller('queues')
 @ApiTags("Queues")
-export class QueuesTestController {
+export class TestQueueController {
 
     constructor(
-        private readonly publisherRmq: TestQueuePublisher,
-        private readonly publisherDb: TestQueueDbPublisher
+        // private readonly publisherRmq: TestQueuePublisher,
+        // private readonly publisherDb: TestQueuePublisherDatabase
+        private readonly publisherFactory: PublisherFactory<any>
     ) { }
 
     @Public()
@@ -30,12 +30,13 @@ export class QueuesTestController {
             parentEntity: 'feeType',
             parentEntityId: 23,
         };
-        if (messageBroker === 'rabbitmq') {
-            await this.publisherRmq.publish(m);
-        }
-        if (messageBroker === 'database') {
-            await this.publisherDb.publish(m);
-        }
+        // if (messageBroker === 'rabbitmq') {
+        //     await this.publisherRmq.publish(m);
+        // }
+        // if (messageBroker === 'database') {
+        //     await this.publisherDb.publish(m);
+        // }
+        await this.publisherFactory.publish(m, 'TestQueuePublisher', messageBroker);
 
         return {};
     }

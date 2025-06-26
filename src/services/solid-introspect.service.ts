@@ -7,6 +7,7 @@ import { IS_SELECTION_PROVIDER } from 'src/decorators/selection-provider.decorat
 import { IS_SOLID_DATABASE_MODULE } from 'src/decorators/solid-database-module.decorator';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { CRUDService } from './crud.service';
+import { IS_SCHEDULED_JOB_PROVIDER } from 'src/decorators/scheduled-job-provider.decorator';
 
 @Injectable()
 export class SolidIntrospectService implements OnApplicationBootstrap {
@@ -81,6 +82,16 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       .filter((provider) => this.isModule(provider));
     this.solidRegistry.registerModules(allModules);
 
+    // Register all IScheduledJob implementations
+    const scheduledJobProviders = this.discoveryService
+      .getProviders()
+      .filter((provider) => this.isScheduledJobProvider(provider));
+
+    scheduledJobProviders.forEach((scheduledJobProvider) => {
+      // @ts-ignore
+      this.solidRegistry.registerScheduledJobProvider(scheduledJobProvider);
+    });
+
   }
 
   // This method identifies a provider as a seeder if it has a seed method i.e duck typing
@@ -117,6 +128,18 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     );
 
     return !!isComputedFieldProvider;
+  }
+
+  private isScheduledJobProvider(provider: InstanceWrapper) {
+    const { instance } = provider;
+    if (!instance) return false;
+
+    const isScheduledJobProvider = this.reflector.get<boolean>(
+      IS_SCHEDULED_JOB_PROVIDER,
+      instance.constructor,
+    );
+
+    return !!isScheduledJobProvider;
   }
 
   private isSolidDatabaseModule(provider: InstanceWrapper) {

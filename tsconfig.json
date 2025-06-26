@@ -20,6 +20,7 @@
       "noFallthroughCasesInSwitch": false,
       "esModuleInterop": true,
       "resolveJsonModule": true,
+      "inlineSources": true,
     }
   }
   

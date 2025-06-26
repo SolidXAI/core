@@ -1,5 +1,5 @@
-import { BadRequestException, Optional } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { BadRequestException, Inject, Optional } from "@nestjs/common";
+import { ConfigService, ConfigType } from "@nestjs/config";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { Repository } from "typeorm/repository/Repository";
@@ -35,6 +35,7 @@ import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
 import { isArray } from "class-validator";
+
 export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
     constructor(
@@ -259,7 +260,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     }
 
     private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false): FieldCrudManager {
-        const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name, isUpdate};
+        const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name, isUpdate };
         switch (fieldMetadata.type) {
             case SolidFieldType.shortText: {
                 const options = { ...commonOptions, length: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern };
@@ -435,8 +436,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
         qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-        if(internationalisation && draftPublishWorkflow){
-            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias,internationalisation, draftPublishWorkflow,this.moduleRef);
+        if (internationalisation && draftPublishWorkflow) {
+            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef);
         }
 
         if (basicFilterDto.groupBy) {

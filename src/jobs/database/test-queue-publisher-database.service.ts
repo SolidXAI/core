@@ -1,13 +1,14 @@
 import { Injectable } from '@nestjs/common';
 
+import testQueueConfig from './test-queue-options-database';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { MqMessageService } from '../../services/mq-message.service';
-import { CodeGenerationOptions, QueuesModuleOptions } from "../../interfaces";
+import { QueuesModuleOptions } from "../../interfaces";
 import { DatabasePublisher } from 'src/services/queues/database-publisher.service';
-import generateCodeQueueOptions from './generate-code-queue-options';
+
 
 @Injectable()
-export class GenerateCodePublisher extends DatabasePublisher<CodeGenerationOptions> {
+export class TestQueuePublisherDatabase extends DatabasePublisher<any> {
     constructor(
         protected readonly mqMessageService: MqMessageService,
         protected readonly mqMessageQueueService: MqMessageQueueService,
@@ -17,7 +18,7 @@ export class GenerateCodePublisher extends DatabasePublisher<CodeGenerationOptio
 
     options(): QueuesModuleOptions {
         return {
-            ...generateCodeQueueOptions
+            ...testQueueConfig
         }
     }
 }

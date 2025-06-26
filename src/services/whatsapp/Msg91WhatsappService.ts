@@ -2,11 +2,11 @@ import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import commonConfig from 'src/config/common.config';
-import { WhatsappQueuePublisher } from 'src/jobs/whatsapp-publisher.service';
 import { QueueMessage } from 'src/interfaces/mq';
 import { SmsTemplateService } from '../sms-template.service';
 import { Msg91BaseSMSService } from '../sms/Msg91BaseSMSService';
 import { ISMS } from "../../interfaces";
+import { PublisherFactory } from '../queues/publisher-factory.service';
 
 enum Msg91WhatsappParameterHeaderType {
   image,
@@ -57,11 +57,12 @@ export class Msg91WhatsappService extends Msg91BaseSMSService implements ISMS {
   constructor(
     @Inject(commonConfig.KEY)
     commonConfiguration: ConfigType<typeof commonConfig>,
-    whatsappPublisher: WhatsappQueuePublisher,
+    // whatsappPublisher: WhatsappQueuePublisher,
+    publisherFactory: PublisherFactory<any>,
     smsTemplateService: SmsTemplateService,
     private readonly httpService: HttpService,
   ) {
-    super(commonConfiguration, whatsappPublisher, smsTemplateService);
+    super(commonConfiguration, 'WhatsappQueuePublisher', publisherFactory, smsTemplateService);
   }
 
   async sendSMSSynchronously(message: QueueMessage<any>): Promise<void> {

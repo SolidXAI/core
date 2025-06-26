@@ -1,14 +1,14 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import Handlebars, { template } from "handlebars";
+import Handlebars from "handlebars";
 import commonConfig from 'src/config/common.config';
 import { EmailAttachment } from 'src/entities/email-attachment.entity';
-import { ApiEmailQueuePublisher } from 'src/jobs/api-email-publisher.service';
 import { QueueMessage } from 'src/interfaces/mq';
 import { EmailTemplateService } from '../email-template.service';
 import { PdfService } from '../pdf.service';
 import { FileService } from '../file.service';
 import { IMail, MailAttachment, MailAttachmentWrapper } from "../../interfaces";
+import { PublisherFactory } from '../queues/publisher-factory.service';
 
 const ElasticEmail = require('@elasticemail/elasticemail-client');
 
@@ -20,7 +20,8 @@ export class ElasticEmailService implements IMail {
     constructor(
         @Inject(commonConfig.KEY)
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
-        private readonly emailPublisher: ApiEmailQueuePublisher,
+        // private readonly emailPublisher: ApiEmailQueuePublisher,
+        private readonly publisherFactory: PublisherFactory<any>,
         private readonly emailTemplateService: EmailTemplateService,
         private readonly pdfService: PdfService,
         private readonly fileService: FileService,
@@ -88,7 +89,8 @@ export class ElasticEmailService implements IMail {
     async sendEmailAsynchronously(message: QueueMessage<any>) {
         const { to, subject, body } = message.payload;
         // this.notificationPublisherService.publish(message);
-        this.emailPublisher.publish(message);
+        // this.emailPublisher.publish(message);
+        this.publisherFactory.publish(message, 'ApiEmailQueuePublisher');
         this.logger.debug(`Queueing email to ${to} with subject ${subject} and body ${body}`);
     }
 

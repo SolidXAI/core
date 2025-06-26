@@ -5,13 +5,13 @@ import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { CodeGenerationOptions, QueuesModuleOptions } from "../../interfaces";
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
-import generateCodeQueueOptions from './generate-code-queue-options';
+import generateCodeQueueOptions from './generate-code-queue-options-database';
 import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 
 @Injectable()
-export class GenerateCodeSubscriber extends DatabaseSubscriber<CodeGenerationOptions> {
-    private readonly generateCodeSubscriberLogger = new Logger(GenerateCodeSubscriber.name);
+export class GenerateCodeSubscriberDatabase extends DatabaseSubscriber<CodeGenerationOptions> {
+    private readonly generateCodeSubscriberLogger = new Logger(GenerateCodeSubscriberDatabase.name);
 
     constructor(
         readonly mqMessageService: MqMessageService,

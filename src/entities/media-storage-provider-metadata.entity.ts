@@ -4,7 +4,7 @@ import { Column, Entity, Index } from "typeorm";
 @Entity("ss_media_storage_provider_metadata")
 export class MediaStorageProviderMetadata extends CommonEntity {
     @Index({ unique: true })
-    @Column({ })
+    @Column({})
     name: string;
 
     @Column()
@@ -21,4 +21,8 @@ export class MediaStorageProviderMetadata extends CommonEntity {
 
     @Column({ name: "local_path", nullable: true })
     localPath: string;
+
+    // default to 1 hour
+    @Column({ name: 'signed_url_expiry', type: 'int', nullable: true, default: 60 })
+    signedUrlExpiry: number;
 }

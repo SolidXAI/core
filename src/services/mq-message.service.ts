@@ -29,7 +29,7 @@ export class MqMessageService extends CRUDService<MqMessage> {
     readonly repo: Repository<MqMessage>,
     readonly moduleRef: ModuleRef
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'mqMessage', 'queues', moduleRef);
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'mqMessage', 'solid-core', moduleRef);
   }
 
   async lockNextPendingMessage(queueName: string): Promise<MqMessage | null> {

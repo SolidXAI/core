@@ -4,7 +4,7 @@ import { ComputedFieldTriggerConfig, ComputedFieldValueType } from 'src/dtos/cre
 import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
-import { EntityManager } from 'typeorm';
+import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
 import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 
 type ControllerMetadata = {
@@ -54,6 +54,7 @@ export interface ComputedFieldMetadata<TContext = any> {
 @Injectable()
 export class SolidRegistry {
   private seeders: Set<InstanceWrapper> = new Set();
+  private scheduledJobProviders: Set<InstanceWrapper> = new Set();
   private selectionProviders: Set<InstanceWrapper> = new Set();
   private computedFieldProviders: Set<InstanceWrapper> = new Set();
   private solidDatabaseModules: Set<InstanceWrapper> = new Set();
@@ -81,6 +82,10 @@ export class SolidRegistry {
 
   registerComputedFieldProvider(computedFieldProvider: InstanceWrapper): void {
     this.computedFieldProviders.add(computedFieldProvider);
+  }
+
+  registerScheduledJobProvider(scheduledJobProvider: InstanceWrapper): void {
+    this.scheduledJobProviders.add(scheduledJobProvider);
   }
 
   registerSolidDatabaseModule(solidDatabaseModule: InstanceWrapper): void {
@@ -118,6 +123,21 @@ export class SolidRegistry {
     return Array.from(this.computedFieldProviders);
   }
 
+  getScheduledJobProviders(): Array<InstanceWrapper> {
+    return Array.from(this.scheduledJobProviders);
+  }
+
+  getScheduledJobProviderInstance(name: string): IScheduledJob {
+    const scheduledJobProviders = this.getScheduledJobProviders();
+
+    for (let i = 0; i < scheduledJobProviders.length; i++) {
+      const scheduledJobProvider = scheduledJobProviders[i];
+      if (scheduledJobProvider.name === name) {
+        return scheduledJobProvider.instance;
+      }
+    }
+  }
+  
   getComputedFieldProvider(name: string): InstanceWrapper {
     const provider = this.getComputedFieldProviders().filter((provider) => provider.name === name).pop();
     if (!provider) {

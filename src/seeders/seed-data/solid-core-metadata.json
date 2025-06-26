@@ -1043,6 +1043,19 @@
             "encrypt": false,
             "columnName": "local_path",
             "isSystem": true
+          },
+          {
+            "name": "signedUrlExpiry",
+            "displayName": "Signed Url Expiry Time",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "signed_url_expiry",
+            "isSystem": true
           }
         ]
       },
@@ -2521,6 +2534,270 @@
             "relationCreateInverse": true,
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core"
+          }
+        ]
+      },
+      {
+        "singularName": "scheduledJob",
+        "pluralName": "scheduledJobs",
+        "displayName": "Scheduled Job",
+        "description": "This table allows us to store schedule job configuration records.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_scheduled_jobs",
+        "userKeyFieldUserKey": "scheduleName",
+        "isChild": false,
+        "enableAuditTracking": true,
+        "enableSoftDelete": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "fields": [
+          {
+            "name": "scheduleName",
+            "displayName": "Schedule Name",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": true,
+            "enableAuditTracking": false
+          },
+          {
+            "name": "isActive",
+            "displayName": "Is Active",
+            "description": null,
+            "type": "boolean",
+            "ormType": "boolean",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false
+          },
+          {
+            "name": "frequency",
+            "displayName": "Frequency",
+            "description": null,
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "selectionStaticValues": [
+              "Once:Once",
+              "Hourly:Hourly",
+              "Daily:Daily",
+              "Weekly:Weekly",
+              "Monthly:Monthly",
+              "Custom:Custom"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false,
+            "isMultiSelect": false
+          },
+          {
+            "name": "startTime",
+            "displayName": "Start Time",
+            "description": null,
+            "type": "time",
+            "ormType": "time",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false
+          },
+          {
+            "name": "endTime",
+            "displayName": "End Time",
+            "description": null,
+            "type": "time",
+            "ormType": "time",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false
+          },
+          {
+            "name": "startDate",
+            "displayName": "Start Date",
+            "description": null,
+            "type": "date",
+            "ormType": "date",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false
+          },
+          {
+            "name": "endDate",
+            "displayName": "End Date",
+            "description": null,
+            "type": "date",
+            "ormType": "date",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false
+          },
+          {
+            "name": "dayOfMonth",
+            "displayName": "Day Of Month",
+            "description": null,
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false
+          },
+          {
+            "name": "lastRunAt",
+            "displayName": "Last Run At",
+            "description": null,
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false
+          },
+          {
+            "name": "nextRunAt",
+            "displayName": "Next Run At",
+            "description": null,
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false
+          },
+          {
+            "name": "dayOfWeek",
+            "displayName": "Day Of Week",
+            "description": null,
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "selectionStaticValues": [
+              "Monday:Monday",
+              "Tuesday:Tuesday",
+              "Wednesday:Wednesday",
+              "Thursday:Thursday",
+              "Friday:Friday",
+              "Saturday:Saturday",
+              "Sunday:Sunday"
+            ],
+            "selectionValueType": "string",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": false,
+            "isMultiSelect": true
+          },
+          {
+            "name": "job",
+            "displayName": "Job",
+            "description": null,
+            "type": "selectionDynamic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": false,
+            "selectionValueType": "string",
+            "selectionDynamicProvider": "ListOfScheduledJobsSelectionProvider",
+            "selectionDynamicProviderCtxt": "{}"
           }
         ]
       },
@@ -4295,6 +4572,19 @@
       "modelUserKey": "mqMessageQueue"
     },
     {
+      "displayName": "Scheduled Jobs list action",
+      "name": "scheduledJob-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "scheduledJob-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "scheduledJob"
+    },
+    {
       "displayName": "Settings action",
       "name": "settings-list-action",
       "type": "solid",
@@ -4606,6 +4896,14 @@
       "actionUserKey": "mqMessageQueue-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "queues-menu-item"
+    },
+    {
+      "displayName": "Scheduled Jobs",
+      "name": "scheduledJob-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "scheduledJob-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
     },
     {
       "displayName": "Notification",
@@ -5783,6 +6081,13 @@
               "name": "localPath",
               "isSearchable": true
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "signedUrlExpiry",
+              "isSearchable": false
+            }
           }
         ]
       }
@@ -5856,6 +6161,13 @@
                     "attrs": {
                       "name": "localPath",
                       "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "signedUrlExpiry",
+                      "isSearchable": false
                     }
                   }
                 ]
@@ -8921,6 +9233,239 @@
                             ]
                           }
                         ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "scheduledJob-list-view",
+      "displayName": "Scheduled Job",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "scheduledJob",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "scheduleName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isActive"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "frequency",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "startTime"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "endTime"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "startDate"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "endDate"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dayOfMonth"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "lastRunAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nextRunAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dayOfWeek"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "job",
+              "sortable": true,
+              "filterable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "scheduledJob-form-view",
+      "displayName": "Scheduled Job",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "scheduledJob",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Scheduled Job",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "Basic",
+                      "className": "col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "scheduleName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "job"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "Configuration",
+                      "className": "col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "isActive"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "frequency"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "startTime"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "endTime"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "startDate"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "endDate"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "lastRunAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "nextRunAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "dayOfWeek"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "dayOfMonth"
+                        }
                       }
                     ]
                   }
