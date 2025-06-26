@@ -171,6 +171,21 @@ export enum ComputedFieldValueType {
   datetime = 'datetime',
 }
 
+export enum ComputedFieldTriggerOperation {
+    beforeInsert = "before-insert",
+    afterInsert = "after-insert",
+    beforeUpdate = "before-update",
+    afterUpdate = "after-update",
+    beforeRemove = "before-delete",
+    afterRemove = "after-delete",
+}
+
+export interface ComputedFieldTriggerConfig {
+  moduleName: string; // Name of the module where the computed field is defined
+  modelName: string;
+  operations: ComputedFieldTriggerOperation[]; // List of operations where this computed field should be triggered
+}
+
 export class CreateFieldMetadataDto {
   @ApiProperty({ description: 'Name of your field, this is also the name of the column or attribute', })
   // @Matches(/[a-z]+(_[a-z]+)*/, { message: 'Field name should follow snake case conventions only with all lower case.', })
@@ -369,6 +384,9 @@ export class CreateFieldMetadataDto {
   @IsEnum(ComputedFieldValueType)
   @IsOptional()
   computedFieldValueType: ComputedFieldValueType;
+
+  @IsOptional()
+  computedFieldTriggerConfig: ComputedFieldTriggerConfig[];
 
   @IsOptional()
   @ApiProperty({ description: 'Uuid.', })
