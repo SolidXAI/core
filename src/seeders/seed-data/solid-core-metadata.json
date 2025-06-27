@@ -5427,27 +5427,27 @@
     },
     {
       "displayName": "Dashboard",
+      "name": "dashboard-root-menu-item",
+      "sequenceNumber": 9,
+      "actionUserKey": "dasbhoard-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Dashboard",
       "name": "dashboard-menu-item",
       "sequenceNumber": 1,
       "actionUserKey": "dashboard-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
-    },
-    {
-      "displayName": "Dashboard Variable",
-      "name": "dashboardVariable-menu-item",
-      "sequenceNumber": 1,
-      "actionUserKey": "dashboardVariable-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "dashboard-root-menu-item"
     },
     {
       "displayName": "Question",
       "name": "question-menu-item",
-      "sequenceNumber": 1,
+      "sequenceNumber": 2,
       "actionUserKey": "question-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "dashboard-root-menu-item"
     }
   ],
   "views": [
@@ -10733,7 +10733,20 @@
                       "label": "",
                       "className": "col-6"
                     },
-                    "children": []
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "name"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "layoutJson"
+                        }
+                      }
+                    ]
                   },
                   {
                     "type": "column",
@@ -10742,7 +10755,20 @@
                       "label": "",
                       "className": "col-6"
                     },
-                    "children": []
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "dashboardVariables"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "questions"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -10816,7 +10842,32 @@
                       "label": "",
                       "className": "col-6"
                     },
-                    "children": []
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "variableName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "variableType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionStaticValues"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionDynamicSourceType"
+                        }
+                      }
+                    ]
                   },
                   {
                     "type": "column",
@@ -10825,7 +10876,33 @@
                       "label": "",
                       "className": "col-6"
                     },
-                    "children": []
+                    "children": [
+                                            {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionDynamicSQL"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionDynamicProviderName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "isMultiSelect"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "dashboard"
+                        }
+                      }
+
+                    ]
                   }
                 ]
               }
@@ -10899,7 +10976,38 @@
                       "label": "",
                       "className": "col-6"
                     },
-                    "children": []
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "name"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sourceType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "visualisedAs"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sql"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "providerName"
+                        }
+                      }
+                    ]
                   },
                   {
                     "type": "column",
@@ -10908,7 +11016,38 @@
                       "label": "",
                       "className": "col-6"
                     },
-                    "children": []
+                    "children": [
+                       {
+                        "type": "field",
+                        "attrs": {
+                          "name": "barChartXKey"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "barChartSeriesKey"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "barChartValueKey"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "barChartLabelOptions"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "dashboard"
+                        }
+                      }
+                   ]
                   }
                 ]
               }
