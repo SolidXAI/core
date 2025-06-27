@@ -121,7 +121,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 {},
             );
 
-            this.logger.debug(`RabbitMqSubscriber ready to consume messages: ${JSON.stringify(this.options())} and url: ${this.url}`);
+            this.logger.log(`RabbitMqSubscriber ready to consume messages: ${JSON.stringify(this.options())} and url: ${this.url}`);
         }
     }
 

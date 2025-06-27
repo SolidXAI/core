@@ -1,5 +1,4 @@
 import { Logger, OnModuleInit } from '@nestjs/common';
-import * as amqp from 'amqplib';
 import { QueuesModuleOptions } from "../../interfaces";
 import { QueueMessage, QueueSubscriber } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
@@ -92,7 +91,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
             // start the loop
             poll();
 
-            this.logger.debug(`DatabaseSubscriber ready to consume messages: ${JSON.stringify(this.options())}`);
+            this.logger.log(`DatabaseSubscriber ready to consume messages: ${JSON.stringify(this.options())}`);
         }
     }
 

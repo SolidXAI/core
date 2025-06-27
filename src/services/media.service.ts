@@ -40,12 +40,10 @@ export class MediaService extends CRUDService<Media> {
     @InjectRepository(FieldMetadata)
     private readonly fieldMetadataRepo: Repository<FieldMetadata>,
     readonly moduleRef: ModuleRef,
-
-
-
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'media', 'solid-core', moduleRef);
   }
+
   async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}) {
     const data = await super.find(basicFilterDto, solidRequestContext);
     if (data.records) {
@@ -64,17 +62,18 @@ export class MediaService extends CRUDService<Media> {
     if (data.groupRecords) {
       data.groupRecords.forEach((group) => {
         group.groupData.records.forEach((media) => {
-            if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-                media.relativeUri = `${process.env.BASE_URL}/${this.getFileSysytemFullFilePath(media.relativeUri)}`;
-            }
-            else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
-                media.relativeUri = this.getAwsS3FullFilePath(media.relativeUri, media.mediaStorageProviderMetadata.bucketName, media.mediaStorageProviderMetadata.region);
-            }
+          if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
+            media.relativeUri = `${process.env.BASE_URL}/${this.getFileSysytemFullFilePath(media.relativeUri)}`;
+          }
+          else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
+            media.relativeUri = this.getAwsS3FullFilePath(media.relativeUri, media.mediaStorageProviderMetadata.bucketName, media.mediaStorageProviderMetadata.region);
+          }
         });
-    });
+      });
     }
     return data
   }
+
   async upload(createDto: any, files: Array<Express.Multer.File>) {
 
     if (!files) {

@@ -1,5 +1,5 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
+import { Inject, Injectable, Logger } from "@nestjs/common";
+import { ConfigService, ConfigType } from "@nestjs/config";
 import { CommonEntity } from "src/entities/common.entity";
 import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { Media } from "src/entities/media.entity";
@@ -7,6 +7,7 @@ import { MediaStorageProvider } from "src/interfaces";
 import { FileService } from "src/services/file.service";
 import { Readable } from "stream";
 import { MediaRepository } from "src/repository/media.repository";
+import commonConfig from "src/config/common.config";
 
 @Injectable()
 export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
@@ -17,21 +18,41 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         // private readonly appBuilderConfiguration: ConfigType<typeof appBuilderConfig>,
         private readonly configService: ConfigService,
         readonly fileService: FileService,
-        readonly mediaRepository: MediaRepository
+        readonly mediaRepository: MediaRepository,
+        @Inject(commonConfig.KEY)
+        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
     ) { }
+
     storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         throw new Error("Method not implemented.");
     }
+
     async retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         if (!(entity instanceof CommonEntity)) {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
         const media = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
+
+        // TODO: Check if the mediaStorageProvider (s3 in this case) is configured with a public bucket or not. 
+        // If private bucket then we need to return a "signed-url", the timeout for the signed url can be configured in the media storage provider entity and modified using the CRUD interface.
         // Add the full URL to the media
-        media.forEach(m => {
-            m['_full_url'] = this.getFullFilePath(m);
-        });
+        for (const m of media) {
+            const storageMeta = m.mediaStorageProviderMetadata;
+            if (storageMeta.isPublic === false) {
+                // Generate signed URL
+                const expiryInSeconds = (storageMeta.signedUrlExpiry ?? 60) * 60; // default 5 min
+                m['_full_url'] = await this.fileService.getSignedUrl(m.relativeUri, expiryInSeconds, storageMeta?.bucketName);
+            } else {
+                // Public S3 or local filesystem: use normal URL
+                m['_full_url'] = this.getFullFilePath(m);
+            }
+        }
+
         return media;
+        // media.forEach(m => {
+        //     m['_full_url'] = this.getFullFilePath(m);
+        // });
+        // return media;
     }
 
     async store(files: Express.Multer.File[], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
@@ -44,9 +65,9 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             // Store the file in the configured S3 Bucket
             let awsFileUrl;
             if (mediaFieldMetadata.mediaStorageProvider.isPublic === true) {
-                awsFileUrl = await this.fileService.copyToS3(file.path, file.mimetype, fileName, mediaFieldMetadata.mediaStorageProvider.bucketName,);
-            } else {
                 awsFileUrl = await this.fileService.copyToS3WithPublic(file.path, file.mimetype, fileName, mediaFieldMetadata.mediaStorageProvider.bucketName,);
+            } else {
+                awsFileUrl = await this.fileService.copyToS3(file.path, file.mimetype, fileName, mediaFieldMetadata.mediaStorageProvider.bucketName,);
             }
             await this.fileService.deleteFile(file.path);
 
@@ -71,7 +92,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         if (!(entity instanceof CommonEntity)) {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
-        const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id,['mediaStorageProviderMetadata']);
+        const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
         existingMedia.forEach(media => {
             this.fileService.deleteFromS3(media.relativeUri, mediaFieldMetadata.mediaStorageProvider.bucketName); //TODO

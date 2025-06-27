@@ -1,4 +1,3 @@
-import { QueueMessage } from 'src/interfaces/mq';
 import { BrokerType } from "../interfaces";
 
 const QUEUE_NAME = 'test_queue';

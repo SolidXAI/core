@@ -2,17 +2,17 @@ import { Logger } from "@nestjs/common";
 import { ConfigType } from "@nestjs/config";
 import Handlebars from "handlebars";
 import commonConfig from "src/config/common.config";
-import { SmsQueuePublisher } from "src/jobs/sms-publisher.service";
 import { QueueMessage } from "src/interfaces/mq";
 import { SmsTemplateService } from "../sms-template.service";
-import { RabbitMqPublisher } from "src/services/queues/rabbitmq-publisher.service";
 import { ISMS } from "../../interfaces";
+import { PublisherFactory } from "../queues/publisher-factory.service";
 
 export abstract class Msg91BaseSMSService implements ISMS {
     protected readonly logger = new Logger(Msg91BaseSMSService.name);
     constructor(
         protected readonly commonConfiguration: ConfigType<typeof commonConfig>,
-        protected readonly smsPublisher: RabbitMqPublisher<any>,
+        protected readonly smsPublisher: string,
+        protected readonly publisherFactory: PublisherFactory<any>,
         protected readonly smsTemplateService: SmsTemplateService,
     ) { }
 
@@ -71,7 +71,8 @@ export abstract class Msg91BaseSMSService implements ISMS {
     async sendSMSAsynchronously(message) {
         const { to } = message.payload;
         // this.notificationPublisherService.publish(message);
-        this.smsPublisher.publish(message);
+        // this.smsPublisher.publish(message);
+        this.publisherFactory.publish(message, this.smsPublisher);
         this.logger.debug(`Queueing SMS to ${to} with message ${JSON.stringify(message)}`);
     }
 

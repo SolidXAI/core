@@ -64,9 +64,9 @@ import { MenuItemMetadataController } from './controllers/menu-item-metadata.con
 import { MqMessageQueueController } from './controllers/mq-message-queue.controller';
 import { MqMessageController } from './controllers/mq-message.controller';
 import { OTPAuthenticationController } from './controllers/otp-authentication.controller';
-import { QueuesTestController } from './controllers/queues-test.controller';
 import { ServiceController } from './controllers/service.controller';
 import { SmsTemplateController } from './controllers/sms-template.controller';
+import { TestQueueController } from './controllers/test-queue.controller';
 // import { UserController } from './controllers/user.controller';
 import { EmailAttachment } from './entities/email-attachment.entity';
 import { EmailTemplate } from './entities/email-template.entity';
@@ -83,16 +83,16 @@ import { SolidRegistry } from './helpers/solid-registry';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
 import { ApiEmailQueuePublisher } from './jobs/api-email-publisher.service';
 import { ApiEmailQueueSubscriber } from './jobs/api-email-subscriber.service';
-import { TestQueueDbPublisher } from './jobs/database/queue-test-db-publisher.service';
-import { TestQueueDbSubscriber } from './jobs/database/queue-test-db-subscriber.service';
+import { TestQueuePublisherDatabase } from './jobs/database/test-queue-publisher-database.service';
+import { TestQueueSubscriberDatabase } from './jobs/database/test-queue-subscriber-database.service';
 import { EmailQueuePublisher } from './jobs/email-publisher.service';
 import { EmailQueueSubscriber } from './jobs/email-subscriber.service';
 import { OTPQueuePublisher } from './jobs/otp-publisher.service';
 import { OTPQueueSubscriber } from './jobs/otp-subscriber.service';
-import { TestQueuePublisher } from './jobs/queue-test-publisher.service';
-import { TestQueueSubscriber } from './jobs/queue-test-subscriber.service';
 import { SmsQueuePublisher } from './jobs/sms-publisher.service';
 import { SmsQueueSubscriber } from './jobs/sms-subscriber.service';
+import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
+import { TestQueueSubscriber } from './jobs/test-queue-subscriber.service';
 import { WhatsappQueuePublisher } from './jobs/whatsapp-publisher.service';
 import { WhatsappQueueSubscriber } from './jobs/whatsapp-subscriber.service';
 import { UserRegistrationListener } from './listeners/user-registration.listener';
@@ -138,6 +138,7 @@ import { ListOfValuesController } from './controllers/list-of-values.controller'
 import { LocaleController } from './controllers/locale.controller';
 import { RoleMetadataController } from './controllers/role-metadata.controller';
 import { SavedFiltersController } from './controllers/saved-filters.controller';
+import { ScheduledJobController } from './controllers/scheduled-job.controller';
 import { SecurityRuleController } from './controllers/security-rule.controller';
 import { SettingController } from './controllers/setting.controller';
 import { UserActivityHistoryController } from './controllers/user-activity-history.controller';
@@ -152,6 +153,7 @@ import { ImportTransaction } from './entities/import-transaction.entity';
 import { Locale } from './entities/locale.entity';
 import { RoleMetadata } from './entities/role-metadata.entity';
 import { SavedFilters } from './entities/saved-filters.entity';
+import { ScheduledJob } from './entities/scheduled-job.entity';
 import { SecurityRule } from './entities/security-rule.entity';
 import { Setting } from './entities/setting.entity';
 import { UserActivityHistory } from './entities/user-activity-history.entity';
@@ -159,10 +161,20 @@ import { UserViewMetadata } from './entities/user-view-metadata.entity';
 import { User } from './entities/user.entity';
 import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
 import { ModuleMetadataHelperService } from './helpers/module-metadata-helper.service';
+import { ApiEmailQueuePublisherDatabase } from './jobs/database/api-email-publisher-database.service';
+import { ApiEmailQueueSubscriberDatabase } from './jobs/database/api-email-subscriber-database.service';
 import { ComputedFieldEvaluationPublisher } from './jobs/database/computed-field-evaluation-publisher.service';
 import { ComputedFieldEvaluationSubscriber } from './jobs/database/computed-field-evaluation-subscriber.service';
-import { GenerateCodePublisher } from './jobs/database/generate-code-publisher.service';
-import { GenerateCodeSubscriber } from './jobs/database/generate-code-subscriber.service';
+import { EmailQueuePublisherDatabase } from './jobs/database/email-publisher-database.service';
+import { EmailQueueSubscriberDatabase } from './jobs/database/email-subscriber-database.service';
+import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-publisher-database.service';
+import { GenerateCodeSubscriberDatabase } from './jobs/database/generate-code-subscriber-database.service';
+import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-database.service';
+import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
+import { SmsQueuePublisherDatabase } from './jobs/database/sms-publisher-database.service';
+import { SmsQueueSubscriberDatabase } from './jobs/database/sms-subscriber-database.service';
+import { WhatsappQueuePublisherDatabase } from './jobs/database/whatsapp-publisher-database.service';
+import { WhatsappQueueSubscriberDatabase } from './jobs/database/whatsapp-subscriber-database.service';
 import { FieldMetadataRepository } from './repository/field-metadata.repository';
 import { FieldRepository } from './repository/field.repository';
 import { MediaRepository } from './repository/media.repository';
@@ -182,10 +194,14 @@ import { ImportTransactionService } from './services/import-transaction.service'
 import { LocaleService } from './services/locale.service';
 import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
+import { PublisherFactory } from './services/queues/publisher-factory.service';
 import { RequestContextService } from './services/request-context.service';
 import { RoleMetadataService } from './services/role-metadata.service';
 import { SavedFiltersService } from './services/saved-filters.service';
+import { ScheduledJobService } from './services/scheduled-job.service';
+import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
 import { SecurityRuleService } from './services/security-rule.service';
+import { ListOfScheduledJobsSelectionProvider } from './services/selection-providers/list-of-scheduled-jobs-selection-provider.service';
 import { LocaleListSelectionProvider } from './services/selection-providers/locale-list-selection-provider.service';
 import { SettingService } from './services/setting.service';
 import { UserActivityHistoryService } from './services/user-activity-history.service';
@@ -218,6 +234,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
       MenuItemMetadata,
       MqMessageQueue,
       MqMessage,
+      ScheduledJob,
       PermissionMetadata,
       RoleMetadata,
       Setting,
@@ -232,6 +249,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
       ExportTransaction,
       ImportTransaction,
       ImportTransactionErrorLog,
+      UserActivityHistory,
     ]),
     ConfigModule.forFeature(appBuilderConfig),
     ConfigModule.forFeature(commonConfig),
@@ -252,7 +270,6 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     HttpModule,
     ConfigModule,
     ClsModule,
-    TypeOrmModule.forFeature([UserActivityHistory]),
   ],
   controllers: [
     ModuleMetadataController,
@@ -270,9 +287,10 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     AuthenticationController,
     GoogleAuthenticationController,
     OTPAuthenticationController,
-    QueuesTestController,
+    TestQueueController,
     MqMessageQueueController,
     MqMessageController,
+    ScheduledJobController,
     PermissionMetadataController,
     RoleMetadataController,
     UserController,
@@ -346,22 +364,34 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     Msg91WhatsappService,
     SmsTemplateService,
     EmailTemplateService,
+    PublisherFactory,
     EmailQueuePublisher,
     EmailQueueSubscriber,
+    EmailQueuePublisherDatabase,
+    EmailQueueSubscriberDatabase,
     ApiEmailQueuePublisher,
     ApiEmailQueueSubscriber,
+    ApiEmailQueuePublisherDatabase,
+    ApiEmailQueueSubscriberDatabase,
     SmsQueuePublisher,
     SmsQueueSubscriber,
+    SmsQueuePublisherDatabase,
+    SmsQueueSubscriberDatabase,
     OTPQueuePublisher,
     OTPQueueSubscriber,
+    OTPQueuePublisherDatabase,
+    OTPQueueSubscriberDatabase,
     WhatsappQueuePublisher,
     WhatsappQueueSubscriber,
+    WhatsappQueuePublisherDatabase,
+    WhatsappQueueSubscriberDatabase,
     EmailTemplateSeederService,
     SmsTemplateSeederService,
     TinyUrlService,
     PdfService,
     UuidExternalIdComputedFieldProvider,
     ListOfModelsSelectionProvider,
+    ListOfScheduledJobsSelectionProvider,
     LocaleListSelectionProvider,
     SoftDeleteAwareEventSubscriber,
     AccessTokenGuard,
@@ -374,12 +404,14 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     UserRegistrationListener,
     TestQueuePublisher,
     TestQueueSubscriber,
-    TestQueueDbPublisher,
-    TestQueueDbSubscriber,
-    GenerateCodePublisher,
-    GenerateCodeSubscriber,    
+    TestQueuePublisherDatabase,
+    TestQueueSubscriberDatabase,
+    GenerateCodePublisherDatabase,
+    GenerateCodeSubscriberDatabase,
     MqMessageQueueService,
     MqMessageService,
+    ScheduledJobService,
+    SchedulerServiceImpl,
     PermissionMetadataService,
     RoleMetadataService,
     PermissionMetadataSeederService,
@@ -447,6 +479,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     RequestContextService,
     SecurityRuleRepository,
     FieldRepository,
+    SchedulerServiceImpl,
     UserActivityHistoryService,
   ],
 })

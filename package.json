@@ -1,6 +1,6 @@
 {
   "name": "@solidstarters/solid-core",
-  "version": "1.2.125",
+  "version": "1.2.127",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -34,8 +34,10 @@
   "dependencies": {
     "@angular-devkit/core": "^18.0.3",
     "@aws-sdk/client-s3": "^3.637.0",
+    "@aws-sdk/s3-request-presigner": "^3.828.0",
     "@elasticemail/elasticemail-client": "^4.0.23",
     "@hapi/joi": "^17.1.1",
+    "@nestjs/schedule": "^6.0.0",
     "amqplib": "^0.10.4",
     "axios": "^1.7.0",
     "bcrypt": "^5.1.1",

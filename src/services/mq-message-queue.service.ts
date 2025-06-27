@@ -29,7 +29,7 @@ export class MqMessageQueueService extends CRUDService<MqMessageQueue> {
     readonly moduleRef: ModuleRef
 
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'mqMessageQueue', 'queues',moduleRef);
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'mqMessageQueue', 'solid-core', moduleRef);
   }
 
   async resolveQueue(queueName: string): Promise<MqMessageQueue> {

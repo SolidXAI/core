@@ -24,7 +24,6 @@ import { CrudHelperService } from './crud-helper.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
 import { RoleMetadataService } from './role-metadata.service';
-import { GenerateCodePublisher } from 'src/jobs/database/generate-code-publisher.service';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
 import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
 import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
@@ -45,7 +44,8 @@ export class ModelMetadataService {
     private readonly fieldMetadataService: FieldMetadataService,
     private readonly roleService: RoleMetadataService,
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
-    private readonly generateCodePublihser: GenerateCodePublisher,
+    // No longer used. 
+    // private readonly generateCodePublihser: GenerateCodePublisherDatabase,
   ) { }
 
   async findMany(basicFilterDto: BasicFilterDto) {
@@ -228,7 +228,7 @@ export class ModelMetadataService {
       if (fieldMetadata.isUserKey) {
         userKeyField = affectedField;
       }
-      listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}`, sortable: true, filterable: true } })
+      listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}` } })
       formViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}` } })
 
     }
@@ -779,13 +779,13 @@ export class ModelMetadataService {
       const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module.name);
       const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
-      const listViewLayoutFields = [{ type: "field", attrs: { name: `id`, sortable: true, filterable: true } }];
+      const listViewLayoutFields = [{ type: "field", attrs: { name: `id` } }];
       const formViewLayoutFields = [];
 
       for (let i = 0; i < model.fields.length; i++) {
         const field = model.fields[i];
         if (field.isSystem) continue;
-        listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}`, sortable: true, filterable: true } })
+        listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
         formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
       }
       this.populateVAMConfigInFileInternal(formViewLayoutFields, model, listViewLayoutFields, metaData);
@@ -801,7 +801,7 @@ export class ModelMetadataService {
   }
 
   // Populate the View, Actions and Menus in the config file
-  private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string; sortable: boolean; filterable: boolean; }; }[], metaData: any) {
+  private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string;  }; }[], metaData: any) {
     const column1Fields = [];
     const column2Fields = [];
 
@@ -813,35 +813,36 @@ export class ModelMetadataService {
         column2Fields.push(formViewLayoutFields[i]);
       }
     }
+    const actionName = `${model.singularName}-list-action`;
     const viewName = `${model.singularName}-list-view`;
     const formViewName = `${model.singularName}-form-view`;
     const menuName = `${model.singularName}-menu-item`;
 
     const action = {
-      displayName: `${model.displayName} List View`,
-      name: `${model.singularName}-list-view`,
+      displayName: `${model.displayName} List Action`,
+      name: actionName,
       type: "solid",
       domain: "",
       context: "",
       customComponent: `/admin/address-master/${model.singularName}/all`,
       customIsModal: true,
       serverEndpoint: "",
-      viewUserKey: `${model.singularName}-list-view`,
+      viewUserKey: viewName,
       moduleUserKey: `${model.module.name}`,
       modelUserKey: `${model.singularName}`
     };
 
     const menu = {
       displayName: `${model.displayName}`,
-      name: `${model.singularName}-menu-item`,
+      name: menuName,
       sequenceNumber: 1,
-      actionUserKey: `${model.singularName}-list-view`,
+      actionUserKey: actionName,
       moduleUserKey: `${model.module.name}`,
       parentMenuItemUserKey: ""
     };
 
     const modelListview = {
-      name: `${model.singularName}-list-view`,
+      name: viewName,
       displayName: `${model.displayName}`,
       type: "list",
       context: "{}",
@@ -867,7 +868,7 @@ export class ModelMetadataService {
 
 
     const modelFormView = {
-      name: `${model.singularName}-form-view`,
+      name: formViewName,
       displayName: `${model.displayName}`,
       type: "form",
       context: "{}",
