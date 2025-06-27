@@ -4286,7 +4286,7 @@
         ]
       },
       {
-       "singularName": "dashboard",
+        "singularName": "dashboard",
         "pluralName": "dashboards",
         "displayName": "Dashboard",
         "description": "This is used to maintain dashboards",
@@ -4485,7 +4485,7 @@
             "private": false,
             "encrypt": false
           }
-        ]   
+        ]
       },
       {
         "singularName": "question",
@@ -4546,7 +4546,7 @@
           {
             "name": "sql",
             "displayName": "SQL Query for the question",
-            "type": "longText", 
+            "type": "longText",
             "ormType": "text",
             "required": false,
             "unique": false,
@@ -4555,7 +4555,7 @@
             "encrypt": false,
             "isSystem": true,
             "description": "This is the raw SQL query to be used to fetch the data for this question"
-        },
+          },
           {
             "name": "providerName",
             "displayName": "Provider Name",
@@ -4619,7 +4619,7 @@
             "ormType": "jsonb",
             "required": false,
             "unique": false,
-            "index": false, 
+            "index": false,
             "private": false,
             "encrypt": false,
             "isSystem": true,
@@ -4644,9 +4644,9 @@
             "private": false,
             "encrypt": false
           }
-      ]
+        ]
       }
-  ]
+    ]
   },
   "roles": [
     {
@@ -5087,6 +5087,45 @@
       "viewUserKey": "",
       "moduleUserKey": "solid-core",
       "modelUserKey": "setting"
+    },
+    {
+      "displayName": "Dashboard List Action",
+      "name": "dashboard-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboard-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboard"
+    },
+    {
+      "displayName": "Dashboard Variable List Action",
+      "name": "dashboardVariable-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/dashboardVariable/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboardVariable-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardVariable"
+    },
+    {
+      "displayName": "Question List Action",
+      "name": "question-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/question/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "question-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question"
     }
   ],
   "menus": [
@@ -5385,6 +5424,30 @@
       "actionUserKey": "misc-settings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
+    },
+    {
+      "displayName": "Dashboard",
+      "name": "dashboard-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "dashboard-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Dashboard Variable",
+      "name": "dashboardVariable-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "dashboardVariable-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Question",
+      "name": "question-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "question-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
     }
   ],
   "views": [
@@ -10588,6 +10651,255 @@
                         }
                       }
                     ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboard-list-view",
+      "displayName": "Dashboard",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboard",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboard-form-view",
+      "displayName": "Dashboard",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboard",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Dashboard",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": []
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardVariable-list-view",
+      "displayName": "Dashboard Variable",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardVariable",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardVariable-form-view",
+      "displayName": "Dashboard Variable",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardVariable",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Dashboard Variable",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": []
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "question-list-view",
+      "displayName": "Question",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "question-form-view",
+      "displayName": "Question",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Question",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": []
                   },
                   {
                     "type": "column",

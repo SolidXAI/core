@@ -212,6 +212,15 @@ import { ComputedEntityFieldSubscriber } from './subscribers/computed-entity-fie
 import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-by.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { Dashboard } from './entities/dashboard.entity';
+import { DashboardService } from './services/dashboard.service';
+import { DashboardController } from './controllers/dashboard.controller';
+import { DashboardVariable } from './entities/dashboard-variable.entity';
+import { DashboardVariableService } from './services/dashboard-variable.service';
+import { DashboardVariableController } from './controllers/dashboard-variable.controller';
+import { Question } from './entities/question.entity';
+import { QuestionService } from './services/question.service';
+import { QuestionController } from './controllers/question.controller';
 
 
 @Global()
@@ -270,6 +279,9 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     HttpModule,
     ConfigModule,
     ClsModule,
+    TypeOrmModule.forFeature([Dashboard]),
+    TypeOrmModule.forFeature([DashboardVariable]),
+    TypeOrmModule.forFeature([Question]),
   ],
   controllers: [
     ModuleMetadataController,
@@ -308,6 +320,9 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     ImportTransactionController,
     ImportTransactionErrorLogController,
     UserActivityHistoryController,
+    DashboardController,
+    DashboardVariableController,
+    QuestionController,
   ],
   providers: [
     {
@@ -448,6 +463,9 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     ComputedFieldEvaluationSubscriber,
     ConcatEntityComputedFieldProvider,
     UserActivityHistoryService,
+    DashboardService,
+    DashboardVariableService,
+    QuestionService,
     
   ],
   exports: [
