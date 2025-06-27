@@ -4330,10 +4330,9 @@
             "unique": false,
             "index": false,
             "relationType": "one-to-many",
-            "relationCoModelFieldName": "dashboards",
+            "relationCoModelFieldName": "dashboard",
             "relationCreateInverse": true,
             "relationCoModelSingularName": "dashboardVariable",
-            "relationCoModelColumnName": "",
             "relationModelModuleName": "solid-core",
             "isSystem": true
           },
