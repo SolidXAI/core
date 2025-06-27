@@ -4590,7 +4590,7 @@
             "name": "barChartSeriesKey",
             "displayName": "Bar Chart Series Key",
             "type": "shortText",
-            "ormType": "",
+            "ormType": "varchar",
             "length": 256,
             "required": false,
             "unique": false,
@@ -4623,7 +4623,7 @@
             "private": false,
             "encrypt": false,
             "isSystem": true,
-            "description": "This is a JSON object representing each label's display and color options for the bar chart."
+            "description": "This is a JSON object representing each labels display and color options for the bar chart"
           },
           {
             "name": "dashboard",
