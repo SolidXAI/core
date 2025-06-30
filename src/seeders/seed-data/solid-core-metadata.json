@@ -5050,7 +5050,8 @@
           "rowButtons": [
             {
               "attrs": {
-                "className": "pi pi-cog",
+                "className":"p-button-text",
+                "icon": "pi pi-cog",
                 "label": "Generate Code",
                 "action": "GenerateModuleCodeRowAction",
                 "openInPopup": true,
@@ -5217,11 +5218,23 @@
           "truncateAfter": 50,
           "create": true,
           "edit": true,
-          "delete": true,
+          "delete": false,
           "rowButtons": [
             {
               "attrs": {
-                "className": "pi pi-cog",
+                "icon":"pi pi-trash",
+                "className": "p-button-danger p-button-text",
+                "label": "Delete",
+                "action": "DeleteModelRowAction",
+                "customComponentIsSystem": true,
+                "actionInContextMenu": true,
+                "openInPopup": true
+              }
+            },
+            {
+              "attrs": {
+                "icon": "pi pi-cog",
+                "className":"p-button-text",
                 "label": "Generate Code",
                 "action": "GenerateModelCodeRowAction",
                 "customComponentIsSystem": true,
