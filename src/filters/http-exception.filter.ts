@@ -1,10 +1,15 @@
-import { ExceptionFilter, Catch, ArgumentsHost, Logger } from '@nestjs/common';
+import { ExceptionFilter, Catch, ArgumentsHost, Logger, Injectable } from '@nestjs/common';
 import { Response } from 'express';
 import { HttpStatusCodeMessages } from '../interceptors/logging.interceptor';
 
 @Catch()
+@Injectable()
 export class HttpExceptionFilter implements ExceptionFilter {
     private readonly logger = new Logger(HttpExceptionFilter.name);
+
+    constructor() {
+        this.logger.debug('HttpExceptionFilter initialized');
+    } 
 
     catch(exception: any, host: ArgumentsHost) {
         const ctx = host.switchToHttp();
@@ -19,20 +24,16 @@ export class HttpExceptionFilter implements ExceptionFilter {
         this.logger.error(exception.stack || 'No stack trace available');
 
         // Send the response to the client
-        if (exception.response) {
-            response.status(status).json({
-                ...exception.response,
-                error: message,
-                data: {}
-            });
-        }
-        else {
-            response.status(status).json({
-                statusCode: status,
-                message: [message],
-                error: message,
-                data: {}
-            });
+        const errorJson = this.getErrorJson(status, message, exception.response);
+        response.status(status).json(errorJson);
+    }
+
+    private getErrorJson(status: number|string, message: string, additionalErrorData: unknown = {}): any {
+        return {
+            statusCode: status,
+            message: [message],
+            error: HttpStatusCodeMessages[status] || 'Internal Server Error',
+            data: additionalErrorData
         }
     }
 }

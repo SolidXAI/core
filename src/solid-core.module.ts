@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
+  APP_FILTER,
   APP_GUARD,
   APP_INTERCEPTOR,
   DiscoveryService,
@@ -212,6 +213,7 @@ import { ComputedEntityFieldSubscriber } from './subscribers/computed-entity-fie
 import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-by.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 
 @Global()
@@ -325,6 +327,10 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter
     },
     ModuleMetadataService,
     ModuleMetadataHelperService,

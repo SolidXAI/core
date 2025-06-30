@@ -1,5 +1,5 @@
 import { camelize } from "@angular-devkit/core/src/utils/strings";
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
 import { ComputedFieldMetadata, SolidRegistry } from "src/helpers/solid-registry";
@@ -57,7 +57,7 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
             camelize(entity.constructor.name)
         );
         //TODO: We can add a feature i.e dependsOn, where we can check if the computed field depends on other computed fields and evaluate them first
-        Promise.all(
+        await Promise.all(
             computedFieldsTobeEvaluated.map(c => this.evaluateComputedField(c, entity))
         )
     }
@@ -101,7 +101,7 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
             const computedValue = await providerInstance.preComputeValue(entity, computedFieldMetadata); //FIXME There should some way to check/assert if the provider actually has a postComputeAndSaveValue
             return computedValue;
         } catch (error) {
-            throw new Error(`Error evaluating computed field ${computedFieldMetadata.fieldName} for model ${computedFieldMetadata.modelName} for triggered entity ${entity.constructor.name}: ${error.message}`);
+            throw new InternalServerErrorException(`Error evaluating computed field ${computedFieldMetadata.fieldName} for model ${computedFieldMetadata.modelName} for triggered entity ${entity.constructor.name}: ${error.message}`);
         }
     }
 
