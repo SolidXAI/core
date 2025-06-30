@@ -1,5 +1,5 @@
 import { camelize } from "@angular-devkit/core/src/utils/strings";
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
 import { ComputedFieldMetadata, SolidRegistry } from "src/helpers/solid-registry";
@@ -15,6 +15,7 @@ export interface ComputedFieldEvaluationPayload extends ComputedFieldMetadata {
 @Injectable()
 @EventSubscriber()
 export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface {
+    private readonly logger = new Logger(this.constructor.name);
     constructor(
         @InjectDataSource()
         private readonly dataSource: DataSource,
@@ -28,61 +29,80 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         await this.handleComputedFieldEvaluation(event.entity, ComputedFieldTriggerOperation.beforeInsert);
     }
 
-    async beforeUpdate(event: UpdateEvent<any>): Promise<any>{
+    async beforeUpdate(event: UpdateEvent<any>): Promise<any> {
         await this.handleComputedFieldEvaluation(event.databaseEntity, ComputedFieldTriggerOperation.beforeUpdate);
     }
 
-    async afterInsert(event: InsertEvent<any>) {
-        await this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterInsert);
+    afterInsert(event: InsertEvent<any>) {
+        this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterInsert);
     }
 
-    async afterUpdate(event: UpdateEvent<any>) {
-        await this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterUpdate);
+    afterUpdate(event: UpdateEvent<any>) {
+        this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterUpdate);
     }
 
-    async afterRemove(event: any) {
-        await this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterRemove);
+    afterRemove(event: any) {
+        this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterRemove);
     }
 
-    //FIXME: Need to add support for beforeRemmove, beforeSoftRemove, afterSoftRemove, beforeRecover, afterRecover
+    //FIXME: Need to add support for beforeRemove, beforeSoftRemove, afterSoftRemove, beforeRecover, afterRecover
 
     private async handleComputedFieldEvaluation(entity: any, currentOperation: ComputedFieldTriggerOperation): Promise<void> {
         if (!entity) {
             return;
         }
-        const currentModelName = camelize(entity.constructor.name); // Resolve the model name from the entity class name
-        const computedFieldsTobeEvaluated = this.getComputedFieldsToBeEvaluated(
+        const computedFieldsTobeEvaluated = this.getComputedFieldsForEvaluation(
             this.solidRegistry.getComputedFieldMetadata(),
             currentOperation,
-            currentModelName
+            camelize(entity.constructor.name)
         );
-        for (const computedFieldMetadata of computedFieldsTobeEvaluated) {
-            const computedValue = await this.getComputedValue(computedFieldMetadata, entity); //FIXME: There should some way to check/assert if the provider actually has a postComputeAndSaveValue
-            entity[computedFieldMetadata.fieldName] = computedValue; // Set the computed value on the entity
-        }
+        //TODO: We can add a feature i.e dependsOn, where we can check if the computed field depends on other computed fields and evaluate them first
+        Promise.all(
+            computedFieldsTobeEvaluated.map(c => this.evaluateComputedField(c, entity))
+        )
     }
 
-    private async handleComputedFieldEvaluationJob(entity: any, currentOperation: ComputedFieldTriggerOperation): Promise<void> {
+    private handleComputedFieldEvaluationJob(entity: any, currentOperation: ComputedFieldTriggerOperation) {
         if (!entity) {
             return;
         }
-        const currentModelName = camelize(entity.constructor.name); //Resolve the model name from the entity class name
-        const computedFieldsTobeEvaluated = this.getComputedFieldsToBeEvaluated(
+        const computedFieldsTobeEvaluated = this.getComputedFieldsForEvaluation(
             this.solidRegistry.getComputedFieldMetadata(),
             currentOperation,
-            currentModelName
+            camelize(entity.constructor.name)
         );
+        //TODO: We can add a feature i.e dependsOn, where we can check if the computed field depends on other computed fields and evaluate them first
         for (const computedField of computedFieldsTobeEvaluated) {
             this.enqueueComputedFieldEvaluationJob(computedField, entity);
         }
     }
 
+    // Based on the current model name and current operation, identify all the computed providers that need to be evaluated
+    // Pass the database entity and the context to the provider of type IEntityComputedFieldProvider
+    private getComputedFieldsForEvaluation(computedFieldMetadata: ComputedFieldMetadata[] = [], currentOperation: ComputedFieldTriggerOperation, currentModelName: string) {
+        return computedFieldMetadata.filter(
+            (computedField) => computedField.computedFieldTriggerConfig.some(
+                (trigger) => trigger.operations.includes(currentOperation) &&
+                    trigger.modelName === currentModelName
+            )
+        );
+    }
+
+    private async evaluateComputedField(computedFieldMetadata: ComputedFieldMetadata<any>, entity: any) {
+        const computedValue = await this.getComputedValue(computedFieldMetadata, entity);
+        entity[computedFieldMetadata.fieldName] = computedValue; // Set the computed value on the entity
+    }
+
     private async getComputedValue(computedFieldMetadata: ComputedFieldMetadata<any>, entity: any) {
-        const provider = this.solidRegistry.getComputedFieldProvider(computedFieldMetadata.computedFieldValueProviderName);
-        // Get the instance of the provider and assert it is of type IEntityComputedFieldProvider
-        const providerInstance = provider.instance as IEntityPreComputeFieldProvider<any, any, any>; // IEntityComputedFieldProvider
-        const computedValue = await providerInstance.preComputeValue(entity, computedFieldMetadata); //FIXME There should some way to check/assert if the provider actually has a postComputeAndSaveValue
-        return computedValue;
+        try {
+            const provider = this.solidRegistry.getComputedFieldProvider(computedFieldMetadata.computedFieldValueProviderName);
+            // Get the instance of the provider and assert it is of type IEntityComputedFieldProvider
+            const providerInstance = provider.instance as IEntityPreComputeFieldProvider<any, any, any>; // IEntityComputedFieldProvider
+            const computedValue = await providerInstance.preComputeValue(entity, computedFieldMetadata); //FIXME There should some way to check/assert if the provider actually has a postComputeAndSaveValue
+            return computedValue;
+        } catch (error) {
+            throw new Error(`Error evaluating computed field ${computedFieldMetadata.fieldName} for model ${computedFieldMetadata.modelName} for triggered entity ${entity.constructor.name}: ${error.message}`);
+        }
     }
 
     private enqueueComputedFieldEvaluationJob(computedField: ComputedFieldMetadata<any>, databaseEntity: any) {
@@ -95,14 +115,4 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         });
     }
 
-    // Based on the current model name and current operation, identify all the computed providers that need to be evaluated
-    // Pass the database entity and the context to the provider of type IEntityComputedFieldProvider
-    private getComputedFieldsToBeEvaluated(computedFieldMetadata: ComputedFieldMetadata[], currentOperation: ComputedFieldTriggerOperation, currentModelName: string) {
-        return computedFieldMetadata.filter(
-            (computedField) => computedField.computedFieldTriggerConfig.some(
-                (trigger) => trigger.operations.includes(currentOperation) &&
-                    trigger.modelName === currentModelName
-            )
-        );
-    }
 }

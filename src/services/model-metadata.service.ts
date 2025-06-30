@@ -714,29 +714,27 @@ export class ModelMetadataService {
 
   @DisallowInProduction()
   async handleGenerateCode(options: CodeGenerationOptions): Promise<any> {
-    // // see if the model record exists. 
-    // const model = await this.modelMetadataRepo.findOne({
-    //   where: {
-    //     id: options.modelId,
-    //   },
-    // });
-    // if (!model) {
-    //   throw new NotFoundException(`Model record with #${options.modelId} not found`);
-    // }
+    const affectedModelIds = [], refreshModelCodeOutputLines = [], removeFieldCodeOutputLines = [];
 
-    // const m = {
-    //   payload: options,
-    //   parentEntity: model.singularName,
-    //   parentEntityId: options.modelId,
-    // };
-
-    // const messageId = await this.generateCodePublihser.publish(m);
-
-    // return { messageId: messageId };
-
+    // Generate the code for the passed model
     const { model, removeFieldCodeOuput, refreshModelCodeOutput } = await this.generateCode(options);
+    affectedModelIds.push(model.id);
+    refreshModelCodeOutputLines.push(refreshModelCodeOutput);
+    removeFieldCodeOutputLines.push(removeFieldCodeOuput);
 
     // Generate the code for models which are linked to fields having an inverse relation
+    await this.generateCodeForInverseModels(model, options, affectedModelIds, refreshModelCodeOutputLines, removeFieldCodeOutputLines);
+
+    // Generate the VAM config for all the affected models
+    for (const modelId of affectedModelIds) {
+      await this.generateVAMConfig(modelId);
+    }
+
+    // Return the aggregated code output
+    return `${removeFieldCodeOutputLines.join('\n')} \n ${refreshModelCodeOutputLines.join('\n')}`;
+  }
+
+  private async generateCodeForInverseModels(model: ModelMetadata, options: CodeGenerationOptions, affectedModelIds: any[], refreshModelCodeOutputLines: any[], removeFieldCodeOutputLines: any[]) {
     const coModelSingularNames = model.fields.
       filter(field => field.type === SolidFieldType.relation && field.relationCreateInverse === true)
       .map(field => field.relationCoModelSingularName);
@@ -747,11 +745,11 @@ export class ModelMetadataService {
         modelId: coModel.id,
         dryRun: options.dryRun
       };
-      await this.generateCode(inverseOptions);
+      const { removeFieldCodeOuput, refreshModelCodeOutput } = await this.generateCode(inverseOptions);
+      affectedModelIds.push(coModel.id);
+      refreshModelCodeOutputLines.push(refreshModelCodeOutput);
+      removeFieldCodeOutputLines.push(removeFieldCodeOuput);
     }
-    await this.generateVAMConfig(model.id);
-
-    return `${removeFieldCodeOuput} \n ${refreshModelCodeOutput}`;
   }
 
   // Generate the View, Action and Menu configuration for the model
@@ -801,7 +799,7 @@ export class ModelMetadataService {
   }
 
   // Populate the View, Actions and Menus in the config file
-  private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string;  }; }[], metaData: any) {
+  private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string; }; }[], metaData: any) {
     const column1Fields = [];
     const column2Fields = [];
 
