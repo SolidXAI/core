@@ -5217,13 +5217,23 @@
           "truncateAfter": 50,
           "create": true,
           "edit": true,
-          "delete": true,
+          "delete": false,
           "rowButtons": [
             {
               "attrs": {
                 "className": "pi pi-cog",
                 "label": "Generate Code",
                 "action": "GenerateModelCodeRowAction",
+                "customComponentIsSystem": true,
+                "actionInContextMenu": true,
+                "openInPopup": true
+              }
+            },
+            {
+              "attrs": {
+                "className": "pi pi-trash",
+                "label": "Delete",
+                "action": "DeleteModelRowAction",
                 "customComponentIsSystem": true,
                 "actionInContextMenu": true,
                 "openInPopup": true
