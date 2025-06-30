@@ -84,7 +84,7 @@ export class SchematicService {
           return !this.solidRegistry.getCommonEntityKeys().includes(field.name);
         })
         .map((field) => {
-          return `--fields='${JSON.stringify(field)}'`;
+          return `--fields='${JSON.stringify(field).replace(/'/g, "\\'")}'`;
         })
         .join(' ');
       const schematicCommand = modelCommand + ' ' + fieldCommand;
