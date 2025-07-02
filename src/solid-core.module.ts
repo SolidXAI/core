@@ -1,6 +1,7 @@
 import { Global, Module } from '@nestjs/common';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
+  APP_FILTER,
   APP_GUARD,
   APP_INTERCEPTOR,
   DiscoveryService,
@@ -221,6 +222,7 @@ import { DashboardVariableController } from './controllers/dashboard-variable.co
 import { Question } from './entities/question.entity';
 import { QuestionService } from './services/question.service';
 import { QuestionController } from './controllers/question.controller';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 
 
 @Global()
@@ -340,6 +342,10 @@ import { QuestionController } from './controllers/question.controller';
     {
       provide: APP_GUARD,
       useClass: PermissionsGuard,
+    },
+    {
+      provide: APP_FILTER,
+      useClass: HttpExceptionFilter
     },
     ModuleMetadataService,
     ModuleMetadataHelperService,

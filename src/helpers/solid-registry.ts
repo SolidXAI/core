@@ -191,16 +191,6 @@ export class SolidRegistry {
     });
   }
 
-  /**
-  * @deprecated You can directly pass the entityName to typeORM, if you are using this just for doing operations against a particular entity.
-  */
-  // Returns the entity target class from the entity name
-  // getEntityTarget(entityManager: EntityManager, entityName: string): any { //TODO Can be refactored to use this function from crud helper service
-  //   const entityMetadatas = entityManager.connection.entityMetadatas;
-  //   const entityMetadata = entityMetadatas.find(em => em.name === entityName);
-  //   return entityMetadata.target;
-  // }
-
   getCommonEntityKeys(): (keyof CommonEntity)[] {
     return ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt'];
     // return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];

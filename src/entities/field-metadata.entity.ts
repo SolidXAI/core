@@ -1,8 +1,8 @@
+import { ComputedFieldTriggerConfig } from "src/dtos/create-field-metadata.dto";
 import { CommonEntity } from "src/entities/common.entity";
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { MediaStorageProviderMetadata } from "./media-storage-provider-metadata.entity";
 import { ModelMetadata } from "./model-metadata.entity";
-import { ComputedFieldTriggerConfig } from "src/dtos/create-field-metadata.dto";
 
 @Entity("ss_field_metadata")
 export class FieldMetadata extends CommonEntity {
