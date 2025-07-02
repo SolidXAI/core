@@ -929,7 +929,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "type",
                     "ormType",
                     "isSystem",
-                    "computedFieldValueType",
+                    "computedFieldTriggerConfig",
                     "computedFieldValueProvider",
                     "computedFieldValueProviderCtxt",
                     "required",
