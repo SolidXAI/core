@@ -172,7 +172,7 @@ export class AuthenticationService {
         catch (err) {
             const pgUniqueViolationErrorCode = '23505';
             if (err.code === pgUniqueViolationErrorCode) {
-                throw new ConflictException();
+                throw new ConflictException(parseUniqueConstraintError(err.detail || 'A unique constraint violation occurred.'));
             }
             throw err;
         }
@@ -1114,4 +1114,20 @@ export class AuthenticationService {
         return response;
     }
 
+}
+
+function parseUniqueConstraintError(detail: string): string {
+    const match = detail.match(/Key \(([^)]+)\)=\(([^)]+)\) already exists\./);
+    if (match) {
+        const field = match[1];
+        const value = match[2];
+        const fieldMap: Record<string, string> = {
+            username: 'username',
+            email: 'email address',
+            full_name_user_key: 'full name',
+        };
+        const friendlyField = fieldMap[field] || field;
+        return `A user with ${friendlyField} "${value}" already exists.`;
+    }
+    return detail;
 }
