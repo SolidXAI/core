@@ -104,6 +104,7 @@ import { SmsTemplateSeederService } from './seeders/sms-template-seeder.service'
 import { UserSeederService } from './seeders/user-seeder.service';
 import { AuthenticationService } from './services/authentication.service';
 import { BcryptService } from './services/bcrypt.service';
+import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/uuid-external-id-computed-field-provider.service';
 import { EmailTemplateService } from './services/email-template.service';
 import { FileService } from './services/file.service';
 import { HashingService } from './services/hashing.service';
@@ -183,6 +184,7 @@ import { PermissionMetadataSeederService } from './seeders/permission-metadata-s
 import { SystemFieldsSeederService } from './seeders/system-fields-seeder.service';
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageService } from './services/chatter-message.service';
+import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
 import { ConcatEntityComputedFieldProvider } from './services/computed-fields/entity/concat-entity-computed-field-provider.service';
 import { CsvService } from './services/csv.service';
 import { ExcelService } from './services/excel.service';
@@ -393,6 +395,7 @@ import { HttpExceptionFilter } from './filters/http-exception.filter';
     SmsTemplateSeederService,
     TinyUrlService,
     PdfService,
+    UuidExternalIdComputedFieldProvider,
     ListOfModelsSelectionProvider,
     ListOfScheduledJobsSelectionProvider,
     LocaleListSelectionProvider,
@@ -420,6 +423,7 @@ import { HttpExceptionFilter } from './filters/http-exception.filter';
     PermissionMetadataSeederService,
     UserService,
     SettingService,
+    ConcatComputedFieldProvider,
     FileStorageProvider,
     FileS3StorageProvider,
     MediaRepository,
