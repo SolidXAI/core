@@ -848,7 +848,7 @@
             "name": "computedFieldTriggerConfig",
             "displayName": "Computed Field Value Trigger Configuration",
             "type": "json",
-            "ormType": "text",
+            "ormType": "jsonb",
             "required": false,
             "unique": false,
             "index": false,
