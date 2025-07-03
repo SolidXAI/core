@@ -33,7 +33,7 @@ export class UpdateDashboardVariableDto {
     selectionDynamicProviderName: string;
     @IsOptional()
     @IsBoolean()
-    @ApiProperty({ description: "This is relevant only for variables of type selectionStatic or selectionDynamic. When set to true, it allows the user to select multiple values from the dropdown." })
+    @ApiProperty({ description: "This is relevant only for variables of type \"selectionStatic\" or \"selectionDynamic\". When set to true, it allows the user to select multiple values from the dropdown." })
     isMultiSelect: boolean;
     @IsOptional()
     @IsInt()

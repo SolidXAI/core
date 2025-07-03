@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
-import { IsNotEmpty, ValidateNested, IsArray, IsOptional } from 'class-validator';
+import { IsNotEmpty, ValidateNested, IsArray, IsOptional, IsJSON, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 import { UpdateDashboardVariableDto } from 'src/dtos/update-dashboard-variable.dto';
 import { UpdateQuestionDto } from 'src/dtos/update-question.dto';
@@ -11,9 +11,9 @@ export class CreateDashboardDto {
     @ApiProperty()
     name: string;
     @IsNotEmpty()
-    @IsString()
+    @IsJSON()
     @ApiProperty()
-    layoutJson: string;
+    layoutJson: any;
     @IsOptional()
     @ApiProperty()
     @IsArray()
@@ -42,4 +42,12 @@ export class CreateDashboardDto {
     @IsOptional()
     @ApiProperty()
     questionsCommand: string;
+    @IsOptional()
+    @IsInt()
+    @ApiProperty()
+    moduleId: number;
+    @IsString()
+    @IsOptional()
+    @ApiProperty()
+    moduleUserKey: string;
 }

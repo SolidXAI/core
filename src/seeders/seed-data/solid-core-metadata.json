@@ -4312,7 +4312,7 @@
           {
             "name": "layoutJson",
             "displayName": "Layout Json",
-            "type": "longText",
+            "type": "json",
             "ormType": "text",
             "required": true,
             "unique": false,
@@ -4348,6 +4348,23 @@
             "relationCreateInverse": true,
             "relationCoModelSingularName": "question",
             "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
             "isSystem": true
           }
         ]
@@ -4464,7 +4481,7 @@
             "private": false,
             "encrypt": false,
             "isSystem": true,
-            "description": "This is relevant only for variables of type 'selectionStatic' or 'selectionDynamic'. When set to true, it allows the user to select multiple values from the dropdown."
+            "description": "This is relevant only for variables of type \"selectionStatic\" or \"selectionDynamic\". When set to true, it allows the user to select multiple values from the dropdown."
           },
           {
             "name": "dashboard",
@@ -5126,6 +5143,45 @@
       "viewUserKey": "question-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "question"
+    },
+    {
+      "displayName": "Dashboard List Action",
+      "name": "dashboard-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/dashboard/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboard-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboard"
+    },
+    {
+      "displayName": "Dashboard Variable List Action",
+      "name": "dashboardVariable-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/dashboardVariable/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboardVariable-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardVariable"
+    },
+    {
+      "displayName": "Question List Action",
+      "name": "question-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/question/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "question-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question"
     }
   ],
   "menus": [
@@ -5448,6 +5504,14 @@
       "actionUserKey": "question-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "dashboard-root-menu-item"
+    },
+    {
+      "displayName": "Dashboard Variable",
+      "name": "dashboardVariable-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "dashboardVariable-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
     }
   ],
   "views": [
@@ -5474,7 +5538,7 @@
           "rowButtons": [
             {
               "attrs": {
-                "className":"p-button-text",
+                "className": "p-button-text",
                 "icon": "pi pi-cog",
                 "label": "Generate Code",
                 "action": "GenerateModuleCodeRowAction",
@@ -5646,7 +5710,7 @@
           "rowButtons": [
             {
               "attrs": {
-                "icon":"pi pi-trash",
+                "icon": "pi pi-trash",
                 "className": "p-button-danger p-button-text",
                 "label": "Delete",
                 "action": "DeleteModelRowAction",
@@ -5658,7 +5722,7 @@
             {
               "attrs": {
                 "icon": "pi pi-cog",
-                "className":"p-button-text",
+                "className": "p-button-text",
                 "label": "Generate Code",
                 "action": "GenerateModelCodeRowAction",
                 "customComponentIsSystem": true,
@@ -10772,6 +10836,12 @@
                       {
                         "type": "field",
                         "attrs": {
+                          "name": "module"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
                           "name": "dashboardVariables"
                         }
                       },
@@ -10890,7 +10960,7 @@
                       "className": "col-6"
                     },
                     "children": [
-                                            {
+                      {
                         "type": "field",
                         "attrs": {
                           "name": "selectionDynamicSQL"
@@ -10914,7 +10984,6 @@
                           "name": "dashboard"
                         }
                       }
-
                     ]
                   }
                 ]
@@ -11030,7 +11099,7 @@
                       "className": "col-6"
                     },
                     "children": [
-                       {
+                      {
                         "type": "field",
                         "attrs": {
                           "name": "barChartXKey"
@@ -11060,7 +11129,7 @@
                           "name": "dashboard"
                         }
                       }
-                   ]
+                    ]
                   }
                 ]
               }
