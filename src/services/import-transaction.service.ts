@@ -339,9 +339,10 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       throw new BadRequestException(`Failed to create export stream for import transaction ID ${importTransactionId}.`);
     }
     // Return the export stream
+    const extension = templateFormat === "excel" ? 'xlsx' : 'csv';
     return {
       stream: exportStream,
-      fileName: `${importTransaction.modelMetadata.singularName}-failed-imports.${templateFormat}`,
+      fileName: `${importTransaction.modelMetadata.singularName}-failed-imports.${extension}`,
       mimeType: templateFormat === "excel" ? ImportMimeTypes.EXCEL : ImportMimeTypes.CSV,
     };
 
