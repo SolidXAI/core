@@ -2,6 +2,10 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 import { IsNotEmpty, IsJSON, IsOptional, IsBoolean, IsInt } from 'class-validator';
 
+export enum SelectionDynamicSourceType {
+    SQL = "sql",
+    PROVIDER = "provider",
+}
 export class CreateDashboardVariableDto {
     @IsNotEmpty()
     @IsString()

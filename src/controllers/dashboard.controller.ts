@@ -1,9 +1,10 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { DashboardService } from '../services/dashboard.service';
+import { DashboardVariableSelectionDynamicQueryDto } from 'src/dtos/dashboard-variable-selection-dynamic-query.dto';
 import { CreateDashboardDto } from '../dtos/create-dashboard.dto';
 import { UpdateDashboardDto } from '../dtos/update-dashboard.dto';
+import { DashboardService } from '../services/dashboard.service';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -13,7 +14,7 @@ enum ShowSoftDeleted {
 @ApiTags('Solid Core')
 @Controller('dashboard')
 export class DashboardController {
-  constructor(private readonly service: DashboardService) {}
+  constructor(private readonly service: DashboardService) { }
 
   @ApiBearerAuth("jwt")
   @Post()
@@ -55,20 +56,26 @@ export class DashboardController {
   async recover(@Param('id') id: number) {
     return this.service.recover(id);
   }
-    
+
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({ name: 'fields', required: false, type: Array })
-  @ApiQuery({ name: 'sort', required: false, type: Array }) 
+  @ApiQuery({ name: 'sort', required: false, type: Array })
   @ApiQuery({ name: 'groupBy', required: false, type: Array })
   @ApiQuery({ name: 'populate', required: false, type: Array })
   @ApiQuery({ name: 'populateMedia', required: false, type: Array })
   @ApiQuery({ name: 'filters', required: false, type: Array })
   @Get()
-  async findMany(@Query() query: any) { 
-    return this.service.find(query);  
+  async findMany(@Query() query: any) {
+    return this.service.find(query);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Get('/selection-dynamic-values')
+  async getSelectionDynamicValues(@Query() query: DashboardVariableSelectionDynamicQueryDto) {
+    return this.service.getSelectionDynamicValues(query);
   }
 
   @ApiBearerAuth("jwt")
@@ -88,6 +95,5 @@ export class DashboardController {
   async delete(@Param('id') id: number) {
     return this.service.delete(id);
   }
-
 
 }
