@@ -225,6 +225,7 @@ import { QuestionController } from './controllers/question.controller';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { DashboardVariableSQLDynamicProvider } from './services/dashboard-selection-providers/DashboardVariableSQLDynamicProvider.service';
 import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selection-providers/DashboardVariableTestDynamicProvider.service';
+import { ListOfDashboardProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-providers-selection-provider.service';
 
 
 @Global()
@@ -476,6 +477,7 @@ import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selec
     QuestionService,
     DashboardVariableSQLDynamicProvider,
     DasbhoardVariableTestDynamicProvider,
+    ListOfDashboardProvidersSelectionProvider,
   ],
   exports: [
     ModuleMetadataService,
