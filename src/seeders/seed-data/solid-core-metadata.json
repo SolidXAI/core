@@ -5504,14 +5504,6 @@
       "actionUserKey": "question-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "dashboard-root-menu-item"
-    },
-    {
-      "displayName": "Dashboard Variable",
-      "name": "dashboardVariable-menu-item",
-      "sequenceNumber": 1,
-      "actionUserKey": "dashboardVariable-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
     }
   ],
   "views": [
@@ -10772,6 +10764,18 @@
             "attrs": {
               "name": "id"
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
+            }
           }
         ]
       }
@@ -10798,58 +10802,96 @@
             },
             "children": [
               {
-                "type": "row",
+                "type": "notebook",
                 "attrs": {
-                  "name": "sheet-1"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-1",
-                      "label": "",
-                      "className": "col-6"
+                      "name": "page-1",
+                      "label": "Dashboard"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "row",
                         "attrs": {
-                          "name": "name"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "layoutJson"
-                        }
+                          "name": "row-1"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "name"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "module"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-2",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "layoutJson"
+                                }
+                              }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   },
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-2",
-                      "label": "",
-                      "className": "col-6"
+                      "name": "page-2",
+                      "label": "Dashboard Variables"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "row",
                         "attrs": {
-                          "name": "module"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "dashboardVariables"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "questions"
-                        }
+                          "name": "row-2"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-3",
+                              "label": "",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "dashboardVariables"
+                                }
+                              }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   }
