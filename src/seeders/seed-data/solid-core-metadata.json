@@ -10929,6 +10929,24 @@
             "attrs": {
               "name": "id"
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "variableName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "variableType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isMultiSelect"
+            }
           }
         ]
       }
