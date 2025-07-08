@@ -16,17 +16,17 @@ export class DashboardVariableSQLDynamicProvider implements IDashboardSelectionP
     }
 
     name(): string {
-        return 'DasbhoardVariableSQLDynamicProvider';
+        return 'DashboardVariableSQLDynamicProvider';
     }
 
     async value(optionValue: string, ctxt: ISelectionProviderContext): Promise<ISelectionProviderValues | any> {
-        throw new Error("DasbhoardVariableSQLDynamicProvider does not support value method. Use values method instead.");
+        throw new Error("DashboardVariableSQLDynamicProvider does not support value method. Use values method instead.");
     }
 
     async values(query: string, ctxt: ISelectionProviderContext): Promise<readonly ISelectionProviderValues[]> {
         const { sql, limit, offset } = ctxt as unknown as { sql: string, limit?: number, offset?: number };
         if (!sql) {
-            throw new Error("DasbhoardVariableSQLDynamicProvider requires a SQL query to be provided in the context.");
+            throw new Error("DashboardVariableSQLDynamicProvider requires a SQL query to be provided in the context.");
         }
 
         // Here you would execute the SQL query against your database
