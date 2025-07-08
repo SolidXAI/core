@@ -11003,12 +11003,6 @@
                         "attrs": {
                           "name": "selectionStaticValues"
                         }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "selectionDynamicSourceType"
-                        }
                       }
                     ]
                   },
@@ -11023,6 +11017,18 @@
                       {
                         "type": "field",
                         "attrs": {
+                          "name": "isMultiSelect"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionDynamicSourceType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
                           "name": "selectionDynamicSQL"
                         }
                       },
@@ -11030,12 +11036,6 @@
                         "type": "field",
                         "attrs": {
                           "name": "selectionDynamicProviderName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "isMultiSelect"
                         }
                       },
                       {
