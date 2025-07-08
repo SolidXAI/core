@@ -5,7 +5,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
+import { IDashboardSelectionProvider, ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 
 type ControllerMetadata = {
   name: string;
@@ -63,6 +63,7 @@ export class SolidRegistry {
   private securityRules: SecurityRule[] = [];
   private locales: Locale[] = [];
   private computedFieldMetadata: ComputedFieldMetadata[] = [];
+  private dashboardSelectionProviders: Set<InstanceWrapper> = new Set();
 
   registerController(name: string, methodNames: string[]): void {
     this.controllers.add({ name: name, methods: methodNames });
@@ -78,6 +79,10 @@ export class SolidRegistry {
 
   registerSelectionProvider(selectionProvider: InstanceWrapper): void {
     this.selectionProviders.add(selectionProvider);
+  }
+
+  registerDashboardSelectionProvider (dashboardSelectionProvider: InstanceWrapper): void {
+    this.dashboardSelectionProviders.add(dashboardSelectionProvider);
   }
 
   registerComputedFieldProvider(computedFieldProvider: InstanceWrapper): void {
@@ -118,6 +123,23 @@ export class SolidRegistry {
       }
     }
   }
+
+  getDashboardSelectionProviders(): Array<InstanceWrapper> {
+    return Array.from(this.dashboardSelectionProviders);
+  }
+
+  getDashboardSelectionProviderInstance<T extends ISelectionProviderContext>(name: string): IDashboardSelectionProvider<T> {
+    const dashboardSelectionProviders = this.getDashboardSelectionProviders();
+
+    for (let i = 0; i < dashboardSelectionProviders.length; i++) {
+      const dashboardSelectionProvider = dashboardSelectionProviders[i];
+      if (dashboardSelectionProvider.instance.name() === name) {
+        return dashboardSelectionProvider.instance;
+      }
+    }
+  }
+
+
 
   getComputedFieldProviders(): Array<InstanceWrapper> {
     return Array.from(this.computedFieldProviders);

@@ -18,6 +18,7 @@ import { SolidRegistry } from 'src/helpers/solid-registry';
 import { Dashboard } from '../entities/dashboard.entity';
 import { query } from 'express';
 
+export const SQL_DYNAMIC_PROVIDER_NAME = 'DasbhoardVariableSQLDynamicProvider';
 @Injectable()
 export class DashboardService extends CRUDService<Dashboard> {
   constructor(
@@ -46,7 +47,7 @@ export class DashboardService extends CRUDService<Dashboard> {
     const [providerName, context] = this.getProviderNameAndContext(dashboardVariable, query);
 
     // Get hold of the provider instance from the SolidRegistry
-    const selectionProviderInstance = this.solidRegistry.getSelectionProviderInstance(providerName);
+    const selectionProviderInstance = this.solidRegistry.getDashboardSelectionProviderInstance(providerName);
     if (!selectionProviderInstance) {
       throw new NotFoundException(`Field incorrectly configured. No provider with name ${providerName} registered in backend.`);
     }
@@ -64,7 +65,7 @@ export class DashboardService extends CRUDService<Dashboard> {
     const context = { limit: query.limit, offset: query.offset };
     switch (sourceType) {
       case SelectionDynamicSourceType.SQL:
-        providerName = 'DasbhoardVariableSQLDynamicProvider';
+        providerName = SQL_DYNAMIC_PROVIDER_NAME;
         context['sql'] = dashboardVariable.selectionDynamicSQL;
         break;
       case SelectionDynamicSourceType.PROVIDER:

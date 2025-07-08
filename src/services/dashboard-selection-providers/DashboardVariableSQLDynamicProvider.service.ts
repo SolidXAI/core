@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { SelectionProvider } from "src/decorators/selection-provider.decorator";
 import { IDashboardSelectionProvider, ISelectionProviderContext, ISelectionProviderValues } from "../../interfaces";
 // import localeCodes from 'locale-codes';
 import { EntityManager } from "typeorm";
+import { DashboardSelectionProvider } from "src/decorators/dashboard-selection-provider.decorator";
 
-@SelectionProvider()
+@DashboardSelectionProvider()
 @Injectable()
-export class DasbhoardVariableSQLDynamicProvider implements IDashboardSelectionProvider<ISelectionProviderContext> {
+export class DashboardVariableSQLDynamicProvider implements IDashboardSelectionProvider<ISelectionProviderContext> {
 
     constructor(private readonly entityManager: EntityManager) {
     }

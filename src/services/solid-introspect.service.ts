@@ -8,6 +8,7 @@ import { IS_SOLID_DATABASE_MODULE } from 'src/decorators/solid-database-module.d
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { CRUDService } from './crud.service';
 import { IS_SCHEDULED_JOB_PROVIDER } from 'src/decorators/scheduled-job-provider.decorator';
+import { IS_DASHBOARD_SELECTION_PROVIDER } from 'src/decorators/dashboard-selection-provider.decorator';
 
 @Injectable()
 export class SolidIntrospectService implements OnApplicationBootstrap {
@@ -40,6 +41,16 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     selectionProviders.forEach((selectionProvider) => {
       // @ts-ignore
       this.solidRegistry.registerSelectionProvider(selectionProvider);
+    });
+
+    // Register all IDashboardSelectionProvider implementations
+    const dashboardSelectionProviders = this.discoveryService
+      .getProviders()
+      .filter((provider) => this.isDashboardSelectionProvider(provider));
+
+    dashboardSelectionProviders.forEach((dashboardSelectionProvider) => {
+      // @ts-ignore
+      this.solidRegistry.registerDashboardSelectionProvider(dashboardSelectionProvider);
     });
 
 
@@ -117,6 +128,16 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
 
     return !!isSelectionProvider;
   }
+
+  private isDashboardSelectionProvider(provider: InstanceWrapper) {
+    const { instance } = provider;
+    if (!instance) return false;  
+    const isDashboardSelectionProvider = this.reflector.get<boolean>(
+      IS_DASHBOARD_SELECTION_PROVIDER,
+      instance.constructor,
+    ); 
+    return !!isDashboardSelectionProvider;
+  } 
 
   private isComputedFieldProvider(provider: InstanceWrapper) {
     const { instance } = provider;

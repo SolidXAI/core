@@ -223,7 +223,7 @@ import { Question } from './entities/question.entity';
 import { QuestionService } from './services/question.service';
 import { QuestionController } from './controllers/question.controller';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
-import { DasbhoardVariableSQLDynamicProvider } from './services/dashboard-selection-providers/DasbhoardVariableSQLDynamicProvider.service';
+import { DashboardVariableSQLDynamicProvider } from './services/dashboard-selection-providers/DashboardVariableSQLDynamicProvider.service';
 import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selection-providers/DashboardVariableTestDynamicProvider.service';
 
 
@@ -474,7 +474,7 @@ import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selec
     DashboardService,
     DashboardVariableService,
     QuestionService,
-    DasbhoardVariableSQLDynamicProvider,
+    DashboardVariableSQLDynamicProvider,
     DasbhoardVariableTestDynamicProvider,
   ],
   exports: [
