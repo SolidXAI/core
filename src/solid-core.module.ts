@@ -223,8 +223,8 @@ import { Question } from './entities/question.entity';
 import { QuestionService } from './services/question.service';
 import { QuestionController } from './controllers/question.controller';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
-import { DashboardVariableSQLDynamicProvider } from './services/dashboard-selection-providers/DashboardVariableSQLDynamicProvider.service';
-import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selection-providers/DashboardVariableTestDynamicProvider.service';
+import { DashboardVariableSQLDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-sql-dynamic-provider.service';
+import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-test-dynamic-provider.service';
 import { ListOfDashboardProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-providers-selection-provider.service';
 
 

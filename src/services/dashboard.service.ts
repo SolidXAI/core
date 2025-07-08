@@ -16,9 +16,8 @@ import { DashboardVariableSelectionDynamicQueryDto } from 'src/dtos/dashboard-va
 import { DashboardVariable } from 'src/entities/dashboard-variable.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { Dashboard } from '../entities/dashboard.entity';
-import { query } from 'express';
 
-export const SQL_DYNAMIC_PROVIDER_NAME = 'DasbhoardVariableSQLDynamicProvider';
+export const SQL_DYNAMIC_PROVIDER_NAME = 'DashboardVariableSQLDynamicProvider';
 @Injectable()
 export class DashboardService extends CRUDService<Dashboard> {
   constructor(
