@@ -11128,6 +11128,12 @@
                       {
                         "type": "field",
                         "attrs": {
+                          "name": "dashboard"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
                           "name": "sourceType"
                         }
                       },
@@ -11181,12 +11187,6 @@
                         "type": "field",
                         "attrs": {
                           "name": "barChartLabelOptions"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "dashboard"
                         }
                       }
                     ]
