@@ -11235,6 +11235,24 @@
             "attrs": {
               "name": "id"
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dashboard"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "visualisedAs"
+            }
           }
         ]
       }
@@ -11337,7 +11355,7 @@
                     "type": "page",
                     "attrs": {
                       "name": "sql-dataset-config",
-                      "label": "SQL Dataset Config"
+                      "label": "Datasets"
                     },
                     "children": [
                       {
@@ -11357,6 +11375,7 @@
                               {
                                 "type": "field",
                                 "attrs": {
+                                  "showLabel": false,
                                   "name": "questionSqlDatasetConfigs"
                                 }
                               }
@@ -11522,9 +11541,15 @@
                     "attrs": {
                       "name": "group-1",
                       "label": "",
-                      "className": "col-6"
+                      "className": "col-12"
                     },
                     "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "datasetName"
+                        }
+                      },
                       {
                         "type": "field",
                         "attrs": {
@@ -11540,7 +11565,9 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "sql"
+                          "name": "sql",
+                          "editWidget": "codeEditor",
+                          "editorLanguage": "sql"
                         }
                       },
                       {
@@ -11552,35 +11579,13 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "backgroundColor"
-                        }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "group-2",
-                      "label": "",
-                      "className": "col-6"
-                    },
-                    "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "datasetName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "description"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
                           "name": "valueColumnName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "backgroundColor"
                         }
                       }
                     ]
