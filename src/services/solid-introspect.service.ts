@@ -9,6 +9,7 @@ import { SolidRegistry } from 'src/helpers/solid-registry';
 import { CRUDService } from './crud.service';
 import { IS_SCHEDULED_JOB_PROVIDER } from 'src/decorators/scheduled-job-provider.decorator';
 import { IS_DASHBOARD_VARIABLE_SELECTION_PROVIDER } from 'src/decorators/dashboard-selection-provider.decorator';
+import { IS_DASHBOARD_QUESTION_DATA_PROVIDER } from 'src/decorators/dashboard-question-data-provider.decorator';
 
 @Injectable()
 export class SolidIntrospectService implements OnApplicationBootstrap {
@@ -44,13 +45,23 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     });
 
     // Register all IDashboardSelectionProvider implementations
-    const dashboardSelectionProviders = this.discoveryService
+    const dashboardVariableSelectionProviders = this.discoveryService
       .getProviders()
-      .filter((provider) => this.isDashboardSelectionProvider(provider));
+      .filter((provider) => this.isDashboardVariableSelectionProvider(provider));
 
-    dashboardSelectionProviders.forEach((dashboardSelectionProvider) => {
+    dashboardVariableSelectionProviders.forEach((dashboardSelectionProvider) => {
       // @ts-ignore
       this.solidRegistry.registerDashboardVariableSelectionProvider(dashboardSelectionProvider);
+    });
+
+    // Register all IDashboardSelectionProvider implementations
+    const dashboardQuestionDataProviders = this.discoveryService
+      .getProviders()
+      .filter((provider) => this.isDashboardQuestionDataProvider(provider));
+
+    dashboardQuestionDataProviders.forEach((provider) => {
+      // @ts-ignore
+      this.solidRegistry.registerDashboardQuestionDataProvider(provider);
     });
 
 
@@ -105,6 +116,16 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
 
   }
 
+  isDashboardQuestionDataProvider(providerWrapper: InstanceWrapper<any>) {
+    const { instance } = providerWrapper;
+    if (!instance) return false;
+    const provider = this.reflector.get<boolean>(
+      IS_DASHBOARD_QUESTION_DATA_PROVIDER,
+      instance.constructor,
+    );
+    return !!provider;
+  }
+
   // This method identifies a provider as a seeder if it has a seed method i.e duck typing
   private isSeeder(provider: InstanceWrapper) {
     const { instance } = provider;
@@ -129,15 +150,15 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     return !!isSelectionProvider;
   }
 
-  private isDashboardSelectionProvider(provider: InstanceWrapper) {
+  private isDashboardVariableSelectionProvider(provider: InstanceWrapper) {
     const { instance } = provider;
-    if (!instance) return false;  
+    if (!instance) return false;
     const isDashboardSelectionProvider = this.reflector.get<boolean>(
       IS_DASHBOARD_VARIABLE_SELECTION_PROVIDER,
       instance.constructor,
-    ); 
+    );
     return !!isDashboardSelectionProvider;
-  } 
+  }
 
   private isComputedFieldProvider(provider: InstanceWrapper) {
     const { instance } = provider;

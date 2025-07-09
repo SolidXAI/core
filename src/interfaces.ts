@@ -27,39 +27,39 @@ export interface FieldCrudManager {
 }
 
 export interface ValidationError {
-    field: string;
-    error: string;
+  field: string;
+  error: string;
 }
 
 // export interface MediaStorage
 export interface MediaStorageProvider<T> {
-    store(files: Express.Multer.File[], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
-    delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void>;
-    retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
-    storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
-    // delete(file: string): Promise<void>;
+  store(files: Express.Multer.File[], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
+  delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void>;
+  retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
+  storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
+  // delete(file: string): Promise<void>;
 }
 
 export interface ModuleMetadataConfiguration {
-    moduleMetadata?: CreateModuleMetadataDto,
-    roles?: CreateRoleMetadataDto[],
-    users?: SignUpDto[],
-    actions?: any[],
-    menus?: any[],
-    views?: any[],
-    emailTemplates?: CreateEmailTemplateDto[],
-    smsTemplates?: CreateSmsTemplateDto[],
-    mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[]
-    securityRules?: CreateSecurityRuleDto[],
+  moduleMetadata?: CreateModuleMetadataDto,
+  roles?: CreateRoleMetadataDto[],
+  users?: SignUpDto[],
+  actions?: any[],
+  menus?: any[],
+  views?: any[],
+  emailTemplates?: CreateEmailTemplateDto[],
+  smsTemplates?: CreateSmsTemplateDto[],
+  mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[]
+  securityRules?: CreateSecurityRuleDto[],
 }
 
 export interface CodeGenerationOptions {
-    moduleId?: number;
-    moduleUserKey?: string;
-    modelId?: number;
-    modelUserKey?: string;
-    fieldIdsForRemoval?: number[];
-    dryRun?: boolean;
+  moduleId?: number;
+  moduleUserKey?: string;
+  modelId?: number;
+  modelUserKey?: string;
+  fieldIdsForRemoval?: number[];
+  dryRun?: boolean;
 }
 
 export interface ISelectionProviderContext {
@@ -84,6 +84,14 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
 export interface IDashboardVariableSelectionProvider<T extends ISelectionProviderContext> extends ISelectionProvider<T> {
 }
 
+export interface IDashboardQuestionDataProvider<TContext, TData> {
+  help(): string;
+
+  name(): string;
+
+  getData(query: unknown, ctxt: TContext): Promise<TData[] | TData>;
+}
+
 /**
  * @deprecated Use `IEntityComputedFieldProvider` instead.
  */
@@ -97,7 +105,7 @@ export interface IComputedFieldProvider<T> {
   computeValue(dto: any, ctxt: T): Promise<string | number>; // FIXME : Improve the types to make it more specific using generics
 }
 
-export interface IEntityComputedFieldProvider {  
+export interface IEntityComputedFieldProvider {
   help(): string;
 
   name(): string;
@@ -125,7 +133,7 @@ export class EventDetails<T> {
   constructor(
     public type: any,
     public payload: T,
-  ) {}
+  ) { }
 }
 
 export interface IMail {
