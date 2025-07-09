@@ -14,6 +14,7 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 import { Question } from '../entities/question.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { QuestionSqlDatasetConfig } from 'src/entities/question-sql-dataset-config.entity';
+import { QuestionSqlDataProviderContext } from './question-data-providers/question-sql-data-provider.service';
 
 enum SOURCE_TYPE {
   SQL = 'sql',
@@ -22,9 +23,6 @@ enum SOURCE_TYPE {
 
 const SQL_DATA_PROVIDER_NAME = 'QuestionSQLDataProvider';
 
-export interface QuestionSqlDataProviderContext {
-  questionSqlDatasetConfig: QuestionSqlDatasetConfig;
-}
 
 @Injectable()
 export class QuestionService extends CRUDService<Question> {
