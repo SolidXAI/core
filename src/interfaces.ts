@@ -81,7 +81,7 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
   values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
 }
 
-export interface IDashboardSelectionProvider<T extends ISelectionProviderContext> extends ISelectionProvider<T> {
+export interface IDashboardVariableSelectionProvider<T extends ISelectionProviderContext> extends ISelectionProvider<T> {
 }
 
 /**

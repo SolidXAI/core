@@ -5,7 +5,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { IDashboardSelectionProvider, ISelectionProvider, ISelectionProviderContext } from "../interfaces";
+import { IDashboardVariableSelectionProvider, ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 
 type ControllerMetadata = {
   name: string;
@@ -63,7 +63,7 @@ export class SolidRegistry {
   private securityRules: SecurityRule[] = [];
   private locales: Locale[] = [];
   private computedFieldMetadata: ComputedFieldMetadata[] = [];
-  private dashboardSelectionProviders: Set<InstanceWrapper> = new Set();
+  private dashboardVariableSelectionProviders: Set<InstanceWrapper> = new Set();
 
   registerController(name: string, methodNames: string[]): void {
     this.controllers.add({ name: name, methods: methodNames });
@@ -81,8 +81,8 @@ export class SolidRegistry {
     this.selectionProviders.add(selectionProvider);
   }
 
-  registerDashboardSelectionProvider (dashboardSelectionProvider: InstanceWrapper): void {
-    this.dashboardSelectionProviders.add(dashboardSelectionProvider);
+  registerDashboardVariableSelectionProvider (dashboardSelectionProvider: InstanceWrapper): void {
+    this.dashboardVariableSelectionProviders.add(dashboardSelectionProvider);
   }
 
   registerComputedFieldProvider(computedFieldProvider: InstanceWrapper): void {
@@ -124,12 +124,12 @@ export class SolidRegistry {
     }
   }
 
-  getDashboardSelectionProviders(): Array<InstanceWrapper> {
-    return Array.from(this.dashboardSelectionProviders);
+  getDashboardVariableSelectionProviders(): Array<InstanceWrapper> {
+    return Array.from(this.dashboardVariableSelectionProviders);
   }
 
-  getDashboardSelectionProviderInstance<T extends ISelectionProviderContext>(name: string): IDashboardSelectionProvider<T> {
-    const dashboardSelectionProviders = this.getDashboardSelectionProviders();
+  getDashboardVariableSelectionProviderInstance<T extends ISelectionProviderContext>(name: string): IDashboardVariableSelectionProvider<T> {
+    const dashboardSelectionProviders = this.getDashboardVariableSelectionProviders();
 
     for (let i = 0; i < dashboardSelectionProviders.length; i++) {
       const dashboardSelectionProvider = dashboardSelectionProviders[i];

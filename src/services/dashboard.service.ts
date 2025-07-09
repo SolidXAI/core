@@ -46,7 +46,7 @@ export class DashboardService extends CRUDService<Dashboard> {
     const [providerName, context] = this.getProviderNameAndContext(dashboardVariable, query);
 
     // Get hold of the provider instance from the SolidRegistry
-    const selectionProviderInstance = this.solidRegistry.getDashboardSelectionProviderInstance(providerName);
+    const selectionProviderInstance = this.solidRegistry.getDashboardVariableSelectionProviderInstance(providerName);
     if (!selectionProviderInstance) {
       throw new NotFoundException(`Field incorrectly configured. No provider with name ${providerName} registered in backend.`);
     }

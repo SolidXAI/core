@@ -1,7 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { SelectionProvider } from "src/decorators/selection-provider.decorator";
 import { SolidRegistry } from "src/helpers/solid-registry";
-import { IDashboardSelectionProvider, ISelectionProvider, ISelectionProviderContext, ISelectionProviderValues } from "../../interfaces";
+import { IDashboardVariableSelectionProvider, ISelectionProvider, ISelectionProviderContext, ISelectionProviderValues } from "../../interfaces";
 import { SQL_DYNAMIC_PROVIDER_NAME } from "../dashboard.service";
 
 
@@ -23,7 +23,7 @@ export class ListOfDashboardProvidersSelectionProvider implements ISelectionProv
     }
 
     async value(optionValue: string, ctxt: ISelectionProviderContext): Promise<ISelectionProviderValues | any> {
-        const dashboardSelectionProvider: IDashboardSelectionProvider<ISelectionProviderContext> | undefined = this.solidRegistry.getDashboardSelectionProviderInstance(optionValue);
+        const dashboardSelectionProvider: IDashboardVariableSelectionProvider<ISelectionProviderContext> | undefined = this.solidRegistry.getDashboardVariableSelectionProviderInstance(optionValue);
         if (!dashboardSelectionProvider) {
             return null;
         }
@@ -32,7 +32,7 @@ export class ListOfDashboardProvidersSelectionProvider implements ISelectionProv
     }
 
     async values(query: string, ctxt: ISelectionProviderContext): Promise<readonly ISelectionProviderValues[]> {
-        const dashboardSelectionProviders = this.solidRegistry.getDashboardSelectionProviders()
+        const dashboardSelectionProviders = this.solidRegistry.getDashboardVariableSelectionProviders()
         //Exclude the SQL dynamic provider from the list, (since although it is a dashboard selection provider, it is not a valid option for the user to select)
         return dashboardSelectionProviders.filter(i => (i.name !== SQL_DYNAMIC_PROVIDER_NAME)).map(i => {
             return { label: i.name, value: i.name };

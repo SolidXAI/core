@@ -8,7 +8,7 @@ import { IS_SOLID_DATABASE_MODULE } from 'src/decorators/solid-database-module.d
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { CRUDService } from './crud.service';
 import { IS_SCHEDULED_JOB_PROVIDER } from 'src/decorators/scheduled-job-provider.decorator';
-import { IS_DASHBOARD_SELECTION_PROVIDER } from 'src/decorators/dashboard-selection-provider.decorator';
+import { IS_DASHBOARD_VARIABLE_SELECTION_PROVIDER } from 'src/decorators/dashboard-selection-provider.decorator';
 
 @Injectable()
 export class SolidIntrospectService implements OnApplicationBootstrap {
@@ -50,7 +50,7 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
 
     dashboardSelectionProviders.forEach((dashboardSelectionProvider) => {
       // @ts-ignore
-      this.solidRegistry.registerDashboardSelectionProvider(dashboardSelectionProvider);
+      this.solidRegistry.registerDashboardVariableSelectionProvider(dashboardSelectionProvider);
     });
 
 
@@ -133,7 +133,7 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     const { instance } = provider;
     if (!instance) return false;  
     const isDashboardSelectionProvider = this.reflector.get<boolean>(
-      IS_DASHBOARD_SELECTION_PROVIDER,
+      IS_DASHBOARD_VARIABLE_SELECTION_PROVIDER,
       instance.constructor,
     ); 
     return !!isDashboardSelectionProvider;
