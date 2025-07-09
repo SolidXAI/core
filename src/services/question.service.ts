@@ -51,28 +51,23 @@ export class QuestionService extends CRUDService<Question> {
       throw new BadRequestException(`Question with id ${id} not found`);
     }
 
-    // Check the source type of the question
-    // If the source is SQL, get the sql IDashboardQuestionDataProvider implementation and call its getData method
-    // use the solid registry to get the provider
-    const dataset = [];
-
     if (question.sourceType === SOURCE_TYPE.SQL) {
       const dataProvider = this.solidRegistry.getDashboardQuestionDataProviderInstance(SQL_DATA_PROVIDER_NAME);
       if (!dataProvider) {
         throw new BadRequestException(`No data provider with name ${SQL_DATA_PROVIDER_NAME} registered in backend.`);
       }
-      for (const questionSqlDatasetConfig of question.questionSqlDatasetConfigs) {
-        const context: QuestionSqlDataProviderContext = {
-          questionSqlDatasetConfig,
-        };
-        const data = await dataProvider.getData(query, context);
-        dataset.push(data);
-      }
+
+      const context: QuestionSqlDataProviderContext = {
+        question,
+      };
+      return await dataProvider.getData(query, context);
+      // dataset.push(data);
+
     }
     else {
       throw new NotImplementedException(`Data source type ${question.sourceType} not implemented. Only ${SOURCE_TYPE.SQL} is supported at the moment.`);
     }
-    return dataset;
+    // return dataset;
   }
 
   private async loadQuestion(id: number) {

@@ -11409,24 +11409,6 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "barChartXKey"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "barChartSeriesKey"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "barChartValueKey"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
                                   "name": "barChartLabelOptions"
                                 }
                               }
