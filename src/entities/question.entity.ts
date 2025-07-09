@@ -1,6 +1,7 @@
 import { CommonEntity } from 'src/entities/common.entity'
-import {Entity, Column, Index, JoinColumn, ManyToOne} from 'typeorm';
-import { Dashboard } from 'src/entities/dashboard.entity'
+import { Entity, Column, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { Dashboard } from 'src/entities/dashboard.entity';
+import { QuestionSqlDatasetConfig } from 'src/entities/question-sql-dataset-config.entity'
 
 @Entity("ss_question")
 export class Question extends CommonEntity {
@@ -28,4 +29,7 @@ export class Question extends CommonEntity {
     @ManyToOne(() => Dashboard, { onDelete: "CASCADE", nullable: true })
     @JoinColumn()
     dashboard: Dashboard;
+
+    @OneToMany(() => QuestionSqlDatasetConfig, questionSqlDatasetConfig => questionSqlDatasetConfig.question, { cascade: true })
+    questionSqlDatasetConfigs: QuestionSqlDatasetConfig[];
 }

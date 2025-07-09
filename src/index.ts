@@ -128,6 +128,7 @@ export * from './entities/user-activity-history.entity'
 export * from './entities/dashboard.entity'
 export * from './entities/dashboard-variable.entity'
 export * from './entities/question.entity'
+export * from './entities/question-sql-dataset-config.entity'
 
 export * from './enums/auth-type.enum'
 

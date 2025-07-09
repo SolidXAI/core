@@ -1,6 +1,8 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
-import { IsNotEmpty, IsOptional, IsJSON, IsInt } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsJSON, IsInt, ValidateNested, IsArray } from 'class-validator';
+import { Type } from 'class-transformer';
+import { UpdateQuestionSqlDatasetConfigDto } from 'src/dtos/update-question-sql-dataset-config.dto';
 
 export class CreateQuestionDto {
     @IsNotEmpty()
@@ -47,4 +49,21 @@ export class CreateQuestionDto {
     @IsOptional()
     @ApiProperty({ description: "Related Dashboard Model" })
     dashboardUserKey: string;
+
+    @IsOptional()
+    @ApiProperty({ description: "Related Question SQL Dataset Config Model" })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => UpdateQuestionSqlDatasetConfigDto)
+    questionSqlDatasetConfigs: UpdateQuestionSqlDatasetConfigDto[];
+
+    @IsOptional()
+    @IsArray()
+    @ApiProperty({ description: "Related Question SQL Dataset Config Model" })
+    questionSqlDatasetConfigsIds: number[];
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({ description: "Related Question SQL Dataset Config Model" })
+    questionSqlDatasetConfigsCommand: string;
 }

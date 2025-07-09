@@ -4668,7 +4668,7 @@
             "type": "relation",
             "ormType": "integer",
             "isSystem": true,
-            "relationType": "one-to-one",
+            "relationType": "one-to-many",
             "relationCoModelFieldName": "question",
             "relationCreateInverse": true,
             "relationCoModelSingularName": "questionSqlDatasetConfig",
@@ -5583,10 +5583,10 @@
     {
       "displayName": "Import Transactions",
       "name": "importTransaction-menu-item",
-      "sequenceNumber": 1,
+      "sequenceNumber": 11,
       "actionUserKey": "importTransaction-list-view",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "other-menu-item"
     },
     {
       "displayName": "Locale",
@@ -11324,13 +11324,40 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "sql"
+                                  "name": "providerName"
                                 }
-                              },
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "sql-dataset-config",
+                      "label": "SQL Dataset Config"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-3"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
+                            "children": [
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "providerName"
+                                  "name": "questionSqlDatasetConfigs"
                                 }
                               }
                             ]
@@ -11442,7 +11469,7 @@
               "name": "datasetDisplayName"
             }
           },
-                    {
+          {
             "type": "field",
             "attrs": {
               "name": "labelColumnName"
@@ -11521,6 +11548,12 @@
                         "attrs": {
                           "name": "labelColumnName"
                         }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "backgroundColor"
+                        }
                       }
                     ]
                   },
@@ -11541,16 +11574,10 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "backgroundColor"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
                           "name": "description"
                         }
                       },
-                                            {
+                      {
                         "type": "field",
                         "attrs": {
                           "name": "valueColumnName"
