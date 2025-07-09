@@ -227,6 +227,9 @@ import { DashboardVariableSQLDynamicProvider } from './services/dashboard-select
 import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-test-dynamic-provider.service';
 import { ListOfDashboardVariableProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-variable-providers-selection-provider.service';
 import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-question-providers-selection-provider.service';
+import { QuestionSqlDatasetConfig } from './entities/question-sql-dataset-config.entity';
+import { QuestionSqlDatasetConfigService } from './services/question-sql-dataset-config.service';
+import { QuestionSqlDatasetConfigController } from './controllers/question-sql-dataset-config.controller';
 
 
 @Global()
@@ -288,6 +291,7 @@ import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/se
     TypeOrmModule.forFeature([Dashboard]),
     TypeOrmModule.forFeature([DashboardVariable]),
     TypeOrmModule.forFeature([Question]),
+    TypeOrmModule.forFeature([QuestionSqlDatasetConfig]),
   ],
   controllers: [
     ModuleMetadataController,
@@ -329,6 +333,7 @@ import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/se
     DashboardController,
     DashboardVariableController,
     QuestionController,
+    QuestionSqlDatasetConfigController,
   ],
   providers: [
     {
@@ -480,6 +485,7 @@ import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/se
     DasbhoardVariableTestDynamicProvider,
     ListOfDashboardVariableProvidersSelectionProvider,
     ListOfDashboardQuestionProvidersSelectionProvider,
+    QuestionSqlDatasetConfigService,
   ],
   exports: [
     ModuleMetadataService,

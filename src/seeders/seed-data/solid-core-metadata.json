@@ -4660,6 +4660,148 @@
             "index": false,
             "private": false,
             "encrypt": false
+          },
+          {
+            "name": "questionSqlDatasetConfigs",
+            "displayName": "Question SQL Dataset Config",
+            "description": "Related Question SQL Dataset Config Model",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "one-to-one",
+            "relationCoModelFieldName": "question",
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "questionSqlDatasetConfig",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          }
+        ]
+      },
+      {
+        "singularName": "questionSqlDatasetConfig",
+        "pluralName": "questionSqlDatasetConfigs",
+        "displayName": "Question SQL Dataset Config",
+        "description": "This is used to maintain SQL dataset configurations for questions",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_question_sql_dataset_config",
+        "userKeyFieldUserKey": "datasetName",
+        "fields": [
+          {
+            "name": "datasetName",
+            "displayName": "Dataset Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "datasetDisplayName",
+            "displayName": "Dataset Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is the display name for the dataset configuration, which can be used in UI components to represent the dataset in a user-friendly manner."
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is a description of the dataset configuration, providing context and details about its purpose."
+          },
+          {
+            "name": "sql",
+            "displayName": "SQL Query",
+            "type": "longText",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "labelColumnName",
+            "displayName": "Label Column Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "valueColumnName",
+            "displayName": "Value Column Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "backgroundColor",
+            "displayName": "Background Color",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is the background color for the chart, if applicable. It can be a hex color code or a color name."
+          },
+          {
+            "name": "question",
+            "displayName": "Question",
+            "description": "Related Question Model",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "questionSqlDatasetConfigs",
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "question",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
           }
         ]
       }
@@ -5182,6 +5324,19 @@
       "viewUserKey": "question-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "question"
+    },
+    {
+      "displayName": "Question SQL Dataset Config List Action",
+      "name": "questionSqlDatasetConfig-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/questionSqlDatasetConfig/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "questionSqlDatasetConfig-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "questionSqlDatasetConfig"
     }
   ],
   "menus": [
@@ -11249,6 +11404,157 @@
                             ]
                           }
                         ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "questionSqlDatasetConfig-list-view",
+      "displayName": "Question SQL Dataset Config",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "questionSqlDatasetConfig",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "datasetDisplayName"
+            }
+          },
+                    {
+            "type": "field",
+            "attrs": {
+              "name": "labelColumnName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "valueColumnName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "backgroundColor"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "questionSqlDatasetConfig-form-view",
+      "displayName": "Question SQL Dataset Config",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "questionSqlDatasetConfig",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Question SQL Dataset Config",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "datasetDisplayName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "question"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sql"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "labelColumnName"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "datasetName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "backgroundColor"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "description"
+                        }
+                      },
+                                            {
+                        "type": "field",
+                        "attrs": {
+                          "name": "valueColumnName"
+                        }
                       }
                     ]
                   }

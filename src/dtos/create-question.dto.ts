@@ -21,7 +21,7 @@ export class CreateQuestionDto {
     sql: string;
     @IsOptional()
     @IsString()
-    @ApiProperty({ description: "This is only applicable when sourceType is set to provider. It allows the user to select any pre-existing SelectionDynamicProvider implementation used to fetch a dynamic dropdown of values to choose from when this question is presented to the user." })
+    @ApiProperty({ description: "This is only applicable when sourceType is set to provider. It allows the user to select any pre-existing Dashboard Question Data provider implementation used to fetch a dynamic dropdown of values to choose from when this question is presented to the user." })
     providerName: string;
     @IsOptional()
     @IsString()
