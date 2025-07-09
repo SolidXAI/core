@@ -18,7 +18,7 @@ export class QuestionSqlDataProvider implements IDashboardQuestionDataProvider<Q
     }
 
     name(): string {
-        return "SQL Dataset Provider";
+        return "QuestionSqlDataProvider";
     }
 
     async getData(query: any, context: QuestionSqlDataProviderContext): Promise<any[]> {
