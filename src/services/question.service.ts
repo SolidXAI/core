@@ -1,6 +1,6 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable, NotImplementedException } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { DiscoveryService, ModuleRef  } from "@nestjs/core";
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, Repository } from 'typeorm';
 
 import { CRUDService } from 'src/services/crud.service';
@@ -12,9 +12,22 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 
 
 import { Question } from '../entities/question.entity';
+import { SolidRegistry } from 'src/helpers/solid-registry';
+import { QuestionSqlDatasetConfig } from 'src/entities/question-sql-dataset-config.entity';
+
+enum SOURCE_TYPE {
+  SQL = 'sql',
+  PROVIDER = 'provider',
+}
+
+const SQL_DATA_PROVIDER_NAME = 'QuestionSQLDataProvider';
+
+export interface QuestionSqlDataProviderContext {
+  questionSqlDatasetConfig: QuestionSqlDatasetConfig;
+}
 
 @Injectable()
-export class QuestionService extends CRUDService<Question>{
+export class QuestionService extends CRUDService<Question> {
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
@@ -26,9 +39,55 @@ export class QuestionService extends CRUDService<Question>{
     readonly entityManager: EntityManager,
     @InjectRepository(Question, 'default')
     readonly repo: Repository<Question>,
-    readonly moduleRef: ModuleRef
+    readonly moduleRef: ModuleRef,
+    readonly solidRegistry: SolidRegistry, // Assuming solidRegistry is injected for data providers
 
- ) {
-   super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'question', 'solid-core', moduleRef);
- }
+  ) {
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'question', 'solid-core', moduleRef);
+  }
+
+  // Get the data for a specific question 
+  async getData(id: number, query: any) {
+    // Load the question
+    const question = await this.loadQuestion(id);
+    if (!question) {
+      throw new BadRequestException(`Question with id ${id} not found`);
+    }
+
+    // Check the source type of the question
+    // If the source is SQL, get the sql IDashboardQuestionDataProvider implementation and call its getData method
+    // use the solid registry to get the provider
+    if (question.sourceType === SOURCE_TYPE.SQL) {
+      const dataProvider = this.solidRegistry.getDashboardQuestionDataProviderInstance(SQL_DATA_PROVIDER_NAME);
+      if (!dataProvider) {
+        throw new BadRequestException(`No data provider with name ${SQL_DATA_PROVIDER_NAME} registered in backend.`);
+      }
+      const dataset = [];
+      for (const questionSqlDatasetConfig of question.questionSqlDatasetConfigs) {
+        const context: QuestionSqlDataProviderContext = {
+          questionSqlDatasetConfig,
+        };
+        const data = await dataProvider.getData(query, context);
+        dataset.push(data);
+      }
+    }
+    else {
+      throw new NotImplementedException(`Data source type ${question.sourceType} not implemented. Only ${SOURCE_TYPE.SQL} is supported at the moment.`);
+    }
+
+  }
+
+  private async loadQuestion(id: number) {
+    const repo = this.entityManager.getRepository(Question);
+
+    // Load the dashboard record using the field
+    const question = await repo.findOne({
+      where: {
+        id,
+      },
+      relations: ['questionSqlDatasetConfigs']
+    });
+    return question;
+  }
+
 }

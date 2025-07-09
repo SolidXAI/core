@@ -13,7 +13,7 @@ enum ShowSoftDeleted {
 @ApiTags('Solid Core')
 @Controller('question')
 export class QuestionController {
-  constructor(private readonly service: QuestionService) {}
+  constructor(private readonly service: QuestionService) { }
 
   @ApiBearerAuth("jwt")
   @Post()
@@ -55,20 +55,26 @@ export class QuestionController {
   async recover(@Param('id') id: number) {
     return this.service.recover(id);
   }
-    
+
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({ name: 'fields', required: false, type: Array })
-  @ApiQuery({ name: 'sort', required: false, type: Array }) 
+  @ApiQuery({ name: 'sort', required: false, type: Array })
   @ApiQuery({ name: 'groupBy', required: false, type: Array })
   @ApiQuery({ name: 'populate', required: false, type: Array })
   @ApiQuery({ name: 'populateMedia', required: false, type: Array })
   @ApiQuery({ name: 'filters', required: false, type: Array })
   @Get()
-  async findMany(@Query() query: any) { 
-    return this.service.find(query);  
+  async findMany(@Query() query: any) {
+    return this.service.find(query);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Get(':id/data')
+  async getData(@Param('id') id: string ,@Query() query: any) {
+    return this.service.getData(+id, query);
   }
 
   @ApiBearerAuth("jwt")
@@ -88,6 +94,5 @@ export class QuestionController {
   async delete(@Param('id') id: number) {
     return this.service.delete(id);
   }
-
 
 }
