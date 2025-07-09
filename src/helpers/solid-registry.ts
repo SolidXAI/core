@@ -148,7 +148,7 @@ export class SolidRegistry {
     return Array.from(this.dashboardQuestionDataProviders)
   }
 
-  getDashboardQuestionDataProviderInstance<TContext, TData>(optionValue: string): IDashboardQuestionDataProvider<TContext, TData> {
+  getDashboardQuestionDataProviderInstance<TContext, TData>(name: string): IDashboardQuestionDataProvider<TContext, TData> {
     const dashboardQuestionDataProviders = this.getDashboardQuestionDataProviders();
 
     for (let i = 0; i < dashboardQuestionDataProviders.length; i++) {

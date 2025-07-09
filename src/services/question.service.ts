@@ -1,19 +1,18 @@
 import { BadRequestException, Injectable, NotImplementedException } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 
+import { ConfigService } from '@nestjs/config';
+import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
+import { FileService } from 'src/services/file.service';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { ConfigService } from '@nestjs/config';
-import { FileService } from 'src/services/file.service';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 
 
-import { Question } from '../entities/question.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
-import { QuestionSqlDatasetConfig } from 'src/entities/question-sql-dataset-config.entity';
+import { Question } from '../entities/question.entity';
 import { QuestionSqlDataProviderContext } from './question-data-providers/question-sql-data-provider.service';
 
 enum SOURCE_TYPE {
@@ -21,7 +20,7 @@ enum SOURCE_TYPE {
   PROVIDER = 'provider',
 }
 
-const SQL_DATA_PROVIDER_NAME = 'QuestionSQLDataProvider';
+const SQL_DATA_PROVIDER_NAME = 'QuestionSqlDataProvider';
 
 
 @Injectable()
