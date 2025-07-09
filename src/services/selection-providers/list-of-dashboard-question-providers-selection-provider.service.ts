@@ -34,7 +34,7 @@ export class ListOfDashboardQuestionProvidersSelectionProvider implements ISelec
     async values(query: string, ctxt: ISelectionProviderContext): Promise<readonly ISelectionProviderValues[]> {
         const dashboardSelectionProviders = this.solidRegistry.getDashboardQuestionDataProviders()
         //Exclude the SQL dynamic provider from the list, (since although it is a dashboard selection provider, it is not a valid option for the user to select)
-        return dashboardSelectionProviders.filter(i => (i.name !== SQL_DYNAMIC_PROVIDER_NAME)).map(i => {
+        return dashboardSelectionProviders.map(i => {
             return { label: i.name, value: i.name };
         });
     }
