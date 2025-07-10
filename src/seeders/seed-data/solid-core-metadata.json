@@ -4771,18 +4771,17 @@
             "isSystem": true
           },
           {
-            "name": "backgroundColor",
-            "displayName": "Background Color",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
+            "name": "options",
+            "displayName": "Dataset options",
+            "type": "json",
+            "ormType": "text",
             "required": false,
             "unique": false,
             "index": false,
             "private": false,
             "encrypt": false,
             "isSystem": true,
-            "description": "This is the background color for the chart, if applicable. It can be a hex color code or a color name."
+            "description": "This allows you to set the dataset options e.g border-color, background-color, etc. This is a JSON object that can be used to customize the dataset appearance or behavior in the UI."
           },
           {
             "name": "question",
@@ -5337,6 +5336,84 @@
       "viewUserKey": "questionSqlDatasetConfig-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "questionSqlDatasetConfig"
+    },
+    {
+      "displayName": "Question SQL Dataset Config List Action",
+      "name": "questionSqlDatasetConfig-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/questionSqlDatasetConfig/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "questionSqlDatasetConfig-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "questionSqlDatasetConfig"
+    },
+    {
+      "displayName": "Question List Action",
+      "name": "question-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/question/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "question-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question"
+    },
+    {
+      "displayName": "Question SQL Dataset Config List Action",
+      "name": "questionSqlDatasetConfig-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/questionSqlDatasetConfig/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "questionSqlDatasetConfig-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "questionSqlDatasetConfig"
+    },
+    {
+      "displayName": "Question List Action",
+      "name": "question-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/question/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "question-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question"
+    },
+    {
+      "displayName": "Question SQL Dataset Config List Action",
+      "name": "questionSqlDatasetConfig-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/questionSqlDatasetConfig/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "questionSqlDatasetConfig-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "questionSqlDatasetConfig"
+    },
+    {
+      "displayName": "Question List Action",
+      "name": "question-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/question/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "question-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question"
     }
   ],
   "menus": [
@@ -5659,6 +5736,14 @@
       "actionUserKey": "question-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "dashboard-root-menu-item"
+    },
+    {
+      "displayName": "Question SQL Dataset Config",
+      "name": "questionSqlDatasetConfig-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "questionSqlDatasetConfig-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
     }
   ],
   "views": [

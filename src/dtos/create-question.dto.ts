@@ -49,19 +49,16 @@ export class CreateQuestionDto {
     @IsOptional()
     @ApiProperty({ description: "Related Dashboard Model" })
     dashboardUserKey: string;
-
     @IsOptional()
     @ApiProperty({ description: "Related Question SQL Dataset Config Model" })
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => UpdateQuestionSqlDatasetConfigDto)
     questionSqlDatasetConfigs: UpdateQuestionSqlDatasetConfigDto[];
-
     @IsOptional()
     @IsArray()
     @ApiProperty({ description: "Related Question SQL Dataset Config Model" })
     questionSqlDatasetConfigsIds: number[];
-
     @IsString()
     @IsOptional()
     @ApiProperty({ description: "Related Question SQL Dataset Config Model" })
