@@ -7,6 +7,7 @@ export enum SelectionDynamicSourceType {
     PROVIDER = "provider",
 }
 
+
 export class CreateDashboardVariableDto {
     @IsNotEmpty()
     @IsString()

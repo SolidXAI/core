@@ -11309,7 +11309,9 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "defaultValue"
+                          "name": "defaultValue",
+                          "editWidget": "codeEditor",
+                          "editorLanguage": "json"
                         }
                       },
                       {

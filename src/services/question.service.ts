@@ -57,10 +57,7 @@ export class QuestionService extends CRUDService<Question> {
         throw new BadRequestException(`No data provider with name ${SQL_DATA_PROVIDER_NAME} registered in backend.`);
       }
 
-      const context: QuestionSqlDataProviderContext = {
-        question,
-      };
-      return await dataProvider.getData(query, context);
+      return await dataProvider.getData(question);
       // dataset.push(data);
 
     }

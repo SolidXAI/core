@@ -1,18 +1,17 @@
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
 import { SignUpDto } from 'src/dtos/sign-up.dto';
-import { CreateActionMetadataDto } from './dtos/create-action-metadata.dto';
+import { Readable } from 'stream';
 import { CreateMediaStorageProviderMetadataDto } from './dtos/create-media-storage-provider-metadata.dto';
-import { CreateMenuItemMetadataDto } from './dtos/create-menu-item-metadata.dto';
 import { DatasourceType } from './dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from './dtos/create-module-metadata.dto';
 import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
 import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
-import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
-import { Readable } from 'stream';
+import { Question } from './entities/question.entity';
 import { ComputedFieldMetadata } from './helpers/solid-registry';
+import { SqlExpression } from './services/question-data-providers/question-sql-data-provider.service';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -89,7 +88,7 @@ export interface IDashboardQuestionDataProvider<TContext, TData> {
 
   name(): string;
 
-  getData(query: unknown, ctxt: TContext): Promise<TData[] | TData>;
+  getData(question: Question, expressions?: SqlExpression[], ctxt?: TContext): Promise<TData[] | TData>;
 }
 
 /**

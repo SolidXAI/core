@@ -7,7 +7,29 @@ import { EntityManager } from "typeorm";
 export interface QuestionSqlDataProviderContext {
     // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
     // questionId: number;
-    question: Question;
+    // question: Question;
+}
+
+export enum SqlExpressionOperator {
+    EQUALS = '$equals',
+    NOT_EQUALS = '$notEquals',
+    CONTAINS = '$contains',
+    NOT_CONTAINS = '$notContains',
+    STARTS_WITH = '$startsWith',
+    ENDS_WITH = '$endsWith',
+    IN = '$in',
+    NOT_IN = '$notIn',
+    BETWEEN = '$between',
+    LT = '$lt',
+    LTE = '$lte',
+    GT = '$gt',
+    GTE = '$gte'
+}
+
+export interface SqlExpression {
+    variableName : string; // The name of the variable in the SQL query
+    operator: SqlExpressionOperator; // The operator to use for the replacement (e.g., '=', '>', '<', etc.)
+    value: string; // The value to replace the variable with
 }
 
 @DashboardQuestionDataProvider()
@@ -24,7 +46,7 @@ export class QuestionSqlDataProvider implements IDashboardQuestionDataProvider<Q
         return "QuestionSqlDataProvider";
     }
 
-    async getData(query: any, context: QuestionSqlDataProviderContext): Promise<any> {
+    async getData(question: Question, expressions?: SqlExpression[], context?: QuestionSqlDataProviderContext): Promise<any> {
         // TODO: put some validation to check if the results of each SQL in each dataset returns the same number of rows 
 
         // This is what we have to return.
@@ -54,12 +76,19 @@ export class QuestionSqlDataProvider implements IDashboardQuestionDataProvider<Q
         let datasetIdx = 0;
         const datasets = [];
         const labels = [];
-        const question = context.question;
+        // const question = context.question;
         for (const questionSqlDatasetConfig of question.questionSqlDatasetConfigs) {
 
             const sql = questionSqlDatasetConfig.sql;
             if (!sql) {
                 throw new Error(`SQL dataset ${questionSqlDatasetConfig.datasetName} configuration does not contain a valid SQL query.`);
+            }
+
+            // The sql can have placeholder e.g publicationDate
+            // These need to be replaced with the values from the expressions array.
+            if (expressions && expressions.length > 0) {
+                for (const expr of expressions) {
+                }
             }
 
             const results = await this.entityManager.query(sql);
