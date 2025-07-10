@@ -11434,8 +11434,8 @@
                               {
                                 "type": "custom",
                                 "attrs": {
-                                  "name": "page-2-bar-chart-preview-custom",
-                                  "widget": "BarChartWidget"
+                                  "name": "page-2-chart-preview-custom",
+                                  "widget": "chart"
                                 }
                               }
                             ]
