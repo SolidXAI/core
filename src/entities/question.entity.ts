@@ -29,7 +29,6 @@ export class Question extends CommonEntity {
     @ManyToOne(() => Dashboard, { onDelete: "CASCADE", nullable: true })
     @JoinColumn()
     dashboard: Dashboard;
-
     @OneToMany(() => QuestionSqlDatasetConfig, questionSqlDatasetConfig => questionSqlDatasetConfig.question, { cascade: true })
     questionSqlDatasetConfigs: QuestionSqlDatasetConfig[];
 }

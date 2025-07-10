@@ -1,6 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
-import { IsNotEmpty, IsOptional, IsInt } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsInt, IsJSON } from 'class-validator';
 
 export class CreateQuestionSqlDatasetConfigDto {
     @IsNotEmpty()
@@ -28,10 +28,6 @@ export class CreateQuestionSqlDatasetConfigDto {
     @ApiProperty()
     valueColumnName: string;
     @IsOptional()
-    @IsString()
-    @ApiProperty({ description: "This is the background color for the chart, if applicable. It can be a hex color code or a color name." })
-    backgroundColor: string;
-    @IsOptional()
     @IsInt()
     @ApiProperty({ description: "Related Question Model" })
     questionId: number;
@@ -39,4 +35,8 @@ export class CreateQuestionSqlDatasetConfigDto {
     @IsOptional()
     @ApiProperty({ description: "Related Question Model" })
     questionUserKey: string;
+    @IsOptional()
+    @IsJSON()
+    @ApiProperty({ description: "This allows you to set the dataset options e.g border-color, background-color, etc. This is a JSON object that can be used to customize the dataset appearance or behavior in the UI." })
+    options: any;
 }
