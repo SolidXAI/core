@@ -82,7 +82,7 @@ export class QuestionSqlDataProvider implements IDashboardQuestionDataProvider<Q
             datasets.push({
                 label: questionSqlDatasetConfig.datasetDisplayName,
                 data: data,
-                backgroundColor: questionSqlDatasetConfig.backgroundColor,
+                ...JSON.parse(questionSqlDatasetConfig.options || '{}'),
             });
 
             datasetIdx++;

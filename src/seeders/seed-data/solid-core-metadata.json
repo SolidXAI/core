@@ -11663,6 +11663,12 @@
                         "attrs": {
                           "name": "backgroundColor"
                         }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "options"
+                        }
                       }
                     ]
                   }
