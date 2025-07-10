@@ -29,7 +29,7 @@ export class UpdateDashboardVariableDto {
     selectionDynamicSQL: string;
     @IsOptional()
     @IsString()
-    @ApiProperty({ description: "This is only applicable when selectionDynamicSourceType is set to provider. It allows the user to select any pre-existing SelectionDynamicProvider implementation used to fetch a dynamic dropdown of values to choose from when this variable is presented to the user." })
+    @ApiProperty({ description: "This is only applicable when selectionDynamicSourceType is set to provider. It allows the user to select any pre-existing Dashboard SelectionDynamicProvider implementation used to fetch a dynamic dropdown of values to choose from when this variable is presented to the user." })
     selectionDynamicProviderName: string;
     @IsOptional()
     @IsBoolean()
@@ -43,4 +43,12 @@ export class UpdateDashboardVariableDto {
     @IsOptional()
     @ApiProperty({ description: "Related Dashboard Model" })
     dashboardUserKey: string;
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ description: "This is the default value for this variable when it is rendered at runtime. It can be a static value for this variable when it is rendered at runtime." })
+    defaultValue: string;
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ description: "This is the default operator for this variable when it is rendered at runtime. It can be a static value for this variable when it is rendered at runtime." })
+    defaultOperator: string;
 }

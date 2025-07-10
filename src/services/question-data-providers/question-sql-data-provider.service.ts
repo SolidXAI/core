@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { DashboardQuestionDataProvider } from "src/decorators/dashboard-question-data-provider.decorator";
-import { QuestionSqlDatasetConfig } from "src/entities/question-sql-dataset-config.entity";
 import { Question } from "src/entities/question.entity";
 import { IDashboardQuestionDataProvider } from "src/interfaces";
 import { EntityManager } from "typeorm";

@@ -4501,6 +4501,49 @@
             "index": false,
             "private": false,
             "encrypt": false
+          },
+          {
+            "name": "defaultValue",
+            "displayName": "Default Value",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is the default value for this variable when it is rendered at runtime. It can be a static value for this variable when it is rendered at runtime."
+          },
+          {
+            "name": "defaultOperator",
+            "displayName": "Default Operator",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "$equals:Equals",
+              "$notEquals:Not Equals",
+              "$contains:Contains",
+              "$notContains:Not Contains",
+              "$startsWith:Starts With",
+              "$endsWith:Ends With",
+              "$in:In",
+              "$notIn:Not In",
+              "$between:Between",
+              "$lt:Less Than",
+              "$lte:Less Than or Equal To",
+              "$gt:Greater Than",
+              "$gte:Greater Than or Equal To"
+            ],
+            "description": "This is the default operator for this variable when it is rendered at runtime. It can be a static value for this variable when it is rendered at runtime."
           }
         ]
       },
@@ -11126,6 +11169,7 @@
                               {
                                 "type": "field",
                                 "attrs": {
+                                  "showLabel": false,
                                   "name": "dashboardVariables"
                                 }
                               }
@@ -11223,7 +11267,7 @@
                     "attrs": {
                       "name": "group-1",
                       "label": "",
-                      "className": "col-6"
+                      "className": "col-12"
                     },
                     "children": [
                       {
@@ -11243,22 +11287,6 @@
                         "attrs": {
                           "name": "selectionStaticValues"
                         }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "group-2",
-                      "label": "",
-                      "className": "col-6"
-                    },
-                    "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "isMultiSelect"
-                        }
                       },
                       {
                         "type": "field",
@@ -11276,6 +11304,18 @@
                         "type": "field",
                         "attrs": {
                           "name": "selectionDynamicProviderName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "defaultValue"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "defaultOperator"
                         }
                       },
                       {

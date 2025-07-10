@@ -23,4 +23,8 @@ export class DashboardVariable extends CommonEntity {
     @ManyToOne(() => Dashboard, { onDelete: "CASCADE", nullable: true })
     @JoinColumn()
     dashboard: Dashboard;
+    @Column({ type: "text", nullable: true })
+    defaultValue: string;
+    @Column({ type: "varchar", nullable: true })
+    defaultOperator: string;
 }
