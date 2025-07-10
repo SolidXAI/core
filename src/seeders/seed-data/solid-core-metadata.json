@@ -11355,7 +11355,7 @@
                     "type": "page",
                     "attrs": {
                       "name": "sql-dataset-config",
-                      "label": "Datasets"
+                      "label": "SQL Queries"
                     },
                     "children": [
                       {
@@ -11372,6 +11372,15 @@
                               "className": "col-12"
                             },
                             "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "label": "Label SQL",
+                                  "name": "sql",
+                                  "editWidget": "codeEditor",
+                                  "editorLanguage": "sql"
+                                }
+                              },
                               {
                                 "type": "field",
                                 "attrs": {
