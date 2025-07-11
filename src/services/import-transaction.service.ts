@@ -496,7 +496,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     };
   }
 
-  private async createErrorLogEntry(importTransaction: ImportTransaction, record: Record<string, any>, error: any) {
+  async createErrorLogEntry(importTransaction: ImportTransaction, record: Record<string, any>, error: any) {
     const importTransactionRepo = this.entityManager.getRepository(ImportTransactionErrorLog);
     // Create a new ImportTransactionErrorLog entry
     const rowNumber = uuidv4(); // Generate a unique row number or use page.rowNumber if available 

@@ -214,6 +214,7 @@ import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-b
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
+import { CRUDService } from './services/crud.service';
 
 
 @Global()
@@ -343,6 +344,7 @@ import { HttpExceptionFilter } from './filters/http-exception.filter';
     SolidIntrospectService,
     DiscoveryService,
     CrudHelperService,
+    CRUDService,
     Reflector,
     MetadataScanner,
     CommandService,
@@ -464,6 +466,7 @@ import { HttpExceptionFilter } from './filters/http-exception.filter';
     MediaService,
     DiscoveryService,
     CrudHelperService,
+    CRUDService,
     MulterModule,
     FileService,
     SolidRegistry,
@@ -487,6 +490,11 @@ import { HttpExceptionFilter } from './filters/http-exception.filter';
     FieldRepository,
     SchedulerServiceImpl,
     UserActivityHistoryService,
+    CsvService,
+    ExcelService,
+    SolidIntrospectService,
+    ImportTransactionService,
+    HttpModule
   ],
 })
 export class SolidCoreModule { }
