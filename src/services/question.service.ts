@@ -13,7 +13,7 @@ import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { Question } from '../entities/question.entity';
-import { QuestionSqlDataProviderContext } from './question-data-providers/question-sql-data-provider.service';
+import { QuestionSqlDataProviderContext, SqlExpression, SqlExpressionOperator } from './question-data-providers/question-sql-data-provider.service';
 
 enum SOURCE_TYPE {
   SQL = 'sql',
@@ -57,7 +57,17 @@ export class QuestionService extends CRUDService<Question> {
         throw new BadRequestException(`No data provider with name ${SQL_DATA_PROVIDER_NAME} registered in backend.`);
       }
 
-      return await dataProvider.getData(question);
+      // Get the dashbbard variables from the question
+      const dashboardVariables = question.dashboard?.dashboardVariables || [];
+      
+      // Convert the dashboard variables into objects of interface type SqlExpression using the default value, default operator and the variable name
+      const expressions: SqlExpression[] = dashboardVariables.map(variable => ({
+        variableName: variable.variableName,
+        operator: variable.defaultOperator as SqlExpressionOperator, // Assuming defaultOperator is a valid SqlExpressionOperator
+        value: JSON.parse(variable.defaultValue || '[]'), // Assuming defaultValue is a string or can be converted to a string array
+      }));
+
+      return await dataProvider.getData(question, expressions);
       // dataset.push(data);
 
     }
@@ -75,7 +85,7 @@ export class QuestionService extends CRUDService<Question> {
       where: {
         id,
       },
-      relations: ['questionSqlDatasetConfigs']
+      relations: ['questionSqlDatasetConfigs', 'dashboard', 'dashboard.dashboardVariables'],
     });
     return question;
   }

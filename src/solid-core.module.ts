@@ -231,6 +231,7 @@ import { QuestionSqlDatasetConfig } from './entities/question-sql-dataset-config
 import { QuestionSqlDatasetConfigService } from './services/question-sql-dataset-config.service';
 import { QuestionSqlDatasetConfigController } from './controllers/question-sql-dataset-config.controller';
 import { QuestionSqlDataProvider } from './services/question-data-providers/question-sql-data-provider.service';
+import { SqlExpressionResolverService } from './services/sql-expression-resolver.service';
 
 
 @Global()
@@ -488,6 +489,7 @@ import { QuestionSqlDataProvider } from './services/question-data-providers/ques
     ListOfDashboardQuestionProvidersSelectionProvider,
     QuestionSqlDatasetConfigService,
     QuestionSqlDataProvider,
+    SqlExpressionResolverService,
   ],
   exports: [
     ModuleMetadataService,

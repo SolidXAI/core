@@ -3,6 +3,7 @@ import { DashboardQuestionDataProvider } from "src/decorators/dashboard-question
 import { Question } from "src/entities/question.entity";
 import { IDashboardQuestionDataProvider } from "src/interfaces";
 import { EntityManager } from "typeorm";
+import { SqlExpressionResolverService } from "../sql-expression-resolver.service";
 
 export interface QuestionSqlDataProviderContext {
     // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
@@ -29,14 +30,13 @@ export enum SqlExpressionOperator {
 export interface SqlExpression {
     variableName : string; // The name of the variable in the SQL query
     operator: SqlExpressionOperator; // The operator to use for the replacement (e.g., '=', '>', '<', etc.)
-    value: string; // The value to replace the variable with
+    value: string[]; // The value to replace the variable with
 }
 
 @DashboardQuestionDataProvider()
 @Injectable()
 export class QuestionSqlDataProvider implements IDashboardQuestionDataProvider<QuestionSqlDataProviderContext, any> {
-    constructor(private readonly entityManager: EntityManager) {
-    }
+    constructor(private readonly entityManager: EntityManager, private readonly sqlExpressionResolver: SqlExpressionResolverService) {}
 
     help(): string {
         return "Provides data for dashboard questions using a SQL dataset configuration. Configure your SQL dataset in the admin panel, then reference it in your dashboard question to fetch data.";
@@ -84,14 +84,8 @@ export class QuestionSqlDataProvider implements IDashboardQuestionDataProvider<Q
                 throw new Error(`SQL dataset ${questionSqlDatasetConfig.datasetName} configuration does not contain a valid SQL query.`);
             }
 
-            // The sql can have placeholder e.g publicationDate
-            // These need to be replaced with the values from the expressions array.
-            if (expressions && expressions.length > 0) {
-                for (const expr of expressions) {
-                }
-            }
-
-            const results = await this.entityManager.query(sql);
+            const sqlReplacementResult = this.sqlExpressionResolver.resolveSqlWithExpressions(sql, expressions || []);
+            const results = await this.entityManager.query(sqlReplacementResult.rawSql, sqlReplacementResult.parameters);
 
             // If this is the first dataset being processed then we use the label_column to populate the labels array first. 
             if (datasetIdx === 0) {
