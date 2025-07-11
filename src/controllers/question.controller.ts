@@ -74,7 +74,7 @@ export class QuestionController {
   @ApiBearerAuth("jwt")
   @Get(':id/data')
   async getData(@Param('id') id: string ,@Query() query: any) {
-    return this.service.getData(+id, query);
+    return this.service.getData(+id, []);//FIXME: Needs to be passed from the ui
   }
 
   @ApiBearerAuth("jwt")

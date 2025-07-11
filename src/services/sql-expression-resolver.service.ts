@@ -105,9 +105,17 @@ export class SqlExpressionResolverService {
         default:
           throw new Error(`Unsupported SQL operator: ${expr.operator}`);
       }
-
       simplifiedSql = simplifiedSql.replace(placeholder, sqlFragment);
     }
+
+    // --- Final cleanup: remove any remaining placeholders ---
+    simplifiedSql = simplifiedSql.replace(/{{\s*\w+\s*}}/g, '');
+
+    // Remove dangling where clause if no expressions were applied
+    simplifiedSql = simplifiedSql.replace(/\bwhere\b\s*$/i, '').trim();
+
+    // Need to handle scenarios of complex expression i.e with and / or clauses. probably need to have this logic in the sql expression object itself
+
 
     return {
       rawSql: simplifiedSql,
