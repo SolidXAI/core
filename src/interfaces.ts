@@ -11,7 +11,7 @@ import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
 import { Question } from './entities/question.entity';
 import { ComputedFieldMetadata } from './helpers/solid-registry';
-import { SqlExpression } from './services/question-data-providers/question-sql-data-provider.service';
+import { SqlExpression } from './services/question-data-providers/chartjs-sql-data-provider.service';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;

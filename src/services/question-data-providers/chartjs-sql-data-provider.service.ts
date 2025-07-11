@@ -35,7 +35,7 @@ export interface SqlExpression {
 
 @DashboardQuestionDataProvider()
 @Injectable()
-export class QuestionSqlDataProvider implements IDashboardQuestionDataProvider<QuestionSqlDataProviderContext, any> {
+export class ChartJsSqlDataProvider implements IDashboardQuestionDataProvider<QuestionSqlDataProviderContext, any> {
     constructor(private readonly entityManager: EntityManager, private readonly sqlExpressionResolver: SqlExpressionResolverService) {}
 
     help(): string {
@@ -43,7 +43,7 @@ export class QuestionSqlDataProvider implements IDashboardQuestionDataProvider<Q
     }
 
     name(): string {
-        return "QuestionSqlDataProvider";
+        return "ChartJsSqlDataProvider";
     }
 
     async getData(question: Question, expressions?: SqlExpression[], context?: QuestionSqlDataProviderContext): Promise<any> {

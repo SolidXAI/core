@@ -230,7 +230,7 @@ import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/se
 import { QuestionSqlDatasetConfig } from './entities/question-sql-dataset-config.entity';
 import { QuestionSqlDatasetConfigService } from './services/question-sql-dataset-config.service';
 import { QuestionSqlDatasetConfigController } from './controllers/question-sql-dataset-config.controller';
-import { QuestionSqlDataProvider } from './services/question-data-providers/question-sql-data-provider.service';
+import { ChartJsSqlDataProvider } from './services/question-data-providers/chartjs-sql-data-provider.service';
 import { SqlExpressionResolverService } from './services/sql-expression-resolver.service';
 
 
@@ -488,7 +488,7 @@ import { SqlExpressionResolverService } from './services/sql-expression-resolver
     ListOfDashboardVariableProvidersSelectionProvider,
     ListOfDashboardQuestionProvidersSelectionProvider,
     QuestionSqlDatasetConfigService,
-    QuestionSqlDataProvider,
+    ChartJsSqlDataProvider,
     SqlExpressionResolverService,
   ],
   exports: [

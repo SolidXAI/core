@@ -1,5 +1,5 @@
 import { Injectable } from "@nestjs/common";
-import { SqlExpression, SqlExpressionOperator } from "./question-data-providers/question-sql-data-provider.service";
+import { SqlExpression, SqlExpressionOperator } from "./question-data-providers/chartjs-sql-data-provider.service";
 
 export interface SqlReplacementResult {
   rawSql: string;

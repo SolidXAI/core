@@ -11,16 +11,17 @@ import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
+import { DashboardVariable } from 'src/entities/dashboard-variable.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { Question } from '../entities/question.entity';
-import { QuestionSqlDataProviderContext, SqlExpression, SqlExpressionOperator } from './question-data-providers/question-sql-data-provider.service';
+import { SqlExpression, SqlExpressionOperator } from './question-data-providers/chartjs-sql-data-provider.service';
 
 enum SOURCE_TYPE {
   SQL = 'sql',
   PROVIDER = 'provider',
 }
 
-const SQL_DATA_PROVIDER_NAME = 'QuestionSqlDataProvider';
+const SQL_DATA_PROVIDER_NAME = 'ChartJsSqlDataProvider';
 
 
 @Injectable()
@@ -44,7 +45,7 @@ export class QuestionService extends CRUDService<Question> {
   }
 
   // Get the data for a specific question 
-  async getData(id: number, query: any) {
+  async getData(id: number, inputExpressions: SqlExpression[] = [], isPreview = false): Promise<any> {
     // Load the question
     const question = await this.loadQuestion(id);
     if (!question) {
@@ -59,13 +60,7 @@ export class QuestionService extends CRUDService<Question> {
 
       // Get the dashbbard variables from the question
       const dashboardVariables = question.dashboard?.dashboardVariables || [];
-      
-      // Convert the dashboard variables into objects of interface type SqlExpression using the default value, default operator and the variable name
-      const expressions: SqlExpression[] = dashboardVariables.map(variable => ({
-        variableName: variable.variableName,
-        operator: variable.defaultOperator as SqlExpressionOperator, // Assuming defaultOperator is a valid SqlExpressionOperator
-        value: JSON.parse(variable.defaultValue || '[]'), // Assuming defaultValue is a string or can be converted to a string array
-      }));
+      const expressions: SqlExpression[] = this.getExpressions(isPreview, dashboardVariables, inputExpressions);
 
       return await dataProvider.getData(question, expressions);
       // dataset.push(data);
@@ -75,6 +70,25 @@ export class QuestionService extends CRUDService<Question> {
       throw new NotImplementedException(`Data source type ${question.sourceType} not implemented. Only ${SOURCE_TYPE.SQL} is supported at the moment.`);
     }
     // return dataset;
+  }
+
+  private getExpressions(isPreview: boolean, dashboardVariables: DashboardVariable[], inputExpressions: SqlExpression[]) {
+    const expressions: SqlExpression[] = [];
+    if (isPreview) {
+      // Convert the dashboard variables into objects of interface type SqlExpression using the default value, default operator and the variable name
+      const expr: SqlExpression[] = dashboardVariables.map(variable => {
+        return {
+          variableName: variable.variableName,
+          operator: variable.defaultOperator as SqlExpressionOperator, // Assuming defaultOperator is a valid SqlExpressionOperator
+          value: JSON.parse(variable.defaultValue || '[]'), // Assuming defaultValue is a string or can be converted to a string array
+        };
+      });
+      expressions.push(...expr);
+    }
+    else {
+      expressions.push(...inputExpressions);
+    }
+    return expressions;
   }
 
   private async loadQuestion(id: number) {
