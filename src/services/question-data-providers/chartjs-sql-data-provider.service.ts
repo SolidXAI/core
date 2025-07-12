@@ -4,6 +4,7 @@ import { Question } from "src/entities/question.entity";
 import { IDashboardQuestionDataProvider } from "src/interfaces";
 import { EntityManager } from "typeorm";
 import { SqlExpressionResolverService } from "../sql-expression-resolver.service";
+import { Logger } from '@nestjs/common';
 
 export interface QuestionSqlDataProviderContext {
     // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
@@ -28,7 +29,7 @@ export enum SqlExpressionOperator {
 }
 
 export interface SqlExpression {
-    variableName : string; // The name of the variable in the SQL query
+    variableName: string; // The name of the variable in the SQL query
     operator: SqlExpressionOperator; // The operator to use for the replacement (e.g., '=', '>', '<', etc.)
     value: string[]; // The value to replace the variable with
 }
@@ -36,7 +37,9 @@ export interface SqlExpression {
 @DashboardQuestionDataProvider()
 @Injectable()
 export class ChartJsSqlDataProvider implements IDashboardQuestionDataProvider<QuestionSqlDataProviderContext, any> {
-    constructor(private readonly entityManager: EntityManager, private readonly sqlExpressionResolver: SqlExpressionResolverService) {}
+    private readonly logger = new Logger(ChartJsSqlDataProvider.name);
+
+    constructor(private readonly entityManager: EntityManager, private readonly sqlExpressionResolver: SqlExpressionResolverService) { }
 
     help(): string {
         return "Provides data for dashboard questions using a SQL dataset configuration. Configure your SQL dataset in the admin panel, then reference it in your dashboard question to fetch data.";
@@ -85,6 +88,8 @@ export class ChartJsSqlDataProvider implements IDashboardQuestionDataProvider<Qu
             }
 
             const sqlReplacementResult = this.sqlExpressionResolver.resolveSqlWithExpressions(sql, expressions || []);
+            this.logger.log(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is query=[${sqlReplacementResult.rawSql}]`);
+            this.logger.log(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is parameters=[${JSON.stringify(sqlReplacementResult.parameters)}]`);
             const results = await this.entityManager.query(sqlReplacementResult.rawSql, sqlReplacementResult.parameters);
 
             // If this is the first dataset being processed then we use the label_column to populate the labels array first. 

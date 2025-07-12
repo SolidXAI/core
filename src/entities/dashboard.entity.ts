@@ -1,5 +1,5 @@
 import { CommonEntity } from 'src/entities/common.entity'
-import {Entity, Column, Index, OneToMany, JoinColumn, ManyToOne} from 'typeorm';
+import { Entity, Column, Index, OneToMany, JoinColumn, ManyToOne } from 'typeorm';
 import { DashboardVariable } from 'src/entities/dashboard-variable.entity';
 import { Question } from 'src/entities/question.entity';
 import { ModuleMetadata } from 'src/entities/module-metadata.entity'

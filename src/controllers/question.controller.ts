@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { QuestionService } from '../services/question.service';
 import { CreateQuestionDto } from '../dtos/create-question.dto';
 import { UpdateQuestionDto } from '../dtos/update-question.dto';
+import { SqlExpression } from 'src/services/question-data-providers/chartjs-sql-data-provider.service';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -73,8 +74,13 @@ export class QuestionController {
 
   @ApiBearerAuth("jwt")
   @Get(':id/data')
-  async getData(@Param('id') id: string ,@Query() query: any) {
-    return this.service.getData(+id, []);//FIXME: Needs to be passed from the ui
+  async getData(
+    @Param('id') id: string,
+    @Query('filters') filters: SqlExpression[],
+    @Query('isPreview') isPreview?: string
+  ) {
+    const previewMode = isPreview === 'true';
+    return this.service.getData(+id, filters, previewMode);
   }
 
   @ApiBearerAuth("jwt")
