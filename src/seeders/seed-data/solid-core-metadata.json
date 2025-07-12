@@ -4597,10 +4597,11 @@
             "isSystem": true,
             "selectionValueType": "string",
             "selectionStaticValues": [
-              "bar:Bar Chart",
-              "line:Line Chart",
-              "pie:Pie Chart",
-              "donut:Donut Chart"
+              "bar:ChartJS - Bar",
+              "line:ChartJS - Line",
+              "pie:ChartJS - Pie",
+              "donut:ChartJS - Donut",
+              "prime-meter-group:Prime - Meter Group"
             ]
           },
           {

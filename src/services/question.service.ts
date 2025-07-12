@@ -21,8 +21,8 @@ enum SOURCE_TYPE {
   PROVIDER = 'provider',
 }
 
-const SQL_DATA_PROVIDER_NAME = 'ChartJsSqlDataProvider';
-
+const CHARTJS_SQL_DATA_PROVIDER_NAME = 'ChartJsSqlDataProvider';
+const PRIME_REACT_METER_GROUP_SQL_DATA_PROVIDER_NAME = 'PrimeReactMeterGroupSqlDataProvider';
 
 @Injectable()
 export class QuestionService extends CRUDService<Question> {
@@ -52,24 +52,26 @@ export class QuestionService extends CRUDService<Question> {
       throw new BadRequestException(`Question with id ${id} not found`);
     }
 
-    if (question.sourceType === SOURCE_TYPE.SQL) {
-      const dataProvider = this.solidRegistry.getDashboardQuestionDataProviderInstance(SQL_DATA_PROVIDER_NAME);
-      if (!dataProvider) {
-        throw new BadRequestException(`No data provider with name ${SQL_DATA_PROVIDER_NAME} registered in backend.`);
-      }
+    // Get the dashbbard variables from the question
+    const dashboardVariables = question.dashboard?.dashboardVariables || [];
+    const expressions: SqlExpression[] = this.getExpressions(isPreview, dashboardVariables, inputExpressions);
 
-      // Get the dashbbard variables from the question
-      const dashboardVariables = question.dashboard?.dashboardVariables || [];
-      const expressions: SqlExpression[] = this.getExpressions(isPreview, dashboardVariables, inputExpressions);
+    // Try to resolve the dataProvider based on a combination of sourceType and visualisedAs
+    let dataProvider = null;
 
-      return await dataProvider.getData(question, expressions);
-      // dataset.push(data);
-
+    if (question.sourceType === SOURCE_TYPE.SQL && ['bar', 'pie', 'line', 'donut'].includes(question.visualisedAs)) {
+      dataProvider = this.solidRegistry.getDashboardQuestionDataProviderInstance(CHARTJS_SQL_DATA_PROVIDER_NAME);
     }
-    else {
-      throw new NotImplementedException(`Data source type ${question.sourceType} not implemented. Only ${SOURCE_TYPE.SQL} is supported at the moment.`);
+    if (question.sourceType === SOURCE_TYPE.SQL && ['prime-meter-group'].includes(question.visualisedAs)) {
+      dataProvider = this.solidRegistry.getDashboardQuestionDataProviderInstance(PRIME_REACT_METER_GROUP_SQL_DATA_PROVIDER_NAME);
     }
-    // return dataset;
+
+    if (!dataProvider) {
+      throw new NotImplementedException(`Invalid data source type ${question.sourceType}`);
+    }
+
+    return await dataProvider.getData(question, expressions);
+
   }
 
   private getExpressions(isPreview: boolean, dashboardVariables: DashboardVariable[], inputExpressions: SqlExpression[]) {
