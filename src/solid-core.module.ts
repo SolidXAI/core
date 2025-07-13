@@ -233,6 +233,7 @@ import { QuestionSqlDatasetConfigController } from './controllers/question-sql-d
 import { ChartJsSqlDataProvider } from './services/question-data-providers/chartjs-sql-data-provider.service';
 import { SqlExpressionResolverService } from './services/sql-expression-resolver.service';
 import { PrimeReactMeterGroupSqlDataProvider } from './services/question-data-providers/prime-react-meter-group-sql-data-provider.service';
+import { PrimeReactDatatableSqlDataProvider } from './services/question-data-providers/prime-react-datatable-sql-data-provider.service';
 
 
 @Global()
@@ -491,6 +492,7 @@ import { PrimeReactMeterGroupSqlDataProvider } from './services/question-data-pr
     QuestionSqlDatasetConfigService,
     ChartJsSqlDataProvider,
     PrimeReactMeterGroupSqlDataProvider,
+    PrimeReactDatatableSqlDataProvider,
     SqlExpressionResolverService,
   ],
   exports: [

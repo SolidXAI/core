@@ -23,6 +23,7 @@ enum SOURCE_TYPE {
 
 const CHARTJS_SQL_DATA_PROVIDER_NAME = 'ChartJsSqlDataProvider';
 const PRIME_REACT_METER_GROUP_SQL_DATA_PROVIDER_NAME = 'PrimeReactMeterGroupSqlDataProvider';
+const PRIME_REACT_DATATABLE_SQL_DATA_PROVIDER_NAME = 'PrimeReactDatatableSqlDataProvider';
 
 @Injectable()
 export class QuestionService extends CRUDService<Question> {
@@ -64,6 +65,9 @@ export class QuestionService extends CRUDService<Question> {
     }
     if (question.sourceType === SOURCE_TYPE.SQL && ['prime-meter-group'].includes(question.visualisedAs)) {
       dataProvider = this.solidRegistry.getDashboardQuestionDataProviderInstance(PRIME_REACT_METER_GROUP_SQL_DATA_PROVIDER_NAME);
+    }
+    if (question.sourceType === SOURCE_TYPE.SQL && ['prime-datatable'].includes(question.visualisedAs)) {
+      dataProvider = this.solidRegistry.getDashboardQuestionDataProviderInstance(PRIME_REACT_DATATABLE_SQL_DATA_PROVIDER_NAME);
     }
 
     if (!dataProvider) {

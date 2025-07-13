@@ -4601,7 +4601,8 @@
               "line:ChartJS - Line",
               "pie:ChartJS - Pie",
               "donut:ChartJS - Donut",
-              "prime-meter-group:Prime - Meter Group"
+              "prime-meter-group:Prime - Meter Group",
+              "prime-datatable:Prime - Datatable"
             ]
           },
           {
