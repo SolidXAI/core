@@ -5,6 +5,7 @@ import { IDashboardQuestionDataProvider } from "src/interfaces";
 import { EntityManager } from "typeorm";
 import { SqlExpressionResolverService } from "../sql-expression-resolver.service";
 import { Logger } from '@nestjs/common';
+import { getLabels } from "./helpers";
 
 export interface QuestionSqlDataProviderContext {
     // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
@@ -78,7 +79,9 @@ export class ChartJsSqlDataProvider implements IDashboardQuestionDataProvider<Qu
 
         let datasetIdx = 0;
         const datasets = [];
-        const labels = [];
+
+        const labels: string[] = await getLabels(question, this.entityManager);
+
         // const question = context.question;
         for (const questionSqlDatasetConfig of question.questionSqlDatasetConfigs) {
 
@@ -91,14 +94,6 @@ export class ChartJsSqlDataProvider implements IDashboardQuestionDataProvider<Qu
             this.logger.log(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is query=[${sqlReplacementResult.rawSql}]`);
             this.logger.log(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is parameters=[${JSON.stringify(sqlReplacementResult.parameters)}]`);
             const results = await this.entityManager.query(sqlReplacementResult.rawSql, sqlReplacementResult.parameters);
-
-            // If this is the first dataset being processed then we use the label_column to populate the labels array first. 
-            if (datasetIdx === 0) {
-                for (let i = 0; i < results.length; i++) {
-                    const result = results[i];
-                    labels.push(result[questionSqlDatasetConfig.labelColumnName]);
-                }
-            }
 
             // Also for each data set we create the dataset object as is expected by ChartJs.
             const data = [];
@@ -121,4 +116,6 @@ export class ChartJsSqlDataProvider implements IDashboardQuestionDataProvider<Qu
         };
 
     }
+
+
 }
