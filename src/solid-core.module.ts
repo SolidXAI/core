@@ -234,6 +234,9 @@ import { ChartJsSqlDataProvider } from './services/question-data-providers/chart
 import { SqlExpressionResolverService } from './services/sql-expression-resolver.service';
 import { PrimeReactMeterGroupSqlDataProvider } from './services/question-data-providers/prime-react-meter-group-sql-data-provider.service';
 import { PrimeReactDatatableSqlDataProvider } from './services/question-data-providers/prime-react-datatable-sql-data-provider.service';
+import { AiInteraction } from './entities/ai-interaction.entity';
+import { AiInteractionService } from './services/ai-interaction.service';
+import { AiInteractionController } from './controllers/ai-interaction.controller';
 
 
 @Global()
@@ -296,6 +299,7 @@ import { PrimeReactDatatableSqlDataProvider } from './services/question-data-pro
     TypeOrmModule.forFeature([DashboardVariable]),
     TypeOrmModule.forFeature([Question]),
     TypeOrmModule.forFeature([QuestionSqlDatasetConfig]),
+    TypeOrmModule.forFeature([AiInteraction]),
   ],
   controllers: [
     ModuleMetadataController,
@@ -338,6 +342,7 @@ import { PrimeReactDatatableSqlDataProvider } from './services/question-data-pro
     DashboardVariableController,
     QuestionController,
     QuestionSqlDatasetConfigController,
+    AiInteractionController,
   ],
   providers: [
     {
@@ -494,6 +499,7 @@ import { PrimeReactDatatableSqlDataProvider } from './services/question-data-pro
     PrimeReactMeterGroupSqlDataProvider,
     PrimeReactDatatableSqlDataProvider,
     SqlExpressionResolverService,
+    AiInteractionService,
   ],
   exports: [
     ModuleMetadataService,
