@@ -14,21 +14,17 @@ export class Question extends CommonEntity {
     @Index()
     @Column({})
     visualisedAs: string;
-    @Column({ type: "text", nullable: true })
-    sql: string;
     @Column({ type: "varchar", nullable: true })
     providerName: string;
-    @Column({ type: "varchar", nullable: true })
-    barChartXKey: string;
-    @Column({ type: "varchar", nullable: true })
-    barChartSeriesKey: string;
-    @Column({ type: "varchar", nullable: true })
-    barChartValueKey: string;
-    @Column({ type: "jsonb", nullable: true })
-    barChartLabelOptions: any;
     @ManyToOne(() => Dashboard, { onDelete: "CASCADE", nullable: true })
     @JoinColumn()
     dashboard: Dashboard;
     @OneToMany(() => QuestionSqlDatasetConfig, questionSqlDatasetConfig => questionSqlDatasetConfig.question, { cascade: true })
     questionSqlDatasetConfigs: QuestionSqlDatasetConfig[];
+    @Column({ type: "jsonb", nullable: true })
+    chartOptions: any;
+    @Column({ type: "text", nullable: true })
+    labelSql: string;
+    @Column({ type: "text", nullable: true })
+    kpiSql: string;
 }

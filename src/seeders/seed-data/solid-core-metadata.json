@@ -4606,8 +4606,8 @@
             ]
           },
           {
-            "name": "sql",
-            "displayName": "SQL Query for the question",
+            "name": "labelSql",
+            "displayName": "Label SQL Query",
             "type": "longText",
             "ormType": "text",
             "required": false,
@@ -4616,7 +4616,20 @@
             "private": false,
             "encrypt": false,
             "isSystem": true,
-            "description": "This is the raw SQL query to be used to fetch the data for this question"
+            "description": "This is the SQL query to fetch the label values for the question"
+          },
+          {
+            "name": "kpiSql",
+            "displayName": "KPI SQL Query",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is the SQL query to fetch the KPI value for the question"
           },
           {
             "name": "providerName",
@@ -4636,46 +4649,7 @@
             "description": "This is only applicable when sourceType is set to provider. It allows the user to select any pre-existing Dashboard Question Data provider implementation used to fetch a dynamic dropdown of values to choose from when this question is presented to the user."
           },
           {
-            "name": "barChartXKey",
-            "displayName": "Bar Chart X Key",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "barChartSeriesKey",
-            "displayName": "Bar Chart Series Key",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "barChartValueKey",
-            "displayName": "Bar Chart Value Key",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "barChartLabelOptions",
+            "name": "chartOptions",
             "displayName": "Bar Chart Label Options",
             "type": "json",
             "ormType": "jsonb",
