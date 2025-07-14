@@ -4848,6 +4848,139 @@
             "encrypt": false
           }
         ]
+      },
+      {
+        "singularName": "aiInteraction",
+        "pluralName": "aiInteractions",
+        "displayName": "AI Interaction",
+        "description": "Stores user and assistant messages in an AI chat session.",
+        "tableName": "ss_ai_interactions",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "userKeyFieldUserKey": "message",
+        "isSystem": false,
+        "fields": [
+          {
+            "name": "user",
+            "displayName": "User",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "user",
+            "relationCreateInverse": true,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "threadId",
+            "displayName": "Thread ID",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "role",
+            "displayName": "Role",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 32,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "message",
+            "displayName": "Message",
+            "type": "longText",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "contentType",
+            "displayName": "Content Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 64,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 64,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "errorMessage",
+            "displayName": "Error Message",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": true,
+            "encrypt": false
+          },
+          {
+            "name": "modelUsed",
+            "displayName": "Model Used",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "responseTimeMs",
+            "displayName": "Response Time (ms)",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "metadata",
+            "displayName": "Metadata",
+            "type": "json",
+            "ormType": "jsonb",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          }
+        ]
       }
     ]
   },
@@ -5459,6 +5592,19 @@
       "viewUserKey": "question-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "question"
+    },
+    {
+      "displayName": "AI Interactions",
+      "name": "aiInteraction-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "aiInteraction-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "aiInteraction"
     }
   ],
   "menus": [
@@ -5789,6 +5935,14 @@
       "actionUserKey": "questionSqlDatasetConfig-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "AI Interactions",
+      "name": "aiInteraction-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "aiInteraction-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
     }
   ],
   "views": [
@@ -11713,6 +11867,264 @@
                         "attrs": {
                           "name": "options"
                         }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ai-interaction-list-view",
+      "displayName": "AI Interaction",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "aiInteraction",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "threadId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "role"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "message"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelUsed"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "responseTimeMs"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ai-interaction-form-view",
+      "displayName": "AI Interaction",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "aiInteraction",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "AI Interaction",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "general",
+                      "label": "General Info"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-general"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "left-col",
+                              "label": "Interaction Details",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "user"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "threadId"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "role"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "message",
+                                  "editWidget": "textarea",
+                                  "rows": 6
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "right-col",
+                              "label": "Message Properties",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "contentType"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "modelUsed"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "responseTimeMs"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "status",
+                      "label": "Status & Debug"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-status"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "col-status",
+                              "label": "Execution Info",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "status"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "errorMessage",
+                                  "editWidget": "textarea",
+                                  "rows": 5
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "meta",
+                      "label": "System Metadata"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-meta"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "col-meta",
+                              "label": "Metadata",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "metadata",
+                                  "editWidget": "codeEditor",
+                                  "editorLanguage": "json"
+                                }
+                              }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   }
