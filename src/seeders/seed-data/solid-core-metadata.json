@@ -5344,17 +5344,17 @@
       "modelUserKey": "dashboard"
     },
     {
-      "displayName": "Dashboard Variable List Action",
-      "name": "dashboardVariable-list-action",
+      "displayName": "Question List Action",
+      "name": "question-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/address-master/dashboardVariable/all",
+      "customComponent": "/admin/address-master/question/all",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "dashboardVariable-list-view",
+      "viewUserKey": "question-list-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardVariable"
+      "modelUserKey": "question"
     },
     {
       "displayName": "Question List Action",
@@ -5370,32 +5370,6 @@
       "modelUserKey": "question"
     },
     {
-      "displayName": "Question SQL Dataset Config List Action",
-      "name": "questionSqlDatasetConfig-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/address-master/questionSqlDatasetConfig/all",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "questionSqlDatasetConfig-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "questionSqlDatasetConfig"
-    },
-    {
-      "displayName": "Question SQL Dataset Config List Action",
-      "name": "questionSqlDatasetConfig-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/address-master/questionSqlDatasetConfig/all",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "questionSqlDatasetConfig-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "questionSqlDatasetConfig"
-    },
-    {
       "displayName": "Question List Action",
       "name": "question-list-action",
       "type": "solid",
@@ -5407,45 +5381,6 @@
       "viewUserKey": "question-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "question"
-    },
-    {
-      "displayName": "Question SQL Dataset Config List Action",
-      "name": "questionSqlDatasetConfig-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/address-master/questionSqlDatasetConfig/all",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "questionSqlDatasetConfig-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "questionSqlDatasetConfig"
-    },
-    {
-      "displayName": "Question List Action",
-      "name": "question-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/address-master/question/all",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "question-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "question"
-    },
-    {
-      "displayName": "Question SQL Dataset Config List Action",
-      "name": "questionSqlDatasetConfig-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/address-master/questionSqlDatasetConfig/all",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "questionSqlDatasetConfig-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "questionSqlDatasetConfig"
     },
     {
       "displayName": "Question List Action",
@@ -5781,14 +5716,6 @@
       "actionUserKey": "question-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "dashboard-root-menu-item"
-    },
-    {
-      "displayName": "Question SQL Dataset Config",
-      "name": "questionSqlDatasetConfig-menu-item",
-      "sequenceNumber": 1,
-      "actionUserKey": "questionSqlDatasetConfig-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
     }
   ],
   "views": [
