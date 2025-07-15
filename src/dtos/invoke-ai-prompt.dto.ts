@@ -1,0 +1,6 @@
+import { IsString } from 'class-validator';
+
+export class InvokeAiPromptDto {
+    @IsString()
+    prompt: string;
+}

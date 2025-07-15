@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AiInteractionService } from '../services/ai-interaction.service';
 import { CreateAiInteractionDto } from '../dtos/create-ai-interaction.dto';
 import { UpdateAiInteractionDto } from '../dtos/update-ai-interaction.dto';
+import { InvokeAiPromptDto } from '../dtos/invoke-ai-prompt.dto';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -13,7 +14,7 @@ enum ShowSoftDeleted {
 @ApiTags('Solid Core')
 @Controller('ai-interaction')
 export class AiInteractionController {
-  constructor(private readonly service: AiInteractionService) {}
+  constructor(private readonly service: AiInteractionService) { }
 
   @ApiBearerAuth("jwt")
   @Post()
@@ -55,20 +56,20 @@ export class AiInteractionController {
   async recover(@Param('id') id: number) {
     return this.service.recover(id);
   }
-    
+
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({ name: 'fields', required: false, type: Array })
-  @ApiQuery({ name: 'sort', required: false, type: Array }) 
+  @ApiQuery({ name: 'sort', required: false, type: Array })
   @ApiQuery({ name: 'groupBy', required: false, type: Array })
   @ApiQuery({ name: 'populate', required: false, type: Array })
   @ApiQuery({ name: 'populateMedia', required: false, type: Array })
   @ApiQuery({ name: 'filters', required: false, type: Array })
   @Get()
-  async findMany(@Query() query: any) { 
-    return this.service.find(query);  
+  async findMany(@Query() query: any) {
+    return this.service.find(query);
   }
 
   @ApiBearerAuth("jwt")
@@ -89,5 +90,9 @@ export class AiInteractionController {
     return this.service.delete(id);
   }
 
-
+  @ApiBearerAuth("jwt")
+  @Post('/invoke')
+  async invokeAi(@Body() dto: InvokeAiPromptDto) {
+    return this.service.runMcpPrompt(dto.prompt);
+  }
 }

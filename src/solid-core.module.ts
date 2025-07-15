@@ -275,6 +275,7 @@ import { AiInteractionController } from './controllers/ai-interaction.controller
       ImportTransaction,
       ImportTransactionErrorLog,
       UserActivityHistory,
+      AiInteraction,
     ]),
     ConfigModule.forFeature(appBuilderConfig),
     ConfigModule.forFeature(commonConfig),

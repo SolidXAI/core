@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, Repository } from 'typeorm';
@@ -11,7 +11,8 @@ import { FileService } from 'src/services/file.service';
 import { CrudHelperService } from 'src/services/crud-helper.service';
 import { spawn } from 'child_process';
 import { AiInteraction } from '../entities/ai-interaction.entity';
-
+import * as fs from 'fs/promises';
+import * as path from 'path';
 
 interface McpResponse {
   success: boolean;
@@ -24,10 +25,6 @@ interface McpResponse {
   errors?: string[];
   trace?: string[];
 }
-
-
-
-
 
 @Injectable()
 export class AiInteractionService extends CRUDService<AiInteraction> {
@@ -54,8 +51,36 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
    * @returns The parsed object inside the 'response' field of the JSON output.
    */
   async runMcpPrompt(prompt: string): Promise<any> {
+    const pythonExecutable = process.env.MCP_PYTHON_EXECUTABLE;
+    const mcpClient = process.env.MCP_CLIENT;
+
+    // TODO: We can return an error if the above env variables are not properly setup...
+    if (!pythonExecutable || !mcpClient) {
+      throw new BadRequestException('SolidX AI MCP python executable or client path not configured.');
+    }
+
+    // Check if both paths are valid and accessible
+    try {
+      const [pyStat, clientStat] = await Promise.all([
+        fs.stat(pythonExecutable),
+        fs.stat(mcpClient),
+      ]);
+
+      if (!pyStat.isFile()) {
+        throw new BadRequestException(`MCP_PYTHON_EXECUTABLE path is not a file: ${pythonExecutable}`);
+      }
+
+      if (!clientStat.isFile()) {
+        throw new BadRequestException(`MCP_CLIENT path is not a file: ${mcpClient}`);
+      }
+
+    } catch (err: any) {
+      throw new BadRequestException(`Invalid MCP executable or client path: ${err.message}`);
+    }
+
     return new Promise((resolve, reject) => {
-      const python = spawn('python', ['client_sse_nochat.py', prompt]);
+
+      const python = spawn(pythonExecutable, [mcpClient, prompt]);
 
       let stdout = '';
       let stderr = '';
