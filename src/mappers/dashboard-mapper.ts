@@ -4,43 +4,50 @@ import { Dashboard } from "src/entities/dashboard.entity";
 
 @Injectable()
 export class DashboardMapper {
-    // Create a toDto method which maps the Dashboard entity to a DTO
-    // This dto will be written to a config file and can be used to seed any forthcoming changes to the dashboard
-    // ids of the main entity and child entities will be removed
-    // parent entities will be removed
     toDto(dashboard: Dashboard): any {
         return {
             name: dashboard.name,
-            layoutJson: JSON.parse(dashboard.layoutJson ?? "{}"),
-            moduleUserKey: dashboard.module.name, // Assuming you want to keep the module ID
-            dashboardVariables: dashboard.dashboardVariables.map(variable => ({
+            layoutJson: this.safeParseJSON(dashboard.layoutJson, {}),
+            moduleUserKey: dashboard.module?.name ?? null, // safer fallback
+
+            dashboardVariables: (dashboard.dashboardVariables || []).map(variable => ({
                 name: variable.variableName,
                 type: variable.variableType,
-                selectionStaticValues: JSON.parse(variable.selectionStaticValues ?? "[]"),
+                selectionStaticValues: this.safeParseJSON(variable.selectionStaticValues, []),
                 selectionDynamicSourceType: variable.selectionDynamicSourceType as SelectionDynamicSourceType,
-                selectionDynamicSQL: variable.selectionDynamicSQL,
-                selectionDynamicProviderName: variable.selectionDynamicProviderName,
-                defaultValue: variable.defaultValue,
-                defaultOperator: variable.defaultOperator,
+                selectionDynamicSQL: variable.selectionDynamicSQL ?? null,
+                selectionDynamicProviderName: variable.selectionDynamicProviderName ?? null,
+                defaultValue: variable.defaultValue ?? null,
+                defaultOperator: variable.defaultOperator ?? null,
             })),
-            questions: dashboard.questions.map(question => ({
+
+            questions: (dashboard.questions || []).map(question => ({
                 name: question.name,
                 sourceType: question.sourceType,
                 visualisedAs: question.visualisedAs,
-                providerName: question.providerName,
-                chartOptions: question.chartOptions,
-                labelSql: question.labelSql,
-                kpiSql: question.kpiSql,
-                questionSqlDatasetConfigs: question.questionSqlDatasetConfigs.map(config => ({
+                providerName: question.providerName ?? null,
+                chartOptions: question.chartOptions ?? null,
+                labelSql: question.labelSql ?? null,
+                kpiSql: question.kpiSql ?? null,
+
+                questionSqlDatasetConfigs: (question.questionSqlDatasetConfigs || []).map(config => ({
                     sql: config.sql,
                     datasetName: config.datasetName,
-                    daataSetDisplayName: config.datasetDisplayName,
+                    datasetDisplayName: config.datasetDisplayName, // 🔧 fixed typo: `daataSetDisplayName`
                     datasetDescription: config.description,
                     labelColumnName: config.labelColumnName,
                     valueColumnName: config.valueColumnName,
-                    options: JSON.parse(config.options ?? "{}")
-                })),
+                    options: this.safeParseJSON(config.options, {}),
+                }))
             }))
+        };
+    }
+
+    private safeParseJSON(json: string | null | undefined, fallback: any): any {
+        try {
+            return json ? JSON.parse(json) : fallback;
+        } catch {
+            return fallback;
         }
     }
 }

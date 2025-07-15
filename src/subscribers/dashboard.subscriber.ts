@@ -35,37 +35,49 @@ export class DashboardSubscriber implements EntitySubscriberInterface<Dashboard>
             this.logger.debug('No entity found in the DashboardSubscriber saveDashboardToConfig method');
             return;
         }
+        
+        // Validate dashboard details
         const dashboard = entity as Dashboard;
         const moduleMetadata = entity.module;
         if (!moduleMetadata) {
-            this.logger.error(`Module metadata not found for dashboard  id ${entity.id}`);
-            return;
+            throw new Error(`Module metadata not found for dashboard id ${entity.id}`);
         }
 
-        const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleMetadata.name);
+        // Get config file details
+        const { filePath, metaData } = await this.getConfigFileDetails(moduleMetadata.name);
+        if (!filePath || !metaData) {
+            throw new Error(`Configuration details not found for module: ${moduleMetadata.name}`);
+        }
+
+        // Write the dashboard to the config file
+        await this.writeToConfig(metaData, dashboard, filePath);
+    }
+
+    private async getConfigFileDetails(moduleName: string): Promise<{ filePath: string; metaData: any }> {
+        const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
         try {
             await fs.access(filePath);
         } catch (error) {
-            // FIXME - Should we actually delete the security rule here, if the file is not found?
-            this.logger.error(`File not found at path: ${filePath}`);
-            return;
+            throw new Error(`Configuration file not found for module: ${moduleName}`);
         }
         const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
+        return { filePath, metaData };
+    }
 
+    private async writeToConfig(metaData: any, dashboard: Dashboard, filePath: string) {
         if (metaData.dashboards) {
-            const dashboardIndex = metaData.dashboards?.findIndex((dashboardFromFile: { name: string }) => dashboardFromFile.name === dashboard.name);
-            const dto = await this.dashboardMapper.toDto(dashboard)
-            metaData.dashboards[dashboardIndex] = dto
+            const dashboardIndex = metaData.dashboards?.findIndex((dashboardFromFile: { name: string; }) => dashboardFromFile.name === dashboard.name);
+            const dto = await this.dashboardMapper.toDto(dashboard);
+            metaData.dashboards[dashboardIndex] = dto;
         }
         else {
-            const dashboards = []
-            const dto = await this.dashboardMapper.toDto(dashboard)
-            dashboards.push(dto)
-            metaData.dashboardds = dashboards
+            const dashboards = [];
+            const dto = await this.dashboardMapper.toDto(dashboard);
+            dashboards.push(dto);
+            metaData.dashboards = dashboards;
         }
         // Write the updated object back to the file
         const updatedContent = JSON.stringify(metaData, null, 2);
         await fs.writeFile(filePath, updatedContent);
     }
-
 }

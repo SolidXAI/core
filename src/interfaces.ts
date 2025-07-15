@@ -12,6 +12,7 @@ import { Media } from './entities/media.entity';
 import { Question } from './entities/question.entity';
 import { ComputedFieldMetadata } from './helpers/solid-registry';
 import { SqlExpression } from './services/question-data-providers/chartjs-sql-data-provider.service';
+import { CreateDashboardDto } from './dtos/create-dashboard.dto';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -50,6 +51,7 @@ export interface ModuleMetadataConfiguration {
   smsTemplates?: CreateSmsTemplateDto[],
   mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[]
   securityRules?: CreateSecurityRuleDto[],
+  dashboards?: CreateDashboardDto[],
 }
 
 export interface CodeGenerationOptions {

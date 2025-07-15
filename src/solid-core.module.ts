@@ -238,6 +238,7 @@ import { AiInteraction } from './entities/ai-interaction.entity';
 import { AiInteractionService } from './services/ai-interaction.service';
 import { AiInteractionController } from './controllers/ai-interaction.controller';
 import { DashboardMapper } from './mappers/dashboard-mapper';
+import { DashboardRepository } from './repository/dashboard.repository';
 
 
 @Global()
@@ -503,6 +504,7 @@ import { DashboardMapper } from './mappers/dashboard-mapper';
     SqlExpressionResolverService,
     AiInteractionService,
     DashboardMapper,
+    DashboardRepository,
   ],
   exports: [
     ModuleMetadataService,

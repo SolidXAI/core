@@ -16,6 +16,7 @@ import { DashboardVariableSelectionDynamicQueryDto } from 'src/dtos/dashboard-va
 import { DashboardVariable } from 'src/entities/dashboard-variable.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { Dashboard } from '../entities/dashboard.entity';
+import { DashboardRepository } from 'src/repository/dashboard.repository';
 
 export const SQL_DYNAMIC_PROVIDER_NAME = 'DashboardVariableSQLDynamicProvider';
 @Injectable()
@@ -29,8 +30,7 @@ export class DashboardService extends CRUDService<Dashboard> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(Dashboard, 'default')
-    readonly repo: Repository<Dashboard>,
+    readonly repo: DashboardRepository, // Assuming you have a DashboardRepository for custom queries
     readonly moduleRef: ModuleRef,
     readonly solidRegistry: SolidRegistry, // Assuming solidRegistry is injected for selection providers
 
