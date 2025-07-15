@@ -239,6 +239,10 @@ import { AiInteractionService } from './services/ai-interaction.service';
 import { AiInteractionController } from './controllers/ai-interaction.controller';
 import { DashboardMapper } from './mappers/dashboard-mapper';
 import { DashboardRepository } from './repository/dashboard.repository';
+import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
+import { DashboardVariableSubscriber } from './subscribers/dashboard-variable.subscriber';
+import { QuestionSubscriber } from './subscribers/question.subscriber';
+import { QuestionSqlDatasetConfigSubscriber } from './subscribers/question-sql-dataset-config.subscriber';
 
 
 @Global()
@@ -505,6 +509,10 @@ import { DashboardRepository } from './repository/dashboard.repository';
     AiInteractionService,
     DashboardMapper,
     DashboardRepository,
+    DashboardSubscriber,
+    DashboardVariableSubscriber,
+    QuestionSubscriber,
+    QuestionSqlDatasetConfigSubscriber,
   ],
   exports: [
     ModuleMetadataService,

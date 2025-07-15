@@ -1,20 +1,21 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { DiscoveryService, ModuleRef  } from "@nestjs/core";
 import { EntityManager, Repository } from 'typeorm';
 
+import { ConfigService } from '@nestjs/config';
+import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
+import { FileService } from 'src/services/file.service';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { ConfigService } from '@nestjs/config';
-import { FileService } from 'src/services/file.service';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 
 
 import { DashboardVariable } from '../entities/dashboard-variable.entity';
 
 @Injectable()
-export class DashboardVariableService extends CRUDService<DashboardVariable>{
+export class DashboardVariableService extends CRUDService<DashboardVariable> {
+  private readonly logger = new Logger(this.constructor.name);
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
@@ -26,9 +27,10 @@ export class DashboardVariableService extends CRUDService<DashboardVariable>{
     readonly entityManager: EntityManager,
     @InjectRepository(DashboardVariable, 'default')
     readonly repo: Repository<DashboardVariable>,
-    readonly moduleRef: ModuleRef
+    readonly moduleRef: ModuleRef,
+  ) {
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'dashboardVariable', 'solid-core', moduleRef);
+  }
 
- ) {
-   super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'dashboardVariable', 'solid-core', moduleRef);
- }
+
 }

@@ -35,6 +35,7 @@ export class DashboardRepository extends Repository<Dashboard> {
             dashboardVariables: createDto.dashboardVariables?.map(variable => ({
                 ...variable,
                 selectionStaticValues: JSON.stringify(variable.selectionStaticValues ?? []),
+                defaultValue: JSON.stringify(variable.defaultValue ?? []),
             })),
             questions: createDto.questions?.map(question => ({
                 ...question,

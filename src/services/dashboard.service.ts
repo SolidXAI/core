@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
 import { ConfigService } from '@nestjs/config';
 import { CrudHelperService } from 'src/services/crud-helper.service';
@@ -11,16 +11,21 @@ import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
+import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { SelectionDynamicSourceType } from 'src/dtos/create-dashboard-variable.dto';
 import { DashboardVariableSelectionDynamicQueryDto } from 'src/dtos/dashboard-variable-selection-dynamic-query.dto';
 import { DashboardVariable } from 'src/entities/dashboard-variable.entity';
+import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
-import { Dashboard } from '../entities/dashboard.entity';
+import { DashboardMapper } from 'src/mappers/dashboard-mapper';
 import { DashboardRepository } from 'src/repository/dashboard.repository';
+import { Dashboard } from '../entities/dashboard.entity';
+
 
 export const SQL_DYNAMIC_PROVIDER_NAME = 'DashboardVariableSQLDynamicProvider';
 @Injectable()
 export class DashboardService extends CRUDService<Dashboard> {
+  private readonly logger = new Logger(this.constructor.name);
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
@@ -33,7 +38,8 @@ export class DashboardService extends CRUDService<Dashboard> {
     readonly repo: DashboardRepository, // Assuming you have a DashboardRepository for custom queries
     readonly moduleRef: ModuleRef,
     readonly solidRegistry: SolidRegistry, // Assuming solidRegistry is injected for selection providers
-
+    readonly moduleMetadataHelperService: ModuleMetadataHelperService,
+    readonly dashboardMapper: DashboardMapper,
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'dashboard', 'solid-core', moduleRef);
   }
@@ -86,5 +92,56 @@ export class DashboardService extends CRUDService<Dashboard> {
       },
     });
     return dashboardVariable;
+  }
+
+  async saveDashboardToConfig(entity: Dashboard) {
+    if (!entity) {
+      this.logger.debug('No entity found in the DashboardSubscriber saveDashboardToConfig method');
+      return;
+    }
+
+    // Validate dashboard details
+    const dashboard = entity as Dashboard;
+    const moduleMetadata = entity.module;
+    if (!moduleMetadata) {
+      throw new Error(`Module metadata not found for dashboard id ${entity.id}`);
+    }
+
+    // Get config file details
+    const { filePath, metaData } = await this.getConfigFileDetails(moduleMetadata.name);
+    if (!filePath || !metaData) {
+      throw new Error(`Configuration details not found for module: ${moduleMetadata.name}`);
+    }
+
+    // Write the dashboard to the config file
+    await this.writeToConfig(metaData, dashboard, filePath);
+  }
+
+  private async getConfigFileDetails(moduleName: string): Promise<{ filePath: string; metaData: any }> {
+    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
+    try {
+      await fs.access(filePath);
+    } catch (error) {
+      throw new Error(`Configuration file not found for module: ${moduleName}`);
+    }
+    const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
+    return { filePath, metaData };
+  }
+
+  private async writeToConfig(metaData: any, dashboard: Dashboard, filePath: string) {
+    if (metaData.dashboards) {
+      const dashboardIndex = metaData.dashboards?.findIndex((dashboardFromFile: { name: string; }) => dashboardFromFile.name === dashboard.name);
+      const dto = await this.dashboardMapper.toDto(dashboard);
+      metaData.dashboards[dashboardIndex] = dto;
+    }
+    else {
+      const dashboards = [];
+      const dto = await this.dashboardMapper.toDto(dashboard);
+      dashboards.push(dto);
+      metaData.dashboards = dashboards;
+    }
+    // Write the updated object back to the file
+    const updatedContent = JSON.stringify(metaData, null, 2);
+    await fs.writeFile(filePath, updatedContent);
   }
 }

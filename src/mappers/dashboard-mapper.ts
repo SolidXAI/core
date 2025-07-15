@@ -17,10 +17,9 @@ export class DashboardMapper {
                 selectionDynamicSourceType: variable.selectionDynamicSourceType as SelectionDynamicSourceType,
                 selectionDynamicSQL: variable.selectionDynamicSQL ?? null,
                 selectionDynamicProviderName: variable.selectionDynamicProviderName ?? null,
-                defaultValue: variable.defaultValue ?? null,
+                defaultValue: this.safeParseJSON(variable.defaultValue, []),
                 defaultOperator: variable.defaultOperator ?? null,
             })),
-
             questions: (dashboard.questions || []).map(question => ({
                 name: question.name,
                 sourceType: question.sourceType,

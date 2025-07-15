@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotImplementedException } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotImplementedException } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -15,6 +15,8 @@ import { DashboardVariable } from 'src/entities/dashboard-variable.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { Question } from '../entities/question.entity';
 import { SqlExpression, SqlExpressionOperator } from './question-data-providers/chartjs-sql-data-provider.service';
+import { DashboardService } from './dashboard.service';
+import { Dashboard } from 'src/entities/dashboard.entity';
 
 enum SOURCE_TYPE {
   SQL = 'sql',
@@ -27,6 +29,7 @@ const PRIME_REACT_DATATABLE_SQL_DATA_PROVIDER_NAME = 'PrimeReactDatatableSqlData
 
 @Injectable()
 export class QuestionService extends CRUDService<Question> {
+  private readonly logger = new Logger(this.constructor.name);
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
@@ -40,7 +43,6 @@ export class QuestionService extends CRUDService<Question> {
     readonly repo: Repository<Question>,
     readonly moduleRef: ModuleRef,
     readonly solidRegistry: SolidRegistry, // Assuming solidRegistry is injected for data providers
-
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'question', 'solid-core', moduleRef);
   }
