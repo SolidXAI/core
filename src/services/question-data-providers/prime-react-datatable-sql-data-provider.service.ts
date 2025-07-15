@@ -34,7 +34,7 @@ export class PrimeReactDatatableSqlDataProvider implements IDashboardQuestionDat
         // Check the expected response for prime react data tables to understand what is going on here...
 
         // TODO: Load the set of labels by using a separate field on the question entity.
-        const labelSql = question.sql;
+        const labelSql = question.labelSql;
         const labelResults = await this.entityManager.query(labelSql);
         const columns = [];
         for (let i = 0; i < labelResults.length; i++) {

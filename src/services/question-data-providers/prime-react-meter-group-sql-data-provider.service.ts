@@ -71,7 +71,7 @@ export class PrimeReactMeterGroupSqlDataProvider implements IDashboardQuestionDa
         // TODO: Load the set of labels by using a separate field on the question entity.
 
         // Load the chart options as a JSON 
-        const chartOptions = JSON.parse(question.barChartLabelOptions || '{}');
+        const chartOptions = JSON.parse(question.chartOptions || '{}');
 
         const values = []
 
