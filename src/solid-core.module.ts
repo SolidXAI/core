@@ -237,6 +237,7 @@ import { PrimeReactDatatableSqlDataProvider } from './services/question-data-pro
 import { AiInteraction } from './entities/ai-interaction.entity';
 import { AiInteractionService } from './services/ai-interaction.service';
 import { AiInteractionController } from './controllers/ai-interaction.controller';
+import { DashboardMapper } from './mappers/dashboard-mapper';
 
 
 @Global()
@@ -500,6 +501,7 @@ import { AiInteractionController } from './controllers/ai-interaction.controller
     PrimeReactDatatableSqlDataProvider,
     SqlExpressionResolverService,
     AiInteractionService,
+    DashboardMapper,
   ],
   exports: [
     ModuleMetadataService,
