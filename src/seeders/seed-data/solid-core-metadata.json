@@ -2599,12 +2599,11 @@
             "isSystem": false,
             "defaultValue": null,
             "selectionStaticValues": [
-              "Once:Once",
+              "Every Minute:Every Minute",
               "Hourly:Hourly",
               "Daily:Daily",
               "Weekly:Weekly",
-              "Monthly:Monthly",
-              "Custom:Custom"
+              "Monthly:Monthly"
             ],
             "selectionValueType": "string",
             "required": true,

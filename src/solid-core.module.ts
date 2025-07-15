@@ -243,6 +243,7 @@ import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
 import { DashboardVariableSubscriber } from './subscribers/dashboard-variable.subscriber';
 import { QuestionSubscriber } from './subscribers/question.subscriber';
 import { QuestionSqlDatasetConfigSubscriber } from './subscribers/question-sql-dataset-config.subscriber';
+import { ScheduleModule } from '@nestjs/schedule';
 
 
 @Global()
@@ -288,6 +289,7 @@ import { QuestionSqlDatasetConfigSubscriber } from './subscribers/question-sql-d
     ConfigModule.forFeature(iamConfig),
     ConfigModule.forFeature(jwtConfig),
     JwtModule.registerAsync(jwtConfig.asProvider()),
+    ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'media-files-storage'),
       serveRoot: '/media-files-storage',
