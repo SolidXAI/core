@@ -494,7 +494,8 @@ import { CRUDService } from './services/crud.service';
     ExcelService,
     SolidIntrospectService,
     ImportTransactionService,
-    HttpModule
+    HttpModule,
+    ListOfValuesService
   ],
 })
 export class SolidCoreModule { }
