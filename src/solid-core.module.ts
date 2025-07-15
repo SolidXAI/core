@@ -214,6 +214,7 @@ import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-b
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
+import { ScheduleModule } from '@nestjs/schedule';
 
 
 @Global()
@@ -258,6 +259,7 @@ import { HttpExceptionFilter } from './filters/http-exception.filter';
     ConfigModule.forFeature(iamConfig),
     ConfigModule.forFeature(jwtConfig),
     JwtModule.registerAsync(jwtConfig.asProvider()),
+    ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'media-files-storage'),
       serveRoot: '/media-files-storage',
