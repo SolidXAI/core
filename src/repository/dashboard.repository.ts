@@ -1,4 +1,4 @@
-import { Logger } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { CreateDashboardDto } from "src/dtos/create-dashboard.dto";
 import { DashboardVariable } from "src/entities/dashboard-variable.entity";
 import { Dashboard } from "src/entities/dashboard.entity";
@@ -7,6 +7,7 @@ import { QuestionSqlDatasetConfig } from "src/entities/question-sql-dataset-conf
 import { Question } from "src/entities/question.entity";
 import { DataSource, Repository } from "typeorm";
 
+@Injectable()
 export class DashboardRepository extends Repository<Dashboard> {
     private readonly logger = new Logger(this.constructor.name);
     constructor(
