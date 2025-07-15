@@ -143,8 +143,10 @@ export class SchedulerServiceImpl implements ISchedulerService {
         const base = new Date(from);
 
         switch (job.frequency.toLowerCase()) {
-            case 'once':
-                return null; // don't reschedule
+            // case 'once':
+            //     return null; // don't reschedule
+            case 'every minute':
+                return new Date(base.getTime() + 1 * 60 * 1000);
             case 'hourly':
                 return new Date(base.getTime() + 60 * 60 * 1000);
             case 'daily':
@@ -155,9 +157,9 @@ export class SchedulerServiceImpl implements ISchedulerService {
                 const next = new Date(base);
                 next.setMonth(base.getMonth() + 1);
                 return next;
-            case 'custom':
-                // Optional: let job handler decide via metadata or registry
-                return new Date(base.getTime() + 24 * 60 * 60 * 1000);
+            // case 'custom':
+            //     // Optional: let job handler decide via metadata or registry
+            //     return new Date(base.getTime() + 24 * 60 * 60 * 1000);
             default:
                 return new Date(base.getTime() + 24 * 60 * 60 * 1000);
         }
