@@ -26,17 +26,27 @@ export class QuestionSubscriber implements EntitySubscriberInterface<Question> {
     }
 
     async afterInsert(event: InsertEvent<Question>) {
-        await this.saveDashboardToConfig(event.entity.dashboard, event.queryRunner.manager);
+        if (!event.entity) {
+            this.logger.debug('No question entity found in the QuestionSubscriber afterInsert method');
+            return;
+        }
+        await this.saveDashboardToConfig(event.entity, event.queryRunner.manager);
     }
 
     async afterUpdate(event: UpdateEvent<Question>) {
-        await this.saveDashboardToConfig(event.databaseEntity.dashboard, event.queryRunner.manager);
+        if (!event.databaseEntity) {
+            this.logger.debug('No question entity found in the QuestionSubscriber afterUpdate method');
+            return;
+        }
+        await this.saveDashboardToConfig(event.databaseEntity, event.queryRunner.manager);
     }
 
-    private async saveDashboardToConfig(dashboard: Dashboard, entityManager: EntityManager): Promise<void> {
+    private async saveDashboardToConfig(question: Question, entityManager: EntityManager): Promise<void> {
+        const dashboard = question.dashboard;
         // Get the dashboard from the question & call the saveDashboardToConfig method
         if (!dashboard) {
-            throw new Error('Dashboard not found in the DashboardVariableService saveDashboardToConfig method');
+            this.logger.debug(`Dashboard is undefined for question id ${question.id}`);
+            return;
         }
 
         // populate the dashboard with its variables

@@ -24,17 +24,27 @@ export class DashboardVariableSubscriber implements EntitySubscriberInterface<Da
     }
 
     async afterInsert(event: InsertEvent<DashboardVariable>) {
-        await this.saveDashboardToConfig(event.entity.dashboard, event.queryRunner.manager);
+        if (!event.entity) {
+            this.logger.debug('No dashboard variable entity found in the DashboardVariableSubscriber afterInsert method');
+            return;
+        }
+        await this.saveDashboardToConfig(event.entity, event.queryRunner.manager);
     }
 
     async afterUpdate(event: UpdateEvent<DashboardVariable>) {
-        await this.saveDashboardToConfig(event.databaseEntity.dashboard, event.queryRunner.manager);
+        if (!event.databaseEntity) {
+            this.logger.debug('No dashboard variable entity found in the DashboardVariableSubscriber afterUpdate method');
+            return;
+        }
+        await this.saveDashboardToConfig(event.databaseEntity, event.queryRunner.manager);
     }
 
-    private async saveDashboardToConfig(dashboard: Dashboard, entityManager: EntityManager): Promise<void> {
+    private async saveDashboardToConfig(dashboardVariable: DashboardVariable, entityManager: EntityManager): Promise<void> {
+        const dashboard = dashboardVariable.dashboard;
         // Get the dashboard from the question & call the saveDashboardToConfig method
         if (!dashboard) {
-            throw new Error('Dashboard not found in the DashboardVariableService saveDashboardToConfig method');
+            this.logger.debug(`Dashboard is undefined for dashboard variable id ${dashboardVariable.id}`);
+            return;
         }
 
         // populate the dashboard with its variables

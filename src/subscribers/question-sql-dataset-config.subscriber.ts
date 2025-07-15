@@ -26,21 +26,23 @@ export class QuestionSqlDatasetConfigSubscriber implements EntitySubscriberInter
 
     async afterInsert(event: InsertEvent<QuestionSqlDatasetConfig>) {
         const question = event.entity.question;
+        if (!question) {
+            this.logger.debug('No question found in the QuestionSqlDatasetConfigSubscriber afterInsert method');
+            return;
+        }
         await this.saveQuestionToConfig(question, event.queryRunner.manager);
     }
 
     async afterUpdate(event: UpdateEvent<QuestionSqlDatasetConfig>) {
         const question = event.databaseEntity.question;
+        if (!question) {
+            this.logger.debug('No question found in the QuestionSqlDatasetConfigSubscriber afterUpdate method');
+            return;
+        }
         await this.saveQuestionToConfig(question, event.queryRunner.manager);
     }
 
-    async saveQuestionToConfig(question: Question, entityManager: EntityManager): Promise<void> {
-        // Get the dashboard from the question & call the saveDashboardToConfig method
-        if (!question) {
-            this.logger.debug('No question found in the QuestionService saveQuestionToConfig method');
-            return;
-        }
-
+    private async saveQuestionToConfig(question: Question, entityManager: EntityManager): Promise<void> {
         // Populate the dashboard for the question
         const populatedQuestion = await entityManager.findOne(Question, {
             where: {

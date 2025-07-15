@@ -11,8 +11,8 @@ export class DashboardMapper {
             moduleUserKey: dashboard.module?.name ?? null, // safer fallback
 
             dashboardVariables: (dashboard.dashboardVariables || []).map(variable => ({
-                name: variable.variableName,
-                type: variable.variableType,
+                variableName: variable.variableName,
+                variableType: variable.variableType,
                 selectionStaticValues: this.safeParseJSON(variable.selectionStaticValues, []),
                 selectionDynamicSourceType: variable.selectionDynamicSourceType as SelectionDynamicSourceType,
                 selectionDynamicSQL: variable.selectionDynamicSQL ?? null,
@@ -33,7 +33,7 @@ export class DashboardMapper {
                     sql: config.sql,
                     datasetName: config.datasetName,
                     datasetDisplayName: config.datasetDisplayName, // 🔧 fixed typo: `daataSetDisplayName`
-                    datasetDescription: config.description,
+                    description: config.description,
                     labelColumnName: config.labelColumnName,
                     valueColumnName: config.valueColumnName,
                     options: this.safeParseJSON(config.options, {}),

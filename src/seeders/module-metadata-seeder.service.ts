@@ -215,6 +215,13 @@ export class ModuleMetadataSeederService {
             await this.seedListOfValues(listOfValues);
             this.logger.debug(`[End] Processing List Of Values for ${moduleMetadata.name}`);
 
+            // Dashboards
+            this.logger.debug(`[Start] Processing dashboards for ${moduleMetadata.name}`);
+            const dashboards: CreateDashboardDto[] = overallMetadata.dashboards;
+            await this.seedDashboards(dashboards);
+            this.logger.debug(`[End] Processing dashboards for ${moduleMetadata.name}`);
+
+
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
 
         }

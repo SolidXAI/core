@@ -24,10 +24,19 @@ export class DashboardSubscriber implements EntitySubscriberInterface<Dashboard>
     }
 
     async afterInsert(event: InsertEvent<Dashboard>) {
+        if (!event.entity) {
+            this.logger.debug('No dashboard entity found in the DashboardSubscriber afterInsert method');
+            return;
+        }
         await this.dashboardService.saveDashboardToConfig(event.entity);
     }
 
     async afterUpdate(event: UpdateEvent<Dashboard>) {
+        if (!event.entity) {
+            this.logger.debug('No dashboard entity found in the DashboardSubscriber afterInsert method');
+            return;
+        }
+
         await this.dashboardService.saveDashboardToConfig(event.databaseEntity);
     }
 
