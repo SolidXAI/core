@@ -848,7 +848,7 @@
             "name": "computedFieldTriggerConfig",
             "displayName": "Computed Field Value Trigger Configuration",
             "type": "json",
-            "ormType": "text",
+            "ormType": "jsonb",
             "required": false,
             "unique": false,
             "index": false,
@@ -4283,6 +4283,677 @@
             "isSystem": true
           }
         ]
+      },
+      {
+        "singularName": "dashboard",
+        "pluralName": "dashboards",
+        "displayName": "Dashboard",
+        "description": "This is used to maintain dashboards",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_dashboard",
+        "userKeyFieldUserKey": "name",
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "isUserKey": true
+          },
+          {
+            "name": "layoutJson",
+            "displayName": "Layout Json",
+            "type": "json",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "dashboardVariables",
+            "displayName": "Dashboard Variables",
+            "type": "relation",
+            "ormType": "",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "relationType": "one-to-many",
+            "relationCoModelFieldName": "dashboard",
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "dashboardVariable",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "questions",
+            "displayName": "Questions",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "relationType": "one-to-many",
+            "relationCoModelFieldName": "dashboard",
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "question",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "dashboardVariable",
+        "pluralName": "dashboardVariables",
+        "displayName": "Dashboard Variable",
+        "description": "This is used to maintain dashboard variables",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_dashboard_variable",
+        "userKeyFieldUserKey": "variableName",
+        "fields": [
+          {
+            "name": "variableName",
+            "displayName": "Variable Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "isUserKey": true
+          },
+          {
+            "name": "variableType",
+            "displayName": "Variable Type",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "index": true,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "date:Date",
+              "selectionStatic:Selection Static",
+              "selectionDynamic:Selection Dynamic"
+            ]
+          },
+          {
+            "name": "selectionStaticValues",
+            "displayName": "Selection Static Values",
+            "type": "json",
+            "ormType": "jsonb",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "selectionDynamicSourceType",
+            "displayName": "Selection Dynamic Source Type",
+            "type": "selectionStatic",
+            "ormType": "",
+            "length": 256,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "sql:SQL",
+              "provider:Provider"
+            ]
+          },
+          {
+            "name": "selectionDynamicSQL",
+            "displayName": "Selection Dynamic SQL",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "SQL query to fetch the data for this variable when it is rendered at runtime. This is only applicable when selectionDynamicSourceType is set to SQL."
+          },
+          {
+            "name": "selectionDynamicProviderName",
+            "displayName": "Selection Dynamic Provider Name",
+            "type": "selectionDynamic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionDynamicProvider": "ListOfDashboardVariableProvidersSelectionProvider",
+            "selectionDynamicProviderCtxt": "{}",
+            "description": "This is only applicable when selectionDynamicSourceType is set to provider. It allows the user to select any pre-existing Dashboard SelectionDynamicProvider implementation used to fetch a dynamic dropdown of values to choose from when this variable is presented to the user."
+          },
+          {
+            "name": "isMultiSelect",
+            "displayName": "Is Multi Select",
+            "type": "boolean",
+            "ormType": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is relevant only for variables of type \"selectionStatic\" or \"selectionDynamic\". When set to true, it allows the user to select multiple values from the dropdown."
+          },
+          {
+            "name": "dashboard",
+            "displayName": "Dashboard",
+            "description": "Related Dashboard Model",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "dashboardVariables",
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "dashboard",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "defaultValue",
+            "displayName": "Default Value",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is the default value for this variable when it is rendered at runtime. It can be a static value for this variable when it is rendered at runtime."
+          },
+          {
+            "name": "defaultOperator",
+            "displayName": "Default Operator",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "$equals:Equals",
+              "$notEquals:Not Equals",
+              "$contains:Contains",
+              "$notContains:Not Contains",
+              "$startsWith:Starts With",
+              "$endsWith:Ends With",
+              "$in:In",
+              "$notIn:Not In",
+              "$between:Between",
+              "$lt:Less Than",
+              "$lte:Less Than or Equal To",
+              "$gt:Greater Than",
+              "$gte:Greater Than or Equal To"
+            ],
+            "description": "This is the default operator for this variable when it is rendered at runtime. It can be a static value for this variable when it is rendered at runtime."
+          }
+        ]
+      },
+      {
+        "singularName": "question",
+        "pluralName": "questions",
+        "displayName": "Question",
+        "description": "This is used to maintain questions for dashboards",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_question",
+        "userKeyFieldUserKey": "name",
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "isUserKey": true
+          },
+          {
+            "name": "sourceType",
+            "displayName": "Source Type",
+            "type": "selectionStatic",
+            "ormType": "",
+            "length": 256,
+            "required": true,
+            "index": true,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "sql:SQL",
+              "provider:Provider"
+            ]
+          },
+          {
+            "name": "visualisedAs",
+            "displayName": "Visualised As",
+            "type": "selectionStatic",
+            "ormType": "",
+            "length": 256,
+            "required": true,
+            "index": true,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "bar:ChartJS - Bar",
+              "line:ChartJS - Line",
+              "pie:ChartJS - Pie",
+              "donut:ChartJS - Donut",
+              "prime-meter-group:Prime - Meter Group",
+              "prime-datatable:Prime - Datatable"
+            ]
+          },
+          {
+            "name": "labelSql",
+            "displayName": "Label SQL Query",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is the SQL query to fetch the label values for the question"
+          },
+          {
+            "name": "kpiSql",
+            "displayName": "KPI SQL Query",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is the SQL query to fetch the KPI value for the question"
+          },
+          {
+            "name": "providerName",
+            "displayName": "Provider Name",
+            "type": "selectionDynamic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionDynamicProvider": "ListOfDashboardQuestionProvidersSelectionProvider",
+            "selectionDynamicProviderCtxt": "{}",
+            "description": "This is only applicable when sourceType is set to provider. It allows the user to select any pre-existing Dashboard Question Data provider implementation used to fetch a dynamic dropdown of values to choose from when this question is presented to the user."
+          },
+          {
+            "name": "chartOptions",
+            "displayName": "Bar Chart Label Options",
+            "type": "json",
+            "ormType": "jsonb",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is a JSON object representing each labels display and color options for the bar chart"
+          },
+          {
+            "name": "dashboard",
+            "displayName": "Dashboard",
+            "description": "Related Dashboard Model",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "questions",
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "dashboard",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "questionSqlDatasetConfigs",
+            "displayName": "Question SQL Dataset Config",
+            "description": "Related Question SQL Dataset Config Model",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "one-to-many",
+            "relationCoModelFieldName": "question",
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "questionSqlDatasetConfig",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          }
+        ]
+      },
+      {
+        "singularName": "questionSqlDatasetConfig",
+        "pluralName": "questionSqlDatasetConfigs",
+        "displayName": "Question SQL Dataset Config",
+        "description": "This is used to maintain SQL dataset configurations for questions",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_question_sql_dataset_config",
+        "userKeyFieldUserKey": "datasetName",
+        "fields": [
+          {
+            "name": "datasetName",
+            "displayName": "Dataset Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": true,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "datasetDisplayName",
+            "displayName": "Dataset Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is the display name for the dataset configuration, which can be used in UI components to represent the dataset in a user-friendly manner."
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is a description of the dataset configuration, providing context and details about its purpose."
+          },
+          {
+            "name": "sql",
+            "displayName": "SQL Query",
+            "type": "longText",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "labelColumnName",
+            "displayName": "Label Column Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "valueColumnName",
+            "displayName": "Value Column Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "options",
+            "displayName": "Dataset options",
+            "type": "json",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This allows you to set the dataset options e.g border-color, background-color, etc. This is a JSON object that can be used to customize the dataset appearance or behavior in the UI."
+          },
+          {
+            "name": "question",
+            "displayName": "Question",
+            "description": "Related Question Model",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": "questionSqlDatasetConfigs",
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "question",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          }
+        ]
+      },
+      {
+        "singularName": "aiInteraction",
+        "pluralName": "aiInteractions",
+        "displayName": "AI Interaction",
+        "description": "Stores user and assistant messages in an AI chat session.",
+        "tableName": "ss_ai_interactions",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "userKeyFieldUserKey": "message",
+        "isSystem": false,
+        "fields": [
+          {
+            "name": "user",
+            "displayName": "User",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "user",
+            "relationCreateInverse": true,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "threadId",
+            "displayName": "Thread ID",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "role",
+            "displayName": "Role",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 32,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "message",
+            "displayName": "Message",
+            "type": "longText",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "contentType",
+            "displayName": "Content Type",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 64,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 64,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "errorMessage",
+            "displayName": "Error Message",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": true,
+            "encrypt": false
+          },
+          {
+            "name": "modelUsed",
+            "displayName": "Model Used",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "responseTimeMs",
+            "displayName": "Response Time (ms)",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "metadata",
+            "displayName": "Metadata",
+            "type": "json",
+            "ormType": "jsonb",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          }
+        ]
       }
     ]
   },
@@ -4725,6 +5396,149 @@
       "viewUserKey": "",
       "moduleUserKey": "solid-core",
       "modelUserKey": "setting"
+    },
+    {
+      "displayName": "Dashboard List Action",
+      "name": "dashboard-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboard-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboard"
+    },
+    {
+      "displayName": "Dashboard Variable List Action",
+      "name": "dashboardVariable-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/dashboardVariable/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboardVariable-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardVariable"
+    },
+    {
+      "displayName": "Question List Action",
+      "name": "question-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/question/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "question-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question"
+    },
+    {
+      "displayName": "Dashboard List Action",
+      "name": "dashboard-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/dashboard/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboard-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboard"
+    },
+    {
+      "displayName": "Dashboard Variable List Action",
+      "name": "dashboardVariable-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/dashboardVariable/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboardVariable-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardVariable"
+    },
+    {
+      "displayName": "Question List Action",
+      "name": "question-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/question/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "question-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question"
+    },
+    {
+      "displayName": "Question List Action",
+      "name": "question-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/question/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "question-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question"
+    },
+    {
+      "displayName": "Question List Action",
+      "name": "question-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/question/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "question-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question"
+    },
+    {
+      "displayName": "Question SQL Dataset Config List Action",
+      "name": "questionSqlDatasetConfig-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/questionSqlDatasetConfig/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "questionSqlDatasetConfig-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "questionSqlDatasetConfig"
+    },
+    {
+      "displayName": "Question List Action",
+      "name": "question-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/address-master/question/all",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "question-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question"
+    },
+    {
+      "displayName": "AI Interactions",
+      "name": "aiInteraction-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "aiInteraction-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "aiInteraction"
     }
   ],
   "menus": [
@@ -4971,10 +5785,10 @@
     {
       "displayName": "Import Transactions",
       "name": "importTransaction-menu-item",
-      "sequenceNumber": 1,
+      "sequenceNumber": 11,
       "actionUserKey": "importTransaction-list-view",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "other-menu-item"
     },
     {
       "displayName": "Locale",
@@ -5023,6 +5837,38 @@
       "actionUserKey": "misc-settings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
+    },
+    {
+      "displayName": "Dashboard",
+      "name": "dashboard-root-menu-item",
+      "sequenceNumber": 9,
+      "actionUserKey": "dasbhoard-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Dashboard",
+      "name": "dashboard-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "dashboard-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "dashboard-root-menu-item"
+    },
+    {
+      "displayName": "Question",
+      "name": "question-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "question-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "dashboard-root-menu-item"
+    },
+    {
+      "displayName": "AI Interactions",
+      "name": "aiInteraction-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "aiInteraction-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
     }
   ],
   "views": [
@@ -5049,7 +5895,7 @@
           "rowButtons": [
             {
               "attrs": {
-                "className":"p-button-text",
+                "className": "p-button-text",
                 "icon": "pi pi-cog",
                 "label": "Generate Code",
                 "action": "GenerateModuleCodeRowAction",
@@ -5221,7 +6067,7 @@
           "rowButtons": [
             {
               "attrs": {
-                "icon":"pi pi-trash",
+                "icon": "pi pi-trash",
                 "className": "p-button-danger p-button-text",
                 "label": "Delete",
                 "action": "DeleteModelRowAction",
@@ -5233,7 +6079,7 @@
             {
               "attrs": {
                 "icon": "pi pi-cog",
-                "className":"p-button-text",
+                "className": "p-button-text",
                 "label": "Generate Code",
                 "action": "GenerateModelCodeRowAction",
                 "customComponentIsSystem": true,
@@ -10248,6 +11094,965 @@
                       "className": "col-6"
                     },
                     "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboard-list-view",
+      "displayName": "Dashboard",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboard",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboard-form-view",
+      "displayName": "Dashboard",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboard",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Dashboard",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-1",
+                      "label": "Dashboard"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-1"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "name"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "module"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-2",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "layoutJson"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-2",
+                      "label": "Dashboard Variables"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-2"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-3",
+                              "label": "",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "showLabel": false,
+                                  "name": "dashboardVariables"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardVariable-list-view",
+      "displayName": "Dashboard Variable",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardVariable",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "variableName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "variableType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isMultiSelect"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardVariable-form-view",
+      "displayName": "Dashboard Variable",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardVariable",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Dashboard Variable",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "variableName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "variableType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionStaticValues"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionDynamicSourceType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionDynamicSQL"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionDynamicProviderName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "defaultValue",
+                          "editWidget": "codeEditor",
+                          "editorLanguage": "json"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "defaultOperator"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "dashboard"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "question-list-view",
+      "displayName": "Question",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dashboard"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "visualisedAs"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "question-form-view",
+      "displayName": "Question",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "question",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Question",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "general",
+                      "label": "General"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-1"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "General Info",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "name"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "dashboard"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "visualisedAs"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "Data Source",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "sourceType"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "providerName"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "sql-dataset-config",
+                      "label": "SQL Queries"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-3"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "label": "Label SQL",
+                                  "name": "sql",
+                                  "editWidget": "codeEditor",
+                                  "editorLanguage": "sql"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "showLabel": false,
+                                  "name": "questionSqlDatasetConfigs"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "preview",
+                      "label": "Preview"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-2"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "chart-settings",
+                              "label": "Chart Settings",
+                              "className": "col-3"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "barChartLabelOptions"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "chart-preview",
+                              "label": "Chart Preview",
+                              "className": "col-9"
+                            },
+                            "children": [
+                              {
+                                "type": "custom",
+                                "attrs": {
+                                  "name": "page-2-chart-preview-custom",
+                                  "widget": "chart"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "questionSqlDatasetConfig-list-view",
+      "displayName": "Question SQL Dataset Config",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "questionSqlDatasetConfig",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "datasetDisplayName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "labelColumnName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "valueColumnName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "backgroundColor"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "questionSqlDatasetConfig-form-view",
+      "displayName": "Question SQL Dataset Config",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "questionSqlDatasetConfig",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Question SQL Dataset Config",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "datasetName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "datasetDisplayName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "question"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sql",
+                          "editWidget": "codeEditor",
+                          "editorLanguage": "sql"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "labelColumnName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "valueColumnName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "backgroundColor"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "options"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ai-interaction-list-view",
+      "displayName": "AI Interaction",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "aiInteraction",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "threadId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "role"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "message"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelUsed"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "responseTimeMs"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ai-interaction-form-view",
+      "displayName": "AI Interaction",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "aiInteraction",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "AI Interaction",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "general",
+                      "label": "General Info"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-general"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "left-col",
+                              "label": "Interaction Details",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "user"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "threadId"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "role"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "message",
+                                  "editWidget": "textarea",
+                                  "rows": 6
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "right-col",
+                              "label": "Message Properties",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "contentType"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "modelUsed"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "responseTimeMs"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "status",
+                      "label": "Status & Debug"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-status"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "col-status",
+                              "label": "Execution Info",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "status"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "errorMessage",
+                                  "editWidget": "textarea",
+                                  "rows": 5
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "meta",
+                      "label": "System Metadata"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-meta"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "col-meta",
+                              "label": "Metadata",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "metadata",
+                                  "editWidget": "codeEditor",
+                                  "editorLanguage": "json"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               }

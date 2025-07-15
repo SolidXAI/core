@@ -1,18 +1,18 @@
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
 import { SignUpDto } from 'src/dtos/sign-up.dto';
-import { CreateActionMetadataDto } from './dtos/create-action-metadata.dto';
+import { Readable } from 'stream';
 import { CreateMediaStorageProviderMetadataDto } from './dtos/create-media-storage-provider-metadata.dto';
-import { CreateMenuItemMetadataDto } from './dtos/create-menu-item-metadata.dto';
 import { DatasourceType } from './dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from './dtos/create-module-metadata.dto';
 import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
 import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
-import { CreateViewMetadataDto } from './dtos/create-view-metadata.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
-import { Readable } from 'stream';
+import { Question } from './entities/question.entity';
 import { ComputedFieldMetadata } from './helpers/solid-registry';
+import { SqlExpression } from './services/question-data-providers/chartjs-sql-data-provider.service';
+import { CreateDashboardDto } from './dtos/create-dashboard.dto';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -27,39 +27,40 @@ export interface FieldCrudManager {
 }
 
 export interface ValidationError {
-    field: string;
-    error: string;
+  field: string;
+  error: string;
 }
 
 // export interface MediaStorage
 export interface MediaStorageProvider<T> {
-    store(files: Express.Multer.File[], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
-    delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void>;
-    retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
-    storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
-    // delete(file: string): Promise<void>;
+  store(files: Express.Multer.File[], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
+  delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void>;
+  retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
+  storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
+  // delete(file: string): Promise<void>;
 }
 
 export interface ModuleMetadataConfiguration {
-    moduleMetadata?: CreateModuleMetadataDto,
-    roles?: CreateRoleMetadataDto[],
-    users?: SignUpDto[],
-    actions?: any[],
-    menus?: any[],
-    views?: any[],
-    emailTemplates?: CreateEmailTemplateDto[],
-    smsTemplates?: CreateSmsTemplateDto[],
-    mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[]
-    securityRules?: CreateSecurityRuleDto[],
+  moduleMetadata?: CreateModuleMetadataDto,
+  roles?: CreateRoleMetadataDto[],
+  users?: SignUpDto[],
+  actions?: any[],
+  menus?: any[],
+  views?: any[],
+  emailTemplates?: CreateEmailTemplateDto[],
+  smsTemplates?: CreateSmsTemplateDto[],
+  mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[]
+  securityRules?: CreateSecurityRuleDto[],
+  dashboards?: CreateDashboardDto[],
 }
 
 export interface CodeGenerationOptions {
-    moduleId?: number;
-    moduleUserKey?: string;
-    modelId?: number;
-    modelUserKey?: string;
-    fieldIdsForRemoval?: number[];
-    dryRun?: boolean;
+  moduleId?: number;
+  moduleUserKey?: string;
+  modelId?: number;
+  modelUserKey?: string;
+  fieldIdsForRemoval?: number[];
+  dryRun?: boolean;
 }
 
 export interface ISelectionProviderContext {
@@ -81,6 +82,17 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
   values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
 }
 
+export interface IDashboardVariableSelectionProvider<T extends ISelectionProviderContext> extends ISelectionProvider<T> {
+}
+
+export interface IDashboardQuestionDataProvider<TContext, TData> {
+  help(): string;
+
+  name(): string;
+
+  getData(question: Question, expressions?: SqlExpression[], ctxt?: TContext): Promise<TData[] | TData>;
+}
+
 /**
  * @deprecated Use `IEntityComputedFieldProvider` instead.
  */
@@ -94,7 +106,7 @@ export interface IComputedFieldProvider<T> {
   computeValue(dto: any, ctxt: T): Promise<string | number>; // FIXME : Improve the types to make it more specific using generics
 }
 
-export interface IEntityComputedFieldProvider {  
+export interface IEntityComputedFieldProvider {
   help(): string;
 
   name(): string;
@@ -122,7 +134,7 @@ export class EventDetails<T> {
   constructor(
     public type: any,
     public payload: T,
-  ) {}
+  ) { }
 }
 
 export interface IMail {
