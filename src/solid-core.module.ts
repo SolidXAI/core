@@ -215,6 +215,24 @@ import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { ScheduleModule } from '@nestjs/schedule';
+import { TriggerMcpClientPublisherDatabase } from './jobs/database/trigger-mcp-client-publisher-database.service';
+import { TriggerMcpClientSubscriberDatabase } from './jobs/database/trigger-mcp-client-subscriber-database.service';
+import { DashboardVariableSQLDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-sql-dynamic-provider.service';
+import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-test-dynamic-provider.service';
+import { ListOfDashboardVariableProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-variable-providers-selection-provider.service';
+import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-question-providers-selection-provider.service';
+import { QuestionSqlDatasetConfig } from './entities/question-sql-dataset-config.entity';
+import { QuestionSqlDatasetConfigService } from './services/question-sql-dataset-config.service';
+import { QuestionSqlDatasetConfigController } from './controllers/question-sql-dataset-config.controller';
+import { ChartJsSqlDataProvider } from './services/question-data-providers/chartjs-sql-data-provider.service';
+import { SqlExpressionResolverService } from './services/sql-expression-resolver.service';
+import { PrimeReactMeterGroupSqlDataProvider } from './services/question-data-providers/prime-react-meter-group-sql-data-provider.service';
+import { PrimeReactDatatableSqlDataProvider } from './services/question-data-providers/prime-react-datatable-sql-data-provider.service';
+import { AiInteraction } from './entities/ai-interaction.entity';
+import { AiInteractionService } from './services/ai-interaction.service';
+import { AiInteractionController } from './controllers/ai-interaction.controller';
+import { DashboardMapper } from './mappers/dashboard-mapper';
+import { DashboardRepository } from './repository/dashboard.repository';
 
 
 @Global()
@@ -373,6 +391,10 @@ import { ScheduleModule } from '@nestjs/schedule';
     SmsTemplateService,
     EmailTemplateService,
     PublisherFactory,
+
+    TriggerMcpClientPublisherDatabase,
+    TriggerMcpClientSubscriberDatabase,
+
     EmailQueuePublisher,
     EmailQueueSubscriber,
     EmailQueuePublisherDatabase,
@@ -456,7 +478,7 @@ import { ScheduleModule } from '@nestjs/schedule';
     ComputedFieldEvaluationSubscriber,
     ConcatEntityComputedFieldProvider,
     UserActivityHistoryService,
-    
+
   ],
   exports: [
     ModuleMetadataService,

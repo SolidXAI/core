@@ -62,6 +62,22 @@ export interface CodeGenerationOptions {
     dryRun?: boolean;
 }
 
+export interface TriggerMcpClientOptions {
+  aiInteractionId: number;
+}
+
+export interface McpResponse {
+  success: boolean;
+  request: string;
+  response: string;
+  model?: string;
+  tools_invoked?: string[];
+  tool_calls?: any[];
+  duration_ms?: number;
+  errors?: string[];
+  trace?: string[];
+}
+
 export interface ISelectionProviderContext {
   // query: string;
 }
