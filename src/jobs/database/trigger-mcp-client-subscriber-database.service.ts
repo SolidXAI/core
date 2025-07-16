@@ -31,7 +31,9 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
 
         const codeGnerationOptions = message.payload;
 
-        const aiInteraction = await this.aiInteractionService.findOne(codeGnerationOptions.aiInteractionId, {});
+        const aiInteraction = await this.aiInteractionService.findOne(codeGnerationOptions.aiInteractionId, {
+            populate: ['user']
+        });
 
         // The message contains the users prompt.
         const prompt = aiInteraction.message;
@@ -52,7 +54,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             // await this.aiInteractionService.update(codeGnerationOptions.aiInteractionId, updatedDto);
 
             await this.aiInteractionService.create({
-                userId: aiInteraction.user,
+                userId: aiInteraction.user.id,
                 threadId: aiInteraction.threadId,
                 role: 'gen-ai',
                 message: nestedResponse,
@@ -64,6 +66,6 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             })
         }
 
-        return `something`;
+        return aiResponse;
     }
 }
