@@ -1,10 +1,10 @@
 import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { AiInteractionService } from '../services/ai-interaction.service';
-import { CreateAiInteractionDto } from '../dtos/create-ai-interaction.dto';
-import { UpdateAiInteractionDto } from '../dtos/update-ai-interaction.dto';
-import { InvokeAiPromptDto } from '../dtos/invoke-ai-prompt.dto';
+import { DashboardQuestionService } from '../services/dashboard-question.service';
+import { CreateDashboardQuestionDto } from '../dtos/create-dashboard-question.dto';
+import { UpdateDashboardQuestionDto } from '../dtos/update-dashboard-question.dto';
+import { SqlExpression } from 'src/services/question-data-providers/chartjs-sql-data-provider.service';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -12,21 +12,21 @@ enum ShowSoftDeleted {
 }
 
 @ApiTags('Solid Core')
-@Controller('ai-interaction')
-export class AiInteractionController {
-  constructor(private readonly service: AiInteractionService) { }
+@Controller('dashboard-question')
+export class DashboardQuestionController {
+  constructor(private readonly service: DashboardQuestionService) { }
 
   @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateAiInteractionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  create(@Body() createDto: CreateDashboardQuestionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.create(createDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateAiInteractionDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+  insertMany(@Body() createDtos: CreateDashboardQuestionDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
     return this.service.insertMany(createDtos, filesArray);
   }
 
@@ -34,14 +34,14 @@ export class AiInteractionController {
   @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateAiInteractionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  update(@Param('id') id: number, @Body() updateDto: UpdateDashboardQuestionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Patch(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateAiInteractionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateDashboardQuestionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files, true);
   }
 
@@ -73,6 +73,17 @@ export class AiInteractionController {
   }
 
   @ApiBearerAuth("jwt")
+  @Get(':id/data')
+  async getData(
+    @Param('id') id: string,
+    @Query('filters') filters: SqlExpression[],
+    @Query('isPreview') isPreview?: string
+  ) {
+    const previewMode = isPreview === 'true';
+    return this.service.getData(+id, filters, previewMode);
+  }
+
+  @ApiBearerAuth("jwt")
   @Get(':id')
   async findOne(@Param('id') id: string, @Query() query: any) {
     return this.service.findOne(+id, query);
@@ -90,15 +101,4 @@ export class AiInteractionController {
     return this.service.delete(id);
   }
 
-  @ApiBearerAuth("jwt")
-  @Post('/trigger-mcp-client-job')
-  async triggerMcpClientJob(@Body() dto: InvokeAiPromptDto) {
-    return this.service.triggerMcpClientJob(dto.prompt);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Post('/run-mcp-prompt')
-  async runMcpPrompt(@Body() dto: InvokeAiPromptDto) {
-    return this.service.runMcpPrompt(dto.prompt);
-  }
 }

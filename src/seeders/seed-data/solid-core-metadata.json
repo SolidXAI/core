@@ -848,7 +848,7 @@
             "name": "computedFieldTriggerConfig",
             "displayName": "Computed Field Value Trigger Configuration",
             "type": "json",
-            "ormType": "text",
+            "ormType": "jsonb",
             "required": false,
             "unique": false,
             "index": false,
@@ -4337,7 +4337,7 @@
           },
           {
             "name": "questions",
-            "displayName": "Questions",
+            "displayName": "Dashboard Questions",
             "type": "relation",
             "required": false,
             "unique": false,
@@ -4345,7 +4345,7 @@
             "relationType": "one-to-many",
             "relationCoModelFieldName": "dashboard",
             "relationCreateInverse": true,
-            "relationCoModelSingularName": "question",
+            "relationCoModelSingularName": "dashboardQuestion",
             "relationModelModuleName": "solid-core",
             "isSystem": true
           },
@@ -4547,13 +4547,13 @@
         ]
       },
       {
-        "singularName": "question",
-        "pluralName": "questions",
-        "displayName": "Question",
-        "description": "This is used to maintain questions for dashboards",
+        "singularName": "dashboardQuestion",
+        "pluralName": "dashboardQuestions",
+        "displayName": "Dashboard Question",
+        "description": "This is used to maintain dashboard questions for dashboards",
         "dataSource": "default",
         "dataSourceType": "postgres",
-        "tableName": "ss_question",
+        "tableName": "ss_dashboard_question",
         "userKeyFieldUserKey": "name",
         "fields": [
           {
@@ -4681,7 +4681,7 @@
           },
           {
             "name": "questionSqlDatasetConfigs",
-            "displayName": "Question SQL Dataset Config",
+            "displayName": "Related Dashboard Question SQL Dataset Config",
             "description": "Related Question SQL Dataset Config Model",
             "type": "relation",
             "ormType": "integer",
@@ -4689,7 +4689,7 @@
             "relationType": "one-to-many",
             "relationCoModelFieldName": "question",
             "relationCreateInverse": true,
-            "relationCoModelSingularName": "questionSqlDatasetConfig",
+            "relationCoModelSingularName": "dashboardQuestionSqlDatasetConfig",
             "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": false,
@@ -4701,13 +4701,13 @@
         ]
       },
       {
-        "singularName": "questionSqlDatasetConfig",
-        "pluralName": "questionSqlDatasetConfigs",
-        "displayName": "Question SQL Dataset Config",
-        "description": "This is used to maintain SQL dataset configurations for questions",
+        "singularName": "dashboardQuestionSqlDatasetConfig",
+        "pluralName": "dashboardQuestionSqlDatasetConfigs",
+        "displayName": "Dashboard Question SQL Dataset Config",
+        "description": "This is used to maintain Dashboard Question SQL dataset configurations",
         "dataSource": "default",
         "dataSourceType": "postgres",
-        "tableName": "ss_question_sql_dataset_config",
+        "tableName": "ss_dashboard_question_sql_dataset_config",
         "userKeyFieldUserKey": "datasetName",
         "fields": [
           {
@@ -4811,7 +4811,7 @@
             "relationType": "many-to-one",
             "relationCoModelFieldName": "questionSqlDatasetConfigs",
             "relationCreateInverse": true,
-            "relationCoModelSingularName": "question",
+            "relationCoModelSingularName": "dashboardQuestion",
             "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": true,
@@ -5401,6 +5401,71 @@
       "viewUserKey": "",
       "moduleUserKey": "solid-core",
       "modelUserKey": "setting"
+    },
+    {
+      "displayName": "Dashboard List Action",
+      "name": "dashboard-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboard-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboard"
+    },
+    {
+      "displayName": "Dashboard Variable List Action",
+      "name": "dashboardVariable-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboardVariable-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardVariable"
+    },
+    {
+      "displayName": "Dashboard Question List Action",
+      "name": "dashboardQuestion-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboardQuestion-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardQuestion"
+    },
+    {
+      "displayName": "Dashboard Question SQL Dataset Config List Action",
+      "name": "dashboardQuestionSqlDatasetConfig-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dsahboardQuestionSqlDatasetConfig-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardQuestionSqlDatasetConfig"
+    },
+    {
+      "displayName": "AI Interactions",
+      "name": "aiInteraction-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "aiInteraction-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "aiInteraction"
     }
   ],
   "menus": [
@@ -5647,10 +5712,10 @@
     {
       "displayName": "Import Transactions",
       "name": "importTransaction-menu-item",
-      "sequenceNumber": 1,
+      "sequenceNumber": 11,
       "actionUserKey": "importTransaction-list-view",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "other-menu-item"
     },
     {
       "displayName": "Locale",
@@ -5699,6 +5764,38 @@
       "actionUserKey": "misc-settings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
+    },
+    {
+      "displayName": "Dashboard",
+      "name": "dashboard-root-menu-item",
+      "sequenceNumber": 9,
+      "actionUserKey": "dasbhoard-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Dashboard",
+      "name": "dashboard-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "dashboard-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "dashboard-root-menu-item"
+    },
+    {
+      "displayName": "Dashboard Question",
+      "name": "dashboardQuestion-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "dashboardQuestion-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "dashboard-root-menu-item"
+    },
+    {
+      "displayName": "AI Interactions",
+      "name": "aiInteraction-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "aiInteraction-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
     }
   ],
   "views": [
@@ -5725,7 +5822,7 @@
           "rowButtons": [
             {
               "attrs": {
-                "className":"p-button-text",
+                "className": "p-button-text",
                 "icon": "pi pi-cog",
                 "label": "Generate Code",
                 "action": "GenerateModuleCodeRowAction",
@@ -5897,7 +5994,7 @@
           "rowButtons": [
             {
               "attrs": {
-                "icon":"pi pi-trash",
+                "icon": "pi pi-trash",
                 "className": "p-button-danger p-button-text",
                 "label": "Delete",
                 "action": "DeleteModelRowAction",
@@ -5909,7 +6006,7 @@
             {
               "attrs": {
                 "icon": "pi pi-cog",
-                "className":"p-button-text",
+                "className": "p-button-text",
                 "label": "Generate Code",
                 "action": "GenerateModelCodeRowAction",
                 "customComponentIsSystem": true,
@@ -10924,6 +11021,965 @@
                       "className": "col-6"
                     },
                     "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboard-list-view",
+      "displayName": "Dashboard",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboard",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboard-form-view",
+      "displayName": "Dashboard",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboard",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Dashboard",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-1",
+                      "label": "Dashboard"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-1"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "name"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "module"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-2",
+                              "label": "",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "layoutJson"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-2",
+                      "label": "Dashboard Variables"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-2"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-3",
+                              "label": "",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "showLabel": false,
+                                  "name": "dashboardVariables"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardVariable-list-view",
+      "displayName": "Dashboard Variable",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardVariable",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "variableName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "variableType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isMultiSelect"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardVariable-form-view",
+      "displayName": "Dashboard Variable",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardVariable",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Dashboard Variable",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "variableName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "variableType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionStaticValues"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionDynamicSourceType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionDynamicSQL"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "selectionDynamicProviderName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "defaultValue",
+                          "editWidget": "codeEditor",
+                          "editorLanguage": "json"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "defaultOperator"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "dashboard"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardQuestion-list-view",
+      "displayName": "Dashboard Question",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardQuestion",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dashboard"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "visualisedAs"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardQuestion-form-view",
+      "displayName": "Dashboard Question",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardQuestion",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Dashboard Question",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "general",
+                      "label": "General"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-1"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "General Info",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "name"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "dashboard"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "visualisedAs"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "Data Source",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "sourceType"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "providerName"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "sql-dataset-config",
+                      "label": "SQL Queries"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-3"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "label": "Label SQL",
+                                  "name": "sql",
+                                  "editWidget": "codeEditor",
+                                  "editorLanguage": "sql"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "showLabel": false,
+                                  "name": "questionSqlDatasetConfigs"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "preview",
+                      "label": "Preview"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-2"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "chart-settings",
+                              "label": "Chart Settings",
+                              "className": "col-3"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "barChartLabelOptions"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "chart-preview",
+                              "label": "Chart Preview",
+                              "className": "col-9"
+                            },
+                            "children": [
+                              {
+                                "type": "custom",
+                                "attrs": {
+                                  "name": "page-2-chart-preview-custom",
+                                  "widget": "chart"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardQuestionSqlDatasetConfig-list-view",
+      "displayName": "Dashboard Question SQL Dataset Config",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardQuestionSqlDatasetConfig",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "datasetDisplayName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "labelColumnName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "valueColumnName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "backgroundColor"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardQuestionSqlDatasetConfig-form-view",
+      "displayName": "Dashboard Question SQL Dataset Config",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardQuestionSqlDatasetConfig",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Dashboard Question SQL Dataset Config",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "datasetName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "datasetDisplayName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "question"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sql",
+                          "editWidget": "codeEditor",
+                          "editorLanguage": "sql"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "labelColumnName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "valueColumnName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "backgroundColor"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "options"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "ai-interaction-list-view",
+      "displayName": "AI Interaction",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "aiInteraction",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "threadId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "role"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "message"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelUsed"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "responseTimeMs"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "ai-interaction-form-view",
+      "displayName": "AI Interaction",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "aiInteraction",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "AI Interaction",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "general",
+                      "label": "General Info"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-general"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "left-col",
+                              "label": "Interaction Details",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "user"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "threadId"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "role"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "message",
+                                  "editWidget": "textarea",
+                                  "rows": 6
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "right-col",
+                              "label": "Message Properties",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "contentType"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "modelUsed"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "responseTimeMs"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "status",
+                      "label": "Status & Debug"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-status"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "col-status",
+                              "label": "Execution Info",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "status"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "errorMessage",
+                                  "editWidget": "textarea",
+                                  "rows": 5
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "meta",
+                      "label": "System Metadata"
+                    },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": {
+                          "name": "row-meta"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "col-meta",
+                              "label": "Metadata",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "metadata",
+                                  "editWidget": "codeEditor",
+                                  "editorLanguage": "json"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               }

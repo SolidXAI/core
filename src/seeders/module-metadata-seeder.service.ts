@@ -37,6 +37,8 @@ import { SecurityRuleRepository } from 'src/repository/security-rule.repository'
 import { ListOfValuesService } from 'src/services/list-of-values.service';
 import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
+import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
+import { DashboardRepository } from 'src/repository/dashboard.repository';
 
 @Injectable()
 export class ModuleMetadataSeederService {
@@ -69,7 +71,8 @@ export class ModuleMetadataSeederService {
         @InjectRepository(Setting, 'default')
         readonly settingsRepo: Repository<Setting>,
         readonly securityRuleRepo: SecurityRuleRepository,
-        readonly systemFieldsSeederService: SystemFieldsSeederService
+        readonly systemFieldsSeederService: SystemFieldsSeederService,
+        readonly dashboardRepo: DashboardRepository,
     ) { }
 
     async seed() {
@@ -211,6 +214,13 @@ export class ModuleMetadataSeederService {
             const listOfValues: CreateListOfValuesDto[] = overallMetadata.listOfValues;
             await this.seedListOfValues(listOfValues);
             this.logger.debug(`[End] Processing List Of Values for ${moduleMetadata.name}`);
+
+            // Dashboards
+            this.logger.debug(`[Start] Processing dashboards for ${moduleMetadata.name}`);
+            const dashboards: CreateDashboardDto[] = overallMetadata.dashboards;
+            await this.seedDashboards(dashboards);
+            this.logger.debug(`[End] Processing dashboards for ${moduleMetadata.name}`);
+
 
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
 
@@ -556,6 +566,16 @@ export class ModuleMetadataSeederService {
         }
         for (let j = 0; j < listOfValuesDto.length; j++) {
             await this.listOfValuesService.upsert(listOfValuesDto);
+        }
+    }
+
+    async seedDashboards(dashboardDtos: CreateDashboardDto[]) {
+        if (!dashboardDtos || dashboardDtos.length === 0) {
+            this.logger.debug(`No dashboards found to seed`);
+            return;
+        }
+        for (const dto of dashboardDtos) {
+            await this.dashboardRepo.upsertWithDto(dto);
         }
     }
 

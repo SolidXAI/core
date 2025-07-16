@@ -5,7 +5,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { ISelectionProvider, ISelectionProviderContext } from "../interfaces";
+import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 
 type ControllerMetadata = {
   name: string;
@@ -63,6 +63,8 @@ export class SolidRegistry {
   private securityRules: SecurityRule[] = [];
   private locales: Locale[] = [];
   private computedFieldMetadata: ComputedFieldMetadata[] = [];
+  private dashboardVariableSelectionProviders: Set<InstanceWrapper> = new Set();
+  private dashboardQuestionDataProviders: Set<InstanceWrapper> = new Set();
 
   registerController(name: string, methodNames: string[]): void {
     this.controllers.add({ name: name, methods: methodNames });
@@ -78,6 +80,14 @@ export class SolidRegistry {
 
   registerSelectionProvider(selectionProvider: InstanceWrapper): void {
     this.selectionProviders.add(selectionProvider);
+  }
+
+  registerDashboardVariableSelectionProvider(dashboardSelectionProvider: InstanceWrapper): void {
+    this.dashboardVariableSelectionProviders.add(dashboardSelectionProvider);
+  }
+
+  registerDashboardQuestionDataProvider(dashboardQuestionDataProvider: InstanceWrapper): void {
+    this.dashboardQuestionDataProviders.add(dashboardQuestionDataProvider);
   }
 
   registerComputedFieldProvider(computedFieldProvider: InstanceWrapper): void {
@@ -119,6 +129,38 @@ export class SolidRegistry {
     }
   }
 
+  getDashboardVariableSelectionProviders(): Array<InstanceWrapper> {
+    return Array.from(this.dashboardVariableSelectionProviders);
+  }
+
+  getDashboardVariableSelectionProviderInstance<T extends ISelectionProviderContext>(name: string): IDashboardVariableSelectionProvider<T> {
+    const dashboardSelectionProviders = this.getDashboardVariableSelectionProviders();
+
+    for (let i = 0; i < dashboardSelectionProviders.length; i++) {
+      const dashboardSelectionProvider = dashboardSelectionProviders[i];
+      if (dashboardSelectionProvider.instance.name() === name) {
+        return dashboardSelectionProvider.instance;
+      }
+    }
+  }
+
+  getDashboardQuestionDataProviders(): Array<InstanceWrapper> {
+    return Array.from(this.dashboardQuestionDataProviders)
+  }
+
+  getDashboardQuestionDataProviderInstance<TContext, TData>(name: string): IDashboardQuestionDataProvider<TContext, TData> {
+    const dashboardQuestionDataProviders = this.getDashboardQuestionDataProviders();
+
+    for (let i = 0; i < dashboardQuestionDataProviders.length; i++) {
+      const dasbhoardQuestionDataProvider = dashboardQuestionDataProviders[i];
+      if (dasbhoardQuestionDataProvider.instance.name() === name) {
+        return dasbhoardQuestionDataProvider.instance;
+      }
+    }
+
+  }
+
+
   getComputedFieldProviders(): Array<InstanceWrapper> {
     return Array.from(this.computedFieldProviders);
   }
@@ -137,7 +179,7 @@ export class SolidRegistry {
       }
     }
   }
-  
+
   getComputedFieldProvider(name: string): InstanceWrapper {
     const provider = this.getComputedFieldProviders().filter((provider) => provider.name === name).pop();
     if (!provider) {

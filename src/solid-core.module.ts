@@ -128,9 +128,15 @@ import { PermissionMetadataController } from './controllers/permission-metadata.
 import { PermissionMetadata } from './entities/permission-metadata.entity';
 import { PermissionMetadataService } from './services/permission-metadata.service';
 
+import { ScheduleModule } from '@nestjs/schedule';
 import { ClsModule } from 'nestjs-cls';
+import { AiInteractionController } from './controllers/ai-interaction.controller';
 import { ChatterMessageDetailsController } from './controllers/chatter-message-details.controller';
 import { ChatterMessageController } from './controllers/chatter-message.controller';
+import { DashboardQuestionSqlDatasetConfigController } from './controllers/dashboard-question-sql-dataset-config.controller';
+import { DashboardQuestionController } from './controllers/dashboard-question.controller';
+import { DashboardVariableController } from './controllers/dashboard-variable.controller';
+import { DashboardController } from './controllers/dashboard.controller';
 import { ExportTemplateController } from './controllers/export-template.controller';
 import { ExportTransactionController } from './controllers/export-transaction.controller';
 import { ImportTransactionErrorLogController } from './controllers/import-transaction-error-log.controller';
@@ -145,8 +151,13 @@ import { SettingController } from './controllers/setting.controller';
 import { UserActivityHistoryController } from './controllers/user-activity-history.controller';
 import { UserViewMetadataController } from './controllers/user-view-metadata.controller';
 import { UserController } from './controllers/user.controller';
+import { AiInteraction } from './entities/ai-interaction.entity';
 import { ChatterMessageDetails } from './entities/chatter-message-details.entity';
 import { ChatterMessage } from './entities/chatter-message.entity';
+import { DashboardQuestionSqlDatasetConfig } from './entities/dashboard-question-sql-dataset-config.entity';
+import { DashboardQuestion } from './entities/dashboard-question.entity';
+import { DashboardVariable } from './entities/dashboard-variable.entity';
+import { Dashboard } from './entities/dashboard.entity';
 import { ExportTemplate } from './entities/export-template.entity';
 import { ExportTransaction } from './entities/export-transaction.entity';
 import { ImportTransactionErrorLog } from './entities/import-transaction-error-log.entity';
@@ -160,6 +171,7 @@ import { Setting } from './entities/setting.entity';
 import { UserActivityHistory } from './entities/user-activity-history.entity';
 import { UserViewMetadata } from './entities/user-view-metadata.entity';
 import { User } from './entities/user.entity';
+import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
 import { ModuleMetadataHelperService } from './helpers/module-metadata-helper.service';
 import { ApiEmailQueuePublisherDatabase } from './jobs/database/api-email-publisher-database.service';
@@ -174,19 +186,30 @@ import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-databas
 import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
 import { SmsQueuePublisherDatabase } from './jobs/database/sms-publisher-database.service';
 import { SmsQueueSubscriberDatabase } from './jobs/database/sms-subscriber-database.service';
+import { TriggerMcpClientPublisherDatabase } from './jobs/database/trigger-mcp-client-publisher-database.service';
+import { TriggerMcpClientSubscriberDatabase } from './jobs/database/trigger-mcp-client-subscriber-database.service';
 import { WhatsappQueuePublisherDatabase } from './jobs/database/whatsapp-publisher-database.service';
 import { WhatsappQueueSubscriberDatabase } from './jobs/database/whatsapp-subscriber-database.service';
+import { DashboardMapper } from './mappers/dashboard-mapper';
+import { DashboardRepository } from './repository/dashboard.repository';
 import { FieldMetadataRepository } from './repository/field-metadata.repository';
 import { FieldRepository } from './repository/field.repository';
 import { MediaRepository } from './repository/media.repository';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
 import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
 import { SystemFieldsSeederService } from './seeders/system-fields-seeder.service';
+import { AiInteractionService } from './services/ai-interaction.service';
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageService } from './services/chatter-message.service';
 import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
 import { ConcatEntityComputedFieldProvider } from './services/computed-fields/entity/concat-entity-computed-field-provider.service';
 import { CsvService } from './services/csv.service';
+import { DashboardQuestionSqlDatasetConfigService } from './services/dashboard-question-sql-dataset-config.service';
+import { DashboardQuestionService } from './services/dashboard-question.service';
+import { DashboardVariableSQLDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-sql-dynamic-provider.service';
+import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-test-dynamic-provider.service';
+import { DashboardVariableService } from './services/dashboard-variable.service';
+import { DashboardService } from './services/dashboard.service';
 import { ExcelService } from './services/excel.service';
 import { ExportTemplateService } from './services/export-template.service';
 import { ExportTransactionService } from './services/export-transaction.service';
@@ -195,6 +218,9 @@ import { ImportTransactionService } from './services/import-transaction.service'
 import { LocaleService } from './services/locale.service';
 import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
+import { ChartJsSqlDataProvider } from './services/question-data-providers/chartjs-sql-data-provider.service';
+import { PrimeReactDatatableSqlDataProvider } from './services/question-data-providers/prime-react-datatable-sql-data-provider.service';
+import { PrimeReactMeterGroupSqlDataProvider } from './services/question-data-providers/prime-react-meter-group-sql-data-provider.service';
 import { PublisherFactory } from './services/queues/publisher-factory.service';
 import { RequestContextService } from './services/request-context.service';
 import { RoleMetadataService } from './services/role-metadata.service';
@@ -202,37 +228,24 @@ import { SavedFiltersService } from './services/saved-filters.service';
 import { ScheduledJobService } from './services/scheduled-job.service';
 import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
 import { SecurityRuleService } from './services/security-rule.service';
+import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-question-providers-selection-provider.service';
+import { ListOfDashboardVariableProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-variable-providers-selection-provider.service';
 import { ListOfScheduledJobsSelectionProvider } from './services/selection-providers/list-of-scheduled-jobs-selection-provider.service';
 import { LocaleListSelectionProvider } from './services/selection-providers/locale-list-selection-provider.service';
 import { SettingService } from './services/setting.service';
+import { SqlExpressionResolverService } from './services/sql-expression-resolver.service';
 import { UserActivityHistoryService } from './services/user-activity-history.service';
 import { UserViewMetadataService } from './services/user-view-metadata.service';
 import { UserService } from './services/user.service';
 import { AuditSubscriber } from './subscribers/audit.subscriber';
 import { ComputedEntityFieldSubscriber } from './subscribers/computed-entity-field.subscriber';
 import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-by.subscriber';
+import { DashboardQuestionSqlDatasetConfigSubscriber } from './subscribers/dashboard-question-sql-dataset-config.subscriber';
+import { DashboardQuestionSubscriber } from './subscribers/dashboard-question.subscriber';
+import { DashboardVariableSubscriber } from './subscribers/dashboard-variable.subscriber';
+import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
-import { HttpExceptionFilter } from './filters/http-exception.filter';
-import { ScheduleModule } from '@nestjs/schedule';
-import { TriggerMcpClientPublisherDatabase } from './jobs/database/trigger-mcp-client-publisher-database.service';
-import { TriggerMcpClientSubscriberDatabase } from './jobs/database/trigger-mcp-client-subscriber-database.service';
-import { DashboardVariableSQLDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-sql-dynamic-provider.service';
-import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-test-dynamic-provider.service';
-import { ListOfDashboardVariableProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-variable-providers-selection-provider.service';
-import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-question-providers-selection-provider.service';
-import { QuestionSqlDatasetConfig } from './entities/question-sql-dataset-config.entity';
-import { QuestionSqlDatasetConfigService } from './services/question-sql-dataset-config.service';
-import { QuestionSqlDatasetConfigController } from './controllers/question-sql-dataset-config.controller';
-import { ChartJsSqlDataProvider } from './services/question-data-providers/chartjs-sql-data-provider.service';
-import { SqlExpressionResolverService } from './services/sql-expression-resolver.service';
-import { PrimeReactMeterGroupSqlDataProvider } from './services/question-data-providers/prime-react-meter-group-sql-data-provider.service';
-import { PrimeReactDatatableSqlDataProvider } from './services/question-data-providers/prime-react-datatable-sql-data-provider.service';
-import { AiInteraction } from './entities/ai-interaction.entity';
-import { AiInteractionService } from './services/ai-interaction.service';
-import { AiInteractionController } from './controllers/ai-interaction.controller';
-import { DashboardMapper } from './mappers/dashboard-mapper';
-import { DashboardRepository } from './repository/dashboard.repository';
 
 
 @Global()
@@ -271,6 +284,7 @@ import { DashboardRepository } from './repository/dashboard.repository';
       ImportTransaction,
       ImportTransactionErrorLog,
       UserActivityHistory,
+      AiInteraction,
     ]),
     ConfigModule.forFeature(appBuilderConfig),
     ConfigModule.forFeature(commonConfig),
@@ -292,6 +306,11 @@ import { DashboardRepository } from './repository/dashboard.repository';
     HttpModule,
     ConfigModule,
     ClsModule,
+    TypeOrmModule.forFeature([Dashboard]),
+    TypeOrmModule.forFeature([DashboardVariable]),
+    TypeOrmModule.forFeature([DashboardQuestion]),
+    TypeOrmModule.forFeature([DashboardQuestionSqlDatasetConfig]),
+    TypeOrmModule.forFeature([AiInteraction]),
   ],
   controllers: [
     ModuleMetadataController,
@@ -330,6 +349,11 @@ import { DashboardRepository } from './repository/dashboard.repository';
     ImportTransactionController,
     ImportTransactionErrorLogController,
     UserActivityHistoryController,
+    DashboardController,
+    DashboardVariableController,
+    DashboardQuestionController,
+    DashboardQuestionSqlDatasetConfigController,
+    AiInteractionController,
   ],
   providers: [
     {
@@ -478,7 +502,25 @@ import { DashboardRepository } from './repository/dashboard.repository';
     ComputedFieldEvaluationSubscriber,
     ConcatEntityComputedFieldProvider,
     UserActivityHistoryService,
-
+    DashboardService,
+    DashboardVariableService,
+    DashboardQuestionService,
+    DashboardVariableSQLDynamicProvider,
+    DasbhoardVariableTestDynamicProvider,
+    ListOfDashboardVariableProvidersSelectionProvider,
+    ListOfDashboardQuestionProvidersSelectionProvider,
+    DashboardQuestionSqlDatasetConfigService,
+    ChartJsSqlDataProvider,
+    PrimeReactMeterGroupSqlDataProvider,
+    PrimeReactDatatableSqlDataProvider,
+    SqlExpressionResolverService,
+    AiInteractionService,
+    DashboardMapper,
+    DashboardRepository,
+    DashboardSubscriber,
+    DashboardVariableSubscriber,
+    DashboardQuestionSubscriber,
+    DashboardQuestionSqlDatasetConfigSubscriber,
   ],
   exports: [
     ModuleMetadataService,
