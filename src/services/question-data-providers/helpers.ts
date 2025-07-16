@@ -6,7 +6,7 @@ export async function getLabels(question: DashboardQuestion, entityManager: Enti
     if (!labelSql) {
         return [];
     }    
-    const labelResults = await this.entityManager.query(labelSql);
+    const labelResults = await entityManager.query(labelSql);
     // Assuming labelResults has a single row with a 'label' field
     // Map the label results to the labels array
     const labels: string[] = labelResults.map((result: { [x: string]: string; }) => result['label']);
