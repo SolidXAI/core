@@ -4337,7 +4337,7 @@
           },
           {
             "name": "questions",
-            "displayName": "Questions",
+            "displayName": "Dashboard Questions",
             "type": "relation",
             "required": false,
             "unique": false,
@@ -4345,7 +4345,7 @@
             "relationType": "one-to-many",
             "relationCoModelFieldName": "dashboard",
             "relationCreateInverse": true,
-            "relationCoModelSingularName": "question",
+            "relationCoModelSingularName": "dashboardQuestion",
             "relationModelModuleName": "solid-core",
             "isSystem": true
           },
@@ -4547,13 +4547,13 @@
         ]
       },
       {
-        "singularName": "question",
-        "pluralName": "questions",
-        "displayName": "Question",
-        "description": "This is used to maintain questions for dashboards",
+        "singularName": "dashboardQuestion",
+        "pluralName": "dashboardQuestions",
+        "displayName": "Dashboard Question",
+        "description": "This is used to maintain dashboard questions for dashboards",
         "dataSource": "default",
         "dataSourceType": "postgres",
-        "tableName": "ss_question",
+        "tableName": "ss_dashboard_question",
         "userKeyFieldUserKey": "name",
         "fields": [
           {
@@ -4681,7 +4681,7 @@
           },
           {
             "name": "questionSqlDatasetConfigs",
-            "displayName": "Question SQL Dataset Config",
+            "displayName": "Related Dashboard Question SQL Dataset Config",
             "description": "Related Question SQL Dataset Config Model",
             "type": "relation",
             "ormType": "integer",
@@ -4689,7 +4689,7 @@
             "relationType": "one-to-many",
             "relationCoModelFieldName": "question",
             "relationCreateInverse": true,
-            "relationCoModelSingularName": "questionSqlDatasetConfig",
+            "relationCoModelSingularName": "dashboardQuestionSqlDatasetConfig",
             "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": false,
@@ -4701,13 +4701,13 @@
         ]
       },
       {
-        "singularName": "questionSqlDatasetConfig",
-        "pluralName": "questionSqlDatasetConfigs",
-        "displayName": "Question SQL Dataset Config",
-        "description": "This is used to maintain SQL dataset configurations for questions",
+        "singularName": "dashboardQuestionSqlDatasetConfig",
+        "pluralName": "dashboardQuestionSqlDatasetConfigs",
+        "displayName": "Dashboard Question SQL Dataset Config",
+        "description": "This is used to maintain Dashboard Question SQL dataset configurations",
         "dataSource": "default",
         "dataSourceType": "postgres",
-        "tableName": "ss_question_sql_dataset_config",
+        "tableName": "ss_dashboard_question_sql_dataset_config",
         "userKeyFieldUserKey": "datasetName",
         "fields": [
           {
@@ -4811,7 +4811,7 @@
             "relationType": "many-to-one",
             "relationCoModelFieldName": "questionSqlDatasetConfigs",
             "relationCreateInverse": true,
-            "relationCoModelSingularName": "question",
+            "relationCoModelSingularName": "dashboardQuestion",
             "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": true,
@@ -5416,7 +5416,7 @@
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/address-master/dashboardVariable/all",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "dashboardVariable-list-view",
@@ -5424,108 +5424,30 @@
       "modelUserKey": "dashboardVariable"
     },
     {
-      "displayName": "Question List Action",
-      "name": "question-list-action",
+      "displayName": "Dashboard Question List Action",
+      "name": "dashboardQuestion-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/address-master/question/all",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "question-list-view",
+      "viewUserKey": "dashboardQuestion-list-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "question"
+      "modelUserKey": "dashboardQuestion"
     },
     {
-      "displayName": "Dashboard List Action",
-      "name": "dashboard-list-action",
+      "displayName": "Dashboard Question SQL Dataset Config List Action",
+      "name": "dashboardQuestionSqlDatasetConfig-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/address-master/dashboard/all",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "dashboard-list-view",
+      "viewUserKey": "dsahboardQuestionSqlDatasetConfig-list-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboard"
-    },
-    {
-      "displayName": "Dashboard Variable List Action",
-      "name": "dashboardVariable-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/address-master/dashboardVariable/all",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "dashboardVariable-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardVariable"
-    },
-    {
-      "displayName": "Question List Action",
-      "name": "question-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/address-master/question/all",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "question-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "question"
-    },
-    {
-      "displayName": "Question List Action",
-      "name": "question-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/address-master/question/all",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "question-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "question"
-    },
-    {
-      "displayName": "Question List Action",
-      "name": "question-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/address-master/question/all",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "question-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "question"
-    },
-    {
-      "displayName": "Question SQL Dataset Config List Action",
-      "name": "questionSqlDatasetConfig-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/address-master/questionSqlDatasetConfig/all",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "questionSqlDatasetConfig-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "questionSqlDatasetConfig"
-    },
-    {
-      "displayName": "Question List Action",
-      "name": "question-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/address-master/question/all",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "question-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "question"
+      "modelUserKey": "dashboardQuestionSqlDatasetConfig"
     },
     {
       "displayName": "AI Interactions",
@@ -5855,10 +5777,10 @@
       "parentMenuItemUserKey": "dashboard-root-menu-item"
     },
     {
-      "displayName": "Question",
-      "name": "question-menu-item",
+      "displayName": "Dashboard Question",
+      "name": "dashboardQuestion-menu-item",
       "sequenceNumber": 2,
-      "actionUserKey": "question-list-action",
+      "actionUserKey": "dashboardQuestion-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "dashboard-root-menu-item"
     },
@@ -11418,12 +11340,12 @@
       }
     },
     {
-      "name": "question-list-view",
-      "displayName": "Question",
+      "name": "dashboardQuestion-list-view",
+      "displayName": "Dashboard Question",
       "type": "list",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "question",
+      "modelUserKey": "dashboardQuestion",
       "layout": {
         "type": "list",
         "attrs": {
@@ -11467,17 +11389,17 @@
       }
     },
     {
-      "name": "question-form-view",
-      "displayName": "Question",
+      "name": "dashboardQuestion-form-view",
+      "displayName": "Dashboard Question",
       "type": "form",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "question",
+      "modelUserKey": "dashboardQuestion",
       "layout": {
         "type": "form",
         "attrs": {
           "name": "form-1",
-          "label": "Question",
+          "label": "Dashboard Question",
           "className": "grid"
         },
         "children": [
@@ -11661,12 +11583,12 @@
       }
     },
     {
-      "name": "questionSqlDatasetConfig-list-view",
-      "displayName": "Question SQL Dataset Config",
+      "name": "dashboardQuestionSqlDatasetConfig-list-view",
+      "displayName": "Dashboard Question SQL Dataset Config",
       "type": "list",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "questionSqlDatasetConfig",
+      "modelUserKey": "dashboardQuestionSqlDatasetConfig",
       "layout": {
         "type": "list",
         "attrs": {
@@ -11710,17 +11632,17 @@
       }
     },
     {
-      "name": "questionSqlDatasetConfig-form-view",
-      "displayName": "Question SQL Dataset Config",
+      "name": "dashboardQuestionSqlDatasetConfig-form-view",
+      "displayName": "Dashboard Question SQL Dataset Config",
       "type": "form",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "questionSqlDatasetConfig",
+      "modelUserKey": "dashboardQuestionSqlDatasetConfig",
       "layout": {
         "type": "form",
         "attrs": {
           "name": "form-1",
-          "label": "Question SQL Dataset Config",
+          "label": "Dashboard Question SQL Dataset Config",
           "className": "grid"
         },
         "children": [

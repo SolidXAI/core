@@ -11,10 +11,10 @@ import { FileService } from 'src/services/file.service';
 import { CrudHelperService } from 'src/services/crud-helper.service';
 
 
-import { QuestionSqlDatasetConfig } from '../entities/question-sql-dataset-config.entity';
+import { DashboardQuestionSqlDatasetConfig } from '../entities/dashboard-question-sql-dataset-config.entity';
 
 @Injectable()
-export class QuestionSqlDatasetConfigService extends CRUDService<QuestionSqlDatasetConfig>{
+export class DashboardQuestionSqlDatasetConfigService extends CRUDService<DashboardQuestionSqlDatasetConfig>{
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
@@ -24,11 +24,11 @@ export class QuestionSqlDatasetConfigService extends CRUDService<QuestionSqlData
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(QuestionSqlDatasetConfig, 'default')
-    readonly repo: Repository<QuestionSqlDatasetConfig>,
+    @InjectRepository(DashboardQuestionSqlDatasetConfig, 'default')
+    readonly repo: Repository<DashboardQuestionSqlDatasetConfig>,
     readonly moduleRef: ModuleRef
 
  ) {
-   super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'questionSqlDatasetConfig', 'solid-core', moduleRef);
+   super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'dashboardQuestionSqlDatasetConfig', 'solid-core', moduleRef);
  }
 }

@@ -13,7 +13,7 @@ import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 import { DashboardVariable } from 'src/entities/dashboard-variable.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
-import { Question } from '../entities/question.entity';
+import { DashboardQuestion } from '../entities/dashboard-question.entity';
 import { SqlExpression, SqlExpressionOperator } from './question-data-providers/chartjs-sql-data-provider.service';
 import { DashboardService } from './dashboard.service';
 import { Dashboard } from 'src/entities/dashboard.entity';
@@ -28,7 +28,7 @@ const PRIME_REACT_METER_GROUP_SQL_DATA_PROVIDER_NAME = 'PrimeReactMeterGroupSqlD
 const PRIME_REACT_DATATABLE_SQL_DATA_PROVIDER_NAME = 'PrimeReactDatatableSqlDataProvider';
 
 @Injectable()
-export class QuestionService extends CRUDService<Question> {
+export class DashboardQuestionService extends CRUDService<DashboardQuestion> {
   private readonly logger = new Logger(this.constructor.name);
   constructor(
     readonly modelMetadataService: ModelMetadataService,
@@ -39,12 +39,12 @@ export class QuestionService extends CRUDService<Question> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(Question, 'default')
-    readonly repo: Repository<Question>,
+    @InjectRepository(DashboardQuestion, 'default')
+    readonly repo: Repository<DashboardQuestion>,
     readonly moduleRef: ModuleRef,
     readonly solidRegistry: SolidRegistry, // Assuming solidRegistry is injected for data providers
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'question', 'solid-core', moduleRef);
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'dashboardQuestion', 'solid-core', moduleRef);
   }
 
   // Get the data for a specific question 
@@ -100,7 +100,7 @@ export class QuestionService extends CRUDService<Question> {
   }
 
   private async loadQuestion(id: number) {
-    const repo = this.entityManager.getRepository(Question);
+    const repo = this.entityManager.getRepository(DashboardQuestion);
 
     // Load the dashboard record using the field
     const question = await repo.findOne({

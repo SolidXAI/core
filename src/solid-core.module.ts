@@ -219,17 +219,17 @@ import { DashboardController } from './controllers/dashboard.controller';
 import { DashboardVariable } from './entities/dashboard-variable.entity';
 import { DashboardVariableService } from './services/dashboard-variable.service';
 import { DashboardVariableController } from './controllers/dashboard-variable.controller';
-import { Question } from './entities/question.entity';
-import { QuestionService } from './services/question.service';
-import { QuestionController } from './controllers/question.controller';
+import { DashboardQuestion } from './entities/dashboard-question.entity';
+import { DashboardQuestionService } from './services/dashboard-question.service';
+import { DashboardQuestionController } from './controllers/dashboard-question.controller';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { DashboardVariableSQLDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-sql-dynamic-provider.service';
 import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-test-dynamic-provider.service';
 import { ListOfDashboardVariableProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-variable-providers-selection-provider.service';
 import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-question-providers-selection-provider.service';
-import { QuestionSqlDatasetConfig } from './entities/question-sql-dataset-config.entity';
-import { QuestionSqlDatasetConfigService } from './services/question-sql-dataset-config.service';
-import { QuestionSqlDatasetConfigController } from './controllers/question-sql-dataset-config.controller';
+import { DashboardQuestionSqlDatasetConfig } from './entities/dashboard-question-sql-dataset-config.entity';
+import { DashboardQuestionSqlDatasetConfigService } from './services/dashboard-question-sql-dataset-config.service';
+import { DashboardQuestionSqlDatasetConfigController } from './controllers/dashboard-question-sql-dataset-config.controller';
 import { ChartJsSqlDataProvider } from './services/question-data-providers/chartjs-sql-data-provider.service';
 import { SqlExpressionResolverService } from './services/sql-expression-resolver.service';
 import { PrimeReactMeterGroupSqlDataProvider } from './services/question-data-providers/prime-react-meter-group-sql-data-provider.service';
@@ -241,8 +241,8 @@ import { DashboardMapper } from './mappers/dashboard-mapper';
 import { DashboardRepository } from './repository/dashboard.repository';
 import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
 import { DashboardVariableSubscriber } from './subscribers/dashboard-variable.subscriber';
-import { QuestionSubscriber } from './subscribers/question.subscriber';
-import { QuestionSqlDatasetConfigSubscriber } from './subscribers/question-sql-dataset-config.subscriber';
+import { DashboardQuestionSubscriber } from './subscribers/dashboard-question.subscriber';
+import { DashboardQuestionSqlDatasetConfigSubscriber } from './subscribers/dashboard-question-sql-dataset-config.subscriber';
 import { ScheduleModule } from '@nestjs/schedule';
 
 
@@ -306,8 +306,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     ClsModule,
     TypeOrmModule.forFeature([Dashboard]),
     TypeOrmModule.forFeature([DashboardVariable]),
-    TypeOrmModule.forFeature([Question]),
-    TypeOrmModule.forFeature([QuestionSqlDatasetConfig]),
+    TypeOrmModule.forFeature([DashboardQuestion]),
+    TypeOrmModule.forFeature([DashboardQuestionSqlDatasetConfig]),
     TypeOrmModule.forFeature([AiInteraction]),
   ],
   controllers: [
@@ -349,8 +349,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     UserActivityHistoryController,
     DashboardController,
     DashboardVariableController,
-    QuestionController,
-    QuestionSqlDatasetConfigController,
+    DashboardQuestionController,
+    DashboardQuestionSqlDatasetConfigController,
     AiInteractionController,
   ],
   providers: [
@@ -498,12 +498,12 @@ import { ScheduleModule } from '@nestjs/schedule';
     UserActivityHistoryService,
     DashboardService,
     DashboardVariableService,
-    QuestionService,
+    DashboardQuestionService,
     DashboardVariableSQLDynamicProvider,
     DasbhoardVariableTestDynamicProvider,
     ListOfDashboardVariableProvidersSelectionProvider,
     ListOfDashboardQuestionProvidersSelectionProvider,
-    QuestionSqlDatasetConfigService,
+    DashboardQuestionSqlDatasetConfigService,
     ChartJsSqlDataProvider,
     PrimeReactMeterGroupSqlDataProvider,
     PrimeReactDatatableSqlDataProvider,
@@ -513,8 +513,8 @@ import { ScheduleModule } from '@nestjs/schedule';
     DashboardRepository,
     DashboardSubscriber,
     DashboardVariableSubscriber,
-    QuestionSubscriber,
-    QuestionSqlDatasetConfigSubscriber,
+    DashboardQuestionSubscriber,
+    DashboardQuestionSqlDatasetConfigSubscriber,
   ],
   exports: [
     ModuleMetadataService,

@@ -3,7 +3,7 @@ import { IsString } from 'class-validator';
 import { IsNotEmpty, ValidateNested, IsArray, IsOptional, IsJSON, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 import { UpdateDashboardVariableDto } from 'src/dtos/update-dashboard-variable.dto';
-import { UpdateQuestionDto } from 'src/dtos/update-question.dto';
+import { UpdateDashboardQuestionDto } from 'src/dtos/update-dashboard-question.dto';
 
 export class CreateDashboardDto {
     @IsNotEmpty()
@@ -32,8 +32,8 @@ export class CreateDashboardDto {
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => UpdateQuestionDto)
-    questions: UpdateQuestionDto[];
+    @Type(() => UpdateDashboardQuestionDto)
+    questions: UpdateDashboardQuestionDto[];
     @IsOptional()
     @IsArray()
     @ApiProperty()

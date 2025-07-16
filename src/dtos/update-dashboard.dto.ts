@@ -2,7 +2,7 @@ import { IsInt,IsOptional, IsString, IsNotEmpty, ValidateNested, IsArray, IsJSON
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { UpdateDashboardVariableDto } from 'src/dtos/update-dashboard-variable.dto';
-import { UpdateQuestionDto } from 'src/dtos/update-question.dto';
+import { UpdateDashboardQuestionDto } from 'src/dtos/update-dashboard-question.dto';
 
 export class UpdateDashboardDto {
     @IsOptional()
@@ -36,8 +36,8 @@ export class UpdateDashboardDto {
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => UpdateQuestionDto)
-    questions: UpdateQuestionDto[];
+    @Type(() => UpdateDashboardQuestionDto)
+    questions: UpdateDashboardQuestionDto[];
     @IsOptional()
     @IsArray()
     @ApiProperty()

@@ -1,9 +1,9 @@
 import { CommonEntity } from 'src/entities/common.entity'
 import { Entity, Column, Index, JoinColumn, ManyToOne } from 'typeorm';
-import { Question } from 'src/entities/question.entity'
+import { DashboardQuestion } from 'src/entities/dashboard-question.entity'
 
-@Entity("ss_question_sql_dataset_config")
-export class QuestionSqlDatasetConfig extends CommonEntity {
+@Entity("ss_dashboard_question_sql_dataset_config")
+export class DashboardQuestionSqlDatasetConfig extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     datasetName: string;
@@ -17,9 +17,9 @@ export class QuestionSqlDatasetConfig extends CommonEntity {
     labelColumnName: string;
     @Column({ type: "varchar" })
     valueColumnName: string;
-    @ManyToOne(() => Question, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => DashboardQuestion, { onDelete: "CASCADE", nullable: false })
     @JoinColumn()
-    question: Question;
+    question: DashboardQuestion;
     @Column({ type: "text", nullable: true })
     options: any;
 }

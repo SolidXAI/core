@@ -3,8 +3,8 @@ import { CreateDashboardDto } from "src/dtos/create-dashboard.dto";
 import { DashboardVariable } from "src/entities/dashboard-variable.entity";
 import { Dashboard } from "src/entities/dashboard.entity";
 import { ModuleMetadata } from "src/entities/module-metadata.entity";
-import { QuestionSqlDatasetConfig } from "src/entities/question-sql-dataset-config.entity";
-import { Question } from "src/entities/question.entity";
+import { DashboardQuestionSqlDatasetConfig } from "src/entities/dashboard-question-sql-dataset-config.entity";
+import { DashboardQuestion } from "src/entities/dashboard-question.entity";
 import { DataSource, Repository } from "typeorm";
 
 @Injectable()
@@ -60,8 +60,8 @@ export class DashboardRepository extends Repository<Dashboard> {
 
     private async cleanupRemovedRelations(existing: Dashboard, dto: CreateDashboardDto) {
         const dashboardVariableRepo = this.dataSource.getRepository(DashboardVariable);
-        const questionRepo = this.dataSource.getRepository(Question);
-        const datasetConfigRepo = this.dataSource.getRepository(QuestionSqlDatasetConfig); // 👈 make sure this is imported
+        const questionRepo = this.dataSource.getRepository(DashboardQuestion);
+        const datasetConfigRepo = this.dataSource.getRepository(DashboardQuestionSqlDatasetConfig); // 👈 make sure this is imported
 
         // === 1. Clean up removed dashboardVariables ===
         const dtoVariableNames = new Set(dto.dashboardVariables.map(v => v.variableName));

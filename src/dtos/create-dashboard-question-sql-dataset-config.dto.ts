@@ -2,7 +2,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 import { IsNotEmpty, IsOptional, IsInt, IsJSON } from 'class-validator';
 
-export class CreateQuestionSqlDatasetConfigDto {
+export class CreateDashboardQuestionSqlDatasetConfigDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty()

@@ -1,15 +1,13 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
-import { Dashboard } from "src/entities/dashboard.entity";
-import { QuestionSqlDatasetConfig } from "src/entities/question-sql-dataset-config.entity";
-import { Question } from "src/entities/question.entity";
+import { DashboardQuestionSqlDatasetConfig } from "src/entities/dashboard-question-sql-dataset-config.entity";
+import { DashboardQuestion } from "src/entities/dashboard-question.entity";
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
 import { DashboardService } from "src/services/dashboard.service";
-import { QuestionService } from "src/services/question.service";
 import { DataSource, EntityManager, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
 
 @Injectable()
-export class QuestionSqlDatasetConfigSubscriber implements EntitySubscriberInterface<QuestionSqlDatasetConfig> {
+export class DashboardQuestionSqlDatasetConfigSubscriber implements EntitySubscriberInterface<DashboardQuestionSqlDatasetConfig> {
     private readonly logger = new Logger(this.constructor.name);
     constructor(
         @InjectDataSource()
@@ -21,10 +19,10 @@ export class QuestionSqlDatasetConfigSubscriber implements EntitySubscriberInter
     }
 
     listenTo() {
-        return QuestionSqlDatasetConfig;
+        return DashboardQuestionSqlDatasetConfig;
     }
 
-    async afterInsert(event: InsertEvent<QuestionSqlDatasetConfig>) {
+    async afterInsert(event: InsertEvent<DashboardQuestionSqlDatasetConfig>) {
         const question = event.entity.question;
         if (!question) {
             this.logger.debug('No question found in the QuestionSqlDatasetConfigSubscriber afterInsert method');
@@ -33,7 +31,7 @@ export class QuestionSqlDatasetConfigSubscriber implements EntitySubscriberInter
         await this.saveQuestionToConfig(question, event.queryRunner.manager);
     }
 
-    async afterUpdate(event: UpdateEvent<QuestionSqlDatasetConfig>) {
+    async afterUpdate(event: UpdateEvent<DashboardQuestionSqlDatasetConfig>) {
         const question = event.databaseEntity.question;
         if (!question) {
             this.logger.debug('No question found in the QuestionSqlDatasetConfigSubscriber afterUpdate method');
@@ -42,9 +40,9 @@ export class QuestionSqlDatasetConfigSubscriber implements EntitySubscriberInter
         await this.saveQuestionToConfig(question, event.queryRunner.manager);
     }
 
-    private async saveQuestionToConfig(question: Question, entityManager: EntityManager): Promise<void> {
+    private async saveQuestionToConfig(question: DashboardQuestion, entityManager: EntityManager): Promise<void> {
         // Populate the dashboard for the question
-        const populatedQuestion = await entityManager.findOne(Question, {
+        const populatedQuestion = await entityManager.findOne(DashboardQuestion, {
             where: {
                 id: question.id,
             },

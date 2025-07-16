@@ -1,16 +1,13 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
-import e from "express";
-import { DashboardVariable } from "src/entities/dashboard-variable.entity";
+import { DashboardQuestion } from "src/entities/dashboard-question.entity";
 import { Dashboard } from "src/entities/dashboard.entity";
-import { Question } from "src/entities/question.entity";
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
 import { DashboardService } from "src/services/dashboard.service";
-import { QuestionService } from "src/services/question.service";
-import { EntitySubscriberInterface, DataSource, InsertEvent, UpdateEvent, EntityManager } from "typeorm";
+import { DataSource, EntityManager, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
 
 @Injectable()
-export class QuestionSubscriber implements EntitySubscriberInterface<Question> {
+export class DashboardQuestionSubscriber implements EntitySubscriberInterface<DashboardQuestion> {
     private readonly logger = new Logger(this.constructor.name);
     constructor(
         @InjectDataSource()
@@ -22,10 +19,10 @@ export class QuestionSubscriber implements EntitySubscriberInterface<Question> {
     }
 
     listenTo() {
-        return Question;
+        return DashboardQuestion;
     }
 
-    async afterInsert(event: InsertEvent<Question>) {
+    async afterInsert(event: InsertEvent<DashboardQuestion>) {
         if (!event.entity) {
             this.logger.debug('No question entity found in the QuestionSubscriber afterInsert method');
             return;
@@ -33,7 +30,7 @@ export class QuestionSubscriber implements EntitySubscriberInterface<Question> {
         await this.saveDashboardToConfig(event.entity, event.queryRunner.manager);
     }
 
-    async afterUpdate(event: UpdateEvent<Question>) {
+    async afterUpdate(event: UpdateEvent<DashboardQuestion>) {
         if (!event.databaseEntity) {
             this.logger.debug('No question entity found in the QuestionSubscriber afterUpdate method');
             return;
@@ -41,7 +38,7 @@ export class QuestionSubscriber implements EntitySubscriberInterface<Question> {
         await this.saveDashboardToConfig(event.databaseEntity, event.queryRunner.manager);
     }
 
-    private async saveDashboardToConfig(question: Question, entityManager: EntityManager): Promise<void> {
+    private async saveDashboardToConfig(question: DashboardQuestion, entityManager: EntityManager): Promise<void> {
         const dashboard = question.dashboard;
         // Get the dashboard from the question & call the saveDashboardToConfig method
         if (!dashboard) {

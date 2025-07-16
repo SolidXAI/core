@@ -1,9 +1,10 @@
 import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { QuestionSqlDatasetConfigService } from '../services/question-sql-dataset-config.service';
-import { CreateQuestionSqlDatasetConfigDto } from '../dtos/create-question-sql-dataset-config.dto';
-import { UpdateQuestionSqlDatasetConfigDto } from '../dtos/update-question-sql-dataset-config.dto';
+import { DashboardQuestionService } from '../services/dashboard-question.service';
+import { CreateDashboardQuestionDto } from '../dtos/create-dashboard-question.dto';
+import { UpdateDashboardQuestionDto } from '../dtos/update-dashboard-question.dto';
+import { SqlExpression } from 'src/services/question-data-providers/chartjs-sql-data-provider.service';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -11,21 +12,21 @@ enum ShowSoftDeleted {
 }
 
 @ApiTags('Solid Core')
-@Controller('question-sql-dataset-config')
-export class QuestionSqlDatasetConfigController {
-  constructor(private readonly service: QuestionSqlDatasetConfigService) {}
+@Controller('dashboard-question')
+export class DashboardQuestionController {
+  constructor(private readonly service: DashboardQuestionService) { }
 
   @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateQuestionSqlDatasetConfigDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  create(@Body() createDto: CreateDashboardQuestionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.create(createDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateQuestionSqlDatasetConfigDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+  insertMany(@Body() createDtos: CreateDashboardQuestionDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
     return this.service.insertMany(createDtos, filesArray);
   }
 
@@ -33,14 +34,14 @@ export class QuestionSqlDatasetConfigController {
   @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateQuestionSqlDatasetConfigDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  update(@Param('id') id: number, @Body() updateDto: UpdateDashboardQuestionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Patch(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateQuestionSqlDatasetConfigDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateDashboardQuestionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files, true);
   }
 
@@ -55,20 +56,31 @@ export class QuestionSqlDatasetConfigController {
   async recover(@Param('id') id: number) {
     return this.service.recover(id);
   }
-    
+
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({ name: 'fields', required: false, type: Array })
-  @ApiQuery({ name: 'sort', required: false, type: Array }) 
+  @ApiQuery({ name: 'sort', required: false, type: Array })
   @ApiQuery({ name: 'groupBy', required: false, type: Array })
   @ApiQuery({ name: 'populate', required: false, type: Array })
   @ApiQuery({ name: 'populateMedia', required: false, type: Array })
   @ApiQuery({ name: 'filters', required: false, type: Array })
   @Get()
-  async findMany(@Query() query: any) { 
-    return this.service.find(query);  
+  async findMany(@Query() query: any) {
+    return this.service.find(query);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Get(':id/data')
+  async getData(
+    @Param('id') id: string,
+    @Query('filters') filters: SqlExpression[],
+    @Query('isPreview') isPreview?: string
+  ) {
+    const previewMode = isPreview === 'true';
+    return this.service.getData(+id, filters, previewMode);
   }
 
   @ApiBearerAuth("jwt")
@@ -88,6 +100,5 @@ export class QuestionSqlDatasetConfigController {
   async delete(@Param('id') id: number) {
     return this.service.delete(id);
   }
-
 
 }

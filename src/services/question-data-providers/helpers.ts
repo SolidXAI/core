@@ -1,7 +1,7 @@
-import { Question } from "src/entities/question.entity";
+import { DashboardQuestion } from "src/entities/dashboard-question.entity";
 import { EntityManager } from "typeorm";
 
-export async function getLabels(question: Question, entityManager: EntityManager): Promise<string[]> {
+export async function getLabels(question: DashboardQuestion, entityManager: EntityManager): Promise<string[]> {
     const labelSql = question.labelSql;
     const labelResults = await this.entityManager.query(labelSql);
     // Assuming labelResults has a single row with a 'label' field

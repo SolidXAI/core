@@ -9,7 +9,7 @@ import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
 import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
-import { Question } from './entities/question.entity';
+import { DashboardQuestion } from './entities/dashboard-question.entity';
 import { ComputedFieldMetadata } from './helpers/solid-registry';
 import { SqlExpression } from './services/question-data-providers/chartjs-sql-data-provider.service';
 import { CreateDashboardDto } from './dtos/create-dashboard.dto';
@@ -90,7 +90,7 @@ export interface IDashboardQuestionDataProvider<TContext, TData> {
 
   name(): string;
 
-  getData(question: Question, expressions?: SqlExpression[], ctxt?: TContext): Promise<TData[] | TData>;
+  getData(question: DashboardQuestion, expressions?: SqlExpression[], ctxt?: TContext): Promise<TData[] | TData>;
 }
 
 /**
