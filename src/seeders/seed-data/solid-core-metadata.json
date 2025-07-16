@@ -11478,6 +11478,18 @@
                               {
                                 "type": "field",
                                 "attrs": {
+                                  "name": "labelSql"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "kpiSql"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
                                   "name": "providerName"
                                 }
                               }
@@ -11554,7 +11566,7 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "barChartLabelOptions"
+                                  "name": "chartOptions"
                                 }
                               }
                             ]
@@ -11630,7 +11642,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "backgroundColor"
+              "name": "options"
             }
           }
         ]
@@ -11707,12 +11719,6 @@
                         "type": "field",
                         "attrs": {
                           "name": "valueColumnName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "backgroundColor"
                         }
                       },
                       {
