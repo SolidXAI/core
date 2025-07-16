@@ -51,7 +51,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
       contentType: '',
       errorMessage: '',
       modelUsed: '',
-      responseTimeMs: '',
+      responseTimeMs: 0,
       metadata: ''
     });
     const m = {

@@ -5,7 +5,7 @@ import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { QueuesModuleOptions, TriggerMcpClientOptions } from "../../interfaces";
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
-import generateCodeQueueOptions from './generate-code-queue-options-database';
+import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
 import { AiInteractionService } from 'src/services/ai-interaction.service';
 
 @Injectable()
@@ -22,7 +22,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
 
     options(): QueuesModuleOptions {
         return {
-            ...generateCodeQueueOptions
+            ...triggerMcpClientQueueOptions
         }
     }
 
@@ -52,7 +52,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             // await this.aiInteractionService.update(codeGnerationOptions.aiInteractionId, updatedDto);
 
             await this.aiInteractionService.create({
-                user: aiInteraction.user,
+                userId: aiInteraction.user,
                 threadId: aiInteraction.threadId,
                 role: 'gen-ai',
                 message: nestedResponse,
