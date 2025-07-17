@@ -18,88 +18,54 @@ export class SchedulerServiceImpl implements ISchedulerService {
         private readonly solidRegistry: SolidRegistry,
     ) { }
 
-    // @Cron(CronExpression.EVERY_MINUTE)
-    // async runScheduledJobs(): Promise<void> {
-    //     const now = new Date();
-
-    //     const dueScheduledJobs = await this.scheduledJobRepo.find({
-    //         where: {
-    //             isActive: true,
-    //             nextRunAt: LessThanOrEqual(now),
-    //         },
-    //     });
-
-    //     for (const dueScheduledJob of dueScheduledJobs) {
-    //         try {
-    //             const jobName = dueScheduledJob.job;
-    //             // @ts-ignore                
-    //             // const jobHandler = this.jobMap[jobName];
-    //             // const jobHandler = ''; 
-    //             const jobHandler: IScheduledJob | undefined = this.solidRegistry.getScheduledJobProviderInstance(jobName)
-
-    //             if (!jobHandler) {
-    //                 this.logger.warn(`No job service found for: ${jobName}`);
-    //                 continue;
-    //             }
-
-    //             await jobHandler.executeReminder(dueScheduledJob);
-
-    //             // Update nextRunAt and lastRunAt based on frequency
-    //             dueScheduledJob.lastRunAt = now;
-    //             dueScheduledJob.nextRunAt = this.computeNextRunAt(dueScheduledJob);
-    //             await this.scheduledJobRepo.save(dueScheduledJob);
-
-    //             this.logger.log(`Successfully ran job: ${jobName}`);
-    //         } catch (err) {
-    //             this.logger.error(`Failed to run job for reminder ${dueScheduledJob.id}`, err.stack);
-    //         }
-    //     }
-    // }
-
-    // private computeNextRunAt(reminder: ScheduledJob): Date {
-    //     const now = new Date();
-    //     switch (reminder.frequency) {
-    //         case 'daily':
-    //             return new Date(now.getTime() + 24 * 60 * 60 * 1000);
-    //         case 'weekly':
-    //             return new Date(now.getTime() + 7 * 24 * 60 * 60 * 1000);
-    //         case 'monthly':
-    //             return new Date(now.setMonth(now.getMonth() + 1));
-    //         default:
-    //             return new Date(now.getTime() + 24 * 60 * 60 * 1000); // default fallback
-    //     }
-    // }
-
     @Cron(CronExpression.EVERY_MINUTE)
     async runScheduledJobs(): Promise<void> {
         const now = new Date();
+
+        this.logger.log(`[${now.getTime()}]: scheduler service started run...`);
         const dueJobs = await this.scheduledJobRepo.find({
-            where: {
-                isActive: true,
-                nextRunAt: LessThanOrEqual(now),
-            },
+            where: [
+                {
+                    isActive: true,
+                    nextRunAt: LessThanOrEqual(now),
+                },
+                // Newly created jobs are also picked for examination 
+                {
+                    isActive: true,
+                    nextRunAt: null,
+                },
+            ],
         });
 
+        this.logger.log(`[${now.getTime()}]: scheduler service identified ${dueJobs.length} jobs to run...`);
+
         for (const job of dueJobs) {
+            this.logger.log(`[${now.getTime()}]: scheduler service attempting to run job ${job.job}`);
             try {
                 if (!this.shouldRunNow(job, now)) {
+                    this.logger.log(`[${now.getTime()}]: scheduler service skipping job ${job.job}`);
                     continue;
                 }
 
                 const handler = this.solidRegistry.getScheduledJobProviderInstance(job.job);
                 if (!handler) {
-                    this.logger.warn(`No job handler found for job: ${job.job}`);
+                    this.logger.warn(`[${now.getTime()}]: scheduler service skipping because job handler not found: ${job.job}`);
                     continue;
                 }
 
+                this.logger.log(`[${now.getTime()}]: scheduler service about to run job ${job.job}`);
                 await handler.executeReminder(job);
+                this.logger.log(`[${now.getTime()}]: scheduler service finished running job ${job.job}`);
+
                 job.isActive = true;
                 job.lastRunAt = now;
                 job.nextRunAt = this.computeNextRunAt(job, now);
+                this.logger.log(`[${now.getTime()}]: scheduler service coomputed next run for ${job.job} as ${job.nextRunAt}`);
+
                 await this.scheduledJobRepo.save(job);
-                this.logger.log(`Successfully ran job: ${job.job}`);
+                this.logger.log(`[${now.getTime()}]: scheduler service finished running job: ${job.job}`);
             } catch (err) {
-                this.logger.error(`Failed to run job ${job.job}`, err.stack);
+                this.logger.error(`[${now.getTime()}]: scheduler service failed to run job ${job.job}`, err.stack);
             }
         }
     }
@@ -143,8 +109,10 @@ export class SchedulerServiceImpl implements ISchedulerService {
         const base = new Date(from);
 
         switch (job.frequency.toLowerCase()) {
-            case 'once':
-                return null; // don't reschedule
+            // case 'once':
+            //     return null; // don't reschedule
+            case 'every minute':
+                return new Date(base.getTime() + 1 * 60 * 1000);
             case 'hourly':
                 return new Date(base.getTime() + 60 * 60 * 1000);
             case 'daily':
@@ -155,9 +123,9 @@ export class SchedulerServiceImpl implements ISchedulerService {
                 const next = new Date(base);
                 next.setMonth(base.getMonth() + 1);
                 return next;
-            case 'custom':
-                // Optional: let job handler decide via metadata or registry
-                return new Date(base.getTime() + 24 * 60 * 60 * 1000);
+            // case 'custom':
+            //     // Optional: let job handler decide via metadata or registry
+            //     return new Date(base.getTime() + 24 * 60 * 60 * 1000);
             default:
                 return new Date(base.getTime() + 24 * 60 * 60 * 1000);
         }

@@ -4,7 +4,7 @@ import { ComputedFieldProvider } from "src/decorators/computed-field-provider.de
 
 import { IComputedFieldProvider } from "../../interfaces";
 
-@ComputedFieldProvider()
+// @ComputedFieldProvider()
 @Injectable()
 export class UuidExternalIdComputedFieldProvider implements IComputedFieldProvider<any> {
 

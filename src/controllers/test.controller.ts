@@ -1,9 +1,8 @@
-import { Body, Controller, Get, Logger, Post, UploadedFile, UploadedFiles, UseInterceptors } from "@nestjs/common";
+import { Body, Controller, Logger, Post, UploadedFile, UploadedFiles, UseInterceptors } from "@nestjs/common";
 import { AnyFilesInterceptor, FileInterceptor } from "@nestjs/platform-express";
 import { ApiTags } from "@nestjs/swagger";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { Auth } from "src/decorators/auth.decorator";
-import { Public } from "src/decorators/public.decorator";
 import { AuthType } from "src/enums/auth-type.enum";
 
 export class SeedData {

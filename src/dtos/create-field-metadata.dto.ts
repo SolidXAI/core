@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { Transform } from 'class-transformer';
+import { Transform, Type } from 'class-transformer';
 
 import {
   IsArray,
@@ -180,7 +180,7 @@ export enum ComputedFieldTriggerOperation {
     afterRemove = "after-delete",
 }
 
-export interface ComputedFieldTriggerConfig {
+export class ComputedFieldTriggerConfig {
   moduleName: string; // Name of the module where the computed field is defined
   modelName: string;
   operations: ComputedFieldTriggerOperation[]; // List of operations where this computed field should be triggered
@@ -385,6 +385,8 @@ export class CreateFieldMetadataDto {
   @IsOptional()
   computedFieldValueType: ComputedFieldValueType;
 
+  @IsArray()
+  @Type(() => ComputedFieldTriggerConfig)
   @IsOptional()
   computedFieldTriggerConfig: ComputedFieldTriggerConfig[];
 

@@ -169,7 +169,8 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
           // TODO: Here we are assuming that we will always take the user to collection view of a model. 
           // We can make provision to take them other views also in the future. 
           // path = `/admin/core/${rootItem.module.name}/${rootItem.action.model.singularName}/${rootItem.action.view.name}`;
-          path = `/admin/core/${rootItem.module.name}/${dasherize(rootItem.action.model.singularName)}/${rootItem.action.view.type}`;
+          path = `/admin/core/${rootItem.module.name}/${dasherize(rootItem.action?.model?.singularName ?? 'unknown')}/${rootItem.action?.view?.type ?? 'list'}`;
+
         }
       }
 
