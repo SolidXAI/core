@@ -25,5 +25,6 @@ export async function getKpi(question: DashboardQuestion, expressions: SqlExpres
     }
     const sqlReplacementResult = sqlExpressionResolver.resolveSqlWithExpressions(sql, expressions || []);
     const result = await entityManager.query(sqlReplacementResult.rawSql, sqlReplacementResult.parameters);
-    return result['kpi'] || "";
+    const kpiResult = result.pop();
+    return kpiResult?.kpi || "";
 }

@@ -67,8 +67,11 @@ export class PrimeReactDatatableSqlDataProvider implements IDashboardQuestionDat
 
         return {
             kpi,
-            columns,
-            data: results,
+            visualisedAs: question.visualisedAs,
+            visualizationData: {
+                columns,
+                rows: results,
+            }
         };
 
     }

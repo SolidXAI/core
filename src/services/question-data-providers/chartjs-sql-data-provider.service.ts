@@ -112,8 +112,11 @@ export class ChartJsSqlDataProvider implements IDashboardQuestionDataProvider<Qu
 
         return {
             kpi,
-            labels,
-            datasets
+            visualizedAs: question.visualisedAs,
+            visualizationData: {
+                labels,
+                datasets
+            }
         };
 
     }

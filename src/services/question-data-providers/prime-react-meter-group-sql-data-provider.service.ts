@@ -109,7 +109,10 @@ export class PrimeReactMeterGroupSqlDataProvider implements IDashboardQuestionDa
 
         return {
             kpi,
-            data: values, 
+            visualizedAs: question.visualisedAs,
+            visualizationData: {
+                dataset: values
+            },
         };
 
     }
