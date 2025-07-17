@@ -125,6 +125,11 @@ export * from './entities/import-transaction.entity'
 export * from './entities/import-transaction-error-log.entity'
 export * from './entities/locale.entity'
 export * from './entities/user-activity-history.entity'
+export * from './entities/dashboard.entity'
+export * from './entities/dashboard-variable.entity'
+export * from './entities/dashboard-question.entity'
+export * from './entities/dashboard-question-sql-dataset-config.entity'
+export * from './entities/ai-interaction.entity'
 
 export * from './enums/auth-type.enum'
 

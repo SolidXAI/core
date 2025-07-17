@@ -16,7 +16,7 @@ export class PublisherFactory<T> {
     }
 
     async publish(message: QueueMessage<T>, publisherName: string, brokerToUse?: string): Promise<string> {
-        let defaultBrokerToUse = brokerToUse || process.env.QUEUES_DEFAULT_BROKER;
+        let defaultBrokerToUse = brokerToUse || process.env.QUEUES_DEFAULT_BROKER || "database";
         let resolvedPublisherName = `${publisherName}${classify(defaultBrokerToUse)}`;
 
         // Register all ISolidDatabaseModules implementations
