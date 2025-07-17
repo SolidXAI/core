@@ -17,7 +17,7 @@ export class DashboardRepository extends Repository<Dashboard> {
     }
 
 
-    async upsertWithDto(createDto: CreateDashboardDto) {
+    async upsertWithDto(createDto: any) {
         const moduleMetadataRepository = this.dataSource.getRepository(ModuleMetadata);
         const module = await moduleMetadataRepository.findOneBy({ name: createDto.moduleUserKey });
 
@@ -28,6 +28,55 @@ export class DashboardRepository extends Repository<Dashboard> {
             relations: ['dashboardVariables', 'questions', 'questions.questionSqlDatasetConfigs'],
         });
 
+        if (existingDashboard) {
+            // Update basic fields
+            existingDashboard.layoutJson = JSON.stringify(createDto.layoutJson ?? {});
+            existingDashboard.module = module;
+
+            // Upsert dashboard variables
+            existingDashboard.dashboardVariables = createDto.dashboardVariables?.map(variable => {
+                const existingVar = existingDashboard.dashboardVariables.find(v => v.variableName === variable.variableName);
+                if (existingVar) {
+                    return Object.assign(existingVar, {
+                        ...variable,
+                        selectionStaticValues: JSON.stringify(variable.selectionStaticValues ?? []),
+                        defaultValue: JSON.stringify(variable.defaultValue ?? []),
+                    });
+                }
+                return {
+                    ...variable,
+                    selectionStaticValues: JSON.stringify(variable.selectionStaticValues ?? []),
+                    defaultValue: JSON.stringify(variable.defaultValue ?? []),
+                };
+            }) ?? [];
+
+            // Upsert questions and their configs
+            existingDashboard.questions = createDto.questions?.map(question => {
+                const existingQuestion = existingDashboard.questions.find(q => q.name === question.name);
+                const questionData: any = {
+                    ...question,
+                    questionSqlDatasetConfigs: question.questionSqlDatasetConfigs?.map(cfg => {
+                        const existingCfg = existingQuestion?.questionSqlDatasetConfigs.find(c => c.datasetName === cfg.datasetName);
+                        if (existingCfg) {
+                            return Object.assign(existingCfg, {
+                                ...cfg,
+                                options: JSON.stringify(cfg.options ?? {}),
+                            });
+                        }
+                        return {
+                            ...cfg,
+                            options: JSON.stringify(cfg.options ?? {}),
+                        };
+                    }) ?? [],
+                };
+
+                return existingQuestion ? Object.assign(existingQuestion, questionData) : questionData;
+            }) ?? [];
+
+            return this.save(existingDashboard);
+        }
+
+        // Else: new dashboard
         const dashboardData = {
             ...createDto,
             module,
@@ -46,55 +95,7 @@ export class DashboardRepository extends Repository<Dashboard> {
             })),
         };
 
-        if (existingDashboard) {
-            // Optionally clean up stale children
-            await this.cleanupRemovedRelations(existingDashboard, createDto);
-
-            this.merge(existingDashboard, dashboardData);
-            return this.save(existingDashboard);
-        } else {
-            const newDashboard = this.create(dashboardData);
-            return this.save(newDashboard);
-        }
-    }
-
-    private async cleanupRemovedRelations(existing: Dashboard, dto: CreateDashboardDto) {
-        const dashboardVariableRepo = this.dataSource.getRepository(DashboardVariable);
-        const questionRepo = this.dataSource.getRepository(DashboardQuestion);
-        const datasetConfigRepo = this.dataSource.getRepository(DashboardQuestionSqlDatasetConfig); // 👈 make sure this is imported
-
-        // === 1. Clean up removed dashboardVariables ===
-        const dtoVariableNames = new Set(dto.dashboardVariables.map(v => v.variableName));
-        const variablesToRemove = existing.dashboardVariables.filter(
-            v => !dtoVariableNames.has(v.variableName)
-        );
-        if (variablesToRemove.length > 0) {
-            await dashboardVariableRepo.remove(variablesToRemove);
-        }
-
-        // === 2. Clean up removed questions and gather removed question IDs ===
-        const dtoQuestionNames = new Set(dto.questions.map(q => q.name));
-        const questionsToRemove = existing.questions.filter(
-            q => !dtoQuestionNames.has(q.name)
-        );
-
-        if (questionsToRemove.length > 0) {
-            await questionRepo.remove(questionsToRemove);
-        }
-
-        // === 3. Clean up removed questionSqlDatasetConfigs from existing (retained) questions ===
-        for (const existingQuestion of existing.questions) {
-            const dtoQuestion = dto.questions.find(q => q.name === existingQuestion.name);
-            if (!dtoQuestion) continue;
-
-            const dtoDatasetNames = new Set(dtoQuestion.questionSqlDatasetConfigs?.map(cfg => cfg.datasetName));
-            const configsToRemove = existingQuestion.questionSqlDatasetConfigs.filter(
-                cfg => !dtoDatasetNames.has(cfg.datasetName)
-            );
-
-            if (configsToRemove.length > 0) {
-                await datasetConfigRepo.remove(configsToRemove);
-            }
-        }
+        const newDashboard = this.create(dashboardData);
+        return this.save(newDashboard);
     }
 }
