@@ -125,7 +125,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
 
     for (const field of auditFields) {
         const fieldValue = entity[field.name];
-        if (fieldValue !== undefined && fieldValue !== null) {
+        if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
             const messageDetail = new ChatterMessageDetails();
             messageDetail.chatterMessage = savedMessage;
             messageDetail.fieldName = field.name;
@@ -289,19 +289,25 @@ private formatFieldValueDisplay(field: any, value: any): string {
 }
 
 private hasValueChanged(newValue: any, oldValue: any): boolean {
+    if (
+        (newValue === null || newValue === undefined) &&
+        (oldValue === null || oldValue === undefined)
+    ) {
+        return false;
+    }
+
     if (newValue === oldValue) {
         return false;
     }
 
-    if (newValue === null && oldValue === null) {
-        return false;
-    }
-
-    if (newValue === undefined && oldValue === undefined) {
-        return false;
-    }
-
     if (Array.isArray(newValue) && Array.isArray(oldValue)) {
+        return JSON.stringify(newValue) !== JSON.stringify(oldValue);
+    }
+
+    if (
+        typeof newValue === 'object' && newValue !== null &&
+        typeof oldValue === 'object' && oldValue !== null
+    ) {
         return JSON.stringify(newValue) !== JSON.stringify(oldValue);
     }
 
