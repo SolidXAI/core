@@ -6,6 +6,7 @@ import { EntityManager } from "typeorm";
 import { SqlExpressionResolverService } from "../sql-expression-resolver.service";
 import { Logger } from '@nestjs/common';
 import { SqlExpression } from "./chartjs-sql-data-provider.service";
+import { getKpi } from "./helpers";
 
 export interface QuestionSqlDataProviderContext {
     // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
@@ -70,6 +71,8 @@ export class PrimeReactMeterGroupSqlDataProvider implements IDashboardQuestionDa
 
         // TODO: Load the set of labels by using a separate field on the question entity.
 
+        const kpi: string = await getKpi(question, expressions, this.entityManager, this.sqlExpressionResolver);
+        
         // Load the chart options as a JSON 
         const chartOptions = JSON.parse(question.chartOptions || '{}');
 
@@ -84,8 +87,8 @@ export class PrimeReactMeterGroupSqlDataProvider implements IDashboardQuestionDa
         }
 
         const sqlReplacementResult = this.sqlExpressionResolver.resolveSqlWithExpressions(sql, expressions || []);
-        this.logger.log(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is query=[${sqlReplacementResult.rawSql}]`);
-        this.logger.log(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is parameters=[${JSON.stringify(sqlReplacementResult.parameters)}]`);
+        this.logger.debug(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is query=[${sqlReplacementResult.rawSql}]`);
+        this.logger.debug(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is parameters=[${JSON.stringify(sqlReplacementResult.parameters)}]`);
         const results = await this.entityManager.query(sqlReplacementResult.rawSql, sqlReplacementResult.parameters);
 
         const colors = this.generateDistinctColors(results.length);
@@ -104,7 +107,10 @@ export class PrimeReactMeterGroupSqlDataProvider implements IDashboardQuestionDa
             })
         }
 
-        return values;
+        return {
+            kpi,
+            data: values, 
+        };
 
     }
 }

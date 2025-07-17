@@ -6,6 +6,7 @@ import { EntityManager } from "typeorm";
 import { SqlExpressionResolverService } from "../sql-expression-resolver.service";
 import { Logger } from '@nestjs/common';
 import { SqlExpression } from "./chartjs-sql-data-provider.service";
+import { getKpi } from "./helpers";
 
 export interface QuestionSqlDataProviderContext {
     // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
@@ -33,6 +34,7 @@ export class PrimeReactDatatableSqlDataProvider implements IDashboardQuestionDat
 
         // Check the expected response for prime react data tables to understand what is going on here...
 
+        const kpi: string = await getKpi(question, expressions, this.entityManager, this.sqlExpressionResolver);
         // TODO: Load the set of labels by using a separate field on the question entity.
         const labelSql = question.labelSql;
         const labelResults = await this.entityManager.query(labelSql);
@@ -59,11 +61,12 @@ export class PrimeReactDatatableSqlDataProvider implements IDashboardQuestionDat
         }
 
         const sqlReplacementResult = this.sqlExpressionResolver.resolveSqlWithExpressions(sql, expressions || []);
-        this.logger.log(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is query=[${sqlReplacementResult.rawSql}]`);
-        this.logger.log(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is parameters=[${JSON.stringify(sqlReplacementResult.parameters)}]`);
+        this.logger.debug(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is query=[${sqlReplacementResult.rawSql}]`);
+        this.logger.debug(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is parameters=[${JSON.stringify(sqlReplacementResult.parameters)}]`);
         const results = await this.entityManager.query(sqlReplacementResult.rawSql, sqlReplacementResult.parameters);
 
         return {
+            kpi,
             columns,
             data: results,
         };

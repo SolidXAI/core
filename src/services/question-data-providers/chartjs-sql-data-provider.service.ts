@@ -1,11 +1,10 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { DashboardQuestionDataProvider } from "src/decorators/dashboard-question-data-provider.decorator";
 import { DashboardQuestion } from "src/entities/dashboard-question.entity";
 import { IDashboardQuestionDataProvider } from "src/interfaces";
 import { EntityManager } from "typeorm";
 import { SqlExpressionResolverService } from "../sql-expression-resolver.service";
-import { Logger } from '@nestjs/common';
-import { getLabels } from "./helpers";
+import { getKpi, getLabels } from "./helpers";
 
 export interface QuestionSqlDataProviderContext {
     // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
@@ -80,7 +79,8 @@ export class ChartJsSqlDataProvider implements IDashboardQuestionDataProvider<Qu
         let datasetIdx = 0;
         const datasets = [];
 
-        const labels: string[] = await getLabels(question, this.entityManager);
+        const labels: string[] = await getLabels(question, expressions, this.entityManager, this.sqlExpressionResolver);
+        const kpi: string = await getKpi(question, expressions, this.entityManager, this.sqlExpressionResolver);
 
         // const question = context.question;
         for (const questionSqlDatasetConfig of question.questionSqlDatasetConfigs) {
@@ -91,8 +91,8 @@ export class ChartJsSqlDataProvider implements IDashboardQuestionDataProvider<Qu
             }
 
             const sqlReplacementResult = this.sqlExpressionResolver.resolveSqlWithExpressions(sql, expressions || []);
-            this.logger.log(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is query=[${sqlReplacementResult.rawSql}]`);
-            this.logger.log(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is parameters=[${JSON.stringify(sqlReplacementResult.parameters)}]`);
+            this.logger.debug(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is query=[${sqlReplacementResult.rawSql}]`);
+            this.logger.debug(`Final Sql query for dataset [${questionSqlDatasetConfig.datasetName}] is parameters=[${JSON.stringify(sqlReplacementResult.parameters)}]`);
             const results = await this.entityManager.query(sqlReplacementResult.rawSql, sqlReplacementResult.parameters);
 
             // Also for each data set we create the dataset object as is expected by ChartJs.
@@ -111,6 +111,7 @@ export class ChartJsSqlDataProvider implements IDashboardQuestionDataProvider<Qu
         }
 
         return {
+            kpi,
             labels,
             datasets
         };
