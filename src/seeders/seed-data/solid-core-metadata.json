@@ -4605,6 +4605,18 @@
             ]
           },
           {
+            "name": "sequenceNumber",
+            "displayName": "Sequence Number",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
             "name": "labelSql",
             "displayName": "Label SQL Query",
             "type": "longText",
@@ -11389,6 +11401,12 @@
             "attrs": {
               "name": "visualisedAs"
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequenceNumber"
+            }
           }
         ]
       }
@@ -11457,6 +11475,12 @@
                                 "type": "field",
                                 "attrs": {
                                   "name": "visualisedAs"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "sequenceNumber"
                                 }
                               }
                             ]

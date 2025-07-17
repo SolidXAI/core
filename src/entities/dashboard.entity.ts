@@ -13,7 +13,7 @@ export class Dashboard extends CommonEntity {
     layoutJson: any;
     @OneToMany(() => DashboardVariable, dashboardVariable => dashboardVariable.dashboard, { cascade: true })
     dashboardVariables: DashboardVariable[];
-    @OneToMany(() => DashboardQuestion, question => question.dashboard, { cascade: true })
+    @OneToMany(() => DashboardQuestion, dashboardQuestion => dashboardQuestion.dashboard, { cascade: true })
     questions: DashboardQuestion[];
     @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
     @JoinColumn()

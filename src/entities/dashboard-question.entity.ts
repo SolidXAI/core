@@ -19,7 +19,7 @@ export class DashboardQuestion extends CommonEntity {
     @ManyToOne(() => Dashboard, { onDelete: "CASCADE", nullable: true })
     @JoinColumn()
     dashboard: Dashboard;
-    @OneToMany(() => DashboardQuestionSqlDatasetConfig, questionSqlDatasetConfig => questionSqlDatasetConfig.question, { cascade: true })
+    @OneToMany(() => DashboardQuestionSqlDatasetConfig, dashboardQuestionSqlDatasetConfig => dashboardQuestionSqlDatasetConfig.question, { cascade: true })
     questionSqlDatasetConfigs: DashboardQuestionSqlDatasetConfig[];
     @Column({ type: "jsonb", nullable: true })
     chartOptions: any;
@@ -27,4 +27,7 @@ export class DashboardQuestion extends CommonEntity {
     labelSql: string;
     @Column({ type: "text", nullable: true })
     kpiSql: string;
+
+@Column({ type: "integer", nullable: true })
+sequenceNumber: number;
 }
