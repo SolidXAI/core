@@ -60,4 +60,9 @@ export class UpdateDashboardQuestionDto {
     @IsString()
     @ApiProperty({ description: "This is the SQL query to fetch the KPI value for the question" })
     kpiSql: string;
+
+@IsOptional()
+@IsInt()
+@ApiProperty()
+sequenceNumber: number;
 }
