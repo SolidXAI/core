@@ -39,6 +39,11 @@ export class ListOfValuesService extends CRUDService<ListOfValues> {
       },
     });
   }
+
+  async findAll(): Promise<ListOfValues[]> {
+    return await this.repo.find();
+  }
+  
   async upsert(updateListOfValuesDto: any) {
     // First check if module already exists using name
     const existingListOfValue = await this.repo.findOne({

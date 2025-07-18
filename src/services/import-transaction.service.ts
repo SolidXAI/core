@@ -496,7 +496,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     };
   }
 
-  private async createErrorLogEntry(importTransaction: ImportTransaction, record: Record<string, any>, error: any) {
+  async createErrorLogEntry(importTransaction: ImportTransaction, record: Record<string, any>, error: any) {
     const importTransactionRepo = this.entityManager.getRepository(ImportTransactionErrorLog);
     // Create a new ImportTransactionErrorLog entry
     const rowNumber = uuidv4(); // Generate a unique row number or use page.rowNumber if available 
@@ -574,11 +574,39 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         return this.populateDtoForNumber(dtoRecord, fieldMetadata, record, key);
       case SolidFieldType.boolean:
         return this.populateDtoForBoolean(dtoRecord, fieldMetadata, record, key);
+      case SolidFieldType.selectionStatic:
+      case SolidFieldType.selectionDynamic:
+        return this.populateDtoForSelectionValues(dtoRecord, fieldMetadata, record, key);
       default:
         dtoRecord[fieldMetadata.name] = record[key];
         return dtoRecord;
     }
   }
+  
+  private populateDtoForSelectionValues(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
+    const rawValue = record[key];
+
+    if (rawValue == null) {
+      dtoRecord[fieldMetadata.name] = null;
+      return dtoRecord;
+    }
+
+    const isMultipleSelection = fieldMetadata.isMultiSelect;
+
+    if (isMultipleSelection) {
+      const selectionValues = String(rawValue)
+        .split(',')
+        .map(value => value.trim())
+        .filter(value => value !== '');
+
+      dtoRecord[fieldMetadata.name] = JSON.stringify(selectionValues);
+    } else {
+      dtoRecord[fieldMetadata.name] = rawValue; // Single select: assign directly
+    }
+
+    return dtoRecord;
+  }
+
 
   private populateDtoForBoolean(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
     const booleanValue = Boolean(record[key]);

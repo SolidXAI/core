@@ -246,6 +246,7 @@ import { DashboardVariableSubscriber } from './subscribers/dashboard-variable.su
 import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { CRUDService } from './services/crud.service';
 
 
 @Global()
@@ -387,6 +388,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     SolidIntrospectService,
     DiscoveryService,
     CrudHelperService,
+    CRUDService,
     Reflector,
     MetadataScanner,
     CommandService,
@@ -530,6 +532,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     MediaService,
     DiscoveryService,
     CrudHelperService,
+    CRUDService,
     MulterModule,
     FileService,
     SolidRegistry,
@@ -553,6 +556,12 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     FieldRepository,
     SchedulerServiceImpl,
     UserActivityHistoryService,
+    CsvService,
+    ExcelService,
+    SolidIntrospectService,
+    ImportTransactionService,
+    HttpModule,
+    ListOfValuesService
   ],
 })
 export class SolidCoreModule { }
