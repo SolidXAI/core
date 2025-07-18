@@ -247,6 +247,7 @@ import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { CRUDService } from './services/crud.service';
+import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
 
 
 @Global()
@@ -523,6 +524,7 @@ import { CRUDService } from './services/crud.service';
     DashboardVariableSubscriber,
     DashboardQuestionSubscriber,
     DashboardQuestionSqlDatasetConfigSubscriber,
+    NoopsEntityComputedFieldProviderService,
   ],
   exports: [
     ModuleMetadataService,
