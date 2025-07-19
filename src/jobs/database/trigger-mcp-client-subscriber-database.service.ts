@@ -34,36 +34,54 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         const aiInteraction = await this.aiInteractionService.findOne(codeGnerationOptions.aiInteractionId, {
             populate: ['user']
         });
+        if (!aiInteraction) {
+            const m = `Unable to identified the aiInteraction entry that triggered this job... using id: ${codeGnerationOptions.aiInteractionId}`
+            this.triggerMcpClientSubscriberLogger.log(m);
+            throw new Error(m);
+        }
 
         // The message contains the users prompt.
         const prompt = aiInteraction.message;
 
         // Use this to invoke our mcp client
         const aiResponse = await this.aiInteractionService.runMcpPrompt(prompt);
-        let nestedResponse = aiResponse.response.trim();
+        this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);
+        this.triggerMcpClientSubscriberLogger.log(JSON.stringify(aiResponse));
+
         if (!aiResponse.success) {
-            // update the job entry with success... raising an error will lead the job to be marked as failed...
-            throw new Error(aiResponse.errors.join(','));
+            this.triggerMcpClientSubscriberLogger.log(`Gen ai has returned with a false status code`);
+
+            const errorsStr = aiResponse.errors.join('; ');
+
+            await this.aiInteractionService.create({
+                userId: aiInteraction.user.id,
+                threadId: aiInteraction.threadId,
+                role: 'gen-ai',
+                message: '-',
+                contentType: aiResponse.content_type,
+                errorMessage: errorsStr,
+                modelUsed: aiResponse.model,
+                responseTimeMs: aiResponse.duration_ms,
+                metadata: JSON.stringify(aiResponse)
+            });
+
+            // update the job entry with failure... raising an error will lead the job to be marked as failed...
+            throw new Error(errorsStr);
         }
         else {
-            // TODO: create a new entry not update...
-            // const updatedDto = {
-            //     ...aiInteraction,
-            //     message: nestedResponse,
-            // }
-            // await this.aiInteractionService.update(codeGnerationOptions.aiInteractionId, updatedDto);
+            let nestedResponse = aiResponse.response.trim();
 
             await this.aiInteractionService.create({
                 userId: aiInteraction.user.id,
                 threadId: aiInteraction.threadId,
                 role: 'gen-ai',
                 message: nestedResponse,
-                contentType: '',
+                contentType: aiResponse.content_type,
                 errorMessage: '',
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
                 metadata: JSON.stringify(aiResponse)
-            })
+            });
         }
 
         return aiResponse;

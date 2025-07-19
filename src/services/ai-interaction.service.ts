@@ -101,9 +101,9 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     // TODO: Refactor to use the command.service.ts instead...
     return new Promise((resolve, reject) => {
       this.logger.log(`Attempting to run command:`)
-      this.logger.log(`${pythonExecutable} ${mcpClient} ${prompt}`);
+      this.logger.log(`${pythonExecutable} ${mcpClient} "${prompt}"`);
 
-      const python = spawn(pythonExecutable, [mcpClient, prompt]);
+      const python = spawn(pythonExecutable, [mcpClient, `"${prompt}"`]);
 
       let stdout = '';
       let stderr = '';

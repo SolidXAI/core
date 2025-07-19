@@ -77,6 +77,7 @@ export interface McpResponse {
   duration_ms?: number;
   errors?: string[];
   trace?: string[];
+  content_type?: string;
 }
 
 export interface ISelectionProviderContext {
