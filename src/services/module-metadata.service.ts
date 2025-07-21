@@ -213,7 +213,6 @@ export class ModuleMetadataService {
     }
   }
 
-
   async updateInDB(manager: EntityManager, id: number, updateModuleMetadataDto: UpdateModuleMetadataDto, files: Express.Multer.File[] = []) {
 
     const module = await this.moduleMetadataRepo.preload({
@@ -286,7 +285,6 @@ export class ModuleMetadataService {
     }
   }
 
-
   async upsert(updateModuleMetadataDto: UpdateModuleMetadataDto) {
     this.logger.log(`Module Upsert called for : ${updateModuleMetadataDto.name}`);
     // First check if module already exists using name
@@ -307,9 +305,6 @@ export class ModuleMetadataService {
       return this.moduleMetadataRepo.save(moduleMetadata);
     }
   }
-
-
-
 
   async removeByName(name: string) {
     const entity = await this.findOneByUserKey(name);

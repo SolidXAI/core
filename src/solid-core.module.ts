@@ -247,6 +247,8 @@ import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { CRUDService } from './services/crud.service';
+import { McpToolResponseHandlerFactory } from './services/mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
+import { SolidCreateModuleMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-module-mcp-tool-response-handler.service';
 
 
 @Global()
@@ -417,6 +419,9 @@ import { CRUDService } from './services/crud.service';
     SmsTemplateService,
     EmailTemplateService,
     PublisherFactory,
+    
+    McpToolResponseHandlerFactory,
+    SolidCreateModuleMcpToolResponseHandler,
 
     TriggerMcpClientPublisherDatabase,
     TriggerMcpClientSubscriberDatabase,

@@ -16,6 +16,7 @@ import { McpResponse, TriggerMcpClientOptions } from 'src/interfaces';
 import { PublisherFactory } from './queues/publisher-factory.service';
 import { RequestContextService } from './request-context.service';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
+import { McpToolResponseHandlerFactory } from './mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
 
 @Injectable()
 export class AiInteractionService extends CRUDService<AiInteraction> {
@@ -35,6 +36,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     readonly moduleRef: ModuleRef,
     readonly publisherFactory: PublisherFactory<TriggerMcpClientOptions>,
     readonly requestContextService: RequestContextService,
+    readonly mcpToolResponseHandlerFactory: McpToolResponseHandlerFactory,
 
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'aiInteraction', 'solid-core', moduleRef);
@@ -160,4 +162,50 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     return response;
   }
 
+  async applySolidAiInteraction(id: number) {
+    // Fetch the aiInteraction
+    const aiInteraction = await this.findOne(id, {
+      populate: ['user']
+    });
+    if (!aiInteraction) {
+      const m = `Unable to identified the aiInteraction entry that triggered this job... using id: ${id}`
+
+      // TODO: RESPONSE SHAPE ALERT Check if we want to control the shape of the response....
+      throw new Error(m);
+    }
+
+    // TODO: Validation: Check if JSON.parse(metadata).tools_invoked starts with solid_
+    let metadata = {};
+    try {
+      metadata = JSON.parse(aiInteraction.metadata);
+    }
+    catch (e) {
+      // TODO: RESPONSE SHAPE ALERT Check if we want to control the shape of the response....
+      throw new Error(e);
+    }
+
+    const toolsInvoked = metadata['tools_invoked'];
+    if (!toolsInvoked) {
+      // TODO: RESPONSE SHAPE ALERT Check if we want to control the shape of the response....
+      throw new Error('Unable to resolve a solid_ command that was used to come up with this response.');
+    }
+
+    // TODO: OPTIMISATION for chained tool invocation, for now we are assuming only 1 tool was used.
+    const toolInvoked = toolsInvoked[0];
+
+    // TODO: use the toolInvoked to identify a service using some convention.
+    // TODO: Eg. if toolInvoked is solid_create_module <> SolidCreateModuleMcpToolHandler ... create a factory class to do this mapping and identify the relevant provider. 
+    const mcpToolHandler = this.mcpToolResponseHandlerFactory.getInstance(toolInvoked);
+    if (!mcpToolHandler) {
+      // TODO: RESPONSE SHAPE ALERT Check if we want to control the shape of the response....
+      throw new Error('Unable to resolve a mcp tool handler.');
+    }
+
+    const handlerApplicationResponse = await mcpToolHandler.apply(aiInteraction);
+
+    // TODO: This provider to implement an interface - IMcpToolResponseHandler ... apply(aiInteraction: AiInteraction)
+    // throw new Error('Method not implemented.');
+
+    return handlerApplicationResponse;
+  }
 }
