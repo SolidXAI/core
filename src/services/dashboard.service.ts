@@ -129,10 +129,15 @@ export class DashboardService extends CRUDService<Dashboard> {
   }
 
   private async writeToConfig(metaData: any, dashboard: Dashboard, filePath: string) {
-    if (metaData.dashboards) {
+    if (metaData.dashboards && Array.isArray(metaData.dashboards)) {
       const dashboardIndex = metaData.dashboards?.findIndex((dashboardFromFile: { name: string; }) => dashboardFromFile.name === dashboard.name);
       const dto = await this.dashboardMapper.toDto(dashboard);
-      metaData.dashboards[dashboardIndex] = dto;
+      if (dashboardIndex !== -1) {
+        metaData.dashboards[dashboardIndex] = dto;
+      }
+      else {
+        metaData.dashboards.push(dto);
+      }
     }
     else {
       const dashboards = [];
