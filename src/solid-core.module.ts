@@ -249,6 +249,8 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { CRUDService } from './services/crud.service';
 import { McpToolResponseHandlerFactory } from './services/mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
 import { SolidCreateModuleMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-module-mcp-tool-response-handler.service';
+import { ScheduledJobRepository } from './repository/scheduled-job.repository';
+import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 
 
 @Global()
@@ -528,6 +530,8 @@ import { SolidCreateModuleMcpToolResponseHandler } from './services/mcp-tool-res
     DashboardVariableSubscriber,
     DashboardQuestionSubscriber,
     DashboardQuestionSqlDatasetConfigSubscriber,
+    ScheduledJobRepository,
+    ScheduledJobSubscriber,
   ],
   exports: [
     ModuleMetadataService,

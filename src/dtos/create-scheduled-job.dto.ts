@@ -62,4 +62,7 @@ export class CreateScheduledJobDto {
     @IsString()
     @ApiProperty()
     job: string;
+
+    @IsNotEmpty()
+    moduleId: number;
 }
