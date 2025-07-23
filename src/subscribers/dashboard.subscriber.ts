@@ -1,9 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from "@nestjs/typeorm";
-import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { Dashboard } from 'src/entities/dashboard.entity';
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
-import { DashboardMapper } from 'src/mappers/dashboard-mapper';
 import { DashboardService } from 'src/services/dashboard.service';
 import { DataSource, EntityManager, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
 
@@ -49,7 +47,7 @@ export class DashboardSubscriber implements EntitySubscriberInterface<Dashboard>
         // Load the dashboard with module relation populated
         const populatedDashboard = await entityManager.findOne(Dashboard, {
             where: { id: dashboard.id },
-            relations: ['module'],
+            relations: ['module','dashboardVariables', 'questions', 'questions.questionSqlDatasetConfigs'],
         });
 
         if (!populatedDashboard) {
