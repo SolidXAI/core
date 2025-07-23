@@ -203,6 +203,7 @@ import { ChatterMessageDetailsService } from './services/chatter-message-details
 import { ChatterMessageService } from './services/chatter-message.service';
 import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
 import { ConcatEntityComputedFieldProvider } from './services/computed-fields/entity/concat-entity-computed-field-provider.service';
+import { CRUDService } from './services/crud.service';
 import { CsvService } from './services/csv.service';
 import { DashboardQuestionSqlDatasetConfigService } from './services/dashboard-question-sql-dataset-config.service';
 import { DashboardQuestionService } from './services/dashboard-question.service';
@@ -216,6 +217,11 @@ import { ExportTransactionService } from './services/export-transaction.service'
 import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
 import { ImportTransactionService } from './services/import-transaction.service';
 import { LocaleService } from './services/locale.service';
+import { McpToolResponseHandlerFactory } from './services/mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
+import { SolidCreateDashboardMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-mcp-tool-response-handler.service';
+import { SolidCreateDashboardQuestionMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-question-mcp-tool-response-handler.service';
+import { SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-question-sql-dataset-config-mcp-tool-response-handler.service';
+import { SolidCreateModuleMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-module-mcp-tool-response-handler.service';
 import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
 import { ChartJsSqlDataProvider } from './services/question-data-providers/chartjs-sql-data-provider.service';
@@ -246,9 +252,7 @@ import { DashboardVariableSubscriber } from './subscribers/dashboard-variable.su
 import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
-import { CRUDService } from './services/crud.service';
-import { McpToolResponseHandlerFactory } from './services/mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
-import { SolidCreateModuleMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-module-mcp-tool-response-handler.service';
+import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-widget-mcp-tool-response-handler.service';
 
 
 @Global()
@@ -528,6 +532,10 @@ import { SolidCreateModuleMcpToolResponseHandler } from './services/mcp-tool-res
     DashboardVariableSubscriber,
     DashboardQuestionSubscriber,
     DashboardQuestionSqlDatasetConfigSubscriber,
+    SolidCreateDashboardMcpToolResponseHandler,
+    SolidCreateDashboardQuestionMcpToolResponseHandler,
+    SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler,
+    SolidCreateDashboardWidgetMcpToolResponseHandler
   ],
   exports: [
     ModuleMetadataService,
