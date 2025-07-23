@@ -14,13 +14,18 @@ export class SolidCreateDashboardMcpToolResponseHandler implements IMcpToolRespo
     }
 
     async apply(aiInteraction: AiInteraction) {
-        const aiResponse = JSON.parse(aiInteraction.message);
+        const escapedMessage = aiInteraction.message.replace(/\\'/g, "'");
+        const aiResponseMessage = JSON.parse(escapedMessage);
+
+        // const aiResponse = JSON.parse(aiInteraction.message);
 
         //FIXME: Replace \' with ' in the response, since the AI response seems to contain \' which is invalid JSON.
         // This is a workaround for now, until we find a better solution.
-        const aiResponseMessageReplaced = aiResponse['message'].replace(/\\'/g, "'");
+        // const aiResponseMessageReplaced = aiResponse['message'].replace(/\\'/g, "'");
 
-        const dashboardDto = plainToInstance(CreateDashboardDto, aiResponseMessageReplaced);
+        const dashboardDto = plainToInstance(CreateDashboardDto, aiResponseMessage);
+        dashboardDto['layoutJson'] = JSON.stringify(dashboardDto['layoutJson']);
+
 
         const dashboard =  await this.dashboardService.create(dashboardDto, []);
 

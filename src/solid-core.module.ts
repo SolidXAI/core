@@ -252,6 +252,7 @@ import { DashboardVariableSubscriber } from './subscribers/dashboard-variable.su
 import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-widget-mcp-tool-response-handler.service';
 
 
 @Global()
@@ -533,7 +534,8 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     DashboardQuestionSqlDatasetConfigSubscriber,
     SolidCreateDashboardMcpToolResponseHandler,
     SolidCreateDashboardQuestionMcpToolResponseHandler,
-    SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler
+    SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler,
+    SolidCreateDashboardWidgetMcpToolResponseHandler
   ],
   exports: [
     ModuleMetadataService,
