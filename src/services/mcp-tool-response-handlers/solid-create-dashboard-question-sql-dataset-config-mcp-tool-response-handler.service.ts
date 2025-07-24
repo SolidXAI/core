@@ -1,6 +1,5 @@
 import { Injectable } from "@nestjs/common";
 import { plainToInstance } from "class-transformer";
-import { CreateDashboardQuestionDto } from "src/dtos/create-dashboard-question.dto";
 import { AiInteraction } from "src/entities/ai-interaction.entity";
 import { IMcpToolResponseHandler } from "../../interfaces";
 import { DashboardQuestionSqlDatasetConfigService } from "../dashboard-question-sql-dataset-config.service";
@@ -19,8 +18,7 @@ export class SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler 
         const escapedMessage = aiInteraction.message.replace(/\\'/g, "'");
         const aiResponseMessage = JSON.parse(escapedMessage);
 
-
-        //FIXME: Replace \' with ' in the response, since the AI response seems to contain \' which is invalid JSON.
+        // FIXME: Replace \' with ' in the response, since the AI response seems to contain \' which is invalid JSON.
         // This is a workaround for now, until we find a better solution.
         // const aiResponseMessageReplaced = aiResponse['message'].replace(/\\'/g, "'");
         // const dashboardUserKey = aiResponseMessageReplaced['dashboardUserKey'];
@@ -30,7 +28,7 @@ export class SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler 
         const dto = plainToInstance(CreateDashboardQuestionSqlDatasetConfigDto, aiResponseMessage);
         dto['options'] = JSON.stringify(dto['options']);
 
-        const dashboardQuestion =  await this.dashboardQuestionSqlDatasetConfigService.create(dto, []);
+        const dashboardQuestion = await this.dashboardQuestionSqlDatasetConfigService.create(dto, []);
 
         // TODO: decide on some shape to return hre...
         return {

@@ -26,7 +26,7 @@ export class SolidCreateDashboardQuestionMcpToolResponseHandler implements IMcpT
         // }
         const dashboardQuestionDto = plainToInstance(CreateDashboardQuestionDto, aiResponseMessage);
 
-        const dashboardQuestion =  await this.dashboardQuestionService.create(dashboardQuestionDto, []);
+        const dashboardQuestion = await this.dashboardQuestionService.create(dashboardQuestionDto, []);
 
         // TODO: decide on some shape to return hre...
         return {

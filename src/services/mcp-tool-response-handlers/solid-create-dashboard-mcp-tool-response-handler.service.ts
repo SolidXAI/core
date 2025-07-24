@@ -27,7 +27,7 @@ export class SolidCreateDashboardMcpToolResponseHandler implements IMcpToolRespo
         dashboardDto['layoutJson'] = JSON.stringify(dashboardDto['layoutJson']);
 
 
-        const dashboard =  await this.dashboardService.create(dashboardDto, []);
+        const dashboard = await this.dashboardService.create(dashboardDto, []);
 
         // TODO: decide on some shape to return hre...
         return {

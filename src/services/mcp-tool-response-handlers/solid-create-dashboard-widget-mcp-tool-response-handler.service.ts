@@ -27,7 +27,7 @@ export class SolidCreateDashboardWidgetMcpToolResponseHandler implements IMcpToo
         const dashboardQuestionDto = plainToInstance(CreateDashboardQuestionDto, aiResponseMessage);
         dashboardQuestionDto['questionSqlDatasetConfigsCommand'] = "update";
 
-        const dashboardQuestion =  await this.dashboardQuestionService.create(dashboardQuestionDto, []);
+        const dashboardQuestion = await this.dashboardQuestionService.create(dashboardQuestionDto, []);
 
         // TODO: decide on some shape to return hre...
         return {

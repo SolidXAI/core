@@ -253,6 +253,8 @@ import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-widget-mcp-tool-response-handler.service';
+import { SolidCreateModelWithFieldsMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-model-with-fields-mcp-tool-response-handler.service';
+import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-add-field-mcp-tool-response-handler.service';
 
 
 @Global()
@@ -423,7 +425,7 @@ import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp
     SmsTemplateService,
     EmailTemplateService,
     PublisherFactory,
-    
+
     McpToolResponseHandlerFactory,
     SolidCreateModuleMcpToolResponseHandler,
 
@@ -535,7 +537,9 @@ import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp
     SolidCreateDashboardMcpToolResponseHandler,
     SolidCreateDashboardQuestionMcpToolResponseHandler,
     SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler,
-    SolidCreateDashboardWidgetMcpToolResponseHandler
+    SolidCreateDashboardWidgetMcpToolResponseHandler,
+    SolidCreateModelWithFieldsMcpToolResponseHandler,
+    SolidAddFieldMcpToolResponseHandler,
   ],
   exports: [
     ModuleMetadataService,
