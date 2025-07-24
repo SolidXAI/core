@@ -255,10 +255,11 @@ export class ModuleMetadataSeederService {
             'SavedFiltersController.partialUpdate',
             'SavedFiltersController.update',
             'SavedFiltersController.insertMany',
-            'SavedFiltersController.create'
+            'SavedFiltersController.create',
+            'AuthenticationController.logout'
         ]
         await this.roleService.addPermissionToRole('Internal User', internalRolePermission);
-        await this.roleService.addPermissionToRole('Public', ['SettingController.wrapSettings']);
+        await this.roleService.addPermissionToRole('Public', ['SettingController.wrapSettings','AuthenticationController.logout']);
         this.logger.log(`All Seeders finished`);
         this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
     }
