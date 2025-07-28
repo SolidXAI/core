@@ -67,9 +67,9 @@ export class SettingService extends CRUDService<Setting> {
       copyright: null,
       enableUsername: true,
       enabledNotification: true,
-      contactSupportEmail : "",
-      contactSupportDisplayName: "",
-      contactSupportIcon: ""
+      contactSupportEmail : null,
+      contactSupportDisplayName: null,
+      contactSupportIcon: null
     };
 
     const existingSettings = await this.repo.find();
@@ -157,9 +157,9 @@ export class SettingService extends CRUDService<Setting> {
       forceChangePasswordOnFirstLogin: true,
       enableUsername: true,
       enabledNotification: true,
-      contactSupportEmail : "",
-      contactSupportDisplayName: "",
-      contactSupportIcon: ""
+      contactSupportEmail : null,
+      contactSupportDisplayName: null,
+      contactSupportIcon: null
     };
   }
 
