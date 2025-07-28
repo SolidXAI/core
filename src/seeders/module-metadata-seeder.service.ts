@@ -189,7 +189,7 @@ export class ModuleMetadataSeederService {
             // Email templates 
             this.logger.debug(`[Start] Processing email templates for ${moduleMetadata.name}`);
             const emailTemplates: CreateEmailTemplateDto[] = overallMetadata.emailTemplates;
-            await this.seedEmailTemplates(emailTemplates);
+            await this.seedEmailTemplates(emailTemplates, moduleMetadata);
             this.logger.debug(`[End] Processing email templates for ${moduleMetadata.name}`);
 
             // Sms templates
@@ -313,7 +313,7 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedEmailTemplates(emailTemplates: CreateEmailTemplateDto[]) {
+    async seedEmailTemplates(emailTemplates: CreateEmailTemplateDto[], moduleMetadata: CreateModuleMetadataDto) {
         if (!emailTemplates) {
             return;
         }
@@ -323,19 +323,24 @@ export class ModuleMetadataSeederService {
             this.logger.log(`Found ${emailTemplate.name} email template`);
 
             // We need to load the actual template contents. 
-            // const emailTemplateFilePath = path.join(process.cwd(), emailTemplate.body);
-
-            // emailTemplate.body = fs.readFileSync(emailTemplateFilePath, 'utf-8').toString()
-            const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
-
-            // Resolve the `src` folder
-            const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/email-templates');
-
-            // Example usage
-            const filePath = path.join(seedDataPath, emailTemplate.body);
-
-
-            emailTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
+            if (moduleMetadata.name === 'solid-core') {
+                const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
+                const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/email-templates');
+                const filePath = path.join(seedDataPath, emailTemplate.body);
+                this.logger.log(`Seeding email template from solid-core at path: ${filePath}`);
+                if (fs.existsSync(filePath)) {
+                    emailTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
+                }
+            }
+            else {
+                // Check if file exists
+                const emailTemplateHandlebar = `module-metadata/${moduleMetadata.name}/email-templates/${emailTemplate.body}`
+                const fullPath = path.join(process.cwd(), emailTemplateHandlebar);
+                this.logger.log(`Seeding custom email template from consuming model at path: ${fullPath}`);
+                if (fs.existsSync(fullPath)) {
+                    emailTemplate.body = fs.readFileSync(fullPath, 'utf-8').toString();
+                }
+            }
 
             // Save to DB.
             await this.emailTemplateService.removeByName(emailTemplate.name);
