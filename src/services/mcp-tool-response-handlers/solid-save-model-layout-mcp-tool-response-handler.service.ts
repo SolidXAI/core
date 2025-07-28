@@ -4,7 +4,7 @@ import { ViewMetadataRepository } from "src/repository/view-metadata.repository"
 import { IMcpToolResponseHandler } from "../../interfaces";
 
 @Injectable()
-export class SolidSaveModelLayoutMcpToolResponseHandler implements IMcpToolResponseHandler {
+export class SolidCreateModelLayoutMcpToolResponseHandler implements IMcpToolResponseHandler {
 
     constructor(
         private readonly viewMetadataRepository: ViewMetadataRepository,
@@ -15,12 +15,12 @@ export class SolidSaveModelLayoutMcpToolResponseHandler implements IMcpToolRespo
         const aiResponse = JSON.parse(aiInteraction.message);
 
         // Get the data for resolving the view metadata
-        const {name, modelUserKey, moduleUserKey, layout} = aiResponse['moduleMetadata'];
+        const {name, modelUserKey, moduleUserKey, layout} = aiResponse;
 
         // Fetch the view metadata for the given model and module and the view name
         const viewMetadata = await this.viewMetadataRepository.findByNameAndModelNameAndModuleName(name, modelUserKey, moduleUserKey);
 
-        viewMetadata.layout = layout;
+        viewMetadata.layout = JSON.stringify(layout);
         // Save the updated view metadata
         await this.viewMetadataRepository.save(viewMetadata);
 

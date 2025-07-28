@@ -256,7 +256,7 @@ import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp
 import { SolidCreateModelWithFieldsMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-model-with-fields-mcp-tool-response-handler.service';
 import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-add-field-mcp-tool-response-handler.service';
 import { ViewMetadataRepository } from './repository/view-metadata.repository';
-import { SolidSaveModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
+import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
 
 
 @Global()
@@ -543,7 +543,7 @@ import { SolidSaveModelLayoutMcpToolResponseHandler } from './services/mcp-tool-
     SolidCreateModelWithFieldsMcpToolResponseHandler,
     SolidAddFieldMcpToolResponseHandler,
     ViewMetadataRepository,
-    SolidSaveModelLayoutMcpToolResponseHandler,
+    SolidCreateModelLayoutMcpToolResponseHandler,
   ],
   exports: [
     ModuleMetadataService,
