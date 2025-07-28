@@ -255,6 +255,8 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-widget-mcp-tool-response-handler.service';
 import { SolidCreateModelWithFieldsMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-model-with-fields-mcp-tool-response-handler.service';
 import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-add-field-mcp-tool-response-handler.service';
+import { ViewMetadataRepository } from './repository/view-metadata.repository';
+import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
 
 
 @Global()
@@ -540,6 +542,8 @@ import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-respons
     SolidCreateDashboardWidgetMcpToolResponseHandler,
     SolidCreateModelWithFieldsMcpToolResponseHandler,
     SolidAddFieldMcpToolResponseHandler,
+    ViewMetadataRepository,
+    SolidCreateModelLayoutMcpToolResponseHandler,
   ],
   exports: [
     ModuleMetadataService,
