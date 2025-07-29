@@ -20,6 +20,7 @@ import { ViewMetadata } from '../entities/view-metadata.entity';
 import { ActionMetadataService } from './action-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { UserViewMetadataService } from './user-view-metadata.service';
+import { ViewMetadataRepository } from 'src/repository/view-metadata.repository';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -35,8 +36,8 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     readonly userViewMetadataService: UserViewMetadataService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(ViewMetadata, 'default')
-    readonly repo: Repository<ViewMetadata>,
+    // @InjectRepository(ViewMetadata, 'default')
+    readonly repo: ViewMetadataRepository,
     @InjectRepository(FieldMetadata)
     private readonly fieldMetadataRepo: Repository<FieldMetadata>,
     @InjectRepository(ModelMetadata)

@@ -18,4 +18,8 @@ export class Dashboard extends CommonEntity {
     @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
     @JoinColumn()
     module: ModuleMetadata;
+    @Column({ type: "varchar", nullable: true })
+    displayName: string;
+    @Column({ type: "text", nullable: true })
+    description: string;
 }

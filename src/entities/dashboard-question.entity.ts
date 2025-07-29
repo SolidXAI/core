@@ -27,7 +27,6 @@ export class DashboardQuestion extends CommonEntity {
     labelSql: string;
     @Column({ type: "text", nullable: true })
     kpiSql: string;
-
-@Column({ type: "integer", nullable: true })
-sequenceNumber: number;
+    @Column({ type: "integer", nullable: true })
+    sequenceNumber: number;
 }

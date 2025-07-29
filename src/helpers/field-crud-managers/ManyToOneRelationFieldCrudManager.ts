@@ -9,9 +9,10 @@ export interface ManyToOneRelationFieldOptions {
     required: boolean | undefined | null;
     relationCoModelSingularName: string | undefined | null;
     fieldName: string | undefined | null;
-    modelUserKeyFieldName: string | undefined | null;
+    // modelUserKeyFieldName: string | undefined | null;
     modelSingularName: string | undefined | null;
     entityManager: EntityManager;
+    relationCoModelUserKeyFieldName: string | undefined | null; 
 }
 
 // This implementation is meant to be used for many-to-one relation field
@@ -50,8 +51,8 @@ export class ManyToOneRelationFieldCrudManager implements FieldCrudManager {
     private applyUserKeyFormatValidations(fieldUserKey: string): ValidationError[] {
         const errors: ValidationError[] = [];
         !isString(fieldUserKey) ? errors.push({ field: this.options.fieldName, error: 'Field is not a string' }) : "no errors";
-        if (isEmpty(this.options.modelUserKeyFieldName)) {
-            errors.push({ field: this.options.fieldName, error: `UserKey field name is not defined in the model ${this.options.modelSingularName}` });
+        if (isEmpty(this.options.relationCoModelUserKeyFieldName)) {
+            errors.push({ field: this.options.fieldName, error: `UserKey field name is not defined in the model ${this.options.relationCoModelSingularName}` });
         }
         return errors;
     }
@@ -72,9 +73,9 @@ export class ManyToOneRelationFieldCrudManager implements FieldCrudManager {
             }
         }
         else {
-            dto[this.options.fieldName] = await this.options.entityManager.getRepository(entityTarget).findOneBy({ [this.options.modelUserKeyFieldName]: fieldUserKeyValue });
+            dto[this.options.fieldName] = await this.options.entityManager.getRepository(entityTarget).findOneBy({ [this.options.relationCoModelUserKeyFieldName]: fieldUserKeyValue });
             if (this.options.required && isEmpty(dto[this.options.fieldName])) {
-                throw new Error(`ManyToOneRelationFieldCrudManager: Record with userKey: ${this.options.modelUserKeyFieldName}: ${fieldUserKeyValue} not found in ${this.options.relationCoModelSingularName}`);
+                throw new Error(`ManyToOneRelationFieldCrudManager: Record with userKey: ${this.options.relationCoModelUserKeyFieldName}: ${fieldUserKeyValue} not found in ${this.options.relationCoModelSingularName}`);
             }
         }
 

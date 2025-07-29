@@ -97,6 +97,12 @@ export class AiInteractionController {
   }
 
   @ApiBearerAuth("jwt")
+  @Post(':id/apply-solid-ai-interaction')
+  async applySolidAiInteraction(@Param('id') id: number) {
+    return this.service.applySolidAiInteraction(+id);
+  }
+
+  @ApiBearerAuth("jwt")
   @Post('/run-mcp-prompt')
   async runMcpPrompt(@Body() dto: InvokeAiPromptDto) {
     return this.service.runMcpPrompt(dto.prompt);

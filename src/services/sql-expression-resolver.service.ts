@@ -1,5 +1,6 @@
 import { Injectable } from "@nestjs/common";
 import { SqlExpression, SqlExpressionOperator } from "./question-data-providers/chartjs-sql-data-provider.service";
+import { RequestContextService } from "./request-context.service";
 
 export interface SqlReplacementResult {
   rawSql: string;
@@ -8,9 +9,24 @@ export interface SqlReplacementResult {
 
 @Injectable()
 export class SqlExpressionResolverService {
+  constructor(private readonly requestContextService: RequestContextService) { }
   resolveSqlWithExpressions(sql: string, expressions: SqlExpression[]): SqlReplacementResult {
     const variableToColumnMap: Record<string, string> = {};
     const variablePattern = /{{\s*(\w+)\s*\[\s*([\w.]+)\s*\]\s*}}/g;
+
+    let paramIndex = 1;
+    const parameters: any[] = [];
+
+    // Handle sql expression tokens like {{$activeUserId}} in the SQL string
+    if (sql.includes('{{$activeUserId}}')) {
+      const activeUser = this.requestContextService.getActiveUser();
+      if (activeUser && activeUser.sub) {
+        // Replace custom placeholder with parameter placeholder ($1)
+        sql = sql.replace(/\{\{\$activeUserId\}\}/g, `$${paramIndex++}`);
+        // Add the active user ID to parameters
+        parameters.push(activeUser.sub);
+      }
+    }
 
     // --- Pass 1: extract variable -> column mappings ---
     let simplifiedSql = sql.replace(variablePattern, (_, variableName, columnName) => {
@@ -19,8 +35,6 @@ export class SqlExpressionResolverService {
     });
 
     // --- Pass 2: Replace each variable with positional fragment ---
-    let paramIndex = 1;
-    const parameters: any[] = [];
 
     for (const expr of expressions) {
       const column = variableToColumnMap[expr.variableName];

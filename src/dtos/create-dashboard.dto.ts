@@ -50,4 +50,12 @@ export class CreateDashboardDto {
     @IsOptional()
     @ApiProperty()
     moduleUserKey: string;
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    displayName: string;
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ description: "This is a description of the dashboard configuration, providing context and details about the dashboard." })
+    description: string;
 }

@@ -13,6 +13,7 @@ import { DashboardQuestion } from './entities/dashboard-question.entity';
 import { ComputedFieldMetadata } from './helpers/solid-registry';
 import { SqlExpression } from './services/question-data-providers/chartjs-sql-data-provider.service';
 import { CreateDashboardDto } from './dtos/create-dashboard.dto';
+import { AiInteraction } from './entities/ai-interaction.entity';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -77,6 +78,7 @@ export interface McpResponse {
   duration_ms?: number;
   errors?: string[];
   trace?: string[];
+  content_type?: string;
 }
 
 export interface ISelectionProviderContext {
@@ -99,6 +101,10 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
 }
 
 export interface IDashboardVariableSelectionProvider<T extends ISelectionProviderContext> extends ISelectionProvider<T> {
+}
+
+export interface IMcpToolResponseHandler {
+  apply(aiInteraction: AiInteraction);
 }
 
 export interface IDashboardQuestionDataProvider<TContext, TData> {

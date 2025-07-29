@@ -22,7 +22,7 @@ export class SchedulerServiceImpl implements ISchedulerService {
     async runScheduledJobs(): Promise<void> {
         const now = new Date();
 
-        this.logger.log(`[${now.getTime()}]: scheduler service started run...`);
+        // this.logger.log(`[${now.getTime()}]: scheduler service started run...`);
         const dueJobs = await this.scheduledJobRepo.find({
             where: [
                 {
@@ -37,7 +37,7 @@ export class SchedulerServiceImpl implements ISchedulerService {
             ],
         });
 
-        this.logger.log(`[${now.getTime()}]: scheduler service identified ${dueJobs.length} jobs to run...`);
+        // this.logger.log(`[${now.getTime()}]: scheduler service identified ${dueJobs.length} jobs to run...`);
 
         for (const job of dueJobs) {
             this.logger.log(`[${now.getTime()}]: scheduler service attempting to run job ${job.job}`);
@@ -49,13 +49,13 @@ export class SchedulerServiceImpl implements ISchedulerService {
 
                 const handler = this.solidRegistry.getScheduledJobProviderInstance(job.job);
                 if (!handler) {
-                    this.logger.warn(`[${now.getTime()}]: scheduler service skipping because job handler not found: ${job.job}`);
+                    // this.logger.warn(`[${now.getTime()}]: scheduler service skipping because job handler not found: ${job.job}`);
                     continue;
                 }
 
-                this.logger.log(`[${now.getTime()}]: scheduler service about to run job ${job.job}`);
-                await handler.executeReminder(job);
-                this.logger.log(`[${now.getTime()}]: scheduler service finished running job ${job.job}`);
+                // this.logger.log(`[${now.getTime()}]: scheduler service about to run job ${job.job}`);
+                await handler.execute(job);
+                // this.logger.log(`[${now.getTime()}]: scheduler service finished running job ${job.job}`);
 
                 job.isActive = true;
                 job.lastRunAt = now;
