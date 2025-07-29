@@ -24,7 +24,7 @@ export class ConcatEntityComputedFieldProvider<T extends CommonEntity> implement
         return "Computed field provider used to create fields whose value is a concatenation of other fields in the same model.";
     }
 
-    async preComputeValue(entity: T, computedFieldMetadata: ComputedFieldMetadata<ConcatComputedFieldContext>){
+    async preComputeValue(triggerEntity: T, computedFieldMetadata: ComputedFieldMetadata<ConcatComputedFieldContext>){
         const { computedFieldValueProviderCtxt } = computedFieldMetadata;
         const separator = computedFieldValueProviderCtxt.separator || ' '; // Default to space if no separator is provided
         const fields = computedFieldValueProviderCtxt.fields || [];
@@ -35,7 +35,7 @@ export class ConcatEntityComputedFieldProvider<T extends CommonEntity> implement
             const field = fields[i];
 
             // if slugify then each field val to be converted to a slug before concatenation
-            let fieldVal = entity[field];
+            let fieldVal = triggerEntity[field];
             if (slugify && typeof fieldVal === 'string') {
                 fieldVal = kebabCase(fieldVal);
             }
@@ -45,7 +45,7 @@ export class ConcatEntityComputedFieldProvider<T extends CommonEntity> implement
             }
             concatenatedString += fieldVal;
         }
-        entity[computedFieldMetadata.fieldName] = concatenatedString; //This set the computed value on the entity
+        triggerEntity[computedFieldMetadata.fieldName] = concatenatedString; //This set the computed value on the entity, since for pre-compute, entity and triggerEntity are the same
     }
 
 }
