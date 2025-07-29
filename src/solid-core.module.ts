@@ -257,6 +257,7 @@ import { SolidCreateModelWithFieldsMcpToolResponseHandler } from './services/mcp
 import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-add-field-mcp-tool-response-handler.service';
 import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
+import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
 
 
 @Global()
@@ -536,6 +537,7 @@ import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-too
     DashboardVariableSubscriber,
     DashboardQuestionSubscriber,
     DashboardQuestionSqlDatasetConfigSubscriber,
+    NoopsEntityComputedFieldProviderService,
     SolidCreateDashboardMcpToolResponseHandler,
     SolidCreateDashboardQuestionMcpToolResponseHandler,
     SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler,
