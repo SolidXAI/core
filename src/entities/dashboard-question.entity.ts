@@ -29,4 +29,7 @@ export class DashboardQuestion extends CommonEntity {
     kpiSql: string;
     @Column({ type: "integer", nullable: true })
     sequenceNumber: number;
+    @Index({ unique: true })
+    @Column({ type: "varchar", nullable: true })
+    externalId: string;
 }

@@ -28,7 +28,7 @@ export class DashboardMapper {
                 chartOptions: question.chartOptions ?? null,
                 labelSql: question.labelSql ?? null,
                 kpiSql: question.kpiSql ?? null,
-
+                externalId: question.externalId,
                 questionSqlDatasetConfigs: (question.questionSqlDatasetConfigs || []).map(config => ({
                     sql: config.sql,
                     datasetName: config.datasetName,
@@ -37,6 +37,7 @@ export class DashboardMapper {
                     labelColumnName: config.labelColumnName,
                     valueColumnName: config.valueColumnName,
                     options: this.safeParseJSON(config.options, {}),
+                    externalId: config.externalId
                 }))
             }))
         };

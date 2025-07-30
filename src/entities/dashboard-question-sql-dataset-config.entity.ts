@@ -22,4 +22,7 @@ export class DashboardQuestionSqlDatasetConfig extends CommonEntity {
     question: DashboardQuestion;
     @Column({ type: "text", nullable: true })
     options: any;
+    @Index({ unique: true })
+    @Column({ type: "varchar", nullable: true })
+    externalId: string;
 }
