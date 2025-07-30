@@ -1,11 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from "@nestjs/typeorm";
-import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { Dashboard } from 'src/entities/dashboard.entity';
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
-import { DashboardMapper } from 'src/mappers/dashboard-mapper';
 import { DashboardService } from 'src/services/dashboard.service';
-import { DataSource, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
+import { DataSource, EntityManager, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
 
 @Injectable()
 export class DashboardSubscriber implements EntitySubscriberInterface<Dashboard> {
@@ -28,7 +26,7 @@ export class DashboardSubscriber implements EntitySubscriberInterface<Dashboard>
             this.logger.debug('No dashboard entity found in the DashboardSubscriber afterInsert method');
             return;
         }
-        await this.dashboardService.saveDashboardToConfig(event.entity);
+        await this.saveDashboardToConfig(event.entity, event.queryRunner.manager);
     }
 
     async afterUpdate(event: UpdateEvent<Dashboard>) {
@@ -37,7 +35,28 @@ export class DashboardSubscriber implements EntitySubscriberInterface<Dashboard>
             return;
         }
 
-        await this.dashboardService.saveDashboardToConfig(event.databaseEntity);
+        await this.saveDashboardToConfig(event.databaseEntity, event.queryRunner.manager);
+    }
+
+    private async saveDashboardToConfig(dashboard: Dashboard, entityManager: EntityManager): Promise<void> {
+        if (!dashboard || !dashboard.id) {
+            this.logger.debug('Dashboard or dashboard id is undefined');
+            return;
+        }
+
+        // Load the dashboard with module relation populated
+        const populatedDashboard = await entityManager.findOne(Dashboard, {
+            where: { id: dashboard.id },
+            relations: ['module','dashboardVariables', 'questions', 'questions.questionSqlDatasetConfigs'],
+        });
+
+        if (!populatedDashboard) {
+            this.logger.error(`Dashboard not found for id ${dashboard.id}`);
+            return;
+        }
+
+        // Call the saveDashboardToConfig method from the DashboardService
+        await this.dashboardService.saveDashboardToConfig(populatedDashboard);
     }
 
 }

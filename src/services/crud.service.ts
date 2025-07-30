@@ -111,7 +111,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     }
 
     private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean, isPartialUpdate: boolean = false, isUpdate: boolean = false) {
-        const fieldManager: FieldCrudManager = this.fieldCrudManager(field, this.entityManager, isPartialUpdate, isUpdate);
+        const fieldManager: FieldCrudManager = await this.fieldCrudManager(field, this.entityManager, isPartialUpdate, isUpdate);
         const validationErrors = fieldManager.validate(dto, files);
         const errors = (validationErrors instanceof Promise) ? await validationErrors : validationErrors;
         if (errors.length > 0) {
@@ -259,7 +259,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         }
     }
 
-    private fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false): FieldCrudManager {
+    private async fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false) {
         const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name, isUpdate };
         switch (fieldMetadata.type) {
             case SolidFieldType.shortText: {
@@ -326,11 +326,13 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             case SolidFieldType.relation: {
                 // Identify if the field is for the inverse side or not
                 if (fieldMetadata.relationType === RelationType.manyToOne) {
+                    const relationCoModelUserKeyFieldName = await this.getUserKeyFieldNameForModel(fieldMetadata.relationCoModelSingularName);
                     const manyToOneOptions: ManyToOneRelationFieldOptions = {
                         ...commonOptions,
                         relationCoModelSingularName: fieldMetadata.relationCoModelSingularName,
-                        modelUserKeyFieldName: fieldMetadata.model.userKeyField?.name,
+                        // modelUserKeyFieldName: fieldMetadata.model.userKeyField?.name,
                         modelSingularName: fieldMetadata.model.singularName,
+                        relationCoModelUserKeyFieldName: relationCoModelUserKeyFieldName,
                         entityManager,
                     }
                     return new ManyToOneRelationFieldCrudManager(manyToOneOptions);
@@ -677,7 +679,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
 
             // Process each field
             for (const field of model.fields) {
-                const fieldManager: FieldCrudManager = this.fieldCrudManager(field, this.entityManager);
+                const fieldManager: FieldCrudManager = await this.fieldCrudManager(field, this.entityManager);
                 const validationErrors = await fieldManager.validate(createDto, files);
                 if (validationErrors.length > 0) {
                     throw new BadRequestException(`Validation errors in ${field.name} are invalid: ${validationErrors.map(e => e.error).join(', ')}`);
@@ -870,6 +872,14 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         }
 
         return this.getFieldMetadataRecursively(remainingParts, relationCoModel.fields);
+    }
+
+    async getUserKeyFieldNameForModel(modelSingularName: string): Promise<string> {
+        const model = await this.modelMetadataService.findOneBySingularName(modelSingularName, ['userKeyField']);
+        if (!model) {
+            throw new BadRequestException(`Model ${modelSingularName} not found`);
+        }
+        return model.userKeyField?.name || '';
     }
 }
 

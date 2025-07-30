@@ -14,7 +14,7 @@ export interface ConcatComputedFieldContext {
 
 @ComputedFieldProvider()
 @Injectable()
-export class ConcatEntityComputedFieldProvider<T extends CommonEntity> implements IEntityPreComputeFieldProvider<T, ConcatComputedFieldContext, string> {
+export class ConcatEntityComputedFieldProvider<T extends CommonEntity> implements IEntityPreComputeFieldProvider<T, ConcatComputedFieldContext> {
 
     name(): string {
         return "ConcatEntityComputedFieldProvider";
@@ -24,7 +24,7 @@ export class ConcatEntityComputedFieldProvider<T extends CommonEntity> implement
         return "Computed field provider used to create fields whose value is a concatenation of other fields in the same model.";
     }
 
-    async preComputeValue(entity: T, computedFieldMetadata: ComputedFieldMetadata<ConcatComputedFieldContext>): Promise<string> {
+    async preComputeValue(entity: T, computedFieldMetadata: ComputedFieldMetadata<ConcatComputedFieldContext>){
         const { computedFieldValueProviderCtxt } = computedFieldMetadata;
         const separator = computedFieldValueProviderCtxt.separator || ' '; // Default to space if no separator is provided
         const fields = computedFieldValueProviderCtxt.fields || [];
@@ -45,8 +45,7 @@ export class ConcatEntityComputedFieldProvider<T extends CommonEntity> implement
             }
             concatenatedString += fieldVal;
         }
-
-        return concatenatedString;
+        entity[computedFieldMetadata.fieldName] = concatenatedString; //This set the computed value on the entity
     }
 
 }

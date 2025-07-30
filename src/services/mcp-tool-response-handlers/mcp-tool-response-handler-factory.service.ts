@@ -1,10 +1,8 @@
-import { Logger } from '@nestjs/common';
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 
-import { QueueMessage, QueuePublisher } from 'src/interfaces/mq';
 import { classify } from '@angular-devkit/core/src/utils/strings';
-import { SolidIntrospectService } from '../solid-introspect.service';
 import { IMcpToolResponseHandler } from 'src/interfaces';
+import { SolidIntrospectService } from '../solid-introspect.service';
 
 
 @Injectable()

@@ -89,17 +89,19 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
     }
 
     private async evaluateComputedField(computedFieldMetadata: ComputedFieldMetadata<any>, entity: any) {
-        const computedValue = await this.getComputedValue(computedFieldMetadata, entity);
-        entity[computedFieldMetadata.fieldName] = computedValue; // Set the computed value on the entity
+        const computedValue = await this.preComputeValue(computedFieldMetadata, entity);
+        if (computedValue) {
+            entity[computedFieldMetadata.fieldName] = computedValue; //TODO: This line here is just for backward compatibility, once the pre compute interface is change to return void, we will get rid of it.
+        }
     }
 
-    private async getComputedValue(computedFieldMetadata: ComputedFieldMetadata<any>, entity: any) {
+    private async preComputeValue(computedFieldMetadata: ComputedFieldMetadata<any>, entity: any) {
         try {
             const provider = this.solidRegistry.getComputedFieldProvider(computedFieldMetadata.computedFieldValueProviderName);
             // Get the instance of the provider and assert it is of type IEntityComputedFieldProvider
             const providerInstance = provider.instance as IEntityPreComputeFieldProvider<any, any, any>; // IEntityComputedFieldProvider
             const computedValue = await providerInstance.preComputeValue(entity, computedFieldMetadata); //FIXME There should some way to check/assert if the provider actually has a postComputeAndSaveValue
-            return computedValue;
+            return computedValue; //TODO: This line here is just for backward compatibility, once the pre compute interface is change to return void, we will get rid of it.
         } catch (error) {
             throw new InternalServerErrorException(`Error evaluating computed field ${computedFieldMetadata.fieldName} for model ${computedFieldMetadata.modelName} for triggered entity ${entity.constructor.name}: ${error.message}`);
         }

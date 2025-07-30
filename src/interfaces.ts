@@ -134,7 +134,7 @@ export interface IEntityComputedFieldProvider {
   name(): string;
 }
 
-export interface IEntityPreComputeFieldProvider<TTriggerEntity, TContext, TValue> extends IEntityComputedFieldProvider {
+export interface IEntityPreComputeFieldProvider<TTriggerEntity, TContext, TValue=void> extends IEntityComputedFieldProvider {
   preComputeValue(entity: TTriggerEntity, computedFieldMetadata: ComputedFieldMetadata<TContext>): Promise<TValue>;
 }
 

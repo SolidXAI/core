@@ -4325,6 +4325,33 @@
             "isUserKey": true
           },
           {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 256,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "isUserKey": false
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "description": "This is a description of the dashboard configuration, providing context and details about the dashboard."
+          },
+          {
             "name": "layoutJson",
             "displayName": "Layout Json",
             "type": "json",
@@ -11107,6 +11134,12 @@
           {
             "type": "field",
             "attrs": {
+              "name": "displayName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "module"
             }
           }
@@ -11165,6 +11198,18 @@
                                 "type": "field",
                                 "attrs": {
                                   "name": "name"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "displayName"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "description"
                                 }
                               },
                               {

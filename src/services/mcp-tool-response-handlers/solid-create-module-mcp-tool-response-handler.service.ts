@@ -36,7 +36,7 @@ export class SolidCreateModuleMcpToolResponseHandler implements IMcpToolResponse
         // This creates the module-metadata.json file....
         const moduleObj = await this.moduleMetadataService.create(createDto);
 
-        const seeder = this.solidRegistry.getSeeders().filter((seeder) => seeder.name === 'ModuleMetadataSeederService').map((seeder) => seeder.instance).pop();
+        // const seeder = this.solidRegistry.getSeeders().filter((seeder) => seeder.name === 'ModuleMetadataSeederService').map((seeder) => seeder.instance).pop();
 
         // Now we need to run solid seed & then solid refresh-model --name <module-name>
         await this.moduleMetadataService.generateCode({ moduleId: moduleObj.id });
@@ -46,7 +46,10 @@ export class SolidCreateModuleMcpToolResponseHandler implements IMcpToolResponse
         // await seeder.seed();
 
         // TODO: decide on some shape to return hre...
-        return {}
+        return {
+            seedingRequired: true,
+            serverRebooting: true,
+        }
     }
 
 }
