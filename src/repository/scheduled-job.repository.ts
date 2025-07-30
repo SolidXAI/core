@@ -19,7 +19,7 @@ export type CreateScheduledJobDto = {
   nextRunAt?: Date;
   dayOfWeek?: string;
   job: string;
-  module: number;
+  moduleUserKey: string;
 };
 
 @Injectable()
@@ -37,7 +37,7 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
   /**
    * Converts an entity to a plain DTO object.
    */
-  async toDto(scheduledJob: ScheduledJob): Promise<Record<string, any>> {
+  async toDto(scheduledJob: CreateScheduledJobDto): Promise<Record<string, any>> {
     return {
       scheduleName: scheduledJob.scheduleName,
       isActive: scheduledJob.isActive,
@@ -51,7 +51,7 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
       nextRunAt: scheduledJob.nextRunAt,
       dayOfWeek: scheduledJob.dayOfWeek,
       job: scheduledJob.job,
-      module: scheduledJob.module.id,
+      moduleUserKey: scheduledJob.moduleUserKey,
     };
   }
 
@@ -59,11 +59,11 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
     const moduleRepo = this.dataSource.getRepository(ModuleMetadata);
 
     const moduleEntity = await moduleRepo.findOne({
-      where: { id: dto.module },
+      where: { name: dto.moduleUserKey },
     });
 
     if (!moduleEntity) {
-      throw new Error(`Module with ID ${dto.module} not found`);
+      throw new Error(`Module with ID ${dto.moduleUserKey} not found`);
     }
 
     const jobData = {

@@ -10,7 +10,7 @@ import {
 } from "typeorm";
 import { ScheduledJob } from "src/entities/scheduled-job.entity";
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
-import { ScheduledJobRepository } from "src/repository/scheduled-job.repository";
+import { CreateScheduledJobDto, ScheduledJobRepository } from "src/repository/scheduled-job.repository";
 import { ModuleMetadata } from "src/entities/module-metadata.entity";
 import { where } from "locale-codes";
 
@@ -41,10 +41,10 @@ export class ScheduledJobSubscriber
   }
 
   async afterRemove(event: RemoveEvent<ScheduledJob>) {
-    await this.RemoveMetadata(event);
+    await this.removeMetadata(event);
   }
 
-  private async RemoveMetadata(event: RemoveEvent<ScheduledJob>) {
+  private async removeMetadata(event: RemoveEvent<ScheduledJob>) {
     const jobEntity = event.entity;
     const moduleMetadata = jobEntity?.module;
 
@@ -146,8 +146,8 @@ export class ScheduledJobSubscriber
       (job) => job.scheduleName === jobName
     );
     // Insert or update job in metadata
-    const jobDto = await this.scheduledJobRepo.toDto(jobEntity as ScheduledJob);
-
+    const jobDto= await this.scheduledJobRepo.toDto(jobEntity as CreateScheduledJobDto);
+    jobDto.moduleUserKey = populatedModuleMetadata.name;
     if (existingIndex !== -1) {
       metaData.scheduledJobs[existingIndex] = jobDto;
       this.logger.log(`Updated scheduled job ${jobName} in metadata`);
