@@ -258,6 +258,7 @@ import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-respons
 import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
 import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
+import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
 import { ScheduledJobRepository } from './repository/scheduled-job.repository';
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 
@@ -548,8 +549,6 @@ import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
     SolidAddFieldMcpToolResponseHandler,
     ViewMetadataRepository,
     SolidCreateModelLayoutMcpToolResponseHandler,
-    ScheduledJobRepository,
-    ScheduledJobSubscriber,
   ],
   exports: [
     ModuleMetadataService,

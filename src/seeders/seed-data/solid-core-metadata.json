@@ -4752,6 +4752,31 @@
             "index": false,
             "private": false,
             "encrypt": false
+          },
+          {
+            "name": "externalId",
+            "displayName": "External ID",
+            "type": "computed",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "computedFieldValueType": "string",
+            "computedFieldValueProvider": "AlphaNumExternalIdComputationProvider",
+            "computedFieldValueProviderCtxt": "{\"prefix\": \"DQ\"}",
+            "computedFieldTriggerConfig": [
+              {
+                "modelName": "dashboardQuestion",
+                "moduleName": "fees-portal",
+                "operations": [
+                  "before-insert"
+                ]
+              }
+            ]
           }
         ]
       },
@@ -4874,6 +4899,31 @@
             "index": false,
             "private": false,
             "encrypt": false
+          },
+          {
+            "name": "externalId",
+            "displayName": "External ID",
+            "type": "computed",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "computedFieldValueType": "string",
+            "computedFieldValueProvider": "AlphaNumExternalIdComputationProvider",
+            "computedFieldValueProviderCtxt": "{\"prefix\": \"DQSDC\"}",
+            "computedFieldTriggerConfig": [
+              {
+                "modelName": "dashboardQuestionSqlDatasetConfig",
+                "moduleName": "fees-portal",
+                "operations": [
+                  "before-insert"
+                ]
+              }
+            ]
           }
         ]
       },
