@@ -146,8 +146,7 @@ export class ScheduledJobSubscriber
       (job) => job.scheduleName === jobName
     );
     // Insert or update job in metadata
-    const jobDto= await this.scheduledJobRepo.toDto(jobEntity as CreateScheduledJobDto);
-    jobDto.moduleUserKey = populatedModuleMetadata.name;
+    const jobDto= await this.scheduledJobRepo.toDto(jobEntity as ScheduledJob);
     if (existingIndex !== -1) {
       metaData.scheduledJobs[existingIndex] = jobDto;
       this.logger.log(`Updated scheduled job ${jobName} in metadata`);

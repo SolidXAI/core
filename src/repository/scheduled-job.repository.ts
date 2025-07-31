@@ -37,7 +37,15 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
   /**
    * Converts an entity to a plain DTO object.
    */
-  async toDto(scheduledJob: CreateScheduledJobDto): Promise<Record<string, any>> {
+  async toDto(scheduledJob: ScheduledJob): Promise<CreateScheduledJobDto> {
+    const moduleRepo = this.dataSource.getRepository(ModuleMetadata);
+    const moduleEntity = await moduleRepo.findOne({
+      where: { id: scheduledJob.module?.id },
+    });
+
+    if (!moduleEntity) {
+      throw new Error(`Module with ID ${scheduledJob.module?.id} not found`);
+    }
     return {
       scheduleName: scheduledJob.scheduleName,
       isActive: scheduledJob.isActive,
@@ -51,7 +59,7 @@ export class ScheduledJobRepository extends Repository<ScheduledJob> {
       nextRunAt: scheduledJob.nextRunAt,
       dayOfWeek: scheduledJob.dayOfWeek,
       job: scheduledJob.job,
-      moduleUserKey: scheduledJob.moduleUserKey,
+      moduleUserKey: moduleEntity.name,
     };
   }
 
