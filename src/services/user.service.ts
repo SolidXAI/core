@@ -42,7 +42,7 @@ export class UserService extends CRUDService<User> {
   override async delete(id: number, solidRequestContext: any = {}) {
     // Prevent user from deleting themselves
     if (solidRequestContext?.activeUser?.sub === id) {
-      throw new BadRequestException('You cannot delete yourself');
+      throw new BadRequestException('Deleting logged-in user is not allowed');
     }
 
     // ✅ Proceed with the default deletion logic
@@ -56,7 +56,7 @@ export class UserService extends CRUDService<User> {
 
     // ❌ If the active user is trying to delete themselves
     if (solidRequestContext?.activeUser?.sub && ids.includes(solidRequestContext.activeUser.id)) {
-      throw new BadRequestException('You cannot delete yourself');
+      throw new BadRequestException('Deleting logged-in user is not allowed');
     }
 
     return super.deleteMany(ids, solidRequestContext);
