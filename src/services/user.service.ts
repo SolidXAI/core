@@ -39,6 +39,28 @@ export class UserService extends CRUDService<User> {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'user', 'solid-core', moduleRef);
   }
 
+  override async delete(id: number, solidRequestContext: any = {}) {
+    // Prevent user from deleting themselves
+    if (solidRequestContext?.activeUser?.sub === id) {
+      throw new BadRequestException('You cannot delete yourself');
+    }
+
+    // ✅ Proceed with the default deletion logic
+    return super.delete(id, solidRequestContext);
+  }
+
+  override async deleteMany(ids: number[], solidRequestContext: any = {}): Promise<any> {
+    if (!ids || ids.length === 0) {
+      throw new Error('At least one ID is required for deletion');
+    }
+
+    // ❌ If the active user is trying to delete themselves
+    if (solidRequestContext?.activeUser?.sub && ids.includes(solidRequestContext.activeUser.id)) {
+      throw new BadRequestException('You cannot delete yourself');
+    }
+
+    return super.deleteMany(ids, solidRequestContext);
+  }
 
   async findOneByEmail(email: string): Promise<User> {
     return await this.repo.findOne({
