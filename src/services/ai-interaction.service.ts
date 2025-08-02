@@ -205,6 +205,9 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
 
     // TODO: This provider to implement an interface - IMcpToolResponseHandler ... apply(aiInteraction: AiInteraction)
     // throw new Error('Method not implemented.');
+    
+    // Mark the interaction as applied
+    await this.update(aiInteraction.id, { isApplied: true }, [], true);
 
     return handlerApplicationResponse;
   }
