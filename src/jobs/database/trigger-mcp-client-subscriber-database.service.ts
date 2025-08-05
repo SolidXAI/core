@@ -62,7 +62,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 errorMessage: errorsStr,
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
-                metadata: JSON.stringify(aiResponse)
+                metadata: JSON.stringify(aiResponse),
+                isApplied: aiInteraction.isApplied
             });
 
             // update the job entry with failure... raising an error will lead the job to be marked as failed...
@@ -80,7 +81,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 errorMessage: '',
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
-                metadata: JSON.stringify(aiResponse)
+                metadata: JSON.stringify(aiResponse),
+                isApplied: aiInteraction.isApplied
             });
         }
 

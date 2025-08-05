@@ -5046,6 +5046,17 @@
             "index": false,
             "private": false,
             "encrypt": false
+          },
+          {
+            "name": "isApplied",
+            "displayName": "Is Applied",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
           }
         ]
       }
