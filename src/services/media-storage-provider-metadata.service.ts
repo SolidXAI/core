@@ -5,6 +5,7 @@ import { MediaStorageProviderMetadata } from "../entities/media-storage-provider
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { CrudHelperService } from "./crud-helper.service";
 import { UpdateMediaStorageProviderMetadataDto } from "../dtos/update-media-storage-provider.dto";
+import { ERROR_MESSAGES } from "src/constants/error-messages";
 
 @Injectable()
 export class MediaStorageProviderMetadataService {
@@ -80,7 +81,7 @@ export class MediaStorageProviderMetadataService {
             relations: relations,
         });
         if (!lov) {
-            throw new NotFoundException(`Media Storage Provider with #${type} not found`);
+            throw new NotFoundException(ERROR_MESSAGES.MEDIA_STORAGE_PROVIDER_ID_NOT_FOUND(type));
         }
         return lov;
     }
@@ -118,14 +119,14 @@ export class MediaStorageProviderMetadataService {
         });
 
         if (!entity) {
-            throw new NotFoundException(`Module ${id} not found`);
+            throw new NotFoundException(ERROR_MESSAGES.MODULE_ID_NOT_FOUND(id));
         }
         return this.mediaStorageProviderRepo.save(entity);
     }
 
     async deleteMany(ids: number[]): Promise<any> {
         if (!ids || ids.length === 0) {
-            throw new Error('At least one ID is required for deletion');
+            throw new Error(ERROR_MESSAGES.DELETE_IDS_REQUIRED);
         }
         const removedEntities = [];
         for (let i = 0; i < ids.length; i++) {

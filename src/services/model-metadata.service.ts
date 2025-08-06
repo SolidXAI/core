@@ -27,6 +27,7 @@ import { RoleMetadataService } from './role-metadata.service';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
 import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
 import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 @Injectable()
 export class ModelMetadataService {
@@ -89,7 +90,7 @@ export class ModelMetadataService {
       relations: query?.populate, //FIXME: Check with jenender and change to relations to avoid confusion
     });
     if (!entity) {
-      throw new NotFoundException(`entity #${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.ENTITY_NOT_FOUND(`#${id}`));
     }
     return entity;
   }
@@ -102,7 +103,7 @@ export class ModelMetadataService {
       relations: relations,
     });
     if (!entity) {
-      throw new NotFoundException(`entity #${singularName} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.ENTITY_NOT_FOUND(singularName));
     }
     return entity;
   }
@@ -115,7 +116,7 @@ export class ModelMetadataService {
       relations: relations,
     });
     if (!entity) {
-      throw new NotFoundException(`entity #${singularName} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.ENTITY_NOT_FOUND(singularName));
     }
     return entity;
   }
@@ -289,7 +290,7 @@ export class ModelMetadataService {
     } catch (error) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
-      throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
+      throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
     }
   }
 
@@ -307,7 +308,7 @@ export class ModelMetadataService {
     });
 
     if (!existingModel) {
-      throw new Error(`Model with singular name "${updateModelMetaDataDto.singularName}" not found.`);
+      throw new Error(ERROR_MESSAGES.MODEL_NOT_FOUND(updateModelMetaDataDto.singularName));
     }
 
     const updatedModel = modelRepo.merge(existingModel, modelMetaDataWithoutFields);
@@ -470,7 +471,7 @@ export class ModelMetadataService {
     } catch (error) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
-      throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
+      throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
     }
   }
 
@@ -507,7 +508,7 @@ export class ModelMetadataService {
 
   async deleteMany(ids: number[]): Promise<any> {
     if (!ids || ids.length === 0) {
-      throw new Error('At least one ID is required for deletion');
+      throw new Error(ERROR_MESSAGES.DELETE_IDS_REQUIRED);
     }
     const removedEntities = [];
     for (let i = 0; i < ids.length; i++) {
@@ -1088,7 +1089,7 @@ export class ModelMetadataService {
 
   async generateRemoveFieldsCode(options: CodeGenerationOptions): Promise<string> {
     if (!options.modelId && !options.modelUserKey) {
-      throw new BadRequestException('Model ID or Model Name is required for generating code');
+      throw new BadRequestException(ERROR_MESSAGES.MODEL_REQUIRED_FOR_CODE_GENERATION);
     }
 
     if (!options.fieldIdsForRemoval || options.fieldIdsForRemoval.length === 0) {
@@ -1143,7 +1144,7 @@ export class ModelMetadataService {
 
   async generateModelCode(options: CodeGenerationOptions): Promise<string> {
     if (!options.modelId && !options.modelUserKey) {
-      throw new BadRequestException('Model ID or Model Name is required for generating code');
+      throw new BadRequestException(ERROR_MESSAGES.MODEL_REQUIRED_FOR_CODE_GENERATION);
     }
 
     const query = {

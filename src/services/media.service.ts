@@ -18,6 +18,7 @@ import { Media } from 'src/entities/media.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 
 @Injectable()
@@ -77,7 +78,7 @@ export class MediaService extends CRUDService<Media> {
   async upload(createDto: any, files: Array<Express.Multer.File>) {
 
     if (!files) {
-      throw new NotFoundException(`File Not Found`);
+      throw new NotFoundException(ERROR_MESSAGES.FILE_NOT_FOUND);
 
     }
     const savedMedias = [];

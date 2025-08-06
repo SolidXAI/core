@@ -35,6 +35,8 @@ import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
 import { isArray } from "class-validator";
+import { ERROR_MESSAGES } from "src/constants/error-messages";
+import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 
 export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
@@ -66,7 +68,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasCreatePermissionOnModel(solidRequestContext.activeUser, model.singularName);
             if (!hasPermission) {
-                throw new BadRequestException('Forbidden');
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
             }
         }
         // const inverseRelationFields = await this.loadInverseRelationFields();
@@ -92,7 +94,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             return savedEntity;
         } catch (error) {
             if (error instanceof QueryFailedError && error.message.includes('duplicate key value violates unique constraint')) {
-                throw new BadRequestException('Duplicate entry. A record with similar unique fields already exists.');
+                throw new BadRequestException(ERROR_MESSAGES.DUPLICATE_ENTRY);
             }
             throw error;
         }
@@ -153,7 +155,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
     async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate: boolean = false, solidRequestContext: any = {}, isUpdate: boolean = false): Promise<T> {
         if (!id) {
-            throw new Error('Id is required for update');
+            throw new Error(ERROR_MESSAGES.ID_REQUIRED_FOR_UPDATE);
         }
         isUpdate = true;
         const model = await this.loadModel();
@@ -161,7 +163,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasUpdatePermissionOnModel(solidRequestContext.activeUser, model.singularName);
             if (!hasPermission) {
-                throw new BadRequestException('Forbidden');
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
             }
         }
         const entity = await this.repo.findOne({
@@ -207,14 +209,14 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
     async delete(id: number, solidRequestContext: any = {}) {
         if (!id) {
-            throw new Error('Id is required for update');
+            throw new Error(ERROR_MESSAGES.ID_REQUIRED_FOR_DELETE);
         }
         const loadedmodel = await this.loadModel();
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasDeletePermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
             if (!hasPermission) {
-                throw new BadRequestException('Forbidden');
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
             }
         }
 
@@ -373,7 +375,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                         return new ManyToManyRelationFieldCrudManager(inverseManyToManyOptions);
                     }
                 }
-                else throw new Error('Relation type not supported in crud service');
+                else throw new Error(ERROR_MESSAGES.RELATION_TYPE_NOT_SUPPORTED);
                 // return (fieldMetadata.relationType === 'many-to-one') ? new ManyToOneRelationFieldCrudManager(fieldMetadata, entityManager) : new ManyToManyRelationFieldCrudManager(fieldMetadata, entityManager); //FIXME many-to-many pending
                 //    ManyToOne -> fieldId. The value is saved as is. No transformation is required
                 //    OneToMany -> fieldIds. Get the value of the oneToMany field side.  No transformation is required (While saving special provision to be made)
@@ -624,7 +626,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasReadPermissionOnModel(solidRequestContext.activeUser, model.singularName);
             if (!hasPermission) {
-                throw new BadRequestException('Forbidden');
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
             }
         }
 
@@ -659,7 +661,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasCreatePermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
             if (!hasPermission) {
-                throw new BadRequestException('Forbidden');
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
             }
         }
 
@@ -709,7 +711,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
     async deleteMany(ids: number[], solidRequestContext: any = {}): Promise<any> {
 
         if (!ids || ids.length === 0) {
-            throw new Error('At least one ID is required for deletion');
+            throw new Error(ERROR_MESSAGES.DELETE_IDS_REQUIRED);
         }
 
         const loadedmodel = await this.loadModel();
@@ -717,7 +719,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasDeletePermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
             if (!hasPermission) {
-                throw new BadRequestException('Forbidden');
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
             }
         }
         const model = await this.modelMetadataService.findOneBySingularName(this.modelName, {
@@ -757,7 +759,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             if (solidRequestContext.activeUser) {
                 const hasPermission = this.crudHelperService.hasRecoverPermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
                 if (!hasPermission) {
-                    throw new BadRequestException('Forbidden');
+                    throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
                 }
             }
 
@@ -770,7 +772,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             });
 
             if (!softDeletedRows) {
-                throw new Error('No soft-deleted record found with the given ID.');
+                throw new Error(ERROR_MESSAGES.NO_SOFT_DELETED_RECORD_FOUND);
             }
 
             await this.repo.update(id, {
@@ -778,11 +780,11 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 deletedAt: null, deletedTracker: "not-deleted"
             });
 
-            return { message: 'Record successfully recovered', data: softDeletedRows };
+            return { message: SUCCESS_MESSAGES.RECORD_RECOVERED, data: softDeletedRows };
         } catch (error) {
             if (error instanceof QueryFailedError) {
                 if ((error as any).code === '23505') {
-                    throw new Error('Another record is conflicting with the record you are attempting to Un-Archive, either delete or change the other record so as to avoid this conflict.');
+                    throw new Error(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
                 }
             }
 
@@ -797,12 +799,12 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             if (solidRequestContext.activeUser) {
                 const hasPermission = this.crudHelperService.hasRecoverPermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
                 if (!hasPermission) {
-                    throw new BadRequestException('Forbidden');
+                    throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
                 }
             }
 
             if (!ids || ids.length === 0) {
-                throw new Error("No IDs provided for recovery.");
+                throw new Error(ERROR_MESSAGES.DELETE_IDS_REQUIRED);
             }
 
             // Find soft-deleted records matching the given IDs
@@ -816,7 +818,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             });
 
             if (softDeletedRows.length === 0) {
-                throw new Error("No matching soft-deleted records found.");
+                throw new Error(ERROR_MESSAGES.NO_SOFT_DELETED_RECORDS_FOUND);
             }
 
             // Recover the specific records by setting deletedAt to null
@@ -826,13 +828,11 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 { deletedAt: null, deletedTracker: "not-deleted" }
             );
 
-            return { message: "Selected records successfully recovered", recoveredIds: ids };
+            return { message: SUCCESS_MESSAGES.SELECTED_RECORDS_RECOVERED, recoveredIds: ids };
         } catch (error) {
             if (error instanceof QueryFailedError) {
                 if ((error as any).code === "23505") {
-                    throw new Error(
-                        "Another record is conflicting with the record you are attempting to Un-Archive, either delete or change the other record to avoid this conflict."
-                    );
+                    throw new Error(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
                 }
             }
 
@@ -843,7 +843,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
 
     async getFieldMetadataRecursively(pathParts: string[], fields: FieldMetadata[]) {
         if (!pathParts || pathParts.length === 0) {
-            throw new BadRequestException('Path parts cannot be empty');
+            throw new BadRequestException(ERROR_MESSAGES.EMPTY_PATH_PARTS);
         }
 
         const [currentPart, ...remainingParts] = pathParts;

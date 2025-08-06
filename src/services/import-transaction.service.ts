@@ -25,6 +25,7 @@ import { ImportTransaction } from '../entities/import-transaction.entity';
 import { CsvService } from './csv.service';
 import { ExcelService } from './excel.service';
 import { SolidIntrospectService } from './solid-introspect.service';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 interface ImportTemplateFileInfo {
   stream: NodeJS.ReadableStream;
@@ -120,7 +121,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       populate: ['fields'],
     });
     if (!modelMetadata) {
-      throw new Error(`Model metadata with ID ${modelMetadataId} not found.`);
+      throw new Error(ERROR_MESSAGES.MODEL_METADATA_NOT_FOUND(modelMetadataId));
     }
     // Create a header row with the display names of the fields, excluding the media fields,computed fields
     const headers = this.fieldsAllowedForImport(modelMetadata.fields)
@@ -147,7 +148,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         mimeType,
       };
     } else {
-      throw new Error(`Unsupported import format: ${format}`);
+      throw new Error(ERROR_MESSAGES.INVALID_FORMAT('import' + format));
     }
 
   }
@@ -158,7 +159,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       populate: ['fields'],
     });
     if (!modelMetadata) {
-      throw new Error(`Model metadata with ID ${modelMetadataId} not found.`);
+      throw new Error(ERROR_MESSAGES.MODEL_METADATA_NOT_FOUND(modelMetadataId));
     }
 
     // Create the standard import instructions
@@ -294,7 +295,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     });
 
     if (!firstErrorLogEntry) {
-      throw new BadRequestException(`No error log entries found for import transaction ID ${importTransactionId}.`);
+      throw new BadRequestException(ERROR_MESSAGES.NO_ERROR_LOG_FOR_IMPORT(importTransactionId));
     }
 
     // Create the headers for the export file
@@ -402,7 +403,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       return firstRecord.value;
     }
     else { // If the file is neither CSV nor Excel, throw an error
-      throw new Error(`Unsupported file type: ${mimeType}`);
+      throw new Error(ERROR_MESSAGES.INVALID_FORMAT(mimeType));
     }
   }
 
@@ -426,7 +427,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     });
 
     if (!fileUrlResponse || !fileUrlResponse.data) {
-      throw new Error(`Failed to read file from URL: ${fileUrl}`);
+      throw new Error(ERROR_MESSAGES.FILE_READ_FAILED_FROM_URL(fileUrl));
     }
     // fileUrlResponse.data is a Node.js Readable stream
     return fileUrlResponse.data;
@@ -462,7 +463,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         createdErrorLogIds.push(...errorLogIds);
       }
     } else { // If the file is neither CSV nor Excel, throw an error
-      throw new Error(`Unsupported file type: ${mimeType}`);
+      throw new Error(ERROR_MESSAGES.INVALID_FORMAT(mimeType));
     }
 
     return {
@@ -529,7 +530,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     const modelServiceWrapper = this.introspectService.getProvider(`${classify(modelSingularName)}Service`);
     const modelService = modelServiceWrapper.instance as CRUDService<any>;
     if (!modelService) {
-      throw new Error(`Model service for ${modelSingularName} not found.`);
+      throw new Error(ERROR_MESSAGES.MODEL_SERVICE_NOT_FOUND(modelSingularName));
     }
     return modelService;
   }
@@ -639,7 +640,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
 
   private async populateDtoForRelations(fieldMetadata: FieldMetadata, record: Record<string, any>, key: string, dtoRecord: Record<string, any>) {
     if (!fieldMetadata.relationCoModelSingularName) {
-      throw new Error(`Relation coModelSingularName is not defined for relation field ${fieldMetadata.name}`);
+      throw new Error(ERROR_MESSAGES.RELATION_CO_MODEL_NOT_DEFINED_FOR_FIELD(fieldMetadata.name));
     }
 
     const relatedRecordsIds = await this.getRelatedEntityIdsFromUserKeys(fieldMetadata, record, key);

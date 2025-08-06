@@ -22,6 +22,7 @@ import { CrudHelperService } from './crud-helper.service';
 import { ModelMetadataService } from './model-metadata.service';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 @Injectable()
 export class ModuleMetadataService {
@@ -77,7 +78,7 @@ export class ModuleMetadataService {
 
   async findOneByUserKey(name: string, relations = {}) {
     if (!name) {
-      throw new BadRequestException('name is required for finding entity');
+      throw new BadRequestException(ERROR_MESSAGES.ENTITY_NAME_REQUIRED);
     }
     const entity = await this.moduleMetadataRepo.findOne({
       where: {
@@ -90,7 +91,7 @@ export class ModuleMetadataService {
 
   async findOne(id: number, relations = {}) {
     if (!id) {
-      throw new BadRequestException('ID is required for finding entity');
+      throw new BadRequestException(ERROR_MESSAGES.ENTITY_ID_REQUIRED);
     }
     const entity = await this.moduleMetadataRepo.findOne({
       where: {
@@ -99,7 +100,7 @@ export class ModuleMetadataService {
       relations: relations,
     });
     if (!entity) {
-      throw new NotFoundException(`entity #${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.ENTITY_NOT_FOUND());
     }
     return entity;
   }
@@ -194,7 +195,7 @@ export class ModuleMetadataService {
     } catch (error) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
-      throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
+      throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
     }
   }
 
@@ -221,7 +222,7 @@ export class ModuleMetadataService {
     });
 
     if (!module) {
-      throw new NotFoundException(`Module ${id} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.MODULE_ID_NOT_FOUND(id));
     }
     if (files.length > 0) {
 
@@ -281,7 +282,7 @@ export class ModuleMetadataService {
     } catch (error) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
-      throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
+      throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
     }
   }
 
@@ -320,7 +321,7 @@ export class ModuleMetadataService {
 
   async deleteMany(ids: number[]): Promise<any> {
     if (!ids || ids.length === 0) {
-      throw new Error('At least one ID is required for deletion');
+      throw new Error(ERROR_MESSAGES.DELETE_IDS_REQUIRED);
     }
     const removedEntities = [];
     for (let i = 0; i < ids.length; i++) {
@@ -348,13 +349,13 @@ export class ModuleMetadataService {
   @DisallowInProduction()
   async generateCode(options: CodeGenerationOptions): Promise<string> {
     if (!options.moduleId && !options.moduleUserKey) {
-      throw new BadRequestException('Module ID or Module Name is required for generating code');
+      throw new BadRequestException(ERROR_MESSAGES.MODEL_REQUIRED_FOR_CODE_GENERATION);
     }
     const module = options.moduleId ? await this.findOne(options.moduleId) : await this.findOneByUserKey(options.moduleUserKey);
 
     // Check if the module exists
     if (!module) {
-      throw new NotFoundException(`Module ${options.moduleId} not found`);
+      throw new NotFoundException(ERROR_MESSAGES.MODULE_ID_NOT_FOUND(options.moduleId));
     }
 
     // Check if the module name already exists and is loaded
@@ -371,7 +372,7 @@ export class ModuleMetadataService {
 
   private async generateAddModuleCode(options: CodeGenerationOptions = { dryRun: false }): Promise<string> {
     if (!options.moduleId && !options.moduleUserKey) {
-      throw new BadRequestException('Module ID or Module Name is required for generating code');
+      throw new BadRequestException(ERROR_MESSAGES.MODEL_REQUIRED_FOR_CODE_GENERATION);
     }
     const module = options.moduleId ? await this.findOne(options.moduleId) : await this.findOneByUserKey(options.moduleUserKey);
 

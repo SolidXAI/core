@@ -28,6 +28,7 @@ import { getMediaStorageProvider } from './mediaStorageProviders';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { UpdateExportTemplateDto } from 'src/dtos/update-export-template.dto';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 const EXPORT_CHUNK_SIZE = 100;
 enum ExportStatus {
@@ -170,7 +171,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
         exportStream = await this.csvService.createCsvStream(dataRecordsFunc, EXPORT_CHUNK_SIZE);
         break;
       default:
-        throw new Error('Invalid export format');
+        throw new Error(ERROR_MESSAGES.INVALID_FORMAT('export' + templateFormat));
     }
     return exportStream;
   }
