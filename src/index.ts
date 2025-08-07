@@ -283,3 +283,5 @@ export * from './solid-core.module'
 
 export * from './winston.logger'
 export { default as datetimeTransformer } from './transformers/datetime-transformer'
+
+export { ERROR_MESSAGES } from './constants/error-messages'

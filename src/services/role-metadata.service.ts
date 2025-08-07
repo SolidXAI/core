@@ -12,6 +12,7 @@ import { CrudHelperService } from "src/services/crud-helper.service";
 import { RoleMetadata } from '../entities/role-metadata.entity';
 import { PermissionMetadata } from '../entities/permission-metadata.entity';
 import { CreateRoleMetadataDto } from '../dtos/create-role-metadata.dto';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 @Injectable()
 export class RoleMetadataService extends CRUDService<RoleMetadata> {
@@ -180,7 +181,7 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     });
 
     if (!role) {
-      throw new Error(`Role ${roleName} not found.`);
+      throw new Error(ERROR_MESSAGES.ROLE_NOT_FOUND(roleName));
     }
 
     // modify the permissions array.
@@ -194,7 +195,7 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
       where: { name },
     });
     if (!existingPermission) {
-      throw new NotFoundException(`Permission ${name} does not exist`)
+      throw new NotFoundException(ERROR_MESSAGES.PERMISSION_NOT_EXIST(name));
     }
     return existingPermission;
   }

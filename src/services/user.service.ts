@@ -15,6 +15,7 @@ import { RoleMetadata } from '../entities/role-metadata.entity';
 import { User } from '../entities/user.entity';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { iamConfig } from 'src/config/iam.config';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 @Injectable()
 export class UserService extends CRUDService<User> {
@@ -42,7 +43,7 @@ export class UserService extends CRUDService<User> {
   override async delete(id: number, solidRequestContext: any = {}) {
     // Prevent user from deleting themselves
     if (solidRequestContext?.activeUser?.sub === id) {
-      throw new BadRequestException('Deleting logged-in user is not allowed');
+      throw new BadRequestException(ERROR_MESSAGES.DELETE_SELF_NOT_ALLOWED);
     }
 
     // ✅ Proceed with the default deletion logic
@@ -51,12 +52,12 @@ export class UserService extends CRUDService<User> {
 
   override async deleteMany(ids: number[], solidRequestContext: any = {}): Promise<any> {
     if (!ids || ids.length === 0) {
-      throw new Error('At least one ID is required for deletion');
+      throw new Error(ERROR_MESSAGES.DELETE_IDS_REQUIRED);
     }
 
     // ❌ If the active user is trying to delete themselves
     if (solidRequestContext?.activeUser?.sub && ids.includes(solidRequestContext.activeUser.id)) {
-      throw new BadRequestException('Deleting logged-in user is not allowed');
+      throw new BadRequestException(ERROR_MESSAGES.DELETE_SELF_NOT_ALLOWED);
     }
 
     return super.deleteMany(ids, solidRequestContext);
@@ -105,7 +106,7 @@ export class UserService extends CRUDService<User> {
       }
     });
     if (!user) {
-      throw new Error(`User not found.`);
+      throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
     }
     const roles = updateDto.roles ? updateDto.roles : [];
     await this.addRolesToUser(user.username, roles);
@@ -121,11 +122,11 @@ export class UserService extends CRUDService<User> {
       }
     });
     if (!user) {
-      throw new Error(`User with username '${username}' not found.`);
+      throw new Error(ERROR_MESSAGES.USER_NOT_FOUND_BY_USERNAME(username));
     }
     const role = await this.roleRepository.findOne({ where: { name: roleName } });
     if (!role) {
-      throw new Error(`Role '${roleName}' not found.`);
+      throw new Error(ERROR_MESSAGES.ROLE_NOT_FOUND(roleName));
     }
 
     if (user.roles && user.roles.length > 0) {
@@ -145,7 +146,7 @@ export class UserService extends CRUDService<User> {
     });
 
     if (!user) {
-      throw new Error(`User with username '${username}' not found.`);
+      throw new Error(ERROR_MESSAGES.USER_NOT_FOUND_BY_USERNAME(username));
     }
 
     const roles = await this.roleRepository.find({
@@ -155,7 +156,7 @@ export class UserService extends CRUDService<User> {
     if (roles.length !== roleNames.length) {
       const foundRoleNames = roles.map(role => role.name);
       const missingRoles = roleNames.filter(roleName => !foundRoleNames.includes(roleName));
-      throw new Error(`The following roles were not found: ${missingRoles.join(', ')}`);
+      throw new Error(ERROR_MESSAGES.ROLES_NOT_FOUND(missingRoles));
     }
 
     const currentRoles = user.roles.map(role => role.name);
@@ -189,7 +190,7 @@ export class UserService extends CRUDService<User> {
     });
 
     if (!user) {
-      throw new Error(`User with username '${username}' not found.`);
+      throw new Error(ERROR_MESSAGES.USER_NOT_FOUND_BY_USERNAME(username));
     }
 
     // modify the permissions array.
@@ -261,7 +262,7 @@ export class UserService extends CRUDService<User> {
 
   async initializeRolesForNewUser(roles: string[], user: User) {
     if (!user.id) {
-      throw new BadRequestException('User must exist before initializing roles');
+      throw new BadRequestException(ERROR_MESSAGES.USER_MISSING_ID);
     }
     let userRoles = [];
     // Default Internal user role assigned 

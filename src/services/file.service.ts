@@ -7,6 +7,7 @@ import commonConfig, { AwsS3Config } from '../config/common.config';
 import path from 'path';
 import { Readable } from 'stream';
 import { getSignedUrl as awsGetSignedUrl } from '@aws-sdk/s3-request-presigner';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 @Injectable()
 export class FileService {
@@ -69,7 +70,7 @@ export class FileService {
       await this.createDirectoryIfNotExists(destinationPath);
       await this.writeFile(destinationPath, data);
     } catch (error) {
-      throw new Error(`Error copying file: ${error.message}`);
+      throw new Error(`${ERROR_MESSAGES.FILE_COPY_ERROR}: ${error.message}`);
     }
   }
 
@@ -114,12 +115,12 @@ export class FileService {
       return fileName
 
     } catch (error) {
-      throw new Error(`Error copying file: ${error.message}`);
+      throw new Error(`${ERROR_MESSAGES.FILE_COPY_ERROR}: ${error.message}`);
     }
   }
 
   private checkIfS3ClientExists() {
-    if (!this.s3Client) { throw new Error('S3 Client not initialized. Please check the S3 configuration'); }
+    if (!this.s3Client) { throw new Error(ERROR_MESSAGES.S3_CLIENT_NOT_INITIALIZED); }
   }
 
   async copyToS3WithPublic(filePath: string, ContentType: string, fileName: string, bucketName: string): Promise<string> {
@@ -145,7 +146,7 @@ export class FileService {
       return fileName
 
     } catch (error) {
-      throw new Error(`Error copying file: ${error.message}`);
+      throw new Error(`${ERROR_MESSAGES.FILE_COPY_ERROR}: ${error.message}`);
     }
   }
 
