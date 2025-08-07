@@ -910,7 +910,7 @@ export class ModelMetadataService {
       metaData.menus.push(menu);
     }
 
-    if (notExists(metaData.actions, viewName)) {
+    if (notExists(metaData.actions, actionName)) {
       metaData.actions.push(action);
     }
 
