@@ -385,6 +385,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       field.type !== SolidFieldType.password &&
       field.type !== SolidFieldType.richText &&
       field.type !== SolidFieldType.uuid &&
+      field.relationType !== RelationType.oneToMany &&
       field.isSystem !== true // Exclude system fields
     );
   }
