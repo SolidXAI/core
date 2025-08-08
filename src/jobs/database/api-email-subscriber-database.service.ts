@@ -4,7 +4,7 @@ import mailQueueOptions from './api-email-queue-options-database';
 import { QueueMessage } from 'src/interfaces/mq';
 import { MqMessageService } from 'src/services/mq-message.service';
 import { MqMessageQueueService } from 'src/services/mq-message-queue.service';
-import { ElasticEmailService } from 'src/services/mail/ElasticEmailService';
+import { ElasticEmailService } from 'src/services/mail/elastic-email.service';
 import { QueuesModuleOptions } from 'src/interfaces';
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
 

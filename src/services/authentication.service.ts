@@ -15,7 +15,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isEmpty, isNotEmpty } from 'class-validator';
 import { randomInt, randomUUID } from 'crypto';
-import { SMTPEMailService } from 'src/services/mail/SMTPEmailService';
+import { SMTPEMailService } from 'src/services/mail/smtp-email.service';
 import { Msg91OTPService } from 'src/services/sms/Msg91OTPService';
 import { Repository } from 'typeorm';
 import { iamConfig, jwtConfig } from '../config/iam.config';

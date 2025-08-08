@@ -108,8 +108,8 @@ import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/
 import { EmailTemplateService } from './services/email-template.service';
 import { FileService } from './services/file.service';
 import { HashingService } from './services/hashing.service';
-import { ElasticEmailService } from './services/mail/ElasticEmailService';
-import { SMTPEMailService } from './services/mail/SMTPEmailService';
+import { ElasticEmailService } from './services/mail/elastic-email.service';
+import { SMTPEMailService } from './services/mail/smtp-email.service';
 import { MenuItemMetadataService } from './services/menu-item-metadata.service';
 import { MqMessageQueueService } from './services/mq-message-queue.service';
 import { MqMessageService } from './services/mq-message.service';

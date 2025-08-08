@@ -5,7 +5,7 @@ import { QueueMessage } from 'src/interfaces/mq';
 import { MqMessageService } from 'src/services/mq-message.service';
 import { MqMessageQueueService } from 'src/services/mq-message-queue.service';
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
-import { SMTPEMailService } from 'src/services/mail/SMTPEmailService';
+import { SMTPEMailService } from 'src/services/mail/smtp-email.service';
 import { QueuesModuleOptions } from 'src/interfaces';
 
 @Injectable()
