@@ -205,7 +205,7 @@ export interface MailAttachment {
   templateParams?: any; // deprecated
   content?: string | Buffer;
   contentType?: string;
-  path?: string;
+  path?: string; //Filesystem absolute path or URL. 
 }
 
 export enum BrokerType {
