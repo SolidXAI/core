@@ -5387,27 +5387,27 @@
     },
     {
       "displayName": "Email list action",
-      "name": "email-list-action",
+      "name": "emailTemplate-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "email-list-view",
+      "viewUserKey": "emailTemplate-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "emailTemplate"
     },
     {
       "displayName": "SMS list action",
-      "name": "sms-list-action",
+      "name": "smsTemplate-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "sms-list-view",
+      "viewUserKey": "smsTemplate-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "smsTemplate"
     },
@@ -5755,17 +5755,17 @@
     },
     {
       "displayName": "Email",
-      "name": "email-menu-item",
+      "name": "emailTemplate-menu-item",
       "sequenceNumber": 1,
-      "actionUserKey": "email-list-action",
+      "actionUserKey": "emailTemplate-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "notification-menu-item"
     },
     {
       "displayName": "SMS",
-      "name": "sms-menu-item",
+      "name": "smsTemplate-menu-item",
       "sequenceNumber": 1,
-      "actionUserKey": "sms-list-action",
+      "actionUserKey": "smsTemplate-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "notification-menu-item"
     },
@@ -10672,7 +10672,7 @@
       }
     },
     {
-      "name": "email-list-view",
+      "name": "emailTemplate-list-view",
       "displayName": "Email",
       "type": "list",
       "context": "{}",
@@ -10706,7 +10706,7 @@
       }
     },
     {
-      "name": "email-form-view",
+      "name": "emailTemplate-form-view",
       "displayName": "Email",
       "type": "form",
       "context": "{}",
@@ -10805,7 +10805,7 @@
       }
     },
     {
-      "name": "sms-list-view",
+      "name": "smsTemplate-list-view",
       "displayName": "SMS Template",
       "type": "list",
       "context": "{}",
@@ -10839,7 +10839,7 @@
       }
     },
     {
-      "name": "sms-form-view",
+      "name": "smsTemplate-form-view",
       "displayName": "SMS Template",
       "type": "form",
       "context": "{}",

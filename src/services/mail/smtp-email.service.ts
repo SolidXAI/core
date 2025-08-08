@@ -33,7 +33,7 @@ export class SMTPEMailService implements IMail {
         });
     }
 
-    async sendEmailUsingTemplate(to: string, templateName: string, templateParams: any, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments: MailAttachment[] = [], cc: string[] = []): Promise<void> {
+    async sendEmailUsingTemplate(to: string, templateName: string, templateParams: any, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments: MailAttachment[] = [], cc: string[] = [], bcc: string[] = [], from: string = null): Promise<void> {
         // Load template and evaluate it. 
         const emailTemplate = await this.emailTemplateService.findOneByName(templateName);
         if (!emailTemplate) {
@@ -49,18 +49,19 @@ export class SMTPEMailService implements IMail {
         const subject = subjectTemplate(templateParams);
 
         // Finally send the email.
-        await this.sendEmail(to, subject, body, shouldQueueEmails, parentEntity, parentEntityId, attachments);
+        await this.sendEmail(to, subject, body, shouldQueueEmails, parentEntity, parentEntityId, attachments, cc, bcc, from);
     }
 
-    async sendEmail(to: string, subject: string, body: string, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments: MailAttachment[] = [], cc: string[] = []): Promise<void> {
+    async sendEmail(to: string, subject: string, body: string, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments: MailAttachment[] = [], cc: string[] = [], bcc: string[] = [], from: string = null): Promise<void> {
         const message = {
             payload: {
-                from: this.commonConfiguration.smtpMail.from,
+                from: from || this.commonConfiguration.smtpMail.from,
                 to: to,
                 subject: subject,
                 body: body,
                 attachments: attachments,
                 cc: cc,
+                bcc: bcc,
             },
             parentEntity: parentEntity,
             parentEntityId: parentEntityId,
@@ -92,7 +93,7 @@ export class SMTPEMailService implements IMail {
     }
 
     async sendEmailSynchronously(message: QueueMessage<any>): Promise<void> {
-        const { from, to, subject, body, attachments, cc } = message.payload;
+        const { from, to, subject, body, attachments, cc, bcc } = message.payload;
 
         const attachmentsList = attachments.map((attachment: MailAttachment) => {
             const attachmentEntry = {
@@ -113,6 +114,7 @@ export class SMTPEMailService implements IMail {
             from: from,
             to: to,
             cc: cc,
+            bcc: bcc,
             subject: subject,
             html: body,
             attachments: attachmentsList,
