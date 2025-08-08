@@ -586,7 +586,9 @@ import { AlphaNumExternalIdComputationProvider } from './services/computed-field
     SolidIntrospectService,
     ImportTransactionService,
     HttpModule,
-    ListOfValuesService
+    ListOfValuesService,
+    ConfigModule,
+    PublisherFactory,
   ],
 })
 export class SolidCoreModule { }
