@@ -5,7 +5,7 @@ export * from './commands/remove-fields.command'
 export * from './commands/seed.command'
 
 export * from './config/app-builder.config'
-export * from './config/common.config'
+export {default as commonConfig} from './config/common.config'
 export * from './config/iam.config'
 export * from './config/cache.options'
 
@@ -257,6 +257,10 @@ export * from './services/import-transaction.service'
 export * from './services/import-transaction-error-log.service'
 export * from './services/excel.service'
 export * from './services/csv.service'
+export * from './services/queues/publisher-factory.service'
+export * from './services/queues/database-publisher.service'
+export * from './services/queues/database-subscriber.service'
+
 // Repositories
 export * from './repository/solid-base.repository'
 export * from './repository/security-rule.repository'
