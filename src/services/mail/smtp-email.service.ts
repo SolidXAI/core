@@ -1,16 +1,17 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { QueueMessage } from 'src/interfaces/mq';
-import commonConfig from 'src/config/common.config';
-import { EmailTemplateService } from '../email-template.service';
 import Handlebars from "handlebars";
+import commonConfig from 'src/config/common.config';
+import { MailProvider } from 'src/decorators/mail-provider.decorator';
+import { QueueMessage } from 'src/interfaces/mq';
 import { IMail, MailAttachment, MailAttachmentWrapper } from "../../interfaces";
+import { EmailTemplateService } from '../email-template.service';
 import { PublisherFactory } from '../queues/publisher-factory.service';
-import Mail from 'nodemailer/lib/mailer';
 
 const nodemailer = require("nodemailer");
 
 @Injectable()
+@MailProvider()
 export class SMTPEMailService implements IMail {
     private readonly logger = new Logger(SMTPEMailService.name);
     private readonly transporter: any;

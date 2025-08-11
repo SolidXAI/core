@@ -65,6 +65,11 @@ export class SolidRegistry {
   private computedFieldMetadata: ComputedFieldMetadata[] = [];
   private dashboardVariableSelectionProviders: Set<InstanceWrapper> = new Set();
   private dashboardQuestionDataProviders: Set<InstanceWrapper> = new Set();
+  private mailProviders: Set<InstanceWrapper> = new Set();
+
+  registerMailProvider(mailProvider: InstanceWrapper): void {
+    this.mailProviders.add(mailProvider);
+  }
 
   registerController(name: string, methodNames: string[]): void {
     this.controllers.add({ name: name, methods: methodNames });
@@ -104,6 +109,10 @@ export class SolidRegistry {
 
   registerModules(modules: InstanceWrapper[]): void {
     this.modules = new Set(modules);
+  }
+
+  getMailProviders(): Array<InstanceWrapper> {
+    return Array.from(this.mailProviders);
   }
 
   getSeeders(): Array<InstanceWrapper> {
