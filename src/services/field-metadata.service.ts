@@ -14,6 +14,7 @@ import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ISelectionProviderValues } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 
 @Injectable()
@@ -61,7 +62,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
 
     async updateInverseField(field: FieldMetadata, fieldRepository: Repository<FieldMetadata>, modelRepository: Repository<ModelMetadata>) {
         if (!field.model || !field.model.module) {
-            throw new Error('Model and module are required to update inverse field');
+            throw new Error(ERROR_MESSAGES.MODEL_AND_MODULE_REQUIRED_TO_UPDATE_INVERSE_FIELD);
         }
         // Update the inverse field in the db
         const savedInverseField = await this.updateInverseFieldInDb(field, fieldRepository, modelRepository);
@@ -202,13 +203,13 @@ export class FieldMetadataService implements OnApplicationBootstrap {
 
     private validateForInverseField(field: FieldMetadata) {
         if (field.type !== SolidFieldType.relation) {
-            throw new Error('Only relation fields can have inverse fields');
+            throw new Error(ERROR_MESSAGES.INVALID_INVERSE_FIELD_TYPE);
         }
         const modelName = field.model.singularName;
         const moduleName = field.model.module.name;
 
         if (!modelName || !moduleName) {
-            throw new Error('Model name and module name are required to create inverse field');
+            throw new Error(ERROR_MESSAGES.MODEL_NAME_AND_MODULE_NAME_REQUIRED_TO_CREATE_INVERSE_FIELD);
         }
         return { moduleName, modelName };
     }
@@ -1037,7 +1038,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
             },
         });
         if (!entity) {
-            throw new NotFoundException(`No field with id #${query.fieldId} exists`);
+            throw new NotFoundException(ERROR_MESSAGES.FIELD_NOT_FOUND(query.fieldId));
         }
 
         // 2. use the field metadata to identify the provider. 
@@ -1049,7 +1050,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         // 3. get hold of the provider instance from the SolidRegistry
         const selectionProviderInstance = this.solidRegistry.getSelectionProviderInstance(selectionDynamicProvider);
         if (!selectionProviderInstance) {
-            throw new NotFoundException(`Field incorrectly configured. No provider with name ${selectionDynamicProvider} registered in backend.`);
+            throw new NotFoundException(ERROR_MESSAGES.PROVIDER_NOT_FOUND(selectionDynamicProvider));
         }
 
         // 4. use the provider to fetch the dynamic values, pass the query string received from the UI.. 
@@ -1064,7 +1065,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
             },
         });
         if (!entity) {
-            throw new NotFoundException(`No field with id #${query.fieldId} exists`);
+            throw new NotFoundException(ERROR_MESSAGES.FIELD_NOT_FOUND(query.fieldId));
         }
 
         // 2. use the field metadata to identify the provider. 
@@ -1076,7 +1077,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         // 3. get hold of the provider instance from the SolidRegistry
         const selectionProviderInstance = this.solidRegistry.getSelectionProviderInstance(selectionDynamicProvider);
         if (!selectionProviderInstance) {
-            throw new NotFoundException(`Field incorrectly configured. No provider with name ${selectionDynamicProvider} registered in backend.`);
+            throw new NotFoundException(ERROR_MESSAGES.PROVIDER_NOT_FOUND(selectionDynamicProvider));
         }
 
         // 4. use the provider to fetch the dynamic values, pass the query string received from the UI.. 
@@ -1108,7 +1109,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
             await fs.writeFile(filePath, updatedContent);
         } catch (error) {
             this.logger.error('File creation failed:', error);
-            throw new Error('File creation failed, rolling back transaction'); // Trigger rollback
+            throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
         }
     }
 

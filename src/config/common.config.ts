@@ -2,7 +2,7 @@ import { registerAs } from '@nestjs/config';
 
 export default registerAs('common', () => {
     return {
-        emailProvider: process.env.COMMON_EMAIL_PROVIDER,
+        emailProvider: process.env.COMMON_EMAIL_PROVIDER ?? "SMTPEMailService",
         emailTemplateSeederFiles: process.env.COMMON_EMAIL_TEMPLATE_SEEDER_FILES,
         smsProvider: process.env.COMMON_SMS_PROVIDER,
         smsTemplateSeederFiles: process.env.COMMON_SMS_TEMPLATE_SEEDER_FILES,
@@ -13,10 +13,11 @@ export default registerAs('common', () => {
             port: +(process.env.COMMON_SMTP_EMAIL_SMTP_PORT ?? 587),
             username: process.env.COMMON_SMTP_EMAIL_USERNAME,
             password: process.env.COMMON_SMTP_EMAIL_PASSWORD,
-            from: process.env.COMMON_SMTP_EMAIL_FROM,
+            from: process.env.COMMON_SMTP_EMAIL_FROM ?? process.env.COMMON_EMAIL_FROM,
         },
         apiMail: {
-            key: process.env.COMMON_API_EMAIL_KEY
+            key: process.env.COMMON_API_EMAIL_KEY,
+            from: process.env.COMMON_EMAIL_FROM
         },
         msg91Sms: {
             url: process.env.COMMON_MSG91_SMS_URL,

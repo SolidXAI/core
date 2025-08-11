@@ -1,5 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { PassThrough, Readable } from 'stream';
 
 
@@ -28,12 +29,12 @@ export class ExcelService {
     // Validations
     // If neither headers nor data records function is provided, throw an error
     if (headers.length === 0 && typeof getDataRecords !== 'function') {
-      throw new Error('Either headers or data records function must be provided.');
+      throw new Error(ERROR_MESSAGES.MISSING_HEADERS_OR_FUNCTION);
     }
 
     // If data records function is provided, chunkSize must be greater than 0
     if (getDataRecords && chunkSize <= 0) {
-      throw new Error('Chunk size must be greater than 0 when data records function is provided.');
+      throw new Error(ERROR_MESSAGES.INVALID_CHUNK_SIZE);
     }
 
     const passThrough = new PassThrough(); // Create streaming pipe

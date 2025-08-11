@@ -9,10 +9,12 @@ import { PdfService } from '../pdf.service';
 import { FileService } from '../file.service';
 import { IMail, MailAttachment, MailAttachmentWrapper } from "../../interfaces";
 import { PublisherFactory } from '../queues/publisher-factory.service';
+import { MailProvider } from 'src/decorators/mail-provider.decorator';
 
 const ElasticEmail = require('@elasticemail/elasticemail-client');
 
 @Injectable()
+@MailProvider()
 export class ElasticEmailService implements IMail {
     private readonly logger = new Logger(ElasticEmailService.name);
     private readonly emailsApi;

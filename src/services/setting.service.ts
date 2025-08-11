@@ -69,7 +69,10 @@ export class SettingService extends CRUDService<Setting> {
       enabledNotification: true,
       contactSupportEmail : null,
       contactSupportDisplayName: null,
-      contactSupportIcon: null
+      contactSupportIcon: null,
+      authScreenRightBackgroundImage: null,
+      authScreenLeftBackgroundImage: null,
+      authScreenCenterBackgroundImage: null,
     };
 
     const existingSettings = await this.repo.find();
@@ -159,7 +162,10 @@ export class SettingService extends CRUDService<Setting> {
       enabledNotification: true,
       contactSupportEmail : null,
       contactSupportDisplayName: null,
-      contactSupportIcon: null
+      contactSupportIcon: null,
+      authScreenRightBackgroundImage: null,
+      authScreenLeftBackgroundImage: null,
+      authScreenCenterBackgroundImage: null,
     };
   }
 

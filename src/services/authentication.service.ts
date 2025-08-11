@@ -15,7 +15,7 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectRepository } from '@nestjs/typeorm';
 import { isEmpty, isNotEmpty } from 'class-validator';
 import { randomInt, randomUUID } from 'crypto';
-import { SMTPEMailService } from 'src/services/mail/SMTPEmailService';
+import { SMTPEMailService } from 'src/services/mail/smtp-email.service';
 import { Msg91OTPService } from 'src/services/sms/Msg91OTPService';
 import { Repository } from 'typeorm';
 import { iamConfig, jwtConfig } from '../config/iam.config';
@@ -34,7 +34,7 @@ import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { HashingService } from './hashing.service';
 import { InvalidatedRefreshTokenError, RefreshTokenIdsStorageService } from './refresh-token-ids-storage.service';
 import { UserService } from './user.service';
-import { EventDetails, EventType } from "../interfaces";
+import { EventDetails, EventType, IMail } from "../interfaces";
 import {
     ForgotPasswordSendVerificationTokenOn,
     RegistrationValidationSource,
@@ -46,6 +46,9 @@ import { RoleMetadataService } from './role-metadata.service';
 import commonConfig from 'src/config/common.config';
 import { UserActivityHistoryService } from './user-activity-history.service';
 import { RequestContextService } from './request-context.service';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { SUCCESS_MESSAGES } from 'src/constants/success-messages';
+import { MailFactory } from 'src/factories/mail.factory';
 
 
 enum LoginProvider {
@@ -62,7 +65,7 @@ interface otp {
 @Injectable()
 export class AuthenticationService {
     private readonly logger = new Logger(AuthenticationService.name);
-
+    // private readonly mailService: IMail;
     constructor(
         private readonly userService: UserService,
         @InjectRepository(User) private readonly userRepository: Repository<User>,
@@ -75,7 +78,8 @@ export class AuthenticationService {
         private readonly iamConfiguration: ConfigType<typeof iamConfig>,
         private readonly refreshTokenIdsStorage: RefreshTokenIdsStorageService,
         private readonly httpService: HttpService,
-        private readonly mailService: SMTPEMailService,
+        // private readonly mailService: SMTPEMailService,
+        private readonly mailServiceFactory: MailFactory,
         private readonly smsService: Msg91OTPService,
         private readonly eventEmitter: EventEmitter2,
         private readonly settingService: SettingService,
@@ -84,7 +88,9 @@ export class AuthenticationService {
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         private readonly userActivityHistoryService: UserActivityHistoryService,
         private readonly requestContextService: RequestContextService,
-    ) { }
+    ) {
+        // this.mailService = this.mailServiceFactory.getMailService();
+     }
 
     private async getConfig(key: string): Promise<any> {
         return this.settingService.getConfigValue(key);
@@ -111,17 +117,17 @@ export class AuthenticationService {
         const user = await this.resolveUser(signInDto.username, signInDto.email);
 
         if (!user) {
-            throw new UnauthorizedException('User does not exists');
+            throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
         }
         if (!user.active) {
-            throw new UnauthorizedException('User profile not activated');
+            throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_ACTIVE);
         }
         const isEqual = await this.hashingService.compare(
             signInDto.password,
             user.password,
         );
         if (!isEqual) {
-            throw new UnauthorizedException('Password does not match');
+            throw new UnauthorizedException(ERROR_MESSAGES.PASSWORD_INCORRECT);
         }
 
         return user;
@@ -130,7 +136,7 @@ export class AuthenticationService {
     async signUp(signUpDto: SignUpDto, activeUser: ActiveUserData = null): Promise<User> {
         // If public registrations are disabled and no activeUser is present when invoking signUp then we throw an exception.
         if (!(await this.settingService.getConfigValue('allowPublicRegistration')) && !activeUser) {
-            throw new BadRequestException('Public registrations are disabled.');
+            throw new BadRequestException(ERROR_MESSAGES.PUBLIC_REGISTRATION_DISABLED);
         }
 
         try {
@@ -150,7 +156,7 @@ export class AuthenticationService {
         } catch (err) {
             const pgUniqueViolationErrorCode = '23505';
             if (err.code === pgUniqueViolationErrorCode) {
-                throw new ConflictException();
+                throw new ConflictException(ERROR_MESSAGES.USER_ALREADY_EXISTS);
             }
             throw err;
         }
@@ -172,7 +178,7 @@ export class AuthenticationService {
         catch (err) {
             const pgUniqueViolationErrorCode = '23505';
             if (err.code === pgUniqueViolationErrorCode) {
-                throw new ConflictException(parseUniqueConstraintError(err.detail || 'A unique constraint violation occurred.'));
+                throw new ConflictException(parseUniqueConstraintError(err.detail || ERROR_MESSAGES.UNIQUE_CONSTRAINT_VIOLATION));
             }
             throw err;
         }
@@ -251,8 +257,8 @@ export class AuthenticationService {
 
     private async notifyUserOnForcePasswordChange(user: User, autoGeneratedPwd: string) {
         const companyLogo = await this.getCompanyLogo();
-
-        this.mailService.sendEmailUsingTemplate(
+        const mailService = this.mailServiceFactory.getMailService();
+        mailService.sendEmailUsingTemplate(
             user.email,
             'on-force-password-change',
             {
@@ -266,6 +272,8 @@ export class AuthenticationService {
                 companyLogoUrl: companyLogo
             },
             this.commonConfiguration.shouldQueueEmails,
+            null,
+            null,
             'user',
             user.id
         );
@@ -275,17 +283,17 @@ export class AuthenticationService {
     async otpInitiateRegistration(signUpDto: OTPSignUpDto) {
         try {
             if (!this.isPasswordlessRegistrationEnabled()) {
-                throw new BadRequestException('Passwordless registration is not enabled');
+                throw new BadRequestException(ERROR_MESSAGES.PASSWORDLESS_REGISTRATION_DISABLED);
             }
             // Validate if either mobile or email is present.
             if (isEmpty(signUpDto.mobile) && isEmpty(signUpDto.email)) {
-                throw new BadRequestException('Either mobile or email is required for initiating registration');
+                throw new BadRequestException(ERROR_MESSAGES.REGISTRATION_REQUIRES_CONTACT);
             }
             if (signUpDto.validationSources.includes(TransactionalRegistrationValidationSource.EMAIL) && isEmpty(signUpDto.email)) {
-                throw new BadRequestException('Email is required for email validation source');
+                throw new BadRequestException(ERROR_MESSAGES.EMAIL_REQUIRED_FOR_VALIDATION);
             }
             if (signUpDto.validationSources.includes(TransactionalRegistrationValidationSource.MOBILE) && isEmpty(signUpDto.mobile)) {
-                throw new BadRequestException('Mobile is required for mobile validation source');
+                throw new BadRequestException(ERROR_MESSAGES.MOBILE_REQUIRED_FOR_VALIDATION);
             }
 
             // Validate if user already exists.
@@ -297,7 +305,7 @@ export class AuthenticationService {
                 ]
             });
             if (isNotEmpty(existingUser) && existingUser.active) {
-                throw new ConflictException('User already exists. Please sign in');
+                throw new ConflictException(ERROR_MESSAGES.USER_ALREADY_EXISTS);
             }
             const finalRegistrationVerificationSources = this.calculateVerificationSources(this.iamConfiguration.passwordlessRegistrationValidateWhat, signUpDto);
             let user = existingUser
@@ -314,11 +322,11 @@ export class AuthenticationService {
 
             // Send OTP to the user through email or SMS, depending on the configuration.
             this.notifyUserOnOtpInitiateRegistration(user, finalRegistrationVerificationSources);
-            return { message: 'User registration initiated. OTP sent to the user.' }
+            return { message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_REGISTRATION }
         } catch (err) {
             const pgUniqueViolationErrorCode = '23505';
             if (err.code === pgUniqueViolationErrorCode) {
-                throw new ConflictException();
+                throw new ConflictException(ERROR_MESSAGES.USER_ALREADY_EXISTS);
             }
             throw err;
         }
@@ -346,7 +354,7 @@ export class AuthenticationService {
     // Generate the validation tokens for the user i.e (system configured + user provided)
     private populateVerificationTokens(finalRegistrationValidationSources: string[], user: User) {
         if (finalRegistrationValidationSources.length === 0) {
-            throw new BadRequestException('At least one validation source is required');
+            throw new BadRequestException(ERROR_MESSAGES.VALIDATION_SOURCE_REQUIRED);
         }
         if (finalRegistrationValidationSources.includes(TransactionalRegistrationValidationSource.EMAIL)) {
             const { token, expiresAt } = this.otp();
@@ -373,7 +381,8 @@ export class AuthenticationService {
         if (this.iamConfiguration.dummyOtp)
             return; // Do nothing if dummy otp is configured.
         if (registrationValidationSources.includes(RegistrationValidationSource.EMAIL)) {
-            this.mailService.sendEmailUsingTemplate(
+            const mailService = this.mailServiceFactory.getMailService();
+            mailService.sendEmailUsingTemplate(
                 user.email,
                 'otp-on-register',
                 {
@@ -385,6 +394,8 @@ export class AuthenticationService {
                     companyLogoUrl: companyLogo
                 },
                 this.commonConfiguration.shouldQueueEmails,
+                null,
+                null,
                 'user',
                 user.id
             );
@@ -407,7 +418,7 @@ export class AuthenticationService {
 
     async otpConfirmRegistration(confirmSignUpDto: OTPConfirmOTPDto) {
         if (!this.isPasswordlessRegistrationEnabled()) {
-            throw new BadRequestException('Passwordless registration is not enabled');
+            throw new BadRequestException(ERROR_MESSAGES.PASSWORDLESS_REGISTRATION_DISABLED);
         }
 
         // Based on the identifier, validate by query the user table.
@@ -418,13 +429,13 @@ export class AuthenticationService {
                 }
             });
             if (!user) {
-                throw new UnauthorizedException('User does not exist');
+                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
             }
             if (user.emailVerificationTokenOnRegistration !== confirmSignUpDto.otp) {
-                throw new UnauthorizedException('Invalid OTP');
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
             }
             if (user.emailVerificationTokenOnRegistrationExpiresAt < new Date()) {
-                throw new UnauthorizedException('OTP expired');
+                throw new UnauthorizedException(ERROR_MESSAGES.OTP_EXPIRED);
             }
             user.emailVerifiedOnRegistrationAt = new Date();
             user.emailVerificationTokenOnRegistration = null;
@@ -440,13 +451,13 @@ export class AuthenticationService {
                 }
             });
             if (!user) {
-                throw new UnauthorizedException('User does not exist');
+                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
             }
             if (user.mobileVerificationTokenOnRegistration !== confirmSignUpDto.otp) {
-                throw new UnauthorizedException('Invalid OTP');
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
             }
             if (user.mobileVerificationTokenOnRegistrationExpiresAt < new Date()) {
-                throw new UnauthorizedException('Invalid OTP');
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
             }
             user.mobileVerifiedOnRegistrationAt = new Date();
             user.mobileVerificationTokenOnRegistration = null;
@@ -456,7 +467,7 @@ export class AuthenticationService {
             this.triggerRegistrationEvent(savedUser);
             return { active: savedUser.active, message: `User registration verified for ${confirmSignUpDto.type}` }
         }
-        throw new BadRequestException('Invalid type. Must be either email or mobile');
+        throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
     }
 
     private triggerRegistrationEvent(savedUser: User) {
@@ -512,7 +523,7 @@ export class AuthenticationService {
 
     async otpInitiateLogin(signInDto: OTPSignInDto) {
         if (!this.isPasswordlessRegistrationEnabled()) {
-            throw new BadRequestException('Passwordless registration is not enabled');
+            throw new BadRequestException(ERROR_MESSAGES.PASSWORDLESS_REGISTRATION_DISABLED);
         }
 
         // Validate & generate otp token for the user based on the identifier type.
@@ -523,10 +534,10 @@ export class AuthenticationService {
                 }
             });
             if (!user) {
-                throw new UnauthorizedException('User does not exist');
+                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
             }
             if (!user.active) {
-                throw new UnauthorizedException('User is inactive');
+                throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
             }
             const { token, expiresAt } = this.otp();
             user.emailVerificationTokenOnLogin = token;
@@ -540,7 +551,7 @@ export class AuthenticationService {
                 }
             });
             if (!user) {
-                throw new UnauthorizedException('User does not exist');
+                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
             }
 
             const { token, expiresAt } = this.otp();
@@ -550,9 +561,9 @@ export class AuthenticationService {
             this.notifyUserOnOtpInititateLogin(user, RegistrationValidationSource.MOBILE);
         }
         else {
-            throw new BadRequestException('Invalid type. Must be either email or mobile');
+            throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
         }
-        return { message: 'User login initiated. OTP sent to the user.' };
+        return { message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_LOGIN };
     }
 
     private async notifyUserOnOtpInititateLogin(user: User, loginType: RegistrationValidationSource) {
@@ -561,7 +572,8 @@ export class AuthenticationService {
         if (this.iamConfiguration.dummyOtp)
             return; // Do nothing if dummy otp is configured.
         if (loginType === RegistrationValidationSource.EMAIL) {
-            this.mailService.sendEmailUsingTemplate(
+            const mailService = this.mailServiceFactory.getMailService();
+            mailService.sendEmailUsingTemplate(
                 user.email,
                 'otp-on-login',
                 {
@@ -573,6 +585,8 @@ export class AuthenticationService {
                     companyLogoUrl: companyLogo
                 },
                 this.commonConfiguration.shouldQueueEmails,
+                null,
+                null,
                 'user',
                 user.id
             );
@@ -595,7 +609,7 @@ export class AuthenticationService {
 
     async otpConfirmLogin(confirmSignInDto: OTPConfirmOTPDto) {
         if (!this.isPasswordlessRegistrationEnabled()) {
-            throw new BadRequestException('Passwordless registration is not enabled');
+            throw new BadRequestException(ERROR_MESSAGES.PASSWORDLESS_REGISTRATION_DISABLED);
         }
         if (confirmSignInDto.type === RegistrationValidationSource.EMAIL) {
             const user = await this.userRepository.findOne({
@@ -605,16 +619,16 @@ export class AuthenticationService {
                 relations: ['roles']
             });
             if (!user) {
-                throw new UnauthorizedException('User does not exist');
+                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
             }
             if (!user.active) {
-                throw new UnauthorizedException('User is inactive');
+                throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
             }
             if (user.emailVerificationTokenOnLogin !== confirmSignInDto.otp) {
-                throw new UnauthorizedException('Invalid OTP');
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
             }
             if (user.emailVerificationTokenOnLoginExpiresAt < new Date()) {
-                throw new UnauthorizedException('Invalid OTP');
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
             }
             user.emailVerifiedOnLoginAt = new Date();
             user.emailVerificationTokenOnLogin = null;
@@ -632,16 +646,16 @@ export class AuthenticationService {
                 relations: ['roles']
             });
             if (!user) {
-                throw new UnauthorizedException('User does not exist');
+                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_ACTIVE);
             }
             if (!user.active) {
-                throw new UnauthorizedException('User is inactive');
+                throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
             }
             if (user.mobileVerificationTokenOnLogin !== confirmSignInDto.otp) {
-                throw new UnauthorizedException('Invalid OTP');
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
             }
             if (user.mobileVerificationTokenOnLoginExpiresAt < new Date()) {
-                throw new UnauthorizedException('Invalid OTP');
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
             }
             user.mobileVerifiedOnLoginAt = new Date();
             user.mobileVerificationTokenOnLogin = null;
@@ -653,7 +667,7 @@ export class AuthenticationService {
             return { accessToken, refreshToken, user: { id, username, email, mobile, lastLoginProvider, roles } };
 
         }
-        throw new BadRequestException('Invalid type. Must be either email or mobile');
+        throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
     }
 
     async changePassword(changePasswordDto: ChangePasswordDto, activeUser: ActiveUserData) {
@@ -661,26 +675,26 @@ export class AuthenticationService {
             where: { id: changePasswordDto.id }
         });
         if (!user) {
-            throw new NotFoundException('User does not exists');
+            throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
         }
 
         if (!user.active) {
-            throw new UnauthorizedException('User is inactive');
+            throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
         }
 
         // 2. Validate if user has used a provider which is "local", only then it makes sense for us to initiate the forgot password routine.
         if (user.lastLoginProvider !== 'local') {
-            throw new BadRequestException('User seems to have used a passwordless mode to authenticate.');
+            throw new BadRequestException(ERROR_MESSAGES.NON_LOCAL_PROVIDER);
         }
 
         // Check if ID's match
         if (!(user.id === activeUser.sub)) {
-            throw new BadRequestException("User ID's do not match ");
+            throw new BadRequestException(ERROR_MESSAGES.USER_ID_MISMATCH);
         }
 
         // Check if username's match
         if (!(user.username === activeUser.username)) {
-            throw new BadRequestException("User username's do not match");
+            throw new BadRequestException(ERROR_MESSAGES.USERNAME_MISMATCH);
         }
 
         // Check if old password is matching.
@@ -689,7 +703,7 @@ export class AuthenticationService {
             user.password,
         );
         if (!isEqual) {
-            throw new UnauthorizedException('Incorrect current password specified...');
+            throw new UnauthorizedException(ERROR_MESSAGES.INCORRECT_CURRENT_PASSWORD);
         }
 
         // Update Password
@@ -700,7 +714,7 @@ export class AuthenticationService {
         user.forcePasswordChange = false;
 
         if (await this.isPasswordDuplicate(user)) {
-            throw new BadRequestException('Previously used passwords cannot be used again.');
+            throw new BadRequestException(ERROR_MESSAGES.PASSWORD_REUSED);
         }
         await this.deleteOldPasswords(user);
 
@@ -724,15 +738,15 @@ export class AuthenticationService {
         const user = await this.resolveUser(initiateForgotPasswordDto.username, initiateForgotPasswordDto.email);
 
         if (!user) {
-            throw new NotFoundException('User does not exists');
+            throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
         }
         if (!user.active) {
-            throw new UnauthorizedException('User is inactive');
+            throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
         }
 
         // 2. Validate if user has used a provider which is "local", only then it makes sense for us to initiate the forgot password routine. 
         if (user.lastLoginProvider !== 'local') {
-            throw new BadRequestException('User seems to have used a passwordless mode to authenticate.');
+            throw new BadRequestException(ERROR_MESSAGES.NON_LOCAL_PROVIDER);
         }
 
         // 3. Generate a 6 digit validation token, we send this token to the user over their email & mobile number (controlled using configuration).
@@ -746,7 +760,7 @@ export class AuthenticationService {
         // 5. Return. 
         return {
             status: 'success',
-            message: 'Forgot password - token generated and sent',
+            message: SUCCESS_MESSAGES.FORGOT_PASSWORD_TOKEN_SENT,
             error: '',
             errorCode: '',
             data: {
@@ -765,7 +779,8 @@ export class AuthenticationService {
         const forgotPasswordSendVerificationTokenOn = this.iamConfiguration.forgotPasswordSendVerificationTokenOn;
 
         if (forgotPasswordSendVerificationTokenOn == ForgotPasswordSendVerificationTokenOn.EMAIL) {
-            this.mailService.sendEmailUsingTemplate(
+            const mailService = this.mailServiceFactory.getMailService();
+            mailService.sendEmailUsingTemplate(
                 user.email,
                 'forgot-password',
                 {
@@ -778,6 +793,8 @@ export class AuthenticationService {
                     companyLogoUrl: companyLogo
                 },
                 this.commonConfiguration.shouldQueueEmails,
+                null,
+                null,
                 'user',
                 user.id
             );
@@ -807,23 +824,23 @@ export class AuthenticationService {
         const user = await this.resolveUser(confirmForgotPasswordDto.username, confirmForgotPasswordDto.email);
 
         if (!user) {
-            throw new NotFoundException('User does not exists');
+            throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
         }
 
         // 2. Validate if user has used a provider which is "local", only then it makes sense for us to initiate the forgot password routine. 
         if (user.lastLoginProvider !== 'local') {
-            throw new BadRequestException('User seems to have used a passwordless mode to authenticate.');
+            throw new BadRequestException(ERROR_MESSAGES.NON_LOCAL_PROVIDER);
         }
         if (!user.active) {
-            throw new UnauthorizedException('User is inactive');
+            throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
         }
 
         // 3. Validate the verification token is proper & update the user record. 
         if (user.verificationTokenOnForgotPassword !== confirmForgotPasswordDto.verificationToken) {
-            throw new UnauthorizedException('Invalid verification token');
+            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_VERIFICATION_TOKEN);
         }
         if (user.verificationTokenOnForgotPasswordExpiresAt < new Date()) {
-            throw new UnauthorizedException('Invalid verification token');
+            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_VERIFICATION_TOKEN);
         }
         user.forgotPasswordConfirmedAt = new Date();
         user.verificationTokenOnForgotPassword = null;
@@ -834,7 +851,7 @@ export class AuthenticationService {
         user.password = confirmForgotPasswordDto.password
 
         if (await this.isPasswordDuplicate(user)) {
-            throw new BadRequestException('Previously used passwords cannot be used again.');
+            throw new BadRequestException(ERROR_MESSAGES.PASSWORD_REUSED);
         }
         await this.deleteOldPasswords(user);
 
@@ -849,7 +866,7 @@ export class AuthenticationService {
 
         return {
             status: 'success',
-            message: 'Forgot password confirmed',
+            message: SUCCESS_MESSAGES.FORGOT_PASSWORD_CONFIRMED,
             error: '',
             errorCode: '',
             data: {}
@@ -950,7 +967,7 @@ export class AuthenticationService {
                 }
             });
             if (!user) {
-                throw new UnauthorizedException();
+                throw new UnauthorizedException(ERROR_MESSAGES.SESSION_INVALID);
             }
 
             // TODO: Replace the if else condition below with a call to validateAndRotate - Done
@@ -973,10 +990,10 @@ export class AuthenticationService {
         } catch (err) {
             if (err instanceof InvalidatedRefreshTokenError) {
                 // Take action: notify user that his refresh token might have been stolen?
-                throw new UnauthorizedException('Access denied');
+                throw new UnauthorizedException(ERROR_MESSAGES.ACCESS_DENIED);
             }
 
-            throw new UnauthorizedException();
+            throw new UnauthorizedException(ERROR_MESSAGES.SESSION_EXPIRED);
         }
     }
 
@@ -1007,10 +1024,10 @@ export class AuthenticationService {
                 // TODO: remove the access code both from the database.
                 return userProfile;
             } else {
-                throw new UnauthorizedException('Invalid user profile');
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_USER_PROFILE);
             }
         } catch (error) {
-            throw new UnauthorizedException('Failed to fetch user profile from Google OAuth service');
+            throw new UnauthorizedException(ERROR_MESSAGES.GOOGLE_OAUTH_PROFILE_FETCH_FAILED);
         }
     }
 
@@ -1071,11 +1088,11 @@ export class AuthenticationService {
             await this.userActivityHistoryService.logEvent('logout', user);
 
 
-            return { message: 'Logged out successfully' };
+            return { message: SUCCESS_MESSAGES.LOGOUT_SUCCESS};
         } catch (err) {
             throw err instanceof UnauthorizedException || err instanceof InternalServerErrorException
                 ? err
-                : new InternalServerErrorException('Logout failed due to an unexpected error.');
+                : new InternalServerErrorException(ERROR_MESSAGES.LOGOUT_FAILED);
         }
     }
 
@@ -1083,7 +1100,7 @@ export class AuthenticationService {
     async activateUser(userId: number) {
         const user = await this.userService.findOne(userId, {});
         if (!user) {
-            throw new NotFoundException('User not found');
+            throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
         }
         user.active = true;
         await this.userRepository.save(user);

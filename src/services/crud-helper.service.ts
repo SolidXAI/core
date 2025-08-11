@@ -4,6 +4,7 @@ import { classify } from "@angular-devkit/core/src/utils/strings";
 import { ActiveUserData } from "src/interfaces/active-user-data.interface";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { Logger } from "@nestjs/common";
+import { ERROR_MESSAGES } from "src/constants/error-messages";
 
 
 export class CrudHelperService {
@@ -174,7 +175,7 @@ export class CrudHelperService {
         const normalizedSort = this.normalize(sort);
         const normalizedGroupBy = this.normalize(groupBy);
         if (normalizedGroupBy.length > 1) {
-            throw new Error('buildFilterQuery: Only 1 Group by field is supported currently');
+            throw new Error(ERROR_MESSAGES.GROUP_BY_LIMIT);
         }
 
         // Depending upon the populate option, apply the join clause
@@ -367,7 +368,7 @@ export class CrudHelperService {
         const groupByField = filteredDto.groupBy;
 
         if (!groupByField || (Array.isArray(groupByField) && groupByField.length !== 1)) {
-            throw new Error('Exactly one groupBy field is required to count grouped records.');
+            throw new Error(ERROR_MESSAGES.INVALID_GROUP_BY_COUNT);
         }
 
          const field = Array.isArray(groupByField) ? groupByField[0] : groupByField;

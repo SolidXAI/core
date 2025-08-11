@@ -30,7 +30,7 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
   async preComputeValue(triggerEntity: T, computedFieldMetadata: ComputedFieldMetadata<AlphaNumExternalIdContext>) {
     const prefix = computedFieldMetadata.computedFieldValueProviderCtxt.prefix;
     const codeLength = computedFieldMetadata.computedFieldValueProviderCtxt.length || 5;
-    const uniqueCode = await this.generateUniqueExternalId(codeLength, triggerEntity);
+    const uniqueCode = await this.generateUniqueExternalId(codeLength, triggerEntity, computedFieldMetadata.fieldName);
     triggerEntity[computedFieldMetadata.fieldName] = `${prefix}-${uniqueCode}`;
   }
 
@@ -43,20 +43,20 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
     return result;
   }
 
-  private async isExternalIdUnique(externalId: string, triggerEntity: T): Promise<boolean> {
+  private async isExternalIdUnique(externalId: string, triggerEntity: T, fieldName: string): Promise<boolean> {
     const count = await this.entityManager.count(triggerEntity.constructor.name, {
-      where: { externalId },
+      where: { [fieldName]: externalId },
     });
     return count === 0;
   }
 
-  private async generateUniqueExternalId(codeLength: number, triggerEntity: T): Promise<string> {
+  private async generateUniqueExternalId(codeLength: number, triggerEntity: T, fieldName: string): Promise<string> {
     const maxAttempts = 10;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const newId = this.generateRandomCode(codeLength);
 
-      const isUnique = await this.isExternalIdUnique(newId, triggerEntity);
+      const isUnique = await this.isExternalIdUnique(newId, triggerEntity, fieldName);
 
       if (isUnique) {
         return newId;

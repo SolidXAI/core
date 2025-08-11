@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { SqlExpression, SqlExpressionOperator } from "./question-data-providers/chartjs-sql-data-provider.service";
 import { RequestContextService } from "./request-context.service";
+import { ERROR_MESSAGES } from "src/constants/error-messages";
 
 export interface SqlReplacementResult {
   rawSql: string;
@@ -117,7 +118,7 @@ export class SqlExpressionResolverService {
           break;
 
         default:
-          throw new Error(`Unsupported SQL operator: ${expr.operator}`);
+          throw new Error(ERROR_MESSAGES.UNSUPPORTED_SQL_OPERATOR(expr.operator));
       }
       simplifiedSql = simplifiedSql.replace(placeholder, sqlFragment);
     }

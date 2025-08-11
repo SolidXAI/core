@@ -86,8 +86,8 @@ import { ApiEmailQueuePublisher } from './jobs/api-email-publisher.service';
 import { ApiEmailQueueSubscriber } from './jobs/api-email-subscriber.service';
 import { TestQueuePublisherDatabase } from './jobs/database/test-queue-publisher-database.service';
 import { TestQueueSubscriberDatabase } from './jobs/database/test-queue-subscriber-database.service';
-import { EmailQueuePublisher } from './jobs/email-publisher.service';
-import { EmailQueueSubscriber } from './jobs/email-subscriber.service';
+import { SmtpEmailQueuePublisherRabbitmq } from './jobs/smtp-email-publisher.service';
+import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/smtp-email-subscriber.service';
 import { OTPQueuePublisher } from './jobs/otp-publisher.service';
 import { OTPQueueSubscriber } from './jobs/otp-subscriber.service';
 import { SmsQueuePublisher } from './jobs/sms-publisher.service';
@@ -108,8 +108,8 @@ import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/
 import { EmailTemplateService } from './services/email-template.service';
 import { FileService } from './services/file.service';
 import { HashingService } from './services/hashing.service';
-import { ElasticEmailService } from './services/mail/ElasticEmailService';
-import { SMTPEMailService } from './services/mail/SMTPEmailService';
+import { ElasticEmailService } from './services/mail/elastic-email.service';
+import { SMTPEMailService } from './services/mail/smtp-email.service';
 import { MenuItemMetadataService } from './services/menu-item-metadata.service';
 import { MqMessageQueueService } from './services/mq-message-queue.service';
 import { MqMessageService } from './services/mq-message.service';
@@ -178,8 +178,8 @@ import { ApiEmailQueuePublisherDatabase } from './jobs/database/api-email-publis
 import { ApiEmailQueueSubscriberDatabase } from './jobs/database/api-email-subscriber-database.service';
 import { ComputedFieldEvaluationPublisher } from './jobs/database/computed-field-evaluation-publisher.service';
 import { ComputedFieldEvaluationSubscriber } from './jobs/database/computed-field-evaluation-subscriber.service';
-import { EmailQueuePublisherDatabase } from './jobs/database/email-publisher-database.service';
-import { EmailQueueSubscriberDatabase } from './jobs/database/email-subscriber-database.service';
+import { SmtpEmailQueuePublisherDatabase } from './jobs/database/smtp-email-publisher-database.service';
+import { SmtpEmailQueueSubscriberDatabase } from './jobs/database/smtp-email-subscriber-database.service';
 import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-publisher-database.service';
 import { GenerateCodeSubscriberDatabase } from './jobs/database/generate-code-subscriber-database.service';
 import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-database.service';
@@ -261,6 +261,7 @@ import { NoopsEntityComputedFieldProviderService } from './services/computed-fie
 import { ScheduledJobRepository } from './repository/scheduled-job.repository';
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
+import { MailFactory } from './factories/mail.factory';
 
 
 @Global()
@@ -438,10 +439,10 @@ import { AlphaNumExternalIdComputationProvider } from './services/computed-field
     TriggerMcpClientPublisherDatabase,
     TriggerMcpClientSubscriberDatabase,
 
-    EmailQueuePublisher,
-    EmailQueueSubscriber,
-    EmailQueuePublisherDatabase,
-    EmailQueueSubscriberDatabase,
+    SmtpEmailQueuePublisherRabbitmq,
+    SmtpEmailQueueSubscriberRabbitmq,
+    SmtpEmailQueuePublisherDatabase,
+    SmtpEmailQueueSubscriberDatabase,
     ApiEmailQueuePublisher,
     ApiEmailQueueSubscriber,
     ApiEmailQueuePublisherDatabase,
@@ -552,6 +553,7 @@ import { AlphaNumExternalIdComputationProvider } from './services/computed-field
     ScheduledJobRepository,
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
+    MailFactory,
   ],
   exports: [
     ModuleMetadataService,
@@ -590,7 +592,10 @@ import { AlphaNumExternalIdComputationProvider } from './services/computed-field
     SolidIntrospectService,
     ImportTransactionService,
     HttpModule,
-    ListOfValuesService
+    ListOfValuesService,
+    ConfigModule,
+    PublisherFactory,
+    MailFactory,
   ],
 })
 export class SolidCoreModule { }

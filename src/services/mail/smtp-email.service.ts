@@ -1,15 +1,17 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import { QueueMessage } from 'src/interfaces/mq';
-import commonConfig from 'src/config/common.config';
-import { EmailTemplateService } from '../email-template.service';
 import Handlebars from "handlebars";
-import { IMail, MailAttachment } from "../../interfaces";
+import commonConfig from 'src/config/common.config';
+import { MailProvider } from 'src/decorators/mail-provider.decorator';
+import { QueueMessage } from 'src/interfaces/mq';
+import { IMail, MailAttachment, MailAttachmentWrapper } from "../../interfaces";
+import { EmailTemplateService } from '../email-template.service';
 import { PublisherFactory } from '../queues/publisher-factory.service';
 
 const nodemailer = require("nodemailer");
 
 @Injectable()
+@MailProvider()
 export class SMTPEMailService implements IMail {
     private readonly logger = new Logger(SMTPEMailService.name);
     private readonly transporter: any;
@@ -33,8 +35,20 @@ export class SMTPEMailService implements IMail {
         });
     }
 
-    async sendEmailUsingTemplate(to: string, templateName: string, templateParams: any, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments: MailAttachment[] = [], cc: string[] = []): Promise<void> {
-        // Load template and evaluate it. 
+    async sendEmailUsingTemplate(
+        to: string,
+        templateName: string,
+        templateParams: any,
+        shouldQueueEmails = false,
+        wrapperAttachments?: MailAttachmentWrapper[],
+        attachments?: MailAttachment[],
+        parentEntity?: any,
+        parentEntityId?: any,
+        cc?: string[],
+        bcc?: string[],
+        from?: string
+    ): Promise<void> {
+        // Load template and evaluate it.
         const emailTemplate = await this.emailTemplateService.findOneByName(templateName);
         if (!emailTemplate) {
             throw new Error(`Invalid template name ${templateName}`);
@@ -49,18 +63,31 @@ export class SMTPEMailService implements IMail {
         const subject = subjectTemplate(templateParams);
 
         // Finally send the email.
-        await this.sendEmail(to, subject, body, shouldQueueEmails, parentEntity, parentEntityId, attachments);
+        await this.sendEmail(to, subject, body, shouldQueueEmails, wrapperAttachments, attachments, parentEntity, parentEntityId, cc, bcc, from);
     }
 
-    async sendEmail(to: string, subject: string, body: string, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments: MailAttachment[] = [], cc: string[] = []): Promise<void> {
+    async sendEmail(
+        to: string,
+        subject: string,
+        body: string,
+        shouldQueueEmails = false,
+        wrapperAttachments?: MailAttachmentWrapper[],
+        attachments?: MailAttachment[],
+        parentEntity?: any,
+        parentEntityId?: any,
+        cc?: string[],
+        bcc?: string[],
+        from?: string
+    ): Promise<void> {
         const message = {
             payload: {
-                from: this.commonConfiguration.smtpMail.from,
+                from: from || this.commonConfiguration.smtpMail.from,
                 to: to,
                 subject: subject,
                 body: body,
                 attachments: attachments,
                 cc: cc,
+                bcc: bcc,
             },
             parentEntity: parentEntity,
             parentEntityId: parentEntityId,
@@ -86,13 +113,13 @@ export class SMTPEMailService implements IMail {
         // this.emailPublisher.publish(message);
         // this.emailDbPublisher.publish(message);
 
-        this.publisherFactory.publish(message, 'EmailQueuePublisher');
+        this.publisherFactory.publish(message, 'SmtpEmailQueuePublisher');
 
         this.logger.debug(`Queueing email to ${to} with subject ${subject} and body ${body}`);
     }
 
     async sendEmailSynchronously(message: QueueMessage<any>): Promise<void> {
-        const { from, to, subject, body, attachments, cc } = message.payload;
+        const { from, to, subject, body, attachments, cc, bcc } = message.payload;
 
         const attachmentsList = attachments.map((attachment: MailAttachment) => {
             const attachmentEntry = {
@@ -113,6 +140,7 @@ export class SMTPEMailService implements IMail {
             from: from,
             to: to,
             cc: cc,
+            bcc: bcc,
             subject: subject,
             html: body,
             attachments: attachmentsList,

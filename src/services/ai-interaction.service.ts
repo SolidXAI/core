@@ -17,6 +17,7 @@ import { PublisherFactory } from './queues/publisher-factory.service';
 import { RequestContextService } from './request-context.service';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { McpToolResponseHandlerFactory } from './mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 @Injectable()
 export class AiInteractionService extends CRUDService<AiInteraction> {
@@ -78,7 +79,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
 
     // TODO: We can return an error if the above env variables are not properly setup...
     if (!pythonExecutable || !mcpClient) {
-      throw new BadRequestException('SolidX AI MCP python executable or client path not configured.');
+      throw new BadRequestException(ERROR_MESSAGES.PYTHON_EXECUTABLE_NOT_CONFIGURED);
     }
 
     // Check if both paths are valid and accessible
@@ -187,7 +188,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     const toolsInvoked = metadata['tools_invoked'];
     if (!toolsInvoked) {
       // TODO: RESPONSE SHAPE ALERT Check if we want to control the shape of the response....
-      throw new Error('Unable to resolve a solid_ command that was used to come up with this response.');
+      throw new Error(ERROR_MESSAGES.UNABLE_TO_RESOLVE_SOLID_COMMAND);
     }
 
     // TODO: OPTIMISATION for chained tool invocation, for now we are assuming only 1 tool was used.
@@ -198,13 +199,16 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     const mcpToolHandler = this.mcpToolResponseHandlerFactory.getInstance(toolInvoked);
     if (!mcpToolHandler) {
       // TODO: RESPONSE SHAPE ALERT Check if we want to control the shape of the response....
-      throw new Error('Unable to resolve a mcp tool handler.');
+      throw new Error(ERROR_MESSAGES.UNABLE_TO_RESOLVE_MCP_HANDLER);
     }
 
     const handlerApplicationResponse = await mcpToolHandler.apply(aiInteraction);
 
     // TODO: This provider to implement an interface - IMcpToolResponseHandler ... apply(aiInteraction: AiInteraction)
     // throw new Error('Method not implemented.');
+    
+    // Mark the interaction as applied
+    await this.update(aiInteraction.id, { isApplied: true }, [], true);
 
     return handlerApplicationResponse;
   }

@@ -5,7 +5,7 @@ export * from './commands/remove-fields.command'
 export * from './commands/seed.command'
 
 export * from './config/app-builder.config'
-export * from './config/common.config'
+export {default as commonConfig} from './config/common.config'
 export * from './config/iam.config'
 export * from './config/cache.options'
 
@@ -21,6 +21,8 @@ export * from './decorators/roles.decorator'
 export * from './decorators/selection-provider.decorator'
 export * from './decorators/solid-database-module.decorator'
 export * from './decorators/solid-service.decorator'
+export * from './decorators/mail-provider.decorator'
+
 export * from './dtos/basic-filters.dto'
 export * from './dtos/solid-request-context.dto'
 export * from './dtos/change-password.dto'
@@ -177,9 +179,9 @@ export * from './services/scheduled-jobs/scheduler.service';
 export * from './jobs/api-email-publisher.service'
 export * from './jobs/api-email-queue-options'
 export * from './jobs/api-email-subscriber.service'
-export * from './jobs/email-publisher.service'
-export * from './jobs/email-queue-options'
-export * from './jobs/email-subscriber.service'
+export { SmtpEmailQueuePublisherRabbitmq, SmtpEmailQueuePublisherRabbitmq as EmailQueuePublisher } from './jobs/smtp-email-publisher.service' // alias for backward compatibility
+export * from './jobs/smtp-email-queue-options'
+export { SmtpEmailQueueSubscriberRabbitmq, SmtpEmailQueueSubscriberRabbitmq as EmailQueueSubscriber } from './jobs/smtp-email-subscriber.service' // alias for backward compatibility
 export * from './jobs/otp-publisher.service'
 export * from './jobs/otp-queue-options'
 export * from './jobs/otp-subscriber.service'
@@ -216,8 +218,8 @@ export * from './services/field-metadata.service'
 export * from './services/file.service'
 export * from './services/hashing.service'
 export * from './services/list-of-values.service'
-export * from './services/mail/ElasticEmailService'
-export * from './services/mail/SMTPEmailService'
+export * from './services/mail/elastic-email.service'
+export * from './services/mail/smtp-email.service'
 export * from './services/media-storage-provider-metadata-seeder.service'
 export * from './services/media-storage-provider-metadata.service'
 export * from './services/media.service'
@@ -257,6 +259,13 @@ export * from './services/import-transaction.service'
 export * from './services/import-transaction-error-log.service'
 export * from './services/excel.service'
 export * from './services/csv.service'
+export * from './services/queues/publisher-factory.service'
+export * from './services/queues/database-publisher.service'
+export * from './services/queues/database-subscriber.service'
+
+// Factories
+export * from './factories/mail.factory'
+
 // Repositories
 export * from './repository/solid-base.repository'
 export * from './repository/security-rule.repository'
@@ -283,3 +292,5 @@ export * from './solid-core.module'
 
 export * from './winston.logger'
 export { default as datetimeTransformer } from './transformers/datetime-transformer'
+
+export { ERROR_MESSAGES } from './constants/error-messages'

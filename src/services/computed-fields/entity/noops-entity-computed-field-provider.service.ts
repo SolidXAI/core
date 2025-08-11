@@ -1,6 +1,10 @@
+import { Injectable } from "@nestjs/common";
+import { ComputedFieldProvider } from "src/decorators/computed-field-provider.decorator";
 import { ComputedFieldMetadata } from "src/helpers/solid-registry";
 import { IEntityPostComputeFieldProvider, IEntityPreComputeFieldProvider } from "src/interfaces";
 
+@ComputedFieldProvider()
+@Injectable()
 export class NoopsEntityComputedFieldProviderService implements IEntityPreComputeFieldProvider<any, any>, IEntityPostComputeFieldProvider<any, any> {
     constructor() { }
 

@@ -169,6 +169,9 @@ export interface IMail {
     attachments?: MailAttachment[],
     parentEntity?: any,
     parentEntityId?: any,
+    cc?: string[],
+    bcc?: string[],
+    from?: string,
   ): Promise<void>;
 
   sendEmailUsingTemplate(
@@ -180,6 +183,9 @@ export interface IMail {
     attachments?: MailAttachment[],
     parentEntity?: any,
     parentEntityId?: any,
+    cc?: string[],
+    bcc?: string[],
+    from?: string,
   ): Promise<void>;
 }
 
@@ -201,11 +207,11 @@ export interface MailAttachmentWrapper {
 
 export interface MailAttachment {
   filename: string;
-  templatePath?: string;
-  templateParams?: any;
+  templatePath?: string; // deprecated
+  templateParams?: any; // deprecated
   content?: string | Buffer;
   contentType?: string;
-  path?: string;
+  path?: string; //Filesystem absolute path or URL. 
 }
 
 export enum BrokerType {
