@@ -35,7 +35,7 @@ export class ScheduledJobSubscriber
 
   async afterInsert(event: InsertEvent<ScheduledJob>) {
     if (!event.entity) {
-      this.logger.debug('No question entity found in the QuestionSubscriber afterInsert method');
+      this.logger.debug('No schedule Job entity found in the  afterInsert method');
       return;
   }
     await this.updateMetadata(event.entity, event.queryRunner.manager);
@@ -43,7 +43,7 @@ export class ScheduledJobSubscriber
 
   async afterUpdate(event: UpdateEvent<ScheduledJob>) {
     if (!event.databaseEntity) {
-      this.logger.debug('No question entity found in the QuestionSubscriber afterUpdate method');
+      this.logger.debug('No schedule Job entity found in the  afterUpdate method');
       return;
   }
     await this.updateMetadata(event.databaseEntity, event.queryRunner.manager);
@@ -104,39 +104,15 @@ export class ScheduledJobSubscriber
   }
 
   private async updateMetadata(jobEntity: ScheduledJob, entityManager: EntityManager) {
-    // const jobEntity = event.entity;
-
     // populate the job with its relation
     const populatedScheduleJob = await entityManager.findOne(ScheduledJob, {
         where: { id: jobEntity.id },
         relations: ['module'],
     });
 
-    console.log("populatedScheduleJob is", populatedScheduleJob)
-
     if (!populatedScheduleJob) {
         throw new Error(`ScheduleJob not found for id ${jobEntity.id }`);
     }
-    // const moduleMetadata = jobEntity?.module;
-
-    // if (!moduleMetadata) {
-    //   this.logger.error(
-    //     `Module metadata not found for scheduled job with ID ${jobEntity?.id}`
-    //   );
-    //   return;
-    // }
-
-    // const moduleMetadataRepo = this.dataSource.getRepository(ModuleMetadata);
-    // const populatedModuleMetadata = await moduleMetadataRepo.findOne({
-    //   where: { id: moduleMetadata.id },
-    // });
-
-    // if (!populatedModuleMetadata) {
-    //   this.logger.error(
-    //     `Could not find ModuleMetadata with ID ${moduleMetadata.id}`
-    //   );
-    //   return;
-    // }
     const filePath =
       await this.moduleMetadataHelperService.getModuleMetadataFilePath(
         populatedScheduleJob.module?.name
@@ -164,11 +140,8 @@ export class ScheduledJobSubscriber
     const existingIndex = metaData.scheduledJobs.findIndex(
       (job) => job.scheduleName === jobName
     );
-
-    console.log("jobEntity is", jobEntity)
     // Insert or update job in metadata
-    const jobDto= await this.scheduledJobRepo.toDto(jobEntity as ScheduledJob);
-    console.log("jobDto is", jobDto);
+    const jobDto= await this.scheduledJobRepo.toDto(populatedScheduleJob as ScheduledJob);
     if (existingIndex !== -1) {
       metaData.scheduledJobs[existingIndex] = jobDto;
       this.logger.log(`Updated scheduled job ${jobName} in metadata`);
