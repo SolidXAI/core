@@ -169,6 +169,9 @@ export interface IMail {
     attachments?: MailAttachment[],
     parentEntity?: any,
     parentEntityId?: any,
+    cc?: string[],
+    bcc?: string[],
+    from?: string,
   ): Promise<void>;
 
   sendEmailUsingTemplate(
@@ -180,6 +183,9 @@ export interface IMail {
     attachments?: MailAttachment[],
     parentEntity?: any,
     parentEntityId?: any,
+    cc?: string[],
+    bcc?: string[],
+    from?: string,
   ): Promise<void>;
 }
 

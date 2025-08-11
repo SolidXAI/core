@@ -4,8 +4,9 @@ import { QueueMessage } from 'src/interfaces/mq';
 import commonConfig from 'src/config/common.config';
 import { EmailTemplateService } from '../email-template.service';
 import Handlebars from "handlebars";
-import { IMail, MailAttachment } from "../../interfaces";
+import { IMail, MailAttachment, MailAttachmentWrapper } from "../../interfaces";
 import { PublisherFactory } from '../queues/publisher-factory.service';
+import Mail from 'nodemailer/lib/mailer';
 
 const nodemailer = require("nodemailer");
 
@@ -33,8 +34,20 @@ export class SMTPEMailService implements IMail {
         });
     }
 
-    async sendEmailUsingTemplate(to: string, templateName: string, templateParams: any, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments: MailAttachment[] = [], cc: string[] = [], bcc: string[] = [], from: string = null): Promise<void> {
-        // Load template and evaluate it. 
+    async sendEmailUsingTemplate(
+        to: string,
+        templateName: string,
+        templateParams: any,
+        shouldQueueEmails = false,
+        wrapperAttachments?: MailAttachmentWrapper[],
+        attachments?: MailAttachment[],
+        parentEntity?: any,
+        parentEntityId?: any,
+        cc?: string[],
+        bcc?: string[],
+        from?: string
+    ): Promise<void> {
+        // Load template and evaluate it.
         const emailTemplate = await this.emailTemplateService.findOneByName(templateName);
         if (!emailTemplate) {
             throw new Error(`Invalid template name ${templateName}`);
@@ -49,10 +62,22 @@ export class SMTPEMailService implements IMail {
         const subject = subjectTemplate(templateParams);
 
         // Finally send the email.
-        await this.sendEmail(to, subject, body, shouldQueueEmails, parentEntity, parentEntityId, attachments, cc, bcc, from);
+        await this.sendEmail(to, subject, body, shouldQueueEmails, wrapperAttachments, attachments, parentEntity, parentEntityId, cc, bcc, from);
     }
 
-    async sendEmail(to: string, subject: string, body: string, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, attachments: MailAttachment[] = [], cc: string[] = [], bcc: string[] = [], from: string = null): Promise<void> {
+    async sendEmail(
+        to: string,
+        subject: string,
+        body: string,
+        shouldQueueEmails = false,
+        wrapperAttachments?: MailAttachmentWrapper[],
+        attachments?: MailAttachment[],
+        parentEntity?: any,
+        parentEntityId?: any,
+        cc?: string[],
+        bcc?: string[],
+        from?: string
+    ): Promise<void> {
         const message = {
             payload: {
                 from: from || this.commonConfiguration.smtpMail.from,

@@ -34,7 +34,7 @@ import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { HashingService } from './hashing.service';
 import { InvalidatedRefreshTokenError, RefreshTokenIdsStorageService } from './refresh-token-ids-storage.service';
 import { UserService } from './user.service';
-import { EventDetails, EventType } from "../interfaces";
+import { EventDetails, EventType, IMail } from "../interfaces";
 import {
     ForgotPasswordSendVerificationTokenOn,
     RegistrationValidationSource,
@@ -48,6 +48,7 @@ import { UserActivityHistoryService } from './user-activity-history.service';
 import { RequestContextService } from './request-context.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { SUCCESS_MESSAGES } from 'src/constants/success-messages';
+import { MailFactory } from 'src/factories/mail.factory';
 
 
 enum LoginProvider {
@@ -64,7 +65,7 @@ interface otp {
 @Injectable()
 export class AuthenticationService {
     private readonly logger = new Logger(AuthenticationService.name);
-
+    private readonly mailService: IMail;
     constructor(
         private readonly userService: UserService,
         @InjectRepository(User) private readonly userRepository: Repository<User>,
@@ -77,7 +78,8 @@ export class AuthenticationService {
         private readonly iamConfiguration: ConfigType<typeof iamConfig>,
         private readonly refreshTokenIdsStorage: RefreshTokenIdsStorageService,
         private readonly httpService: HttpService,
-        private readonly mailService: SMTPEMailService,
+        // private readonly mailService: SMTPEMailService,
+        private readonly mailServiceFactory: MailFactory,
         private readonly smsService: Msg91OTPService,
         private readonly eventEmitter: EventEmitter2,
         private readonly settingService: SettingService,
@@ -86,7 +88,9 @@ export class AuthenticationService {
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         private readonly userActivityHistoryService: UserActivityHistoryService,
         private readonly requestContextService: RequestContextService,
-    ) { }
+    ) {
+        this.mailService = this.mailServiceFactory.getMailService();
+     }
 
     private async getConfig(key: string): Promise<any> {
         return this.settingService.getConfigValue(key);
@@ -268,6 +272,8 @@ export class AuthenticationService {
                 companyLogoUrl: companyLogo
             },
             this.commonConfiguration.shouldQueueEmails,
+            null,
+            null,
             'user',
             user.id
         );
@@ -387,6 +393,8 @@ export class AuthenticationService {
                     companyLogoUrl: companyLogo
                 },
                 this.commonConfiguration.shouldQueueEmails,
+                null,
+                null,
                 'user',
                 user.id
             );
@@ -575,6 +583,8 @@ export class AuthenticationService {
                     companyLogoUrl: companyLogo
                 },
                 this.commonConfiguration.shouldQueueEmails,
+                null,
+                null,
                 'user',
                 user.id
             );
@@ -780,6 +790,8 @@ export class AuthenticationService {
                     companyLogoUrl: companyLogo
                 },
                 this.commonConfiguration.shouldQueueEmails,
+                null,
+                null,
                 'user',
                 user.id
             );

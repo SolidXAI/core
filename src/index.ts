@@ -261,6 +261,9 @@ export * from './services/queues/publisher-factory.service'
 export * from './services/queues/database-publisher.service'
 export * from './services/queues/database-subscriber.service'
 
+// Factories
+export * from './factories/mail.factory'
+
 // Repositories
 export * from './repository/solid-base.repository'
 export * from './repository/security-rule.repository'
