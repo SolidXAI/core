@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 
-import mailQueueOptions from './email-queue-options-database';
+import mailQueueOptions from './smtp-email-queue-options-database';
 import { QueueMessage } from 'src/interfaces/mq';
 import { MqMessageService } from 'src/services/mq-message.service';
 import { MqMessageQueueService } from 'src/services/mq-message-queue.service';
@@ -9,7 +9,7 @@ import { SMTPEMailService } from 'src/services/mail/smtp-email.service';
 import { QueuesModuleOptions } from 'src/interfaces';
 
 @Injectable()
-export class EmailQueueSubscriberDatabase extends DatabaseSubscriber<any> {
+export class SmtpEmailQueueSubscriberDatabase extends DatabaseSubscriber<any> {
     constructor(
         private readonly emailService: SMTPEMailService,
         readonly mqMessageService: MqMessageService,

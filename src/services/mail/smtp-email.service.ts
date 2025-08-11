@@ -87,7 +87,7 @@ export class SMTPEMailService implements IMail {
         // this.emailPublisher.publish(message);
         // this.emailDbPublisher.publish(message);
 
-        this.publisherFactory.publish(message, 'EmailQueuePublisher');
+        this.publisherFactory.publish(message, 'SmtpEmailQueuePublisher');
 
         this.logger.debug(`Queueing email to ${to} with subject ${subject} and body ${body}`);
     }

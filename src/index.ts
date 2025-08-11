@@ -177,9 +177,9 @@ export * from './services/scheduled-jobs/scheduler.service';
 export * from './jobs/api-email-publisher.service'
 export * from './jobs/api-email-queue-options'
 export * from './jobs/api-email-subscriber.service'
-export * from './jobs/email-publisher.service'
-export * from './jobs/email-queue-options'
-export * from './jobs/email-subscriber.service'
+export { SmtpEmailQueuePublisherRabbitmq, SmtpEmailQueuePublisherRabbitmq as EmailQueuePublisher } from './jobs/smtp-email-publisher.service' // alias for backward compatibility
+export * from './jobs/smtp-email-queue-options'
+export { SmtpEmailQueueSubscriberRabbitmq, SmtpEmailQueueSubscriberRabbitmq as EmailQueueSubscriber } from './jobs/smtp-email-subscriber.service' // alias for backward compatibility
 export * from './jobs/otp-publisher.service'
 export * from './jobs/otp-queue-options'
 export * from './jobs/otp-subscriber.service'
