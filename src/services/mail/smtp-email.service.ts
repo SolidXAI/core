@@ -47,7 +47,7 @@ export class SMTPEMailService implements IMail {
         cc?: string[],
         bcc?: string[],
         from?: string
-    ){
+    ) {
         // Load template and evaluate it.
         const emailTemplate = await this.emailTemplateService.findOneByName(templateName);
         if (!emailTemplate) {
@@ -78,7 +78,7 @@ export class SMTPEMailService implements IMail {
         cc?: string[],
         bcc?: string[],
         from?: string
-    ){
+    ) {
         const message = {
             payload: {
                 from: from || this.commonConfiguration.smtpMail.from,
@@ -113,11 +113,11 @@ export class SMTPEMailService implements IMail {
         return this.publisherFactory.publish(message, 'SmtpEmailQueuePublisher');
     }
 
-    async sendEmailSynchronously(message: QueueMessage<any>){
-        const { from, to, subject, body, attachments=[], cc, bcc } = message.payload;
+    async sendEmailSynchronously(message: QueueMessage<any>) {
+        const { from, to, subject, body, attachments = [], cc, bcc } = message.payload;
 
         // if any of the required fields are missing, throw an error.
-        if (! from || !to || !subject || !body) {
+        if (!from || !to || !subject || !body) {
             this.logger.error(`Required fields are missing in the email message: ${JSON.stringify(message.payload)}`);
             return;
         }

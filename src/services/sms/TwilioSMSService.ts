@@ -1,3 +1,4 @@
+import Handlebars from "handlebars";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ConfigType } from "@nestjs/config";
 import commonConfig from "src/config/common.config";
@@ -16,7 +17,7 @@ export class TwilioSMSService implements ISMS {
         @Inject(commonConfig.KEY)
         private commonConfiguration: ConfigType<typeof commonConfig>,
         private publisherFactory: PublisherFactory<any>,
-        smsTemplateService: SmsTemplateService,
+        private smsTemplateService: SmsTemplateService,
     ) {
         // super(commonConfiguration, 'OTPQueuePublisher', publisherFactory, smsTemplateService);
     }
@@ -52,8 +53,24 @@ export class TwilioSMSService implements ISMS {
         return message;
     }
 
-    sendSMSUsingTemplate(to: string, templateName: string, templateParams: any, shouldQueueSms: boolean): Promise<any> {
-        throw new Error("Method not implemented.");
+    async sendSMSUsingTemplate(to: string, templateName: string, templateParams: any, shouldQueueSms: boolean): Promise<any> {
+        // Load template and evaluate it.
+        const smsTemplate = await this.smsTemplateService.findOneByName(templateName);
+        if (!smsTemplate) {
+            throw new Error(`Invalid template name ${templateName}`);
+        }
+
+        // Evaluate the body template.
+        let body = '';
+        try {
+            const bodyTemplate = Handlebars.compile(smsTemplate.body);
+            body = bodyTemplate(templateParams);
+        } catch (error) {
+            throw new Error('Unable to compile sms template body');
+        }
+        // Finally send the email.
+        return await this.sendSMS(to, body, shouldQueueSms);
+
     }
 
     async sendSMSAsynchronously(message) {
