@@ -7,6 +7,7 @@ import { MqMessageQueueService } from 'src/services/mq-message-queue.service';
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
 import { SMTPEMailService } from 'src/services/mail/smtp-email.service';
 import { QueuesModuleOptions } from 'src/interfaces';
+import { PollerService } from 'src/services/poller.service';
 
 @Injectable()
 export class SmtpEmailQueueSubscriberDatabase extends DatabaseSubscriber<any> {
@@ -14,8 +15,9 @@ export class SmtpEmailQueueSubscriberDatabase extends DatabaseSubscriber<any> {
         private readonly emailService: SMTPEMailService,
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
+        readonly poller: PollerService,
     ) {
-        super(mqMessageService, mqMessageQueueService);
+        super(mqMessageService, mqMessageQueueService, poller);
     }
 
     options(): QueuesModuleOptions {

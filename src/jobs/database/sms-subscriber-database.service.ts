@@ -7,6 +7,7 @@ import { MqMessageQueueService } from 'src/services/mq-message-queue.service';
 import { Msg91SMSService } from 'src/services/sms/Msg91SMSService';
 import { QueuesModuleOptions } from 'src/interfaces';
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
+import { PollerService } from 'src/services/poller.service';
 
 @Injectable()
 export class SmsQueueSubscriberDatabase extends DatabaseSubscriber<any> {
@@ -14,8 +15,9 @@ export class SmsQueueSubscriberDatabase extends DatabaseSubscriber<any> {
         private readonly smsService: Msg91SMSService,
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
+        readonly poller: PollerService,
     ) {
-        super(mqMessageService, mqMessageQueueService);
+        super(mqMessageService, mqMessageQueueService, poller);
     }
 
     options(): QueuesModuleOptions {
@@ -25,6 +27,6 @@ export class SmsQueueSubscriberDatabase extends DatabaseSubscriber<any> {
     }
 
     subscribe(message: QueueMessage<any>) {
-        this.smsService.sendSMSSynchronously(message);
+        return this.smsService.sendSMSSynchronously(message);
     }
 }

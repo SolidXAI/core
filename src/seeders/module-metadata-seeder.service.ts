@@ -195,7 +195,7 @@ export class ModuleMetadataSeederService {
             // Sms templates
             this.logger.log(`[Start] Processing sms templates for ${moduleMetadata.name}`);
             const smsTemplates: CreateSmsTemplateDto[] = overallMetadata.smsTemplates;
-            await this.seedSmsTemplates(smsTemplates);
+            await this.seedSmsTemplates(smsTemplates, moduleMetadata);
             this.logger.log(`[End] Processing sms templates for ${moduleMetadata.name}`);
 
             // Settings
@@ -259,7 +259,7 @@ export class ModuleMetadataSeederService {
             'AuthenticationController.logout'
         ]
         await this.roleService.addPermissionToRole('Internal User', internalRolePermission);
-        await this.roleService.addPermissionToRole('Public', ['SettingController.wrapSettings','AuthenticationController.logout']);
+        await this.roleService.addPermissionToRole('Public', ['SettingController.wrapSettings', 'AuthenticationController.logout']);
         this.logger.log(`All Seeders finished`);
         this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
     }
@@ -350,7 +350,7 @@ export class ModuleMetadataSeederService {
 
     }
 
-    async seedSmsTemplates(smsTemplates: CreateSmsTemplateDto[]) {
+    async seedSmsTemplates(smsTemplates: CreateSmsTemplateDto[], moduleMetadata: CreateModuleMetadataDto) {
         if (!smsTemplates) {
             return;
         }
@@ -360,22 +360,25 @@ export class ModuleMetadataSeederService {
             this.logger.log(`Found ${smsTemplate.name} sms template`);
 
             // We need to load the actual template contents. 
-            if (smsTemplate.body) {
-                // const smsTemplateFilePath = path.join(process.cwd(), smsTemplate.body);
-                // smsTemplate.body = fs.readFileSync(smsTemplateFilePath, 'utf-8').toString()
-
+            if (moduleMetadata.name === 'solid-core') {
                 const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
-
-                // Resolve the `src` folder
                 const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/sms-templates');
-
-                // Example usage
                 const filePath = path.join(seedDataPath, smsTemplate.body);
-
-
-                smsTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
-
+                this.logger.log(`Seeding sms template from solid-core at path: ${filePath}`);
+                if (fs.existsSync(filePath)) {
+                    smsTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
+                }
             }
+            else {
+                // Check if file exists
+                const emailTemplateHandlebar = `module-metadata/${moduleMetadata.name}/sms-templates/${smsTemplate.body}`
+                const fullPath = path.join(process.cwd(), emailTemplateHandlebar);
+                this.logger.log(`Seeding custom sms template from consuming model at path: ${fullPath}`);
+                if (fs.existsSync(fullPath)) {
+                    smsTemplate.body = fs.readFileSync(fullPath, 'utf-8').toString();
+                }
+            }
+
 
             // Save to DB.
             await this.smsTemplateService.removeByName(smsTemplate.name);

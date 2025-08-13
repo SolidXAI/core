@@ -266,6 +266,7 @@ import { NoopsEntityComputedFieldProviderService } from './services/computed-fie
 import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
 import { MailFactory } from './factories/mail.factory';
 import { TwilioSMSService } from './services/sms/TwilioSMSService';
+import { PollerService } from './services/poller.service';
 
 
 @Global()
@@ -437,6 +438,7 @@ import { TwilioSMSService } from './services/sms/TwilioSMSService';
     SmsTemplateService,
     EmailTemplateService,
     PublisherFactory,
+    PollerService,
 
     McpToolResponseHandlerFactory,
     SolidCreateModuleMcpToolResponseHandler,
@@ -602,6 +604,7 @@ import { TwilioSMSService } from './services/sms/TwilioSMSService';
     ConfigModule,
     PublisherFactory,
     MailFactory,
+    PollerService
   ],
 })
 export class SolidCoreModule { }

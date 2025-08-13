@@ -1,4 +1,3 @@
-import { HttpService } from "@nestjs/axios";
 import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ConfigType } from "@nestjs/config";
 import commonConfig from "src/config/common.config";
@@ -18,7 +17,6 @@ export class TwilioSMSService implements ISMS {
         private commonConfiguration: ConfigType<typeof commonConfig>,
         private publisherFactory: PublisherFactory<any>,
         smsTemplateService: SmsTemplateService,
-        private readonly httpService: HttpService,
     ) {
         // super(commonConfiguration, 'OTPQueuePublisher', publisherFactory, smsTemplateService);
     }
@@ -78,6 +76,8 @@ export class TwilioSMSService implements ISMS {
         try {
             const toSplit = to.split(',');
 
+            const r = [];
+
             for (let i = 0; i < toSplit.length; i++) {
                 const actualTo = toSplit[i];
                 const twilioResponseMsg = await client.messages.create({
@@ -86,15 +86,16 @@ export class TwilioSMSService implements ISMS {
                     to: actualTo,
                 });
 
-                this.logger.debug(`Sending SMS to ${to} using Twilio`);
-                this.logger.debug(`Twilio response: `, JSON.stringify(twilioResponseMsg.body));
+                this.logger.debug(`Sending SMS to ${actualTo} using Twilio`);
+                this.logger.debug(`Twilio response: `);
+                this.logger.debug(JSON.stringify(twilioResponseMsg))
+
+                r.push(twilioResponseMsg);
             }
 
-            return {};
+            return r;
         } catch (error) {
             throw new Error(error);
         }
-
     }
-
 }

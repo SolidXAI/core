@@ -7,6 +7,7 @@ import { MqMessageQueueService } from 'src/services/mq-message-queue.service';
 import { QueuesModuleOptions } from 'src/interfaces';
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
 import { TwilioSMSService } from 'src/services/sms/TwilioSMSService';
+import { PollerService } from 'src/services/poller.service';
 
 @Injectable()
 export class TwilioSmsQueueSubscriberDatabase extends DatabaseSubscriber<any> {
@@ -14,8 +15,9 @@ export class TwilioSmsQueueSubscriberDatabase extends DatabaseSubscriber<any> {
         private readonly smsService: TwilioSMSService,
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
+        readonly poller: PollerService,
     ) {
-        super(mqMessageService, mqMessageQueueService);
+        super(mqMessageService, mqMessageQueueService, poller);
     }
 
     options(): QueuesModuleOptions {
@@ -25,6 +27,6 @@ export class TwilioSmsQueueSubscriberDatabase extends DatabaseSubscriber<any> {
     }
 
     subscribe(message: QueueMessage<any>) {
-        this.smsService.sendSMSSynchronously(message);
+        return this.smsService.sendSMSSynchronously(message);
     }
 }

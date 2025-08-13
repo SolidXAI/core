@@ -7,15 +7,17 @@ import { MqMessageService } from "src/services/mq-message.service";
 import { DatabaseSubscriber } from "src/services/queues/database-subscriber.service";
 import { ComputedFieldEvaluationPayload } from "src/subscribers/computed-entity-field.subscriber";
 import computedFieldEvaluationQueueOptions from "./computed-field-evaluation-queue-options";
+import { PollerService } from "src/services/poller.service";
 
 @Injectable()
 export class ComputedFieldEvaluationSubscriber extends DatabaseSubscriber<ComputedFieldEvaluationPayload> {
     constructor(
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
-        readonly solidRegistry: SolidRegistry
+        readonly solidRegistry: SolidRegistry,
+        readonly poller: PollerService,
     ) {
-        super(mqMessageService, mqMessageQueueService);
+        super(mqMessageService, mqMessageQueueService, poller);
     }
 
     options(): QueuesModuleOptions {

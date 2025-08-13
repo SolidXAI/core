@@ -7,6 +7,7 @@ import { QueuesModuleOptions, TriggerMcpClientOptions } from "../../interfaces";
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
 import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
 import { AiInteractionService } from 'src/services/ai-interaction.service';
+import { PollerService } from 'src/services/poller.service';
 
 @Injectable()
 export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<TriggerMcpClientOptions> {
@@ -15,9 +16,10 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
     constructor(
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
+        readonly poller: PollerService,
         readonly aiInteractionService: AiInteractionService,
     ) {
-        super(mqMessageService, mqMessageQueueService);
+        super(mqMessageService, mqMessageQueueService, poller);
     }
 
     options(): QueuesModuleOptions {
