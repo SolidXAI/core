@@ -259,6 +259,9 @@ import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
 import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
 import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
+import { ListOfValuesMapper } from './mappers/list-of-values-mapper';
+import { ListOfValuesMetadataSubscriber } from './subscribers/list-of-values-metadata.subscriber';
+import { ListOfValuesMetadataService } from './services/list-of-values-metadata.service';
 
 
 @Global()
@@ -548,6 +551,9 @@ import { AlphaNumExternalIdComputationProvider } from './services/computed-field
     ViewMetadataRepository,
     SolidCreateModelLayoutMcpToolResponseHandler,
     AlphaNumExternalIdComputationProvider,
+    ListOfValuesMetadataService,
+    ListOfValuesMetadataSubscriber,
+    ListOfValuesMapper,
   ],
   exports: [
     ModuleMetadataService,

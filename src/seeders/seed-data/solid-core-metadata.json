@@ -3626,6 +3626,23 @@
             "private": false,
             "encrypt": false,
             "isSystem": false
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "isSystem": true
           }
         ]
       },
@@ -6518,6 +6535,12 @@
                     "attrs": {
                       "name": "sequence"
                     }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "module"
+                    }
                   }
                 ]
               }
@@ -6827,6 +6850,12 @@
               "name": "sequence",
               "isSearchable": true
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
+            }
           }
         ]
       }
@@ -6894,6 +6923,12 @@
                     "type": "field",
                     "attrs": {
                       "name": "sequence"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "module"
                     }
                   }
                 ]
