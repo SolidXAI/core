@@ -159,7 +159,7 @@ export class EventDetails<T> {
   ) { }
 }
 
-export interface IMail {
+export interface IMail<TResponse=unknown> {
   sendEmail(
     to: string,
     subject: string,
@@ -172,7 +172,7 @@ export interface IMail {
     cc?: string[],
     bcc?: string[],
     from?: string,
-  ): Promise<void>;
+  ): Promise<TResponse>;
 
   sendEmailUsingTemplate(
     to: string,
@@ -186,7 +186,7 @@ export interface IMail {
     cc?: string[],
     bcc?: string[],
     from?: string,
-  ): Promise<void>;
+  ): Promise<TResponse>;
 }
 
 export interface ISMS {

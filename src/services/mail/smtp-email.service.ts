@@ -47,7 +47,7 @@ export class SMTPEMailService implements IMail {
         cc?: string[],
         bcc?: string[],
         from?: string
-    ): Promise<void> {
+    ){
         // Load template and evaluate it.
         const emailTemplate = await this.emailTemplateService.findOneByName(templateName);
         if (!emailTemplate) {
@@ -63,7 +63,7 @@ export class SMTPEMailService implements IMail {
         const subject = subjectTemplate(templateParams);
 
         // Finally send the email.
-        await this.sendEmail(to, subject, body, shouldQueueEmails, wrapperAttachments, attachments, parentEntity, parentEntityId, cc, bcc, from);
+        return await this.sendEmail(to, subject, body, shouldQueueEmails, wrapperAttachments, attachments, parentEntity, parentEntityId, cc, bcc, from);
     }
 
     async sendEmail(
@@ -78,7 +78,7 @@ export class SMTPEMailService implements IMail {
         cc?: string[],
         bcc?: string[],
         from?: string
-    ): Promise<void> {
+    ){
         const message = {
             payload: {
                 from: from || this.commonConfiguration.smtpMail.from,
@@ -95,33 +95,34 @@ export class SMTPEMailService implements IMail {
 
         // Send using queue if the developer has explicitly invoked with true.
         if (shouldQueueEmails === true) {
-            this.sendEmailAsynchronously(message);
+            return this.sendEmailAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
         else if (shouldQueueEmails == false && this.commonConfiguration.shouldQueueEmails === true) {
-            this.sendEmailAsynchronously(message);
+            return this.sendEmailAsynchronously(message);
         }
-        // Else we send synch
+        // Else we send synchronously
         else {
-            await this.sendEmailSynchronously(message);
+            return await this.sendEmailSynchronously(message);
         }
     }
 
     async sendEmailAsynchronously(message) {
         const { to, subject, body } = message.payload;
-        // this.notificationPublisherService.publish(message);
-        // this.emailPublisher.publish(message);
-        // this.emailDbPublisher.publish(message);
-
-        this.publisherFactory.publish(message, 'SmtpEmailQueuePublisher');
-
         this.logger.debug(`Queueing email to ${to} with subject ${subject} and body ${body}`);
+        return this.publisherFactory.publish(message, 'SmtpEmailQueuePublisher');
     }
 
-    async sendEmailSynchronously(message: QueueMessage<any>): Promise<void> {
-        const { from, to, subject, body, attachments, cc, bcc } = message.payload;
+    async sendEmailSynchronously(message: QueueMessage<any>){
+        const { from, to, subject, body, attachments=[], cc, bcc } = message.payload;
 
-        const attachmentsList = attachments.map((attachment: MailAttachment) => {
+        // if any of the required fields are missing, throw an error.
+        if (! from || !to || !subject || !body) {
+            this.logger.error(`Required fields are missing in the email message: ${JSON.stringify(message.payload)}`);
+            return;
+        }
+
+        const attachmentsList = attachments?.map((attachment: MailAttachment) => {
             const attachmentEntry = {
                 filename: attachment.filename,
                 contentType: attachment.contentType,
@@ -133,7 +134,7 @@ export class SMTPEMailService implements IMail {
                 attachmentEntry['content'] = attachment.content;
             }
             return attachmentEntry;
-        });
+        }) || [];
 
         // throw new Error('Random error....');
         const r = await this.transporter.sendMail({
