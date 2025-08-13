@@ -243,6 +243,7 @@ export * from './services/short-url/tiny-url.service'
 export * from './services/sms/Msg91BaseSMSService' //rename
 export * from './services/sms/Msg91OTPService' //rename
 export * from './services/sms/Msg91SMSService' //rename
+export * from './services/sms/TwilioSMSService' //rename
 export * from './services/sms-template.service'
 export * from './services/solid-introspect.service'
 export * from './services/user.service'

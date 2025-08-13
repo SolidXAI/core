@@ -186,6 +186,11 @@ import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-databas
 import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
 import { SmsQueuePublisherDatabase } from './jobs/database/sms-publisher-database.service';
 import { SmsQueueSubscriberDatabase } from './jobs/database/sms-subscriber-database.service';
+
+import { TwilioSmsQueuePublisherDatabase } from './jobs/database/twilio-sms-publisher-database.service';
+import { TwilioSmsQueueSubscriberDatabase } from './jobs/database/twilio-sms-subscriber-database.service';
+
+
 import { TriggerMcpClientPublisherDatabase } from './jobs/database/trigger-mcp-client-publisher-database.service';
 import { TriggerMcpClientSubscriberDatabase } from './jobs/database/trigger-mcp-client-subscriber-database.service';
 import { WhatsappQueuePublisherDatabase } from './jobs/database/whatsapp-publisher-database.service';
@@ -260,6 +265,7 @@ import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-too
 import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
 import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
 import { MailFactory } from './factories/mail.factory';
+import { TwilioSMSService } from './services/sms/TwilioSMSService';
 
 
 @Global()
@@ -427,6 +433,7 @@ import { MailFactory } from './factories/mail.factory';
     Msg91SMSService,
     Msg91OTPService,
     Msg91WhatsappService,
+    TwilioSMSService,
     SmsTemplateService,
     EmailTemplateService,
     PublisherFactory,
@@ -449,6 +456,8 @@ import { MailFactory } from './factories/mail.factory';
     SmsQueueSubscriber,
     SmsQueuePublisherDatabase,
     SmsQueueSubscriberDatabase,
+    TwilioSmsQueuePublisherDatabase,
+    TwilioSmsQueueSubscriberDatabase,
     OTPQueuePublisher,
     OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
@@ -567,6 +576,7 @@ import { MailFactory } from './factories/mail.factory';
     ElasticEmailService,
     Msg91SMSService,
     Msg91OTPService,
+    TwilioSMSService,
     Msg91WhatsappService,
     TinyUrlService,
     PdfService,

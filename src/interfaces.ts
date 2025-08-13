@@ -190,14 +190,14 @@ export interface IMail {
 }
 
 export interface ISMS {
-  sendSMS(to: string, body: string, shouldQueueSms: boolean): Promise<void>;
+  sendSMS(to: string, body: string, shouldQueueSms: boolean): Promise<any>;
 
   sendSMSUsingTemplate(
     to: string,
     templateName: string,
     templateParams: any,
     shouldQueueSms: boolean,
-  ): Promise<void>;
+  ): Promise<any>;
 }
 
 export interface MailAttachmentWrapper {

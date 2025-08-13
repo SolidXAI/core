@@ -23,6 +23,11 @@ export default registerAs('common', () => {
             url: process.env.COMMON_MSG91_SMS_URL,
             apiKey: process.env.COMMON_MSG91_SMS_API_KEY,
         },
+        twilio: {
+            accountSid: process.env.COMMON_TWILIO_ACCOUNT_SID,
+            authToken: process.env.COMMON_TWILIO_AUTH_TOKEN,
+            number: process.env.COMMON_TWILIO_NUMBER,
+        },
         shortUrl: {
             apiUrl: process.env.COMMON_SHORT_URL_API_URL,
             apiKey: process.env.COMMON_SHORT_URL_API_KEY,
