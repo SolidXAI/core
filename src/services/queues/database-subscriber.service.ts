@@ -108,7 +108,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
             this.poller.start(queueName, (q) => this.processNext(q), {
                 baseDelayMs: 1000,
                 maxDelayMs: 30_000,
-                timeoutPerIterationMs: 60_000,
+                timeoutPerIterationMs: 5 * 60_000,
                 jitter: true,
             });
 

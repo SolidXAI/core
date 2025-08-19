@@ -28,7 +28,13 @@ export class AiInteraction extends CommonEntity {
     responseTimeMs: number;
     @Column({ type: "jsonb", nullable: true })
     metadata: any;
-
-@Column({ type: "boolean", nullable: true, default: false })
-isApplied: boolean = false;
+    @Column({ type: "boolean", nullable: true, default: false })
+    isApplied: boolean = false;
+    @Index()
+    @ManyToOne(() => AiInteraction, { onDelete: "SET NULL", nullable: true })
+    @JoinColumn()
+    parentInteraction: AiInteraction;
+    @Index({ unique: true })
+    @Column({ type: "varchar" })
+    externalId: string;
 }

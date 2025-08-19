@@ -264,6 +264,7 @@ export * from './services/csv.service'
 export * from './services/queues/publisher-factory.service'
 export * from './services/queues/database-publisher.service'
 export * from './services/queues/database-subscriber.service'
+export * from './services/ai-interaction.service'
 
 // Factories
 export * from './factories/mail.factory'

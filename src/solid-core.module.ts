@@ -604,7 +604,8 @@ import { PollerService } from './services/poller.service';
     ConfigModule,
     PublisherFactory,
     MailFactory,
-    PollerService
+    PollerService,
+    AiInteractionService,
   ],
 })
 export class SolidCoreModule { }

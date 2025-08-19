@@ -43,7 +43,7 @@ export class PollerService implements OnModuleDestroy, BeforeApplicationShutdown
         const opts: Required<PollOptions> = {
             baseDelayMs: options.baseDelayMs ?? 1000,
             maxDelayMs: options.maxDelayMs ?? 30_000,
-            timeoutPerIterationMs: options.timeoutPerIterationMs ?? 60_000,
+            timeoutPerIterationMs: options.timeoutPerIterationMs ?? 5 * 60_000,
             jitter: options.jitter ?? true,
         };
 

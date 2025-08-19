@@ -58,6 +58,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             await this.aiInteractionService.create({
                 userId: aiInteraction.user.id,
                 threadId: aiInteraction.threadId,
+                parentInteractionId: aiInteraction.id,
                 role: 'gen-ai',
                 message: '-',
                 contentType: aiResponse.content_type,
@@ -77,6 +78,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             await this.aiInteractionService.create({
                 userId: aiInteraction.user.id,
                 threadId: aiInteraction.threadId,
+                parentInteractionId: aiInteraction.id,
                 role: 'gen-ai',
                 message: nestedResponse,
                 contentType: aiResponse.content_type,
