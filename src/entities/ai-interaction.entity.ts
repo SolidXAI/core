@@ -37,4 +37,6 @@ export class AiInteraction extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     externalId: string;
+    @Column({ type: "boolean", nullable: true, default: false })
+    isAutoApply: boolean = false;
 }

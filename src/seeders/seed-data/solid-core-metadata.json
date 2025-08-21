@@ -5102,6 +5102,17 @@
             "index": false,
             "private": false,
             "encrypt": false
+          },
+          {
+            "name": "isAutoApply",
+            "displayName": "Is Auto Apply",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
           }
         ]
       }

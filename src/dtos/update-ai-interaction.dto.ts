@@ -64,4 +64,8 @@ export class UpdateAiInteractionDto {
     @IsOptional()
     @ApiProperty()
     parentInteractionUserKey: string;
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty()
+    isAutoApply: boolean;
 }
