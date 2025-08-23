@@ -75,7 +75,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         else {
             let nestedResponse = aiResponse.response.trim();
 
-            await this.aiInteractionService.create({
+            const genAiInteraction = await this.aiInteractionService.create({
                 userId: aiInteraction.user.id,
                 threadId: aiInteraction.threadId,
                 parentInteractionId: aiInteraction.id,
@@ -88,6 +88,11 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 metadata: JSON.stringify(aiResponse),
                 isApplied: aiInteraction.isApplied
             });
+
+            // If the human interaction was with isAutoApply=true, then we can go ahead and autoApply.
+            if (aiInteraction.isAutoApply) {
+                this.aiInteractionService.applySolidAiInteraction(genAiInteraction.id);
+            }
         }
 
         return aiResponse;
