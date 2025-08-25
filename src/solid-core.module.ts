@@ -267,6 +267,7 @@ import { AlphaNumExternalIdComputationProvider } from './services/computed-field
 import { MailFactory } from './factories/mail.factory';
 import { TwilioSMSService } from './services/sms/TwilioSMSService';
 import { PollerService } from './services/poller.service';
+import { TextractService } from './services/textract.service';
 
 
 @Global()
@@ -427,6 +428,7 @@ import { PollerService } from './services/poller.service';
     Reflector,
     MetadataScanner,
     FileService,
+    TextractService,
     SolidRegistry,
     SeedCommand,
     SMTPEMailService,
@@ -573,6 +575,7 @@ import { PollerService } from './services/poller.service';
     CRUDService,
     MulterModule,
     FileService,
+    TextractService,
     SolidRegistry,
     SMTPEMailService,
     ElasticEmailService,

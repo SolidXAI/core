@@ -46,6 +46,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         const prompt = aiInteraction.message;
 
         // Use this to invoke our mcp client
+        // TODO: try / catch ... 
+        // Handle the rejection gracefully...
         const aiResponse = await this.aiInteractionService.runMcpPrompt(prompt);
         this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);
         this.triggerMcpClientSubscriberLogger.log(JSON.stringify(aiResponse));
