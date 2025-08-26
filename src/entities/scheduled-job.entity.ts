@@ -1,10 +1,10 @@
-import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn, Index } from 'typeorm';
 import { CommonEntity } from './common.entity';
 import { ModuleMetadata } from 'src/entities/module-metadata.entity';
 
-
 @Entity('ss_scheduled_job')
 export class ScheduledJob extends CommonEntity {
+    @Index({ unique: true })
     @Column({ type: "varchar" })
     scheduleName: string;
     @Column({ type: "boolean", default: false })

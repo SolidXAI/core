@@ -40,7 +40,7 @@ import { SystemFieldsSeederService } from './system-fields-seeder.service';
 import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { DashboardRepository } from 'src/repository/dashboard.repository';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
-import { ScheduledJobRepository , CreateScheduledJobDto} from 'src/repository/scheduled-job.repository';
+import { ScheduledJobRepository, CreateScheduledJobDto } from 'src/repository/scheduled-job.repository';
 
 @Injectable()
 export class ModuleMetadataSeederService {
@@ -232,10 +232,7 @@ export class ModuleMetadataSeederService {
             }
             this.logger.debug(`[End] Processing scheduled jobs for ${moduleMetadata.name}`);
 
-
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
-            
-
         }
 
         // Post seed data file processing. 

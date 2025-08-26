@@ -2548,7 +2548,7 @@
         "userKeyFieldUserKey": "scheduleName",
         "isChild": false,
         "enableAuditTracking": true,
-        "enableSoftDelete": true,
+        "enableSoftDelete": false,
         "draftPublishWorkflow": false,
         "internationalisation": false,
         "fields": [
