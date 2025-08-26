@@ -1,6 +1,6 @@
 import { Injectable, Logger, Inject } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
-import { LessThanOrEqual, Repository } from 'typeorm';
+import { IsNull, LessThanOrEqual, Repository } from 'typeorm';
 
 import { ISchedulerService } from './scheduler.interface';
 import { SolidRegistry } from 'src/helpers/solid-registry';
@@ -32,7 +32,7 @@ export class SchedulerServiceImpl implements ISchedulerService {
                 // Newly created jobs are also picked for examination 
                 {
                     isActive: true,
-                    nextRunAt: null,
+                    nextRunAt: IsNull(),
                 },
             ],
         });
