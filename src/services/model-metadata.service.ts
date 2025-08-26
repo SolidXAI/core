@@ -1034,7 +1034,7 @@ export class ModelMetadataService {
       type: "solid",
       domain: "" as any,
       context: "" as any,
-      customComponent: `/admin/address-master/${model.singularName}/all`,
+      customComponent: "",
       customIsModal: true,
       serverEndpoint: "",
       view: view,
