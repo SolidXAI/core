@@ -167,6 +167,7 @@ export * from './helpers/field-crud-managers/SelectionStaticFieldCrudManager' //
 export * from './helpers/field-crud-managers/ShortTextFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/UUIDFieldCrudManager' //rename
 export * from './helpers/environment.helper'
+export * from './helpers/cors.helper'
 
 export * from './services/crud.service'
 export * from './interceptors/logging.interceptor'
