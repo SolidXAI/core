@@ -2797,6 +2797,22 @@
             "selectionValueType": "string",
             "selectionDynamicProvider": "ListOfScheduledJobsSelectionProvider",
             "selectionDynamicProviderCtxt": "{}"
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ]
       },
@@ -10222,6 +10238,13 @@
           {
             "type": "field",
             "attrs": {
+              "name": "module",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "isActive"
             }
           },
@@ -10336,6 +10359,12 @@
                         "type": "field",
                         "attrs": {
                           "name": "job"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "module"
                         }
                       }
                     ]
@@ -12279,5 +12308,6 @@
     }
   ],
   "checksums": [],
-  "listOfValues": []
+  "listOfValues": [],
+  "scheduledJobs": []
 }

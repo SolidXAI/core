@@ -69,4 +69,7 @@ export class UpdateScheduledJobDto {
     @IsString()
     @ApiProperty()
     job: string;
+    
+    @IsNotEmpty()
+    moduleId: number;
 }

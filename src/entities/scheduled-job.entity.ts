@@ -1,5 +1,7 @@
-import { Entity, Column } from 'typeorm';
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm';
 import { CommonEntity } from './common.entity';
+import { ModuleMetadata } from 'src/entities/module-metadata.entity';
+
 
 @Entity('ss_scheduled_job')
 export class ScheduledJob extends CommonEntity {
@@ -27,4 +29,7 @@ export class ScheduledJob extends CommonEntity {
     dayOfWeek: string;
     @Column({ type: "varchar" })
     job: string;
+    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
+    @JoinColumn({ referencedColumnName: 'id' })
+    module: ModuleMetadata;
 }
