@@ -317,6 +317,17 @@ import { TextractService } from './services/textract.service';
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'media-files-storage'),
       serveRoot: '/media-files-storage',
+      serveStaticOptions: {
+        setHeaders: (res /*, path, stat*/) => {
+          // Allow use of these files from a different origin (e.g., :3000 UI)
+          // Use 'same-site' if both origins are on the same site (localhost:* counts as same-site)
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'); // or 'same-site'
+
+          // If you need to load into <canvas> without tainting or fetch images via XHR,
+          // you can also expose CORS here (not needed for simple <img>):
+          // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+        },
+      }
     }),
     MulterModule.registerAsync({
       imports: [ConfigModule],
