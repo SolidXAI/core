@@ -17,9 +17,15 @@ import { where } from "locale-codes";
 
 @Injectable()
 export class ScheduledJobSubscriber
-  implements EntitySubscriberInterface<ScheduledJob>
-{
+  implements EntitySubscriberInterface<ScheduledJob> {
   private readonly logger = new Logger(ScheduledJobSubscriber.name);
+
+  /** Fields that, when changed (and only these changed), should NOT trigger metadata update. */
+  private readonly ignoredUpdateFields: Array<keyof ScheduledJob | string> = [
+    "lastRunAt",
+    "nextRunAt",
+    "updatedAt",
+  ];
 
   constructor(
     @InjectDataSource() private readonly dataSource: DataSource,
@@ -37,7 +43,7 @@ export class ScheduledJobSubscriber
     if (!event.entity) {
       this.logger.debug('No schedule Job entity found in the  afterInsert method');
       return;
-  }
+    }
     await this.updateMetadata(event.entity, event.queryRunner.manager);
   }
 
@@ -45,7 +51,20 @@ export class ScheduledJobSubscriber
     if (!event.databaseEntity) {
       this.logger.debug('No schedule Job entity found in the  afterUpdate method');
       return;
-  }
+    }
+
+    // get hold of the changed field names 
+    const changedProps = (event.updatedColumns ?? []).map((c) => c.propertyName);
+
+    // Decide whether to skip: only skip when *all* changed fields are in the ignore list
+    const onlyIgnoredChanged = changedProps.every((p) => this.ignoredUpdateFields.includes(p));
+
+    if (onlyIgnoredChanged) {
+      this.logger.debug(`Skipping metadata update for ScheduledJob#${(event.databaseEntity as ScheduledJob).id}; only ignored fields changed: ${changedProps.join(", ")}`
+      );
+      return;
+    }
+
     await this.updateMetadata(event.databaseEntity, event.queryRunner.manager);
   }
 
@@ -106,12 +125,12 @@ export class ScheduledJobSubscriber
   private async updateMetadata(jobEntity: ScheduledJob, entityManager: EntityManager) {
     // populate the job with its relation
     const populatedScheduleJob = await entityManager.findOne(ScheduledJob, {
-        where: { id: jobEntity.id },
-        relations: ['module'],
+      where: { id: jobEntity.id },
+      relations: ['module'],
     });
 
     if (!populatedScheduleJob) {
-        throw new Error(`ScheduleJob not found for id ${jobEntity.id }`);
+      throw new Error(`ScheduleJob not found for id ${jobEntity.id}`);
     }
     const filePath =
       await this.moduleMetadataHelperService.getModuleMetadataFilePath(
@@ -141,7 +160,7 @@ export class ScheduledJobSubscriber
       (job) => job.scheduleName === jobName
     );
     // Insert or update job in metadata
-    const jobDto= await this.scheduledJobRepo.toDto(populatedScheduleJob as ScheduledJob);
+    const jobDto = await this.scheduledJobRepo.toDto(populatedScheduleJob as ScheduledJob);
     if (existingIndex !== -1) {
       metaData.scheduledJobs[existingIndex] = jobDto;
       this.logger.log(`Updated scheduled job ${jobName} in metadata`);

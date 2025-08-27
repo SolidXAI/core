@@ -10336,106 +10336,154 @@
             },
             "children": [
               {
-                "type": "row",
+                "type": "notebook",
                 "attrs": {
-                  "name": "sheet-1"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-1",
-                      "label": "Basic",
-                      "className": "col-6"
+                      "name": "page-general",
+                      "label": "General"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "row",
                         "attrs": {
-                          "name": "scheduleName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "job"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "module"
-                        }
+                          "name": "row-general"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-basic",
+                              "label": "Basic",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "scheduleName"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "job"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "module"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "isActive"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-config",
+                              "label": "Configuration",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "frequency"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "startTime"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "endTime"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "startDate"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "endDate"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "dayOfWeek"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "dayOfMonth"
+                                }
+                              }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   },
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-1",
-                      "label": "Configuration",
-                      "className": "col-6"
+                      "name": "page-runtime",
+                      "label": "Runtime"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "row",
                         "attrs": {
-                          "name": "isActive"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "frequency"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "startTime"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "endTime"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "startDate"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "endDate"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "lastRunAt"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "nextRunAt"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "dayOfWeek"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "dayOfMonth"
-                        }
+                          "name": "row-runtime"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-runtime",
+                              "label": "Execution",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "lastRunAt",
+                                  "disabled": true,
+                                  "readOnly": true
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "nextRunAt",
+                                  "disabled": true,
+                                  "readOnly": true
+                                }
+                              }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   }
