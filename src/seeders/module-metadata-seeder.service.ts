@@ -40,7 +40,8 @@ import { SystemFieldsSeederService } from './system-fields-seeder.service';
 import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { DashboardRepository } from 'src/repository/dashboard.repository';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
-import { ScheduledJobRepository, CreateScheduledJobDto } from 'src/repository/scheduled-job.repository';
+import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
+import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 
 @Injectable()
 export class ModuleMetadataSeederService {
