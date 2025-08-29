@@ -29,6 +29,7 @@ export class ScheduledJob extends CommonEntity {
     dayOfWeek: string;
     @Column({ type: "varchar" })
     job: string;
+    @Index()
     @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
     @JoinColumn({ referencedColumnName: 'id' })
     module: ModuleMetadata;
