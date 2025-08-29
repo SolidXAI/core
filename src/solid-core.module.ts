@@ -263,6 +263,8 @@ import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-respons
 import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
 import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
+import { ScheduledJobRepository } from './repository/scheduled-job.repository';
+import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
 import { MailFactory } from './factories/mail.factory';
 import { TwilioSMSService } from './services/sms/TwilioSMSService';
@@ -580,6 +582,8 @@ import { seconds, ThrottlerModule } from '@nestjs/throttler';
     SolidAddFieldMcpToolResponseHandler,
     ViewMetadataRepository,
     SolidCreateModelLayoutMcpToolResponseHandler,
+    ScheduledJobRepository,
+    ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
     MailFactory,
   ],
