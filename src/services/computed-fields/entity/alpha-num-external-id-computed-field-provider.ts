@@ -14,13 +14,12 @@ export interface AlphaNumExternalIdContext {
 
 @ComputedFieldProvider()
 @Injectable()
-export class AlphaNumExternalIdComputationProvider<T extends CommonEntity>
-  implements IEntityPreComputeFieldProvider<T, AlphaNumExternalIdContext>
+export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> implements IEntityPreComputeFieldProvider<T, AlphaNumExternalIdContext>
 {
   constructor(
     @InjectEntityManager()
     private readonly entityManager: EntityManager
-  ) {}
+  ) { }
 
   name(): string {
     return this.constructor.name;
@@ -60,8 +59,7 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity>
   }
 
   private async isExternalIdUnique( externalId: string, triggerEntity: T, fieldName: string ): Promise<boolean> {
-    const count = await this.entityManager.count(
-      triggerEntity.constructor as any,
+    const count = await this.entityManager.count(triggerEntity.constructor as any,
       {
         where: { [fieldName]: externalId },
       }
@@ -69,17 +67,13 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity>
     return count === 0;
   }
 
-  private async generateUniqueExternalId( codeLength: number, triggerEntity: T, fieldName: string ): Promise<string> {
+  private async generateUniqueExternalId(codeLength: number, triggerEntity: T, fieldName: string): Promise<string> {
     const maxAttempts = 10;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
       const newId = this.generateRandomCode(codeLength);
 
-      const isUnique = await this.isExternalIdUnique(
-        newId,
-        triggerEntity,
-        fieldName
-      );
+      const isUnique = await this.isExternalIdUnique(newId,triggerEntity,fieldName);
 
       if (isUnique) {
         return newId;
