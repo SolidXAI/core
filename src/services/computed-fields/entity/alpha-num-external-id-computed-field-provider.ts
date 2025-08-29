@@ -5,7 +5,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { ComputedFieldMetadata } from 'src/helpers/solid-registry';
 import { IEntityPreComputeFieldProvider } from 'src/interfaces';
 import { EntityManager } from 'typeorm';
-
+import { get } from "lodash";
 export interface AlphaNumExternalIdContext {
   prefix?: string;              // alias -> staticPrefix
   length?: number;              // Optional: length of the unique code to generate, default is 5
@@ -38,8 +38,9 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
 
     // Determine prefix
     let resolvedPrefix = prefix || '';
+
     if (dynamicFieldPrefix) {
-      const dynamicValue = triggerEntity[dynamicFieldPrefix];
+      const dynamicValue = get(triggerEntity as any, dynamicFieldPrefix);
       if (dynamicValue) {
         resolvedPrefix = String(dynamicValue).trim().toLowerCase().replace(/\s+/g, '-').replace(/[^a-z0-9\-]/g, '');
       }
