@@ -632,6 +632,7 @@ import { seconds, ThrottlerModule } from '@nestjs/throttler';
     MailFactory,
     PollerService,
     AiInteractionService,
+    ThrottlerModule,
   ],
 })
 export class SolidCoreModule { }

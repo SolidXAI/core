@@ -10,11 +10,15 @@ import { UserService } from '../services/user.service';
 import { Public } from '../decorators/public.decorator';
 import { iamConfig } from '../config/iam.config';
 import { isGoogleOAuthConfigured } from 'src/helpers/google-oauth.helper';
+import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
+
 
 
 @Auth(AuthType.None)
 @Controller('iam/google')
 @ApiTags("Iam")
+@UseGuards(ThrottlerGuard)
+@SkipThrottle({ login: false }) //Enable the login throttle only 
 export class GoogleAuthenticationController {
     constructor(
         @Inject(iamConfig.KEY) private iamConfiguration: ConfigType<typeof iamConfig>,
