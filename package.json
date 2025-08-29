@@ -39,6 +39,7 @@
     "@elasticemail/elasticemail-client": "^4.0.23",
     "@hapi/joi": "^17.1.1",
     "@nestjs/schedule": "^6.0.0",
+    "@nestjs/throttler": "^6.4.0",
     "amqplib": "^0.10.4",
     "axios": "^1.7.0",
     "bcrypt": "^5.1.1",
