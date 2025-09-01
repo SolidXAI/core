@@ -37,6 +37,7 @@ import { ModuleMetadataService } from "./module-metadata.service";
 import { isArray } from "class-validator";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
+import { RequestContextService } from "./request-context.service";
 
 export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
@@ -436,6 +437,10 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 throw new BadRequestException('Forbidden');
             }
         }
+
+        // Set the request filter in the request context service
+        const requestContextService = this.moduleRef.get(RequestContextService, { strict: false });
+        requestContextService.setRequestFilter(basicFilterDto);
 
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)

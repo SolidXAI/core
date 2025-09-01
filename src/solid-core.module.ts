@@ -271,6 +271,8 @@ import { TwilioSMSService } from './services/sms/TwilioSMSService';
 import { PollerService } from './services/poller.service';
 import { TextractService } from './services/textract.service';
 import { seconds, ThrottlerModule } from '@nestjs/throttler';
+import { ChatterMessageRepository } from './repository/chatter-message.repository';
+import { ChatterMessageDetailsRepository } from './repository/chatter-message-details.repository';
 
 
 @Global()
@@ -586,6 +588,8 @@ import { seconds, ThrottlerModule } from '@nestjs/throttler';
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
     MailFactory,
+    ChatterMessageRepository,
+    ChatterMessageDetailsRepository,
   ],
   exports: [
     ModuleMetadataService,
