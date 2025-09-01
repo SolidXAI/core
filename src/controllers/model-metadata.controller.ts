@@ -1,10 +1,11 @@
-import { Body, Controller, Delete, Get, Logger, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Logger, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public.decorator';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { UpdateModelMetaDataDto } from '../dtos/update-model-metadata.dto';
 import { ModelMetadataService } from '../services/model-metadata.service';
+import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 @Controller('model-metadata')
 @ApiTags("App Builder")
@@ -32,6 +33,8 @@ export class ModelMetadataController {
     }
 
     @Public()
+    @UseGuards(ThrottlerGuard)
+    @SkipThrottle({ short: false }) //Enable the login throttle only 
     @Get('public')
     async findManyPublic() {
         const basicFilterDto: BasicFilterDto = {
@@ -40,7 +43,7 @@ export class ModelMetadataController {
             offset: 0,
             filters: [],
             groupBy: [],
-            populate: [],
+            populate: [],   
             populateMedia: [],
             sort: []
         }
@@ -61,6 +64,8 @@ export class ModelMetadataController {
     }
 
     @Public()
+    @UseGuards(ThrottlerGuard)
+    @SkipThrottle({ short: false }) //Enable the login throttle only 
     @Post('/update-user-key')
     updateUserKey(@Body() data: any) {
         return this.modelMetadataService.updateUserKey(data);

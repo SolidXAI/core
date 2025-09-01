@@ -48,7 +48,7 @@ export class MediaController {
 
   @Public()
   @UseGuards(ThrottlerGuard)
-  @SkipThrottle({ login: false }) //Enable the login throttle only 
+  @SkipThrottle({ short: false }) //Enable the login throttle only 
   @ApiBearerAuth("jwt")
   @Post('/upload')
   @UseInterceptors(AnyFilesInterceptor())

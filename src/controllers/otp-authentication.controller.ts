@@ -1,4 +1,4 @@
-import { Body, Controller, HttpCode, HttpStatus, Post, Res } from '@nestjs/common';
+import { Body, Controller, HttpCode, HttpStatus, Post, Res, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { Auth } from '../decorators/auth.decorator';
@@ -8,11 +8,14 @@ import { OTPSignInDto } from '../dtos/otp-sign-in.dto';
 import { OTPSignUpDto } from '../dtos/otp-sign-up.dto';
 import { AuthType } from '../enums/auth-type.enum';
 import { AuthenticationService } from '../services/authentication.service';
+import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 
 @Auth(AuthType.None)
 @Controller('iam/otp')
 @ApiTags("Iam")
+@UseGuards(ThrottlerGuard)
+@SkipThrottle({ login: false }) //Enable the login throttle only 
 export class OTPAuthenticationController {
     constructor(private readonly authService: AuthenticationService) { }
 

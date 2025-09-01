@@ -1,12 +1,14 @@
-import { Body, Controller, Get, Logger, Post } from '@nestjs/common';
+import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
 import { Public } from 'src/decorators/public.decorator';
 import { SolidRegistry } from '../helpers/solid-registry';
 import { ApiTags } from '@nestjs/swagger';
+import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 
 @Controller('')
 @ApiTags("Common")
+
 export class ServiceController {
     private readonly logger = new Logger(ServiceController.name);
 
@@ -21,6 +23,8 @@ export class ServiceController {
     }
 
     @Public()
+    @UseGuards(ThrottlerGuard)
+    @SkipThrottle({ short: false }) //Enable the short throttle only 
     @Post('seed')
     async seedData(@Body() seedData: any) {
         const seeder = this.solidRegistry
