@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Optional } from "@nestjs/common";
+import { BadRequestException, Inject, NotFoundException, Optional } from "@nestjs/common";
 import { ConfigService, ConfigType } from "@nestjs/config";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
@@ -639,7 +639,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             select: fields,
         });
         if (!entity) {
-            throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
+            throw new NotFoundException(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
         // Populate the entity with the media
         if (normalizedPopulateMedia.length > 0) {
