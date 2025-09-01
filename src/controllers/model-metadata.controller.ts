@@ -33,8 +33,8 @@ export class ModelMetadataController {
     }
 
     @Public()
-    @UseGuards(ThrottlerGuard)
-    @SkipThrottle({ short: false }) //Enable the login throttle only 
+    // @UseGuards(ThrottlerGuard)
+    // @SkipThrottle({ burst: false }) //Enable the login throttle only 
     @Get('public')
     async findManyPublic() {
         const basicFilterDto: BasicFilterDto = {

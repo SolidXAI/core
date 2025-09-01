@@ -350,7 +350,7 @@ import { seconds, ThrottlerModule } from '@nestjs/throttler';
       throttlers: [
         { name: 'short', ttl: seconds(60),  limit: 10 },
         { name: 'login', ttl: seconds(60),  limit: 5  },
-        { name: 'burst', ttl: seconds(10),  limit: 20 },
+        { name: 'burst', ttl: seconds(1),  limit: 100 },
         { name: 'sustained', ttl: seconds(300), limit: 100 },
       ],
     }),
