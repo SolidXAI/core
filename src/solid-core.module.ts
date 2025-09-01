@@ -263,11 +263,14 @@ import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-respons
 import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
 import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
+import { ScheduledJobRepository } from './repository/scheduled-job.repository';
+import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
 import { MailFactory } from './factories/mail.factory';
 import { TwilioSMSService } from './services/sms/TwilioSMSService';
 import { PollerService } from './services/poller.service';
 import { TextractService } from './services/textract.service';
+import { seconds, ThrottlerModule } from '@nestjs/throttler';
 
 
 @Global()
@@ -307,6 +310,10 @@ import { TextractService } from './services/textract.service';
       ImportTransactionErrorLog,
       UserActivityHistory,
       AiInteraction,
+      Dashboard,
+      DashboardVariable,
+      DashboardQuestion,
+      DashboardQuestionSqlDatasetConfig,
     ]),
     ConfigModule.forFeature(appBuilderConfig),
     ConfigModule.forFeature(commonConfig),
@@ -339,11 +346,14 @@ import { TextractService } from './services/textract.service';
     HttpModule,
     ConfigModule,
     ClsModule,
-    TypeOrmModule.forFeature([Dashboard]),
-    TypeOrmModule.forFeature([DashboardVariable]),
-    TypeOrmModule.forFeature([DashboardQuestion]),
-    TypeOrmModule.forFeature([DashboardQuestionSqlDatasetConfig]),
-    TypeOrmModule.forFeature([AiInteraction]),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        { name: 'short', ttl: seconds(60),  limit: 10 },
+        { name: 'login', ttl: seconds(60),  limit: 5  },
+        { name: 'burst', ttl: seconds(1),  limit: 100 },
+        { name: 'sustained', ttl: seconds(300), limit: 100 },
+      ],
+    }),
   ],
   controllers: [
     ModuleMetadataController,
@@ -572,6 +582,8 @@ import { TextractService } from './services/textract.service';
     SolidAddFieldMcpToolResponseHandler,
     ViewMetadataRepository,
     SolidCreateModelLayoutMcpToolResponseHandler,
+    ScheduledJobRepository,
+    ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
     MailFactory,
   ],
@@ -620,6 +632,7 @@ import { TextractService } from './services/textract.service';
     MailFactory,
     PollerService,
     AiInteractionService,
+    ThrottlerModule,
   ],
 })
 export class SolidCoreModule { }

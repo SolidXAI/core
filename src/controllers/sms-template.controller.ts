@@ -1,16 +1,17 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { PaginationQueryDto } from 'src/dtos/pagination-query.dto';
-import { Roles } from 'src/decorators/roles.decorator';
-import { SmsTemplateService } from '../services/sms-template.service';
+import { Body, Controller, Delete, Get, Param, Post, Put, Query, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
+import { Public } from 'src/decorators/public.decorator';
 import { CreateSmsTemplateDto } from '../dtos/create-sms-template.dto';
 import { UpdateSmsTemplateDto } from '../dtos/update-sms-template.dto';
-import { Public } from 'src/decorators/public.decorator';
-import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { SmsTemplateService } from '../services/sms-template.service';
 
 
 @Controller('sms-template')
 @ApiTags("Common")
+@UseGuards(ThrottlerGuard)
+@SkipThrottle({ short: false }) //Enable the short throttle only 
 export class SmsTemplateController {
   constructor(private readonly service: SmsTemplateService) { }
 

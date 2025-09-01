@@ -5,7 +5,10 @@ import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { RequestContextService } from 'src/services/request-context.service';
 import {
     DataSource,
+    EntityNotFoundError,
     EntityTarget,
+    FindOneOptions,
+    FindOptionsWhere,
     QueryRunner,
     Repository,
     SelectQueryBuilder
@@ -41,5 +44,37 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
         );
     }
 
+    /**
+    * Security-aware findOne: applies FindOneOptions via FindOptionsUtils,
+    * but builds from our security-wrapped QueryBuilder.
+    */
+    override async findOne(options?: FindOneOptions<T>): Promise<T | null> {
+        const alias = this.modelSingularName();
+        const qb = this.createQueryBuilder(alias);
 
+        if (options) {
+            // Apply all standard find options (relations, selects, order, where, etc.)
+            if (options) qb.setFindOptions(options); // <- applies where, relations, select, order, etc.
+        }
+
+        return qb.getOne();
+    }
+
+    /**
+     * Convenience: route findOneBy through the same path so rules apply.
+     */
+    override async findOneBy(where: FindOptionsWhere<T> | FindOptionsWhere<T>[]): Promise<T | null> {
+        return this.findOne({ where });
+    }
+
+    /**
+     * Optional: an OrFail that still honors security rules.
+     */
+    override async findOneOrFail(options?: FindOneOptions<T>): Promise<T> {
+        const entity = await this.findOne(options);
+        if (!entity) {
+            throw new EntityNotFoundError(this.metadata.target, options?.where ?? {});
+        }
+        return entity;
+    }
 }

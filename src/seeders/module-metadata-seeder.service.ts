@@ -39,6 +39,9 @@ import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { DashboardRepository } from 'src/repository/dashboard.repository';
+// import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
+import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
+import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 
 @Injectable()
 export class ModuleMetadataSeederService {
@@ -73,6 +76,7 @@ export class ModuleMetadataSeederService {
         readonly securityRuleRepo: SecurityRuleRepository,
         readonly systemFieldsSeederService: SystemFieldsSeederService,
         readonly dashboardRepo: DashboardRepository,
+        readonly scheduledJobRepository: ScheduledJobRepository,
     ) { }
 
     async seed() {
@@ -221,9 +225,15 @@ export class ModuleMetadataSeederService {
             await this.seedDashboards(dashboards);
             this.logger.log(`[End] Processing dashboards for ${moduleMetadata.name}`);
 
+            // Scheduled Jobs
+            this.logger.debug(`[Start] Processing scheduled jobs for ${moduleMetadata.name}`);
+            const scheduledJobs: CreateScheduledJobDto[] = overallMetadata.scheduledJobs;
+            if (scheduledJobs?.length > 0) {
+                await this.seedScheduledJobs(scheduledJobs);
+            }
+            this.logger.debug(`[End] Processing scheduled jobs for ${moduleMetadata.name}`);
 
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
-
         }
 
         // Post seed data file processing. 
@@ -585,6 +595,16 @@ export class ModuleMetadataSeederService {
         }
         for (const dto of dashboardDtos) {
             await this.dashboardRepo.upsertWithDto(dto);
+        }
+    }
+
+    async seedScheduledJobs(createScheduledJobDto: CreateScheduledJobDto[]) {
+        if (!createScheduledJobDto || createScheduledJobDto.length === 0) {
+            this.logger.debug(`No scheduled jobs found to seed`);
+            return;
+        }
+        for (const dto of createScheduledJobDto) {
+            await this.scheduledJobRepository.upsertWithDto(dto);
         }
     }
 
