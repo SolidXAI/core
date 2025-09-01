@@ -21,7 +21,7 @@ export const ERROR_MESSAGES = {
     USER_ID_MISMATCH: "User ID's do not match.",
     USERNAME_MISMATCH: "User username's do not match.",
     INCORRECT_CURRENT_PASSWORD: 'Incorrect current password specified.',
-    PASSWORD_REUSED: 'This password was previously used, please use a different password.',
+    PASSWORD_REUSED: 'Try a different password',
     INVALID_VERIFICATION_TOKEN: 'Invalid verification token',
     ACCESS_DENIED: 'Access denied',
     INVALID_USER_PROFILE: 'Invalid user profile',

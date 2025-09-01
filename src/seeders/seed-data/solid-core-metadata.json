@@ -12241,6 +12241,15 @@
       "description": "This template is used to send the verification token required by users to reset their password.",
       "active": true,
       "type": "text"
+    },
+    {
+      "name": "password-changed",
+      "displayName": "Default: Password Changed",
+      "body": "password-changed.handlebars.html",
+      "subject": "Your {{solidAppName}} Password Has Been Updated",
+      "description": "This template notifies users that their account password was successfully changed.",
+      "active": true,
+      "type": "text"
     }
   ],
   "smsTemplates": [
