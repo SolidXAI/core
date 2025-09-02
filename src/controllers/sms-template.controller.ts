@@ -11,7 +11,7 @@ import { SmsTemplateService } from '../services/sms-template.service';
 @Controller('sms-template')
 @ApiTags("Common")
 @UseGuards(ThrottlerGuard)
-@SkipThrottle({ short: false }) //Enable the short throttle only 
+@SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only
 export class SmsTemplateController {
   constructor(private readonly service: SmsTemplateService) { }
 

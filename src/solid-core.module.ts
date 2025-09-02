@@ -353,7 +353,7 @@ import { ChatterMessageDetailsRepository } from './repository/chatter-message-de
         { name: 'short', ttl: seconds(10),  limit: 5 },
         { name: 'login', ttl: seconds(10),  limit: 5  },
         { name: 'burst', ttl: seconds(1),  limit: 100 },
-        { name: 'sustained', ttl: seconds(300), limit: 100 },
+        { name: 'sustained', ttl: seconds(300), limit: 500 },
       ],
     }),
   ],

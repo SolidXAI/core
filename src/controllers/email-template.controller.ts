@@ -19,7 +19,7 @@ import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 @Controller('email-template')
 @ApiTags("Common")
 @UseGuards(ThrottlerGuard)
-@SkipThrottle({ short: false }) //Enable the short throttle only 
+@SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only 
 export class EmailTemplateController {
   constructor(private readonly service: EmailTemplateService) { }
 

@@ -18,7 +18,7 @@ import { AuthenticationService } from '../services/authentication.service';
 @Controller('iam')
 @ApiTags("Iam")
 @UseGuards(ThrottlerGuard)
-@SkipThrottle() // disable all sets by default for this controller
+@SkipThrottle({login: true, short: true, burst: true, sustained: true}) // disable all sets by default for this controller
 export class AuthenticationController {
     private readonly logger = new Logger(AuthenticationController.name);
 

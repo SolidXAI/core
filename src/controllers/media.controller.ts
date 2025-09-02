@@ -14,6 +14,8 @@ enum ShowSoftDeleted {
 
 @ApiTags('Solid Core')
 @Controller('media')
+@UseGuards(ThrottlerGuard)
+@SkipThrottle({ short: true, login: true, burst: true, sustained: true }) //Skip all
 export class MediaController {
   constructor(private readonly service: MediaService) {}
 
@@ -47,8 +49,7 @@ export class MediaController {
   }
 
   @Public()
-  @UseGuards(ThrottlerGuard)
-  @SkipThrottle({ short: false }) //Enable the login throttle only 
+  @SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only
   @ApiBearerAuth("jwt")
   @Post('/upload')
   @UseInterceptors(AnyFilesInterceptor())

@@ -9,6 +9,8 @@ import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 @Controller('model-metadata')
 @ApiTags("App Builder")
+@UseGuards(ThrottlerGuard)
+@SkipThrottle({ short: true, login: true, burst: true, sustained: true }) //Skip all
 export class ModelMetadataController {
     private logger = new Logger('ModelMetadataController');
 
@@ -33,8 +35,7 @@ export class ModelMetadataController {
     }
 
     @Public()
-    // @UseGuards(ThrottlerGuard)
-    // @SkipThrottle({ burst: false }) //Enable the login throttle only 
+    @SkipThrottle({ burst: false, short: true, login: true, sustained: true }) //Enable burst only
     @Get('public')
     async findManyPublic() {
         const basicFilterDto: BasicFilterDto = {
@@ -64,8 +65,7 @@ export class ModelMetadataController {
     }
 
     @Public()
-    @UseGuards(ThrottlerGuard)
-    @SkipThrottle({ short: false }) //Enable the login throttle only 
+    @SkipThrottle({ short: false, burst: true, login: true, sustained: true }) //Enable short only
     @Post('/update-user-key')
     updateUserKey(@Body() data: any) {
         return this.modelMetadataService.updateUserKey(data);

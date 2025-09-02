@@ -8,7 +8,8 @@ import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 @Controller('')
 @ApiTags("Common")
-
+@UseGuards(ThrottlerGuard)
+@SkipThrottle({ short: true, login: true, burst: true, sustained: true }) //Skip all
 export class ServiceController {
     private readonly logger = new Logger(ServiceController.name);
 
@@ -23,8 +24,7 @@ export class ServiceController {
     }
 
     @Public()
-    @UseGuards(ThrottlerGuard)
-    @SkipThrottle({ short: false }) //Enable the short throttle only 
+    @SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only
     @Post('seed')
     async seedData(@Body() seedData: any) {
         const seeder = this.solidRegistry

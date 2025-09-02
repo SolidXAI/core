@@ -18,7 +18,7 @@ import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 @Controller('iam/google')
 @ApiTags("Iam")
 @UseGuards(ThrottlerGuard)
-@SkipThrottle({ login: false }) //Enable the login throttle only 
+@SkipThrottle({ login: false, short: false, burst: true, sustained: true }) //Enable the login throttle only 
 export class GoogleAuthenticationController {
     constructor(
         @Inject(iamConfig.KEY) private iamConfiguration: ConfigType<typeof iamConfig>,
