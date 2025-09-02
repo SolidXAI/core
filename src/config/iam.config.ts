@@ -9,10 +9,13 @@ export const iamConfig = registerAs('iam', () => {
         activateUserOnRegistration: (process.env.IAM_ACTIVATE_USER_ON_REGISTRATION ?? 'true') === 'true',
         autoLoginUserOnRegistration: (process.env.IAM_AUTO_LOGIN_USER_ON_REGISTRATION ?? 'false') === 'true',
         otpExpiry: parseInt(process.env.IAM_OTP_EXPIRY ?? '10'),
+        forgotPasswordVerificationTokenExpiry: parseInt(process.env.IAM_FORGOT_PASSWORD_VERIFICATION_TOKEN_EXPIRY ?? '10'),
         defaultRole: process.env.IAM_DEFAULT_ROLE ?? 'Public',
         dummyOtp: process.env.IAM_OTP_DUMMY,
         forgotPasswordSendVerificationTokenOn: process.env.IAM_FORGOT_PASSWORD_SEND_VERIFICATION_TOKEN_ON ?? 'email',
         forceChangePasswordOnFirstLogin:true,
+        PASSWORD_REGEX: process.env.PASSWORD_REGEX || '^$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\da-zA-Z]).*$',
+        PASSWORD_COMPLEXITY_DESC : process.env.PASSWORD_COMPLEXITY_DESC || 'Password must contain at least one uppercase, one lowercase, one number, and one special character.',
         googleOauth: {
             clientID: process.env.IAM_GOOGLE_OAUTH_CLIENT_ID,
             clientSecret: process.env.IAM_GOOGLE_OAUTH_CLIENT_SECRET,

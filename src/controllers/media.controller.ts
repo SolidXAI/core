@@ -1,10 +1,11 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, UseGuards } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public.decorator';
 import { MediaService } from 'src/services/media.service';
 import { CreateMediaDto } from 'src/dtos/create-media.dto';
 import { UpdateMediaDto } from 'src/dtos/update-media.dto';
+import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -13,6 +14,8 @@ enum ShowSoftDeleted {
 
 @ApiTags('Solid Core')
 @Controller('media')
+@UseGuards(ThrottlerGuard)
+@SkipThrottle({ short: true, login: true, burst: true, sustained: true }) //Skip all
 export class MediaController {
   constructor(private readonly service: MediaService) {}
 
@@ -46,6 +49,7 @@ export class MediaController {
   }
 
   @Public()
+  @SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only
   @ApiBearerAuth("jwt")
   @Post('/upload')
   @UseInterceptors(AnyFilesInterceptor())

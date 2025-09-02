@@ -660,9 +660,23 @@ export class ModelMetadataService {
     const existingModelIndex = metaData.moduleMetadata.models.findIndex(
       (existingModel: any) => existingModel.singularName === modelEntity.singularName
     );
+
+    // Remove the model to be deleted from the metadata
     if (existingModelIndex !== -1) {
       metaData.moduleMetadata.models.splice(existingModelIndex, 1);
     }
+
+    // Remove references to this model in the menu, action & view sections.
+    metaData.moduleMetadata.menus = metaData.moduleMetadata.menus.filter(
+      (menu: any) => menu.modelUserKey !== modelEntity.singularName
+    );
+    metaData.moduleMetadata.actions = metaData.moduleMetadata.actions.filter(
+      (action: any) => action.modelUserKey !== modelEntity.singularName
+    );
+    metaData.moduleMetadata.views = metaData.moduleMetadata.views.filter(
+      (view: any) => view.modelUserKey !== modelEntity.singularName
+    );
+
     const updatedContent = JSON.stringify(metaData, null, 2);
     await fs.writeFile(filePath, updatedContent);
 
@@ -1034,7 +1048,7 @@ export class ModelMetadataService {
       type: "solid",
       domain: "" as any,
       context: "" as any,
-      customComponent: `/admin/address-master/${model.singularName}/all`,
+      customComponent: "",
       customIsModal: true,
       serverEndpoint: "",
       view: view,

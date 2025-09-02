@@ -12,12 +12,12 @@ import {
 import { ConfigType } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
-import { InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { isEmpty, isNotEmpty } from 'class-validator';
 import { randomInt, randomUUID } from 'crypto';
 import { SMTPEMailService } from 'src/services/mail/smtp-email.service';
 import { Msg91OTPService } from 'src/services/sms/Msg91OTPService';
-import { Repository } from 'typeorm';
+import { DataSource, Repository } from 'typeorm';
 import { iamConfig, jwtConfig } from '../config/iam.config';
 import { ChangePasswordDto } from "../dtos/change-password.dto";
 import { ConfirmForgotPasswordDto } from '../dtos/confirm-forgot-password.dto';
@@ -49,7 +49,7 @@ import { RequestContextService } from './request-context.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { SUCCESS_MESSAGES } from 'src/constants/success-messages';
 import { MailFactory } from 'src/factories/mail.factory';
-
+import { v4 as uuidv4 } from 'uuid';
 
 enum LoginProvider {
     LOCAL = 'local',
@@ -88,9 +88,11 @@ export class AuthenticationService {
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         private readonly userActivityHistoryService: UserActivityHistoryService,
         private readonly requestContextService: RequestContextService,
+        @InjectDataSource()
+        private readonly dataSource: DataSource,
     ) {
         // this.mailService = this.mailServiceFactory.getMailService();
-     }
+    }
 
     private async getConfig(key: string): Promise<any> {
         return this.settingService.getConfigValue(key);
@@ -109,6 +111,13 @@ export class AuthenticationService {
             relations: {
                 roles: true
             }
+        });
+    }
+
+    async resolveUserByVerificationToken(token: string) {
+        return await this.userRepository.findOne({
+            where: { verificationTokenOnForgotPassword: token },
+            relations: { roles: true }
         });
     }
 
@@ -729,6 +738,19 @@ export class AuthenticationService {
         return true;
     }
 
+    // generate uuid token for forgot password
+    private generateForgotPasswordToken() {
+        const expiryTime = new Date();
+        expiryTime.setMinutes(expiryTime.getMinutes() + this.iamConfiguration.forgotPasswordVerificationTokenExpiry);
+
+        return {
+            token: this.iamConfiguration.dummyOtp
+                ? this.iamConfiguration.dummyOtp
+                : uuidv4(),   // UUID instead of numeric OTP
+            expiresAt: expiryTime,
+        };
+    }
+
     async initiateForgotPassword(initiateForgotPasswordDto: InitiateForgotPasswordDto) {
         // Steps / Algorithm: 
         // 1. Identify the user using the specified "username", if not found exit.
@@ -738,20 +760,20 @@ export class AuthenticationService {
         const user = await this.resolveUser(initiateForgotPasswordDto.username, initiateForgotPasswordDto.email);
 
         if (!user) {
-            throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+            throw new NotFoundException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
         if (!user.active) {
-            throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
+            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
 
         // 2. Validate if user has used a provider which is "local", only then it makes sense for us to initiate the forgot password routine. 
         if (user.lastLoginProvider !== 'local') {
-            throw new BadRequestException(ERROR_MESSAGES.NON_LOCAL_PROVIDER);
+            throw new BadRequestException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
 
         // 3. Generate a 6 digit validation token, we send this token to the user over their email & mobile number (controlled using configuration).
         // 4. Save this validation token in new fields on the user record. 
-        const { token, expiresAt } = this.otp();
+        const { token, expiresAt } = this.generateForgotPasswordToken();
         user.verificationTokenOnForgotPassword = token;
         user.verificationTokenOnForgotPasswordExpiresAt = expiresAt;
         await this.userRepository.save(user);
@@ -789,7 +811,7 @@ export class AuthenticationService {
                     firstName: user.username,
                     fullName: user.fullName,
                     // TODO: Need to prefix this with the page url where the forgot password page will open up.
-                    passwordResetLink: `${process.env.IAM_FRONTEND_APP_FORGOT_PASSWORD_PAGE_URL}?token=${user.verificationTokenOnForgotPassword}&username=${user.username}`,
+                    passwordResetLink: `${process.env.IAM_FRONTEND_APP_FORGOT_PASSWORD_PAGE_URL}?token=${user.verificationTokenOnForgotPassword}`,
                     companyLogoUrl: companyLogo
                 },
                 this.commonConfiguration.shouldQueueEmails,
@@ -816,62 +838,165 @@ export class AuthenticationService {
     }
 
     async confirmForgotPassword(confirmForgotPasswordDto: ConfirmForgotPasswordDto) {
-        // Steps / Algorithm: 
-        // 1. Identify the user using the specified "username", if not found exit.
-        // const user = await this.userRepository.findOne({
-        //     where: { username: confirmForgotPasswordDto.username, }
-        // });
-        const user = await this.resolveUser(confirmForgotPasswordDto.username, confirmForgotPasswordDto.email);
+        return this.dataSource.transaction(async (m) => {
+            // Resolve the user id first (by username/email), but DON'T check the token in JS.
+            const user = await this.resolveUserByVerificationToken(confirmForgotPasswordDto.verificationToken);
+            if (!user) throw new NotFoundException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+            if (user.lastLoginProvider !== 'local') throw new BadRequestException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+            if (!user.active) throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
 
-        if (!user) {
-            throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+            // 1) Atomically consume the token (only one request can succeed)
+            const { affected } = await m
+                .createQueryBuilder()
+                .update(User)
+                .set({
+                    forgotPasswordConfirmedAt: () => 'NOW()',
+                    verificationTokenOnForgotPassword: () => 'NULL',
+                    verificationTokenOnForgotPasswordExpiresAt: () => 'NULL',
+                })
+                .where('id = :id', { id: user.id })
+                .andWhere('verificationTokenOnForgotPassword = :token', { token: confirmForgotPasswordDto.verificationToken })
+                .andWhere('verificationTokenOnForgotPasswordExpiresAt > NOW()')
+                .execute();
+
+            if (affected !== 1) {
+                // Token invalid/expired/already used (or a parallel call already consumed it)
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+            }
+
+            // 2) Now update the password & history (still inside the same transaction)
+            const pwdHash = await this.hashingService.hash(confirmForgotPasswordDto.password);
+
+            // Avoid ever assigning plaintext:
+            // user.password = dto.password <-- remove this line in your original code
+
+            // Check reuse with your existing method (ensure it looks at hashes).
+            const tempUser = { ...user, password: pwdHash } as User; // if your helper expects it
+            if (await this.isPasswordDuplicate(tempUser)) {
+                throw new BadRequestException(ERROR_MESSAGES.PASSWORD_REUSED);
+            }
+
+            await this.deleteOldPasswords(user);
+
+            await m.getRepository(User).update({ id: user.id }, { password: pwdHash });
+
+            const history = m.getRepository(UserPasswordHistory).create({
+                user: { id: user.id } as any,
+                passwordHash: pwdHash,
+            });
+            await m.getRepository(UserPasswordHistory).save(history);
+            this.notifyUserOnPasswordChanged(user);
+
+            return {
+                status: 'success',
+                message: SUCCESS_MESSAGES.FORGOT_PASSWORD_CONFIRMED,
+                error: '',
+                errorCode: '',
+                data: {},
+            };
+        });
+    }
+
+    private async notifyUserOnPasswordChanged(user: User) {
+        const companyLogo = await this.getCompanyLogo();
+
+        const forgotPasswordSendVerificationTokenOn = this.iamConfiguration.forgotPasswordSendVerificationTokenOn;
+
+        if (forgotPasswordSendVerificationTokenOn == ForgotPasswordSendVerificationTokenOn.EMAIL) {
+            const mailService = this.mailServiceFactory.getMailService();
+            mailService.sendEmailUsingTemplate(
+                user.email,
+                'password-changed',
+                {
+                    solidAppName: process.env.SOLID_APP_NAME,
+                    solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
+                    email: user.email,
+                    firstName: user.username,
+                    fullName: user.fullName,
+                    // TODO: Need to prefix this with the page url where the forgot password page will open up.
+                    passwordResetLink: `${process.env.IAM_FRONTEND_APP_FORGOT_PASSWORD_PAGE_URL}?token=${user.verificationTokenOnForgotPassword}`,
+                    companyLogoUrl: companyLogo
+                },
+                this.commonConfiguration.shouldQueueEmails,
+                null,
+                null,
+                'user',
+                user.id
+            );
         }
-
-        // 2. Validate if user has used a provider which is "local", only then it makes sense for us to initiate the forgot password routine. 
-        if (user.lastLoginProvider !== 'local') {
-            throw new BadRequestException(ERROR_MESSAGES.NON_LOCAL_PROVIDER);
-        }
-        if (!user.active) {
-            throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
-        }
-
-        // 3. Validate the verification token is proper & update the user record. 
-        if (user.verificationTokenOnForgotPassword !== confirmForgotPasswordDto.verificationToken) {
-            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_VERIFICATION_TOKEN);
-        }
-        if (user.verificationTokenOnForgotPasswordExpiresAt < new Date()) {
-            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_VERIFICATION_TOKEN);
-        }
-        user.forgotPasswordConfirmedAt = new Date();
-        user.verificationTokenOnForgotPassword = null;
-        user.verificationTokenOnForgotPasswordExpiresAt = null;
-
-        // 4. Update the users password while encrypting it.
-        const pwd = await this.hashingService.hash(confirmForgotPasswordDto.password);
-        user.password = confirmForgotPasswordDto.password
-
-        if (await this.isPasswordDuplicate(user)) {
-            throw new BadRequestException(ERROR_MESSAGES.PASSWORD_REUSED);
-        }
-        await this.deleteOldPasswords(user);
-
-        user.password = pwd;
-        const userPasswordHistory = new UserPasswordHistory();
-        userPasswordHistory.passwordHash = pwd;
-        userPasswordHistory.user = user;
-
-        await this.userRepository.save(user);
-        //FIXME: Do this check conditionally, basis a configuration parameter i.e if IAM_ALLOW_PREVIOUS_PASSWORDS=false, default true
-        await this.userPasswordHistoryRepository.save(userPasswordHistory);
-
-        return {
-            status: 'success',
-            message: SUCCESS_MESSAGES.FORGOT_PASSWORD_CONFIRMED,
-            error: '',
-            errorCode: '',
-            data: {}
+        // Assuming all users do not have mobile as mandatory.
+        if (forgotPasswordSendVerificationTokenOn == ForgotPasswordSendVerificationTokenOn.MOBILE && user.mobile) {
+            this.smsService.sendSMSUsingTemplate(
+                user.mobile,
+                'forgot-password',
+                {
+                    solidAppName: process.env.SOLID_APP_NAME,
+                    otp: user.verificationTokenOnForgotPassword,
+                    verificationTokenOnForgotPassword: user.verificationTokenOnForgotPassword,
+                    firstName: user.username,
+                    companyLogoUrl: companyLogo
+                }
+            );
         }
     }
+
+    // async confirmForgotPassword(confirmForgotPasswordDto: ConfirmForgotPasswordDto) {
+    //     // Steps / Algorithm: 
+    //     // 1. Identify the user using the specified "username", if not found exit.
+    //     // const user = await this.userRepository.findOne({
+    //     //     where: { username: confirmForgotPasswordDto.username, }
+    //     // });
+    //     const user = await this.resolveUserByVerificationToken(confirmForgotPasswordDto.verificationToken);
+
+    //     if (!user) {
+    //         throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+    //     }
+
+    //     // 2. Validate if user has used a provider which is "local", only then it makes sense for us to initiate the forgot password routine. 
+    //     if (user.lastLoginProvider !== 'local') {
+    //         throw new BadRequestException(ERROR_MESSAGES.NON_LOCAL_PROVIDER);
+    //     }
+    //     if (!user.active) {
+    //         throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
+    //     }
+
+    //     // 3. Validate the verification token is proper & update the user record. 
+    //     if (user.verificationTokenOnForgotPassword !== confirmForgotPasswordDto.verificationToken) {
+    //         throw new UnauthorizedException(ERROR_MESSAGES.INVALID_VERIFICATION_TOKEN);
+    //     }
+    //     if (user.verificationTokenOnForgotPasswordExpiresAt < new Date()) {
+    //         throw new UnauthorizedException(ERROR_MESSAGES.INVALID_VERIFICATION_TOKEN);
+    //     }
+    //     user.forgotPasswordConfirmedAt = new Date();
+    //     user.verificationTokenOnForgotPassword = null;
+    //     user.verificationTokenOnForgotPasswordExpiresAt = null;
+
+    //     // 4. Update the users password while encrypting it.
+    //     const pwd = await this.hashingService.hash(confirmForgotPasswordDto.password);
+    //     user.password = confirmForgotPasswordDto.password
+
+    //     if (await this.isPasswordDuplicate(user)) {
+    //         throw new BadRequestException(ERROR_MESSAGES.PASSWORD_REUSED);
+    //     }
+    //     await this.deleteOldPasswords(user);
+
+    //     user.password = pwd;
+    //     const userPasswordHistory = new UserPasswordHistory();
+    //     userPasswordHistory.passwordHash = pwd;
+    //     userPasswordHistory.user = user;
+
+    //     await this.userRepository.save(user);
+    //     //FIXME: Do this check conditionally, basis a configuration parameter i.e if IAM_ALLOW_PREVIOUS_PASSWORDS=false, default true
+    //     await this.userPasswordHistoryRepository.save(userPasswordHistory);
+
+    //     return {
+    //         status: 'success',
+    //         message: SUCCESS_MESSAGES.FORGOT_PASSWORD_CONFIRMED,
+    //         error: '',
+    //         errorCode: '',
+    //         data: {}
+    //     }
+    // }
 
     //FIXME: Do this check conditionally, basis a configuration parameter i.e if IAM_ALLOW_PREVIOUS_PASSWORDS=true, return immediately without processing, i.e false.
     private async isPasswordDuplicate(user: User) {
@@ -1088,7 +1213,7 @@ export class AuthenticationService {
             await this.userActivityHistoryService.logEvent('logout', user);
 
 
-            return { message: SUCCESS_MESSAGES.LOGOUT_SUCCESS};
+            return { message: SUCCESS_MESSAGES.LOGOUT_SUCCESS };
         } catch (err) {
             throw err instanceof UnauthorizedException || err instanceof InternalServerErrorException
                 ? err

@@ -17,6 +17,7 @@ import { MediaStorageProviderType } from '../dtos/create-media-storage-provider-
 import { ChatterMessageDetails } from '../entities/chatter-message-details.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { RequestContextService } from './request-context.service';
+import { ChatterMessageRepository } from 'src/repository/chatter-message.repository';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage>{
   constructor(
@@ -28,8 +29,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(ChatterMessage, 'default')
-    readonly repo: Repository<ChatterMessage>,
+    // @InjectRepository(ChatterMessage, 'default')
+    readonly repo: ChatterMessageRepository,
     @InjectRepository(ChatterMessageDetails, 'default')
     readonly chatterMessageDetailsRepo: Repository<ChatterMessageDetails>,
     readonly moduleRef: ModuleRef,

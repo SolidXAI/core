@@ -1,4 +1,5 @@
 import { IsNotEmpty, IsOptional } from "class-validator";
+import { SolidPasswordRegex } from "src/decorators/solid-password.decorator";
 
 export class ConfirmForgotPasswordDto {
     @IsNotEmpty()
@@ -13,5 +14,6 @@ export class ConfirmForgotPasswordDto {
     verificationToken: string;
 
     @IsNotEmpty()
+    @SolidPasswordRegex({ regex: /^$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).*$/})
     password: string;
 }

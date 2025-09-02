@@ -134,6 +134,7 @@ export * from './entities/dashboard-question-sql-dataset-config.entity'
 export * from './entities/ai-interaction.entity'
 
 export * from './enums/auth-type.enum'
+export * from './decorators/disallow-in-production.decorator'
 
 export * from './filters/http-exception.filter'
 
@@ -167,6 +168,8 @@ export * from './helpers/field-crud-managers/SelectionStaticFieldCrudManager' //
 export * from './helpers/field-crud-managers/ShortTextFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/UUIDFieldCrudManager' //rename
 export * from './helpers/environment.helper'
+export * from './helpers/cors.helper'
+export * from './helpers/security.helper'
 
 export * from './services/crud.service'
 export * from './interceptors/logging.interceptor'

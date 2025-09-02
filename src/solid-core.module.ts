@@ -270,6 +270,9 @@ import { MailFactory } from './factories/mail.factory';
 import { TwilioSMSService } from './services/sms/TwilioSMSService';
 import { PollerService } from './services/poller.service';
 import { TextractService } from './services/textract.service';
+import { seconds, ThrottlerModule } from '@nestjs/throttler';
+import { ChatterMessageRepository } from './repository/chatter-message.repository';
+import { ChatterMessageDetailsRepository } from './repository/chatter-message-details.repository';
 
 
 @Global()
@@ -309,6 +312,10 @@ import { TextractService } from './services/textract.service';
       ImportTransactionErrorLog,
       UserActivityHistory,
       AiInteraction,
+      Dashboard,
+      DashboardVariable,
+      DashboardQuestion,
+      DashboardQuestionSqlDatasetConfig,
     ]),
     ConfigModule.forFeature(appBuilderConfig),
     ConfigModule.forFeature(commonConfig),
@@ -319,6 +326,17 @@ import { TextractService } from './services/textract.service';
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'media-files-storage'),
       serveRoot: '/media-files-storage',
+      serveStaticOptions: {
+        setHeaders: (res /*, path, stat*/) => {
+          // Allow use of these files from a different origin (e.g., :3000 UI)
+          // Use 'same-site' if both origins are on the same site (localhost:* counts as same-site)
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'); // or 'same-site'
+
+          // If you need to load into <canvas> without tainting or fetch images via XHR,
+          // you can also expose CORS here (not needed for simple <img>):
+          // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+        },
+      }
     }),
     MulterModule.registerAsync({
       imports: [ConfigModule],
@@ -330,11 +348,14 @@ import { TextractService } from './services/textract.service';
     HttpModule,
     ConfigModule,
     ClsModule,
-    TypeOrmModule.forFeature([Dashboard]),
-    TypeOrmModule.forFeature([DashboardVariable]),
-    TypeOrmModule.forFeature([DashboardQuestion]),
-    TypeOrmModule.forFeature([DashboardQuestionSqlDatasetConfig]),
-    TypeOrmModule.forFeature([AiInteraction]),
+    ThrottlerModule.forRoot({
+      throttlers: [
+        { name: 'short', ttl: seconds(10),  limit: 10 },
+        { name: 'login', ttl: seconds(10),  limit: 5  },
+        { name: 'burst', ttl: seconds(1),  limit: 100 },
+        { name: 'sustained', ttl: seconds(300), limit: 500 },
+      ],
+    }),
   ],
   controllers: [
     ModuleMetadataController,
@@ -567,6 +588,8 @@ import { TextractService } from './services/textract.service';
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
     MailFactory,
+    ChatterMessageRepository,
+    ChatterMessageDetailsRepository,
   ],
   exports: [
     ModuleMetadataService,
@@ -613,6 +636,7 @@ import { TextractService } from './services/textract.service';
     MailFactory,
     PollerService,
     AiInteractionService,
+    ThrottlerModule,
   ],
 })
 export class SolidCoreModule { }
