@@ -740,14 +740,14 @@ export class AuthenticationService {
 
     // generate uuid token for forgot password
     private generateForgotPasswordToken() {
-        const now = new Date();
-        now.setMinutes(now.getMinutes() + this.iamConfiguration.otpExpiry);
+        const expiryTime = new Date();
+        expiryTime.setMinutes(expiryTime.getMinutes() + this.iamConfiguration.forgotPasswordVerificationTokenExpiry);
 
         return {
             token: this.iamConfiguration.dummyOtp
                 ? this.iamConfiguration.dummyOtp
                 : uuidv4(),   // UUID instead of numeric OTP
-            expiresAt: now,
+            expiresAt: expiryTime,
         };
     }
 
@@ -760,15 +760,15 @@ export class AuthenticationService {
         const user = await this.resolveUser(initiateForgotPasswordDto.username, initiateForgotPasswordDto.email);
 
         if (!user) {
-            throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
+            throw new NotFoundException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
         if (!user.active) {
-            throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
+            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
 
         // 2. Validate if user has used a provider which is "local", only then it makes sense for us to initiate the forgot password routine. 
         if (user.lastLoginProvider !== 'local') {
-            throw new BadRequestException(ERROR_MESSAGES.NON_LOCAL_PROVIDER);
+            throw new BadRequestException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
 
         // 3. Generate a 6 digit validation token, we send this token to the user over their email & mobile number (controlled using configuration).
@@ -841,9 +841,9 @@ export class AuthenticationService {
         return this.dataSource.transaction(async (m) => {
             // Resolve the user id first (by username/email), but DON'T check the token in JS.
             const user = await this.resolveUserByVerificationToken(confirmForgotPasswordDto.verificationToken);
-            if (!user) throw new NotFoundException(ERROR_MESSAGES.USER_NOT_FOUND);
-            if (user.lastLoginProvider !== 'local') throw new BadRequestException(ERROR_MESSAGES.NON_LOCAL_PROVIDER);
-            if (!user.active) throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
+            if (!user) throw new NotFoundException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+            if (user.lastLoginProvider !== 'local') throw new BadRequestException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+            if (!user.active) throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
 
             // 1) Atomically consume the token (only one request can succeed)
             const { affected } = await m
@@ -861,7 +861,7 @@ export class AuthenticationService {
 
             if (affected !== 1) {
                 // Token invalid/expired/already used (or a parallel call already consumed it)
-                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_VERIFICATION_TOKEN);
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
             }
 
             // 2) Now update the password & history (still inside the same transaction)

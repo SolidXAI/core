@@ -9,6 +9,7 @@ export const iamConfig = registerAs('iam', () => {
         activateUserOnRegistration: (process.env.IAM_ACTIVATE_USER_ON_REGISTRATION ?? 'true') === 'true',
         autoLoginUserOnRegistration: (process.env.IAM_AUTO_LOGIN_USER_ON_REGISTRATION ?? 'false') === 'true',
         otpExpiry: parseInt(process.env.IAM_OTP_EXPIRY ?? '10'),
+        forgotPasswordVerificationTokenExpiry: parseInt(process.env.IAM_FORGOT_PASSWORD_VERIFICATION_TOKEN_EXPIRY ?? '10'),
         defaultRole: process.env.IAM_DEFAULT_ROLE ?? 'Public',
         dummyOtp: process.env.IAM_OTP_DUMMY,
         forgotPasswordSendVerificationTokenOn: process.env.IAM_FORGOT_PASSWORD_SEND_VERIFICATION_TOKEN_ON ?? 'email',
