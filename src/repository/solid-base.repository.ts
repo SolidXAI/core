@@ -7,6 +7,7 @@ import {
     DataSource,
     EntityNotFoundError,
     EntityTarget,
+    FindManyOptions,
     FindOneOptions,
     FindOptionsWhere,
     QueryRunner,
@@ -76,5 +77,35 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
             throw new EntityNotFoundError(this.metadata.target, options?.where ?? {});
         }
         return entity;
+    }
+
+    /**
+     * Security-aware find(): builds from our secured QB and preserves all FindManyOptions
+     * (where, relations, select, order, take/skip, withDeleted, etc.).
+     */
+    override async find(options?: FindManyOptions<T>): Promise<T[]> {
+        const alias = this.modelSingularName();
+        const qb = this.createQueryBuilder(alias);
+
+        if (options) {
+            qb.setFindOptions(options);
+        }
+
+        return qb.getMany();
+    }
+
+    /**
+     * (Optional) Security-aware findAndCount(): same as find(), plus a total count.
+     * Mirrors Repository.findAndCount semantics.
+     */
+    override async findAndCount(options?: FindManyOptions<T>): Promise<[T[], number]> {
+        const alias = this.modelSingularName();
+        const qb = this.createQueryBuilder(alias);
+
+        if (options) {
+            qb.setFindOptions(options);
+        }
+
+        return qb.getManyAndCount();
     }
 }
