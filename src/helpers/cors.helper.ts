@@ -3,7 +3,7 @@ import { ConfigService } from '@nestjs/config';
 
 /** Build CorsOptions from env; supports wildcards like https://*.example.com */
 export function buildDefaultCorsOptions(configService: ConfigService): CorsOptions {
-  const rawOrigins = configService.get<string>('CORS_ORIGINS') ?? '';
+  const rawOrigins = configService.get<string>('SECURITY_CORS_ORIGINS') ?? '*';
   const allowed = rawOrigins.split(',').map(s => s.trim()).filter(Boolean);
 
   const escapeRx = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
