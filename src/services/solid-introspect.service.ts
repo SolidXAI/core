@@ -10,6 +10,7 @@ import { CRUDService } from './crud.service';
 import { IS_SCHEDULED_JOB_PROVIDER } from 'src/decorators/scheduled-job-provider.decorator';
 import { IS_DASHBOARD_VARIABLE_SELECTION_PROVIDER } from 'src/decorators/dashboard-selection-provider.decorator';
 import { IS_DASHBOARD_QUESTION_DATA_PROVIDER } from 'src/decorators/dashboard-question-data-provider.decorator';
+import { IS_MAIL_PROVIDER } from 'src/decorators/mail-provider.decorator';
 
 @Injectable()
 export class SolidIntrospectService implements OnApplicationBootstrap {
@@ -40,7 +41,6 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       .filter((provider) => this.isSelectionProvider(provider));
 
     selectionProviders.forEach((selectionProvider) => {
-      // @ts-ignore
       this.solidRegistry.registerSelectionProvider(selectionProvider);
     });
 
@@ -50,7 +50,6 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       .filter((provider) => this.isDashboardVariableSelectionProvider(provider));
 
     dashboardVariableSelectionProviders.forEach((dashboardSelectionProvider) => {
-      // @ts-ignore
       this.solidRegistry.registerDashboardVariableSelectionProvider(dashboardSelectionProvider);
     });
 
@@ -60,7 +59,6 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       .filter((provider) => this.isDashboardQuestionDataProvider(provider));
 
     dashboardQuestionDataProviders.forEach((provider) => {
-      // @ts-ignore
       this.solidRegistry.registerDashboardQuestionDataProvider(provider);
     });
 
@@ -81,7 +79,6 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       .filter((provider) => this.isSolidDatabaseModule(provider));
 
     solidDatabaseModules.forEach((solidDatabaseModule) => {
-      // @ts-ignore
       this.solidRegistry.registerSolidDatabaseModule(solidDatabaseModule);
     });
 
@@ -110,10 +107,17 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       .filter((provider) => this.isScheduledJobProvider(provider));
 
     scheduledJobProviders.forEach((scheduledJobProvider) => {
-      // @ts-ignore
       this.solidRegistry.registerScheduledJobProvider(scheduledJobProvider);
     });
 
+    // Register all IMail implementations
+    const mailProviders = this.discoveryService
+      .getProviders()
+      .filter((provider) => this.isMailProvider(provider));
+
+    mailProviders.forEach((mailProvider) => {
+      this.solidRegistry.registerMailProvider(mailProvider);
+    });
   }
 
   isDashboardQuestionDataProvider(providerWrapper: InstanceWrapper<any>) {
@@ -194,6 +198,18 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     );
 
     return !!isSolidDatabaseModule;
+  }
+
+  private isMailProvider(provider: InstanceWrapper) {
+    const { instance } = provider;
+    if (!instance) return false;
+
+    const isMailProvider = this.reflector.get<boolean>(
+      IS_MAIL_PROVIDER,
+      instance.constructor,
+    );
+
+    return !!isMailProvider;
   }
 
   private isModule(provider: InstanceWrapper): boolean {

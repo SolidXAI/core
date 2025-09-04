@@ -7,6 +7,7 @@ import { QueuesModuleOptions, TriggerMcpClientOptions } from "../../interfaces";
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
 import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
 import { AiInteractionService } from 'src/services/ai-interaction.service';
+import { PollerService } from 'src/services/poller.service';
 
 @Injectable()
 export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<TriggerMcpClientOptions> {
@@ -15,9 +16,10 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
     constructor(
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
+        readonly poller: PollerService,
         readonly aiInteractionService: AiInteractionService,
     ) {
-        super(mqMessageService, mqMessageQueueService);
+        super(mqMessageService, mqMessageQueueService, poller);
     }
 
     options(): QueuesModuleOptions {
@@ -56,6 +58,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             await this.aiInteractionService.create({
                 userId: aiInteraction.user.id,
                 threadId: aiInteraction.threadId,
+                parentInteractionId: aiInteraction.id,
                 role: 'gen-ai',
                 message: '-',
                 contentType: aiResponse.content_type,
@@ -72,9 +75,10 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         else {
             let nestedResponse = aiResponse.response.trim();
 
-            await this.aiInteractionService.create({
+            const genAiInteraction = await this.aiInteractionService.create({
                 userId: aiInteraction.user.id,
                 threadId: aiInteraction.threadId,
+                parentInteractionId: aiInteraction.id,
                 role: 'gen-ai',
                 message: nestedResponse,
                 contentType: aiResponse.content_type,
@@ -84,6 +88,11 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 metadata: JSON.stringify(aiResponse),
                 isApplied: aiInteraction.isApplied
             });
+
+            // If the human interaction was with isAutoApply=true, then we can go ahead and autoApply.
+            if (aiInteraction.isAutoApply) {
+                this.aiInteractionService.applySolidAiInteraction(genAiInteraction.id);
+            }
         }
 
         return aiResponse;

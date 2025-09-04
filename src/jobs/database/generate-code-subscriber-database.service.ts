@@ -8,6 +8,7 @@ import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.serv
 import generateCodeQueueOptions from './generate-code-queue-options-database';
 import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
+import { PollerService } from 'src/services/poller.service';
 
 @Injectable()
 export class GenerateCodeSubscriberDatabase extends DatabaseSubscriber<CodeGenerationOptions> {
@@ -16,10 +17,11 @@ export class GenerateCodeSubscriberDatabase extends DatabaseSubscriber<CodeGener
     constructor(
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
+        readonly poller: PollerService,
         @Inject(forwardRef(() => ModelMetadataService))
         readonly modelMetadataService: ModelMetadataService,
     ) {
-        super(mqMessageService, mqMessageQueueService);
+        super(mqMessageService, mqMessageQueueService, poller);
     }
 
     options(): QueuesModuleOptions {

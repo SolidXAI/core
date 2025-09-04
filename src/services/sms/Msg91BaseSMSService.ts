@@ -20,7 +20,7 @@ export abstract class Msg91BaseSMSService implements ISMS {
         throw new Error(`Msg91 does not support sending plain text messages, you need to register a template and use the templateId to send the SMS.`);
     }
 
-    async sendSMSUsingTemplate(to: string, templateName: string, templateParams: any, shouldQueueSms = false): Promise<void> {
+    async sendSMSUsingTemplate(to: string, templateName: string, templateParams: any, shouldQueueSms = false): Promise<any> {
         // Load template and evaluate it. 
         const emailTemplate = await this.smsTemplateService.findOneByName(templateName);
         if (!emailTemplate) {
@@ -76,5 +76,5 @@ export abstract class Msg91BaseSMSService implements ISMS {
         this.logger.debug(`Queueing SMS to ${to} with message ${JSON.stringify(message)}`);
     }
 
-    abstract sendSMSSynchronously(message: QueueMessage<any>): Promise<void>
+    abstract sendSMSSynchronously(message: QueueMessage<any>): Promise<any>
 }

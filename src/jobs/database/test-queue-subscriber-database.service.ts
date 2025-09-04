@@ -6,6 +6,7 @@ import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../../interfaces";
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
+import { PollerService } from 'src/services/poller.service';
 
 @Injectable()
 export class TestQueueSubscriberDatabase extends DatabaseSubscriber<any> {
@@ -13,8 +14,9 @@ export class TestQueueSubscriberDatabase extends DatabaseSubscriber<any> {
     constructor(
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
+        readonly poller: PollerService
     ) {
-        super(mqMessageService, mqMessageQueueService);
+        super(mqMessageService, mqMessageQueueService, poller);
     }
 
     options(): QueuesModuleOptions {

@@ -48,9 +48,20 @@ export class CreateAiInteractionDto {
     @IsJSON()
     @ApiProperty()
     metadata: any;
-
-@IsOptional()
-@IsBoolean()
-@ApiProperty()
-isApplied: boolean = false;
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty()
+    isApplied: boolean = false;
+    @IsOptional()
+    @IsInt()
+    @ApiProperty()
+    parentInteractionId: number;
+    @IsString()
+    @IsOptional()
+    @ApiProperty()
+    parentInteractionUserKey: string;
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty()
+    isAutoApply: boolean = false;
 }

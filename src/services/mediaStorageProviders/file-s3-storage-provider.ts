@@ -60,7 +60,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
         const result: Media[] = [];
-        files.forEach(async (file) => {
+        for (const file of files) {
             const fileName = this.getFileName(file);
             // Store the file in the configured S3 Bucket
             let awsFileUrl;
@@ -84,7 +84,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             }) as unknown as Media;
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
-        });
+        };
         return result;
     }
 

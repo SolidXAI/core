@@ -43,7 +43,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'aiInteraction', 'solid-core', moduleRef);
   }
 
-  async triggerMcpClientJob(prompt: string): Promise<string> {
+  async triggerMcpClientJob(prompt: string, isAutoApply: boolean = false): Promise<any> {
     const activeUser: ActiveUserData = this.requestContextService.getActiveUser();
 
     const aiInteraction = await this.create({
@@ -55,7 +55,8 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
       errorMessage: '',
       modelUsed: '',
       responseTimeMs: 0,
-      metadata: ''
+      metadata: '',
+      isAutoApply: isAutoApply
     });
     const m = {
       payload: {
@@ -65,7 +66,12 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
       parentEntityId: aiInteraction.id,
     };
 
-    return await this.publisherFactory.publish(m, 'TriggerMcpClientPublisher');
+    const queueMessageId = await this.publisherFactory.publish(m, 'TriggerMcpClientPublisher');
+
+    return {
+      queueMessageId: queueMessageId,
+      aiInteractionId: aiInteraction.id
+    }
   }
 
   /**
@@ -206,7 +212,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
 
     // TODO: This provider to implement an interface - IMcpToolResponseHandler ... apply(aiInteraction: AiInteraction)
     // throw new Error('Method not implemented.');
-    
+
     // Mark the interaction as applied
     await this.update(aiInteraction.id, { isApplied: true }, [], true);
 

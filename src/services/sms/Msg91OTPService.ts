@@ -28,7 +28,7 @@ export class Msg91OTPService extends Msg91BaseSMSService implements ISMS {
         super(commonConfiguration, 'OTPQueuePublisher', publisherFactory, smsTemplateService);
     }
 
-    async sendSMSSynchronously(message: QueueMessage<any>): Promise<void> {
+    async sendSMSSynchronously(message: QueueMessage<any>): Promise<any> {
         const { to, templateId, otp } = message.payload;
         const params = { otp, template_id: templateId, mobile: to, authkey: this.commonConfiguration.msg91Sms.apiKey }
         const otpUrl = `${this.commonConfiguration.msg91Sms.url}/otp?${this.paramsToQueryString(params)}`;

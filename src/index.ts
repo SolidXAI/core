@@ -21,6 +21,8 @@ export * from './decorators/roles.decorator'
 export * from './decorators/selection-provider.decorator'
 export * from './decorators/solid-database-module.decorator'
 export * from './decorators/solid-service.decorator'
+export * from './decorators/mail-provider.decorator'
+
 export * from './dtos/basic-filters.dto'
 export * from './dtos/solid-request-context.dto'
 export * from './dtos/change-password.dto'
@@ -164,6 +166,8 @@ export * from './helpers/field-crud-managers/SelectionDynamicFieldCrudManager' /
 export * from './helpers/field-crud-managers/SelectionStaticFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/ShortTextFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/UUIDFieldCrudManager' //rename
+export * from './helpers/environment.helper'
+
 export * from './services/crud.service'
 export * from './interceptors/logging.interceptor'
 export * from './interceptors/wrap-response.interceptor'
@@ -177,9 +181,9 @@ export * from './services/scheduled-jobs/scheduler.service';
 export * from './jobs/api-email-publisher.service'
 export * from './jobs/api-email-queue-options'
 export * from './jobs/api-email-subscriber.service'
-export * from './jobs/email-publisher.service'
-export * from './jobs/email-queue-options'
-export * from './jobs/email-subscriber.service'
+export { SmtpEmailQueuePublisherRabbitmq, SmtpEmailQueuePublisherRabbitmq as EmailQueuePublisher } from './jobs/smtp-email-publisher.service' // alias for backward compatibility
+export * from './jobs/smtp-email-queue-options'
+export { SmtpEmailQueueSubscriberRabbitmq, SmtpEmailQueueSubscriberRabbitmq as EmailQueueSubscriber } from './jobs/smtp-email-subscriber.service' // alias for backward compatibility
 export * from './jobs/otp-publisher.service'
 export * from './jobs/otp-queue-options'
 export * from './jobs/otp-subscriber.service'
@@ -241,6 +245,8 @@ export * from './services/short-url/tiny-url.service'
 export * from './services/sms/Msg91BaseSMSService' //rename
 export * from './services/sms/Msg91OTPService' //rename
 export * from './services/sms/Msg91SMSService' //rename
+export * from './services/sms/TwilioSMSService' //rename
+export * from './services/poller.service'
 export * from './services/sms-template.service'
 export * from './services/solid-introspect.service'
 export * from './services/user.service'
@@ -260,6 +266,10 @@ export * from './services/csv.service'
 export * from './services/queues/publisher-factory.service'
 export * from './services/queues/database-publisher.service'
 export * from './services/queues/database-subscriber.service'
+export * from './services/ai-interaction.service'
+
+// Factories
+export * from './factories/mail.factory'
 
 // Repositories
 export * from './repository/solid-base.repository'

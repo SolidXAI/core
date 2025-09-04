@@ -21,7 +21,7 @@ export class Msg91SMSService extends Msg91BaseSMSService implements ISMS {
         super(commonConfiguration, 'SmsQueuePublisher', publisherFactory, smsTemplateService)
     }
 
-    async sendSMSSynchronously(message: QueueMessage<any>): Promise<void> {
+    async sendSMSSynchronously(message: QueueMessage<any>): Promise<any> {
         const { to, templateId, ...templateParams } = message.payload;
         const body = { template_id: templateId, short_url: "0", recipients: [{ mobiles: to, ...templateParams }] };
         const headers = { "authkey": this.commonConfiguration.msg91Sms.apiKey };

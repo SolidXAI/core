@@ -84,7 +84,6 @@ export class MediaService extends CRUDService<Media> {
     const savedMedias = [];
     for (let i = 0; i < files.length; i++) {
 
-
       createDto['fieldMetadata'] = await this.fieldMetadataRepo.findOne({
         where: {
           id: createDto['fieldMetadataId']
@@ -113,9 +112,9 @@ export class MediaService extends CRUDService<Media> {
           const fileName = this.getFileName(file);
           let awsFileUrl;
           if (createDto.mediaStorageProviderMetadata.isPublic === true) {
-            awsFileUrl = await this.fileService.copyToS3(file.path, file.mimetype, fileName, createDto.mediaStorageProviderMetadata.bucketName,);
-          } else {
             awsFileUrl = await this.fileService.copyToS3WithPublic(file.path, file.mimetype, fileName, createDto.mediaStorageProviderMetadata.bucketName,);
+          } else {
+            awsFileUrl = await this.fileService.copyToS3(file.path, file.mimetype, fileName, createDto.mediaStorageProviderMetadata.bucketName,);
           }
           // createDto['relativeUri'] = this.getAwsS3FullFilePath(awsFileUrl, createDto.mediaStorageProviderMetadata.bucketName, createDto.mediaStorageProviderMetadata.region);
           createDto['relativeUri'] = awsFileUrl

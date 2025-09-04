@@ -38,7 +38,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
         const result: Media[] = [];
-        files.forEach(async (file) => {
+        for (const file of files) {
             // Store the file in the configured file storage directory
             const fileStoragePath = this.getFullFilePath(this.getFileName(file));
             await this.fileService.copyFile(file.path, fileStoragePath);
@@ -57,7 +57,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
             }) as unknown as Media;
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
-        });
+        };
         return result;
     }
 
@@ -66,7 +66,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
             throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
         const result: Media[] = [];
-        streamPairs.forEach(async (pair) => {
+        for (const pair of streamPairs) {
             const stream = pair[0];
             const fileName = pair[1];
             this.fileService.writeStreamToFile(stream, this.getFullFilePath(fileName));
@@ -78,7 +78,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
                 fieldMetadataId: mediaFieldMetadata.id
             }) as unknown as Media;
             this.logger.debug(`Stored media with`, mediaEntity);
-        });
+        };
         return result;
     }
 

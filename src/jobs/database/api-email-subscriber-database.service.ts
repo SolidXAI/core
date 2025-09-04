@@ -7,6 +7,7 @@ import { MqMessageQueueService } from 'src/services/mq-message-queue.service';
 import { ElasticEmailService } from 'src/services/mail/elastic-email.service';
 import { QueuesModuleOptions } from 'src/interfaces';
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
+import { PollerService } from 'src/services/poller.service';
 
 @Injectable()
 export class ApiEmailQueueSubscriberDatabase extends DatabaseSubscriber<any> {
@@ -14,8 +15,9 @@ export class ApiEmailQueueSubscriberDatabase extends DatabaseSubscriber<any> {
         private readonly emailService: ElasticEmailService,
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
+        readonly poller: PollerService,
     ) {
-        super(mqMessageService, mqMessageQueueService);
+        super(mqMessageService, mqMessageQueueService, poller);
     }
 
     options(): QueuesModuleOptions {

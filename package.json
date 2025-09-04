@@ -1,6 +1,6 @@
 {
   "name": "@solidstarters/solid-core",
-  "version": "1.2.145",
+  "version": "1.2.150",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -67,6 +67,7 @@
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.0",
+    "twilio": "^5.8.0",
     "uuid": "^9.0.1",
     "xlsx": "^0.18.5"
   },
@@ -87,10 +88,10 @@
     "@nestjs/typeorm": "^10.0.1",
     "nest-commander": "^3.12.5",
     "nest-winston": "^1.9.7",
+    "nestjs-cls": "^5.4.3",
     "typeorm": "^0.3.20",
     "typeorm-naming-strategies": "^4.1.0",
-    "winston": "^3.17.0",
-    "nestjs-cls": "^5.4.3"
+    "winston": "^3.17.0"
   },
   "devDependencies": {
     "@angular-devkit/schematics": "^19.2.6",

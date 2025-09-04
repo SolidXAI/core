@@ -86,8 +86,8 @@ import { ApiEmailQueuePublisher } from './jobs/api-email-publisher.service';
 import { ApiEmailQueueSubscriber } from './jobs/api-email-subscriber.service';
 import { TestQueuePublisherDatabase } from './jobs/database/test-queue-publisher-database.service';
 import { TestQueueSubscriberDatabase } from './jobs/database/test-queue-subscriber-database.service';
-import { EmailQueuePublisher } from './jobs/email-publisher.service';
-import { EmailQueueSubscriber } from './jobs/email-subscriber.service';
+import { SmtpEmailQueuePublisherRabbitmq } from './jobs/smtp-email-publisher.service';
+import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/smtp-email-subscriber.service';
 import { OTPQueuePublisher } from './jobs/otp-publisher.service';
 import { OTPQueueSubscriber } from './jobs/otp-subscriber.service';
 import { SmsQueuePublisher } from './jobs/sms-publisher.service';
@@ -178,14 +178,19 @@ import { ApiEmailQueuePublisherDatabase } from './jobs/database/api-email-publis
 import { ApiEmailQueueSubscriberDatabase } from './jobs/database/api-email-subscriber-database.service';
 import { ComputedFieldEvaluationPublisher } from './jobs/database/computed-field-evaluation-publisher.service';
 import { ComputedFieldEvaluationSubscriber } from './jobs/database/computed-field-evaluation-subscriber.service';
-import { EmailQueuePublisherDatabase } from './jobs/database/email-publisher-database.service';
-import { EmailQueueSubscriberDatabase } from './jobs/database/email-subscriber-database.service';
+import { SmtpEmailQueuePublisherDatabase } from './jobs/database/smtp-email-publisher-database.service';
+import { SmtpEmailQueueSubscriberDatabase } from './jobs/database/smtp-email-subscriber-database.service';
 import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-publisher-database.service';
 import { GenerateCodeSubscriberDatabase } from './jobs/database/generate-code-subscriber-database.service';
 import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-database.service';
 import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
 import { SmsQueuePublisherDatabase } from './jobs/database/sms-publisher-database.service';
 import { SmsQueueSubscriberDatabase } from './jobs/database/sms-subscriber-database.service';
+
+import { TwilioSmsQueuePublisherDatabase } from './jobs/database/twilio-sms-publisher-database.service';
+import { TwilioSmsQueueSubscriberDatabase } from './jobs/database/twilio-sms-subscriber-database.service';
+
+
 import { TriggerMcpClientPublisherDatabase } from './jobs/database/trigger-mcp-client-publisher-database.service';
 import { TriggerMcpClientSubscriberDatabase } from './jobs/database/trigger-mcp-client-subscriber-database.service';
 import { WhatsappQueuePublisherDatabase } from './jobs/database/whatsapp-publisher-database.service';
@@ -262,6 +267,9 @@ import { AlphaNumExternalIdComputationProvider } from './services/computed-field
 import { ListOfValuesMapper } from './mappers/list-of-values-mapper';
 import { ListOfValuesMetadataSubscriber } from './subscribers/list-of-values-metadata.subscriber';
 import { ListOfValuesMetadataService } from './services/list-of-values-metadata.service';
+import { MailFactory } from './factories/mail.factory';
+import { TwilioSMSService } from './services/sms/TwilioSMSService';
+import { PollerService } from './services/poller.service';
 
 
 @Global()
@@ -429,9 +437,11 @@ import { ListOfValuesMetadataService } from './services/list-of-values-metadata.
     Msg91SMSService,
     Msg91OTPService,
     Msg91WhatsappService,
+    TwilioSMSService,
     SmsTemplateService,
     EmailTemplateService,
     PublisherFactory,
+    PollerService,
 
     McpToolResponseHandlerFactory,
     SolidCreateModuleMcpToolResponseHandler,
@@ -439,10 +449,10 @@ import { ListOfValuesMetadataService } from './services/list-of-values-metadata.
     TriggerMcpClientPublisherDatabase,
     TriggerMcpClientSubscriberDatabase,
 
-    EmailQueuePublisher,
-    EmailQueueSubscriber,
-    EmailQueuePublisherDatabase,
-    EmailQueueSubscriberDatabase,
+    SmtpEmailQueuePublisherRabbitmq,
+    SmtpEmailQueueSubscriberRabbitmq,
+    SmtpEmailQueuePublisherDatabase,
+    SmtpEmailQueueSubscriberDatabase,
     ApiEmailQueuePublisher,
     ApiEmailQueueSubscriber,
     ApiEmailQueuePublisherDatabase,
@@ -451,6 +461,8 @@ import { ListOfValuesMetadataService } from './services/list-of-values-metadata.
     SmsQueueSubscriber,
     SmsQueuePublisherDatabase,
     SmsQueueSubscriberDatabase,
+    TwilioSmsQueuePublisherDatabase,
+    TwilioSmsQueueSubscriberDatabase,
     OTPQueuePublisher,
     OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
@@ -554,6 +566,7 @@ import { ListOfValuesMetadataService } from './services/list-of-values-metadata.
     ListOfValuesMetadataService,
     ListOfValuesMetadataSubscriber,
     ListOfValuesMapper,
+    MailFactory,
   ],
   exports: [
     ModuleMetadataService,
@@ -571,6 +584,7 @@ import { ListOfValuesMetadataService } from './services/list-of-values-metadata.
     ElasticEmailService,
     Msg91SMSService,
     Msg91OTPService,
+    TwilioSMSService,
     Msg91WhatsappService,
     TinyUrlService,
     PdfService,
@@ -595,6 +609,9 @@ import { ListOfValuesMetadataService } from './services/list-of-values-metadata.
     ListOfValuesService,
     ConfigModule,
     PublisherFactory,
+    MailFactory,
+    PollerService,
+    AiInteractionService,
   ],
 })
 export class SolidCoreModule { }

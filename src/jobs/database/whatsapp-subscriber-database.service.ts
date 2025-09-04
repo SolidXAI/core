@@ -8,6 +8,7 @@ import { MqMessageQueueService } from 'src/services/mq-message-queue.service';
 import { Msg91WhatsappService } from 'src/services/whatsapp/Msg91WhatsappService';
 import { QueuesModuleOptions } from 'src/interfaces';
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
+import { PollerService } from 'src/services/poller.service';
 
 @Injectable()
 export class WhatsappQueueSubscriberDatabase extends DatabaseSubscriber<any> {
@@ -15,8 +16,9 @@ export class WhatsappQueueSubscriberDatabase extends DatabaseSubscriber<any> {
         private readonly whatsappService: Msg91WhatsappService,
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
+        readonly poller: PollerService,
     ) {
-        super(mqMessageService, mqMessageQueueService);
+        super(mqMessageService, mqMessageQueueService, poller);
     }
 
     options(): QueuesModuleOptions {

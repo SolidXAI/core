@@ -23,12 +23,12 @@ export class CreateUserDto {
     @ApiProperty()
     mobile: string;
     @IsOptional()
-    @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).*$/)
+    @Matches(/^$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).*$/)
     @IsString()
     @ApiProperty()
     password: string;
     @IsOptional()
-    @Matches(/^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).*$/)
+    @Matches(/^$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).*$/)
     @IsString()
     @ApiProperty()
     passwordConfirm: string;

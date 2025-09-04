@@ -52,9 +52,20 @@ export class UpdateAiInteractionDto {
     @IsJSON()
     @ApiProperty()
     metadata: any;
-
-@IsOptional()
-@IsBoolean()
-@ApiProperty()
-isApplied: boolean;
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty()
+    isApplied: boolean;
+    @IsOptional()
+    @IsInt()
+    @ApiProperty()
+    parentInteractionId: number;
+    @IsString()
+    @IsOptional()
+    @ApiProperty()
+    parentInteractionUserKey: string;
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty()
+    isAutoApply: boolean;
 }

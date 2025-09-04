@@ -4936,7 +4936,7 @@
         "tableName": "ss_ai_interactions",
         "dataSource": "default",
         "dataSourceType": "postgres",
-        "userKeyFieldUserKey": "message",
+        "userKeyFieldUserKey": "externalId",
         "isSystem": false,
         "fields": [
           {
@@ -4956,6 +4956,35 @@
             "isSystem": true
           },
           {
+            "name": "externalId",
+            "displayName": "External ID",
+            "description": "Used to track using a reference number of each ai interaction.",
+            "type": "computed",
+            "ormType": "varchar",
+            "isSystem": false,
+            "computedFieldValueType": "string",
+            "computedFieldTriggerConfig": [
+              {
+                "modelName": "aiInteraction",
+                "moduleName": "solid-core",
+                "operations": [
+                  "before-insert"
+                ]
+              }
+            ],
+            "computedFieldValueProvider": "AlphaNumExternalIdComputationProvider",
+            "computedFieldValueProviderCtxt": "{\n  \"prefix\": \"AI\",\n  \"length\": \"10\"\n}",
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": true
+          },
+          {
             "name": "threadId",
             "displayName": "Thread ID",
             "type": "shortText",
@@ -4966,6 +4995,22 @@
             "index": true,
             "private": false,
             "encrypt": false
+          },
+          {
+            "name": "parentInteraction",
+            "displayName": "Parent Interaction",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "aiInteraction",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           },
           {
             "name": "role",
@@ -5067,6 +5112,17 @@
           {
             "name": "isApplied",
             "displayName": "Is Applied",
+            "type": "boolean",
+            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "isAutoApply",
+            "displayName": "Is Auto Apply",
             "type": "boolean",
             "ormType": "boolean",
             "required": false,
@@ -11757,7 +11813,7 @@
       }
     },
     {
-      "name": "ai-interaction-list-view",
+      "name": "aiInteraction-list-view",
       "displayName": "AI Interaction",
       "type": "list",
       "context": "{}",
@@ -11788,6 +11844,18 @@
             "type": "field",
             "attrs": {
               "name": "threadId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "externalId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "parentInteraction"
             }
           },
           {
@@ -11824,7 +11892,7 @@
       }
     },
     {
-      "name": "ai-interaction-form-view",
+      "name": "aiInteraction-form-view",
       "displayName": "AI Interaction",
       "type": "form",
       "context": "{}",
@@ -11880,6 +11948,12 @@
                               {
                                 "type": "field",
                                 "attrs": {
+                                  "name": "externalId"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
                                   "name": "threadId"
                                 }
                               },
@@ -11923,6 +11997,12 @@
                                 "type": "field",
                                 "attrs": {
                                   "name": "responseTimeMs"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "parentInteraction"
                                 }
                               }
                             ]

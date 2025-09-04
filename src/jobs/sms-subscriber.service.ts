@@ -25,6 +25,6 @@ export class SmsQueueSubscriber extends RabbitMqSubscriber<any> {
     }
 
     subscribe(message: QueueMessage<any>) {
-        this.smsService.sendSMSSynchronously(message);
+        return this.smsService.sendSMSSynchronously(message);
     }
 }
