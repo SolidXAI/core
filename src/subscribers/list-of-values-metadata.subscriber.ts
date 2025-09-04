@@ -34,11 +34,6 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
             this.logger.debug('No listofvalue entity found in the ListofValueSubscriber afterInsert method');
             return;
         }
-        // event.databaseEntity --> for old data i.e before upadte
-        // event.entity --> new data after upadte
-        // const oldType = event.databaseEntity?.type;
-        // const oldValue = event.databaseEntity?.value;
-        // const newEntity = event.entity;
 
         //@ts-ignore
         await this.updateListOfValuesToConfig(event.databaseEntity, event.entity, event.queryRunner.manager);
@@ -52,18 +47,18 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
         }
 
         // Load the Listofvalue with module relation populated
-        const populatedDashboard = await entityManager.findOne(ListOfValues, {
+        const populatedLov = await entityManager.findOne(ListOfValues, {
             where: { id: listOfValues.id },
             relations: ['module'],
         });
 
-        if (!populatedDashboard) {
+        if (!populatedLov) {
             this.logger.error(`Listofvalue not found for id ${listOfValues.id}`);
             return;
         }
 
         // Call the saveListofValuesToConfig method from the ListOfValuesMetadataService
-        await this.listOfValuesMetadataService.saveListofValuesToConfig(populatedDashboard);
+        await this.listOfValuesMetadataService.saveListofValuesToConfig(populatedLov);
     }
 
     private async updateListOfValuesToConfig(oldlistOfValues: ListOfValues, listOfValues: ListOfValues, entityManager: EntityManager): Promise<void> {
@@ -73,18 +68,18 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
         }
 
         // Load the Listofvalue with module relation populated
-        const populatedDashboard = await entityManager.findOne(ListOfValues, {
+        const populatedLov = await entityManager.findOne(ListOfValues, {
             where: { id: listOfValues.id },
             relations: ['module'],
         });
 
-        if (!populatedDashboard) {
+        if (!populatedLov) {
             this.logger.error(`Listofvalue not found for id ${listOfValues.id}`);
             return;
         }
 
         // Call the updateListofValuesToConfig method from the ListOfValuesMetadataService
-        await this.listOfValuesMetadataService.updateListofValuesToConfig(oldlistOfValues, populatedDashboard);
+        await this.listOfValuesMetadataService.updateListofValuesToConfig(oldlistOfValues, populatedLov);
     }
 
 }

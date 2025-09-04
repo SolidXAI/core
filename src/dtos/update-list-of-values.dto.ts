@@ -37,4 +37,7 @@ export class UpdateListOfValuesDto {
     @IsInt()
     @ApiProperty()
     moduleId: number;
+    @IsString()
+    @IsOptional()
+    moduleUserKey: string;
 }

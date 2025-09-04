@@ -31,4 +31,7 @@ export class CreateListOfValuesDto {
     @IsInt()
     @ApiProperty()
     moduleId: number;
+    @IsString()
+    @IsOptional()
+    moduleUserKey: string;
 }
