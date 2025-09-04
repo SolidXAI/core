@@ -266,6 +266,9 @@ import { NoopsEntityComputedFieldProviderService } from './services/computed-fie
 import { ScheduledJobRepository } from './repository/scheduled-job.repository';
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
+import { ListOfValuesMapper } from './mappers/list-of-values-mapper';
+import { ListOfValuesMetadataSubscriber } from './subscribers/list-of-values-metadata.subscriber';
+import { ListOfValuesMetadataService } from './services/list-of-values-metadata.service';
 import { MailFactory } from './factories/mail.factory';
 import { TwilioSMSService } from './services/sms/TwilioSMSService';
 import { PollerService } from './services/poller.service';
@@ -587,6 +590,9 @@ import { ChatterMessageDetailsRepository } from './repository/chatter-message-de
     ScheduledJobRepository,
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
+    ListOfValuesMetadataService,
+    ListOfValuesMetadataSubscriber,
+    ListOfValuesMapper,
     MailFactory,
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,

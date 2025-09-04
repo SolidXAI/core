@@ -3642,6 +3642,23 @@
             "private": false,
             "encrypt": false,
             "isSystem": false
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "isSystem": true
           }
         ]
       },
@@ -6460,73 +6477,6 @@
       }
     },
     {
-      "name": "listOfValues-list-view",
-      "displayName": "List of Values list view",
-      "type": "list",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "listOfValues",
-      "layout": {
-        "type": "list",
-        "attrs": {
-          "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
-          "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
-        },
-        "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "type",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "value",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "display",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "description",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "default",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "sequence",
-              "isSearchable": true
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "listOfValues-form-view",
       "displayName": "List of Values form view",
       "type": "form",
@@ -6589,6 +6539,12 @@
                     "type": "field",
                     "attrs": {
                       "name": "sequence"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "module"
                     }
                   }
                 ]
@@ -6899,78 +6855,12 @@
               "name": "sequence",
               "isSearchable": true
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "listOfValues-form-view",
-      "displayName": "List of Values form view",
-      "type": "form",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "listOfValues",
-      "layout": {
-        "type": "form",
-        "attrs": {
-          "name": "form-1",
-          "label": "Solid List of Values Model",
-          "className": "grid"
-        },
-        "children": [
+          },
           {
-            "type": "sheet",
+            "type": "field",
             "attrs": {
-              "name": "sheet-1"
-            },
-            "children": [
-              {
-                "type": "group",
-                "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-6"
-                },
-                "children": [
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "type"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "value"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "display"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "description"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "default"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "sequence"
-                    }
-                  }
-                ]
-              }
-            ]
+              "name": "module"
+            }
           }
         ]
       }

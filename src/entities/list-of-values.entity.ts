@@ -1,5 +1,6 @@
 import { CommonEntity } from 'src/entities/common.entity'
-import {Entity, Column} from 'typeorm'
+import { Entity, Column, ManyToOne, JoinColumn } from 'typeorm'
+import { ModuleMetadata } from 'src/entities/module-metadata.entity'
 
 @Entity("ss_list_of_values")
 export class ListOfValues extends CommonEntity {
@@ -15,4 +16,7 @@ export class ListOfValues extends CommonEntity {
     default: boolean = false;
     @Column({ type: "int", nullable: true })
     sequence: number;
+    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: true })
+    @JoinColumn()
+    module: ModuleMetadata;
 }
