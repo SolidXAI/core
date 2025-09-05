@@ -841,7 +841,7 @@ export class AuthenticationService {
         return this.dataSource.transaction(async (m) => {
             // Resolve the user id first (by username/email), but DON'T check the token in JS.
             const user = await this.resolveUserByVerificationToken(confirmForgotPasswordDto.verificationToken);
-            if (!user) throw new NotFoundException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+            if (!user) throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
             if (user.lastLoginProvider !== 'local') throw new BadRequestException(ERROR_MESSAGES.INVALID_CREDENTIALS);
             if (!user.active) throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
 
