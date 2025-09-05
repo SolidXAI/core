@@ -26,7 +26,7 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
             this.logger.debug('No listofvalue entity found in the ListofValueSubscriber afterInsert method');
             return;
         }
-        await this.saveListOfValuesToConfig(event.entity, event.queryRunner.manager);
+        // await this.saveListOfValuesToConfig(event.entity, event.queryRunner.manager);
     }
 
     async afterUpdate(event: UpdateEvent<ListOfValues>) {
@@ -36,7 +36,7 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
         }
 
         //@ts-ignore
-        await this.updateListOfValuesToConfig(event.databaseEntity, event.entity, event.queryRunner.manager);
+        // await this.updateListOfValuesToConfig(event.databaseEntity, event.entity, event.queryRunner.manager);
     }
 
 
