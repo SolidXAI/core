@@ -5545,6 +5545,19 @@
       "moduleUserKey": "solid-core",
       "modelUserKey": "setting"
     },
+     {
+      "displayName": "Ai settings",
+      "name": "ai-settings-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/core/solid-core/settings/ai-settings",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "setting"
+    },
     {
       "displayName": "Misc",
       "name": "misc-settings-action",
@@ -5910,6 +5923,14 @@
       "name": "authentication-settings-menu-item",
       "sequenceNumber": 2,
       "actionUserKey": "authentication-settings-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "settings-menu-item"
+    },
+     {
+      "displayName": "Ai Settings",
+      "name": "ai-settings-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "ai-settings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
     },
