@@ -1,6 +1,7 @@
 import { Injectable } from "@nestjs/common";
 import { ClsService } from "nestjs-cls";
 import { REQUEST_USER_KEY } from "src/constants";
+import { BasicFilterDto } from "src/dtos/basic-filters.dto";
 
 @Injectable()
 export class RequestContextService {
@@ -18,6 +19,14 @@ export class RequestContextService {
 
     getUserAgent(): string | undefined {
         return this.cls.get('userAgent');
+    }
+
+    setRequestFilter(filter: BasicFilterDto) {
+        this.cls.set('filter', filter);
+    }
+
+    getRequestFilter(): BasicFilterDto | undefined {
+        return this.cls.get('filter');
     }
 
 }

@@ -2548,7 +2548,7 @@
         "userKeyFieldUserKey": "scheduleName",
         "isChild": false,
         "enableAuditTracking": true,
-        "enableSoftDelete": true,
+        "enableSoftDelete": false,
         "draftPublishWorkflow": false,
         "internationalisation": false,
         "fields": [
@@ -2797,6 +2797,22 @@
             "selectionValueType": "string",
             "selectionDynamicProvider": "ListOfScheduledJobsSelectionProvider",
             "selectionDynamicProviderCtxt": "{}"
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ]
       },
@@ -3626,6 +3642,23 @@
             "private": false,
             "encrypt": false,
             "isSystem": false
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "isSystem": true
           }
         ]
       },
@@ -6465,73 +6498,6 @@
       }
     },
     {
-      "name": "listOfValues-list-view",
-      "displayName": "List of Values list view",
-      "type": "list",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "listOfValues",
-      "layout": {
-        "type": "list",
-        "attrs": {
-          "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
-          "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
-        },
-        "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "type",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "value",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "display",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "description",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "default",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "sequence",
-              "isSearchable": true
-            }
-          }
-        ]
-      }
-    },
-    {
       "name": "listOfValues-form-view",
       "displayName": "List of Values form view",
       "type": "form",
@@ -6594,6 +6560,12 @@
                     "type": "field",
                     "attrs": {
                       "name": "sequence"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "module"
                     }
                   }
                 ]
@@ -6904,78 +6876,12 @@
               "name": "sequence",
               "isSearchable": true
             }
-          }
-        ]
-      }
-    },
-    {
-      "name": "listOfValues-form-view",
-      "displayName": "List of Values form view",
-      "type": "form",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "listOfValues",
-      "layout": {
-        "type": "form",
-        "attrs": {
-          "name": "form-1",
-          "label": "Solid List of Values Model",
-          "className": "grid"
-        },
-        "children": [
+          },
           {
-            "type": "sheet",
+            "type": "field",
             "attrs": {
-              "name": "sheet-1"
-            },
-            "children": [
-              {
-                "type": "group",
-                "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-6"
-                },
-                "children": [
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "type"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "value"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "display"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "description"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "default"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "sequence"
-                    }
-                  }
-                ]
-              }
-            ]
+              "name": "module"
+            }
           }
         ]
       }
@@ -10243,6 +10149,13 @@
           {
             "type": "field",
             "attrs": {
+              "name": "module",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "isActive"
             }
           },
@@ -10334,100 +10247,154 @@
             },
             "children": [
               {
-                "type": "row",
+                "type": "notebook",
                 "attrs": {
-                  "name": "sheet-1"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-1",
-                      "label": "Basic",
-                      "className": "col-6"
+                      "name": "page-general",
+                      "label": "General"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "row",
                         "attrs": {
-                          "name": "scheduleName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "job"
-                        }
+                          "name": "row-general"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-basic",
+                              "label": "Basic",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "scheduleName"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "job"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "module"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "isActive"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-config",
+                              "label": "Configuration",
+                              "className": "col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "frequency"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "startTime"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "endTime"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "startDate"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "endDate"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "dayOfWeek"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "dayOfMonth"
+                                }
+                              }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   },
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-1",
-                      "label": "Configuration",
-                      "className": "col-6"
+                      "name": "page-runtime",
+                      "label": "Runtime"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "row",
                         "attrs": {
-                          "name": "isActive"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "frequency"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "startTime"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "endTime"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "startDate"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "endDate"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "lastRunAt"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "nextRunAt"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "dayOfWeek"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "dayOfMonth"
-                        }
+                          "name": "row-runtime"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-runtime",
+                              "label": "Execution",
+                              "className": "col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "lastRunAt",
+                                  "disabled": true,
+                                  "readOnly": true
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "nextRunAt",
+                                  "disabled": true,
+                                  "readOnly": true
+                                }
+                              }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   }
@@ -12262,6 +12229,15 @@
       "description": "This template is used to send the verification token required by users to reset their password.",
       "active": true,
       "type": "text"
+    },
+    {
+      "name": "password-changed",
+      "displayName": "Default: Password Changed",
+      "body": "password-changed.handlebars.html",
+      "subject": "Your {{solidAppName}} Password Has Been Updated",
+      "description": "This template notifies users that their account password was successfully changed.",
+      "active": true,
+      "type": "text"
     }
   ],
   "smsTemplates": [
@@ -12300,5 +12276,6 @@
     }
   ],
   "checksums": [],
-  "listOfValues": []
+  "listOfValues": [],
+  "scheduledJobs": []
 }

@@ -1,4 +1,4 @@
-import { IsInt,IsOptional, IsString, IsNotEmpty, IsBoolean } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsNotEmpty, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateListOfValuesDto {
@@ -33,4 +33,11 @@ export class UpdateListOfValuesDto {
     @IsInt()
     @ApiProperty()
     sequence: number;
+    @IsOptional()
+    @IsInt()
+    @ApiProperty()
+    moduleId: number;
+    @IsString()
+    @IsOptional()
+    moduleUserKey: string;
 }

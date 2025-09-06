@@ -5,6 +5,8 @@ import { AiInteractionService } from '../services/ai-interaction.service';
 import { CreateAiInteractionDto } from '../dtos/create-ai-interaction.dto';
 import { UpdateAiInteractionDto } from '../dtos/update-ai-interaction.dto';
 import { InvokeAiPromptDto } from '../dtos/invoke-ai-prompt.dto';
+import { ActiveUser } from 'src/decorators/active-user.decorator';
+import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -92,8 +94,8 @@ export class AiInteractionController {
 
   @ApiBearerAuth("jwt")
   @Post('/trigger-mcp-client-job')
-  async triggerMcpClientJob(@Body() dto: InvokeAiPromptDto) {
-    return this.service.triggerMcpClientJob(dto.prompt);
+  async triggerMcpClientJob(@Body() dto: InvokeAiPromptDto, @ActiveUser() activeUser: ActiveUserData) {
+    return this.service.triggerMcpClientJob(dto.prompt, activeUser.sub);
   }
 
   @ApiBearerAuth("jwt")

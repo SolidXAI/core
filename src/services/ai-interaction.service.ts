@@ -36,19 +36,19 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     readonly repo: Repository<AiInteraction>,
     readonly moduleRef: ModuleRef,
     readonly publisherFactory: PublisherFactory<TriggerMcpClientOptions>,
-    readonly requestContextService: RequestContextService,
+    // readonly requestContextService: RequestContextService,
     readonly mcpToolResponseHandlerFactory: McpToolResponseHandlerFactory,
 
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'aiInteraction', 'solid-core', moduleRef);
   }
 
-  async triggerMcpClientJob(prompt: string, isAutoApply: boolean = false, threadId: string = null): Promise<any> {
-    const activeUser: ActiveUserData = this.requestContextService.getActiveUser();
+  async triggerMcpClientJob(prompt: string, userId: number, isAutoApply: boolean = false, threadId: string = null): Promise<any> {
+    // const activeUser: ActiveUserData = this.requestContextService.getActiveUser();
 
     const aiInteraction = await this.create({
-      userId: activeUser.sub,
-      threadId: threadId ? threadId : `thread-${activeUser.sub}`,
+      userId: userId,
+      threadId: threadId ? threadId : `thread-${userId}`,
       role: 'human',
       message: prompt,
       contentType: '',

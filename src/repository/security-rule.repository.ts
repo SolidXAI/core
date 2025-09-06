@@ -22,7 +22,7 @@ export class SecurityRuleRepository extends Repository<SecurityRule> {
         super(SecurityRule, dataSource.createEntityManager());
     }
 
-    applySecurityRules<T extends CommonEntity>(qb: SelectQueryBuilder<T>, modelSingularName: string, activeUser: ActiveUserData,): SelectQueryBuilder<T> {
+    applySecurityRules<T extends CommonEntity>(qb: SelectQueryBuilder<T>, modelSingularName: string, activeUser: ActiveUserData, securityRuleAlias: string = qb.alias): SelectQueryBuilder<T> {
         // Fetch the security rules for the model and roles
         const securityRules = this.solidRegistry.getSecurityRules(modelSingularName, activeUser.roles);
 
@@ -32,7 +32,7 @@ export class SecurityRuleRepository extends Repository<SecurityRule> {
                 // Parse the security rule and call the buildFilter method to build the query from the security rule
                 const parsedRule = JSON.parse(this.resolveSecurityRuleConfig(rule.securityRuleConfig, activeUser)) as SecurityRuleConfig;
                 if (parsedRule && parsedRule.filters) {
-                    this.crudHelperService.buildFilterQuery(qb, parsedRule, qb.alias);
+                    this.crudHelperService.buildFilterQuery(qb, parsedRule, securityRuleAlias);
                 }
             } catch (error) {
                 this.logger.warn(`Error parsing security rule: ${rule.securityRuleConfig}`, error);
