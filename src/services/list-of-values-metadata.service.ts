@@ -13,7 +13,7 @@ import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
-// import { Dashboard } from '../entities/dashboard.entity';
+
 import { ListOfValues } from 'src/entities/list-of-values.entity';
 import { ListOfValuesMapper } from 'src/mappers/list-of-values-mapper';
 
@@ -43,7 +43,7 @@ export class ListOfValuesMetadataService extends CRUDService<ListOfValues> {
 
   async saveListofValuesToConfig(entity: ListOfValues) {
     if (!entity) {
-      this.logger.debug('No entity found in the ListofValuesSubscriber saveDashboardToConfig method');
+      this.logger.debug('No entity found in the ListofValuesSubscriber saveListofvalueToConfig method');
       return;
     }
 
@@ -60,13 +60,13 @@ export class ListOfValuesMetadataService extends CRUDService<ListOfValues> {
       throw new Error(`Configuration details not found for module: ${moduleMetadata.name}`);
     }
 
-    // Write the dashboard to the config file
+    // Write the listofvalue to the config file
     await this.writeToConfig(metaData, listofvalue, filePath);
   }
 
   async updateListofValuesToConfig(oldentity: ListOfValues, entity: ListOfValues) {
     if (!entity) {
-      this.logger.debug('No entity found in the ListofValuesSubscriber saveDashboardToConfig method');
+      this.logger.debug('No entity found in the ListofValuesSubscriber saveListofvalueToConfig method');
       return;
     }
 
@@ -84,8 +84,31 @@ export class ListOfValuesMetadataService extends CRUDService<ListOfValues> {
       throw new Error(`Configuration details not found for module: ${moduleMetadata.name}`);
     }
 
-    // Write the dashboard to the config file
+    // Write the listofvalue to the config file
     await this.updateToConfig(metaData, oldlistofvalue, listofvalue, filePath);
+  }
+
+  async deleteListOfValuesFromConfig(entity: ListOfValues) {
+    if (!entity) {
+      this.logger.debug('No entity found in the ListofValuesSubscriber saveListofvalueToConfig method');
+      return;
+    }
+
+    // Validate list of value details
+    const listofvalue = entity as ListOfValues;
+    const moduleMetadata = entity.module;
+    if (!moduleMetadata) {
+      throw new Error(`Module metadata not found for listofvalue id ${entity.id}`);
+    }
+
+    // Get config file details
+    const { filePath, metaData } = await this.getConfigFileDetails(moduleMetadata.name); // sting expected module name
+    if (!filePath || !metaData) {
+      throw new Error(`Configuration details not found for module: ${moduleMetadata.name}`);
+    }
+
+    // delete the listofvalue to the config file
+    await this.deleteFromConfig(metaData, listofvalue, filePath);
   }
 
 
@@ -108,13 +131,29 @@ export class ListOfValuesMetadataService extends CRUDService<ListOfValues> {
       metaData.listOfValues = [];
     }
 
-    if (metaData.listOfValues.length === 0) {
-      // Case 1: Empty array → add first item
-      metaData.listOfValues.push(dto);
+    // Match by type + value + module
+    const existingIndex = metaData.listOfValues.findIndex(
+      (item: { type: string; value: string; module: number }) =>
+        item.type === dto.type &&
+        item.value === dto.value &&
+        item.module === dto.module
+    );
+
+    if (existingIndex !== -1) {
+      // Replace existing entry
+      metaData.listOfValues[existingIndex] = dto;
     } else {
-      // Case 2: Insert new item right after index 0
-      metaData.listOfValues.unshift(dto);
-      // metaData.listOfValues.splice(1, 0, dto);
+      // Insert new entry
+      // metaData.listOfValues.unshift(dto);
+
+      if (metaData.listOfValues.length === 0) {
+        // Case 1: Empty array → add first item
+        metaData.listOfValues.push(dto);
+      } else {
+        // Case 2: Insert new item right after index 0
+        metaData.listOfValues.unshift(dto);
+      }
+
     }
 
     const updatedContent = JSON.stringify(metaData, null, 2);
@@ -131,10 +170,11 @@ export class ListOfValuesMetadataService extends CRUDService<ListOfValues> {
 
     const searchType = oldvalue.type || newvalue.type;
     const searchValue = oldvalue.value || newvalue.value;
+    const searchModule = oldvalue.module || newvalue.module;
 
     const existingIndex = metaData.listOfValues.findIndex(
-      (item: { type: string; value: string }) =>
-        item.type === searchType && item.value === searchValue
+      (item: { type: string; value: string; module: number }) =>
+        item.type === searchType && item.value === searchValue && item.module === searchModule
     );
     if (existingIndex !== -1) {
       // Replace existing match
@@ -143,6 +183,36 @@ export class ListOfValuesMetadataService extends CRUDService<ListOfValues> {
 
     const updatedContent = JSON.stringify(metaData, null, 2);
     await fs.writeFile(filePath, updatedContent);
+  }
+
+
+  private async deleteFromConfig(metaData: any, listofvalues: ListOfValues, filePath: string) {
+    const dto = await this.listOfValuesMapper.toDto(listofvalues);
+
+    if (!Array.isArray(metaData.listOfValues)) {
+      metaData.listOfValues = [];
+    }
+
+    // Match by type + value + module
+    const existingIndex = metaData.listOfValues.findIndex(
+      (item: { type: string; value: string; module: number }) =>
+        item.type === dto.type &&
+        item.value === dto.value &&
+        item.module === dto.module
+    );
+
+    if (existingIndex !== -1) {
+      // Remove the item
+      metaData.listOfValues.splice(existingIndex, 1);
+      this.logger.debug(`Deleted LOV ${dto.type}:${dto.value} (module ${dto.module}) from config`);
+    } else {
+      this.logger.warn(
+        `LOV ${dto.type}:${dto.value} (module ${dto.module}) not found in config during delete`
+      );
+    }
+    const updatedContent = JSON.stringify(metaData, null, 2);
+    await fs.writeFile(filePath, updatedContent);
+
   }
 
 
