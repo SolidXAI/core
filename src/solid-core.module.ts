@@ -94,8 +94,8 @@ import { SmsQueuePublisher } from './jobs/sms-publisher.service';
 import { SmsQueueSubscriber } from './jobs/sms-subscriber.service';
 import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
 import { TestQueueSubscriber } from './jobs/test-queue-subscriber.service';
-import { WhatsappQueuePublisher } from './jobs/whatsapp-publisher.service';
-import { WhatsappQueueSubscriber } from './jobs/whatsapp-subscriber.service';
+import { Msg91WhatsappQueuePublisher } from './jobs/msg91-whatsapp-publisher.service';
+import { Msg91WhatsappQueueSubscriber } from './jobs/msg91-whatsapp-subscriber.service';
 import { UserRegistrationListener } from './listeners/user-registration.listener';
 import { GoogleOauthStrategy } from './passport-strategies/google-oauth.strategy';
 import { LocalStrategy } from './passport-strategies/local.strategy';
@@ -193,8 +193,8 @@ import { TwilioSmsQueueSubscriberDatabase } from './jobs/database/twilio-sms-sub
 
 import { TriggerMcpClientPublisherDatabase } from './jobs/database/trigger-mcp-client-publisher-database.service';
 import { TriggerMcpClientSubscriberDatabase } from './jobs/database/trigger-mcp-client-subscriber-database.service';
-import { WhatsappQueuePublisherDatabase } from './jobs/database/whatsapp-publisher-database.service';
-import { WhatsappQueueSubscriberDatabase } from './jobs/database/whatsapp-subscriber-database.service';
+import { Msg91WhatsappQueuePublisherDatabase } from './jobs/database/msg91-whatsapp-publisher-database.service';
+import { Msg91WhatsappQueueSubscriberDatabase } from './jobs/database/msg91-whatsapp-subscriber-database.service';
 import { DashboardMapper } from './mappers/dashboard-mapper';
 import { DashboardRepository } from './repository/dashboard.repository';
 import { FieldMetadataRepository } from './repository/field-metadata.repository';
@@ -276,6 +276,10 @@ import { TextractService } from './services/textract.service';
 import { seconds, ThrottlerModule } from '@nestjs/throttler';
 import { ChatterMessageRepository } from './repository/chatter-message.repository';
 import { ChatterMessageDetailsRepository } from './repository/chatter-message-details.repository';
+import { Three60WhatsappQueuePublisher } from './jobs/three60-whatsapp-publisher.service';
+import { Three60WhatsappQueueSubscriber } from './jobs/three60-whatsapp-subscriber.service';
+import { Three60WhatsappQueuePublisherDatabase } from './jobs/database/three60-whatsapp-publisher-database.service';
+import { Three60WhatsappQueueSubscriberDatabase } from './jobs/database/three60-whatsapp-subscriber-database.service';
 
 
 @Global()
@@ -492,10 +496,14 @@ import { ChatterMessageDetailsRepository } from './repository/chatter-message-de
     OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
     OTPQueueSubscriberDatabase,
-    WhatsappQueuePublisher,
-    WhatsappQueueSubscriber,
-    WhatsappQueuePublisherDatabase,
-    WhatsappQueueSubscriberDatabase,
+    Msg91WhatsappQueuePublisher,
+    Msg91WhatsappQueueSubscriber,
+    Msg91WhatsappQueuePublisherDatabase,
+    Msg91WhatsappQueueSubscriberDatabase,
+    Three60WhatsappQueuePublisher,
+    Three60WhatsappQueueSubscriber,
+    Three60WhatsappQueuePublisherDatabase,
+    Three60WhatsappQueueSubscriberDatabase,
     EmailTemplateSeederService,
     SmsTemplateSeederService,
     TinyUrlService,
