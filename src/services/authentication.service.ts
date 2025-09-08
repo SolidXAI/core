@@ -848,7 +848,7 @@ export class AuthenticationService {
             // Resolve the user id first (by username/email), but DON'T check the token in JS.
             const user = await this.resolveUserByVerificationToken(confirmForgotPasswordDto.verificationToken);
             if (!user) throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
-            if (user.lastLoginProvider !== 'local') throw new BadRequestException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+            if (user.lastLoginProvider !== 'local') throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
             if (!user.active) throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
 
             // 1) Atomically consume the token (only one request can succeed)
