@@ -759,25 +759,31 @@ export class AuthenticationService {
         // });
         const user = await this.resolveUser(initiateForgotPasswordDto.username, initiateForgotPasswordDto.email);
 
+        let isValidUser = true // Instead of throwing exceptions we will simply return success message, this is to avoid user enumeration attacks.
         if (!user) {
-            throw new NotFoundException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+            isValidUser = false            
+            // throw new NotFoundException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
         if (!user.active) {
-            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+            isValidUser = false
+            // throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
 
         // 2. Validate if user has used a provider which is "local", only then it makes sense for us to initiate the forgot password routine. 
         if (user.lastLoginProvider !== 'local') {
-            throw new BadRequestException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+            isValidUser = false
+            // throw new BadRequestException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
 
         // 3. Generate a 6 digit validation token, we send this token to the user over their email & mobile number (controlled using configuration).
         // 4. Save this validation token in new fields on the user record. 
-        const { token, expiresAt } = this.generateForgotPasswordToken();
-        user.verificationTokenOnForgotPassword = token;
-        user.verificationTokenOnForgotPasswordExpiresAt = expiresAt;
-        await this.userRepository.save(user);
-        this.notifyUserOnForgotPassword(user);
+        if (isValidUser) {
+            const { token, expiresAt } = this.generateForgotPasswordToken();
+            user.verificationTokenOnForgotPassword = token;
+            user.verificationTokenOnForgotPasswordExpiresAt = expiresAt;
+            await this.userRepository.save(user);
+            this.notifyUserOnForgotPassword(user);
+        }
 
         // 5. Return. 
         return {
