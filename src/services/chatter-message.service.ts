@@ -86,6 +86,9 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
  }
 
  async postAuditMessageOnInsert(entity: any, metadata: EntityMetadata, messageQueue: boolean = false) {
+    if(!entity){
+        return;
+    }
     const model = await this.modelMetadataRepo.findOne({
         where: {
             displayName: metadata.name
@@ -140,6 +143,9 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
 }
 
 async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEntity: any, messageQueue: boolean = false) {
+    if(!databaseEntity || !entity){
+        return;
+    }
     const model = await this.modelMetadataRepo.findOne({
         where: {
             displayName: metadata.name

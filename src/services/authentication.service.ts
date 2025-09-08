@@ -788,8 +788,8 @@ export class AuthenticationService {
             data: {
                 user: {
                     email: user.email,
-                    mobile: user.mobile,
-                    username: user.username,
+                    // mobile: user.mobile,
+                    // username: user.username,
                 },
             }
         }
