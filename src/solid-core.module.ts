@@ -280,6 +280,7 @@ import { Three60WhatsappQueuePublisher } from './jobs/three60-whatsapp-publisher
 import { Three60WhatsappQueueSubscriber } from './jobs/three60-whatsapp-subscriber.service';
 import { Three60WhatsappQueuePublisherDatabase } from './jobs/database/three60-whatsapp-publisher-database.service';
 import { Three60WhatsappQueueSubscriberDatabase } from './jobs/database/three60-whatsapp-subscriber-database.service';
+import { Three60WhatsappService } from './services/whatsapp/Three60WhatsappService';
 
 
 @Global()
@@ -504,6 +505,9 @@ import { Three60WhatsappQueueSubscriberDatabase } from './jobs/database/three60-
     Three60WhatsappQueueSubscriber,
     Three60WhatsappQueuePublisherDatabase,
     Three60WhatsappQueueSubscriberDatabase,
+    Three60WhatsappService,
+    MqMessageService,
+    MqMessageQueueService,
     EmailTemplateSeederService,
     SmsTemplateSeederService,
     TinyUrlService,
