@@ -3,6 +3,7 @@ import { registerAs } from '@nestjs/config';
 export default registerAs('common', () => {
     return {
         emailProvider: process.env.COMMON_EMAIL_PROVIDER ?? "SMTPEMailService",
+        whatsappProvider: process.env.COMMON_WHATSAPP_PROVIDER,
         emailTemplateSeederFiles: process.env.COMMON_EMAIL_TEMPLATE_SEEDER_FILES,
         smsProvider: process.env.COMMON_SMS_PROVIDER,
         smsTemplateSeederFiles: process.env.COMMON_SMS_TEMPLATE_SEEDER_FILES,

@@ -193,9 +193,9 @@ export * from './jobs/otp-subscriber.service'
 export * from './jobs/sms-publisher.service'
 export * from './jobs/sms-queue-options'
 export * from './jobs/sms-subscriber.service'
-export * from './jobs/whatsapp-publisher.service'
-export * from './jobs/whatsapp-queue-options'
-export * from './jobs/whatsapp-subscriber.service'
+export * from './jobs/msg91-whatsapp-publisher.service'
+export * from './jobs/msg91-whatsapp-queue-options'
+export * from './jobs/msg91-whatsapp-subscriber.service'
 
 export * from './listeners/user-registration.listener'
 

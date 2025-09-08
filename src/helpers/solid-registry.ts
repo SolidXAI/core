@@ -66,6 +66,11 @@ export class SolidRegistry {
   private dashboardVariableSelectionProviders: Set<InstanceWrapper> = new Set();
   private dashboardQuestionDataProviders: Set<InstanceWrapper> = new Set();
   private mailProviders: Set<InstanceWrapper> = new Set();
+  private whatsappProviders: Set<InstanceWrapper> = new Set();
+
+  registerWhatsappProvider(whatsappProvider: InstanceWrapper): void {
+    this.whatsappProviders.add(whatsappProvider);
+  }
 
   registerMailProvider(mailProvider: InstanceWrapper): void {
     this.mailProviders.add(mailProvider);
@@ -113,6 +118,10 @@ export class SolidRegistry {
 
   getMailProviders(): Array<InstanceWrapper> {
     return Array.from(this.mailProviders);
+  }
+
+  getWhatsappProviders(): Array<InstanceWrapper> {
+    return Array.from(this.whatsappProviders);
   }
 
   getSeeders(): Array<InstanceWrapper> {

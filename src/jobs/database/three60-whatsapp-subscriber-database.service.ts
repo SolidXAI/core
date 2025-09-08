@@ -1,19 +1,18 @@
 import { Injectable } from '@nestjs/common';
 
-import { RabbitMqSubscriber } from 'src/services/queues/rabbitmq-subscriber.service';
 import { QueueMessage } from 'src/interfaces/mq';
-import whatsappQueueOptions from './whatsapp-queue-options-database';
+import whatsappQueueOptions from './msg91-whatsapp-queue-options-database';
 import { MqMessageService } from 'src/services/mq-message.service';
 import { MqMessageQueueService } from 'src/services/mq-message-queue.service';
-import { Msg91WhatsappService } from 'src/services/whatsapp/Msg91WhatsappService';
 import { QueuesModuleOptions } from 'src/interfaces';
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
 import { PollerService } from 'src/services/poller.service';
+import { Three60WhatsappService } from 'src/services/whatsapp/Three60WhatsappService';
 
 @Injectable()
-export class WhatsappQueueSubscriberDatabase extends DatabaseSubscriber<any> {
+export class Three60WhatsappQueueSubscriberDatabase extends DatabaseSubscriber<any> {
     constructor(
-        private readonly whatsappService: Msg91WhatsappService,
+        private readonly whatsappService: Three60WhatsappService,
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
         readonly poller: PollerService,
@@ -28,6 +27,6 @@ export class WhatsappQueueSubscriberDatabase extends DatabaseSubscriber<any> {
     }
 
     subscribe(message: QueueMessage<any>) {
-        this.whatsappService.sendSMSSynchronously(message);
+        this.whatsappService.sendWhatsAppMessageSynchronously(message);
     }
 }

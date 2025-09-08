@@ -3,10 +3,9 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import commonConfig from 'src/config/common.config';
 import { QueueMessage } from 'src/interfaces/mq';
-import { SmsTemplateService } from '../sms-template.service';
-import { Msg91BaseSMSService } from '../sms/Msg91BaseSMSService';
-import { ISMS } from "../../interfaces";
+import { IWhatsAppTransport } from "../../interfaces";
 import { PublisherFactory } from '../queues/publisher-factory.service';
+import { WhatsAppProvider } from 'src/decorators/whatsapp-provider.decorator';
 
 enum Msg91WhatsappParameterHeaderType {
   image,
@@ -51,21 +50,46 @@ interface WhatsappToAndComponents {
 }
 
 @Injectable()
-export class Msg91WhatsappService extends Msg91BaseSMSService implements ISMS {
+@WhatsAppProvider()
+export class Msg91WhatsappService implements IWhatsAppTransport {
   readonly logger = new Logger(Msg91WhatsappService.name);
 
   constructor(
     @Inject(commonConfig.KEY)
-    commonConfiguration: ConfigType<typeof commonConfig>,
+    private readonly commonConfiguration: ConfigType<typeof commonConfig>,
     // whatsappPublisher: WhatsappQueuePublisher,
-    publisherFactory: PublisherFactory<any>,
-    smsTemplateService: SmsTemplateService,
+    private readonly publisherFactory: PublisherFactory<any>,
     private readonly httpService: HttpService,
-  ) {
-    super(commonConfiguration, 'WhatsappQueuePublisher', publisherFactory, smsTemplateService);
+  ) {}
+
+  async sendWhatsAppMessage(
+    to: string,
+    templateId: string,
+    parameters: any,
+    parentEntity?: any,
+    parentEntityId?: any
+  ): Promise<any> {
+    const message = {
+      payload: {
+        to,
+        templateId,
+        ...parameters,
+      },
+      parentEntity,
+      parentEntityId,
+    };
+
+    // All messages are always queued as per requirement
+    return this.sendWhatsAppMessageAsynchronously(message);
   }
 
-  async sendSMSSynchronously(message: QueueMessage<any>): Promise<void> {
+  private async sendWhatsAppMessageAsynchronously(message: any): Promise<any> {
+    const { to, templateId } = message.payload;
+    this.logger.debug(`Queueing WhatsApp message to ${to} with template ${templateId}`);
+    return this.publisherFactory.publish(message, 'Msg91WhatsappQueuePublisher');
+  }
+
+  async sendWhatsAppMessageSynchronously(message: QueueMessage<any>): Promise<void> {
     const body = this.createWhatsappRequest(message);
     const headers = { authkey: this.commonConfiguration.msg91Whatsapp.apiKey };
     await this.httpService.axiosRef.post(
