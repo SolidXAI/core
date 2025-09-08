@@ -584,6 +584,8 @@ export class ModuleMetadataSeederService {
             return;
         }
         for (let j = 0; j < listOfValuesDto.length; j++) {
+            const listOfValueDto = listOfValuesDto[j];
+            listOfValueDto['module'] = await this.moduleMetadataService.findOneByUserKey(listOfValueDto.moduleUserKey);
             await this.listOfValuesService.upsert(listOfValuesDto[j]);
         }
     }
