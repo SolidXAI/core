@@ -28,7 +28,7 @@ export const ERROR_MESSAGES = {
     GOOGLE_OAUTH_PROFILE_FETCH_FAILED: 'Failed to fetch user profile from Google OAuth service',
     LOGOUT_FAILED: 'Logout failed due to an unexpected error.',
 
-    INVALID_CREDENTIALS: 'Invalid username or password specified.',
+    INVALID_CREDENTIALS: 'Invalid credentials',
     LOGIN_FAILED: 'Login Failed',
     OLD_PASSWORD_INCORRECT: 'You have specified an incorrect old password.',
     INVALID_NEW_PASSWORD: 'Invalid new password.',
