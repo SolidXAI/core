@@ -25,7 +25,7 @@ export class AuthenticationController {
     constructor(private readonly authService: AuthenticationService) { }
 
     @Public()
-    @SkipThrottle({ login: false }) //Enable the login throttle only 
+    @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
     @Post('register')
     signUp(@Body() signUpDto: SignUpDto) {
         return this.authService.signUp(signUpDto);
@@ -39,7 +39,7 @@ export class AuthenticationController {
 
     @Public()
     // @UseGuards(LocalAuthGuard)
-    @SkipThrottle({ login: false }) //Enable the login throttle only
+    @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
     @HttpCode(HttpStatus.OK) // by default @Post does 201, we wanted 200 - hence using @HttpCode(HttpStatus.OK)
     @Post('authenticate')
     async signIn(
@@ -62,7 +62,7 @@ export class AuthenticationController {
     }
 
     @Public()
-    @SkipThrottle({ login: false }) //Enable the login throttle only
+    @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
     @HttpCode(HttpStatus.OK) // changed since the default is 201
     @Post('refresh-tokens')
     refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
@@ -70,14 +70,14 @@ export class AuthenticationController {
     }
 
     @Public()
-    @SkipThrottle({ login: false }) //Enable the login throttle only
+    @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
     @Post('initiate/forgot-password')
     initiateForgotPassword(@Body() initiateForgotPasswordDto: InitiateForgotPasswordDto) {
         return this.authService.initiateForgotPassword(initiateForgotPasswordDto);
     }
 
     @Public()
-    @SkipThrottle({ login: false }) //Enable the login throttle only
+    @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
     @Post('confirm/forgot-password')
     confirmForgotPassword(@Body() confirmForgotPasswordDto: ConfirmForgotPasswordDto) {
         return this.authService.confirmForgotPassword(confirmForgotPasswordDto);

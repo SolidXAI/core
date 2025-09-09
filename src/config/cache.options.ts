@@ -1,7 +1,7 @@
 import { CacheModuleAsyncOptions } from '@nestjs/cache-manager';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import { redisStore } from 'cache-manager-redis-store';
-import { isNumber } from 'class-validator';
+import { isRedisConfigured } from 'src/helpers/environment.helper';
 
 export const RedisOptions: CacheModuleAsyncOptions = {
     isGlobal: true,
@@ -29,8 +29,3 @@ async function createRedisStore(configService: ConfigService<Record<string, unkn
     });
 }
 
-function isRedisConfigured(configService: ConfigService): boolean {
-    const host = configService.get<string>('REDIS_HOST');
-    const port = configService.get<string>('REDIS_PORT');
-    return host && port && isNumber(parseInt(port));
-}

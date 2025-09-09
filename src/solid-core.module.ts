@@ -281,6 +281,8 @@ import { Three60WhatsappQueueSubscriber } from './jobs/three60-whatsapp-subscrib
 import { Three60WhatsappQueuePublisherDatabase } from './jobs/database/three60-whatsapp-publisher-database.service';
 import { Three60WhatsappQueueSubscriberDatabase } from './jobs/database/three60-whatsapp-subscriber-database.service';
 import { Three60WhatsappService } from './services/whatsapp/Three60WhatsappService';
+import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis/src/throttler-storage-redis.service';
+import { isRedisConfigured } from './helpers/environment.helper';
 
 
 @Global()
@@ -356,13 +358,18 @@ import { Three60WhatsappService } from './services/whatsapp/Three60WhatsappServi
     HttpModule,
     ConfigModule,
     ClsModule,
-    ThrottlerModule.forRoot({
-      throttlers: [
+    ThrottlerModule.forRootAsync({
+      imports: [ConfigModule],
+      inject: [ConfigService],
+      useFactory: (configService: ConfigService) => ({
+        throttlers: [
         { name: 'short', ttl: seconds(10),  limit: 10 },
         { name: 'login', ttl: seconds(10),  limit: 5  },
         { name: 'burst', ttl: seconds(1),  limit: 100 },
         { name: 'sustained', ttl: seconds(300), limit: 500 },
-      ],
+        ],
+        storage: isRedisConfigured(configService) ? new ThrottlerStorageRedisService(`redis://${configService.get<string>('REDIS_HOST')}:${configService.get<string>('REDIS_PORT')}`) : undefined,
+      }),
     }),
   ],
   controllers: [

@@ -38,6 +38,7 @@
     "@aws-sdk/s3-request-presigner": "^3.828.0",
     "@elasticemail/elasticemail-client": "^4.0.23",
     "@hapi/joi": "^17.1.1",
+    "@nest-lab/throttler-storage-redis": "^1.1.0",
     "@nestjs/schedule": "^6.0.0",
     "@nestjs/throttler": "^6.4.0",
     "amqplib": "^0.10.4",
