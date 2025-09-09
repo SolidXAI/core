@@ -126,7 +126,7 @@ export class AuthenticationService {
         const user = await this.resolveUser(signInDto.username, signInDto.email);
 
         if (!user) {
-            throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
+            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
         if (!user.active) {
             throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_ACTIVE);
@@ -136,7 +136,7 @@ export class AuthenticationService {
             user.password,
         );
         if (!isEqual) {
-            throw new UnauthorizedException(ERROR_MESSAGES.PASSWORD_INCORRECT);
+            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
 
         return user;
