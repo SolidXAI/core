@@ -28,7 +28,7 @@ export class CrudHelperService {
         return orderOptions;
     }
 
-    private applyFilters(qb: WhereExpressionBuilder, filters: any, alias: string = 'entity', selectQb: SelectQueryBuilder<any>) {
+    applyFilters(qb: WhereExpressionBuilder, filters: any, alias: string = 'entity', selectQb: SelectQueryBuilder<any>) {
         const normalizedFilters = this.normalizeObjectKeys(filters);
         if (normalizedFilters.$and) {
             normalizedFilters.$and.forEach((andFilter: any) => {

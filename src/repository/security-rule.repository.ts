@@ -39,14 +39,10 @@ export class SecurityRuleRepository extends Repository<SecurityRule> {
                         this.resolveSecurityRuleConfig(rule.securityRuleConfig, activeUser)
                     ) as SecurityRuleConfig;
 
-                    if (parsedRule?.filters?.length) {
+                if (parsedRule && parsedRule.filters) {
                         outerQb.orWhere( // combine each rule-group with OR at the outer level
                             new Brackets((innerQb) => {
-                                this.crudHelperService.buildFilterQuery(
-                                    innerQb as any,               // target the inner bracket
-                                    parsedRule,
-                                    securityRuleAlias
-                                );
+                               this.crudHelperService.applyFilters(innerQb, parsedRule.filters, securityRuleAlias, qb); // AND within a rule
                             })
                         );
                     }
