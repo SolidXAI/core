@@ -8,7 +8,7 @@ import { RoleMetadata } from 'src/entities/role-metadata.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
-import { CrudHelperService } from 'src/services/crud-helper.service';
+import { CrudHelperService, FilterCombinator } from 'src/services/crud-helper.service';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 
 @Injectable()
@@ -32,7 +32,7 @@ export class SecurityRuleRepository extends Repository<SecurityRule> {
                 // Parse the security rule and call the buildFilter method to build the query from the security rule
                 const parsedRule = JSON.parse(this.resolveSecurityRuleConfig(rule.securityRuleConfig, activeUser)) as SecurityRuleConfig;
                 if (parsedRule && parsedRule.filters) {
-                    this.crudHelperService.buildFilterQuery(qb, parsedRule, securityRuleAlias);
+                    this.crudHelperService.buildFilterQuery(qb, parsedRule, securityRuleAlias, null, null, null, FilterCombinator.OR);
                 }
             } catch (error) {
                 this.logger.warn(`Error parsing security rule: ${rule.securityRuleConfig}`, error);

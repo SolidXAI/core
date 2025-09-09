@@ -6,6 +6,10 @@ import { SolidRegistry } from "src/helpers/solid-registry";
 import { Logger } from "@nestjs/common";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 
+export enum FilterCombinator {
+    AND = '$and',
+    OR = '$or'
+}
 
 export class CrudHelperService {
     constructor(
@@ -157,8 +161,16 @@ export class CrudHelperService {
     private hasJoins(queryBuilder: SelectQueryBuilder<any>): boolean {
         return queryBuilder.expressionMap.joinAttributes.length > 0;
     }
- 
-    buildFilterQuery(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string, internationalisation?: boolean, draftPublishWorkflow?: boolean,moduleRef?:any): SelectQueryBuilder<any> { // TODO : Check how to pass a type to SelectQueryBuilder instead of any
+
+    buildFilterQuery(
+        qb: SelectQueryBuilder<any>,
+        basicFilterDto: BasicFilterDto,
+        entityAlias: string,
+        internationalisation?: boolean,
+        draftPublishWorkflow?: boolean,
+        moduleRef?: any,
+        filterCombinator: FilterCombinator = FilterCombinator.AND
+    ): SelectQueryBuilder<any> { // TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
         const { fields, sort, groupBy, populate = [], populateMedia = [], locale, status } = basicFilterDto;
 
@@ -184,9 +196,15 @@ export class CrudHelperService {
         }
 
         if (filters) {
-            qb.andWhere(new Brackets(whereQb => {
-                this.applyFilters(whereQb, filters, entityAlias, qb);
-            }));
+            if (filterCombinator === FilterCombinator.AND) {
+                qb.andWhere(new Brackets(whereQb => {
+                    this.applyFilters(whereQb, filters, entityAlias, qb);
+                }));
+            } else if (filterCombinator === FilterCombinator.OR) {
+                qb.orWhere(new Brackets(whereQb => {
+                    this.applyFilters(whereQb, filters, entityAlias, qb);
+                }));
+            }
         }
 
         let finalLocale = locale
