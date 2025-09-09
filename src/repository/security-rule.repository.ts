@@ -9,7 +9,7 @@ import { SecurityRule } from 'src/entities/security-rule.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { CrudHelperService, FilterCombinator } from 'src/services/crud-helper.service';
-import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import { Brackets, DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 
 @Injectable()
 export class SecurityRuleRepository extends Repository<SecurityRule> {
@@ -26,18 +26,35 @@ export class SecurityRuleRepository extends Repository<SecurityRule> {
         // Fetch the security rules for the model and roles
         const securityRules = this.solidRegistry.getSecurityRules(modelSingularName, activeUser.roles);
 
-        // Loop through the security rules and add only rules that are json parseable and have a rule
-        securityRules.forEach((rule: SecurityRule) => {
-            try {
-                // Parse the security rule and call the buildFilter method to build the query from the security rule
-                const parsedRule = JSON.parse(this.resolveSecurityRuleConfig(rule.securityRuleConfig, activeUser)) as SecurityRuleConfig;
-                if (parsedRule && parsedRule.filters) {
-                    this.crudHelperService.buildFilterQuery(qb, parsedRule, securityRuleAlias, null, null, null, FilterCombinator.OR);
+        // If no security rules, return the original query builder
+        if (!securityRules.length) {
+            return qb;
+        }
+
+        // Apply each security rule to the query builder. The rules are combined with OR logic at the top level.
+        qb.andWhere(new Brackets((outerQb) => {
+            for (const rule of securityRules) {
+                try {
+                    const parsedRule = JSON.parse(
+                        this.resolveSecurityRuleConfig(rule.securityRuleConfig, activeUser)
+                    ) as SecurityRuleConfig;
+
+                    if (parsedRule?.filters?.length) {
+                        outerQb.orWhere( // combine each rule-group with OR at the outer level
+                            new Brackets((innerQb) => {
+                                this.crudHelperService.buildFilterQuery(
+                                    innerQb as any,               // target the inner bracket
+                                    parsedRule,
+                                    securityRuleAlias
+                                );
+                            })
+                        );
+                    }
+                } catch (error) {
+                    this.logger.warn(`Error parsing security rule: ${rule.securityRuleConfig}`, error);
                 }
-            } catch (error) {
-                this.logger.warn(`Error parsing security rule: ${rule.securityRuleConfig}`, error);
             }
-        });
+        }));
 
         return qb;
     }
@@ -85,7 +102,7 @@ export class SecurityRuleRepository extends Repository<SecurityRule> {
                 },
             });
             createDto['role'] = role;
-        } 
+        }
 
         if (createDto.roleUserKey) {
             const role = await roleRepository.findOne({
