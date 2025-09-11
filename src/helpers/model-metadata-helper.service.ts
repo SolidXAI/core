@@ -2,13 +2,18 @@
 
 import { Injectable, Logger } from "@nestjs/common";
 import { SolidRegistry } from "./solid-registry";
-import { In } from "typeorm";
+import { In, Repository } from "typeorm";
+import { InjectRepository } from "@nestjs/typeorm";
+import { ModelMetadata } from "src/entities/model-metadata.entity";
 
 @Injectable()
 export class ModelMetadataHelperService {
     private readonly logger = new Logger(ModelMetadataHelperService.name);
 
-    constructor(private readonly registry: SolidRegistry) {
+    constructor(private readonly registry: SolidRegistry,
+        @InjectRepository(ModelMetadata)
+        private readonly modelMetadataRepo: Repository<ModelMetadata>,
+    ) {
     }
 
     getSystemFieldsMetadata(): any[] {
@@ -105,5 +110,28 @@ export class ModelMetadataHelperService {
         return systemFieldsMetadata;
     }
 
+    async loadFieldHierarchy(modelName: any) {
+        const model = await this.modelMetadataRepo.findOne({
+            where: {
+                singularName: modelName,
+            },
+            relations: {
+                fields: true,
+                parentModel: {
+                    fields: true,
+                }
+            }
+        });
+        const fields = [];
+        if (model) {
+            // Add the fields of the current model
+            fields.push(...model.fields);
 
+            // Add the fields of the parent model
+            if (model.parentModel) {
+                fields.push(...model.parentModel.fields);
+            }
+        }
+        return fields;
+    }
 }

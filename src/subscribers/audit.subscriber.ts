@@ -4,6 +4,7 @@ import { DataSource, EntityMetadata, EntitySubscriberInterface, EventSubscriber,
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ChatterMessageService } from '../services/chatter-message.service';
 import { lowerFirst } from 'src/helpers/string.helper';
+import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 
 @Injectable()
 @EventSubscriber()
@@ -15,6 +16,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         private readonly chatterMessageService: ChatterMessageService,
         @InjectRepository(ModelMetadata)
         private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        private readonly modelMetadataHelperService : ModelMetadataHelperService,
     ) {
         this.dataSource.subscribers.push(this);
     }
@@ -34,7 +36,9 @@ export class AuditSubscriber implements EntitySubscriberInterface {
             return false;
         }
 
-        const auditFields = model.fields.filter(field =>
+        const modelFields = await this.modelMetadataHelperService.loadFieldHierarchy(model.singularName)
+
+        const auditFields = modelFields.filter(field =>
             field.enableAuditTracking &&
             !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
             !(field.type === 'relation' && field.relationType === 'one-to-many')

@@ -19,6 +19,7 @@ import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { RequestContextService } from './request-context.service';
 import { ChatterMessageRepository } from 'src/repository/chatter-message.repository';
 import { lowerFirst } from 'src/helpers/string.helper';
+import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage>{
   constructor(
@@ -37,7 +38,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     readonly moduleRef: ModuleRef,
     @InjectRepository(ModelMetadata)
     private readonly modelMetadataRepo: Repository<ModelMetadata>,
-    readonly requestContextService: RequestContextService
+    readonly requestContextService: RequestContextService,
+    private readonly modelMetadataHelperService: ModelMetadataHelperService,
  ) {
    super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
  }
@@ -160,8 +162,10 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
     if (!model || !model.enableAuditTracking) {
         return;
     }
+    
+    const modelFields = await this.modelMetadataHelperService.loadFieldHierarchy(model.singularName)
 
-    const auditFields = model.fields.filter(field => 
+    const auditFields = modelFields.filter(field => 
         field.enableAuditTracking && 
         !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
         !(field.type === 'relation' && field.relationType === 'one-to-many')
