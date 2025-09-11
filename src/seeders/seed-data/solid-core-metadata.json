@@ -12256,5 +12256,20 @@
   ],
   "checksums": [],
   "listOfValues": [],
-  "scheduledJobs": []
+  "scheduledJobs": [],
+  "securityRules": [
+    {
+      "name": "model:User-role:Internal User",
+      "description": "Show User record for the current user only",
+      "roleUserKey": "Internal User",
+      "modelMetadataUserKey": "user",
+      "securityRuleConfig": {
+        "filters": {
+          "id": {
+            "$eq": "$activeUserId"
+          }
+        }
+      }
+    }
+  ]
 }
