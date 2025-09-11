@@ -18,6 +18,7 @@ import { ChatterMessageDetails } from '../entities/chatter-message-details.entit
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { RequestContextService } from './request-context.service';
 import { ChatterMessageRepository } from 'src/repository/chatter-message.repository';
+import { lowerFirst } from 'src/helpers/string.helper';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage>{
   constructor(
@@ -91,7 +92,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     }
     const model = await this.modelMetadataRepo.findOne({
         where: {
-            displayName: metadata.name
+            singularName: lowerFirst(metadata.name)
         },
         relations: {
             fields: true,
@@ -148,7 +149,7 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
     }
     const model = await this.modelMetadataRepo.findOne({
         where: {
-            displayName: metadata.name
+            singularName: lowerFirst(metadata.name)
         },
         relations: {
             fields: true,
@@ -220,7 +221,7 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
 async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata, databaseEntity: any, messageQueue: boolean = false) {
     const model = await this.modelMetadataRepo.findOne({
         where: {
-            displayName: metadata.name
+            singularName: lowerFirst(metadata.name)
         },
         relations: {
             fields: true,

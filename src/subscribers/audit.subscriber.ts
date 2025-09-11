@@ -3,6 +3,8 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityMetadata, EntitySubscriberInterface, EventSubscriber, InsertEvent, RemoveEvent, Repository, UpdateEvent } from 'typeorm';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ChatterMessageService } from '../services/chatter-message.service';
+import { lowerFirst } from 'src/helpers/string.helper';
+
 @Injectable()
 @EventSubscriber()
 export class AuditSubscriber implements EntitySubscriberInterface {
@@ -20,7 +22,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
     private async shouldTrackAudit(entity: any, metadata: EntityMetadata): Promise<boolean> {
         const model = await this.modelMetadataRepo.findOne({
             where: {
-                displayName: metadata.name
+                singularName: lowerFirst(metadata.name)
             },
             relations: {
                 fields: true,
