@@ -134,7 +134,7 @@ export interface IEntityComputedFieldProvider {
   name(): string;
 }
 
-export interface IEntityPreComputeFieldProvider<TTriggerEntity, TContext, TValue=void> extends IEntityComputedFieldProvider {
+export interface IEntityPreComputeFieldProvider<TTriggerEntity, TContext, TValue = void> extends IEntityComputedFieldProvider {
   preComputeValue(triggerEntity: TTriggerEntity, computedFieldMetadata: ComputedFieldMetadata<TContext>): Promise<TValue>;
 }
 
@@ -159,7 +159,7 @@ export class EventDetails<T> {
   ) { }
 }
 
-export interface IMail<TResponse=unknown> {
+export interface IMail<TResponse = unknown> {
   sendEmail(
     to: string,
     subject: string,
@@ -197,6 +197,16 @@ export interface ISMS {
     templateName: string,
     templateParams: any,
     shouldQueueSms: boolean,
+  ): Promise<any>;
+}
+
+export interface IWhatsAppTransport {
+  sendWhatsAppMessage(
+    to: string,
+    templateId: string,
+    parameters: any,
+    parentEntity?: any,
+    parentEntityId?: any
   ): Promise<any>;
 }
 

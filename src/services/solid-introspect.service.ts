@@ -11,6 +11,7 @@ import { IS_SCHEDULED_JOB_PROVIDER } from 'src/decorators/scheduled-job-provider
 import { IS_DASHBOARD_VARIABLE_SELECTION_PROVIDER } from 'src/decorators/dashboard-selection-provider.decorator';
 import { IS_DASHBOARD_QUESTION_DATA_PROVIDER } from 'src/decorators/dashboard-question-data-provider.decorator';
 import { IS_MAIL_PROVIDER } from 'src/decorators/mail-provider.decorator';
+import { IS_WA_PROVIDER } from 'src/decorators/whatsapp-provider.decorator';
 
 @Injectable()
 export class SolidIntrospectService implements OnApplicationBootstrap {
@@ -118,6 +119,15 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     mailProviders.forEach((mailProvider) => {
       this.solidRegistry.registerMailProvider(mailProvider);
     });
+
+    // Register all IMail implementations
+    const whatsappProviders = this.discoveryService
+      .getProviders()
+      .filter((provider) => this.isWhatsappProvider(provider));
+
+    whatsappProviders.forEach((whatsappProvider) => {
+      this.solidRegistry.registerWhatsappProvider(whatsappProvider);
+    });
   }
 
   isDashboardQuestionDataProvider(providerWrapper: InstanceWrapper<any>) {
@@ -210,6 +220,18 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     );
 
     return !!isMailProvider;
+  }
+
+  private isWhatsappProvider(provider: InstanceWrapper) {
+    const { instance } = provider;
+    if (!instance) return false;
+
+    const isWhatsappProvider = this.reflector.get<boolean>(
+      IS_WA_PROVIDER,
+      instance.constructor,
+    );
+
+    return !!isWhatsappProvider;
   }
 
   private isModule(provider: InstanceWrapper): boolean {

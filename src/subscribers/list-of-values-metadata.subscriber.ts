@@ -12,7 +12,7 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
         @InjectDataSource()
         private readonly dataSource: DataSource,
         readonly moduleMetadataHelperService: ModuleMetadataHelperService,
-        readonly listOfValuesMetadataService: ListOfValuesMetadataService, // Assuming you have a DashboardService for custom queries
+        readonly listOfValuesMetadataService: ListOfValuesMetadataService,
     ) {
         this.dataSource.subscribers.push(this);
     }
@@ -26,7 +26,7 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
             this.logger.debug('No listofvalue entity found in the ListofValueSubscriber afterInsert method');
             return;
         }
-        // await this.saveListOfValuesToConfig(event.entity, event.queryRunner.manager);
+        await this.saveListOfValuesToConfig(event.entity, event.queryRunner.manager);
     }
 
     async afterUpdate(event: UpdateEvent<ListOfValues>) {
@@ -36,13 +36,22 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
         }
 
         //@ts-ignore
-        // await this.updateListOfValuesToConfig(event.databaseEntity, event.entity, event.queryRunner.manager);
+        await this.updateListOfValuesToConfig(event.databaseEntity, event.entity, event.queryRunner.manager);
     }
+
+    // async beforeRemove(event: RemoveEvent<ListOfValues>) {
+    //     if (!event.entity) {
+    //         this.logger.debug('No listofvalue entity found in the ListofValueSubscriber beforeRemove method');
+    //         return;
+    //     }
+
+    //     await this.deleteListOfValuesFromConfig(event.entity, event.queryRunner.manager);
+    // }
 
 
     private async saveListOfValuesToConfig(listOfValues: ListOfValues, entityManager: EntityManager): Promise<void> {
         if (!listOfValues || !listOfValues.id) {
-            this.logger.debug('Listofvalue id is undefined');
+            this.logger.debug('on save Listofvalue id is undefined');
             return;
         }
 
@@ -63,7 +72,7 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
 
     private async updateListOfValuesToConfig(oldlistOfValues: ListOfValues, listOfValues: ListOfValues, entityManager: EntityManager): Promise<void> {
         if (!listOfValues || !listOfValues.id) {
-            this.logger.debug('Listofvalue id is undefined');
+            this.logger.debug('on update Listofvalue id is undefined');
             return;
         }
 
@@ -80,6 +89,27 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
 
         // Call the updateListofValuesToConfig method from the ListOfValuesMetadataService
         await this.listOfValuesMetadataService.updateListofValuesToConfig(oldlistOfValues, populatedLov);
+    }
+
+    private async deleteListOfValuesFromConfig(listOfValues: ListOfValues, entityManager: EntityManager): Promise<void> {
+        if (!listOfValues || !listOfValues.id) {
+            this.logger.debug('on delete Listofvalue id is undefined');
+            return;
+        }
+
+        // Load the Listofvalue with module relation populated
+        const populatedLov = await entityManager.findOne(ListOfValues, {
+            where: { id: listOfValues.id },
+            relations: ['module'],
+        });
+
+        if (!populatedLov) {
+            this.logger.error(`Listofvalue not found for id ${listOfValues.id}`);
+            return;
+        }
+
+        // Call the deleteListOfValuesFromConfig method from the ListOfValuesMetadataService
+        await this.listOfValuesMetadataService.deleteListOfValuesFromConfig(populatedLov);
     }
 
 }
