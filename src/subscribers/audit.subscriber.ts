@@ -58,7 +58,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
     async afterUpdate(event: UpdateEvent<any>) {
         if (await this.shouldTrackAudit(event.entity, event.metadata)) {
-            await this.chatterMessageService.postAuditMessageOnUpdate(event.entity, event.metadata, event.databaseEntity);
+            await this.chatterMessageService.postAuditMessageOnUpdate(event.entity, event.metadata, event.databaseEntity, event.updatedColumns || []);
         }
     }
 

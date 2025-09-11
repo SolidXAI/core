@@ -283,6 +283,7 @@ import { Three60WhatsappQueueSubscriberDatabase } from './jobs/database/three60-
 import { Three60WhatsappService } from './services/whatsapp/Three60WhatsappService';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis/src/throttler-storage-redis.service';
 import { isRedisConfigured } from './helpers/environment.helper';
+import { UserRepository } from './repository/user.repository';
 
 
 @Global()
@@ -546,6 +547,7 @@ import { isRedisConfigured } from './helpers/environment.helper';
     RoleMetadataService,
     PermissionMetadataSeederService,
     UserService,
+    UserRepository,
     SettingService,
     ConcatComputedFieldProvider,
     FileStorageProvider,
@@ -615,6 +617,7 @@ import { isRedisConfigured } from './helpers/environment.helper';
     MailFactory,
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,
+
   ],
   exports: [
     ModuleMetadataService,
