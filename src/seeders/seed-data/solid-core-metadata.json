@@ -12276,6 +12276,19 @@
           }
         }
       }
+    },
+    {
+      "name": "model:User-role:Admin",
+      "description": "Show All User records",
+      "roleUserKey": "Admin",
+      "modelMetadataUserKey": "user",
+      "securityRuleConfig": {
+        "filters": {
+          "id": {
+            "$ne": "0"
+          }
+        }
+      }
     }
   ]
 }
