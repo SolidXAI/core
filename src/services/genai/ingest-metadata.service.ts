@@ -21,9 +21,23 @@ import { exist } from '@hapi/joi';
 
 // const ING_INFO_FULL_FILE_DOC_ID = 'fullFileDocumentId';
 
+export type FieldIngestionInfo = {
+    fieldName: string;
+    fieldChunkId?: string; // Will be filled later
+};
+
+export type ModelIngestionInfo = {
+    modelName: string;
+    modelChunkId?: string;
+    fields: FieldIngestionInfo[];
+};
+
 export type ModuleRAGIngestionInfo = {
+    moduleName: string;
     collectionId: string;
     documentId: string;
+    moduleChunkId?: string;
+    models: ModelIngestionInfo[];
 };
 
 
@@ -63,6 +77,9 @@ export class IngestMetadataService {
             const fileName = `${enabledModule}-metadata.json`;
             const enabledModuleSeedFile = `module-metadata/${enabledModule}/${fileName}`;
             const fullPath = path.join(process.cwd(), enabledModuleSeedFile);
+            const overallMetadata: any = JSON.parse(fs.readFileSync(fullPath, 'utf-8').toString());
+
+            const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
 
             // Manage all the ingestion info file paths...
             const enabledModulIngestionInfoFile = `module-metadata/${enabledModule}/genai/${enabledModule}-ingested-info.json`;
@@ -75,19 +92,41 @@ export class IngestMetadataService {
 
             if (fs.existsSync(fullPath)) {
                 const overallMetadata: any = JSON.parse(fs.readFileSync(fullPath, 'utf-8').toString());
-
-                // Resolve collection
-                ingestionInfo.collectionId = await this.resolveRagCollectionForModule(ingestionInfo, enabledModule);
-
-                // Ingest full files... 
-                ingestionInfo.documentId = await this.deleteInsertRagDocumentForModule(ingestionInfo, fullPath, fileName);
-
+                ingestionInfo.moduleName = enabledModule
                 // Process module metadata first. 
                 const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
                 this.logger.log(`[Start] Processing module metadata for ${moduleMetadata.name}`)
+                const cleanedModuleMetadataWithoutFields = {
+                    ...moduleMetadata,
+                    models: moduleMetadata.models.map(({ fields, ...rest }) => rest),
+                };
+
+
+
+
+                // Build enriched ingestion info with placeholders for chunks
+                const enrichedIngestionInfo: ModuleRAGIngestionInfo = {
+                    moduleName: moduleMetadata.name,
+                    collectionId: await this.resolveRagCollectionForModule(ingestionInfo, enabledModule),
+                    documentId: await this.deleteInsertRagDocumentForModule(ingestionInfo, fullPath, fileName),
+                    moduleChunkId: await this.deleteInsertRagDocumentForModuleMetadataJson(ingestionInfo, cleanedModuleMetadataWithoutFields),
+                    models: await Promise.all(
+                        moduleMetadata.models.map(async (model) => ({
+                            modelName: model.singularName,
+                            modelChunkId: await this.deleteInsertRagDocumentForModelMetadataJson(ingestionInfo, model),
+                            fields: await Promise.all(
+                                model.fields.map(async (field) => ({
+                                    fieldName: field.name,
+                                    fieldChunkId: await this.deleteInsertRagDocumentForFieldMetadataJson(ingestionInfo, field,model),
+                                }))
+                            ),
+                        }))
+                    )
+
+                };
 
                 // Save ingestion info to disk...
-                fs.writeFileSync(enabledModulIngestionInfoFullPath, JSON.stringify({ingestionInfo}, null, 2), 'utf8');
+                fs.writeFileSync(enabledModulIngestionInfoFullPath, JSON.stringify({ enrichedIngestionInfo }, null, 2), 'utf8');
             }
         }
 
@@ -150,4 +189,70 @@ export class IngestMetadataService {
 
     }
 
+    private async deleteInsertRagDocumentForModuleMetadataJson(ingestionInfo: ModuleRAGIngestionInfo, moduleData: any): Promise<string> {
+        // Delete if existing...
+        if (ingestionInfo.moduleChunkId) {
+            await this.ragClient.documents.delete({ id: ingestionInfo.moduleChunkId });
+        }
+
+        // Now re-create...
+        const ingestResult = await this.ragClient.documents.create({
+            raw_text: moduleData,
+            metadata: {
+                chunk_type: "module_overview",
+                module_name: moduleData.name,
+                module_display_name: moduleData.displayName,
+                model_names: moduleData.models.map((i: any) => i.singularName), // just names for filtering
+                ingestion_level: "L1"
+
+            },
+        });
+        console.log("file ingest result for module Json:", JSON.stringify(ingestResult, null, 2));
+        return ingestResult.results.documentId;
+    }
+
+    
+    private async deleteInsertRagDocumentForModelMetadataJson(ingestionInfo: ModuleRAGIngestionInfo, modelData: any): Promise<string> {
+        // Delete if existing...
+        const currentModelChunkId = ingestionInfo.models.find(i => i.modelName == modelData.name).modelChunkId;
+        if (currentModelChunkId) {
+            await this.ragClient.documents.delete({ id: currentModelChunkId });
+        }
+
+        // Now re-create...
+        const ingestResult = await this.ragClient.documents.create({
+            raw_text: modelData,
+            metadata: {
+                chunk_type: "model_overview",
+                model_name: modelData.name,
+                model_display_name: modelData.displayName,
+                field_names: modelData.models.map((i: any) => i.name), // just names for filtering
+                ingestion_level: "L2"
+            },
+        });
+        console.log("file ingest result for model Json:", JSON.stringify(ingestResult, null, 2));
+        return ingestResult.results.documentId;
+    }
+
+    private async deleteInsertRagDocumentForFieldMetadataJson(ingestionInfo: ModuleRAGIngestionInfo, fieldData: any , modelData): Promise<string> {
+        // Delete if existing...
+        const currentFieldChunkId = ingestionInfo.models.find(i => i.modelName == modelData.singularName).fields.find(f => f.fieldName === fieldData.name).fieldChunkId;
+        if (currentFieldChunkId) {
+            await this.ragClient.documents.delete({ id: currentFieldChunkId });
+        }
+
+        // Now re-create...
+        const ingestResult = await this.ragClient.documents.create({
+            raw_text: fieldData,
+            metadata: {
+                chunk_type: "field_overview",
+                field_name: fieldData.singularName,
+                field_display_name: fieldData.displayName,
+                field_type: fieldData.type, // just names for filtering
+                ingestion_level: "L3"
+            },
+        });
+        console.log("file ingest result for field Json:", JSON.stringify(ingestResult, null, 2));
+        return ingestResult.results.documentId;
+    }
 }

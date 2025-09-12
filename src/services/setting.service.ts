@@ -73,6 +73,10 @@ export class SettingService extends CRUDService<Setting> {
       authScreenRightBackgroundImage: null,
       authScreenLeftBackgroundImage: null,
       authScreenCenterBackgroundImage: null,
+      solidXGenAiCodeBuilderConfig: JSON.stringify({
+            defaultProvider: "",
+            availableProviders: []
+        })
     };
 
     const existingSettings = await this.repo.find();
@@ -106,21 +110,34 @@ export class SettingService extends CRUDService<Setting> {
     for (const setting of settingsArray) {
       if (setting.key && setting.value !== undefined && setting.value !== null) {
         let value = setting.value;
+                try {
+          settingsMap[setting.key] = JSON.parse(value);
+        } catch {
+          if (value === 'true' || value === 'false') {
+            settingsMap[setting.key] = value === 'true';
+          } else if (!isNaN(Number(value)) && value.trim() !== '') {
+            settingsMap[setting.key] = Number(value);
+          } else if (value.includes(',')) {
+            settingsMap[setting.key] = value.split(',').map(item => item.trim());
+          } else {
+            settingsMap[setting.key] = value;
+          }
+        }
 
-        if (value === 'true' || value === 'false') {
-          settingsMap[setting.key] = value === 'true';
-        }
-        else if (!isNaN(Number(value)) && value.trim() !== '') {
-          settingsMap[setting.key] = Number(value);
-        }
-        else if (value.includes(',')) {
-          settingsMap[setting.key] = value.split(',').map(item => item.trim());
-        }
-        else {
-          settingsMap[setting.key] = value;
-        }
+        // if (value === 'true' || value === 'false') {
+        //   settingsMap[setting.key] = value === 'true';
+        // }
+        // else if (!isNaN(Number(value)) && value.trim() !== '') {
+        //   settingsMap[setting.key] = Number(value);
+        // }
+        // else if (value.includes(',')) {
+        //   settingsMap[setting.key] = value.split(',').map(item => item.trim());
+        // }
+        // else {
+        //   settingsMap[setting.key] = value;
+        // }
       }
-    }
+    } 
 
     const defaultSettings = this.getDefaultSettings();
 
@@ -166,6 +183,10 @@ export class SettingService extends CRUDService<Setting> {
       authScreenRightBackgroundImage: null,
       authScreenLeftBackgroundImage: null,
       authScreenCenterBackgroundImage: null,
+      solidXGenAiCodeBuilderConfig: JSON.stringify({
+            defaultProvider: "",
+            availableProviders: []
+        })
     };
   }
 
@@ -303,16 +324,19 @@ export class SettingService extends CRUDService<Setting> {
         const value = setting.value;
         let parsedValue: any;
 
-        if (value === 'true' || value === 'false') {
-          parsedValue = value === 'true';
-        } else if (!isNaN(Number(value)) && value.trim() !== '') {
-          parsedValue = Number(value);
-        } else if (value.includes(',')) {
-          parsedValue = value.split(',').map(item => item.trim());
-        } else {
-          parsedValue = value;
+        try {
+          parsedValue = JSON.parse(value);
+        } catch {
+          if (value === 'true' || value === 'false') {
+            parsedValue = value === 'true';
+          } else if (!isNaN(Number(value)) && value.trim() !== '') {
+            parsedValue = Number(value);
+          } else if (value.includes(',')) {
+            parsedValue = value.split(',').map(item => item.trim());
+          } else {
+            parsedValue = value;
+          }
         }
-
         if (setting.type === 'user') {
           user[setting.key] = parsedValue;
         } else {
