@@ -68,7 +68,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
                 metadata: JSON.stringify(aiResponse),
-                isApplied: aiInteraction.isApplied
+                isApplied: aiInteraction.isApplied,
+                status: aiResponse.success ? 'succeeded' : 'failed'
             });
 
             // update the job entry with failure... raising an error will lead the job to be marked as failed...
@@ -88,7 +89,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
                 metadata: JSON.stringify(aiResponse),
-                isApplied: aiInteraction.isApplied
+                isApplied: aiInteraction.isApplied,
+                status: aiResponse.success ? 'succeeded' : 'failed'
             });
 
             // If the human interaction was with isAutoApply=true, then we can go ahead and autoApply.

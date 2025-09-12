@@ -284,6 +284,7 @@ import { Three60WhatsappService } from './services/whatsapp/Three60WhatsappServi
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis/src/throttler-storage-redis.service';
 import { isRedisConfigured } from './helpers/environment.helper';
 import { UserRepository } from './repository/user.repository';
+import { ErrorMapperService } from './helpers/error-mapper.service';
 
 
 @Global()
@@ -480,6 +481,7 @@ import { UserRepository } from './repository/user.repository';
     EmailTemplateService,
     PublisherFactory,
     PollerService,
+    ErrorMapperService,
 
     McpToolResponseHandlerFactory,
     SolidCreateModuleMcpToolResponseHandler,
