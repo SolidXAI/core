@@ -1697,6 +1697,7 @@
         "dataSourceType": "postgres",
         "userKeyFieldUserKey": "username",
         "isSystem": true,
+        "enableAuditTracking": true,
         "fields": [
           {
             "name": "fullName",
@@ -1709,7 +1710,8 @@
             "index": false,
             "private": false,
             "encrypt": false,
-            "isSystem": true
+            "isSystem": true,
+            "enableAuditTracking": true
           },
           {
             "name": "username",
@@ -1722,7 +1724,8 @@
             "index": true,
             "private": false,
             "encrypt": false,
-            "isSystem": true
+            "isSystem": true,
+            "enableAuditTracking": true
           },
           {
             "name": "email",
@@ -1735,7 +1738,8 @@
             "index": true,
             "private": false,
             "encrypt": false,
-            "isSystem": true
+            "isSystem": true,
+            "enableAuditTracking": true
           },
           {
             "name": "mobile",
@@ -1748,7 +1752,8 @@
             "index": true,
             "private": false,
             "encrypt": false,
-            "isSystem": true
+            "isSystem": true,
+            "enableAuditTracking": true
           },
           {
             "name": "password",
@@ -1884,7 +1889,8 @@
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
             "isSystem": true,
-            "isRelationManyToManyOwner": true
+            "isRelationManyToManyOwner": true,
+            "enableAuditTracking": true
           },
           {
             "name": "forgotPasswordConfirmedAt",
@@ -12277,5 +12283,33 @@
   ],
   "checksums": [],
   "listOfValues": [],
-  "scheduledJobs": []
+  "scheduledJobs": [],
+  "securityRules": [
+    {
+      "name": "model:User-role:Internal User",
+      "description": "Show User record for the current user only",
+      "roleUserKey": "Internal User",
+      "modelMetadataUserKey": "user",
+      "securityRuleConfig": {
+        "filters": {
+          "id": {
+            "$eq": "$activeUserId"
+          }
+        }
+      }
+    },
+    {
+      "name": "model:User-role:Admin",
+      "description": "Show All User records",
+      "roleUserKey": "Admin",
+      "modelMetadataUserKey": "user",
+      "securityRuleConfig": {
+        "filters": {
+          "id": {
+            "$ne": "0"
+          }
+        }
+      }
+    }
+  ]
 }

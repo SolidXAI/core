@@ -19,6 +19,7 @@ import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { RequestContextService } from './request-context.service';
 import { ChatterMessageRepository } from 'src/repository/chatter-message.repository';
 import { lowerFirst } from 'src/helpers/string.helper';
+import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage>{
   constructor(
@@ -37,7 +38,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     readonly moduleRef: ModuleRef,
     @InjectRepository(ModelMetadata)
     private readonly modelMetadataRepo: Repository<ModelMetadata>,
-    readonly requestContextService: RequestContextService
+    readonly requestContextService: RequestContextService,
+    private readonly modelMetadataHelperService: ModelMetadataHelperService,
  ) {
    super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
  }
@@ -143,7 +145,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage>{
     }
 }
 
-async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEntity: any, messageQueue: boolean = false) {
+async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEntity: any, updatedColumns: any[] = [], messageQueue: boolean = false) {
     if(!databaseEntity || !entity){
         return;
     }
@@ -160,34 +162,70 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
     if (!model || !model.enableAuditTracking) {
         return;
     }
+    
+    const modelFields = await this.modelMetadataHelperService.loadFieldHierarchy(model.singularName)
 
-    const auditFields = model.fields.filter(field => 
+    const auditFields = modelFields.filter(field => 
         field.enableAuditTracking && 
         !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
         !(field.type === 'relation' && field.relationType === 'one-to-many')
     );
 
-    const relationFields = auditFields.filter(field => 
-        field.type === 'relation'
-    );
-    if (relationFields.length > 0) {
-        const populatedEntity = await this.entityManager.findOne(metadata.target, {
-            where: { id: databaseEntity.id },
-            relations: relationFields.map(field => field.name)
-        });
-        if (populatedEntity) {
-            databaseEntity = populatedEntity;
-        }
+    const updatedFieldNames = new Set(updatedColumns.map(col => col.propertyName));
+    
+    const allNonRelationFields = auditFields.filter(field => field.type !== 'relation');
+    const allRelationFields = auditFields.filter(field => field.type === 'relation');
+
+    let potentialNonRelationFields = [];
+    
+    if (updatedColumns.length > 0) {
+        potentialNonRelationFields = allNonRelationFields.filter(field => 
+            updatedFieldNames.has(field.name)
+        );
+    } else {
+        potentialNonRelationFields = allNonRelationFields;
     }
-    const changedFields = auditFields.filter(field => {
+
+    const potentialRelationFields = allRelationFields;
+
+    const changedNonRelationFields = potentialNonRelationFields.filter(field => {
         const newValue = entity[field.name];
         const oldValue = databaseEntity[field.name];
         return this.hasValueChanged(newValue, oldValue);
     });
+
+    const changedRelationFields = [];
+    if (potentialRelationFields.length > 0) {
+        const populatedOldEntity = await this.populateRelationFields(databaseEntity, potentialRelationFields, metadata);
+
+        for (const field of potentialRelationFields) {
+            const newValue = entity[field.name];
+            const oldValue = populatedOldEntity[field.name];
+            
+            if (this.hasRelationValueChanged(field, newValue, oldValue)) {
+                changedRelationFields.push({
+                    field,
+                    newValue,
+                    oldValue
+                });
+            }
+        }
+    }
+
+
+    const allChangedFields = [
+        ...changedNonRelationFields.map(field => ({
+            field,
+            newValue: entity[field.name],
+            oldValue: databaseEntity[field.name]
+        })),
+        ...changedRelationFields
+    ];
     
-    if (changedFields.length === 0) {
+    if (allChangedFields.length === 0) {
         return;
     }
+
     const activeUser = this.requestContextService.getActiveUser();
 
     const chatterMessage = new ChatterMessage();
@@ -206,14 +244,14 @@ async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEn
 
     const savedMessage = await this.repo.save(chatterMessage);
 
-    for (const field of changedFields) {
+    for (const { field, newValue, oldValue } of allChangedFields) {
         const messageDetail = new ChatterMessageDetails();
         messageDetail.chatterMessage = savedMessage;
         messageDetail.fieldName = field.name;
-        messageDetail.oldValue = this.formatFieldValue(field, databaseEntity[field.name]);
-        messageDetail.newValue = this.formatFieldValue(field, entity[field.name]);
-        messageDetail.oldValueDisplay = this.formatFieldValueDisplay(field, databaseEntity[field.name]);
-        messageDetail.newValueDisplay = this.formatFieldValueDisplay(field, entity[field.name]);
+        messageDetail.oldValue = this.formatFieldValue(field, oldValue);
+        messageDetail.newValue = this.formatFieldValue(field, newValue);
+        messageDetail.oldValueDisplay = this.formatFieldValueDisplay(field, oldValue);
+        messageDetail.newValueDisplay = this.formatFieldValueDisplay(field, newValue);
         await this.chatterMessageDetailsRepo.save(messageDetail);
     }
 }
@@ -297,28 +335,139 @@ private formatFieldValueDisplay(field: any, value: any): string {
 }
 
 private hasValueChanged(newValue: any, oldValue: any): boolean {
-    if (
-        (newValue === null || newValue === undefined) &&
-        (oldValue === null || oldValue === undefined)
-    ) {
+    if (newValue === oldValue) {
         return false;
     }
 
-    if (newValue === oldValue) {
+    if (newValue === null && oldValue === null) {
         return false;
+    }
+
+    if (newValue === undefined && oldValue === undefined) {
+        return false;
+    }
+
+    if (newValue && oldValue && typeof newValue === 'object' && typeof oldValue === 'object') {
+        if (newValue.id !== undefined && oldValue.id !== undefined) {
+            return newValue.id !== oldValue.id;
+        }
+        
+        if (Array.isArray(newValue) && Array.isArray(oldValue)) {
+            if (newValue.length !== oldValue.length) {
+                return true;
+            }
+            const newIds = newValue.map(item => item.id || item).sort();
+            const oldIds = oldValue.map(item => item.id || item).sort();
+            return JSON.stringify(newIds) !== JSON.stringify(oldIds);
+        }
     }
 
     if (Array.isArray(newValue) && Array.isArray(oldValue)) {
         return JSON.stringify(newValue) !== JSON.stringify(oldValue);
     }
 
-    if (
-        typeof newValue === 'object' && newValue !== null &&
-        typeof oldValue === 'object' && oldValue !== null
-    ) {
-        return JSON.stringify(newValue) !== JSON.stringify(oldValue);
+    return true;
+}
+
+private hasRelationValueChanged(field: any, newValue: any, oldValue: any): boolean {
+    if (newValue === oldValue) {
+        return false;
+    }
+    
+    if ((newValue === null || newValue === undefined) && (oldValue === null || oldValue === undefined)) {
+        return false;
     }
 
-    return true;
+    if (field.relationType === 'many-to-one') {
+        const newId = this.extractRelationId(newValue);
+        const oldId = this.extractRelationId(oldValue);
+        return newId !== oldId;
+    }
+
+    if (field.relationType === 'many-to-many' || field.relationType === 'manyToMany') {
+        const newIds = this.extractRelationIds(newValue);
+        const oldIds = this.extractRelationIds(oldValue);
+        
+        if (newIds.length !== oldIds.length) {
+            return true;
+        }
+        
+        newIds.sort();
+        oldIds.sort();
+        
+        return JSON.stringify(newIds) !== JSON.stringify(oldIds);
+    }
+
+    return this.hasValueChanged(newValue, oldValue);
+}
+
+private extractRelationId(value: any): any {
+    if (value === null || value === undefined) {
+        return null;
+    }
+    
+    if (typeof value === 'string' || typeof value === 'number') {
+        return value;
+    }
+    
+    if (typeof value === 'object' && value.id !== undefined) {
+        return value.id;
+    }
+    
+    return null;
+}
+
+private extractRelationIds(value: any): any[] {
+    if (!Array.isArray(value)) {
+        const id = this.extractRelationId(value);
+        return id !== null ? [id] : [];
+    }
+    
+    return value.map(item => this.extractRelationId(item)).filter(id => id !== null);
+}
+
+private async populateRelationFields(databaseEntity: any, relationFields: any[], metadata: EntityMetadata): Promise<any> {
+    const populatedEntity = { ...databaseEntity };
+    
+    for (const field of relationFields) {
+        const relationValue = databaseEntity[field.name];
+        
+        if (relationValue === null || relationValue === undefined) {
+            populatedEntity[field.name] = relationValue;
+            continue;
+        }
+
+        const relationMetadata = metadata.relations.find(rel => rel.propertyName === field.name);
+        if (!relationMetadata) {
+            populatedEntity[field.name] = relationValue;
+            continue;
+        }
+
+        const targetEntity = relationMetadata.inverseEntityMetadata || relationMetadata.type;
+        
+        if (field.relationType === 'many-to-one') {
+            const relationId = this.extractRelationId(relationValue);
+            if (relationId) {
+                const relatedEntity = await this.entityManager.findOne(targetEntity as any, {
+                    where: { id: relationId }
+                });
+                populatedEntity[field.name] = relatedEntity;
+            } else {
+                populatedEntity[field.name] = relationValue; 
+            }
+        } else if (field.relationType === 'many-to-many' || field.relationType === 'manyToMany') {
+            const relationIds = this.extractRelationIds(relationValue);
+            if (relationIds.length > 0) {
+                const relatedEntities = await this.entityManager.findByIds(targetEntity as any, relationIds);
+                populatedEntity[field.name] = relatedEntities;
+            } else {
+                populatedEntity[field.name] = relationValue; 
+            }
+        } else {
+            populatedEntity[field.name] = relationValue;
+        }
+    }
+    
+    return populatedEntity;
 }
 }

@@ -21,6 +21,7 @@ import { ActionMetadataService } from './action-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { UserViewMetadataService } from './user-view-metadata.service';
 import { ViewMetadataRepository } from 'src/repository/view-metadata.repository';
+import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -42,6 +43,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     private readonly fieldMetadataRepo: Repository<FieldMetadata>,
     @InjectRepository(ModelMetadata)
     private readonly modelMetadataRepo: Repository<ModelMetadata>,
+    private readonly modelMetadataHelperService: ModelMetadataHelperService,
     readonly moduleRef: ModuleRef
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'viewMetadata', 'solid-core', moduleRef);
@@ -172,7 +174,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     }
 
     // 5. Create an easy to use map of field metadata, rather than sending an array of fields it becomes easier to use in the frontend.
-    const fields = await this.loadFieldHierarchy(modelName);
+    const fields = await this.modelMetadataHelperService.loadFieldHierarchy(modelName);
     const fieldsMap = new Map<string, FieldMetadata>();
     for (let i = 0; i < fields.length; i++) {
       const field = fields[i];
