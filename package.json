@@ -68,6 +68,7 @@
     "pg": "^8.11.3",
     "pluralize": "^8.0.0",
     "puppeteer": "^23.2.0",
+    "r2r-js": "^0.4.43",
     "reflect-metadata": "^0.1.13",
     "rxjs": "^7.8.1",
     "swagger-ui-express": "^5.0.0",

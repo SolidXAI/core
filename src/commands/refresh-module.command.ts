@@ -35,7 +35,6 @@ export class RefreshModuleCommand extends CommandRunner {
     await this.moduleMetadataService.generateCode(codeGenerationOptions);
   }
 
-
   @Option({
     flags: '-i, --id [module ID]',
     description: 'Module ID from the ss_module_metadata table',

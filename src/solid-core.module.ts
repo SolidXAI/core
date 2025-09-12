@@ -285,6 +285,9 @@ import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis/
 import { isRedisConfigured } from './helpers/environment.helper';
 import { UserRepository } from './repository/user.repository';
 import { ErrorMapperService } from './helpers/error-mapper.service';
+import { IngestCommand } from './commands/ingest.command';
+import { R2RHelperService } from './services/genai/r2r-helper.service';
+import { IngestMetadataService } from './services/genai/ingest-metadata.service';
 
 
 @Global()
@@ -448,6 +451,7 @@ import { ErrorMapperService } from './helpers/error-mapper.service';
     RefreshModuleCommand,
     SolidIntrospectService,
     DiscoveryService,
+    R2RHelperService,
     CrudHelperService,
     CRUDService,
     Reflector,
@@ -471,6 +475,8 @@ import { ErrorMapperService } from './helpers/error-mapper.service';
     TextractService,
     SolidRegistry,
     SeedCommand,
+    IngestCommand,
+    IngestMetadataService,
     SMTPEMailService,
     ElasticEmailService,
     Msg91SMSService,
