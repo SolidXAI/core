@@ -284,6 +284,10 @@ import { Three60WhatsappService } from './services/whatsapp/Three60WhatsappServi
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis/src/throttler-storage-redis.service';
 import { isRedisConfigured } from './helpers/environment.helper';
 import { UserRepository } from './repository/user.repository';
+import { ErrorMapperService } from './helpers/error-mapper.service';
+import { IngestCommand } from './commands/ingest.command';
+import { R2RHelperService } from './services/genai/r2r-helper.service';
+import { IngestMetadataService } from './services/genai/ingest-metadata.service';
 
 
 @Global()
@@ -447,6 +451,7 @@ import { UserRepository } from './repository/user.repository';
     RefreshModuleCommand,
     SolidIntrospectService,
     DiscoveryService,
+    R2RHelperService,
     CrudHelperService,
     CRUDService,
     Reflector,
@@ -470,6 +475,8 @@ import { UserRepository } from './repository/user.repository';
     TextractService,
     SolidRegistry,
     SeedCommand,
+    IngestCommand,
+    IngestMetadataService,
     SMTPEMailService,
     ElasticEmailService,
     Msg91SMSService,
@@ -480,6 +487,7 @@ import { UserRepository } from './repository/user.repository';
     EmailTemplateService,
     PublisherFactory,
     PollerService,
+    ErrorMapperService,
 
     McpToolResponseHandlerFactory,
     SolidCreateModuleMcpToolResponseHandler,
