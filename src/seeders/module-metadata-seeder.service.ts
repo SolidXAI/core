@@ -41,8 +41,7 @@ import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { DashboardRepository } from 'src/repository/dashboard.repository';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
-import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto'
-import { deepFreeze } from 'src/helpers';
+import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 
 @Injectable()
 export class ModuleMetadataSeederService {
@@ -129,8 +128,7 @@ export class ModuleMetadataSeederService {
         for (let i = 0; i < seedDataFiles.length; i++) {
 
             // Module, model & field handling.
-            const overallMetadata = deepFreeze(seedDataFiles[i]);
-
+            const overallMetadata = seedDataFiles[i];
             // const fullPath = path.join(process.cwd(), seedDataFile);
 
             // For each module metadata seed file provided, read contents, parse & convert to a variable. 
@@ -319,20 +317,14 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedMediaStorageProviders(_mediaStorageProviders: any) {
-        const mediaStorageProviders = structuredClone(_mediaStorageProviders);
-        if (!mediaStorageProviders) {
-            return;
-        }
+    async seedMediaStorageProviders(mediaStorageProviders: any) {
         for (let i = 0; i < mediaStorageProviders.length; i++) {
             const mediaStorageProivder = mediaStorageProviders[i];
             await this.mediaStorageProviderMetadataService.upsert(mediaStorageProivder);
         }
     }
 
-    async seedEmailTemplates(_emailTemplates: CreateEmailTemplateDto[], _moduleMetadata: CreateModuleMetadataDto) {
-        const emailTemplates = structuredClone(_emailTemplates);
-        const moduleMetadata = structuredClone(_moduleMetadata);
+    async seedEmailTemplates(emailTemplates: CreateEmailTemplateDto[], moduleMetadata: CreateModuleMetadataDto) {
         if (!emailTemplates) {
             return;
         }
@@ -368,9 +360,7 @@ export class ModuleMetadataSeederService {
 
     }
 
-    async seedSmsTemplates(_smsTemplates: CreateSmsTemplateDto[], _moduleMetadata: CreateModuleMetadataDto) {
-        const smsTemplates = structuredClone(_smsTemplates);
-        const moduleMetadata = structuredClone(_moduleMetadata);
+    async seedSmsTemplates(smsTemplates: CreateSmsTemplateDto[], moduleMetadata: CreateModuleMetadataDto) {
         if (!smsTemplates) {
             return;
         }
@@ -407,7 +397,6 @@ export class ModuleMetadataSeederService {
     }
 
     async seedMenus(menus: any) {
-        // const menus = structuredClone(_menus);
         if (!menus) {
             return;
         }
@@ -445,8 +434,7 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedActions(_actions: any) {
-        const actions = structuredClone(_actions);
+    async seedActions(actions: any) {
         if (!actions) {
             return;
         }
@@ -467,8 +455,7 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedViews(_views: any) {
-        const views = structuredClone(_views);
+    async seedViews(views: any) {
         if (!views) {
             return;
         }
@@ -491,8 +478,7 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedUsers(_users) {
-        const users = structuredClone(_users);
+    async seedUsers(users) {
         if (!users) {
             return;
         }
@@ -513,8 +499,8 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedModuleModelFields(_moduleMetadata: CreateModuleMetadataDto) {
-        const moduleMetadata = structuredClone(_moduleMetadata);
+    async seedModuleModelFields(moduleMetadata: CreateModuleMetadataDto) {
+
         // First we create the module. 
         // await this.moduleMetadataService.removeByName(moduleMetadata.name);
         // const module = await this.moduleMetadataService.create(moduleMetadata);
@@ -575,16 +561,14 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedSettings(_createDto: CreateSettingDto) {
-        const createDto = structuredClone(_createDto);
+    async seedSettings(createDto: CreateSettingDto) {
         const settingsArray: any[] = await this.settingsRepo.find();
         if (!settingsArray || settingsArray.length === 0) {
             this.seetingService.create(createDto);
         }
     }
 
-    async seedSecurityRules(_rulesDto: CreateSecurityRuleDto[]) {
-        const rulesDto = structuredClone(_rulesDto);
+    async seedSecurityRules(rulesDto: CreateSecurityRuleDto[]) {
         if (!rulesDto || rulesDto.length === 0) {
             this.logger.debug(`No security rules found to seed`);
             return;
@@ -594,8 +578,7 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedListOfValues(_listOfValuesDto: CreateListOfValuesDto[]) {
-        const listOfValuesDto = structuredClone(_listOfValuesDto);
+    async seedListOfValues(listOfValuesDto: CreateListOfValuesDto[]) {
         if (!listOfValuesDto || listOfValuesDto.length === 0) {
             this.logger.debug(`No List Of Values found to seed`);
             return;
@@ -607,8 +590,7 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedDashboards(_dashboardDtos: CreateDashboardDto[]) {
-        const dashboardDtos = structuredClone(_dashboardDtos);
+    async seedDashboards(dashboardDtos: CreateDashboardDto[]) {
         if (!dashboardDtos || dashboardDtos.length === 0) {
             this.logger.debug(`No dashboards found to seed`);
             return;
@@ -618,8 +600,7 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedScheduledJobs(_createScheduledJobDto: CreateScheduledJobDto[]) {
-        const createScheduledJobDto = structuredClone(_createScheduledJobDto);
+    async seedScheduledJobs(createScheduledJobDto: CreateScheduledJobDto[]) {
         if (!createScheduledJobDto || createScheduledJobDto.length === 0) {
             this.logger.debug(`No scheduled jobs found to seed`);
             return;
