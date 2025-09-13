@@ -46,62 +46,42 @@ export class IngestMetadataService {
     private ragClient: r2rClient;
 
     constructor(
-        // @InjectRepository(Setting, 'default')
-        // readonly settingsRepo: Repository<Setting>,
-        // readonly securityRuleRepo: SecurityRuleRepository,
-        // readonly systemFieldsSeederService: SystemFieldsSeederService,
-        // readonly dashboardRepo: DashboardRepository,
-        // readonly scheduledJobRepository: ScheduledJobRepository,
         private readonly r2rService: R2RHelperService,
     ) { }
 
     // Stable stringify so hashes/ids don't flap
-    private stableStringify(obj: any): string {
-        return JSON.stringify(obj, Object.keys(obj).sort(), 2);
+    // private stableStringify(obj: any): string {
+    //     return JSON.stringify(obj, Object.keys(obj).sort(), 2);
+    // }
+    // private sha256(input: string): string {
+    //     return crypto.createHash('sha256').update(input).digest('hex');
+    // }
+    // private hashSchema(obj: any): string {
+    //     return this.sha256(this.stableStringify(obj));
+    // }
+    private _sha256OfJson(obj: any): string {
+        const s = JSON.stringify(obj);
+        return crypto.createHash('sha256').update(s).digest('hex');
     }
-
-    private sha256(input: string): string {
-        return crypto.createHash('sha256').update(input).digest('hex');
-    }
-
-    // private buildChunkExternalId(moduleName: string, modelName?: string, fieldName?: string): string {
-    //     const key = [moduleName, modelName ?? '', fieldName ?? ''].join(':');
-    //     return `sx:${this.sha256(key).slice(0, 24)}`; // short but unique
+    // // Small natural-language one-liners for relations
+    // private relationSig(model: any): string[] {
+    //     const rels: string[] = [];
+    //     for (const f of model.fields ?? []) {
+    //         if (f.relation?.targetModel) {
+    //             rels.push(`${model.singularName}.${f.name} -> ${f.relation.targetModel}(${f.relation.targetField ?? 'id'})`);
+    //         }
+    //     }
+    //     return rels;
     // }
 
-    private hashSchema(obj: any): string {
-        return this.sha256(this.stableStringify(obj));
+    private _oneLineBool(b?: boolean): 'yes' | 'no' {
+        return b ? 'yes' : 'no';
     }
 
-    // Small natural-language one-liners for relations
-    private relationSig(model: any): string[] {
-        const rels: string[] = [];
-        for (const f of model.fields ?? []) {
-            if (f.relation?.targetModel) {
-                rels.push(`${model.singularName}.${f.name} -> ${f.relation.targetModel}(${f.relation.targetField ?? 'id'})`);
-            }
-        }
-        return rels;
-    }
-
-    private summarizeModel(model: any): { oneLine: string; importantFields: string[] } {
-        const primary = (model.fields ?? []).find((f: any) => f.isPrimary) ?? {};
-        const uniques = (model.fields ?? []).filter((f: any) => f.isUnique).map((f: any) => f.name);
-        const req = (model.fields ?? []).filter((f: any) => f.required).map((f: any) => f.name);
-        const rels = this.relationSig(model);
-
-        const oneLine = `${model.singularName}: ${model.description ?? 'no description'}. ` +
-            `Primary: ${primary.name ?? 'id'}. ` +
-            (uniques.length ? `Unique: ${uniques.join(', ')}. ` : '') +
-            (rels.length ? `Relations: ${rels.length}.` : 'No relations.');
-
-        const importantFields = [
-            primary?.name && `Primary: ${primary.name}`,
-            uniques.length && `Unique: ${uniques.join(', ')}`,
-            req.length && `Required: ${req.slice(0, 6).join(', ')}${req.length > 6 ? '…' : ''}`
-        ].filter(Boolean) as string[];
-
-        return { oneLine, importantFields };
+    private _shortList(arr?: string[] | null, max = 10): string {
+        if (!Array.isArray(arr) || arr.length === 0) return 'none';
+        const a = arr.slice(0, max);
+        return `${a.join(', ')}${arr.length > max ? ', …' : ''}`;
     }
 
     async ingest() {
@@ -147,10 +127,11 @@ export class IngestMetadataService {
             await this.deleteInsertRagChunkForModule(ingestionInfo, moduleMetadata);
 
             // Delete and re-insert chunks representing each model.
-            const models = moduleMetadata.models;
-            for (let iM = 0; iM < models.length; iM++) {
-                const model = models[iM];
+            for (const model of moduleMetadata.models) {
                 await this.deleteInsertRagChunkForModel(ingestionInfo, enabledModule, model);
+                for (const field of model.fields) {
+                    await this.deleteInsertRagChunkForField(ingestionInfo, enabledModule, model.singularName, field);
+                }
             }
 
             // Save ingestion info to disk...
@@ -199,7 +180,7 @@ export class IngestMetadataService {
 
         // 1) Compute hash of the entire JSON string (as-is)
         const jsonStr = fs.readFileSync(fullPath, 'utf-8');
-        const contentHash = this.hashSchema(JSON.parse(jsonStr));
+        const contentHash = this._sha256OfJson(JSON.parse(jsonStr));
 
         // 2) Short-circuit if unchanged and we still have a documentId
         if (ingestionInfo.documentHash === contentHash && ingestionInfo.documentId) {
@@ -251,7 +232,7 @@ export class IngestMetadataService {
         const moduleName: string = moduleMetadata?.name;
 
         // Hash the meaningful parts of the module to detect changes and skip re-ingest.
-        const schemaHash = this.hashSchema({
+        const schemaHash = this._sha256OfJson({
             name: moduleMetadata?.name ?? null,
             description: moduleMetadata?.description ?? null,
 
@@ -300,7 +281,7 @@ Usage: Use this chunk to choose the correct model/field chunks for code generati
         // Delete previous chunk if we have one
         if (ingestionInfo.moduleChunkId) {
             try {
-                await this.ragClient.chunks.delete({ id: ingestionInfo.moduleChunkId });
+                await this.ragClient.documents.delete({ id: ingestionInfo.moduleChunkId });
             } catch (e) {
                 this.logger.warn(`[Warn] Failed deleting old module chunk (${ingestionInfo.moduleChunkId}): ${String(e)}`);
             }
@@ -329,7 +310,7 @@ Usage: Use this chunk to choose the correct model/field chunks for code generati
         const modelName: string = model?.singularName;
 
         // 1) Hash full JSON (as-is) to detect changes and skip re-ingest
-        const schemaHash = this.hashSchema(model);
+        const schemaHash = this._sha256OfJson(model);
 
         // Ensure ingestionInfo.models[] has an entry for this model
         const modelsArr = ingestionInfo.models ?? (ingestionInfo.models = []);
@@ -403,7 +384,7 @@ For exact constraints (enum/min/max/regex/default), consult the individual field
         // 5) Delete previous chunk if present
         if (modelEntry.modelChunkId) {
             try {
-                await this.ragClient.chunks.delete({ id: modelEntry.modelChunkId });
+                await this.ragClient.documents.delete({ id: modelEntry.modelChunkId });
             } catch (e) {
                 this.logger.warn(`[Warn] Failed deleting old model chunk (${modelEntry.modelChunkId}): ${String(e)}`);
             }
@@ -427,5 +408,288 @@ For exact constraints (enum/min/max/regex/default), consult the individual field
 
         this.logger.log(`[OK] Ingested model ${moduleName}.${modelName} → id=${newId}, hash=${schemaHash.slice(0, 8)}…`);
         // return newId;
+    }
+
+    private _buildFieldTextAndMetadata(moduleName: string, modelName: string, f: CreateFieldMetadataDto) {
+        // Identity
+        const name = f?.name;
+        const displayName = f?.displayName ?? name;
+        const description = f?.description ?? 'N/A';
+
+        // Types
+        const type = f?.type;
+        const ormType = f?.ormType ?? null;
+
+        // Constraints / validation
+        const required = !!f?.required;
+        const unique = !!f?.unique;
+        const index = !!f?.index;
+        const length = f?.length ?? null;
+        const min = f?.min ?? null;
+        const max = f?.max ?? null;
+        const defaultValue = f?.defaultValue ?? null;
+        const regex = f?.regexPattern ?? null;
+        const regexErr = f?.regexPatternNotMatchingErrorMsg ?? null;
+
+        // Relation
+        const relationType = f?.relationType ?? null; // e.g., many-to-one, many-to-many, one-to-many
+        const relModule = f?.relationModelModuleName ?? null;
+        const relModel = f?.relationCoModelSingularName ?? null;
+        const relField = f?.relationCoModelFieldName ?? 'id';
+        // const relOwner = f?.isRelationManyToManyOwner ?? null;
+        // const relJoinTable = f?.relationJoinTableName ?? null;
+        // const relCreateInverse = !!f?.relationCreateInverse;
+        const relCascade = f?.relationCascade ?? null;
+        const relFixedFilter = f?.relationFieldFixedFilter ?? null;
+
+        // Selection (dropdowns)
+        const selectionDynProvider = f?.selectionDynamicProvider ?? null;
+        const selectionDynCtxt = f?.selectionDynamicProviderCtxt ?? null;
+        const selectionStatic = Array.isArray(f?.selectionStaticValues) ? f.selectionStaticValues : null;
+        const selectionValueType = f?.selectionValueType ?? null;
+        const isMultiSelect = !!f?.isMultiSelect;
+
+        // Media (uploads)
+        const mediaTypes = Array.isArray(f?.mediaTypes) ? f.mediaTypes : null;
+        const mediaMaxSizeKb = f?.mediaMaxSizeKb ?? null;
+        const mediaStorageProvider = f?.mediaStorageProviderUserKey ?? null; // likely object/id in your JSON
+
+        // Computed fields
+        const computedProvider = f?.computedFieldValueProvider ?? null;
+        const computedProviderCtxt = f?.computedFieldValueProviderCtxt ?? null;
+        const computedValueType = f?.computedFieldValueType ?? null;
+        const computedTriggerCfg = f?.computedFieldTriggerConfig ?? null;
+
+        // Security / privacy / audit
+        // const encrypt = !!f?.encrypt;
+        // const encryptionType = f?.encryptionType ?? null;
+        // const decryptWhen = f?.decryptWhen ?? null;
+        const isPrivate = !!f?.private;
+        const enableAuditTracking = !!f?.enableAuditTracking;
+
+        // Keys / system flags / mapping
+        const isUserKey = !!f?.isUserKey;
+        const isSystem = !!f?.isSystem;
+        const isMarkedForRemoval = !!f?.isMarkedForRemoval;
+        const columnName = f?.columnName ?? null;
+        const relCoModelColumn = f?.relationCoModelColumnName ?? null;
+        const uuid = f?.uuid ?? null;
+
+        const relationSummary = (() => {
+            if (!relationType || !relModel) return 'none';
+            const parts = [
+                `type=${relationType}`,
+                relModule ? `module=${relModule}` : null,
+                `model=${relModel}`,
+                relField ? `field=${relField}` : null,
+                // relOwner !== null ? `m2mOwner=${relOwner}` : null,
+                // relCreateInverse ? 'createInverse=yes' : null,
+                relCascade ? `cascade=${relCascade}` : null,
+                // relJoinTable ? `joinTable=${relJoinTable}` : null,
+                relFixedFilter ? `fixedFilter=${relFixedFilter}` : null,
+            ].filter(Boolean);
+            return parts.join(', ');
+        })();
+
+        const selectionSummary = (() => {
+            const parts: string[] = [];
+            if (selectionDynProvider) parts.push(`dynamicProvider=${selectionDynProvider}`);
+            if (selectionDynCtxt) parts.push(`dynamicCtxt=${selectionDynCtxt}`);
+            if (selectionStatic?.length) parts.push(`static=[${this._shortList(selectionStatic, 12)}]`);
+            if (selectionValueType) parts.push(`valueType=${selectionValueType}`);
+            parts.push(`multiSelect=${this._oneLineBool(isMultiSelect)}`);
+            return parts.length ? parts.join(', ') : 'none';
+        })();
+
+        const mediaSummary = (() => {
+            const parts: string[] = [];
+            if (mediaTypes?.length) parts.push(`types=[${this._shortList(mediaTypes, 12)}]`);
+            if (mediaMaxSizeKb) parts.push(`maxSizeKb=${mediaMaxSizeKb}`);
+            if (mediaStorageProvider) parts.push(`storageProvider=${typeof mediaStorageProvider === 'string' ? mediaStorageProvider : 'set'}`);
+            return parts.length ? parts.join(', ') : 'none';
+        })();
+
+        const computedSummary = (() => {
+            const parts: string[] = [];
+            if (computedProvider) parts.push(`provider=${computedProvider}`);
+            if (computedProviderCtxt) parts.push(`providerCtxt=${computedProviderCtxt}`);
+            if (computedValueType) parts.push(`valueType=${computedValueType}`);
+            if (computedTriggerCfg?.length) parts.push(`triggers=${computedTriggerCfg.length}`);
+            return parts.length ? parts.join(', ') : 'none';
+        })();
+
+        const securitySummary = [
+            // `encrypt=${this.oneLineBool(encrypt)}`,
+            // encryptionType ? `encType=${encryptionType}` : null,
+            // decryptWhen ? `decryptWhen=${decryptWhen}` : null,
+            `private=${this._oneLineBool(isPrivate)}`,
+            `auditTracking=${this._oneLineBool(enableAuditTracking)}`
+        ].filter(Boolean).join(', ');
+
+        const constraintSummary = [
+            `required=${this._oneLineBool(required)}`,
+            `unique=${this._oneLineBool(unique)}`,
+            `index=${this._oneLineBool(index)}`,
+            length !== null ? `length=${length}` : null,
+            min !== null ? `min=${min}` : null,
+            max !== null ? `max=${max}` : null,
+            defaultValue !== null ? `default=${defaultValue}` : null,
+            regex ? `regex=${regex}${regexErr ? ` (${regexErr})` : ''}` : null
+        ].filter(Boolean).join(', ');
+
+        const mappingSummary = [
+            columnName ? `column=${columnName}` : null,
+            relCoModelColumn ? `relColumn=${relCoModelColumn}` : null,
+            uuid ? `uuid=${uuid}` : null,
+            `userKey=${this._oneLineBool(isUserKey)}`,
+            `system=${this._oneLineBool(isSystem)}`,
+            `markedForRemoval=${this._oneLineBool(isMarkedForRemoval)}`
+        ].filter(Boolean).join(', ');
+
+        const text = [
+            `SolidX Field: ${name} (${displayName})`,
+            `Model: ${modelName}`,
+            `Module: ${moduleName}`,
+            ``,
+            `Type: ${type}${ormType ? ` (orm=${ormType})` : ''}`,
+            `Description: ${description}`,
+            ``,
+            `Constraints: ${constraintSummary || 'none'}`,
+            `Relation: ${relationSummary}`,
+            `Selection: ${selectionSummary}`,
+            `Media: ${mediaSummary}`,
+            `Computed: ${computedSummary}`,
+            `Security/Privacy/Audit: ${securitySummary}`,
+            `Mapping/Flags: ${mappingSummary || 'none'}`,
+            ``,
+            `Usage: Use this chunk to generate exact field contracts (DTO, form control, DB column), `,
+            `validation rules, relation wiring, and UI widgets (selection/media/computed).`,
+        ].join('\n');
+
+        const metadata = {
+            kind: 'solidx-metadata',
+            type: 'field',
+            moduleName,
+            modelName,
+            fieldName: name,
+            displayName,
+            description,
+            dataType: type,
+            ormType,
+            required,
+            unique,
+            index,
+            defaultValue,
+            length,
+            min,
+            max,
+            regexPattern: regex,
+            regexPatternNotMatchingErrorMsg: regexErr,
+
+            // relation
+            relationType,
+            relationModelModuleName: relModule,
+            relationCoModelSingularName: relModel,
+            relationCoModelFieldName: relField,
+            // isRelationManyToManyOwner: relOwner,
+            // relationJoinTableName: relJoinTable,
+            // relationCreateInverse: relCreateInverse,
+            relationCascade: relCascade,
+            relationFieldFixedFilter: relFixedFilter,
+
+            // selection
+            selectionDynProvider,
+            selectionDynCtxt,
+            selectionStaticValues: selectionStatic,
+            selectionValueType,
+            isMultiSelect,
+
+            // media
+            mediaTypes,
+            mediaMaxSizeKb,
+            mediaStorageProvider: mediaStorageProvider ? (typeof mediaStorageProvider === 'string' ? mediaStorageProvider : 'set') : null,
+
+            // computed
+            computedFieldValueProvider: computedProvider,
+            computedFieldValueProviderCtxt: computedProviderCtxt,
+            computedFieldValueType: computedValueType,
+            computedFieldTriggerConfigCount: Array.isArray(computedTriggerCfg) ? computedTriggerCfg.length : 0,
+
+            // security/privacy/audit
+            // encrypt,
+            // encryptionType,
+            // decryptWhen,
+            private: isPrivate,
+            enableAuditTracking,
+
+            // mapping/flags
+            columnName,
+            relationCoModelColumnName: relCoModelColumn,
+            isUserKey,
+            isSystem,
+            isMarkedForRemoval,
+        };
+
+        return { text, metadata };
+    }
+
+    private async deleteInsertRagChunkForField(ingestionInfo: ModuleRAGIngestionInfo, moduleName: string, modelName: string, field: CreateFieldMetadataDto,): Promise<string> {
+        const fieldName: string = field?.name ?? 'unknown_field';
+
+        // 1) Full JSON hash (as-is)
+        const schemaHash = this._sha256OfJson(field);
+
+        // 2) Ensure ingestionInfo entry for the model & field
+        const modelsArr = ingestionInfo.models ?? (ingestionInfo.models = []);
+        let modelEntry = modelsArr.find(m => m.modelName === modelName);
+        if (!modelEntry) {
+            modelEntry = { modelName, fields: [] };
+            modelsArr.push(modelEntry);
+        }
+        const fieldsArr = modelEntry.fields ?? (modelEntry.fields = []);
+        let fieldEntry = fieldsArr.find(f => f.fieldName === fieldName);
+        if (!fieldEntry) {
+            fieldEntry = { fieldName };
+            fieldsArr.push(fieldEntry);
+        }
+
+        // 3) Skip if unchanged
+        if (fieldEntry.fieldHash === schemaHash && fieldEntry.fieldChunkId) {
+            this.logger.log(`[Skip] Field unchanged: ${moduleName}.${modelName}.${fieldName}`);
+            return fieldEntry.fieldChunkId;
+        }
+
+        // 4) Build text + metadata tailored to FieldMetadata
+        const { text, metadata } = this._buildFieldTextAndMetadata(moduleName, modelName, field);
+        // also keep the hash in metadata for audit/debug
+        (metadata as any).schemaHash = schemaHash;
+
+        // 5) Delete previous chunk if present
+        if (fieldEntry.fieldChunkId) {
+            try {
+                await this.ragClient.documents.delete({ id: fieldEntry.fieldChunkId });
+            } catch (e) {
+                this.logger.warn(`[Warn] Failed deleting old field chunk (${fieldEntry.fieldChunkId}): ${String(e)}`);
+            }
+        }
+
+        // 6) Create new document (R2R auto-generates the ID)
+        const r = await this.ragClient.documents.create({
+            raw_text: text,
+            metadata,
+            collectionIds: [ingestionInfo.collectionId],
+        });
+
+        const newId = r?.results?.documentId;
+        if (!newId) {
+            throw new Error(`R2R did not return a documentId while creating field chunk for ${moduleName}.${modelName}.${fieldName}`);
+        }
+
+        // 7) Update ingestion info
+        fieldEntry.fieldChunkId = newId;
+        fieldEntry.fieldHash = schemaHash;
+
+        this.logger.log(`[OK] Ingested field ${moduleName}.${modelName}.${fieldName} → id=${newId}, hash=${schemaHash.slice(0, 8)}…`);
+        return newId;
     }
 }
