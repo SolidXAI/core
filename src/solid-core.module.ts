@@ -94,6 +94,10 @@ import { SmsQueuePublisher } from './jobs/sms-publisher.service';
 import { SmsQueueSubscriber } from './jobs/sms-subscriber.service';
 import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
 import { TestQueueSubscriber } from './jobs/test-queue-subscriber.service';
+
+// import { ChatterQueuePublisher } from './jobs/chatter-queue-publisher.service';
+// import { ChatterQueueSubscriber } from './jobs/chatter-queue-subscriber.service';
+
 import { Msg91WhatsappQueuePublisher } from './jobs/msg91-whatsapp-publisher.service';
 import { Msg91WhatsappQueueSubscriber } from './jobs/msg91-whatsapp-subscriber.service';
 import { UserRegistrationListener } from './listeners/user-registration.listener';
@@ -370,10 +374,10 @@ import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/computed-field
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         throttlers: [
-        { name: 'short', ttl: seconds(10),  limit: 10 },
-        { name: 'login', ttl: seconds(10),  limit: 5  },
-        { name: 'burst', ttl: seconds(1),  limit: 100 },
-        { name: 'sustained', ttl: seconds(300), limit: 500 },
+          { name: 'short', ttl: seconds(10), limit: 10 },
+          { name: 'login', ttl: seconds(10), limit: 5 },
+          { name: 'burst', ttl: seconds(1), limit: 100 },
+          { name: 'sustained', ttl: seconds(300), limit: 500 },
         ],
         storage: isRedisConfigured(configService) ? new ThrottlerStorageRedisService(`redis://${configService.get<string>('REDIS_HOST')}:${configService.get<string>('REDIS_PORT')}`) : undefined,
       }),
@@ -545,6 +549,10 @@ import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/computed-field
     UserRegistrationListener,
     TestQueuePublisher,
     TestQueueSubscriber,
+
+    // ChatterQueuePublisher,
+    // ChatterQueueSubscriber,
+
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,
     GenerateCodePublisherDatabase,
