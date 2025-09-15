@@ -176,8 +176,8 @@ import { ModelMetadataHelperService } from './helpers/model-metadata-helper.serv
 import { ModuleMetadataHelperService } from './helpers/module-metadata-helper.service';
 import { ApiEmailQueuePublisherDatabase } from './jobs/database/api-email-publisher-database.service';
 import { ApiEmailQueueSubscriberDatabase } from './jobs/database/api-email-subscriber-database.service';
-import { ComputedFieldEvaluationPublisher } from './jobs/database/computed-field-evaluation-publisher.service';
-import { ComputedFieldEvaluationSubscriber } from './jobs/database/computed-field-evaluation-subscriber.service';
+import { ComputedFieldEvaluationPublisherDatabase } from './jobs/database/computed-field-evaluation-publisher-database.service';
+import { ComputedFieldEvaluationSubscriberDatabase } from './jobs/database/computed-field-evaluation-subscriber-database.service';
 import { SmtpEmailQueuePublisherDatabase } from './jobs/database/smtp-email-publisher-database.service';
 import { SmtpEmailQueueSubscriberDatabase } from './jobs/database/smtp-email-subscriber-database.service';
 import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-publisher-database.service';
@@ -288,6 +288,8 @@ import { ErrorMapperService } from './helpers/error-mapper.service';
 import { IngestCommand } from './commands/ingest.command';
 import { R2RHelperService } from './services/genai/r2r-helper.service';
 import { IngestMetadataService } from './services/genai/ingest-metadata.service';
+import { ComputedFieldEvaluationPublisherRabbitmq } from './jobs/computed-field-evaluation-publisher.service';
+import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/computed-field-evaluation-subscriber.service';
 
 
 @Global()
@@ -584,8 +586,10 @@ import { IngestMetadataService } from './services/genai/ingest-metadata.service'
     SystemFieldsSeederService,
     FieldMetadataRepository,
     ComputedEntityFieldSubscriber,
-    ComputedFieldEvaluationPublisher,
-    ComputedFieldEvaluationSubscriber,
+    ComputedFieldEvaluationPublisherDatabase,
+    ComputedFieldEvaluationSubscriberDatabase,
+    ComputedFieldEvaluationPublisherRabbitmq,
+    ComputedFieldEvaluationSubscriberRabbitmq,
     ConcatEntityComputedFieldProvider,
     UserActivityHistoryService,
     DashboardService,

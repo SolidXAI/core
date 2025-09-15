@@ -98,8 +98,9 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
     // }
 
     async onModuleInit(): Promise<void> {
+        const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'database';
         // we will start subscriber only if the current service role is subscriber. 
-        if (['both', 'subscriber'].includes(this.serviceRole)) {
+        if (['both', 'subscriber'].includes(this.serviceRole) && defaultBroker === 'database') {
 
             const options = this.options();
 
