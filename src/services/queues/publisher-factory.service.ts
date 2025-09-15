@@ -34,7 +34,7 @@ export class PublisherFactory<T> {
 
         // type safe
         const typedActualPublisher: QueuePublisher<T> = actualPublisherToUse.instance;
-        this.logger.error(`Resolved publisher with name ${actualPublisherToUse.name}, and with options ${typedActualPublisher.options()}`);
+        this.logger.debug(`Resolved publisher with name ${actualPublisherToUse.name}, and with options: ${JSON.stringify(typedActualPublisher.options())}`);
 
         return typedActualPublisher.publish(message);
     }

@@ -18,14 +18,15 @@ export class TestQueueController {
     ) { }
 
     @Public()
-    @Get(':messageBroker')
-    async getHello(@Param('messageBroker') messageBroker: string) {
+    @Get(':messageBroker/:timeoutSeconds')
+    async getHello(@Param('messageBroker') messageBroker: string, @Param('timeoutSeconds') timeoutSeconds: number) {
         const pubsubMessage = 'A hopping-good time!';
         const m = {
             payload: {
                 firstName: 'Harish',
                 lastName: 'Patel',
-                age: 40
+                age: 40,
+                timeoutSeconds: timeoutSeconds
             },
             parentEntity: 'feeType',
             parentEntityId: 23,
