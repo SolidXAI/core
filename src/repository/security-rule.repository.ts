@@ -91,7 +91,7 @@ export class SecurityRuleRepository extends Repository<SecurityRule> {
     async upsertWithDto(createDto: CreateSecurityRuleDto) {
         // Populate the role from roleId or roleUserKey
         const roleRepository = this.dataSource.getRepository(RoleMetadata);
-        if (!createDto.roleId) {
+        if (createDto.roleId) {
             const role = await roleRepository.findOne({
                 where: {
                     id: createDto.roleId,
@@ -111,7 +111,7 @@ export class SecurityRuleRepository extends Repository<SecurityRule> {
 
         // Populate the model from modelMetadataId or modelMetadataUserKey
         const modelMetadataRepository = this.dataSource.getRepository(ModelMetadata);
-        if (!createDto.modelMetadataId) {
+        if (createDto.modelMetadataId) {
             const modelMetadata = await modelMetadataRepository.findOne({
                 where: {
                     id: createDto.modelMetadataId,

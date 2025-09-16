@@ -300,6 +300,7 @@ import { TriggerMcpClientPublisherRabbitmq } from './jobs/trigger-mcp-client-pub
 import { TriggerMcpClientSubscriberRabbitmq } from './jobs/trigger-mcp-client-subscriber.service';
 import { TwilioSmsQueuePublisherRabbitmq } from './jobs/twilio-sms-publisher.service';
 import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/twilio-sms-subscriber.service';
+import { SolidCoreErrorCodesProvider } from './helpers/solid-core-error-codes-provider.service';
 
 
 @Global()
@@ -500,6 +501,7 @@ import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/twilio-sms-subscriber.s
     PublisherFactory,
     PollerService,
     ErrorMapperService,
+    SolidCoreErrorCodesProvider,
 
     McpToolResponseHandlerFactory,
     SolidCreateModuleMcpToolResponseHandler,
