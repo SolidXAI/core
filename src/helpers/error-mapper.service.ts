@@ -17,6 +17,61 @@ export const ERROR_CODES = [
 
 export type ErrorCode = typeof ERROR_CODES[number];
 
+// You can add more metadata here (e.g., severity, retryable, docs URL)
+type ErrorDefinition = {
+    template: string;
+    httpStatus?: number;
+    defaultVars?: Record<string, string | number | boolean>;
+};
+
+// Central place to define human-readable, templated messages
+const ERROR_DEFINITIONS: Record<ErrorCode, ErrorDefinition> = {
+    'bedrock-throttling-error': {
+        template: 'Bedrock is rate-limiting requests{{#retryAfter}}. Try again in ~{{retryAfter}}s{{/retryAfter}}.',
+        httpStatus: 429,
+    },
+    'bedrock-access-denied': {
+        template: 'Access to Bedrock was denied. Check IAM roles/permissions for {{principal}}.',
+        httpStatus: 403,
+    },
+    'bedrock-input-too-long': {
+        template: 'Your input exceeded the model limit ({{limit}} tokens). Consider chunking or summarizing input.',
+        httpStatus: 400,
+    },
+    'bedrock-validation-error': {
+        template: 'The request to Bedrock failed validation. Field: {{field}}. Reason: {{reason}}.',
+        httpStatus: 400,
+    },
+    'bedrock-model-not-found': {
+        template: 'The requested model "{{modelId}}" is not available/enabled in region {{region}}.',
+        httpStatus: 404,
+    },
+    'db-duplicate-key': {
+        template: 'Duplicate key violation on {{constraint}}. A record with these unique fields already exists.',
+        httpStatus: 409,
+    },
+    'db-foreign-key-error': {
+        template: 'Foreign key constraint prevents this operation. Related records exist (constraint {{constraint}}).',
+        httpStatus: 409,
+    },
+    'metadata-extraction-date-parsing-failed': {
+        template: 'Failed to parse date fields during metadata extraction for document {{documentId}}.',
+        httpStatus: 422,
+    },
+    'metadata-extraction-missing-s3-file': {
+        template: 'Referenced S3 object was not found: s3://{{bucket}}/{{key}} (NoSuchKey).',
+        httpStatus: 404,
+    },
+    'solidx-mcp-server-unavailable': {
+        template: 'SolidX MCP server is unreachable. Last error: {{lastError}}. Please verify the MCP endpoint.',
+        httpStatus: 503,
+    },
+    'unknown-error': {
+        template: 'An unexpected error occurred. Reference: {{ref}}.',
+        httpStatus: 500,
+    },
+};
+
 @Injectable()
 export class ErrorMapperService {
     /**
@@ -26,74 +81,14 @@ export class ErrorMapperService {
     mapException(exc: unknown): ErrorCode {
         const combined = this.combineErrorText(exc);
 
-        // AiInteraction - mcp server down. 
-        // {
-        //     "success": false,
-        //     "errors": [
-        //         "unhandled errors in a TaskGroup (1 sub-exception)"
-        //     ],
-        //     "error_trace": [
-        //         "Traceback (most recent call last):",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/mcp/client/sse.py\", line 47, in sse_client\n    async with aconnect_sse(\n               ^^^^^^^^^^^^^",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/lib/python3.12/contextlib.py\", line 210, in __aenter__\n    return await anext(self.gen)\n           ^^^^^^^^^^^^^^^^^^^^^",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx_sse/_api.py\", line 69, in aconnect_sse\n    async with client.stream(method, url, headers=headers, **kwargs) as response:\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/lib/python3.12/contextlib.py\", line 210, in __aenter__\n    return await anext(self.gen)\n           ^^^^^^^^^^^^^^^^^^^^^",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_client.py\", line 1583, in stream\n    response = await self.send(\n               ^^^^^^^^^^^^^^^^",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_client.py\", line 1629, in send\n    response = await self._send_handling_auth(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_client.py\", line 1657, in _send_handling_auth\n    response = await self._send_handling_redirects(\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_client.py\", line 1694, in _send_handling_redirects\n    response = await self._send_single_request(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_client.py\", line 1730, in _send_single_request\n    response = await transport.handle_async_request(request)\n               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_transports/default.py\", line 393, in handle_async_request\n    with map_httpcore_exceptions():\n         ^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/lib/python3.12/contextlib.py\", line 158, in __exit__\n    self.gen.throw(value)",
-        //         "File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_transports/default.py\", line 118, in map_httpcore_exceptions\n    raise mapped_exc(message) from exc",
-        //         "httpx.ConnectError: All connection attempts failed",
-        //         "During handling of the above exception, another exception occurred:",
-        //         "+ Exception Group Traceback (most recent call last):",
-        //         "|   File \"/Users/harishpatel/mcp/clients/solidx_mcp_client/client_sse_nochat.py\", line 239, in main\n  |     await client.connect_to_sse_server()",
-        //         "|   File \"/Users/harishpatel/mcp/clients/solidx_mcp_client/client_sse_nochat.py\", line 49, in connect_to_sse_server\n  |     streams = await self._streams_context.__aenter__()\n  |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/lib/python3.12/contextlib.py\", line 210, in __aenter__\n  |     return await anext(self.gen)\n  |            ^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/mcp/client/sse.py\", line 43, in sse_client\n  |     async with anyio.create_task_group() as tg:\n  |                ^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/anyio/_backends/_asyncio.py\", line 767, in __aexit__\n  |     raise BaseExceptionGroup(",
-        //         "| ExceptionGroup: unhandled errors in a TaskGroup (1 sub-exception)",
-        //         "+-+---------------- 1 ----------------",
-        //         "| Traceback (most recent call last):",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_transports/default.py\", line 101, in map_httpcore_exceptions\n    |     yield",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_transports/default.py\", line 394, in handle_async_request\n    |     resp = await self._pool.handle_async_request(req)\n    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpcore/_async/connection_pool.py\", line 256, in handle_async_request\n    |     raise exc from None",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpcore/_async/connection_pool.py\", line 236, in handle_async_request\n    |     response = await connection.handle_async_request(\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpcore/_async/connection.py\", line 101, in handle_async_request\n    |     raise exc",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpcore/_async/connection.py\", line 78, in handle_async_request\n    |     stream = await self._connect(request)\n    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpcore/_async/connection.py\", line 124, in _connect\n    |     stream = await self._network_backend.connect_tcp(**kwargs)\n    |              ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpcore/_backends/auto.py\", line 31, in connect_tcp\n    |     return await self._backend.connect_tcp(\n    |            ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpcore/_backends/anyio.py\", line 113, in connect_tcp\n    |     with map_exceptions(exc_map):\n    |          ^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/lib/python3.12/contextlib.py\", line 158, in __exit__\n    |     self.gen.throw(value)",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpcore/_exceptions.py\", line 14, in map_exceptions\n    |     raise to_exc(exc) from exc",
-        //         "| httpcore.ConnectError: All connection attempts failed",
-        //         "| \n    | The above exception was the direct cause of the following exception:\n    |",
-        //         "| Traceback (most recent call last):",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/mcp/client/sse.py\", line 47, in sse_client\n    |     async with aconnect_sse(\n    |                ^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/lib/python3.12/contextlib.py\", line 210, in __aenter__\n    |     return await anext(self.gen)\n    |            ^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx_sse/_api.py\", line 69, in aconnect_sse\n    |     async with client.stream(method, url, headers=headers, **kwargs) as response:\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/lib/python3.12/contextlib.py\", line 210, in __aenter__\n    |     return await anext(self.gen)\n    |            ^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_client.py\", line 1583, in stream\n    |     response = await self.send(\n    |                ^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_client.py\", line 1629, in send\n    |     response = await self._send_handling_auth(\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_client.py\", line 1657, in _send_handling_auth\n    |     response = await self._send_handling_redirects(\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_client.py\", line 1694, in _send_handling_redirects\n    |     response = await self._send_single_request(request)\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_client.py\", line 1730, in _send_single_request\n    |     response = await transport.handle_async_request(request)\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_transports/default.py\", line 393, in handle_async_request\n    |     with map_httpcore_exceptions():\n    |          ^^^^^^^^^^^^^^^^^^^^^^^^^",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/lib/python3.12/contextlib.py\", line 158, in __exit__\n    |     self.gen.throw(value)",
-        //         "|   File \"/Users/harishpatel/.pyenv/versions/3.12.7/envs/solid_mcp_client/lib/python3.12/site-packages/httpx/_transports/default.py\", line 118, in map_httpcore_exceptions\n    |     raise mapped_exc(message) from exc",
-        //         "| httpx.ConnectError: All connection attempts failed",
-        //         "+------------------------------------"
-        //     ],
-        //     "request": "\"Can you do 1 + 1\""
-        // }
-        if (combined.includes("all connection attempts failed") && combined.includes("unhandled errors in a taskgroup (1 sub-exception)")) {
+        if (
+            combined.includes('all connection attempts failed') &&
+            combined.includes('unhandled errors in a taskgroup (1 sub-exception)')
+        ) {
             return 'solidx-mcp-server-unavailable';
         }
 
         // --- Bedrock errors ---
-        // Throttling: "ThrottlingException" or "Too many tokens"
         if (
             combined.includes('throttlingexception') ||
             combined.includes('too many tokens')
@@ -128,29 +123,24 @@ export class ErrorMapperService {
             return 'db-duplicate-key';
         }
 
-        if (combined.includes('foreign key')) {
+        if (combined.includes('violates foreign key')) {
             return 'db-foreign-key-error';
         }
 
-        // --- OpenSearch errors ---
-        // mapper_parsing_exception on specific fields
+        // --- OpenSearch/meta extraction ---
         if (
             combined.includes('mapper_parsing_exception') &&
             (combined.includes('failed to parse field [metadata.properties.dates]') ||
-                combined.includes(
-                    'failed to parse field [metadata.properties.date_authored]',
-                ))
+                combined.includes('failed to parse field [metadata.properties.date_authored]'))
         ) {
             return 'metadata-extraction-date-parsing-failed';
         }
 
-        // --- S3 errors ---
-        // NoSuchKey during GetObject
+        // --- S3 ---
         if (combined.includes('nosuchkey') && combined.includes('getobject')) {
             return 'metadata-extraction-missing-s3-file';
         }
 
-        // --- Catch-all ---
         return 'unknown-error';
     }
 
@@ -162,47 +152,78 @@ export class ErrorMapperService {
         return this.mapException(combined);
     }
 
-    // ---- helpers ----
+    /**
+     * Render a human-readable error message for a given code.
+     * Pass variables to fill {{placeholders}} in the template.
+     */
+    renderMessage(code: ErrorCode, vars?: Record<string, unknown>): string {
+        const def = ERROR_DEFINITIONS[code] ?? ERROR_DEFINITIONS['unknown-error'];
+        const merged = { ...(def.defaultVars ?? {}), ...(vars ?? {}) };
+        return renderTemplate(def.template, merged);
+    }
 
+    // /**
+    //  * Helpful wrapper to produce a consistent error payload (RFC7807-ish).
+    //  */
+    // toProblem(code: ErrorCode, vars?: Record<string, unknown>, extra?: Record<string, unknown>,) {
+    //     const def = ERROR_DEFINITIONS[code] ?? ERROR_DEFINITIONS['unknown-error'];
+    //     return {
+    //         type: `about:blank#${code}`,
+    //         title: code,
+    //         status: def.httpStatus ?? 500,
+    //         detail: this.renderMessage(code, vars),
+    //         ...(extra ?? {}),
+    //     };
+    // }
+
+    // ---- helpers ----
     private combineErrorText(exc: unknown): string {
-        // If caller passed us a pre-lowered string (e.g. from mapMessage), use it
         if (typeof exc === 'string') {
             return exc.toLowerCase();
         }
 
-        // Standard Error
         if (exc instanceof Error) {
             const message = exc.message ?? '';
-            // Many libs set .stack to "Error: message\n<stack>"
-            // We still include it in case upstream mutated it.
             const stack = exc.stack ?? '';
             return `${message}\n${stack}`.toLowerCase();
         }
 
-        // Some SDKs throw objects (e.g., { name, message, code, $metadata, ... })
         if (exc && typeof exc === 'object') {
             try {
                 const maybeAny = exc as Record<string, unknown>;
                 const msg =
                     String(maybeAny.message ?? '') ||
-                    String(maybeAny['Message'] ?? '') ||
+                    String((maybeAny as any)['Message'] ?? '') ||
                     '';
                 const name =
                     String(maybeAny.name ?? '') ||
-                    String(maybeAny['__type'] ?? '') ||
+                    String((maybeAny as any)['__type'] ?? '') ||
                     '';
                 const stack = String((maybeAny as any).stack ?? '');
-                // Also fold in a JSON snapshot as a last resort
                 const json = safeJsonStringify(maybeAny);
                 return `${name}\n${msg}\n${stack}\n${json}`.toLowerCase();
             } catch {
-                // fall through
+                // ignore
             }
         }
 
-        // Fallback
         return String(exc ?? '').toLowerCase();
     }
+}
+
+// ---- tiny template engine: supports {{var}} and {{#var}}...{{/var}} sections ----
+function renderTemplate(template: string, vars: Record<string, unknown>): string {
+    // Section syntax: {{#name}}...{{/name}} is included only if vars[name] is truthy
+    template = template.replace(/{{#(\w+)}}([\s\S]*?){{\/\1}}/g, (_, key: string, content: string) => {
+        const v = vars[key];
+        return v ? String(content) : '';
+    });
+
+    // Simple variable replacement: {{name}}
+    return template.replace(/{{(\w+)}}/g, (_, key: string) => {
+        const v = vars[key];
+        return v === undefined || v === null ? '' : String(v);
+    });
 }
 
 function safeJsonStringify(obj: unknown): string {
