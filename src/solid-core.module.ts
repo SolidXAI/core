@@ -294,6 +294,12 @@ import { R2RHelperService } from './services/genai/r2r-helper.service';
 import { IngestMetadataService } from './services/genai/ingest-metadata.service';
 import { ComputedFieldEvaluationPublisherRabbitmq } from './jobs/computed-field-evaluation-publisher.service';
 import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/computed-field-evaluation-subscriber.service';
+import { GenerateCodePublisherRabbitmq } from './jobs/generate-code-publisher.service';
+import { GenerateCodeSubscriberRabbitmq } from './jobs/generate-code-subscriber.service';
+import { TriggerMcpClientPublisherRabbitmq } from './jobs/trigger-mcp-client-publisher.service';
+import { TriggerMcpClientSubscriberRabbitmq } from './jobs/trigger-mcp-client-subscriber.service';
+import { TwilioSmsQueuePublisherRabbitmq } from './jobs/twilio-sms-publisher.service';
+import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/twilio-sms-subscriber.service';
 
 
 @Global()
@@ -500,6 +506,8 @@ import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/computed-field
 
     TriggerMcpClientPublisherDatabase,
     TriggerMcpClientSubscriberDatabase,
+    TriggerMcpClientPublisherRabbitmq,
+    TriggerMcpClientSubscriberRabbitmq,
 
     SmtpEmailQueuePublisherRabbitmq,
     SmtpEmailQueueSubscriberRabbitmq,
@@ -515,6 +523,8 @@ import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/computed-field
     SmsQueueSubscriberDatabase,
     TwilioSmsQueuePublisherDatabase,
     TwilioSmsQueueSubscriberDatabase,
+    TwilioSmsQueuePublisherRabbitmq,
+    TwilioSmsQueueSubscriberRabbitmq,
     OTPQueuePublisher,
     OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
@@ -557,6 +567,9 @@ import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/computed-field
     TestQueueSubscriberDatabase,
     GenerateCodePublisherDatabase,
     GenerateCodeSubscriberDatabase,
+    GenerateCodePublisherRabbitmq,
+    GenerateCodeSubscriberRabbitmq,
+    OTPQueuePublisher,
     MqMessageQueueService,
     MqMessageService,
     ScheduledJobService,
