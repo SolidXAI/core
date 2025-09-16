@@ -7,7 +7,7 @@ import { MqMessageService } from 'src/services/mq-message.service';
 import { PollerService } from 'src/services/poller.service';
 import { RabbitMqPublisher } from 'src/services/queues/rabbitmq-publisher.service';
 import { TwilioSMSService } from 'src/services/sms/TwilioSMSService';
-import smsQueueOptions from './twilio-sms-queue-database-options';
+import smsQueueOptions from './twilio-sms-queue-options';
 
 @Injectable()
 export class TwilioSmsQueueSubscriberRabbitmq extends RabbitMqPublisher<any> {
