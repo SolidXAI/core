@@ -792,8 +792,8 @@ export class AuthenticationService {
             error: '',
             errorCode: '',
             data: {
-                user: {
-                    email: user.email,
+                user:  {
+                    email: user?.email,
                     // mobile: user.mobile,
                     // username: user.username,
                 },
