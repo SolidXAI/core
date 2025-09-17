@@ -764,13 +764,13 @@ export class AuthenticationService {
             isValidUser = false            
             // throw new NotFoundException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
-        if (!user.active) {
+        if (isValidUser && !user?.active) {
             isValidUser = false
             // throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
 
         // 2. Validate if user has used a provider which is "local", only then it makes sense for us to initiate the forgot password routine. 
-        if (user.lastLoginProvider !== 'local') {
+        if (isValidUser && user?.lastLoginProvider !== 'local') {
             isValidUser = false
             // throw new BadRequestException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
