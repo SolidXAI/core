@@ -33,7 +33,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         // Canonical code + static message
         const code: ErrorCode = this.errorMapper.mapException(exception);
         const defaultStatus = this.errorMapper.getHttpStatus(code);
-        const message = this.errorMapper.getMessage(code);
+        const message = code === 'unknown-error' ? `${exception?.message}` : this.errorMapper.getMessage(code);
 
         const status = explicitStatus ?? defaultStatus ?? 500;
 
@@ -55,9 +55,12 @@ export class HttpExceptionFilter implements ExceptionFilter {
         response.status(status).json({
             statusCode: status,
             statusCodeMessage: HttpStatusCodeMessages[status] || 'Internal Server Error',
-            // message: [message],
+            // Keeping this for backward compatibility..
+            message: message,
             errorCode: code,
             error: message,
+            // We can make this conditional based on whether we are running in prod mode or dev mode...
+            // errorStack: exception.stack,
             data: extra,
         });
     }
