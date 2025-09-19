@@ -68,15 +68,12 @@ import { OTPAuthenticationController } from './controllers/otp-authentication.co
 import { ServiceController } from './controllers/service.controller';
 import { SmsTemplateController } from './controllers/sms-template.controller';
 import { TestQueueController } from './controllers/test-queue.controller';
-// import { UserController } from './controllers/user.controller';
 import { EmailAttachment } from './entities/email-attachment.entity';
 import { EmailTemplate } from './entities/email-template.entity';
 import { MenuItemMetadata } from './entities/menu-item-metadata.entity';
 import { MqMessageQueue } from './entities/mq-message-queue.entity';
 import { MqMessage } from './entities/mq-message.entity';
 import { SmsTemplate } from './entities/sms-template.entity';
-import { UserPasswordHistory } from './entities/user-password-history.entity';
-// import { User } from './entities/user.entity';
 import { AccessTokenGuard } from './guards/access-token.guard';
 import { AuthenticationGuard } from './guards/authentication.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
@@ -94,10 +91,6 @@ import { SmsQueuePublisher } from './jobs/sms-publisher.service';
 import { SmsQueueSubscriber } from './jobs/sms-subscriber.service';
 import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
 import { TestQueueSubscriber } from './jobs/test-queue-subscriber.service';
-
-// import { ChatterQueuePublisher } from './jobs/chatter-queue-publisher.service';
-// import { ChatterQueueSubscriber } from './jobs/chatter-queue-subscriber.service';
-
 import { Msg91WhatsappQueuePublisher } from './jobs/msg91-whatsapp-publisher.service';
 import { Msg91WhatsappQueueSubscriber } from './jobs/msg91-whatsapp-subscriber.service';
 import { UserRegistrationListener } from './listeners/user-registration.listener';
@@ -317,7 +310,6 @@ import { SolidCoreErrorCodesProvider } from './helpers/solid-core-error-codes-pr
       SmsTemplate,
       EmailAttachment,
       User,
-      UserPasswordHistory,
       ViewMetadata,
       ActionMetadata,
       MenuItemMetadata,

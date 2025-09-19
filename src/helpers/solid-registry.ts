@@ -33,7 +33,6 @@ export enum RESERVED_SOLID_KEYWORDS {
   securityRule = "securityRule",
   setting = "setting",
   smsTemplate = "smsTemplate",
-  userPasswordHistory = "userPasswordHistory",
   userMetadata = "userMetadata",
   user = "user",
   locale = "locale"
