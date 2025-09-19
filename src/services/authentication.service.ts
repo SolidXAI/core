@@ -208,7 +208,7 @@ export class AuthenticationService {
         if (signUpDto.mobile) {
             user.mobile = signUpDto.mobile;
         }
-        this.logger.debug("user", user);
+        // this.logger.debug("user", user);
 
         // If password has been specified by the user, then we simply create & activate the user based on the configuration parameter "activateUserOnRegistration".
         let pwd = '';
