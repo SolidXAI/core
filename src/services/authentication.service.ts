@@ -228,7 +228,8 @@ export class AuthenticationService {
             }
             // When user does not specify password, and system is not configured to auto generate passwords.
             else {
-                // TODO: This means that most likely the system is going to be using password-less login. 
+                // This means that most likely the system is going to be using password-less login. 
+                // If that is not the case then we can raise a bad request exception...
                 if (!this.isPasswordlessRegistrationEnabled()) {
                     this.logger.error('User being created without password, and password less login is also not enabled in the system. Is this intentional?');
                     throw new BadRequestException(ERROR_MESSAGES.PASSWORDLESS_REGISTRATION_DISABLED);
