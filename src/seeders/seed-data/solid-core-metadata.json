@@ -5152,6 +5152,39 @@
             "index": false,
             "private": false,
             "encrypt": false
+          },
+          {
+            "name": "inputTokens",
+            "displayName": "Input Tokens",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "outputTokens",
+            "displayName": "Output Tokens",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "totalTokens",
+            "displayName": "Total Tokens",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
           }
         ]
       }
@@ -5584,7 +5617,7 @@
       "moduleUserKey": "solid-core",
       "modelUserKey": "setting"
     },
-     {
+    {
       "displayName": "Ai settings",
       "name": "ai-settings-action",
       "type": "custom",
@@ -5965,7 +5998,7 @@
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
     },
-     {
+    {
       "displayName": "Ai Settings",
       "name": "ai-settings-menu-item",
       "sequenceNumber": 3,
