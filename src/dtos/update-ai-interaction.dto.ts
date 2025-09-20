@@ -68,4 +68,19 @@ export class UpdateAiInteractionDto {
     @IsBoolean()
     @ApiProperty()
     isAutoApply: boolean;
+
+@IsOptional()
+@IsInt()
+@ApiProperty()
+inputTokens: number;
+
+@IsOptional()
+@IsInt()
+@ApiProperty()
+outputTokens: number;
+
+@IsOptional()
+@IsInt()
+@ApiProperty()
+totalTokens: number;
 }
