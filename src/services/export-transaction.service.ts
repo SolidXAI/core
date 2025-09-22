@@ -212,9 +212,9 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     // Return a function which will take the chunkIndex & chunkSize and return the data
     // Get the relation fields to populate
     const relatedFieldNames = modelMetadata?.fields
-    .filter((field: { relationType: any; }) => field.relationType !== null)
-    .map((field: { name: any; }) => field.name);
-
+      .filter((field: { relationType: any; }) => field.relationType !== null)
+      .map((field: { name: any; }) => field.name);
+  
     //Get the model metadata of relation field with userKey details
     const relatedModelsUserKeyMap = new Map<string, string>();
     for (const field of modelMetadata?.fields || []) {
@@ -223,13 +223,22 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
           where: { singularName: field.relationCoModelSingularName },
           relations: ['userKeyField'],
         });
-
+  
         if (relatedModelMetadata?.userKeyField?.name) {
           relatedModelsUserKeyMap.set(field.name, relatedModelMetadata.userKeyField.name);
         }
       }
     }
+  
+    // Build fieldName -> displayName map
+    const fieldNameToDisplayName = new Map<string, string>();
+    for (const field of modelMetadata?.fields || []) {
+      if (field.name) {
+        fieldNameToDisplayName.set(field.name, field.displayName ?? field.name);
+      }
+    }
 
+  
     return async (chunkIndex: number, chunkSize: number) => {
       const offset = chunkIndex * chunkSize;
       const recordFilterDto: BasicFilterDto = {
@@ -238,11 +247,11 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
         populate: relatedFieldNames
       };
       const cleanedFilters = cleanNullsFromObject(filters);
-
+  
       if (cleanedFilters && Object.keys(cleanedFilters).length > 0) {
         recordFilterDto.filters = cleanedFilters;
       }
-
+  
       //Get the non relation fields which are in fields array passed to this function
       const nonRelationalFieldSet = new Set(
         modelMetadata?.fields
@@ -251,35 +260,59 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
       );
       const data = await modelService.instance.find(recordFilterDto);
       const records = data.records ?? [];
-    const cleanedRecords = records.map((record: Record<string, any>) => {
-      const newRecord: Record<string, any> = {};
-    
-      // Include non-relational fields
+      const cleanedRecords = records.map((record: Record<string, any>, idx: number) => {
+          const newRecord: Record<string, any> = {};
+  
+      // Include non-relational fields (with displayName)
       for (const key of nonRelationalFieldSet as Set<string>) {
-        newRecord[key] = record[key];
-      }
-    
-      // Include userKey from each related field
-      for (const [relatedFieldName, userKeyFieldName] of relatedModelsUserKeyMap.entries()) {
-        const relatedData = record[relatedFieldName];
-    
-        if (Array.isArray(relatedData)) {
-          // For many-to-many or one-to-many
-          const values = relatedData.map(item => item?.[userKeyFieldName]).filter(Boolean);
-          newRecord[relatedFieldName] = values.join(', ');
-        } else if (relatedData && typeof relatedData === 'object') {
-          // For many-to-one or one-to-one
-          newRecord[relatedFieldName] = relatedData?.[userKeyFieldName] ?? null;
+        const displayKey = fieldNameToDisplayName.get(key) ?? key;
+        const fieldMeta = modelMetadata.fields.find(f => f.name === key);
+
+        if (fieldMeta?.type === 'datetime' || fieldMeta?.type === 'date' ) {
+          // Convert to ISO string if value exists
+          newRecord[displayKey] = record[key] ? new Date(record[key]).toISOString() : null;
         } else {
-          newRecord[relatedFieldName] = null;
+          newRecord[displayKey] = record[key];
         }
       }
-    
-      return newRecord;
-    });
-    return cleanedRecords
+
+    // Include userKey from each related field (with displayName)
+    for (const [relatedFieldName, userKeyFieldName] of relatedModelsUserKeyMap.entries()) {
+      const relatedData = record[relatedFieldName];
+      const displayKey = fieldNameToDisplayName.get(relatedFieldName) ?? relatedFieldName;
+
+      if (Array.isArray(relatedData)) {
+        // For many-to-many or one-to-many
+        const values = relatedData
+          .map(item => {
+            const val = item?.[userKeyFieldName];
+            // Convert datetime to ISO if needed
+            const relatedFieldMeta = modelMetadata.fields.find(f => f.name === relatedFieldName);
+            if ((relatedFieldMeta?.type === 'datetime' || relatedFieldMeta?.type === 'date' ) && val) {
+              return new Date(val).toISOString();
+            }
+            return val;
+          })
+          .filter(Boolean);
+        newRecord[displayKey] = values.join(', ');
+      } else if (relatedData && typeof relatedData === 'object') {
+        let val = relatedData?.[userKeyFieldName] ?? null;
+        const relatedFieldMeta = modelMetadata.fields.find(f => f.name === relatedFieldName);
+        if ((relatedFieldMeta?.type === 'datetime' || relatedFieldMeta?.type === 'date') && val) {
+          val = new Date(val).toISOString();
+        }
+        newRecord[displayKey] = val;
+      } else {
+        newRecord[displayKey] = null;
+      }
+    }
+
+  
+          return newRecord;
+        });
+      return cleanedRecords
+    }
   }
-}
 
   async toDto(data: Partial<CreateExportTransactionDto>): Promise<CreateExportTransactionDto> {
     const dto = new CreateExportTransactionDto(data);
