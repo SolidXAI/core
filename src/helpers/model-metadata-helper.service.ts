@@ -122,7 +122,7 @@ export class ModelMetadataHelperService {
                 }
             }
         });
-        const fields = [];
+        const fields: any[] = [];
         if (model) {
             // Add the fields of the current model
             fields.push(...model.fields);
