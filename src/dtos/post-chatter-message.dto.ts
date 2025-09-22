@@ -16,4 +16,4 @@ export class PostChatterMessageDto {
     @IsString()
     @IsOptional()
     messageSubType?: string;
-} 
+}

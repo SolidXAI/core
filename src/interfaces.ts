@@ -238,3 +238,39 @@ export interface QueuesModuleOptions {
 export type MediaWithFullUrl = Media & {
   _full_url: string;
 };
+
+
+export type ErrorCode = string;
+
+export type ErrorMeta = {
+  message: string;
+  httpStatus?: number;
+};
+
+export type ErrorRule = {
+  /** Canonical error code. Keep them kebab-case for consistency. */
+  code: ErrorCode;
+  /** Higher runs earlier. Defaults to 0 if not provided. */
+  priority?: number;
+  /** Return true if this rule matches the combined error text. */
+  match: (combinedErrorText: string) => boolean;
+  /** Display + HTTP mapping for this code. */
+  meta: ErrorMeta;
+};
+
+export interface IErrorCodeProvider {
+  /** Used for registry identity & logs */
+  name(): string;
+
+  /**
+   * Return all rules this provider contributes.
+   * These will be merged with other providers’ rules, then sorted by priority.
+   */
+  rules(): ReadonlyArray<ErrorRule>;
+
+  /**
+   * Optional fallback meta for codes this provider owns (when called by getMessage/getHttpStatus).
+   * If omitted, the ErrorMapperService will rely on the rule.meta of the first matching rule.
+   */
+  resolve?(code: ErrorCode): ErrorMeta | undefined;
+}

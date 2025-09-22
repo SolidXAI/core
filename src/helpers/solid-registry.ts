@@ -5,7 +5,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, ISelectionProvider, ISelectionProviderContext } from "../interfaces";
+import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 
 type ControllerMetadata = {
   name: string;
@@ -33,7 +33,6 @@ export enum RESERVED_SOLID_KEYWORDS {
   securityRule = "securityRule",
   setting = "setting",
   smsTemplate = "smsTemplate",
-  userPasswordHistory = "userPasswordHistory",
   userMetadata = "userMetadata",
   user = "user",
   locale = "locale"
@@ -67,6 +66,12 @@ export class SolidRegistry {
   private dashboardQuestionDataProviders: Set<InstanceWrapper> = new Set();
   private mailProviders: Set<InstanceWrapper> = new Set();
   private whatsappProviders: Set<InstanceWrapper> = new Set();
+  private errorCodeProviders: Set<InstanceWrapper> = new Set();
+
+
+  registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
+    this.errorCodeProviders.add(errorCodeProvider);
+  }
 
   registerWhatsappProvider(whatsappProvider: InstanceWrapper): void {
     this.whatsappProviders.add(whatsappProvider);
@@ -160,6 +165,19 @@ export class SolidRegistry {
         return dashboardSelectionProvider.instance;
       }
     }
+  }
+
+  getErrorCodeProviders(): Array<InstanceWrapper> {
+    return Array.from(this.errorCodeProviders);
+  }
+
+  getErrorCodeProviderInstance(name: string): IErrorCodeProvider | undefined {
+    const providers = this.getErrorCodeProviders();
+    for (let i = 0; i < providers.length; i++) {
+      const p = providers[i];
+      if (p.instance?.name?.() === name) return p.instance as IErrorCodeProvider;
+    }
+    return undefined;
   }
 
   getDashboardQuestionDataProviders(): Array<InstanceWrapper> {

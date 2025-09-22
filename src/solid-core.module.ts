@@ -68,15 +68,12 @@ import { OTPAuthenticationController } from './controllers/otp-authentication.co
 import { ServiceController } from './controllers/service.controller';
 import { SmsTemplateController } from './controllers/sms-template.controller';
 import { TestQueueController } from './controllers/test-queue.controller';
-// import { UserController } from './controllers/user.controller';
 import { EmailAttachment } from './entities/email-attachment.entity';
 import { EmailTemplate } from './entities/email-template.entity';
 import { MenuItemMetadata } from './entities/menu-item-metadata.entity';
 import { MqMessageQueue } from './entities/mq-message-queue.entity';
 import { MqMessage } from './entities/mq-message.entity';
 import { SmsTemplate } from './entities/sms-template.entity';
-import { UserPasswordHistory } from './entities/user-password-history.entity';
-// import { User } from './entities/user.entity';
 import { AccessTokenGuard } from './guards/access-token.guard';
 import { AuthenticationGuard } from './guards/authentication.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
@@ -176,8 +173,8 @@ import { ModelMetadataHelperService } from './helpers/model-metadata-helper.serv
 import { ModuleMetadataHelperService } from './helpers/module-metadata-helper.service';
 import { ApiEmailQueuePublisherDatabase } from './jobs/database/api-email-publisher-database.service';
 import { ApiEmailQueueSubscriberDatabase } from './jobs/database/api-email-subscriber-database.service';
-import { ComputedFieldEvaluationPublisher } from './jobs/database/computed-field-evaluation-publisher.service';
-import { ComputedFieldEvaluationSubscriber } from './jobs/database/computed-field-evaluation-subscriber.service';
+import { ComputedFieldEvaluationPublisherDatabase } from './jobs/database/computed-field-evaluation-publisher-database.service';
+import { ComputedFieldEvaluationSubscriberDatabase } from './jobs/database/computed-field-evaluation-subscriber-database.service';
 import { SmtpEmailQueuePublisherDatabase } from './jobs/database/smtp-email-publisher-database.service';
 import { SmtpEmailQueueSubscriberDatabase } from './jobs/database/smtp-email-subscriber-database.service';
 import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-publisher-database.service';
@@ -283,6 +280,20 @@ import { Three60WhatsappQueueSubscriberDatabase } from './jobs/database/three60-
 import { Three60WhatsappService } from './services/whatsapp/Three60WhatsappService';
 import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis/src/throttler-storage-redis.service';
 import { isRedisConfigured } from './helpers/environment.helper';
+import { UserRepository } from './repository/user.repository';
+import { ErrorMapperService } from './helpers/error-mapper.service';
+import { IngestCommand } from './commands/ingest.command';
+import { R2RHelperService } from './services/genai/r2r-helper.service';
+import { IngestMetadataService } from './services/genai/ingest-metadata.service';
+import { ComputedFieldEvaluationPublisherRabbitmq } from './jobs/computed-field-evaluation-publisher.service';
+import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/computed-field-evaluation-subscriber.service';
+import { GenerateCodePublisherRabbitmq } from './jobs/generate-code-publisher.service';
+import { GenerateCodeSubscriberRabbitmq } from './jobs/generate-code-subscriber.service';
+import { TriggerMcpClientPublisherRabbitmq } from './jobs/trigger-mcp-client-publisher.service';
+import { TriggerMcpClientSubscriberRabbitmq } from './jobs/trigger-mcp-client-subscriber.service';
+import { TwilioSmsQueuePublisherRabbitmq } from './jobs/twilio-sms-publisher.service';
+import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/twilio-sms-subscriber.service';
+import { SolidCoreErrorCodesProvider } from './helpers/solid-core-error-codes-provider.service';
 
 
 @Global()
@@ -299,7 +310,6 @@ import { isRedisConfigured } from './helpers/environment.helper';
       SmsTemplate,
       EmailAttachment,
       User,
-      UserPasswordHistory,
       ViewMetadata,
       ActionMetadata,
       MenuItemMetadata,
@@ -363,10 +373,10 @@ import { isRedisConfigured } from './helpers/environment.helper';
       inject: [ConfigService],
       useFactory: (configService: ConfigService) => ({
         throttlers: [
-        { name: 'short', ttl: seconds(10),  limit: 10 },
-        { name: 'login', ttl: seconds(10),  limit: 5  },
-        { name: 'burst', ttl: seconds(1),  limit: 100 },
-        { name: 'sustained', ttl: seconds(300), limit: 500 },
+          { name: 'short', ttl: seconds(10), limit: 10 },
+          { name: 'login', ttl: seconds(10), limit: 5 },
+          { name: 'burst', ttl: seconds(1), limit: 100 },
+          { name: 'sustained', ttl: seconds(300), limit: 500 },
         ],
         storage: isRedisConfigured(configService) ? new ThrottlerStorageRedisService(`redis://${configService.get<string>('REDIS_HOST')}:${configService.get<string>('REDIS_PORT')}`) : undefined,
       }),
@@ -446,6 +456,7 @@ import { isRedisConfigured } from './helpers/environment.helper';
     RefreshModuleCommand,
     SolidIntrospectService,
     DiscoveryService,
+    R2RHelperService,
     CrudHelperService,
     CRUDService,
     Reflector,
@@ -469,6 +480,8 @@ import { isRedisConfigured } from './helpers/environment.helper';
     TextractService,
     SolidRegistry,
     SeedCommand,
+    IngestCommand,
+    IngestMetadataService,
     SMTPEMailService,
     ElasticEmailService,
     Msg91SMSService,
@@ -479,12 +492,16 @@ import { isRedisConfigured } from './helpers/environment.helper';
     EmailTemplateService,
     PublisherFactory,
     PollerService,
+    ErrorMapperService,
+    SolidCoreErrorCodesProvider,
 
     McpToolResponseHandlerFactory,
     SolidCreateModuleMcpToolResponseHandler,
 
     TriggerMcpClientPublisherDatabase,
     TriggerMcpClientSubscriberDatabase,
+    TriggerMcpClientPublisherRabbitmq,
+    TriggerMcpClientSubscriberRabbitmq,
 
     SmtpEmailQueuePublisherRabbitmq,
     SmtpEmailQueueSubscriberRabbitmq,
@@ -500,6 +517,8 @@ import { isRedisConfigured } from './helpers/environment.helper';
     SmsQueueSubscriberDatabase,
     TwilioSmsQueuePublisherDatabase,
     TwilioSmsQueueSubscriberDatabase,
+    TwilioSmsQueuePublisherRabbitmq,
+    TwilioSmsQueueSubscriberRabbitmq,
     OTPQueuePublisher,
     OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
@@ -534,10 +553,17 @@ import { isRedisConfigured } from './helpers/environment.helper';
     UserRegistrationListener,
     TestQueuePublisher,
     TestQueueSubscriber,
+
+    // ChatterQueuePublisher,
+    // ChatterQueueSubscriber,
+
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,
     GenerateCodePublisherDatabase,
     GenerateCodeSubscriberDatabase,
+    GenerateCodePublisherRabbitmq,
+    GenerateCodeSubscriberRabbitmq,
+    OTPQueuePublisher,
     MqMessageQueueService,
     MqMessageService,
     ScheduledJobService,
@@ -546,6 +572,7 @@ import { isRedisConfigured } from './helpers/environment.helper';
     RoleMetadataService,
     PermissionMetadataSeederService,
     UserService,
+    UserRepository,
     SettingService,
     ConcatComputedFieldProvider,
     FileStorageProvider,
@@ -574,8 +601,10 @@ import { isRedisConfigured } from './helpers/environment.helper';
     SystemFieldsSeederService,
     FieldMetadataRepository,
     ComputedEntityFieldSubscriber,
-    ComputedFieldEvaluationPublisher,
-    ComputedFieldEvaluationSubscriber,
+    ComputedFieldEvaluationPublisherDatabase,
+    ComputedFieldEvaluationSubscriberDatabase,
+    ComputedFieldEvaluationPublisherRabbitmq,
+    ComputedFieldEvaluationSubscriberRabbitmq,
     ConcatEntityComputedFieldProvider,
     UserActivityHistoryService,
     DashboardService,
@@ -615,6 +644,7 @@ import { isRedisConfigured } from './helpers/environment.helper';
     MailFactory,
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,
+
   ],
   exports: [
     ModuleMetadataService,

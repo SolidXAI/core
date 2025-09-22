@@ -29,12 +29,20 @@ export class TestQueueSubscriberDatabase extends DatabaseSubscriber<any> {
         // console.log(`Received message ${JSON.stringify(message)}`);
         this.testQueueLogger.debug(`Received message: ${JSON.stringify(message)}`);
 
+        let timeoutSecondsParsed = 10;
+        const timeoutSeconds = message?.payload?.timeoutSeconds;
+        if (timeoutSeconds) {
+            timeoutSecondsParsed = +timeoutSeconds;
+        }
+
+        this.testQueueLogger.debug(`Processing message with timeout: ${timeoutSecondsParsed}`);
+
+        // Simulate some processing time
         return new Promise((resolve, reject) => {
-            // Simulate some processing time
             setTimeout(() => {
                 this.testQueueLogger.debug(`Processed message: ${JSON.stringify(message)}`);
                 resolve({ status: 'success', messageId: message.messageId, message: `Processed message` });
-            }, 10000); // Simulate 1 second processing time
+            }, timeoutSecondsParsed * 1000);
         });
     }
 }

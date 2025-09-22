@@ -39,4 +39,13 @@ export class AiInteraction extends CommonEntity {
     externalId: string;
     @Column({ type: "boolean", nullable: true, default: false })
     isAutoApply: boolean = false;
+
+@Column({ type: "integer", nullable: true })
+inputTokens: number;
+
+@Column({ type: "integer", nullable: true })
+outputTokens: number;
+
+@Column({ type: "integer", nullable: true })
+totalTokens: number;
 }

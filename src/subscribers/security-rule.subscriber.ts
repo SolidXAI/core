@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from "@nestjs/typeorm";
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
+import { SOLID_CORE_MODULE_NAME } from 'src/constants';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
@@ -48,6 +49,11 @@ export class SecurityRuleSubscriber implements EntitySubscriberInterface<Securit
                 module: true,
             }
         });
+
+        // Ignore further processing if the module is solid core module, since solid core security rules cannot be seeded from the UI
+        if (populatedModelMetadata.module.name === SOLID_CORE_MODULE_NAME) {
+            return;
+        }
 
         const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(populatedModelMetadata.module.name);
         try {

@@ -18,7 +18,7 @@ export abstract class DatabasePublisher<T> implements QueuePublisher<T> {
         if (!this.serviceRole) {
             this.logger.debug('Queue service Role is not defined in the environment variables');
         }
-        this.logger.debug(`DatabasePublisher instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
+        this.logger.debug(`DatabasePublisher instance created with options: ${JSON.stringify(this.options())}`);
     }
 
     abstract options(): QueuesModuleOptions;
@@ -33,7 +33,7 @@ export abstract class DatabasePublisher<T> implements QueuePublisher<T> {
             throw new Error('Queue service Role is subscriber, cannot publish messages');
         }
 
-        this.logger.debug(`DatabasePublisher publishing with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
+        this.logger.debug(`DatabasePublisher publishing with options: ${JSON.stringify(this.options())}`);
 
         const options = this.options();
 

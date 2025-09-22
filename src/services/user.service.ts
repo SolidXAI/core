@@ -16,6 +16,7 @@ import { User } from '../entities/user.entity';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { iamConfig } from 'src/config/iam.config';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { UserRepository } from 'src/repository/user.repository';
 
 @Injectable()
 export class UserService extends CRUDService<User> {
@@ -28,8 +29,8 @@ export class UserService extends CRUDService<User> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(User, 'default')
-    readonly repo: Repository<User>,
+    // @InjectRepository(User, 'default')
+    readonly repo: UserRepository,
     @InjectRepository(RoleMetadata)
     private readonly roleRepository: Repository<RoleMetadata>,
     readonly moduleRef: ModuleRef,

@@ -22,11 +22,12 @@ export class WhatsAppFactory {
 
     getWhatsappService(name: string = null): IWhatsAppTransport {
         // This is the default provider
-        const whatsappServiceName = this.commonConfiguration.whatsappProvider || name;
+        const whatsappServiceName = name || this.commonConfiguration.whatsappProvider;
         if (!whatsappServiceName) {
             throw new Error("Unable to resolve whatsapp provider")
         }
         const whatsappProviders = this.solidRegistry.getWhatsappProviders();
+
         // Return the instance which matches the whatsappServiceName
         if (!whatsappProviders.length) {
             // throw new Error("No mail providers are registered.");

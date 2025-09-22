@@ -1,26 +1,89 @@
 import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common';
-import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
 import { Public } from 'src/decorators/public.decorator';
 import { SolidRegistry } from '../helpers/solid-registry';
-import { ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
+import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
+import { ActiveUser } from 'src/decorators/active-user.decorator';
+import { AiInteractionService } from 'src/services/ai-interaction.service';
+import { MqMessageService } from 'src/services/mq-message.service';
+import { ErrorMapperService } from 'src/helpers/error-mapper.service';
 
 
 @Controller('')
 @ApiTags("Common")
 @UseGuards(ThrottlerGuard)
-@SkipThrottle({ short: true, login: true, burst: true, sustained: true }) //Skip all
+@SkipThrottle({ short: true, login: true, burst: true, sustained: true }) // Skip all
 export class ServiceController {
     private readonly logger = new Logger(ServiceController.name);
 
     constructor(
         private readonly solidRegistry: SolidRegistry,
+        private readonly aiInteractionService: AiInteractionService,
+        private readonly mqMessageService: MqMessageService,
+        private readonly errorMapper: ErrorMapperService
     ) { }
 
     @Public()
     @Get('ping')
     pingPong() {
         return { pong: 'v1.0.2' };
+    }
+
+    @ApiBearerAuth("jwt")
+    @Get('mcp/ping')
+    async mcpPingPong(@ActiveUser() activeUser: ActiveUserData) {
+        // TODO: do a MCP client invocation, wait for response and return.
+        // If failure then decide shape to return.
+
+        const threadId = `pingPongTxn-${activeUser.sub}`;
+
+        const { queueMessageId, aiInteractionId } = await this.aiInteractionService.triggerMcpClientJob(
+            `Can you do 1 + 1`,
+            activeUser.sub,
+            true,
+            threadId
+        );
+
+        this.logger.debug(`mcp ping pong job triggered: queueMessageId=${queueMessageId}, aiInteractionId=${aiInteractionId}`);
+
+        // Wait up to 2 minutes, start at 500ms poll, back off to max 2s, throw if failed:
+        const result = await this.mqMessageService.waitForTerminalStatus(queueMessageId, {
+            timeoutMs: 2 * 60 * 1000,
+            intervalMs: 500,
+            maxIntervalMs: 2000,
+            throwOnFailure: false,
+        });
+
+        this.logger.debug(`mcp ping pong job finished with stage=${result.stage}`)
+
+        this.logger.debug(`mcp ping pong trying to find genai (child) interaction for aiInteraction for id=${aiInteractionId}`)
+
+        // @ts-ignore
+        const genAiInteractions = await this.aiInteractionService.find({
+            filters: {
+                parentInteraction: {
+                    id: {
+                        $eq: aiInteractionId
+                    }
+                }
+            }
+        });
+
+        const genAiInteraction = genAiInteractions['records'][0];
+        this.logger.debug(genAiInteraction.message);
+
+        this.logger.debug(`identified gen-ai interaction with id=${genAiInteraction.id}`);
+        this.logger.debug(`proceeding with applying the gen-ai interaction`)
+
+        return {
+            mcpPong: 'v1.0.2',
+            genAiInteraction: {
+                status: genAiInteraction.status,
+                errorCode: genAiInteraction.status === 'failed' ? this.errorMapper.mapMessage(genAiInteraction.errorMessage, genAiInteraction.metadata) : '',
+                errorMessage: genAiInteraction.errorMessage,
+            }
+        };
     }
 
     @Public()

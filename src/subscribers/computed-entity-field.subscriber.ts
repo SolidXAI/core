@@ -4,7 +4,7 @@ import { InjectDataSource } from "@nestjs/typeorm";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
 import { ComputedFieldMetadata, SolidRegistry } from "src/helpers/solid-registry";
 import { IEntityPreComputeFieldProvider } from "src/interfaces";
-import { ComputedFieldEvaluationPublisher } from "src/jobs/database/computed-field-evaluation-publisher.service";
+import { PublisherFactory } from "src/services/queues/publisher-factory.service";
 import { DataSource, EntitySubscriberInterface, EventSubscriber, InsertEvent, UpdateEvent } from "typeorm";
 
 // Create an interface i.e ComputedFieldEvaluationPayload which has same fields as the ComputedFieldMetadata and an additional field for the database entity
@@ -20,7 +20,8 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         @InjectDataSource()
         private readonly dataSource: DataSource,
         private readonly solidRegistry: SolidRegistry,
-        private readonly computedFieldPublisher: ComputedFieldEvaluationPublisher,
+        private readonly publisherFactory: PublisherFactory<ComputedFieldEvaluationPayload>
+        // private readonly computedFieldPublisher: ComputedFieldEvaluationPublisherDatabase,
     ) {
         this.dataSource.subscribers.push(this);
     }
@@ -112,9 +113,10 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
             ...computedField,
             databaseEntity,
         };
-        this.computedFieldPublisher.publish({
-            payload
-        });
+        this.publisherFactory.publish({payload}, 'ComputedFieldEvaluationPublisher')
+        // this.computedFieldPublisher.publish({
+        //     payload
+        // });
     }
 
 }

@@ -8,7 +8,7 @@ export class SecurityRule extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     name: string;
-    @Index({ unique: true })
+    // @Index({ unique: true })
     @Column({ type: "varchar" })
     description: string;
     @Index()

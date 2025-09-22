@@ -1,23 +1,23 @@
 import { Injectable } from "@nestjs/common";
 import { SolidRegistry } from "src/helpers/solid-registry";
-import { IEntityPostComputeFieldProvider, IEntityComputedFieldProvider, QueuesModuleOptions } from "src/interfaces";
+import { IEntityPostComputeFieldProvider, QueuesModuleOptions } from "src/interfaces";
 import { QueueMessage } from "src/interfaces/mq";
 import { MqMessageQueueService } from "src/services/mq-message-queue.service";
 import { MqMessageService } from "src/services/mq-message.service";
-import { DatabaseSubscriber } from "src/services/queues/database-subscriber.service";
+import { PollerService } from "src/services/poller.service";
+import { RabbitMqSubscriber } from "src/services/queues/rabbitmq-subscriber.service";
 import { ComputedFieldEvaluationPayload } from "src/subscribers/computed-entity-field.subscriber";
 import computedFieldEvaluationQueueOptions from "./computed-field-evaluation-queue-options";
-import { PollerService } from "src/services/poller.service";
 
 @Injectable()
-export class ComputedFieldEvaluationSubscriber extends DatabaseSubscriber<ComputedFieldEvaluationPayload> {
+export class ComputedFieldEvaluationSubscriberRabbitmq extends RabbitMqSubscriber<ComputedFieldEvaluationPayload> {
     constructor(
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
         readonly solidRegistry: SolidRegistry,
         readonly poller: PollerService,
     ) {
-        super(mqMessageService, mqMessageQueueService, poller);
+        super(mqMessageService, mqMessageQueueService);
     }
 
     options(): QueuesModuleOptions {

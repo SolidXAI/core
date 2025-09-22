@@ -12,6 +12,7 @@ import { IS_DASHBOARD_VARIABLE_SELECTION_PROVIDER } from 'src/decorators/dashboa
 import { IS_DASHBOARD_QUESTION_DATA_PROVIDER } from 'src/decorators/dashboard-question-data-provider.decorator';
 import { IS_MAIL_PROVIDER } from 'src/decorators/mail-provider.decorator';
 import { IS_WA_PROVIDER } from 'src/decorators/whatsapp-provider.decorator';
+import { IS_ERROR_CODE_PROVIDER } from 'src/decorators/error-codes-provider.decorator';
 
 @Injectable()
 export class SolidIntrospectService implements OnApplicationBootstrap {
@@ -35,6 +36,15 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     });
 
     // TODO: Scan the filesystem and populate the solid metadata
+
+    // Register all IErrorCodeProvider implementations
+    const errorCodeProviders = this.discoveryService
+      .getProviders()
+      .filter((provider) => this.isErrorCodeProvider(provider));
+
+    errorCodeProviders.forEach((errorCodeProvider) => {
+      this.solidRegistry.registerErrorCodeProvider(errorCodeProvider);
+    });
 
     // Register all ISelectionProvider implementations
     const selectionProviders = this.discoveryService
@@ -150,6 +160,18 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       .find((methodName) => methodName === 'seed');
     if (!seedMethod) return false;
     return true;
+  }
+
+  private isErrorCodeProvider(provider: InstanceWrapper) {
+    const { instance } = provider;
+    if (!instance) return false;
+
+    const isErrorCodeProvider = this.reflector.get<boolean>(
+      IS_ERROR_CODE_PROVIDER,
+      instance.constructor,
+    );
+
+    return !!isErrorCodeProvider;
   }
 
   private isSelectionProvider(provider: InstanceWrapper) {

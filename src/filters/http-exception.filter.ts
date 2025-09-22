@@ -1,39 +1,67 @@
-import { ExceptionFilter, Catch, ArgumentsHost, Logger, Injectable } from '@nestjs/common';
-import { Response } from 'express';
+// src/common/filters/http-exception.filter.ts
+import {
+    ExceptionFilter,
+    Catch,
+    ArgumentsHost,
+    Logger,
+    Injectable,
+    HttpException,
+} from '@nestjs/common';
+import { Response, Request } from 'express';
 import { HttpStatusCodeMessages } from '../interceptors/logging.interceptor';
+import { ErrorMapperService } from 'src/helpers/error-mapper.service';
+import { ErrorCode } from 'src/interfaces';
+
 
 @Catch()
 @Injectable()
 export class HttpExceptionFilter implements ExceptionFilter {
     private readonly logger = new Logger(HttpExceptionFilter.name);
 
-    constructor() {
+    constructor(private readonly errorMapper: ErrorMapperService) {
         this.logger.debug('HttpExceptionFilter initialized');
-    } 
+    }
 
     catch(exception: any, host: ArgumentsHost) {
         const ctx = host.switchToHttp();
         const response = ctx.getResponse<Response>();
-        const request = ctx.getRequest();
-        const status = exception.status || 500;
-        const message = exception.message || 'Internal server error';
-        const { method, url } = request;
+        const request = ctx.getRequest<Request>();
 
-        // Log the error here
-        this.logger.error(`[${status || 500} ${HttpStatusCodeMessages[status] || 'Internal Server Error'}] ${method} ${url} - ${message}`);
-        this.logger.error(exception.stack || 'No stack trace available');
+        const isHttp = exception instanceof HttpException;
+        const explicitStatus = isHttp ? exception.getStatus() : undefined;
 
-        // Send the response to the client
-        const errorJson = this.getErrorJson(status, message, exception.response);
-        response.status(status).json(errorJson);
-    }
+        // Canonical code + static message
+        const code: ErrorCode = this.errorMapper.mapException(exception);
+        const defaultStatus = this.errorMapper.getHttpStatus(code);
+        const message = code === 'unknown-error' ? `${exception?.message}` : this.errorMapper.getMessage(code);
 
-    private getErrorJson(status: number|string, message: string, additionalErrorData: unknown = {}): any {
-        return {
-            statusCode: status,
-            message: [message],
-            error: HttpStatusCodeMessages[status] || 'Internal Server Error',
-            data: additionalErrorData
+        const status = explicitStatus ?? defaultStatus ?? 500;
+
+        // Logging
+        this.logger.error(
+            `[${status} ${HttpStatusCodeMessages[status] || 'Internal Server Error'}] ${request?.method} ${request?.url} - ${exception?.message || message} [code=${code}]`,
+        );
+        if (exception?.stack) {
+            this.logger.error(exception.stack);
         }
+
+        // Preserve any extra data the exception carried (optional)
+        const extra =
+            (isHttp && (exception.getResponse?.() as any)) ??
+            exception?.response ??
+            {};
+
+        // Keep your legacy shape; add canonical code
+        response.status(status).json({
+            statusCode: status,
+            statusCodeMessage: HttpStatusCodeMessages[status] || 'Internal Server Error',
+            // Keeping this for backward compatibility..
+            message: message,
+            errorCode: code,
+            error: message,
+            // We can make this conditional based on whether we are running in prod mode or dev mode...
+            // errorStack: exception.stack,
+            data: extra,
+        });
     }
 }
