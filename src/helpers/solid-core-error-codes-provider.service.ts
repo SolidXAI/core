@@ -15,7 +15,7 @@ export class SolidCoreErrorCodesProvider implements IErrorCodeProvider {
         return [
             {
                 code: 'solidx-mcp-server-unavailable',
-                priority: 100, // run early
+                priority: 100,
                 match: (txt) =>
                     txt.includes('all connection attempts failed') &&
                     txt.includes('unhandled errors in a taskgroup (1 sub-exception)'),
@@ -25,7 +25,7 @@ export class SolidCoreErrorCodesProvider implements IErrorCodeProvider {
                 },
             },
             {
-                code: 'db-duplicate-key',
+                code: 'solidx-db-duplicate-key',
                 priority: 90,
                 match: (txt) => txt.includes('unique constraint') || txt.includes('duplicate key'),
                 meta: {
@@ -34,7 +34,7 @@ export class SolidCoreErrorCodesProvider implements IErrorCodeProvider {
                 },
             },
             {
-                code: 'db-foreign-key-error',
+                code: 'solidx-db-foreign-key-error',
                 priority: 90,
                 match: (txt) => txt.includes('violates foreign key'),
                 meta: {
@@ -44,7 +44,7 @@ export class SolidCoreErrorCodesProvider implements IErrorCodeProvider {
                 },
             },
             {
-                code: 'unknown-error',
+                code: 'solidx-unknown-error',
                 priority: -1, // last resort
                 match: (_txt) => true, // fallback catch-all
                 meta: {
