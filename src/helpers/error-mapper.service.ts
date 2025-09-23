@@ -1,40 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { ErrorCode, ErrorMeta, ErrorRule, IErrorCodeProvider } from 'src/interfaces';
-
-// export const ERROR_CODES = [
-//     'db-duplicate-key',
-//     'db-foreign-key-error',
-//     'solidx-mcp-server-unavailable',
-//     'unknown-error',
-// ] as const;
-
-// export type ErrorCode = typeof ERROR_CODES[number];
-
-// type ErrorMeta = {
-//     message: string;
-//     httpStatus?: number;
-// };
-
-// const ERROR_MESSAGES: Record<ErrorCode, ErrorMeta> = {
-//     'db-duplicate-key': {
-//         message: 'Duplicate key violation. A record with these values already exists.',
-//         httpStatus: 409,
-//     },
-//     'db-foreign-key-error': {
-//         message: 'Foreign key constraint prevents this operation due to related records.',
-//         httpStatus: 409,
-//     },
-//     'solidx-mcp-server-unavailable': {
-//         message: 'SolidX MCP server is unreachable. Please verify the MCP endpoint.',
-//         httpStatus: 503,
-//     },
-//     'unknown-error': {
-//         message: 'An unexpected error occurred.',
-//         httpStatus: 500,
-//     },
-// };
-
 @Injectable()
 export class ErrorMapperService {
     private readonly logger = new Logger(ErrorMapperService.name);
@@ -76,7 +42,7 @@ export class ErrorMapperService {
                 this.logger.warn(`Error rule threw in match(): code=${rule.code} provider? — ${e}`);
             }
         }
-        return 'unknown-error';
+        return 'solidx-unknown-error';
     }
 
     private lookupMeta(code: ErrorCode): ErrorMeta | undefined {
