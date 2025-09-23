@@ -29,6 +29,7 @@ import { SolidIntrospectService } from './solid-introspect.service';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { UpdateExportTemplateDto } from 'src/dtos/update-export-template.dto';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 
 const EXPORT_CHUNK_SIZE = 100;
 enum ExportStatus {
@@ -71,8 +72,10 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     @InjectRepository(FieldMetadata, 'default')
     readonly fieldRepo: Repository<FieldMetadata>,
     @InjectRepository(ModelMetadata, 'default')
-    readonly ModelMetadataRepo : Repository<ModelMetadata>,
-    readonly moduleRef: ModuleRef
+    readonly ModelMetadataRepo: Repository<ModelMetadata>,
+    readonly moduleRef: ModuleRef,
+    private readonly modelMetadataHelperService: ModelMetadataHelperService,
+
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'exportTransaction', 'solid-core',moduleRef);
   }
@@ -209,16 +212,20 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
   }
 
   private async getDataRecordsFunc(fields: any, modelService: InstanceWrapper<any>, modelMetadata: any, filters:any): Promise<(chunkIndex: number, chunkSize: number) => Promise<any[]>> {
-    // Return a function which will take the chunkIndex & chunkSize and return the data
-    // Get the relation fields to populate
-    const relatedFieldNames = modelMetadata?.fields
-    .filter((field: { relationType: any; }) => field.relationType !== null)
-    .map((field: { name: any; }) => field.name);
+    //Load all possible fields for the model
+    const allModelFields = await this.modelMetadataHelperService.loadFieldHierarchy(
+      modelMetadata.singularName,
+    );
+
+    // Filter only the fields requested in the export payload
+    const modelFields = allModelFields.filter((f: any) =>
+      fields.includes(f.name),
+    );
 
     //Get the model metadata of relation field with userKey details
     const relatedModelsUserKeyMap = new Map<string, string>();
-    for (const field of modelMetadata?.fields || []) {
-      if (field.relationType && field.relationCoModelSingularName && fields.includes(field.name)) {
+    for (const field of modelFields) {
+      if (field.relationType && field.relationCoModelSingularName) {
         const relatedModelMetadata = await this.ModelMetadataRepo.findOne({
           where: { singularName: field.relationCoModelSingularName },
           relations: ['userKeyField'],
@@ -235,7 +242,10 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
       const recordFilterDto: BasicFilterDto = {
         limit: chunkSize,
         offset,
-        populate: relatedFieldNames
+        //only contains relational fields (so TypeORM includes relations in the result).
+        populate: modelFields
+          .filter((f: any) => f.relationType !== null)
+          .map((f: any) => f.name),
       };
       const cleanedFilters = cleanNullsFromObject(filters);
 
@@ -243,21 +253,17 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
         recordFilterDto.filters = cleanedFilters;
       }
 
-      //Get the non relation fields which are in fields array passed to this function
-      const nonRelationalFieldSet = new Set(
-        modelMetadata?.fields
-          .filter((field: { name: any; relationType: any; }) => fields.includes(field.name) && field.relationType === null)
-          .map((field: { name: any; }) => field.name)
-      );
       const data = await modelService.instance.find(recordFilterDto);
       const records = data.records ?? [];
     const cleanedRecords = records.map((record: Record<string, any>) => {
       const newRecord: Record<string, any> = {};
     
       // Include non-relational fields
-      for (const key of nonRelationalFieldSet as Set<string>) {
-        newRecord[key] = record[key];
-      }
+      for (const field of modelFields) {
+          if (!field.relationType) {
+            newRecord[field.name] = record[field.name];
+          }
+        }
     
       // Include userKey from each related field
       for (const [relatedFieldName, userKeyFieldName] of relatedModelsUserKeyMap.entries()) {
