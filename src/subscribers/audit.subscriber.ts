@@ -64,7 +64,12 @@ export class AuditSubscriber implements EntitySubscriberInterface {
             return false;
         }
 
-        return auditFields.some(field => {
+        // if (!entity) {
+        //     console.warn(`[AuditSubscriber] Skipping audit for ${metadata.name} – entity is undefined or null`);
+        //     return false;
+        // }
+
+        return entity && auditFields.some(field => {
             const fieldValue = entity[field.name];
             return fieldValue !== undefined && fieldValue !== null;
         });
