@@ -33,7 +33,7 @@ export class HttpExceptionFilter implements ExceptionFilter {
         // Canonical code + static message
         const code: ErrorCode = this.errorMapper.mapException(exception);
         const defaultStatus = this.errorMapper.getHttpStatus(code);
-        const message = code === 'unknown-error' ? `${exception?.message}` : this.errorMapper.getMessage(code);
+        const message = code === 'solidx-unknown-error' ? `${exception?.message}` : this.errorMapper.getMessage(code);
 
         const status = explicitStatus ?? defaultStatus ?? 500;
 
