@@ -77,17 +77,17 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     private readonly modelMetadataHelperService: ModelMetadataHelperService,
 
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'exportTransaction', 'solid-core',moduleRef);
+    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'exportTransaction', 'solid-core', moduleRef);
   }
 
   // Return the export stream
-  async triggerExportSync(id: number, exportTransactionEntity: any, updateDto: UpdateExportTemplateDto , filters: any): Promise<ExportTransactionFileInfo> {
+  async triggerExportSync(id: number, exportTransactionEntity: any, updateDto: UpdateExportTemplateDto, filters: any): Promise<ExportTransactionFileInfo> {
     try {
       // const loadedExportTransaction = await this.loadExportTransaction(id);
       // from updateDto, get modelId and get modelMetadata
       const modeldata = await this.ModelMetadataRepo.findOne({
-        where: { id:  updateDto?.modelMetadataId},
-        relations: { fields: true},
+        where: { id: updateDto?.modelMetadataId },
+        relations: { fields: true },
       })
       const modelName = modeldata?.singularName;
       const modelTemplateName = modelName;
@@ -105,13 +105,13 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
   }
 
   // Store the export stream using the appropriate storage provider
-  async triggerExportAsync(id: number, exportTransactionEntity: any, updateDto: UpdateExportTemplateDto, filters:any): Promise<void> {
+  async triggerExportAsync(id: number, exportTransactionEntity: any, updateDto: UpdateExportTemplateDto, filters: any): Promise<void> {
     try {
       // const loadedExportTransaction = await this.loadExportTransaction(id)
       // from updateDto, get modelId and get modelMetadata
       const modeldata = await this.ModelMetadataRepo.findOne({
-        where: { id:  updateDto?.modelMetadataId},
-        relations: { fields: true},
+        where: { id: updateDto?.modelMetadataId },
+        relations: { fields: true },
       })
       const modelName = modeldata?.singularName;
       const modelTemplateName = modelName;
@@ -132,7 +132,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
   private async loadExportTransaction(id: number) {
     return await this.repo.findOne({
       where: { id: id },
-      relations: { exportTemplate: { modelMetadata: {fields: true} }},
+      relations: { exportTemplate: { modelMetadata: { fields: true } } },
     }
     );
   }
@@ -141,15 +141,15 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     await this.repo.update(id, { status, error });
   }
 
-  private async getExportStreamDetails(modelName: string, templateName: string, fields:any, modelData:any, templateFormat:string, id:number, exportTransaction: any, filters: any) {
+  private async getExportStreamDetails(modelName: string, templateName: string, fields: any, modelData: any, templateFormat: string, id: number, exportTransaction: any, filters: any) {
     // Get the columns which need to be exported & the model id
     // const fields = JSON.parse(exportTransaction.exportTemplate.fields);
 
     // // Get the appropriate service for the model by trying to fetch a model service matching a particular name
     // const modelName = exportTransaction.exportTemplate.modelMetadata.singularName;
-     const modelService = this.introspectService.getProvider(`${classify(modelName)}Service`);
+    const modelService = this.introspectService.getProvider(`${classify(modelName)}Service`);
     // const templateName = exportTransaction.exportTemplate.templateName;
-     const uuid = String(id); //TODO can be renamed to exportTransactionUUID
+    const uuid = String(id); //TODO can be renamed to exportTransactionUUID
     // const modelData = exportTransaction.exportTemplate.modelMetadata;
 
     // Get the data records function
@@ -211,7 +211,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     return (fileFormat === ExportFormat.EXCEL) ? 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' : 'text/csv';
   }
 
-  private async getDataRecordsFunc(fields: any, modelService: InstanceWrapper<any>, modelMetadata: any, filters:any): Promise<(chunkIndex: number, chunkSize: number) => Promise<any[]>> {
+  private async getDataRecordsFunc(fields: any, modelService: InstanceWrapper<any>, modelMetadata: any, filters: any): Promise<(chunkIndex: number, chunkSize: number) => Promise<any[]>> {
     //Load all possible fields for the model
     const allModelFields = await this.modelMetadataHelperService.loadFieldHierarchy(
       modelMetadata.singularName,
@@ -230,22 +230,22 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
           where: { singularName: field.relationCoModelSingularName },
           relations: ['userKeyField'],
         });
-  
+
         if (relatedModelMetadata?.userKeyField?.name) {
           relatedModelsUserKeyMap.set(field.name, relatedModelMetadata.userKeyField.name);
         }
       }
     }
-  
+
     // Build fieldName -> displayName map
     const fieldNameToDisplayName = new Map<string, string>();
-    for (const field of modelMetadata?.fields || []) {
+    for (const field of modelFields || []) {
       if (field.name) {
         fieldNameToDisplayName.set(field.name, field.displayName ?? field.name);
       }
     }
 
-  
+
     return async (chunkIndex: number, chunkSize: number) => {
       const offset = chunkIndex * chunkSize;
       const recordFilterDto: BasicFilterDto = {
@@ -257,23 +257,23 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
           .map((f: any) => f.name),
       };
       const cleanedFilters = cleanNullsFromObject(filters);
-  
+
       if (cleanedFilters && Object.keys(cleanedFilters).length > 0) {
         recordFilterDto.filters = cleanedFilters;
       }
 
       const data = await modelService.instance.find(recordFilterDto);
       const records = data.records ?? [];
-    const cleanedRecords = records.map((record: Record<string, any>) => {
-      const newRecord: Record<string, any> = {};
-    
-      // Include non-relational fields
-      for (const field of modelFields) {
+      const cleanedRecords = records.map((record: Record<string, any>) => {
+        const newRecord: Record<string, any> = {};
+
+        // Include non-relational fields
+        for (const field of modelFields) {
           if (!field.relationType) {
             // newRecord[field.name] = record[field.name];
             const displayKey = fieldNameToDisplayName.get(field.name) ?? field.name;
-            const fieldMeta = modelMetadata.fields.find(f => f.name === field.name);
-      
+            const fieldMeta = modelFields.find(f => f.name === field.name);
+
             if ((fieldMeta?.type === 'datetime' || fieldMeta?.type === 'date') && record[field.name]) {
               newRecord[displayKey] = new Date(record[field.name]).toISOString();
             } else {
@@ -281,65 +281,65 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
             }
           }
         }
-    
-      // Include userKey from each related field
-      for (const [relatedFieldName, userKeyFieldName] of relatedModelsUserKeyMap.entries()) {
-        const relatedData = record[relatedFieldName];
-        const displayKey = fieldNameToDisplayName.get(relatedFieldName) ?? relatedFieldName;
-    
-        if (Array.isArray(relatedData)) {
-          // For many-to-many or one-to-many
-          const values = relatedData
-          .map(item => {
-          let val = item?.[userKeyFieldName];
-          const relatedFieldMeta = modelMetadata.fields.find(f => f.name === relatedFieldName);
-          if ((relatedFieldMeta?.type === 'datetime' || relatedFieldMeta?.type === 'date') && val) {
-            val = new Date(val).toISOString();
+
+        // Include userKey from each related field
+        for (const [relatedFieldName, userKeyFieldName] of relatedModelsUserKeyMap.entries()) {
+          const relatedData = record[relatedFieldName];
+          const displayKey = fieldNameToDisplayName.get(relatedFieldName) ?? relatedFieldName;
+
+          if (Array.isArray(relatedData)) {
+            // For many-to-many or one-to-many
+            const values = relatedData
+              .map(item => {
+                let val = item?.[userKeyFieldName];
+                const relatedFieldMeta = modelFields.find(f => f.name === relatedFieldName);
+                if ((relatedFieldMeta?.type === 'datetime' || relatedFieldMeta?.type === 'date') && val) {
+                  val = new Date(val).toISOString();
+                }
+                return val;
+              })
+              .filter(Boolean);
+            newRecord[displayKey] = values.join(', ');
+          } else if (relatedData && typeof relatedData === 'object') {
+            // For many-to-one or one-to-one
+            newRecord[relatedFieldName] = relatedData?.[userKeyFieldName] ?? null;
+          } else {
+            newRecord[displayKey] = null;
           }
-          return val;
-        })
-        .filter(Boolean);
-       newRecord[displayKey] = values.join(', ');
-        } else if (relatedData && typeof relatedData === 'object') {
-          // For many-to-one or one-to-one
-          newRecord[relatedFieldName] = relatedData?.[userKeyFieldName] ?? null;
-        } else {
-          newRecord[displayKey] = null;
         }
-      }
 
-    // Include userKey from each related field (with displayName)
-    for (const [relatedFieldName, userKeyFieldName] of relatedModelsUserKeyMap.entries()) {
-      const relatedData = record[relatedFieldName];
-      const displayKey = fieldNameToDisplayName.get(relatedFieldName) ?? relatedFieldName;
+        // Include userKey from each related field (with displayName)
+        for (const [relatedFieldName, userKeyFieldName] of relatedModelsUserKeyMap.entries()) {
+          const relatedData = record[relatedFieldName];
+          const displayKey = fieldNameToDisplayName.get(relatedFieldName) ?? relatedFieldName;
 
-      if (Array.isArray(relatedData)) {
-        // For many-to-many or one-to-many
-        const values = relatedData
-          .map(item => {
-            const val = item?.[userKeyFieldName];
-            // Convert datetime to ISO if needed
-            const relatedFieldMeta = modelMetadata.fields.find(f => f.name === relatedFieldName);
-            if ((relatedFieldMeta?.type === 'datetime' || relatedFieldMeta?.type === 'date' ) && val) {
-              return new Date(val).toISOString();
+          if (Array.isArray(relatedData)) {
+            // For many-to-many or one-to-many
+            const values = relatedData
+              .map(item => {
+                const val = item?.[userKeyFieldName];
+                // Convert datetime to ISO if needed
+                const relatedFieldMeta = modelFields.find(f => f.name === relatedFieldName);
+                if ((relatedFieldMeta?.type === 'datetime' || relatedFieldMeta?.type === 'date') && val) {
+                  return new Date(val).toISOString();
+                }
+                return val;
+              })
+              .filter(Boolean);
+            newRecord[displayKey] = values.join(', ');
+          } else if (relatedData && typeof relatedData === 'object') {
+            let val = relatedData?.[userKeyFieldName] ?? null;
+            const relatedFieldMeta = modelFields.find(f => f.name === relatedFieldName);
+            if ((relatedFieldMeta?.type === 'datetime' || relatedFieldMeta?.type === 'date') && val) {
+              val = new Date(val).toISOString();
             }
-            return val;
-          })
-          .filter(Boolean);
-        newRecord[displayKey] = values.join(', ');
-      }else if (relatedData && typeof relatedData === 'object') {
-        let val = relatedData?.[userKeyFieldName] ?? null;
-        const relatedFieldMeta = modelMetadata.fields.find(f => f.name === relatedFieldName);
-        if ((relatedFieldMeta?.type === 'datetime' || relatedFieldMeta?.type === 'date') && val) {
-          val = new Date(val).toISOString();
+            newRecord[displayKey] = val;
+          } else {
+            newRecord[displayKey] = null;
+          }
         }
-        newRecord[displayKey] = val;
-      } else {
-        newRecord[displayKey] = null;
-      }
-    }
-          return newRecord;
-        });
+        return newRecord;
+      });
       return cleanedRecords
     }
   }
