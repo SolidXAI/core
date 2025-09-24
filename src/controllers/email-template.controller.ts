@@ -1,25 +1,22 @@
-import { Body, Controller, Delete, Get, Header, Param, Patch, Post, Put, Query, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { PaginationQueryDto } from 'src/dtos/pagination-query.dto';
-import { Roles } from 'src/decorators/roles.decorator';
-import { EmailTemplateService } from '../services/email-template.service';
+import { Body, Controller, Delete, Get, Header, Param, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Public } from 'src/decorators/public.decorator';
 import { CreateEmailTemplateDto } from '../dtos/create-email-template.dto';
 import { UpdateEmailTemplateDto } from '../dtos/update-email-template.dto';
-import { Public } from 'src/decorators/public.decorator';
+import { EmailTemplateService } from '../services/email-template.service';
 
 
 
 // TODO: esInterop not working somehow, defaulted to using the require syntax to import Mailgen. Figure a better way to do this. 
 // import { Mailgen } from 'mailgen';
 import Mailgen = require('mailgen');
-import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 
 @Controller('email-template')
 @ApiTags("Common")
-@UseGuards(ThrottlerGuard)
-@SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only 
+// @UseGuards(ThrottlerGuard)
+// @SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only 
 export class EmailTemplateController {
   constructor(private readonly service: EmailTemplateService) { }
 

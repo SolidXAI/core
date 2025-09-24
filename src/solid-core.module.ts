@@ -368,19 +368,19 @@ import { SolidCoreErrorCodesProvider } from './helpers/solid-core-error-codes-pr
     HttpModule,
     ConfigModule,
     ClsModule,
-    ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        throttlers: [
-          { name: 'short', ttl: seconds(10), limit: 10 },
-          { name: 'login', ttl: seconds(10), limit: 5 },
-          { name: 'burst', ttl: seconds(1), limit: 100 },
-          { name: 'sustained', ttl: seconds(300), limit: 500 },
-        ],
-        storage: isRedisConfigured(configService) ? new ThrottlerStorageRedisService(`redis://${configService.get<string>('REDIS_HOST')}:${configService.get<string>('REDIS_PORT')}`) : undefined,
-      }),
-    }),
+    // ThrottlerModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: (configService: ConfigService) => ({
+    //     throttlers: [
+    //       { name: 'short', ttl: seconds(10), limit: 10 },
+    //       { name: 'login', ttl: seconds(10), limit: 5 },
+    //       { name: 'burst', ttl: seconds(1), limit: 100 },
+    //       { name: 'sustained', ttl: seconds(300), limit: 500 },
+    //     ],
+    //     storage: isRedisConfigured(configService) ? new ThrottlerStorageRedisService(`redis://${configService.get<string>('REDIS_HOST')}:${configService.get<string>('REDIS_PORT')}`) : undefined,
+    //   }),
+    // }),
   ],
   controllers: [
     ModuleMetadataController,
