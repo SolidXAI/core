@@ -10,11 +10,10 @@ export interface PasswordFieldOptions {
     regexPattern: string | undefined | null;
     fieldName: string | undefined | null;
     isUpdate: Boolean;
+    hashingService: HashingService | undefined | null;
 }
 
 export class PasswordFieldCrudManager implements FieldCrudManager {
-    private hashingService: HashingService = new BcryptService(); //FIXME: The bcrypt service injected here probably can be optimized to be a singleton
-
     constructor(private readonly options: PasswordFieldOptions) {
     }
 
@@ -47,7 +46,9 @@ export class PasswordFieldCrudManager implements FieldCrudManager {
 
     async transformForCreate(dto: any): Promise<any> {
         if(dto[this.options.fieldName]){
-            dto[this.options.fieldName] = await this.hashingService.hash(dto[this.options.fieldName]);
+            dto[this.options.fieldName] = await this.options.hashingService.hash(dto[this.options.fieldName]);
+            dto['passwordScheme'] = this.options.hashingService.name(); //Don't want to expose this in dto  // e.g., 'bcrypt'
+            dto['passwordHashVersion'] = this.options.hashingService.currentVersion(); //Don't want to expose this in dto // e.g., 1, 2, ...
         }
         return dto;
     }

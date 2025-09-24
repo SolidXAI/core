@@ -2115,6 +2115,49 @@
             "relationCreateInverse": true,
             "relationModelModuleName": "solid-core",
             "isSystem": true
+          },
+          {
+            "name": "passwordScheme",
+            "displayName": "Password Scheme",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 256,
+            "required": true,
+            "index": false,
+            "isSystem": true,
+            "columnName": "password_scheme",
+            "defaultValue": "bcrypt",
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "bcrypt:bcrypt"
+            ]
+          },
+          {
+            "name": "passwordSchemeVersion",
+            "displayName": "Password Scheme Version",
+            "type": "int",
+            "ormType": "integer",
+            "length": 512,
+            "required": true,
+            "defaultValue": 1,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "rehashedAt",
+            "displayName": "Password Rehashed At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
           }
         ]
       },
