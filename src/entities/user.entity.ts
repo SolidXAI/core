@@ -102,4 +102,13 @@ export class User extends CommonEntity {
     @OneToMany(() => UserViewMetadata, userViewMetadata => userViewMetadata.user, { cascade: true })
     // don't send to client
     userViewMetadata: UserViewMetadata[];
+    // dont send to client
+    @Column({ type: "varchar", default: "bcrypt" })
+    passwordScheme: string;
+    // dont send to client
+    @Column({ type: "int", default: 1 })
+    passwordSchemeVersion: number;
+    // dont send to client
+    @Column({ type: "timestamp", nullable: true })
+    rehashedAt: Date;
 }

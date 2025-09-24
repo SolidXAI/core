@@ -38,6 +38,7 @@ import { isArray } from "class-validator";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 import { RequestContextService } from "./request-context.service";
+import { HashingService } from "./hashing.service";
 
 export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
@@ -307,7 +308,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 return new DateFieldCrudManager(options);
             }
             case SolidFieldType.password: {
-                const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern };
+                const options = { ...commonOptions, min: fieldMetadata.min, max: fieldMetadata.max, regexPattern: fieldMetadata.regexPattern, hashingService: this.moduleRef.get(HashingService, { strict: false }) };
                 return new PasswordFieldCrudManager(options);
             }
             case SolidFieldType.mediaSingle:
