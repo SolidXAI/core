@@ -188,7 +188,7 @@ import { TwilioSmsQueuePublisherDatabase } from './jobs/database/twilio-sms-publ
 import { TwilioSmsQueueSubscriberDatabase } from './jobs/database/twilio-sms-subscriber-database.service';
 
 
-import { ThrottlerModule } from '@nestjs/throttler';
+// import { ThrottlerModule } from '@nestjs/throttler';
 import { IngestCommand } from './commands/ingest.command';
 import { MailFactory } from './factories/mail.factory';
 import { ErrorMapperService } from './helpers/error-mapper.service';
@@ -689,7 +689,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     MailFactory,
     PollerService,
     AiInteractionService,
-    ThrottlerModule,
+    // ThrottlerModule,
   ],
 })
 export class SolidCoreModule { }
