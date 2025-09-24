@@ -2145,6 +2145,19 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "rehashedAt",
+            "displayName": "Password Rehashed At",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
           }
         ]
       },
