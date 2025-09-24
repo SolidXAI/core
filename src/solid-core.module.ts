@@ -83,16 +83,16 @@ import { ApiEmailQueuePublisher } from './jobs/api-email-publisher.service';
 import { ApiEmailQueueSubscriber } from './jobs/api-email-subscriber.service';
 import { TestQueuePublisherDatabase } from './jobs/database/test-queue-publisher-database.service';
 import { TestQueueSubscriberDatabase } from './jobs/database/test-queue-subscriber-database.service';
-import { SmtpEmailQueuePublisherRabbitmq } from './jobs/smtp-email-publisher.service';
-import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/smtp-email-subscriber.service';
+import { Msg91WhatsappQueuePublisher } from './jobs/msg91-whatsapp-publisher.service';
+import { Msg91WhatsappQueueSubscriber } from './jobs/msg91-whatsapp-subscriber.service';
 import { OTPQueuePublisher } from './jobs/otp-publisher.service';
 import { OTPQueueSubscriber } from './jobs/otp-subscriber.service';
 import { SmsQueuePublisher } from './jobs/sms-publisher.service';
 import { SmsQueueSubscriber } from './jobs/sms-subscriber.service';
+import { SmtpEmailQueuePublisherRabbitmq } from './jobs/smtp-email-publisher.service';
+import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/smtp-email-subscriber.service';
 import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
 import { TestQueueSubscriber } from './jobs/test-queue-subscriber.service';
-import { Msg91WhatsappQueuePublisher } from './jobs/msg91-whatsapp-publisher.service';
-import { Msg91WhatsappQueueSubscriber } from './jobs/msg91-whatsapp-subscriber.service';
 import { UserRegistrationListener } from './listeners/user-registration.listener';
 import { GoogleOauthStrategy } from './passport-strategies/google-oauth.strategy';
 import { LocalStrategy } from './passport-strategies/local.strategy';
@@ -175,36 +175,61 @@ import { ApiEmailQueuePublisherDatabase } from './jobs/database/api-email-publis
 import { ApiEmailQueueSubscriberDatabase } from './jobs/database/api-email-subscriber-database.service';
 import { ComputedFieldEvaluationPublisherDatabase } from './jobs/database/computed-field-evaluation-publisher-database.service';
 import { ComputedFieldEvaluationSubscriberDatabase } from './jobs/database/computed-field-evaluation-subscriber-database.service';
-import { SmtpEmailQueuePublisherDatabase } from './jobs/database/smtp-email-publisher-database.service';
-import { SmtpEmailQueueSubscriberDatabase } from './jobs/database/smtp-email-subscriber-database.service';
 import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-publisher-database.service';
 import { GenerateCodeSubscriberDatabase } from './jobs/database/generate-code-subscriber-database.service';
 import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-database.service';
 import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
 import { SmsQueuePublisherDatabase } from './jobs/database/sms-publisher-database.service';
 import { SmsQueueSubscriberDatabase } from './jobs/database/sms-subscriber-database.service';
+import { SmtpEmailQueuePublisherDatabase } from './jobs/database/smtp-email-publisher-database.service';
+import { SmtpEmailQueueSubscriberDatabase } from './jobs/database/smtp-email-subscriber-database.service';
 
 import { TwilioSmsQueuePublisherDatabase } from './jobs/database/twilio-sms-publisher-database.service';
 import { TwilioSmsQueueSubscriberDatabase } from './jobs/database/twilio-sms-subscriber-database.service';
 
 
-import { TriggerMcpClientPublisherDatabase } from './jobs/database/trigger-mcp-client-publisher-database.service';
-import { TriggerMcpClientSubscriberDatabase } from './jobs/database/trigger-mcp-client-subscriber-database.service';
+import { ThrottlerModule } from '@nestjs/throttler';
+import { IngestCommand } from './commands/ingest.command';
+import { MailFactory } from './factories/mail.factory';
+import { ErrorMapperService } from './helpers/error-mapper.service';
+import { SolidCoreErrorCodesProvider } from './helpers/solid-core-error-codes-provider.service';
+import { ComputedFieldEvaluationPublisherRabbitmq } from './jobs/computed-field-evaluation-publisher.service';
+import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/computed-field-evaluation-subscriber.service';
 import { Msg91WhatsappQueuePublisherDatabase } from './jobs/database/msg91-whatsapp-publisher-database.service';
 import { Msg91WhatsappQueueSubscriberDatabase } from './jobs/database/msg91-whatsapp-subscriber-database.service';
+import { Three60WhatsappQueuePublisherDatabase } from './jobs/database/three60-whatsapp-publisher-database.service';
+import { Three60WhatsappQueueSubscriberDatabase } from './jobs/database/three60-whatsapp-subscriber-database.service';
+import { TriggerMcpClientPublisherDatabase } from './jobs/database/trigger-mcp-client-publisher-database.service';
+import { TriggerMcpClientSubscriberDatabase } from './jobs/database/trigger-mcp-client-subscriber-database.service';
+import { GenerateCodePublisherRabbitmq } from './jobs/generate-code-publisher.service';
+import { GenerateCodeSubscriberRabbitmq } from './jobs/generate-code-subscriber.service';
+import { Three60WhatsappQueuePublisher } from './jobs/three60-whatsapp-publisher.service';
+import { Three60WhatsappQueueSubscriber } from './jobs/three60-whatsapp-subscriber.service';
+import { TriggerMcpClientPublisherRabbitmq } from './jobs/trigger-mcp-client-publisher.service';
+import { TriggerMcpClientSubscriberRabbitmq } from './jobs/trigger-mcp-client-subscriber.service';
+import { TwilioSmsQueuePublisherRabbitmq } from './jobs/twilio-sms-publisher.service';
+import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/twilio-sms-subscriber.service';
 import { DashboardMapper } from './mappers/dashboard-mapper';
+import { ListOfValuesMapper } from './mappers/list-of-values-mapper';
+import { ChatterMessageDetailsRepository } from './repository/chatter-message-details.repository';
+import { ChatterMessageRepository } from './repository/chatter-message.repository';
 import { DashboardRepository } from './repository/dashboard.repository';
 import { FieldMetadataRepository } from './repository/field-metadata.repository';
 import { FieldRepository } from './repository/field.repository';
 import { MediaRepository } from './repository/media.repository';
+import { ScheduledJobRepository } from './repository/scheduled-job.repository';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
+import { UserRepository } from './repository/user.repository';
+import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
 import { SystemFieldsSeederService } from './seeders/system-fields-seeder.service';
 import { AiInteractionService } from './services/ai-interaction.service';
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageService } from './services/chatter-message.service';
 import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
+import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
 import { ConcatEntityComputedFieldProvider } from './services/computed-fields/entity/concat-entity-computed-field-provider.service';
+import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
 import { CRUDService } from './services/crud.service';
 import { CsvService } from './services/csv.service';
 import { DashboardQuestionSqlDatasetConfigService } from './services/dashboard-question-sql-dataset-config.service';
@@ -216,16 +241,24 @@ import { DashboardService } from './services/dashboard.service';
 import { ExcelService } from './services/excel.service';
 import { ExportTemplateService } from './services/export-template.service';
 import { ExportTransactionService } from './services/export-transaction.service';
+import { IngestMetadataService } from './services/genai/ingest-metadata.service';
+import { R2RHelperService } from './services/genai/r2r-helper.service';
 import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
 import { ImportTransactionService } from './services/import-transaction.service';
+import { ListOfValuesMetadataService } from './services/list-of-values-metadata.service';
 import { LocaleService } from './services/locale.service';
 import { McpToolResponseHandlerFactory } from './services/mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
+import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-add-field-mcp-tool-response-handler.service';
 import { SolidCreateDashboardMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-mcp-tool-response-handler.service';
 import { SolidCreateDashboardQuestionMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-question-mcp-tool-response-handler.service';
 import { SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-question-sql-dataset-config-mcp-tool-response-handler.service';
+import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-widget-mcp-tool-response-handler.service';
+import { SolidCreateModelWithFieldsMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-model-with-fields-mcp-tool-response-handler.service';
 import { SolidCreateModuleMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-module-mcp-tool-response-handler.service';
+import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
 import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
+import { PollerService } from './services/poller.service';
 import { ChartJsSqlDataProvider } from './services/question-data-providers/chartjs-sql-data-provider.service';
 import { PrimeReactDatatableSqlDataProvider } from './services/question-data-providers/prime-react-datatable-sql-data-provider.service';
 import { PrimeReactMeterGroupSqlDataProvider } from './services/question-data-providers/prime-react-meter-group-sql-data-provider.service';
@@ -241,10 +274,13 @@ import { ListOfDashboardVariableProvidersSelectionProvider } from './services/se
 import { ListOfScheduledJobsSelectionProvider } from './services/selection-providers/list-of-scheduled-jobs-selection-provider.service';
 import { LocaleListSelectionProvider } from './services/selection-providers/locale-list-selection-provider.service';
 import { SettingService } from './services/setting.service';
+import { TwilioSMSService } from './services/sms/TwilioSMSService';
 import { SqlExpressionResolverService } from './services/sql-expression-resolver.service';
+import { TextractService } from './services/textract.service';
 import { UserActivityHistoryService } from './services/user-activity-history.service';
 import { UserViewMetadataService } from './services/user-view-metadata.service';
 import { UserService } from './services/user.service';
+import { Three60WhatsappService } from './services/whatsapp/Three60WhatsappService';
 import { AuditSubscriber } from './subscribers/audit.subscriber';
 import { ComputedEntityFieldSubscriber } from './subscribers/computed-entity-field.subscriber';
 import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-by.subscriber';
@@ -252,48 +288,10 @@ import { DashboardQuestionSqlDatasetConfigSubscriber } from './subscribers/dashb
 import { DashboardQuestionSubscriber } from './subscribers/dashboard-question.subscriber';
 import { DashboardVariableSubscriber } from './subscribers/dashboard-variable.subscriber';
 import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
+import { ListOfValuesMetadataSubscriber } from './subscribers/list-of-values-metadata.subscriber';
+import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
-import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-widget-mcp-tool-response-handler.service';
-import { SolidCreateModelWithFieldsMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-model-with-fields-mcp-tool-response-handler.service';
-import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-add-field-mcp-tool-response-handler.service';
-import { ViewMetadataRepository } from './repository/view-metadata.repository';
-import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
-import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
-import { ScheduledJobRepository } from './repository/scheduled-job.repository';
-import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
-import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
-import { ListOfValuesMapper } from './mappers/list-of-values-mapper';
-import { ListOfValuesMetadataSubscriber } from './subscribers/list-of-values-metadata.subscriber';
-import { ListOfValuesMetadataService } from './services/list-of-values-metadata.service';
-import { MailFactory } from './factories/mail.factory';
-import { TwilioSMSService } from './services/sms/TwilioSMSService';
-import { PollerService } from './services/poller.service';
-import { TextractService } from './services/textract.service';
-import { seconds, ThrottlerModule } from '@nestjs/throttler';
-import { ChatterMessageRepository } from './repository/chatter-message.repository';
-import { ChatterMessageDetailsRepository } from './repository/chatter-message-details.repository';
-import { Three60WhatsappQueuePublisher } from './jobs/three60-whatsapp-publisher.service';
-import { Three60WhatsappQueueSubscriber } from './jobs/three60-whatsapp-subscriber.service';
-import { Three60WhatsappQueuePublisherDatabase } from './jobs/database/three60-whatsapp-publisher-database.service';
-import { Three60WhatsappQueueSubscriberDatabase } from './jobs/database/three60-whatsapp-subscriber-database.service';
-import { Three60WhatsappService } from './services/whatsapp/Three60WhatsappService';
-import { ThrottlerStorageRedisService } from '@nest-lab/throttler-storage-redis/src/throttler-storage-redis.service';
-import { isRedisConfigured } from './helpers/environment.helper';
-import { UserRepository } from './repository/user.repository';
-import { ErrorMapperService } from './helpers/error-mapper.service';
-import { IngestCommand } from './commands/ingest.command';
-import { R2RHelperService } from './services/genai/r2r-helper.service';
-import { IngestMetadataService } from './services/genai/ingest-metadata.service';
-import { ComputedFieldEvaluationPublisherRabbitmq } from './jobs/computed-field-evaluation-publisher.service';
-import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/computed-field-evaluation-subscriber.service';
-import { GenerateCodePublisherRabbitmq } from './jobs/generate-code-publisher.service';
-import { GenerateCodeSubscriberRabbitmq } from './jobs/generate-code-subscriber.service';
-import { TriggerMcpClientPublisherRabbitmq } from './jobs/trigger-mcp-client-publisher.service';
-import { TriggerMcpClientSubscriberRabbitmq } from './jobs/trigger-mcp-client-subscriber.service';
-import { TwilioSmsQueuePublisherRabbitmq } from './jobs/twilio-sms-publisher.service';
-import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/twilio-sms-subscriber.service';
-import { SolidCoreErrorCodesProvider } from './helpers/solid-core-error-codes-provider.service';
 
 
 @Global()
@@ -368,19 +366,19 @@ import { SolidCoreErrorCodesProvider } from './helpers/solid-core-error-codes-pr
     HttpModule,
     ConfigModule,
     ClsModule,
-    ThrottlerModule.forRootAsync({
-      imports: [ConfigModule],
-      inject: [ConfigService],
-      useFactory: (configService: ConfigService) => ({
-        throttlers: [
-          { name: 'short', ttl: seconds(10), limit: 10 },
-          { name: 'login', ttl: seconds(10), limit: 5 },
-          { name: 'burst', ttl: seconds(1), limit: 100 },
-          { name: 'sustained', ttl: seconds(300), limit: 500 },
-        ],
-        storage: isRedisConfigured(configService) ? new ThrottlerStorageRedisService(`redis://${configService.get<string>('REDIS_HOST')}:${configService.get<string>('REDIS_PORT')}`) : undefined,
-      }),
-    }),
+    // ThrottlerModule.forRootAsync({
+    //   imports: [ConfigModule],
+    //   inject: [ConfigService],
+    //   useFactory: (configService: ConfigService) => ({
+    //     throttlers: [
+    //       { name: 'short', ttl: seconds(10), limit: 10 },
+    //       { name: 'login', ttl: seconds(10), limit: 5 },
+    //       { name: 'burst', ttl: seconds(1), limit: 100 },
+    //       { name: 'sustained', ttl: seconds(300), limit: 500 },
+    //     ],
+    //     storage: isRedisConfigured(configService) ? new ThrottlerStorageRedisService(`redis://${configService.get<string>('REDIS_HOST')}:${configService.get<string>('REDIS_PORT')}`) : undefined,
+    //   }),
+    // }),
   ],
   controllers: [
     ModuleMetadataController,

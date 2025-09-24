@@ -1,24 +1,23 @@
 import { Controller, Get, Inject, InternalServerErrorException, Query, Req, Res, UseGuards } from '@nestjs/common';
-import { AuthenticationService } from '../services/authentication.service';
-import { Auth } from '../decorators/auth.decorator';
-import { AuthType } from '../enums/auth-type.enum';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
-import { GoogleOauthGuard } from '../passport-strategies/google-oauth.strategy';
-import { Request, Response } from 'express';
 import { ConfigType } from '@nestjs/config';
-import { UserService } from '../services/user.service';
-import { Public } from '../decorators/public.decorator';
-import { iamConfig } from '../config/iam.config';
+import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Request, Response } from 'express';
 import { isGoogleOAuthConfigured } from 'src/helpers/google-oauth.helper';
-import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
+import { iamConfig } from '../config/iam.config';
+import { Auth } from '../decorators/auth.decorator';
+import { Public } from '../decorators/public.decorator';
+import { AuthType } from '../enums/auth-type.enum';
+import { GoogleOauthGuard } from '../passport-strategies/google-oauth.strategy';
+import { AuthenticationService } from '../services/authentication.service';
+import { UserService } from '../services/user.service';
 
 
 
 @Auth(AuthType.None)
 @Controller('iam/google')
 @ApiTags("Iam")
-@UseGuards(ThrottlerGuard)
-@SkipThrottle({ login: false, short: false, burst: true, sustained: true }) //Enable the login throttle only 
+// @UseGuards(ThrottlerGuard)
+// @SkipThrottle({ login: false, short: false, burst: true, sustained: true }) //Enable the login throttle only 
 export class GoogleAuthenticationController {
     constructor(
         @Inject(iamConfig.KEY) private iamConfiguration: ConfigType<typeof iamConfig>,

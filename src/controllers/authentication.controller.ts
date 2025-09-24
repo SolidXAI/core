@@ -1,6 +1,5 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Post, Res, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Post, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { SkipThrottle, ThrottlerGuard } from '@nestjs/throttler';
 import { Response } from 'express';
 import { ActiveUser } from "../decorators/active-user.decorator";
 import { Public } from '../decorators/public.decorator';
@@ -17,15 +16,15 @@ import { AuthenticationService } from '../services/authentication.service';
 // @Auth(AuthType.None)
 @Controller('iam')
 @ApiTags("Iam")
-@UseGuards(ThrottlerGuard)
-@SkipThrottle({login: true, short: true, burst: true, sustained: true}) // disable all sets by default for this controller
+// @UseGuards(ThrottlerGuard)
+// @SkipThrottle({login: true, short: true, burst: true, sustained: true}) // disable all sets by default for this controller
 export class AuthenticationController {
     private readonly logger = new Logger(AuthenticationController.name);
 
     constructor(private readonly authService: AuthenticationService) { }
 
     @Public()
-    @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
+    // @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
     @Post('register')
     signUp(@Body() signUpDto: SignUpDto) {
         return this.authService.signUp(signUpDto);
@@ -38,8 +37,7 @@ export class AuthenticationController {
     }
 
     @Public()
-    // @UseGuards(LocalAuthGuard)
-    @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
+    // @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
     @HttpCode(HttpStatus.OK) // by default @Post does 201, we wanted 200 - hence using @HttpCode(HttpStatus.OK)
     @Post('authenticate')
     async signIn(
@@ -62,7 +60,7 @@ export class AuthenticationController {
     }
 
     @Public()
-    @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
+    // @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
     @HttpCode(HttpStatus.OK) // changed since the default is 201
     @Post('refresh-tokens')
     refreshTokens(@Body() refreshTokenDto: RefreshTokenDto) {
@@ -70,14 +68,14 @@ export class AuthenticationController {
     }
 
     @Public()
-    @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
+    // @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
     @Post('initiate/forgot-password')
     initiateForgotPassword(@Body() initiateForgotPasswordDto: InitiateForgotPasswordDto) {
         return this.authService.initiateForgotPassword(initiateForgotPasswordDto);
     }
 
     @Public()
-    @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
+    // @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
     @Post('confirm/forgot-password')
     confirmForgotPassword(@Body() confirmForgotPasswordDto: ConfirmForgotPasswordDto) {
         return this.authService.confirmForgotPassword(confirmForgotPasswordDto);

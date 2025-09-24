@@ -14,8 +14,8 @@ import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 @Auth(AuthType.None)
 @Controller('iam/otp')
 @ApiTags("Iam")
-@UseGuards(ThrottlerGuard)
-@SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
+// @UseGuards(ThrottlerGuard)
+// @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
 export class OTPAuthenticationController {
     constructor(private readonly authService: AuthenticationService) { }
 

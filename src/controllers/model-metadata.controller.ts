@@ -1,16 +1,15 @@
-import { Body, Controller, Delete, Get, Logger, Param, ParseIntPipe, Post, Put, Query, UseGuards } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Logger, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public.decorator';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { UpdateModelMetaDataDto } from '../dtos/update-model-metadata.dto';
 import { ModelMetadataService } from '../services/model-metadata.service';
-import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 @Controller('model-metadata')
 @ApiTags("App Builder")
-@UseGuards(ThrottlerGuard)
-@SkipThrottle({ short: true, login: true, burst: true, sustained: true }) //Skip all
+// @UseGuards(ThrottlerGuard)
+// @SkipThrottle({ short: true, login: true, burst: true, sustained: true }) //Skip all
 export class ModelMetadataController {
     private logger = new Logger('ModelMetadataController');
 
@@ -35,7 +34,7 @@ export class ModelMetadataController {
     }
 
     @Public()
-    @SkipThrottle({ burst: false, short: true, login: true, sustained: true }) //Enable burst only
+    // @SkipThrottle({ burst: false, short: true, login: true, sustained: true }) //Enable burst only
     @Get('public')
     async findManyPublic() {
         const basicFilterDto: BasicFilterDto = {
@@ -65,7 +64,7 @@ export class ModelMetadataController {
     }
 
     @Public()
-    @SkipThrottle({ short: false, burst: true, login: true, sustained: true }) //Enable short only
+    // @SkipThrottle({ short: false, burst: true, login: true, sustained: true }) //Enable short only
     @Post('/update-user-key')
     updateUserKey(@Body() data: any) {
         return this.modelMetadataService.updateUserKey(data);
