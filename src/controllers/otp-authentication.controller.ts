@@ -8,7 +8,7 @@ import { OTPSignInDto } from '../dtos/otp-sign-in.dto';
 import { OTPSignUpDto } from '../dtos/otp-sign-up.dto';
 import { AuthType } from '../enums/auth-type.enum';
 import { AuthenticationService } from '../services/authentication.service';
-import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
+// import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
 
 
 @Auth(AuthType.None)
