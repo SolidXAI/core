@@ -85,12 +85,12 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             threadId: aiInteraction.threadId,
             parentInteractionId: aiInteraction.id,
             role: 'gen-ai',
-            message: '', // Updated after we receive the response
+            message: '', // Updated in the tool
             contentType: '', // Updated after we receive the response
             errorMessage: '', // Updated after we receive the response
             modelUsed: '', // Updated after we receive the response
             responseTimeMs: 0, // Updated after we receive the response
-            metadata: '', // Updated after we receive the response
+            metadata: '', // Updated in the tool
             isApplied: false, // Updated after we receive the response
             status: '' // Updated after we receive the response
         });
