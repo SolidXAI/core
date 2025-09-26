@@ -85,7 +85,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             threadId: aiInteraction.threadId,
             parentInteractionId: aiInteraction.id,
             role: 'gen-ai',
-            message: '', // Updated in the tool
+            message: prompt, // Updated in the tool
             contentType: '', // Updated after we receive the response
             errorMessage: '', // Updated after we receive the response
             modelUsed: '', // Updated after we receive the response
@@ -103,7 +103,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         - aiInteractionId: ${genAiInteraction.id}
         `
 
-        const aiResponse = await this.aiInteractionService.runMcpPrompt(prompt);
+        const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);
         this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);
         this.triggerMcpClientSubscriberLogger.log(JSON.stringify(aiResponse));
 
@@ -128,6 +128,14 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             // });
 
             // TODO: Update the previously created genAiInteraction record with the respective error fields and save to DB
+            await this.aiInteractionService.update(genAiInteraction.id, {
+                contentType: aiResponse.content_type,
+                errorMessage: errorsStr,
+                modelUsed: aiResponse.model,
+                responseTimeMs: aiResponse.duration_ms,
+                isApplied: aiInteraction.isApplied,
+                status: aiResponse.success ? 'succeeded' : 'failed'
+            }, [], true);
 
             // update the job entry with failure... raising an error will lead the job to be marked as failed...
             throw new Error(errorsStr);
@@ -151,6 +159,15 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             // });
 
             // TODO: Update the previously created genAiInteraction record with the respective success fields and save to DB
+            await this.aiInteractionService.update(genAiInteraction.id, {
+                contentType: aiResponse.content_type,
+                errorMessage: '',
+                modelUsed: aiResponse.model,
+                responseTimeMs: aiResponse.duration_ms,
+                isApplied: aiInteraction.isApplied,
+                status: aiResponse.success ? 'succeeded' : 'failed'
+            }, [], true);
+
 
             // If the human interaction was with isAutoApply=true, then we can go ahead and autoApply.
             if (aiInteraction.isAutoApply) {
