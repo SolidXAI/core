@@ -136,8 +136,20 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
         try {
           this.logger.log(`Python script exited with zero exit code: ${stdout}`);
           const raw: McpResponse = JSON.parse(stdout);
+
+          // Sometimes the raw.response might not be a valid json
+          // TODO: examine the content type of the raw response..
+          // if (raw.content_type==='json') {
+          // }
+          let parsedResponse = raw.response;
+          try {
+            parsedResponse = JSON.parse(raw.response);
+          }
+          catch (ex) {
+            this.logger.warn(`Attempting to parse mcp client response assuming it is JSON, however it is not: ${parsedResponse}`);
+          }
           // Parse the response string into an object
-          const parsedResponse = JSON.parse(raw.response);
+          // const parsedResponse = JSON.parse(raw.response);
 
           // Replace the string with the parsed object
           const enrichedRaw = {

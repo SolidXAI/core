@@ -3,7 +3,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { QueueMessage } from 'src/interfaces/mq';
 import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
-import { QueuesModuleOptions, TriggerMcpClientOptions } from "../../interfaces";
+import { McpResponse, QueuesModuleOptions, TriggerMcpClientOptions } from "../../interfaces";
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
 import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
 import { AiInteractionService } from 'src/services/ai-interaction.service';
@@ -28,6 +28,36 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         }
     }
 
+    cleanNestedResponse(aiResponse: McpResponse) {
+        let nestedResponse: any;
+
+        try {
+            let raw = aiResponse.response;
+
+            if (typeof raw === "string") {
+                raw = raw.trim();
+                try {
+                    // Try to parse as JSON
+                    nestedResponse = JSON.parse(raw);
+                } catch {
+                    // Not JSON, just keep as string
+                    nestedResponse = raw;
+                }
+            } else if (typeof raw === "object" && raw !== null) {
+                // Already JSON
+                nestedResponse = raw;
+            } else {
+                // Fallback
+                nestedResponse = String(raw);
+            }
+        } catch (err) {
+            this.triggerMcpClientSubscriberLogger.error("Error processing AI response:", err);
+            nestedResponse = `Error handling response: ${err?.message || String(err)}`;
+        }
+
+        return nestedResponse;
+    }
+
     async subscribe(message: QueueMessage<TriggerMcpClientOptions>) {
         this.triggerMcpClientSubscriberLogger.debug(`Received message: ${JSON.stringify(message)}`);
 
@@ -48,6 +78,31 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         // Use this to invoke our mcp client
         // TODO: try / catch ... 
         // Handle the rejection gracefully...
+
+        // We create the aiInteraction entry first 
+        const genAiInteraction = await this.aiInteractionService.create({
+            userId: aiInteraction.user.id,
+            threadId: aiInteraction.threadId,
+            parentInteractionId: aiInteraction.id,
+            role: 'gen-ai',
+            message: '', // Updated after we receive the response
+            contentType: '', // Updated after we receive the response
+            errorMessage: '', // Updated after we receive the response
+            modelUsed: '', // Updated after we receive the response
+            responseTimeMs: 0, // Updated after we receive the response
+            metadata: '', // Updated after we receive the response
+            isApplied: false, // Updated after we receive the response
+            status: '' // Updated after we receive the response
+        });
+
+        const finalPrompt = `
+        # User Prompt: 
+        ${prompt}
+
+        # System Instructions:
+        - aiInteractionId: ${genAiInteraction.id}
+        `
+
         const aiResponse = await this.aiInteractionService.runMcpPrompt(prompt);
         this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);
         this.triggerMcpClientSubscriberLogger.log(JSON.stringify(aiResponse));
@@ -57,41 +112,45 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
 
             const errorsStr = aiResponse.errors.join('; ');
 
-            await this.aiInteractionService.create({
-                userId: aiInteraction.user.id,
-                threadId: aiInteraction.threadId,
-                parentInteractionId: aiInteraction.id,
-                role: 'gen-ai',
-                message: '-',
-                contentType: aiResponse.content_type,
-                errorMessage: errorsStr,
-                modelUsed: aiResponse.model,
-                responseTimeMs: aiResponse.duration_ms,
-                metadata: JSON.stringify(aiResponse, null, 2),
-                isApplied: aiInteraction.isApplied,
-                status: aiResponse.success ? 'succeeded' : 'failed'
-            });
+            // await this.aiInteractionService.create({
+            //     userId: aiInteraction.user.id,
+            //     threadId: aiInteraction.threadId,
+            //     parentInteractionId: aiInteraction.id,
+            //     role: 'gen-ai',
+            //     message: '-',
+            //     contentType: aiResponse.content_type,
+            //     errorMessage: errorsStr,
+            //     modelUsed: aiResponse.model,
+            //     responseTimeMs: aiResponse.duration_ms,
+            //     metadata: JSON.stringify(aiResponse, null, 2),
+            //     isApplied: aiInteraction.isApplied,
+            //     status: aiResponse.success ? 'succeeded' : 'failed'
+            // });
+
+            // TODO: Update the previously created genAiInteraction record with the respective error fields and save to DB
 
             // update the job entry with failure... raising an error will lead the job to be marked as failed...
             throw new Error(errorsStr);
         }
         else {
-            let nestedResponse = aiResponse.response.trim();
+            let nestedResponse = this.cleanNestedResponse(aiResponse);
 
-            const genAiInteraction = await this.aiInteractionService.create({
-                userId: aiInteraction.user.id,
-                threadId: aiInteraction.threadId,
-                parentInteractionId: aiInteraction.id,
-                role: 'gen-ai',
-                message: nestedResponse,
-                contentType: aiResponse.content_type,
-                errorMessage: '',
-                modelUsed: aiResponse.model,
-                responseTimeMs: aiResponse.duration_ms,
-                metadata: JSON.stringify(aiResponse, null, 2),
-                isApplied: aiInteraction.isApplied,
-                status: aiResponse.success ? 'succeeded' : 'failed'
-            });
+            // const genAiInteraction = await this.aiInteractionService.create({
+            //     userId: aiInteraction.user.id,
+            //     threadId: aiInteraction.threadId,
+            //     parentInteractionId: aiInteraction.id,
+            //     role: 'gen-ai',
+            //     message: nestedResponse,
+            //     contentType: aiResponse.content_type,
+            //     errorMessage: '',
+            //     modelUsed: aiResponse.model,
+            //     responseTimeMs: aiResponse.duration_ms,
+            //     metadata: JSON.stringify(aiResponse, null, 2),
+            //     isApplied: aiInteraction.isApplied,
+            //     status: aiResponse.success ? 'succeeded' : 'failed'
+            // });
+
+            // TODO: Update the previously created genAiInteraction record with the respective success fields and save to DB
 
             // If the human interaction was with isAutoApply=true, then we can go ahead and autoApply.
             if (aiInteraction.isAutoApply) {
