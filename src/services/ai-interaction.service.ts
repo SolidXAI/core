@@ -136,7 +136,14 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
         try {
           this.logger.log(`Python script exited with zero exit code: ${stdout}`);
           const raw: McpResponse = JSON.parse(stdout);
+          // Parse the response string into an object
+          const parsedResponse = JSON.parse(raw.response);
 
+          // Replace the string with the parsed object
+          const enrichedRaw = {
+            ...raw,
+            response: parsedResponse,
+          };
           // if (!raw.success) {
           //   return reject(new Error(`MCP error: ${raw.errors?.join(', ')}`));
           // }
@@ -146,7 +153,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
           // const parsed = JSON.parse(cleaned);
           // resolve(cleaned);
 
-          resolve(raw);
+          resolve(enrichedRaw);
         } catch (err: any) {
           reject(new Error(`Mcp Invocation Failed: ${err.message}`));
         }
