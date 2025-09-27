@@ -36,9 +36,9 @@ export class ServiceController {
         // If failure then decide shape to return.
 
         const threadId = `pingPongTxn-${activeUser.sub}`;
-
+        const dto ={prompt:"Can you do 1 + 1", moduleName:"solidCoreModule"}
         const { queueMessageId, aiInteractionId } = await this.aiInteractionService.triggerMcpClientJob(
-            `Can you do 1 + 1`,
+            dto,
             activeUser.sub,
             true,
             threadId
