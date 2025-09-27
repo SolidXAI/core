@@ -98,9 +98,15 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         const finalPrompt = `
         # User Prompt: 
         ${prompt}
-
+        
         # System Instructions:
         - aiInteractionId: ${genAiInteraction.id}
+        - moduleName:${message.payload.moduleName}
+        - You will be invoking tools if needed.
+        - If a tool is invoked, you must return **exactly** the raw output from the tool, without any additional formatting, commentary, or text.
+        - Do not wrap the result in quotes, JSON, or markdown fences.
+        - Do not explain what the result means.
+        - Your final response must be identical to the tool output.
         `
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);

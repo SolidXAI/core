@@ -18,6 +18,7 @@ import { RequestContextService } from './request-context.service';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { McpToolResponseHandlerFactory } from './mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { InvokeAiPromptDto } from 'src/dtos/invoke-ai-prompt.dto';
 
 @Injectable()
 export class AiInteractionService extends CRUDService<AiInteraction> {
@@ -43,14 +44,14 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'aiInteraction', 'solid-core', moduleRef);
   }
 
-  async triggerMcpClientJob(prompt: string, userId: number, isAutoApply: boolean = false, threadId: string = null): Promise<any> {
+  async triggerMcpClientJob(dto: InvokeAiPromptDto, userId: number, isAutoApply: boolean = false, threadId: string = null): Promise<any> {
     // const activeUser: ActiveUserData = this.requestContextService.getActiveUser();
 
     const aiInteraction = await this.create({
       userId: userId,
       threadId: threadId ? threadId : `thread-${userId}`,
       role: 'human',
-      message: prompt,
+      message: dto.prompt,
       contentType: '',
       errorMessage: '',
       modelUsed: '',
@@ -61,6 +62,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     const m = {
       payload: {
         aiInteractionId: aiInteraction.id,
+        moduleName:dto.moduleName
       },
       parentEntity: 'aiInteraction',
       parentEntityId: aiInteraction.id,

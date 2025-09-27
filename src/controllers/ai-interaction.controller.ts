@@ -95,7 +95,7 @@ export class AiInteractionController {
   @ApiBearerAuth("jwt")
   @Post('/trigger-mcp-client-job')
   async triggerMcpClientJob(@Body() dto: InvokeAiPromptDto, @ActiveUser() activeUser: ActiveUserData) {
-    return this.service.triggerMcpClientJob(dto.prompt, activeUser.sub);
+    return this.service.triggerMcpClientJob(dto,activeUser.sub);
   }
 
   @ApiBearerAuth("jwt")
