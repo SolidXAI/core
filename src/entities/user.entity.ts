@@ -111,4 +111,6 @@ export class User extends CommonEntity {
     // dont send to client
     @Column({ type: "timestamp", nullable: true })
     rehashedAt: Date;
+    @Expose()
+    _media: any;
 }
