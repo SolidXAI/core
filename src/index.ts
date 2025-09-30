@@ -170,6 +170,7 @@ export * from './helpers/field-crud-managers/UUIDFieldCrudManager' //rename
 export * from './helpers/environment.helper'
 export * from './helpers/cors.helper'
 export * from './helpers/security.helper'
+export * from './helpers/model-metadata-helper.service'
 
 export * from './services/crud.service'
 export * from './interceptors/logging.interceptor'
@@ -280,6 +281,7 @@ export * from './repository/solid-base.repository'
 export * from './repository/security-rule.repository'
 export * from './repository/field.repository'
 export * from './repository/chatter-message.repository'
+export * from './repository/chatter-message-details.repository'
 
 
 //softDeleteAwareEventSubscriber.subscriber.ts
