@@ -148,7 +148,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             throw new Error(errorsStr);
         }
         else {
-            let nestedResponse = this.cleanNestedResponse(aiResponse);
+            // let nestedResponse = this.cleanNestedResponse(aiResponse);
 
             // const genAiInteraction = await this.aiInteractionService.create({
             //     userId: aiInteraction.user.id,
@@ -179,8 +179,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 responseTimeMs: aiResponse.duration_ms,
                 isApplied: aiInteraction.isApplied,
 
-                status: nestedResponse.success ? 'succeeded' : 'failed'
-                // status: nestedResponse.success && nestedResponse.status == "success" ? 'succeeded' : 'failed'
+                status: aiResponse.success ? 'succeeded' : 'failed'
+                // status: aiResponse.success && nestedResponse.status == "success" ? 'succeeded' : 'failed'
             }, [], true);
 
             // If the human interaction was with isAutoApply=true, then we can go ahead and autoApply.
