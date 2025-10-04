@@ -149,6 +149,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
           }
           catch (ex) {
             this.logger.warn(`Attempting to parse mcp client response assuming it is JSON, however it is not: ${parsedResponse}`);
+            // raw.success = false
           }
           // Parse the response string into an object
           // const parsedResponse = JSON.parse(raw.response);
