@@ -178,7 +178,9 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
                 isApplied: aiInteraction.isApplied,
-                status: nestedResponse.success && nestedResponse.status == "success" ? 'succeeded' : 'failed'
+
+                status: nestedResponse.success ? 'succeeded' : 'failed'
+                // status: nestedResponse.success && nestedResponse.status == "success" ? 'succeeded' : 'failed'
             }, [], true);
 
             // If the human interaction was with isAutoApply=true, then we can go ahead and autoApply.
