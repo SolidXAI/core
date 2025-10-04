@@ -78,7 +78,7 @@ export interface McpResponse {
   tool_calls?: any[];
   duration_ms?: number;
   errors?: string[];
-  trace?: string[];
+  error_trace?: string[];
   content_type?: string;
 }
 

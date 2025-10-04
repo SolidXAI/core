@@ -85,8 +85,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             threadId: aiInteraction.threadId,
             parentInteractionId: aiInteraction.id,
             role: 'gen-ai',
-            message: prompt, // Updated in the tool
-            contentType: '', // Updated after we receive the response
+            message: '...', // Updated in the tool
+            contentType: '', // Updated in the tool
             errorMessage: '', // Updated after we receive the response
             modelUsed: '', // Updated after we receive the response
             responseTimeMs: 0, // Updated after we receive the response
@@ -116,7 +116,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         if (!aiResponse.success) {
             this.triggerMcpClientSubscriberLogger.log(`Gen ai has returned with a false status code`);
 
-            const errorsStr = aiResponse.errors.join('; ');
+            const errorsStr = aiResponse.errors.join('\n ');
+            const errorTrace = aiResponse.error_trace.join('\n');
 
             // await this.aiInteractionService.create({
             //     userId: aiInteraction.user.id,
@@ -135,8 +136,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
 
             // TODO: Update the previously created genAiInteraction record with the respective error fields and save to DB
             await this.aiInteractionService.update(genAiInteraction.id, {
-                contentType: aiResponse.content_type,
-                errorMessage: errorsStr,
+                // contentType: aiResponse.content_type,
+                errorMessage: `${errorsStr}\n\n${errorTrace}`,
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
                 isApplied: aiInteraction.isApplied,
@@ -165,17 +166,19 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             // });
 
             // TODO: Update the previously created genAiInteraction record with the respective success fields and save to DB
-            const errorsStr = nestedResponse.status == "error" ?  nestedResponse.errors.join('; ') : "";
+            const errorsStr = aiResponse.errors.join('\n ');
+            const errorTrace = aiResponse.error_trace.join('\n');
+
 
             await this.aiInteractionService.update(genAiInteraction.id, {
-                contentType: aiResponse.content_type,
-                errorMessage: errorsStr,
+                errorMessage:nestedResponse.status == "error" ? `${errorsStr}\n\n${errorTrace}` :"",
+                // contentType: aiResponse.content_type,
+                // message: nestedResponse,
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
                 isApplied: aiInteraction.isApplied,
                 status: nestedResponse.success && nestedResponse.status == "success" ? 'succeeded' : 'failed'
             }, [], true);
-
 
             // If the human interaction was with isAutoApply=true, then we can go ahead and autoApply.
             if (aiInteraction.isAutoApply) {
