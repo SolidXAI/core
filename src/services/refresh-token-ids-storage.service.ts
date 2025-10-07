@@ -28,13 +28,13 @@ export class RefreshTokenIdsStorageService {
         private readonly authenticationService: AuthenticationService
     ) { }
 
-    async insert(userId: number, refreshToken: string): Promise<void> {
+    async insert(userId: number, refreshToken: string, previousRefreshToken?: string): Promise<void> {
         // TODO: save a refresh token object with this shape {"currentRefreshToken": "", "previousRefreshToken": ""}
         // Save a refresh token object with the shape: { currentRefreshToken: string, previousRefreshToken: string }
         const existing = (await this.cacheManager.get(this.getKey(userId))) as { currentRefreshToken?: string, previousRefreshToken?: string } | undefined;
         const refreshTokenState = {
             currentRefreshToken: refreshToken,
-            previousRefreshToken: "",
+            previousRefreshToken: previousRefreshToken ?? "",
         };
         await this.cacheManager.set(this.getKey(userId), refreshTokenState);
     }
@@ -84,14 +84,14 @@ export class RefreshTokenIdsStorageService {
                 // Scenario 1: Token matches currentRefreshToken
                 valid = true;
                 // Rotate tokens: move current to previous, set new current (simulate generation)
-                newRefreshToken = await this.authenticationService.generateRefreshToken(user); // Replace with real token generation logic
+                newRefreshToken = await this.authenticationService.generateRefreshToken(user, refreshTokenState.currentRefreshToken); // Replace with real token generation logic
 
 
                 //   updated cache state
-                await this.cacheManager.set(this.getKey(user.id), {
-                    currentRefreshToken: newRefreshToken,
-                    previousRefreshToken: refreshTokenState.currentRefreshToken,
-                });
+                // await this.cacheManager.set(this.getKey(user.id), {
+                //     currentRefreshToken: newRefreshToken,
+                //     previousRefreshToken: refreshTokenState.currentRefreshToken,
+                // });
 
                 // Optionally, set a timeout to clear previousRefreshToken after X minutes
                 setTimeout(async () => {
@@ -124,5 +124,9 @@ export class RefreshTokenIdsStorageService {
 
     private getKey(userId: number): string {
         return `user-${userId}`;
+    }
+
+    getCurrentRefreshTokenState(userId: number): Promise<any> {
+        return this.cacheManager.get(this.getKey(userId));
     }
 }
