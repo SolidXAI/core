@@ -15,6 +15,7 @@ export const iamConfig = registerAs('iam', () => {
         forgotPasswordSendVerificationTokenOn: process.env.IAM_FORGOT_PASSWORD_SEND_VERIFICATION_TOKEN_ON ?? 'email',
         forceChangePasswordOnFirstLogin:true,
         PASSWORD_REGEX: process.env.PASSWORD_REGEX || '^$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\da-zA-Z]).*$',
+        PASSWORD_REGEX_ERROR_MESSAGE: process.env.PASSWORD_REGEX_ERROR_MESSAGE || 'Password must contain at least one uppercase, one lowercase, one number, and one special character.',
         PASSWORD_COMPLEXITY_DESC : process.env.PASSWORD_COMPLEXITY_DESC || 'Password must contain at least one uppercase, one lowercase, one number, and one special character.',
         googleOauth: {
             clientID: process.env.IAM_GOOGLE_OAUTH_CLIENT_ID,
