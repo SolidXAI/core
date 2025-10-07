@@ -645,7 +645,6 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 
   ],
   exports: [
-    TypeOrmModule,
     ModelMetadataService,
     ModelMetadataHelperService,
     ModuleMetadataService,
