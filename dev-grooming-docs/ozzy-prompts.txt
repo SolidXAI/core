@@ -1,0 +1,13 @@
+Hi Ozzy, 
+Can you give me instructions to create a new model in the fees portal module, you can call it address-master. 
+This model needs to have the following fields. 
+1. address1 - shortText 
+2. address2 - shortText 
+3. addressType - selectionStatic with values - home, office & other. 
+4. city 
+5. state 
+6. pincode. 
+
+After I add this model I want to start storing student address. 
+
+To do this if you can also give me instructions on how to add a relation field to the student model, you can call this field studentAddress.

@@ -26,6 +26,7 @@ export class ChatterMessageRepository extends SolidBaseRepository<ChatterMessage
         
         //Left join on the associated chatter model entity
         const [coModelName, coModelAlias] = this.getCoModelNameAndAlias();
+        if (!coModelName) return qb;
         qb = this.leftJoinCoModel(qb, coModelName);
         
         return this.securityRuleRepository.applySecurityRules(
@@ -62,7 +63,6 @@ export class ChatterMessageRepository extends SolidBaseRepository<ChatterMessage
 
         const coModelName = get(requestFilter, this.CO_MODEL_NAME_PATH);
         if (!coModelName) return [undefined, undefined];
-
         const alias = camelize(coModelName);
         return [coModelName, alias];
     }

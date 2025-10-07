@@ -37,16 +37,15 @@ export class ChatterMessageDetailsRepository extends SolidBaseRepository<Chatter
   ): SelectQueryBuilder<ChatterMessageDetails> {
     const activeUser = this.requestContextService.getActiveUser();
     let qb = super.createQueryBuilder(alias, queryRunner);
-
-    // Join the real relation so we can access co_model_* fields
-    qb = qb.leftJoin(`${alias}.chatterMessage`, 'chatterMessage');
+    if (!activeUser) return qb;
 
     // Example: join the "client" co-model (pass whatever co-model name you need)
     const [coModelName, coModelAlias] = this.getCoModelNameAndAlias();
+    if (!coModelName) return qb;
 
+    // Join the real relation so we can access co_model_* fields
+    qb = qb.leftJoin(`${alias}.chatterMessage`, 'chatterMessage');
     qb = this.leftJoinCoModel(qb, coModelName, 'chatterMessage');
-
-    if (!activeUser) return qb;
 
     // If your security rules should apply to the co-model rows, pass the co-model alias.
     // Here we use the co-model name "client" both as model key and alias base for consistency.
@@ -102,6 +101,8 @@ export class ChatterMessageDetailsRepository extends SolidBaseRepository<Chatter
     if (!requestFilter) return [undefined, undefined];
 
     const coModelName = get(requestFilter, this.CO_MODEL_NAME_PATH);
+    if (!coModelName) return [undefined, undefined];
+
     const alias = camelize(coModelName);
     return [coModelName, alias];
   }

@@ -18,6 +18,7 @@ import { RequestContextService } from './request-context.service';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { McpToolResponseHandlerFactory } from './mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { InvokeAiPromptDto } from 'src/dtos/invoke-ai-prompt.dto';
 
 @Injectable()
 export class AiInteractionService extends CRUDService<AiInteraction> {
@@ -43,14 +44,14 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'aiInteraction', 'solid-core', moduleRef);
   }
 
-  async triggerMcpClientJob(prompt: string, userId: number, isAutoApply: boolean = false, threadId: string = null): Promise<any> {
+  async triggerMcpClientJob(dto: InvokeAiPromptDto, userId: number, isAutoApply: boolean = false, threadId: string = null): Promise<any> {
     // const activeUser: ActiveUserData = this.requestContextService.getActiveUser();
 
     const aiInteraction = await this.create({
       userId: userId,
       threadId: threadId ? threadId : `thread-${userId}`,
       role: 'human',
-      message: prompt,
+      message: dto.prompt,
       contentType: '',
       errorMessage: '',
       modelUsed: '',
@@ -61,6 +62,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     const m = {
       payload: {
         aiInteractionId: aiInteraction.id,
+        moduleName:dto.moduleName
       },
       parentEntity: 'aiInteraction',
       parentEntityId: aiInteraction.id,
@@ -137,6 +139,25 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
           this.logger.log(`Python script exited with zero exit code: ${stdout}`);
           const raw: McpResponse = JSON.parse(stdout);
 
+          // Sometimes the raw.response might not be a valid json
+          // TODO: examine the content type of the raw response..
+          // if (raw.content_type==='json') {
+          // }
+          let parsedResponse = raw.response;
+          try {
+            parsedResponse = JSON.parse(raw.response);
+          }
+          catch (ex) {
+            this.logger.warn(`Attempting to parse mcp client response assuming it is JSON, however it is not: ${parsedResponse}`);
+          }
+          // Parse the response string into an object
+          // const parsedResponse = JSON.parse(raw.response);
+
+          // Replace the string with the parsed object
+          const enrichedRaw = {
+            ...raw,
+            response: parsedResponse,
+          };
           // if (!raw.success) {
           //   return reject(new Error(`MCP error: ${raw.errors?.join(', ')}`));
           // }
@@ -146,7 +167,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
           // const parsed = JSON.parse(cleaned);
           // resolve(cleaned);
 
-          resolve(raw);
+          resolve(enrichedRaw);
         } catch (err: any) {
           reject(new Error(`Mcp Invocation Failed: ${err.message}`));
         }

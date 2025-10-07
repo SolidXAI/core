@@ -66,6 +66,7 @@ export interface CodeGenerationOptions {
 
 export interface TriggerMcpClientOptions {
   aiInteractionId: number;
+  moduleName:string;
 }
 
 export interface McpResponse {
@@ -77,7 +78,7 @@ export interface McpResponse {
   tool_calls?: any[];
   duration_ms?: number;
   errors?: string[];
-  trace?: string[];
+  error_trace?: string[];
   content_type?: string;
 }
 

@@ -1,19 +1,18 @@
-import { Body, Controller, Get, Logger, Post, UseGuards } from '@nestjs/common';
-import { Public } from 'src/decorators/public.decorator';
-import { SolidRegistry } from '../helpers/solid-registry';
+import { Body, Controller, Get, Logger, Post } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
-import { ThrottlerGuard, SkipThrottle } from '@nestjs/throttler';
-import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { ActiveUser } from 'src/decorators/active-user.decorator';
+import { Public } from 'src/decorators/public.decorator';
+import { ErrorMapperService } from 'src/helpers/error-mapper.service';
+import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { AiInteractionService } from 'src/services/ai-interaction.service';
 import { MqMessageService } from 'src/services/mq-message.service';
-import { ErrorMapperService } from 'src/helpers/error-mapper.service';
+import { SolidRegistry } from '../helpers/solid-registry';
 
 
 @Controller('')
 @ApiTags("Common")
-@UseGuards(ThrottlerGuard)
-@SkipThrottle({ short: true, login: true, burst: true, sustained: true }) // Skip all
+// @UseGuards(ThrottlerGuard)
+// @SkipThrottle({ short: true, login: true, burst: true, sustained: true }) // Skip all
 export class ServiceController {
     private readonly logger = new Logger(ServiceController.name);
 
@@ -37,9 +36,9 @@ export class ServiceController {
         // If failure then decide shape to return.
 
         const threadId = `pingPongTxn-${activeUser.sub}`;
-
+        const dto ={prompt:"Can you do 1 + 1", moduleName:"solidCoreModule"}
         const { queueMessageId, aiInteractionId } = await this.aiInteractionService.triggerMcpClientJob(
-            `Can you do 1 + 1`,
+            dto,
             activeUser.sub,
             true,
             threadId
@@ -87,7 +86,7 @@ export class ServiceController {
     }
 
     @Public()
-    @SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only
+    // @SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only
     @Post('seed')
     async seedData(@Body() seedData: any) {
         const seeder = this.solidRegistry

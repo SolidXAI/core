@@ -31,6 +31,8 @@ export class UserService extends CRUDService<User> {
     readonly entityManager: EntityManager,
     // @InjectRepository(User, 'default')
     readonly repo: UserRepository,
+    @InjectRepository(User, 'default')
+    readonly nonSecurityRuleAwareRepo : Repository<User>,
     @InjectRepository(RoleMetadata)
     private readonly roleRepository: Repository<RoleMetadata>,
     readonly moduleRef: ModuleRef,
@@ -141,7 +143,7 @@ export class UserService extends CRUDService<User> {
   }
 
   async addRolesToUser(username: string, roleNames: string[]): Promise<User> {
-    const user = await this.repo.findOne({
+    const user = await this.nonSecurityRuleAwareRepo.findOne({
       where: { username: username },
       relations: { roles: true }
     });
@@ -174,7 +176,7 @@ export class UserService extends CRUDService<User> {
       user.roles = user.roles.filter(role => !rolesToRemove.includes(role));
     }
 
-    return await this.repo.save(user);
+    return await this.nonSecurityRuleAwareRepo.save(user);
   }
 
 
