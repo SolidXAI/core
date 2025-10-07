@@ -32,7 +32,7 @@ export const jwtConfig = registerAs('jwt', () => {
         secret: process.env.IAM_JWT_SECRET,
         audience: process.env.IAM_JWT_TOKEN_AUDIENCE,
         issuer: process.env.IAM_JWT_TOKEN_ISSUER,
-        accessTokenTtl: parseInt(process.env.IAM_JWT_ACCESS_TOKEN_TTL ?? '3600', 10),
-        refreshTokenTtl: parseInt(process.env.IAM_JWT_REFRESH_TOKEN_TTL ?? '86400', 10),
+        accessTokenTtl: parseInt(process.env.IAM_JWT_ACCESS_TOKEN_TTL ?? '1200', 10), // 20 minutes 
+        refreshTokenTtl: parseInt(process.env.IAM_JWT_REFRESH_TOKEN_TTL ?? '604800', 10), // 7 days
     };
 });
