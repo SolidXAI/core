@@ -1168,7 +1168,7 @@ export class AuthenticationService {
         // const tokens = await this.generateTokens(user);
 
         // Get the refresh token for a user from refresh token storage.
-        const refreshToken = await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(user.id);
+        const refreshTokenState = await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(user.id);
 
         const response = {
             user: {
@@ -1179,7 +1179,7 @@ export class AuthenticationService {
                 id: user.id,
                 roles: user.roles.map((role) => role.name)
             },
-            refreshToken: refreshToken,
+            refreshToken: refreshTokenState.currentRefreshToken,
             // ...tokens
         }
         return response;
