@@ -3705,7 +3705,8 @@
             "selectionStaticValues": [
               "audit_insert:audit_insert",
               "audit_update:audit_update",
-              "audit_delete:audit_delete"
+              "audit_delete:audit_delete",
+              "custom:custom"
             ]
           },
           {
@@ -3792,6 +3793,30 @@
             "columnName": null,
             "relationJoinTableName": "",
             "isRelationManyToManyOwner": null
+          },
+          {
+            "name": "modelDisplayName",
+            "displayName": "Model Display Name",
+            "type": "shortText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "modelUserKey",
+            "displayName": "Model User Key",
+            "type": "shortText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
           }
         ]
       },
@@ -3861,6 +3886,19 @@
             "ormType": "varchar",
             "length": 512,
             "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "fieldDisplayName",
+            "displayName": "Field Display Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
             "unique": false,
             "index": false,
             "private": false,

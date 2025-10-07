@@ -61,6 +61,8 @@ export class ChatterMessageRepository extends SolidBaseRepository<ChatterMessage
         if (!requestFilter) return [undefined, undefined];
 
         const coModelName = get(requestFilter, this.CO_MODEL_NAME_PATH);
+        if (!coModelName) return [undefined, undefined];
+
         const alias = camelize(coModelName);
         return [coModelName, alias];
     }
