@@ -10,7 +10,7 @@ export class ChatterMessage extends CommonEntity {
     messageType: string; // audit | custom 
     @Column({ type: "varchar" })
     messageSubType: string; // audit_update | audit_insert | audit_delete | custom
-    @Column({ type: "text" })
+    @Column({ type: "text", nullable: true })
     messageBody: string;
     @Index()
     @Column({ type: "integer" })
