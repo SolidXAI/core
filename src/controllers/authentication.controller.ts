@@ -97,6 +97,7 @@ export class AuthenticationController {
 
     @ApiBearerAuth("jwt")
     @Post('logout')
+    @Public()
     @HttpCode(HttpStatus.OK)
     async logout() {
         return this.authService.logout();
