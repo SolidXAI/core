@@ -694,7 +694,8 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     ChatterMessageService,
     ChatterMessageRepository,
     ChatterMessageDetailsService,
-    ChatterMessageDetailsRepository
+    ChatterMessageDetailsRepository,
+    TypeOrmModule
     // ThrottlerModule,
   ],
 })
