@@ -148,7 +148,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 messageDetail.oldValue = null;
                 messageDetail.oldValueDisplay = null;
                 messageDetail.newValue = this.formatFieldValue(field, fieldValue);
-                messageDetail.newValueDisplay = this.formatFieldValueDisplay(field, fieldValue);
+                messageDetail.newValueDisplay = await this.formatFieldValueDisplay(field, fieldValue);
                 await this.chatterMessageDetailsRepo.save(messageDetail);
             }
         }
@@ -263,8 +263,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             messageDetail.fieldDisplayName = field.displayName;
             messageDetail.oldValue = this.formatFieldValue(field, oldValue);
             messageDetail.newValue = this.formatFieldValue(field, newValue);
-            messageDetail.oldValueDisplay = this.formatFieldValueDisplay(field, oldValue);
-            messageDetail.newValueDisplay = this.formatFieldValueDisplay(field, newValue);
+            messageDetail.oldValueDisplay = await this.formatFieldValueDisplay(field, oldValue);
+            messageDetail.newValueDisplay = await this.formatFieldValueDisplay(field, newValue);
             await this.chatterMessageDetailsRepo.save(messageDetail);
         }
     }
@@ -328,7 +328,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         return value.toString();
     }
 
-    private formatFieldValueDisplay(field: any, value: any): string {
+    private async formatFieldValueDisplay(field: any, value: any): Promise<string> {
         if (value === null || value === undefined) {
             return '';
         }
@@ -339,8 +339,30 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         if (field.type === 'relation') {
             if (field.relationType === "many-to-one") {
+            if (value.name) {
                 return value.name;
             }
+            
+            try {
+                const relatedModel = await this.modelMetadataRepo.findOne({
+                where: { singularName: field.relationCoModelSingularName || field.relation },
+                relations: { userKeyField: true }
+                });
+                
+                if (relatedModel && relatedModel.userKeyField) {
+                const userKeyFieldName = relatedModel.userKeyField.name;
+                return value[userKeyFieldName] ? value[userKeyFieldName].toString() : '';
+                }
+                
+                if (value.id) {
+                return value.id.toString();
+                }
+            } catch (error) {
+                console.error('Error fetching related model metadata:', error);
+                return value.id ? value.id.toString() : '';
+            }
+            }
+
             if (field.relationType === 'many-to-many') {
                 return value.map(item => item.name).join(', ');
             }
