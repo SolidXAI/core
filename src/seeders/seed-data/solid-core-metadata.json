@@ -3757,7 +3757,7 @@
             "displayName": "Message Body",
             "type": "longText",
             "ormType": "text",
-            "required": true,
+            "required": false,
             "unique": false,
             "index": false,
             "private": false,

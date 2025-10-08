@@ -492,7 +492,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         entityName: string,
         query: any
     ) {
-        const { limit = 25, offset = 0, sort, populate = [] } = query;
+        const { limit = 25, offset = 0, sort, populate = [], populateMedia = [] } = query;
 
         const model = await this.modelMetadataRepo.findOne({
             where: {
@@ -570,6 +570,11 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         qb.skip(offset).take(limit);
 
         const [entities, count] = await qb.getManyAndCount();
+
+        if (populateMedia && populateMedia.length > 0) {
+            const normalizedPopulateMedia = this.crudHelperService.normalize(populateMedia);
+            await this['handlePopulateMedia'](normalizedPopulateMedia, entities);
+        }
 
         const currentPage = Math.floor(offset / limit) + 1;
         const totalPages = Math.ceil(count / limit);
