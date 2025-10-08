@@ -319,7 +319,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             if (field.relationType === "many-to-one") {
                 return value.id;
             }
-            if (field.relationType === 'manyToMany') {
+            if (field.relationType === 'many-to-many') {
                 return value.map(item => item.id).join(', ');
             }
         }
@@ -341,7 +341,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             if (field.relationType === "many-to-one") {
                 return value.name;
             }
-            if (field.relationType === 'many-toMany') {
+            if (field.relationType === 'many-to-many') {
                 return value.map(item => item.name).join(', ');
             }
         }
@@ -400,7 +400,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             return newId !== oldId;
         }
 
-        if (field.relationType === 'many-to-many' || field.relationType === 'manyToMany') {
+        if (field.relationType === 'many-to-many') {
             const newIds = this.extractRelationIds(newValue);
             const oldIds = this.extractRelationIds(oldValue);
 
