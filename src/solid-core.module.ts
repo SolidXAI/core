@@ -645,8 +645,9 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 
   ],
   exports: [
-    ModuleMetadataService,
     ModelMetadataService,
+    ModelMetadataHelperService,
+    ModuleMetadataService,
     FieldMetadataService,
     MediaStorageProviderMetadataService,
     MediaService,
@@ -689,6 +690,10 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     MailFactory,
     PollerService,
     AiInteractionService,
+    ChatterMessageService,
+    ChatterMessageRepository,
+    ChatterMessageDetailsService,
+    ChatterMessageDetailsRepository
     // ThrottlerModule,
   ],
 })
