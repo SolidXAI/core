@@ -12293,7 +12293,9 @@
                                 "type": "field",
                                 "attrs": {
                                   "name": "metadata",
-                                  "height": "80vh"
+                                  "height": "80vh",
+                                  "viewWidget":"SolidAiInteractionMetadataFieldFormWidget"
+
                                 }
                               }
                             ]
