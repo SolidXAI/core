@@ -241,21 +241,27 @@ export class ModuleMetadataSeederService {
         // 1. Give all permissions to the Admin role.
         this.logger.log(`About to add all permissions to the Admin role`);
         await this.roleService.addAllPermissionsToRole("Admin");
-        // 2. Give wrapSettings permissions to the Public role.
+        // 2. Give  permissions to the Internal / Public role.
         const internalRolePermission = [
-            'UserController.findMany',
+            // User permissions
+            'UserController.findMany', //Why do we need this?
             'UserController.checkIfPermissionExists',
             'UserController.findOne',
+            // Menu permissions
             'MenuItemMetadataController.findMany',
             'MenuItemMetadataController.findUserMenus',
             'MenuItemMetadataController.findOne',
+            // View metadata permissions
             'ViewMetadataController.getLayout',
             'ViewMetadataController.findMany',
             'ViewMetadataController.findOne',
+            // IAM permissions
             'AuthenticationController.changePassword',
+            // Field Metadata permissions
             'FieldMetadataController.getSelectionDynamicValues',
             'FieldMetadataController.getSelectionDynamicValue',
             'FieldMetadataController.findFieldDefaultMetaData',
+            // Saved Filters permissions
             'SavedFiltersController.delete',
             'SavedFiltersController.deleteMany',
             'SavedFiltersController.findOne',
@@ -266,7 +272,27 @@ export class ModuleMetadataSeederService {
             'SavedFiltersController.update',
             'SavedFiltersController.insertMany',
             'SavedFiltersController.create',
-            'AuthenticationController.logout'
+            // Logout permissions
+            'AuthenticationController.logout',
+            // Other permissions can be added here as required.
+            // Chatter permissions
+            'ChatterMessageController.create',
+            'ChatterMessageController.getChatterMessages',
+            // 'ChatterMessageController.postMessage', // Does not seem to be used from ui
+            // Import
+            'ImportTransactionController.getImportTemplate',
+            'ImportTransactionController.getImportInstructions',
+            'ImportTransactionController.getImportMappingInfo',
+            'ImportTransactionController.startImportSync',
+            'ImportTransactionController.startImportAsync',
+            'ImportTransactionController.exportFailedImportedImports',
+            // Export permissions
+            'ExportTemplateController.startExportSync',
+            'ExportTemplateController.startExportAsync',
+            // List of values
+            'ListOfValuesController.findMany',
+            'ListOfValuesController.findOne',
+            // Media // [Not required], since media is always populated as part of a model
         ]
         await this.roleService.addPermissionToRole('Internal User', internalRolePermission);
         await this.roleService.addPermissionToRole('Public', ['SettingController.wrapSettings', 'AuthenticationController.logout']);

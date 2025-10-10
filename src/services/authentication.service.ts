@@ -986,7 +986,7 @@ export class AuthenticationService {
         return accessToken;
     }
 
-    async generateRefreshToken(user: User) {
+    async generateRefreshToken(user: User, previousRefreshToken?: string) {
         const refreshTokenId = randomUUID();
 
         const refreshToken = await this.signToken(user.id, this.jwtConfiguration.refreshTokenTtl, {
@@ -994,7 +994,7 @@ export class AuthenticationService {
         })
 
         // store the refresh token id in the redis storage.
-        await this.refreshTokenIdsStorage.insert(user.id, refreshToken);
+        await this.refreshTokenIdsStorage.insert(user.id, refreshToken, previousRefreshToken);
 
         return refreshToken;
     }
@@ -1164,7 +1164,11 @@ export class AuthenticationService {
                 roles: true
             }
         });
-        const tokens = await this.generateTokens(user);
+
+        // const tokens = await this.generateTokens(user);
+
+        // Get the refresh token for a user from refresh token storage.
+        const refreshTokenState = await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(user.id);
 
         const response = {
             user: {
@@ -1175,7 +1179,8 @@ export class AuthenticationService {
                 id: user.id,
                 roles: user.roles.map((role) => role.name)
             },
-            ...tokens
+            refreshToken: refreshTokenState.currentRefreshToken,
+            // ...tokens
         }
         return response;
     }

@@ -19,6 +19,10 @@ import { RequestContextService } from './request-context.service';
 import { ChatterMessageRepository } from 'src/repository/chatter-message.repository';
 import { lowerFirst } from 'src/helpers/string.helper';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
+import { ChatterMessageDetailsRepository } from 'src/repository/chatter-message-details.repository';
+import { FieldMetadata } from 'src/entities/field-metadata.entity';
+import { CHATTER_MESSAGE_TYPE, CHATTER_MESSAGE_SUBTYPE } from 'src/constants/chatter-message.constants';
+import { classify } from '@angular-devkit/core/src/utils/strings';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
     constructor(
@@ -32,8 +36,10 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         readonly entityManager: EntityManager,
         // @InjectRepository(ChatterMessage, 'default')
         readonly repo: ChatterMessageRepository,
-        @InjectRepository(ChatterMessageDetails, 'default')
-        readonly chatterMessageDetailsRepo: Repository<ChatterMessageDetails>,
+        // @InjectRepository(ChatterMessageDetailsRepository, 'default')
+        readonly chatterMessageDetailsRepo: ChatterMessageDetailsRepository,
+        @InjectRepository(FieldMetadata, 'default')
+        readonly fieldMetadataRepo: Repository<FieldMetadata>,
         readonly moduleRef: ModuleRef,
         @InjectRepository(ModelMetadata)
         private readonly modelMetadataRepo: Repository<ModelMetadata>,
@@ -45,8 +51,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
     async postMessage(postDto: PostChatterMessageDto, files: Express.Multer.File[] = []) {
         const chatterMessage = new ChatterMessage();
-        chatterMessage.messageType = 'custom';
-        chatterMessage.messageSubType = postDto.messageSubType || 'post_message';
+        chatterMessage.messageType = CHATTER_MESSAGE_TYPE.CUSTOM;
+        chatterMessage.messageSubType = postDto.messageSubType || CHATTER_MESSAGE_SUBTYPE.CUSTOM;
         chatterMessage.messageBody = postDto.messageBody;
         chatterMessage.coModelEntityId = postDto.coModelEntityId;
         chatterMessage.coModelName = postDto.coModelName;
@@ -97,7 +103,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             },
             relations: {
                 fields: true,
-                module: true
+                module: true,
+                userKeyField: true
             }
         });
 
@@ -114,11 +121,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         const activeUser = this.requestContextService.getActiveUser();
 
         const chatterMessage = new ChatterMessage();
-        chatterMessage.messageType = 'audit';
-        chatterMessage.messageSubType = 'insert';
+        chatterMessage.messageType = CHATTER_MESSAGE_TYPE.AUDIT;
+        chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.AUDIT_INSERT;
         chatterMessage.coModelEntityId = entity.id;
-        chatterMessage.coModelName = model.singularName;
-        chatterMessage.messageBody = `New ${model.displayName} created`;
+        chatterMessage.coModelName = model?.singularName;
+        chatterMessage.modelDisplayName = model?.displayName;
+        chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
+        chatterMessage.messageBody = `New ${model?.displayName} created`;
 
         if (activeUser) {
             const userId = activeUser?.sub;
@@ -135,10 +144,11 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 const messageDetail = new ChatterMessageDetails();
                 messageDetail.chatterMessage = savedMessage;
                 messageDetail.fieldName = field.name;
+                messageDetail.fieldDisplayName = field.displayName;
                 messageDetail.oldValue = null;
                 messageDetail.oldValueDisplay = null;
                 messageDetail.newValue = this.formatFieldValue(field, fieldValue);
-                messageDetail.newValueDisplay = this.formatFieldValueDisplay(field, fieldValue);
+                messageDetail.newValueDisplay = await this.formatFieldValueDisplay(field, fieldValue);
                 await this.chatterMessageDetailsRepo.save(messageDetail);
             }
         }
@@ -154,7 +164,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             },
             relations: {
                 fields: true,
-                module: true
+                module: true,
+                userKeyField: true
             }
         });
 
@@ -228,11 +239,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         const activeUser = this.requestContextService.getActiveUser();
 
         const chatterMessage = new ChatterMessage();
-        chatterMessage.messageType = 'audit';
-        chatterMessage.messageSubType = 'update';
-        chatterMessage.coModelEntityId = entity.id;
-        chatterMessage.coModelName = model.singularName;
-        chatterMessage.messageBody = `${model.displayName} updated`;
+        chatterMessage.messageType = CHATTER_MESSAGE_TYPE.AUDIT;
+        chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.AUDIT_UPDATE;
+        chatterMessage.coModelEntityId = entity?.id;
+        chatterMessage.coModelName = model?.singularName;
+        chatterMessage.modelDisplayName = model.displayName;
+        chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
+        chatterMessage.messageBody = `${model?.displayName} updated`;
 
         if (activeUser) {
             const userId = activeUser?.sub;
@@ -247,10 +260,11 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             const messageDetail = new ChatterMessageDetails();
             messageDetail.chatterMessage = savedMessage;
             messageDetail.fieldName = field.name;
+            messageDetail.fieldDisplayName = field.displayName;
             messageDetail.oldValue = this.formatFieldValue(field, oldValue);
             messageDetail.newValue = this.formatFieldValue(field, newValue);
-            messageDetail.oldValueDisplay = this.formatFieldValueDisplay(field, oldValue);
-            messageDetail.newValueDisplay = this.formatFieldValueDisplay(field, newValue);
+            messageDetail.oldValueDisplay = await this.formatFieldValueDisplay(field, oldValue);
+            messageDetail.newValueDisplay = await this.formatFieldValueDisplay(field, newValue);
             await this.chatterMessageDetailsRepo.save(messageDetail);
         }
     }
@@ -262,7 +276,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             },
             relations: {
                 fields: true,
-                module: true
+                module: true,
+                userKeyField: true
             }
         });
 
@@ -271,11 +286,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
 
         const chatterMessage = new ChatterMessage();
-        chatterMessage.messageType = 'audit';
-        chatterMessage.messageSubType = 'delete';
-        chatterMessage.coModelEntityId = databaseEntity.id;
-        chatterMessage.coModelName = model.singularName;
-        chatterMessage.messageBody = `${model.displayName} deleted`;
+        chatterMessage.messageType = CHATTER_MESSAGE_TYPE.AUDIT;
+        chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.AUDIT_DELETE;
+        chatterMessage.coModelEntityId = databaseEntity?.id;
+        chatterMessage.coModelName = model?.singularName;
+        chatterMessage.modelDisplayName = model?.displayName;
+        chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
+        chatterMessage.messageBody = `${model?.displayName} deleted`;
 
         const activeUser = this.requestContextService.getActiveUser();
 
@@ -302,7 +319,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             if (field.relationType === "many-to-one") {
                 return value.id;
             }
-            if (field.relationType === 'manyToMany') {
+            if (field.relationType === 'many-to-many') {
                 return value.map(item => item.id).join(', ');
             }
         }
@@ -311,7 +328,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         return value.toString();
     }
 
-    private formatFieldValueDisplay(field: any, value: any): string {
+    private async formatFieldValueDisplay(field: any, value: any): Promise<string> {
         if (value === null || value === undefined) {
             return '';
         }
@@ -322,9 +339,31 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         if (field.type === 'relation') {
             if (field.relationType === "many-to-one") {
+            if (value.name) {
                 return value.name;
             }
-            if (field.relationType === 'many-toMany') {
+            
+            try {
+                const relatedModel = await this.modelMetadataRepo.findOne({
+                where: { singularName: field.relationCoModelSingularName || field.relation },
+                relations: { userKeyField: true }
+                });
+                
+                if (relatedModel && relatedModel.userKeyField) {
+                const userKeyFieldName = relatedModel.userKeyField.name;
+                return value[userKeyFieldName] ? value[userKeyFieldName].toString() : '';
+                }
+                
+                if (value.id) {
+                return value.id.toString();
+                }
+            } catch (error) {
+                console.error('Error fetching related model metadata:', error);
+                return value.id ? value.id.toString() : '';
+            }
+            }
+
+            if (field.relationType === 'many-to-many') {
                 return value.map(item => item.name).join(', ');
             }
         }
@@ -383,7 +422,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             return newId !== oldId;
         }
 
-        if (field.relationType === 'many-to-many' || field.relationType === 'manyToMany') {
+        if (field.relationType === 'many-to-many') {
             const newIds = this.extractRelationIds(newValue);
             const oldIds = this.extractRelationIds(oldValue);
 
@@ -468,5 +507,112 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
 
         return populatedEntity;
+    }
+
+    async getChatterMessages(
+        entityId: number,
+        entityName: string,
+        query: any
+    ) {
+        const { limit = 25, offset = 0, sort, populate = [], populateMedia = [] } = query;
+
+        const model = await this.modelMetadataRepo.findOne({
+            where: {
+                singularName: entityName
+            },
+        });
+        const oneToManyFields = await this.fieldMetadataRepo.find({
+            where: {
+                model: { id: model.id },
+                type: 'relation',
+                relationType: 'one-to-many'
+            }
+        });
+
+        const relatedEntitiesMap = new Map<string, number[]>();
+
+        for (const field of oneToManyFields) {
+            const coModelName = field.relationCoModelSingularName;
+            const coModelFieldName = field.relationCoModelFieldName;
+
+            const coModel = await this.modelMetadataRepo.findOne({
+                where: { singularName: coModelName }
+            });
+
+            if (coModel) {
+                const relatedEntityRepository = this.entityManager.getRepository(classify(coModelName));
+
+                const relatedEntities = await relatedEntityRepository.find({
+                    where: { [coModelFieldName]: { id: entityId } }
+                });
+
+                const relatedIds = relatedEntities.map((entity: any) => entity.id);
+                relatedEntitiesMap.set(field.name, relatedIds);
+            }
+        }
+
+        const qb = this.repo.createQueryBuilder('entity');
+
+        const orConditions: string[] = [];
+        const parameters: any = {};
+
+        orConditions.push('(entity.coModelName = :entityName AND entity.coModelEntityId = :entityId)');
+        parameters.entityName = entityName;
+        parameters.entityId = entityId;
+
+        let paramIndex = 0;
+        for (const [fieldName, relatedIds] of relatedEntitiesMap.entries()) {
+            if (relatedIds.length > 0) {
+                const field = oneToManyFields.find(f => f.name === fieldName);
+                if (field) {
+                    const coModelName = field.relationCoModelSingularName;
+                    const idsParamName = `relatedIds${paramIndex}`;
+                    orConditions.push(`(entity.coModelName = :coModelName${paramIndex} AND entity.coModelEntityId IN (:...${idsParamName}))`);
+                    parameters[`coModelName${paramIndex}`] = coModelName;
+                    parameters[idsParamName] = relatedIds;
+                    paramIndex++;
+                }
+            }
+        }
+
+        qb.where(orConditions.join(' OR '), parameters);
+
+        const relations = ['chatterMessageDetails', 'user'];
+        if (populate && populate.length > 0) {
+            const normalizedPopulate = this.crudHelperService.normalize(populate);
+            relations.push(...normalizedPopulate.filter(rel => !relations.includes(rel)));
+        }
+
+        relations.forEach(relation => {
+            qb.leftJoinAndSelect(`entity.${relation}`, relation);
+        });
+
+        qb.orderBy('entity.createdAt', 'DESC');
+
+        qb.skip(offset).take(limit);
+
+        const [entities, count] = await qb.getManyAndCount();
+
+        if (populateMedia && populateMedia.length > 0) {
+            const normalizedPopulateMedia = this.crudHelperService.normalize(populateMedia);
+            await this['handlePopulateMedia'](normalizedPopulateMedia, entities);
+        }
+
+        const currentPage = Math.floor(offset / limit) + 1;
+        const totalPages = Math.ceil(count / limit);
+        const nextPage = currentPage < totalPages ? currentPage + 1 : null;
+        const prevPage = currentPage > 1 ? currentPage - 1 : null;
+
+        return {
+            meta: {
+                totalRecords: count,
+                currentPage: currentPage,
+                nextPage: nextPage,
+                prevPage: prevPage,
+                totalPages: totalPages,
+                perPage: +limit,
+            },
+            records: entities
+        };
     }
 }
