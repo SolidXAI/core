@@ -92,7 +92,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             responseTimeMs: 0, // Updated after we receive the response
             metadata: '', // Updated in the tool
             isApplied: false, // Updated after we receive the response
-            status: 'in-progress' // Updated after we receive the response
+            status: 'pending' // Updated after we receive the response
         });
 
         const finalPrompt = `
