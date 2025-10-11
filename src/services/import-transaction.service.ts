@@ -566,10 +566,11 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     // TODO Move this logic to field crud managers i.e add a parse method to the field crud manager interface
     switch (fieldType) {
       case SolidFieldType.relation: {
-        return await this.populateDtoForRelations(fieldMetadata, record, key, dtoRecord);
+        return await this.populateDtoForRelations(fieldMetadata, record, key, dtoRecord); 
       }
       case SolidFieldType.date:
-      case SolidFieldType.datetime: return this.populateDtoForDate(record, key, fieldMetadata, dtoRecord);
+      case SolidFieldType.datetime:
+         return this.populateDtoForDate(record, key, fieldMetadata, dtoRecord);
       case SolidFieldType.int:
       case SolidFieldType.bigint:
       case SolidFieldType.decimal:
@@ -579,16 +580,24 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       case SolidFieldType.selectionStatic:
       case SolidFieldType.selectionDynamic:
         return this.populateDtoForSelectionValues(dtoRecord, fieldMetadata, record, key);
-      default:
+      case SolidFieldType.email:
+      case SolidFieldType.shortText:
+      case SolidFieldType.longtext:
+      case SolidFieldType.richText: {
+        dtoRecord[fieldMetadata.name] = record[key] ? String(record[key]).trim() : null; // Trim text fields and set to null if empty
+        return dtoRecord;
+      }
+      default: {
         dtoRecord[fieldMetadata.name] = record[key];
         return dtoRecord;
+      }
     }
   }
   
   private populateDtoForSelectionValues(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
     const rawValue = record[key];
 
-    if (rawValue == null) {
+    if (rawValue == null || rawValue === '' || (typeof rawValue === 'string' && rawValue.trim() === '')) {
       dtoRecord[fieldMetadata.name] = null;
       return dtoRecord;
     }
@@ -611,16 +620,27 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
 
 
   private populateDtoForBoolean(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
-    const booleanValue = Boolean(record[key]);
+    const cellValue = record[key];
+    const booleanValue = Boolean(cellValue);
+    if (cellValue === null || cellValue === undefined || cellValue === '') {
+      dtoRecord[fieldMetadata.name] = null; // If the cell is empty, set the field to null
+      return dtoRecord;
+    }
+
     if (typeof booleanValue !== 'boolean') {
-      throw new Error(`Invalid boolean value for cell ${key} with value ${record[key]}`);
+      throw new Error(`Invalid boolean value for cell ${key} with value ${cellValue}`);
     }
     dtoRecord[fieldMetadata.name] = booleanValue;
     return dtoRecord;
   }
 
   private populateDtoForNumber(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
-    const numberValue = Number(record[key]);
+    const cellValue = record[key];
+    if (cellValue === null || cellValue === undefined || cellValue === '') {
+      dtoRecord[fieldMetadata.name] = null; // If the cell is empty, set the field to null
+      return dtoRecord;
+    }
+    const numberValue = Number(cellValue);
     if (isNaN(numberValue)) {
       throw new Error(`Invalid number value for cell ${key} with value ${record[key]}`);
     }
@@ -630,7 +650,13 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
 
   private populateDtoForDate(record: Record<string, any>, key: string, fieldMetadata: FieldMetadata, dtoRecord: Record<string, any>) {
     {
-      const dateValue = new Date(record[key]);
+      // Get the cell value
+      const cellValue = record[key];
+      if (!cellValue) { //If cell is a falsy value (empty)
+        dtoRecord[fieldMetadata.name] = null; // If the cell is empty, set the field to null
+        return dtoRecord;
+      }
+      const dateValue = new Date(cellValue);
       if (isNaN(dateValue.getTime())) {
         throw new Error(`Invalid date value for cell ${key} with value ${record[key]}`);
       }
