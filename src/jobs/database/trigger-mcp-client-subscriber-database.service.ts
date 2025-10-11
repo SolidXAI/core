@@ -166,11 +166,10 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             // });
 
             // TODO: Update the previously created genAiInteraction record with the respective success fields and save to DB
-            const errorsStr =nestedResponse.status == "error" && nestedResponse.errors.join('\n ');
-
+            const errorsStr = nestedResponse.status == "error" && nestedResponse.errors.join('\n ');
 
             await this.aiInteractionService.update(genAiInteraction.id, {
-                errorMessage:nestedResponse.status == "error" ? `${errorsStr}` :"",
+                errorMessage: nestedResponse.status == "error" ? `${errorsStr}` : "",
                 // errorMessage:"",
                 // contentType: aiResponse.content_type,
                 // message: nestedResponse,
