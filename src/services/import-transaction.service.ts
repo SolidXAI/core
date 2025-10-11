@@ -621,13 +621,14 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
 
   private populateDtoForBoolean(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
     const cellValue = record[key];
-    const booleanValue = Boolean(cellValue);
     if (cellValue === null || cellValue === undefined || cellValue === '') {
       dtoRecord[fieldMetadata.name] = null; // If the cell is empty, set the field to null
       return dtoRecord;
     }
 
-    if (typeof booleanValue !== 'boolean') {
+    // If the cell contains values other than 'true', '1', 'yes', 'false', '0', 'no', throw an error
+    const booleanValue = (String(cellValue).toLowerCase() === 'true' || String(cellValue) === '1' || String(cellValue).toLowerCase() === 'yes') ? true : (String(cellValue).toLowerCase() === 'false' || String(cellValue) === '0' || String(cellValue).toLowerCase() === 'no') ? false : null;
+    if (booleanValue === null) {
       throw new Error(`Invalid boolean value for cell ${key} with value ${cellValue}`);
     }
     dtoRecord[fieldMetadata.name] = booleanValue;
