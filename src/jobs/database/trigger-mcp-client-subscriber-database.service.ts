@@ -92,7 +92,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             responseTimeMs: 0, // Updated after we receive the response
             metadata: '', // Updated in the tool
             isApplied: false, // Updated after we receive the response
-            status: '' // Updated after we receive the response
+            status: 'pending' // Updated after we receive the response
         });
 
         const finalPrompt = `
@@ -148,7 +148,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             throw new Error(errorsStr);
         }
         else {
-            // let nestedResponse = this.cleanNestedResponse(aiResponse);
+            let nestedResponse = this.cleanNestedResponse(aiResponse);
 
             // const genAiInteraction = await this.aiInteractionService.create({
             //     userId: aiInteraction.user.id,
@@ -166,14 +166,20 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             // });
 
             // TODO: Update the previously created genAiInteraction record with the respective success fields and save to DB
+            const errorsStr =nestedResponse.status == "error" && nestedResponse.errors.join('\n ');
+
+
             await this.aiInteractionService.update(genAiInteraction.id, {
+                errorMessage:nestedResponse.status == "error" ? `${errorsStr}` :"",
+                // errorMessage:"",
                 // contentType: aiResponse.content_type,
-                errorMessage: '',
                 // message: nestedResponse,
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
                 isApplied: aiInteraction.isApplied,
-                status: aiResponse.success ? 'succeeded' : 'failed'
+
+                // status: aiResponse.success ? 'succeeded' : 'failed'
+                status: aiResponse.success && nestedResponse.status == "success" ? 'succeeded' : 'failed'
             }, [], true);
 
             // If the human interaction was with isAutoApply=true, then we can go ahead and autoApply.
