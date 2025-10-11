@@ -121,7 +121,7 @@ export class IngestMetadataService {
             ingestionInfo.collectionId = collectionId;
 
             // Delete and re-insert a document representing the full json...
-            await this.deleteInsertRagDocumentForModuleMetadataJsonFile(ingestionInfo, fullPath, fileName)
+            // await this.deleteInsertRagDocumentForModuleMetadataJsonFile(ingestionInfo, fullPath, fileName)
 
             // Delete and re-insert a chunk representing the module.
             await this.deleteInsertRagChunkForModule(ingestionInfo, moduleMetadata);
@@ -129,10 +129,28 @@ export class IngestMetadataService {
             // Delete and re-insert chunks representing each model.
             for (const model of moduleMetadata.models) {
                 await this.deleteInsertRagChunkForModel(ingestionInfo, enabledModule, model);
-                for (const field of model.fields) {
-                    await this.deleteInsertRagChunkForField(ingestionInfo, enabledModule, model.singularName, field);
-                }
+
+                // Disabling this for now...
+                // for (const field of model.fields) {
+                //     await this.deleteInsertRagChunkForField(ingestionInfo, enabledModule, model.singularName, field);
+                // }
             }
+
+            // TODO: Delete and re-insert chunks representing roles
+
+            // TODO: Delete and re-insert chunks representing menus 
+
+            // TODO: Delete and re-insert chunks representing actions
+
+            // TODO: Delete and re-insert chunks representing list views 
+
+            // TODO: Delete and re-insert chunks representing kanban views 
+
+            // TODO: Delete and re-insert chunks representing form views
+
+            // TODO: Delete and re-insert chunks representing security rules
+
+            // TODO: Delete and re-insert chunks representing scheduled jobs
 
             // Save ingestion info to disk...
             fs.writeFileSync(enabledModulIngestionInfoFullPath, JSON.stringify({ ...ingestionInfo }, null, 2), 'utf8');
@@ -242,7 +260,7 @@ export class IngestMetadataService {
                 description: m?.description ?? null,
 
                 // Include field names to detect field-level changes at module granularity - maybe remove this later?
-                fields: Array.isArray(m?.fields) ? m.fields.map((f: any) => f?.name ?? null) : [],
+                // fields: Array.isArray(m?.fields) ? m.fields.map((f: any) => f?.name ?? null) : [],
             })),
         });
 
@@ -288,7 +306,8 @@ Usage: Use this chunk to choose the correct model/field chunks for code generati
         }
 
         const r = await this.ragClient.documents.create({
-            raw_text: text,
+            chunks: [text],
+            // raw_text: text,
             metadata: metadata,
             collectionIds: [ingestionInfo.collectionId],
         });
@@ -364,7 +383,11 @@ Fields (${fields.length}) [name:type|flags]:
 ${fieldSummaryLines.join('\n')}
 
 Usage: Use this chunk to generate DTOs, subscribers, custom service methods, and CRUD handlers for ${modelName}.
-For exact constraints (enum/min/max/regex/default), consult the individual field chunks.`;
+
+Full model metadata json: 
+${JSON.stringify(model)}
+
+`;
 
         // 4) Metadata (concise & queryable)
         const metadata = {
@@ -392,7 +415,7 @@ For exact constraints (enum/min/max/regex/default), consult the individual field
 
         // 6) Create new document (R2R auto-generates the ID)
         const r = await this.ragClient.documents.create({
-            raw_text: text,
+            chunks: [text],
             metadata,
             collectionIds: [ingestionInfo.collectionId],
         });
@@ -661,6 +684,7 @@ For exact constraints (enum/min/max/regex/default), consult the individual field
 
         // 4) Build text + metadata tailored to FieldMetadata
         const { text, metadata } = this._buildFieldTextAndMetadata(moduleName, modelName, field);
+
         // also keep the hash in metadata for audit/debug
         (metadata as any).schemaHash = schemaHash;
 
