@@ -288,6 +288,7 @@ Usage: Use this chunk to choose the correct model/field chunks for code generati
 
         // metadata has to be concise and queryable
         const metadata = {
+            collectionName: `${moduleName}-rag-collection`,
             kind: 'solidx-metadata',
             type: 'module',
             moduleName,
@@ -391,6 +392,7 @@ ${JSON.stringify(model)}
 
         // 4) Metadata (concise & queryable)
         const metadata = {
+            collectionName: `${moduleName}-rag-collection`,
             kind: 'solidx-metadata',
             type: 'model',
             moduleName,
