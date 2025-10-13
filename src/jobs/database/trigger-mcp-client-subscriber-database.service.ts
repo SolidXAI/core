@@ -96,18 +96,22 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         });
 
         const finalPrompt = `
-        # User Prompt: 
-        ${prompt}
-        
-        # System Instructions:
-        - aiInteractionId: ${genAiInteraction.id}
-        - moduleName:${message.payload.moduleName}
-        - You will be invoking tools if needed.
-        - If a tool is invoked, you must return **exactly** the raw output from the tool, without any additional formatting, commentary, or text.
-        - Do not wrap the result in quotes, JSON, or markdown fences.
-        - Do not explain what the result means.
-        - Your final response must be identical to the tool output.
-        `
+# User Prompt: 
+${prompt}
+
+# System Instructions:
+- aiInteractionId: ${genAiInteraction.id}
+- moduleName:${message.payload.moduleName}
+- You will be invoking tools if needed.
+- If a tool is invoked, you must return **exactly** the raw output from the tool, without any json envelopes, additional formatting, commentary, or text.
+- Do not wrap the result in quotes, JSON, or markdown fences.
+- Do not explain what the result means.
+
+# Past Interactions: 
+This section contains the last 10 interactions done between the human and LLM. These are sorted by oldest first. 
+Use these interactions to further identify concerns based on the current User Prompt.
+
+`
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);
         this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);
@@ -116,8 +120,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         if (!aiResponse.success) {
             this.triggerMcpClientSubscriberLogger.log(`Gen ai has returned with a false status code`);
 
-            const errorsStr = aiResponse.errors.join('\n ');
-            const errorTrace = aiResponse.error_trace.join('\n');
+            const errorsStr = aiResponse.errors?.join('\n ');
+            const errorTrace = aiResponse.error_trace?.join('\n');
 
             // await this.aiInteractionService.create({
             //     userId: aiInteraction.user.id,
