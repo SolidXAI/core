@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { EntityManager, Repository, EntityMetadata } from 'typeorm';
+import { EntityManager, Repository, EntityMetadata, Brackets } from 'typeorm';
 
 import { CRUDService } from 'src/services/crud.service';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
@@ -514,7 +514,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         entityName: string,
         query: any
     ) {
-        const { limit = 25, offset = 0, sort, populate = [], populateMedia = [] } = query;
+        const { limit = 25, offset = 0, populate = [], populateMedia = [], filters } = query;
 
         const model = await this.modelMetadataRepo.findOne({
             where: {
@@ -575,7 +575,9 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             }
         }
 
-        qb.where(orConditions.join(' OR '), parameters);
+        qb.where(new Brackets(qb => {
+            qb.where(orConditions.join(' OR '), parameters);
+        }));
 
         const relations = ['chatterMessageDetails', 'user'];
         if (populate && populate.length > 0) {
@@ -586,6 +588,12 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         relations.forEach(relation => {
             qb.leftJoinAndSelect(`entity.${relation}`, relation);
         });
+
+        if (filters) {
+            qb.andWhere(new Brackets(whereQb => {
+                this.crudHelperService.applyFilters(whereQb, filters, 'entity', qb);
+            }));
+        }
 
         qb.orderBy('entity.createdAt', 'DESC');
 
