@@ -5,6 +5,7 @@ import { SolidRegistry } from "src/helpers/solid-registry";
 import { ModelMetadataService } from "../model-metadata.service";
 import { CreateModelMetadataDto } from "src/dtos/create-model-metadata.dto";
 import { ModuleMetadataService } from "../module-metadata.service";
+import { model } from "mongoose";
 
 @Injectable()
 export class SolidCreateModelWithFieldsMcpToolResponseHandler implements IMcpToolResponseHandler {
@@ -19,9 +20,9 @@ export class SolidCreateModelWithFieldsMcpToolResponseHandler implements IMcpToo
     async apply(aiInteraction: AiInteraction) {
         // const aiResponse = JSON.parse(aiInteraction.message);
         const escapedMessage = aiInteraction.message.replace(/\\'/g, "'");
-        const aiResponse = JSON.parse(escapedMessage);
+        const aiResponseMessage = JSON.parse(escapedMessage);
 
-        const { moduleUserKey, modelSchema } = aiResponse;
+        const { moduleUserKey, ...modelSchema } = aiResponseMessage;
         const moduleMetadata = await this.moduleMetadataService.findOneByUserKey(moduleUserKey);
         if (!moduleMetadata) {
             throw new Error(`Module with user key ${moduleUserKey} not found.`);
