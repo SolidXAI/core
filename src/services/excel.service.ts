@@ -59,7 +59,7 @@ export class ExcelService {
         //   headers.reduce((acc, header) => ({ ...acc, [header]: '' }), {})
         // ).commit(); // Write a dummy record with headers
 
-        await workbook.commit();
+         workbook.commit();
         return passThrough;
       }
 
