@@ -92,22 +92,26 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             responseTimeMs: 0, // Updated after we receive the response
             metadata: '', // Updated in the tool
             isApplied: false, // Updated after we receive the response
-            status: '' // Updated after we receive the response
+            status: 'pending' // Updated after we receive the response
         });
 
         const finalPrompt = `
-        # User Prompt: 
-        ${prompt}
-        
-        # System Instructions:
-        - aiInteractionId: ${genAiInteraction.id}
-        - moduleName:${message.payload.moduleName}
-        - You will be invoking tools if needed.
-        - If a tool is invoked, you must return **exactly** the raw output from the tool, without any additional formatting, commentary, or text.
-        - Do not wrap the result in quotes, JSON, or markdown fences.
-        - Do not explain what the result means.
-        - Your final response must be identical to the tool output.
-        `
+# User Prompt: 
+${prompt}
+
+# System Instructions:
+- aiInteractionId: ${genAiInteraction.id}
+- moduleName:${message.payload.moduleName}
+- You will be invoking tools if needed.
+- If a tool is invoked, you must return **exactly** the raw output from the tool, without any json envelopes, additional formatting, commentary, or text.
+- Do not wrap the result in quotes, JSON, or markdown fences.
+- Do not explain what the result means.
+
+# Past Interactions: 
+This section contains the last 10 interactions done between the human and LLM. These are sorted by oldest first. 
+Use these interactions to further identify concerns based on the current User Prompt.
+
+`
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);
         this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);
@@ -116,8 +120,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         if (!aiResponse.success) {
             this.triggerMcpClientSubscriberLogger.log(`Gen ai has returned with a false status code`);
 
-            const errorsStr = aiResponse.errors.join('\n ');
-            const errorTrace = aiResponse.error_trace.join('\n');
+            const errorsStr = aiResponse.errors?.join('\n ');
+            const errorTrace = aiResponse.error_trace?.join('\n');
 
             // await this.aiInteractionService.create({
             //     userId: aiInteraction.user.id,
@@ -148,7 +152,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             throw new Error(errorsStr);
         }
         else {
-            // let nestedResponse = this.cleanNestedResponse(aiResponse);
+            let nestedResponse = this.cleanNestedResponse(aiResponse);
 
             // const genAiInteraction = await this.aiInteractionService.create({
             //     userId: aiInteraction.user.id,
@@ -166,14 +170,19 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             // });
 
             // TODO: Update the previously created genAiInteraction record with the respective success fields and save to DB
+            const errorsStr = nestedResponse.status == "error" && nestedResponse.errors.join('\n ');
+
             await this.aiInteractionService.update(genAiInteraction.id, {
+                errorMessage: nestedResponse.status == "error" ? `${errorsStr}` : "",
+                // errorMessage:"",
                 // contentType: aiResponse.content_type,
-                errorMessage: '',
                 // message: nestedResponse,
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
                 isApplied: aiInteraction.isApplied,
-                status: aiResponse.success ? 'succeeded' : 'failed'
+
+                // status: aiResponse.success ? 'succeeded' : 'failed'
+                status: aiResponse.success && nestedResponse.status == "success" ? 'succeeded' : 'failed'
             }, [], true);
 
             // If the human interaction was with isAutoApply=true, then we can go ahead and autoApply.

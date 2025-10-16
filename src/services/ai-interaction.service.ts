@@ -62,7 +62,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     const m = {
       payload: {
         aiInteractionId: aiInteraction.id,
-        moduleName:dto.moduleName
+        moduleName: dto.moduleName
       },
       parentEntity: 'aiInteraction',
       parentEntityId: aiInteraction.id,
@@ -149,6 +149,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
           }
           catch (ex) {
             this.logger.warn(`Attempting to parse mcp client response assuming it is JSON, however it is not: ${parsedResponse}`);
+            // raw.success = false
           }
           // Parse the response string into an object
           // const parsedResponse = JSON.parse(raw.response);
@@ -203,16 +204,22 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     }
 
     // TODO: Validation: Check if JSON.parse(metadata).tools_invoked starts with solid_
-    let metadata = {};
+    let metadata: any = {};
     try {
-      metadata = JSON.parse(aiInteraction.metadata);
-    }
-    catch (e) {
+      if (typeof aiInteraction.metadata === "string") {
+        metadata = JSON.parse(aiInteraction.metadata);
+      } else if (typeof aiInteraction.metadata === "object" && aiInteraction.metadata !== null) {
+        metadata = aiInteraction.metadata;
+      } else {
+        // optional fallback
+        metadata = {};
+      }
+    } catch (e) {
       // TODO: RESPONSE SHAPE ALERT Check if we want to control the shape of the response....
-      throw new Error(e);
+      throw new Error(`Invalid metadata JSON: ${e}`);
     }
 
-    const toolsInvoked = metadata['tools_invoked'];
+    const toolsInvoked = metadata['toolsInvoked'];
     if (!toolsInvoked) {
       // TODO: RESPONSE SHAPE ALERT Check if we want to control the shape of the response....
       throw new Error(ERROR_MESSAGES.UNABLE_TO_RESOLVE_SOLID_COMMAND);
