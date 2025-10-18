@@ -26,6 +26,7 @@ import { CsvService } from './csv.service';
 import { ExcelService } from './excel.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { parseFlexibleDate } from 'src/helpers/date.helper';
 
 interface ImportTemplateFileInfo {
   stream: NodeJS.ReadableStream;
@@ -657,10 +658,17 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         dtoRecord[fieldMetadata.name] = null; // If the cell is empty, set the field to null
         return dtoRecord;
       }
-      const dateValue = new Date(cellValue);
-      if (isNaN(dateValue.getTime())) {
-        throw new Error(`Invalid date value for cell ${key} with value ${record[key]}`);
-      }
+     // Use flexible date parser
+     console.log(cellValue,'cellValue');
+     
+  const dateValue = parseFlexibleDate(cellValue);
+  console.log(dateValue,'dateValue');
+
+  if (!dateValue) {
+    throw new Error(
+      `Invalid date value for cell ${key} with value ${cellValue}`
+    );
+  }
       dtoRecord[fieldMetadata.name] = dateValue;
       return dtoRecord;
     }
