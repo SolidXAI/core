@@ -454,12 +454,13 @@ export class ModuleMetadataSeederService {
         // Get the required roles first for all menu items.
         const adminRoleObj = await this.roleService.findRoleByName(ADMIN_ROLE_NAME);
         const specifiedRoleObjects = [adminRoleObj];
-        const specifiedRoleNames = menus.map(menu => menu['roles']).flat().filter(roleName => roleName !== undefined);
-        for (let i = 0; i < specifiedRoleNames.length; i++) {
-            const specifiedRoleName = specifiedRoleNames[i];
-            const specifiedRoleObject = await this.roleService.findRoleByName(specifiedRoleName);
+        const specifiedRoleNames = menus.map(menu => menu['roles']).flat().filter(roleName => roleName !== undefined) as string[];
+        // Remove duplicates
+        const uniqueSpecifiedRoleNames = Array.from(new Set(specifiedRoleNames));
+        for (const roleName of uniqueSpecifiedRoleNames) {
+            const specifiedRoleObject = await this.roleService.findRoleByName(roleName);
             if (!specifiedRoleObject) {
-                throw new Error(`Invalid role: (${specifiedRoleName}) specified against menu items.`);
+                throw new Error(`Invalid role: (${roleName}) specified against menu items.`);
             }
             specifiedRoleObjects.push(specifiedRoleObject);
         }
@@ -492,7 +493,9 @@ export class ModuleMetadataSeederService {
             } else {
                 menuData['parentMenuItem'] = null
             }
+            this.logger.log(`upserting menu item: ${menuData.name}`);
             await this.solidMenuItemService.upsert(menuData);
+            this.logger.log(`Finished processing menu item: ${menuData.name}`);
             this.logger.log(`Processed menu item ${j + 1} of ${menus.length}`);
         }
     }
