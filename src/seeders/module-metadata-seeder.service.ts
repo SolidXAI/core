@@ -466,25 +466,11 @@ export class ModuleMetadataSeederService {
         }
 
         for (let j = 0; j < menus.length; j++) {
-            this.logger.log(`Processing menu item ${j + 1} of ${menus.length}`);
+            this.logger.debug(`Processing menu item ${j + 1} of ${menus.length}`);
             const menuData = menus[j];
-            /*
-            const specifiedRoles = menuData['roles'];
 
-            // If the developer has specified roles, then resolve them, making sure that admin role is also given.
-            const specifiedRoleObjects = [adminRole];
-            if (specifiedRoles) {
-                for (let i = 0; i < specifiedRoles.length; i++) {
-                    const specifiedRole = specifiedRoles[i];
-                    const specifiedRoleObject = await this.roleService.findRoleByName(specifiedRole);
-                    if (!specifiedRoleObject) {
-                        throw new Error(`Invalid role: (${specifiedRole}) specified against menu with display name ${menuData.displayName}.`);
-                    }
-                    specifiedRoleObjects.push(specifiedRoleObject);
-                }
-            }
-            */
-            menuData['roles'] = specifiedRoleObjects;
+            menuData['roles'] = specifiedRoleObjects.filter( roleObj => menuData['roles']?.includes(roleObj.name) || roleObj.name === ADMIN_ROLE_NAME );
+            // menuData['roles'] = specifiedRoleObjects.filter( roleObj => menuData['roles']?.includes(roleObj.name));
             menuData['action'] = await this.solidActionService.findOneByUserKey(menuData.actionUserKey);
             menuData['module'] = await this.moduleMetadataService.findOneByUserKey(menuData.moduleUserKey);
 
@@ -493,10 +479,8 @@ export class ModuleMetadataSeederService {
             } else {
                 menuData['parentMenuItem'] = null
             }
-            this.logger.log(`upserting menu item: ${menuData.name}`);
             await this.solidMenuItemService.upsert(menuData);
-            this.logger.log(`Finished processing menu item: ${menuData.name}`);
-            this.logger.log(`Processed menu item ${j + 1} of ${menus.length}`);
+            this.logger.debug(`Processed menu item ${j + 1} of ${menus.length}`);
         }
     }
 
