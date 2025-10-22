@@ -2,28 +2,39 @@ import { Injectable } from "@nestjs/common";
 import { UpdateModelMetaDataDto } from "src/dtos/update-model-metadata.dto";
 import { AiInteraction } from "src/entities/ai-interaction.entity";
 import { FieldMetadata } from "src/entities/field-metadata.entity";
-import { SolidRegistry } from "src/helpers/solid-registry";
 import { IMcpToolResponseHandler } from "../../interfaces";
-import { FieldMetadataService } from "../field-metadata.service";
 import { ModelMetadataService } from "../model-metadata.service";
 
 @Injectable()
 // solid_add_field
-export class SolidAddFieldMcpToolResponseHandler implements IMcpToolResponseHandler {
+export class SolidAddFieldsToModelMcpToolResponseHandler implements IMcpToolResponseHandler {
 
     constructor(
         private readonly modelMetadataService: ModelMetadataService,
-        private readonly fieldMetadataService: FieldMetadataService,
-        private readonly solidRegistry: SolidRegistry,
     ) {
     }
 
     async apply(aiInteraction: AiInteraction) {
         // const aiResponse = JSON.parse(aiInteraction.message);
         const escapedMessage = aiInteraction.message.replace(/\\'/g, "'");
-        const aiResponse = JSON.parse(escapedMessage);
+        const aiResponseMessage = JSON.parse(escapedMessage);
 
-        const { modelUserKey, fieldSchema } = aiResponse;
+        // {
+        //   "generation_status": "success",
+        //   "instructions": "<optional string>",
+        //   "data": {
+        //     "modelUserKey": "<existing model name>",
+        //     "schemaPatch": {
+        //       "fieldsToAdd": [
+        //         <json representing each of the fields to be added>
+        //       ]
+        //     }
+        //   }
+        // }        
+        // const { modelUserKey, fieldSchema } = aiResponseMessage;
+        const { data } = aiResponseMessage;
+        const { modelUserKey, schemaPatch } = data;
+        const { fieldsToAdd } = schemaPatch;
 
         // TODO: Validate if another field with same name exists, if it does then raise an error...
 
@@ -33,15 +44,16 @@ export class SolidAddFieldMcpToolResponseHandler implements IMcpToolResponseHand
             throw new Error(`Model with user key ${modelUserKey} not found.`);
         }
 
-        // Add the fieldSchema to the model fields array
-        fieldSchema['modelId'] = modelMetadata.id;
-        modelMetadata.fields.push(fieldSchema as FieldMetadata);
+        for (let i = 0; i < fieldsToAdd.length; i++) {
+            const fieldSchema = fieldsToAdd[i];
 
-        const modelObj = await this.modelMetadataService.update(modelMetadata.id, modelMetadata as unknown as UpdateModelMetaDataDto);
+            // Add the fieldSchema to the model fields array
+            fieldSchema['modelId'] = modelMetadata.id;
+            modelMetadata.fields.push(fieldSchema as FieldMetadata);
+        }
 
-
-        // This creates the module-metadata.json file....
-        // const modelObj = await this.fieldMetadataService.create(fieldSchema as CreateFieldMetadataDto);
+        // This adds the field to the respective model metadat...
+        await this.modelMetadataService.update(modelMetadata.id, modelMetadata as unknown as UpdateModelMetaDataDto);
 
         // Now we need to run solid seed & then solid refresh-model --name <module-name>
         await this.modelMetadataService.handleGenerateCode({ modelId: modelMetadata.id });

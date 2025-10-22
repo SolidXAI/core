@@ -1,11 +1,9 @@
 import { Injectable } from "@nestjs/common";
 import { IMcpToolResponseHandler } from "../../interfaces";
 import { AiInteraction } from "src/entities/ai-interaction.entity";
-import { SolidRegistry } from "src/helpers/solid-registry";
 import { ModelMetadataService } from "../model-metadata.service";
 import { CreateModelMetadataDto } from "src/dtos/create-model-metadata.dto";
 import { ModuleMetadataService } from "../module-metadata.service";
-import { model } from "mongoose";
 
 @Injectable()
 export class SolidCreateModelWithFieldsMcpToolResponseHandler implements IMcpToolResponseHandler {
@@ -13,7 +11,6 @@ export class SolidCreateModelWithFieldsMcpToolResponseHandler implements IMcpToo
     constructor(
         private readonly moduleMetadataService: ModuleMetadataService,
         private readonly modelMetadataService: ModelMetadataService,
-        private readonly solidRegistry: SolidRegistry,
     ) {
     }
 
@@ -22,7 +19,7 @@ export class SolidCreateModelWithFieldsMcpToolResponseHandler implements IMcpToo
         const escapedMessage = aiInteraction.message.replace(/\\'/g, "'");
         const aiResponseMessage = JSON.parse(escapedMessage);
 
-        const { generationStatus, instructions, data } = aiResponseMessage;
+        const { generation_status, instructions, data } = aiResponseMessage;
         const { moduleUserKey, schema } = data;
         const moduleMetadata = await this.moduleMetadataService.findOneByUserKey(moduleUserKey);
         if (!moduleMetadata) {

@@ -248,7 +248,7 @@ import { ImportTransactionService } from './services/import-transaction.service'
 import { ListOfValuesMetadataService } from './services/list-of-values-metadata.service';
 import { LocaleService } from './services/locale.service';
 import { McpToolResponseHandlerFactory } from './services/mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
-import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-add-field-mcp-tool-response-handler.service';
+import { SolidAddFieldsToModelMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-add-fields-to-model-mcp-tool-response-handler.service';
 import { SolidCreateDashboardMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-mcp-tool-response-handler.service';
 import { SolidCreateDashboardQuestionMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-question-mcp-tool-response-handler.service';
 import { SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-question-sql-dataset-config-mcp-tool-response-handler.service';
@@ -630,7 +630,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler,
     SolidCreateDashboardWidgetMcpToolResponseHandler,
     SolidCreateModelWithFieldsMcpToolResponseHandler,
-    SolidAddFieldMcpToolResponseHandler,
+    SolidAddFieldsToModelMcpToolResponseHandler,
     ViewMetadataRepository,
     SolidCreateModelLayoutMcpToolResponseHandler,
     ScheduledJobRepository,
