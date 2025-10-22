@@ -101,15 +101,10 @@ ${prompt}
 
 # System Instructions:
 - aiInteractionId: ${genAiInteraction.id}
-- moduleName:${message.payload.moduleName}
-- You will be invoking tools if needed.
+- You will be invoking tools if needed, hence you will have to choose the applicable tools based on the tool context given to you.
 - If a tool is invoked, you must return **exactly** the raw output from the tool, without any json envelopes, additional formatting, commentary, or text.
 - Do not wrap the result in quotes, JSON, or markdown fences.
 - Do not explain what the result means.
-
-# Past Interactions: 
-This section contains the last 10 interactions done between the human and LLM. These are sorted by oldest first. 
-Use these interactions to further identify concerns based on the current User Prompt.
 
 `
 

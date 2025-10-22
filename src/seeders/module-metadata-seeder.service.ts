@@ -309,7 +309,7 @@ export class ModuleMetadataSeederService {
         for (let id = 0; id < controllers.length; id++) {
             try {
                 const controller = controllers[id];
-                this.logger.log(`Resolving controller: ${controller.name}`);
+                // this.logger.log(`Resolving controller: ${controller.name}`);
 
                 const methods = controller.methods;
                 for (let mId = 0; mId < methods.length; mId++) {
@@ -323,16 +323,20 @@ export class ModuleMetadataSeederService {
                         }
                     });
 
-                    if (existingPermission) {
-                        this.logger.log(`Permission ${permissionName} already exists.`);
-                    }
-                    else {
+                    // if (existingPermission) {
+                    //     this.logger.log(`Permission ${permissionName} already exists.`);
+                    // }
+                    // else { }
+
+                    if (!existingPermission) {
+
                         this.logger.log(`Permission ${permissionName} does not exist, creating new.`);
 
                         const newPermission = this.permissionRepo.create({
                             name: permissionName
                         });
                         await this.permissionRepo.save(newPermission);
+
 
                     }
                 }
@@ -357,14 +361,14 @@ export class ModuleMetadataSeederService {
 
         for (let i = 0; i < emailTemplates.length; i++) {
             const emailTemplate = emailTemplates[i];
-            this.logger.log(`Found ${emailTemplate.name} email template`);
+            // this.logger.log(`Found ${emailTemplate.name} email template`);
 
             // We need to load the actual template contents. 
             if (moduleMetadata.name === 'solid-core') {
                 const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
                 const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/email-templates');
                 const filePath = path.join(seedDataPath, emailTemplate.body);
-                this.logger.log(`Seeding email template from solid-core at path: ${filePath}`);
+                // this.logger.log(`Seeding email template from solid-core at path: ${filePath}`);
                 if (fs.existsSync(filePath)) {
                     emailTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
                 }
@@ -373,7 +377,7 @@ export class ModuleMetadataSeederService {
                 // Check if file exists
                 const emailTemplateHandlebar = `module-metadata/${moduleMetadata.name}/email-templates/${emailTemplate.body}`
                 const fullPath = path.join(process.cwd(), emailTemplateHandlebar);
-                this.logger.log(`Seeding custom email template from consuming model at path: ${fullPath}`);
+                // this.logger.log(`Seeding custom email template from consuming model at path: ${fullPath}`);
                 if (fs.existsSync(fullPath)) {
                     emailTemplate.body = fs.readFileSync(fullPath, 'utf-8').toString();
                 }
@@ -393,14 +397,14 @@ export class ModuleMetadataSeederService {
 
         for (let i = 0; i < smsTemplates.length; i++) {
             const smsTemplate = smsTemplates[i];
-            this.logger.log(`Found ${smsTemplate.name} sms template`);
+            // this.logger.log(`Found ${smsTemplate.name} sms template`);
 
             // We need to load the actual template contents. 
             if (moduleMetadata.name === 'solid-core') {
                 const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
                 const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/sms-templates');
                 const filePath = path.join(seedDataPath, smsTemplate.body);
-                this.logger.log(`Seeding sms template from solid-core at path: ${filePath}`);
+                // this.logger.log(`Seeding sms template from solid-core at path: ${filePath}`);
                 if (fs.existsSync(filePath)) {
                     smsTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
                 }
@@ -409,7 +413,7 @@ export class ModuleMetadataSeederService {
                 // Check if file exists
                 const emailTemplateHandlebar = `module-metadata/${moduleMetadata.name}/sms-templates/${smsTemplate.body}`
                 const fullPath = path.join(process.cwd(), emailTemplateHandlebar);
-                this.logger.log(`Seeding custom sms template from consuming model at path: ${fullPath}`);
+                // this.logger.log(`Seeding custom sms template from consuming model at path: ${fullPath}`);
                 if (fs.existsSync(fullPath)) {
                     smsTemplate.body = fs.readFileSync(fullPath, 'utf-8').toString();
                 }

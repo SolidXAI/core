@@ -57,7 +57,7 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     for (let id = 0; id < roles.length; id++) {
       try {
         const roleObj = roles[id];
-        this.logger.log(`Resolving role: ${JSON.stringify(roleObj)}`);
+        // this.logger.log(`Resolving role: ${JSON.stringify(roleObj)}`);
 
         const existingRole = await this.repo.findOne({
           where: {
@@ -81,9 +81,10 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
           // const role = this.repo.create({ ...roleObj, permissions });
           const role = this.repo.create({ ...roleObj });
           await this.repo.save(role);
-        } else {
-          this.logger.log(`Role ${roleObj.name} already exists`);
-        }
+        } 
+        // else {
+        //   this.logger.log(`Role ${roleObj.name} already exists`);
+        // }
       } catch (error) {
         this.logger.error(error);
       }
@@ -113,15 +114,14 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
       throw new Error(`Role '${roleName}' not found.`);
     }
 
-    this.logger.log(`Found role ${roleName}`);
-
+    // this.logger.log(`Found role ${roleName}`);
 
     // The new set of permissions which are to be added to this role.
     let newPermissions: PermissionMetadata[];
 
     // Load all the specified permissions in the system. 
     if (permissionNames && permissionNames.length != 0) {
-      this.logger.log(`Loading specified permissions.`);
+      // this.logger.log(`Loading specified permissions.`);
 
       newPermissions = await this.permissionRepository.find({ where: { name: In(permissionNames) } });
       if (newPermissions.length !== permissionNames.length) {
@@ -129,7 +129,7 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
       }
     }
     else {
-      this.logger.log(`Loading all permissions in system.`);
+      // this.logger.log(`Loading all permissions in system.`);
 
       // Load all permissions in the system. 
       // TODO: Do we want to convert this to a paginated query to avoid having to load a very large permissions table into memory?
@@ -139,7 +139,7 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
       }
     }
 
-    this.logger.log(`Adding ${newPermissions.length} permissions to role ${roleName}.`);
+    // this.logger.log(`Adding ${newPermissions.length} permissions to role ${roleName}.`);
 
     // if there are already permissions assigned. 
     if (role.permissions && role.permissions.length > 0) {

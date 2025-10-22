@@ -136,7 +136,10 @@ export class ServiceController {
         // Run the Solid ingestion command
         if (config.runSolidIngestion) {
             this.logger.debug(`Running the Solid ingestion command as part of post-process code generation`);
-            await this.ingestMetadataService.ingest();
+
+            // TODO: disabled this till we figure out a way to make this stable...
+            // This keeps failing for a variety of reasons... 
+            // await this.ingestMetadataService.ingest();
         }
     }
 
