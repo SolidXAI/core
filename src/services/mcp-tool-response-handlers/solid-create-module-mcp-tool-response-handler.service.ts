@@ -16,9 +16,12 @@ export class SolidCreateModuleMcpToolResponseHandler implements IMcpToolResponse
     }
 
     async apply(aiInteraction: AiInteraction) {
-        const aiResponseMessage = JSON.parse(aiInteraction.message);
+        const escapedMessage = aiInteraction.message.replace(/\\'/g, "'");
+        const aiResponseMessage = JSON.parse(escapedMessage);
 
-        const moduleMetadata = aiResponseMessage?.moduleMetadata ?? {};
+        const { generation_status, instructions, data } = aiResponseMessage;
+        const { schema } = data;
+        const { moduleMetadata } = schema;
 
         // TODO: Validate if another module with same name exists, if it does then raise an error...
 
