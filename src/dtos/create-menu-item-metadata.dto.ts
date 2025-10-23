@@ -66,3 +66,7 @@ export class CreateMenuItemMetadataDto {
     iconName: string;
 
 }
+
+export const MENU_ROLE_JOIN_TABLE_NAME = "ss_menu_item_metadata_roles_ss_role_metadata"; // <-- your actual join table
+export const MENU_ROLE_JOIN_TABLE_NAME_MENU_COL = "ss_menu_item_metadata_id"; // <-- actual column name in the join table
+export const MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL = "ss_role_metadata_id";     // <-- actual column name in the join table

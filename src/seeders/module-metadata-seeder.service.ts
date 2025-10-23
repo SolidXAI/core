@@ -21,7 +21,7 @@ import { ListOfValuesService } from 'src/services/list-of-values.service';
 import { SettingService } from 'src/services/setting.service';
 import { SmsTemplateService } from 'src/services/sms-template.service';
 import { UserService } from 'src/services/user.service';
-import { Repository } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import appBuilderConfig from '../config/app-builder.config';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
@@ -43,10 +43,13 @@ import { SystemFieldsSeederService } from './system-fields-seeder.service';
 import { ADMIN_ROLE_NAME, INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS, PUBLIC_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
+import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata } from 'src';
+
 
 @Injectable()
 export class ModuleMetadataSeederService {
     private readonly logger = new Logger(ModuleMetadataSeederService.name);
+
 
     constructor(
         private readonly moduleMetadataService: ModuleMetadataService,
@@ -78,6 +81,7 @@ export class ModuleMetadataSeederService {
         readonly systemFieldsSeederService: SystemFieldsSeederService,
         readonly dashboardRepo: DashboardRepository,
         readonly scheduledJobRepository: ScheduledJobRepository,
+        readonly dataSource: DataSource,
     ) { }
 
     async seed() {
@@ -94,7 +98,7 @@ export class ModuleMetadataSeederService {
             const overallMetadata = seedDataFiles[i];
             const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
             this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
-            
+
             // Process module metadata first. 
             this.logger.log(`Seeding Module / Model / Fields`);
             await this.seedModuleModelFields(moduleMetadata);
@@ -451,37 +455,89 @@ export class ModuleMetadataSeederService {
             return;
         }
 
-        // Get the required roles first for all menu items.
-        const adminRoleObj = await this.roleService.findRoleByName(ADMIN_ROLE_NAME);
-        const specifiedRoleObjects = [adminRoleObj];
-        const specifiedRoleNames = menus.map(menu => menu['roles']).flat().filter(roleName => roleName !== undefined) as string[];
-        // Remove duplicates
-        const uniqueSpecifiedRoleNames = Array.from(new Set(specifiedRoleNames));
-        for (const roleName of uniqueSpecifiedRoleNames) {
-            const specifiedRoleObject = await this.roleService.findRoleByName(roleName);
-            if (!specifiedRoleObject) {
-                throw new Error(`Invalid role: (${roleName}) specified against menu items.`);
+        await this.dataSource.transaction(async (trx) => {
+            const menuRepo = trx.getRepository(MenuItemMetadata);
+            const roleRepo = trx.getRepository(RoleMetadata);
+            const actionRepo = trx.getRepository(ActionMetadata);
+            const moduleRepo = trx.getRepository(ModuleMetadata);
+
+            // 1) Upsert menus WITHOUT roles
+            for (const m of menus) {
+                const entity = menuRepo.create({
+                    name: m.name,
+                    displayName: m.displayName,
+                    action: m.actionUserKey
+                        ? await actionRepo.findOne({ where: { name: m.actionUserKey }, select: ["id"] })
+                        : null,
+                    module: m.moduleUserKey
+                        ? await moduleRepo.findOne({ where: { name: m.moduleUserKey }, select: ["id"] })
+                        : null,
+                    parentMenuItem: m.parentMenuItemUserKey
+                        ? await menuRepo.findOne({ where: { name: m.parentMenuItemUserKey }, select: ["id"] })
+                        : null,
+                });
+                await menuRepo.upsert(entity, ["name"]); // or ["userKey"]
             }
-            specifiedRoleObjects.push(specifiedRoleObject);
-        }
 
-        for (let j = 0; j < menus.length; j++) {
-            this.logger.debug(`Processing menu item ${j + 1} of ${menus.length}`);
-            const menuData = menus[j];
+            // 2) Fetch ids for batching
+            const seeded = await menuRepo.find({
+                where: { name: In(menus.map((m: any) => m.name)) },
+                select: ["id", "name"],
+            });
+            const idByName = new Map(seeded.map(s => [s.name, s.id]));
 
-            menuData['roles'] = specifiedRoleObjects.filter( roleObj => menuData['roles']?.includes(roleObj.name) || roleObj.name === ADMIN_ROLE_NAME );
-            // menuData['roles'] = specifiedRoleObjects.filter( roleObj => menuData['roles']?.includes(roleObj.name));
-            menuData['action'] = await this.solidActionService.findOneByUserKey(menuData.actionUserKey);
-            menuData['module'] = await this.moduleMetadataService.findOneByUserKey(menuData.moduleUserKey);
+            // 3) Build desired join rows once
+            const admin = await roleRepo.findOne({ where: { name: ADMIN_ROLE_NAME }, select: ["id", "name"] });
+            const allRoleNames = new Set<string>();
+            for (const m of menus) (m.roles ?? []).forEach((r: string) => allRoleNames.add(r));
+            if (admin) allRoleNames.add(admin.name);
 
-            if (menuData.parentMenuItemUserKey) {
-                menuData['parentMenuItem'] = await this.solidMenuItemService.findOneByUserKey(menuData.parentMenuItemUserKey);
-            } else {
-                menuData['parentMenuItem'] = null
+            const roles = await roleRepo.find({
+                where: { name: In([...allRoleNames]) },
+                select: ["id", "name"],
+            });
+            const roleByName = new Map(roles.map(r => [r.name, r]));
+
+            const joinRows: Array<{ menuId: number; roleId: number }> = [];
+            for (const m of menus) {
+                const menuId = idByName.get(m.name)!;
+                const roleNames = new Set<string>([...(m.roles ?? []), admin?.name].filter(Boolean) as string[]);
+                for (const rn of roleNames) {
+                    const role = roleByName.get(rn);
+                    if (role) joinRows.push({ menuId, roleId: role.id });
+                }
             }
-            await this.solidMenuItemService.upsert(menuData);
-            this.logger.debug(`Processed menu item ${j + 1} of ${menus.length}`);
-        }
+
+            // 4) Replace in bulk — QueryBuilder version
+
+            // 4a) delete existing for affected menus
+            const menuIds = [...new Set(joinRows.map(r => r.menuId))];
+            if (menuIds.length) {
+                await trx
+                    .createQueryBuilder()
+                    .delete()
+                    .from(MENU_ROLE_JOIN_TABLE_NAME) // string table name is fine
+                    .where(`${MENU_ROLE_JOIN_TABLE_NAME_MENU_COL} IN (:...ids)`, { ids: menuIds })
+                    .execute();
+            }
+
+            // 4b) bulk insert all pairs
+            if (joinRows.length) {
+                // Build objects with the exact column names used by the join table
+                const values = joinRows.map(r => ({
+                    [MENU_ROLE_JOIN_TABLE_NAME_MENU_COL]: r.menuId,
+                    [MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL]: r.roleId,
+                }));
+
+                await trx
+                    .createQueryBuilder()
+                    .insert()
+                    .into(MENU_ROLE_JOIN_TABLE_NAME) // string table name
+                    .values(values)
+                    .orIgnore() // optional if you have a UNIQUE(menuItemId, roleId) and want to skip dups
+                    .execute();
+            }
+        });
     }
 
     // Ok
