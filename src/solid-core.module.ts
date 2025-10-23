@@ -255,7 +255,7 @@ import { SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler } fr
 import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-widget-mcp-tool-response-handler.service';
 import { SolidCreateModelWithFieldsMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-model-with-fields-mcp-tool-response-handler.service';
 import { SolidCreateModuleMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-module-mcp-tool-response-handler.service';
-import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
+import { SolidUpdateLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-update-layout-mcp-tool-response-handler.service';
 import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
 import { PollerService } from './services/poller.service';
@@ -632,7 +632,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     SolidCreateModelWithFieldsMcpToolResponseHandler,
     SolidAddFieldsToModelMcpToolResponseHandler,
     ViewMetadataRepository,
-    SolidCreateModelLayoutMcpToolResponseHandler,
+    SolidUpdateLayoutMcpToolResponseHandler,
     ScheduledJobRepository,
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
