@@ -53,6 +53,7 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     return entity;
   }
 
+  // OK
   async createRolesIfNotExists(roles: CreateRoleMetadataDto[]) {
     for (let id = 0; id < roles.length; id++) {
       try {
@@ -68,7 +69,7 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
 
         // Create only if not existing already.
         if (!existingRole) {
-          this.logger.log(`Role ${roleObj.name} does not exist, hence creating`);
+          this.logger.debug(`Role ${roleObj.name} does not exist, hence creating`);
 
           let permissions = [];
 
@@ -81,10 +82,23 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
           // const role = this.repo.create({ ...roleObj, permissions });
           const role = this.repo.create({ ...roleObj });
           await this.repo.save(role);
-        } 
-        // else {
-        //   this.logger.log(`Role ${roleObj.name} already exists`);
-        // }
+        } else {
+          /*
+          this.logger.debug(`Role ${roleObj.name} already exists`);
+          const existingPermissions = existingRole.permissions.map(permission => permission.name);
+          const newPermissions = roleObj.permissions.map(permission => permission.name);
+          const permissionsToAdd = newPermissions.filter(permission => !existingPermissions.includes(permission));
+          const permissionsToRemove = existingPermissions.filter(permission => !newPermissions.includes(permission));
+          this.logger.debug(`Permissions to add: ${JSON.stringify(permissionsToAdd)}`);
+          if (permissionsToAdd.length > 0) {
+            await this.addPermissionsToRole(roleObj.name, permissionsToAdd);
+          }
+          this.logger.debug(`Permissions to remove: ${JSON.stringify(permissionsToRemove)}`);
+          if (permissionsToRemove.length > 0) {
+            await this.removePermissionsFromRole(roleObj.name, permissionsToRemove);
+          }
+          */
+        }
       } catch (error) {
         this.logger.error(error);
       }
