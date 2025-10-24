@@ -70,6 +70,10 @@ export const INTERNAL_ROLE_PERMISSIONS = [
     'ViewMetadataController.getLayout',
     'ViewMetadataController.findMany',
     'ViewMetadataController.findOne',
+    // User View metadata permissions
+    'UserViewMetadataController.upsert',
+    'UserViewMetadataController.findMany',
+    'UserViewMetadataController.findOne',
     // IAM permissions
     'AuthenticationController.changePassword',
     // Field Metadata permissions
