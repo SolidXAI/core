@@ -8,6 +8,8 @@ import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.serv
 import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
 import { AiInteractionService } from 'src/services/ai-interaction.service';
 import { PollerService } from 'src/services/poller.service';
+import { ModuleMetadataService } from 'src/services/module-metadata.service';
+import { ModelMetadataService } from 'src/services/model-metadata.service';
 
 @Injectable()
 export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<TriggerMcpClientOptions> {
@@ -18,6 +20,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         readonly mqMessageQueueService: MqMessageQueueService,
         readonly poller: PollerService,
         readonly aiInteractionService: AiInteractionService,
+        readonly moduleMetadataService: ModuleMetadataService,
+        readonly modelMetadataService: ModelMetadataService
     ) {
         super(mqMessageService, mqMessageQueueService, poller);
     }
@@ -95,6 +99,29 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             status: 'pending' // Updated after we receive the response
         });
 
+        const existing_modules = await this.moduleMetadataService.findMany({ limit: 100, offset: 0 });
+        const existing_models = await this.modelMetadataService.findMany({ limit: 100, offset: 0, populate: ['module'] });
+
+
+        // Build the dynamic existing modules list
+        const existingModulesList = existing_modules.records
+            .map(
+                (module) => `
+### ${module.displayName}
+- name: ${module.name}
+- description: ${module.description || "No description"}
+`).join("\n");
+
+        const existingModelsList = existing_models.records
+            .map(
+                (model) => `
+### ${model.displayName}
+- singularName: ${model.singularName}
+- description: ${model.description || "No description"}
+- moduleName: ${model.module.name || "Unknown"}
+`).join("\n");
+
+
         const finalPrompt = `
 # User Prompt: 
 ${prompt}
@@ -111,22 +138,12 @@ ${prompt}
 ## LIST OF EXISTING MODULES
 Use the below list of models with module names to infer which module & models the user is referring to, you can try to pull out the singularName incase of models.
 
-{% for module in existing_modules %}
-### {{ module['display_name'] }}
-- name: {{ module['name'] }}
-- description: {{ module['description'] }}
-{% endfor %}
-
+${existingModulesList}
 ## LIST OF EXISTING MODELS
 Use the below list of modules to infer which module the user is referring to.
 
-{% for model in existing_models %}
-### {{ model['display_name'] }}
-- singularName: {{ model['singular_name'] }}
-- description: {{ model['description'] }}
-- moduleName: {{ model['module_name'] }}
-{% endfor %}
-`
+${existingModelsList}`
+
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);
         this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);
