@@ -12203,8 +12203,7 @@
                                 "type": "field",
                                 "attrs": {
                                   "name": "message",
-                                  "editWidget": "textarea",
-                                  "rows": 6
+                                  "viewWidget": "SolidAiInteractionMessageFieldFormWidget"
                                 }
                               }
                             ]
@@ -12296,7 +12295,6 @@
                                 "type": "field",
                                 "attrs": {
                                   "name": "errorMessage",
-                                  "editWidget": "textarea",
                                   "rows": 5
                                 }
                               }
@@ -12332,8 +12330,7 @@
                                 "attrs": {
                                   "name": "metadata",
                                   "height": "80vh",
-                                  "viewWidget":"SolidAiInteractionMetadataFieldFormWidget"
-
+                                  "viewWidget": "SolidAiInteractionMetadataFieldFormWidget"
                                 }
                               }
                             ]
