@@ -170,7 +170,9 @@ Use these interactions to further identify concerns based on the current User Pr
             // });
 
             // TODO: Update the previously created genAiInteraction record with the respective success fields and save to DB
-            const errorsStr = nestedResponse.status == "error" && nestedResponse.errors.join('\n ');
+            const errorsStr = nestedResponse?.status == "error" && nestedResponse?.errors.join('\n ');
+            // const errorTrace = nestedResponse?.status == "error" && nestedResponse?.error_trace?.join('\n');
+
 
             await this.aiInteractionService.update(genAiInteraction.id, {
                 errorMessage: nestedResponse.status == "error" ? `${errorsStr}` : "",
