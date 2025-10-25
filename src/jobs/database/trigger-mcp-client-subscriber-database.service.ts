@@ -106,6 +106,26 @@ ${prompt}
 - Do not wrap the result in quotes, JSON, or markdown fences.
 - Do not explain what the result means.
 
+# LISTS TO RESOLVE MODULE & MODEL
+
+## LIST OF EXISTING MODULES
+Use the below list of models with module names to infer which module & models the user is referring to, you can try to pull out the singularName incase of models.
+
+{% for module in existing_modules %}
+### {{ module['display_name'] }}
+- name: {{ module['name'] }}
+- description: {{ module['description'] }}
+{% endfor %}
+
+## LIST OF EXISTING MODELS
+Use the below list of modules to infer which module the user is referring to.
+
+{% for model in existing_models %}
+### {{ model['display_name'] }}
+- singularName: {{ model['singular_name'] }}
+- description: {{ model['description'] }}
+- moduleName: {{ model['module_name'] }}
+{% endfor %}
 `
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);
