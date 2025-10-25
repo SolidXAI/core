@@ -60,10 +60,9 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
 
     // if found
     if (existingMenuItem) {
-      const updatedSolidActionDto = { ...existingMenuItem, ...cleanUpdateSolidMenuItemDto };
-      // @ts-ignore
-      return this.repo.save(updatedSolidActionDto);
-      // await this.repo.remove(existingSolidAction);
+      // TODO: This is very slow disabling this for now..
+      // const updatedSolidActionDto = { ...existingMenuItem, ...cleanUpdateSolidMenuItemDto };
+      // return this.repo.save(updatedSolidActionDto);
     }
     // if not found - create new 
     else {
@@ -71,9 +70,6 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
       const moduleMetadata = this.repo.create(cleanUpdateSolidMenuItemDto);
       return this.repo.save(moduleMetadata);
     }
-    // const moduleMetadata = this.repo.create(updateSolidMenuItemDto);
-    // return this.repo.save(moduleMetadata);
-
   }
 
 

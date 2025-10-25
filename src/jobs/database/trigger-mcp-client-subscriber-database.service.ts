@@ -101,16 +101,31 @@ ${prompt}
 
 # System Instructions:
 - aiInteractionId: ${genAiInteraction.id}
-- moduleName:${message.payload.moduleName}
-- You will be invoking tools if needed.
+- You will be invoking tools if needed, hence you will have to choose the applicable tools based on the tool context given to you.
 - If a tool is invoked, you must return **exactly** the raw output from the tool, without any json envelopes, additional formatting, commentary, or text.
 - Do not wrap the result in quotes, JSON, or markdown fences.
 - Do not explain what the result means.
 
-# Past Interactions: 
-This section contains the last 10 interactions done between the human and LLM. These are sorted by oldest first. 
-Use these interactions to further identify concerns based on the current User Prompt.
+# LISTS TO RESOLVE MODULE & MODEL
 
+## LIST OF EXISTING MODULES
+Use the below list of models with module names to infer which module & models the user is referring to, you can try to pull out the singularName incase of models.
+
+{% for module in existing_modules %}
+### {{ module['display_name'] }}
+- name: {{ module['name'] }}
+- description: {{ module['description'] }}
+{% endfor %}
+
+## LIST OF EXISTING MODELS
+Use the below list of modules to infer which module the user is referring to.
+
+{% for model in existing_models %}
+### {{ model['display_name'] }}
+- singularName: {{ model['singular_name'] }}
+- description: {{ model['description'] }}
+- moduleName: {{ model['module_name'] }}
+{% endfor %}
 `
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);

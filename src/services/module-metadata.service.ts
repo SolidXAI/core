@@ -287,7 +287,7 @@ export class ModuleMetadataService {
   }
 
   async upsert(updateModuleMetadataDto: UpdateModuleMetadataDto) {
-    this.logger.log(`Module Upsert called for : ${updateModuleMetadataDto.name}`);
+    this.logger.debug(`Module Upsert called for : ${updateModuleMetadataDto.name}`);
     // First check if module already exists using name
     const existingModuleMetadata = await this.moduleMetadataRepo.findOne({
       where: {

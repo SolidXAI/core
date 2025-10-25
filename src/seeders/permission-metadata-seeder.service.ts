@@ -25,7 +25,7 @@ export class PermissionMetadataSeederService {
     for (let id = 0; id < controllers.length; id++) {
       try {
         const controller = controllers[id];
-        this.logger.log(`Resolving controller: ${controller.name}`);
+        // this.logger.log(`Resolving controller: ${controller.name}`);
 
         const methods = controller.methods;
         for (let mId = 0; mId < methods.length; mId++) {

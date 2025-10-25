@@ -2,50 +2,54 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import appBuilderConfig from '../config/app-builder.config';
 import { ConfigType } from '@nestjs/config';
-import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
-import { ModuleMetadataService } from '../services/module-metadata.service';
-import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
-import { ModelMetadataService } from '../services/model-metadata.service';
-import { MediaStorageProviderMetadataService } from '../services/media-storage-provider-metadata.service';
-import { FieldMetadataService } from '../services/field-metadata.service';
-import { UserService } from 'src/services/user.service';
-import { AuthenticationService } from 'src/services/authentication.service';
-import { MediaStorageProviderMetadataSeederService } from '../services/media-storage-provider-metadata-seeder.service';
-import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
-import { EmailTemplateService } from 'src/services/email-template.service';
-import { SmsTemplateService } from 'src/services/sms-template.service';
-import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
-import { ViewMetadataService } from '../services/view-metadata.service';
-import { ActionMetadataService } from '../services/action-metadata.service';
-import { MenuItemMetadataService } from '../services/menu-item-metadata.service';
 import { InjectRepository } from '@nestjs/typeorm';
-import { PermissionMetadata } from '../entities/permission-metadata.entity';
-import { Repository } from 'typeorm';
-import { SolidRegistry } from '../helpers/solid-registry';
-import { RoleMetadataService } from '../services/role-metadata.service';
-import { getCoreModuleNames, getDynamicModuleNames } from '../helpers/module.helper';
-import solidCoreMetadata from './seed-data/solid-core-metadata.json';
-import { iamConfig } from 'src/config/iam.config';
 import commonConfig from 'src/config/common.config';
-import { CreateSettingDto } from 'src/dtos/create-setting.dto';
-import { SettingService } from 'src/services/setting.service';
-import { Setting } from 'src/entities/setting.entity';
-import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
-import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
-import { ListOfValuesService } from 'src/services/list-of-values.service';
-import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
-import { SystemFieldsSeederService } from './system-fields-seeder.service';
+import { iamConfig } from 'src/config/iam.config';
 import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
+import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
+import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
+import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
+import { CreateSettingDto } from 'src/dtos/create-setting.dto';
+import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
+import { Setting } from 'src/entities/setting.entity';
 import { DashboardRepository } from 'src/repository/dashboard.repository';
+import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
+import { AuthenticationService } from 'src/services/authentication.service';
+import { EmailTemplateService } from 'src/services/email-template.service';
+import { ListOfValuesService } from 'src/services/list-of-values.service';
+import { SettingService } from 'src/services/setting.service';
+import { SmsTemplateService } from 'src/services/sms-template.service';
+import { UserService } from 'src/services/user.service';
+import { DataSource, In, Repository } from 'typeorm';
+import appBuilderConfig from '../config/app-builder.config';
+import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
+import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
+import { PermissionMetadata } from '../entities/permission-metadata.entity';
+import { getDynamicModuleNames } from '../helpers/module.helper';
+import { SolidRegistry } from '../helpers/solid-registry';
+import { ActionMetadataService } from '../services/action-metadata.service';
+import { FieldMetadataService } from '../services/field-metadata.service';
+import { MediaStorageProviderMetadataSeederService } from '../services/media-storage-provider-metadata-seeder.service';
+import { MediaStorageProviderMetadataService } from '../services/media-storage-provider-metadata.service';
+import { MenuItemMetadataService } from '../services/menu-item-metadata.service';
+import { ModelMetadataService } from '../services/model-metadata.service';
+import { ModuleMetadataService } from '../services/module-metadata.service';
+import { RoleMetadataService } from '../services/role-metadata.service';
+import { ViewMetadataService } from '../services/view-metadata.service';
+import solidCoreMetadata from './seed-data/solid-core-metadata.json';
+import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
-import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
+import { ADMIN_ROLE_NAME, INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS, PUBLIC_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
+import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
+import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata } from 'src';
+
 
 @Injectable()
 export class ModuleMetadataSeederService {
     private readonly logger = new Logger(ModuleMetadataSeederService.name);
+
 
     constructor(
         private readonly moduleMetadataService: ModuleMetadataService,
@@ -70,238 +74,246 @@ export class ModuleMetadataSeederService {
         @Inject(iamConfig.KEY) private readonly iamConfiguration: ConfigType<typeof iamConfig>,
         @Inject(commonConfig.KEY)
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
-        private readonly seetingService: SettingService,
+        private readonly settingService: SettingService,
         @InjectRepository(Setting, 'default')
         readonly settingsRepo: Repository<Setting>,
         readonly securityRuleRepo: SecurityRuleRepository,
         readonly systemFieldsSeederService: SystemFieldsSeederService,
         readonly dashboardRepo: DashboardRepository,
         readonly scheduledJobRepository: ScheduledJobRepository,
+        readonly dataSource: DataSource,
     ) { }
 
     async seed() {
+        // Global seeding steps i.e across all modules
+        await this.seedGlobalMetadata();
 
-        const typedSolidCoreMetadata: any = structuredClone(solidCoreMetadata);
-
-        // Run the permissions seeder. 
-        // await this.permissionsSeederService.seed();
-        this.logger.log(`Seeding permissions`);
-        await this.seedPermissions();
-
-        // TODO: move this also the main loop processing. Generate the media storage providers required by default
-        this.logger.log(`Seeding media storage providers`);
-        await this.mediaStorageProviderSeederService.seed();
-
-        // Seed any missing system fields metadata for all models.
-        this.logger.log(`Seeding system fields metadata`);
-        await this.systemFieldsSeederService.seed();
-
-        // Read the module metadata from a file specified in the .env 
-        // Add the core json file as the first entry in the above array.
-        // Please note the sequence of core files is important below...
-        const coreModules = getCoreModuleNames();
-        const seedDataFiles = [
-            // 'src/common/seeders/seed-data/common-metadata.json',
-            // 'src/iam/seeders/seed-data/iam-metadata.json',
-            // 'src/app-builder/seeders/seed-data/app-builder-metadata.json',
-            // 'src/queues/seeders/seed-data/queues-metadata.json',
-            // ...coreModules.map(module => `src/${module}/seeders/seed-data/${module}-metadata.json`),
-            typedSolidCoreMetadata
-        ];
-        this.logger.debug(`getting dynamics modules`);
-        const enabledModules = getDynamicModuleNames();
-        this.logger.log(`Seeding metadata`);
-
-        for (let i = 0; i < enabledModules.length; i++) {
-            const enabledModule = enabledModules[i];
-            const enabledModuleSeedFile = `module-metadata/${enabledModule}/${enabledModule}-metadata.json`
-            const fullPath = path.join(process.cwd(), enabledModuleSeedFile);
-            if (fs.existsSync(fullPath)) {
-                const overallMetadata: any = JSON.parse(fs.readFileSync(fullPath, 'utf-8').toString());
-
-                seedDataFiles.push(overallMetadata)
-            }
-        }
-
+        // Module specific seeding steps.
+        // Get all the module metadata files which needs to be seeded.
+        const seedDataFiles = this.seedDataFiles;
         this.logger.debug(`Seed data files are: ${seedDataFiles}`);
-        let usersDetail;
+        // let usersDetail;
+        // For each module metadata file, we will process the seeding steps one by one.
         for (let i = 0; i < seedDataFiles.length; i++) {
-
-            // Module, model & field handling.
             const overallMetadata = seedDataFiles[i];
-            // const fullPath = path.join(process.cwd(), seedDataFile);
-
-            // For each module metadata seed file provided, read contents, parse & convert to a variable. 
-            // this.logger.log(`[Start] module seed data: ${fullPath}`);
-
-            // const overallMetadata: any = JSON.parse(fs.readFileSync(fullPath, 'utf-8').toString());
+            const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
+            this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
 
             // Process module metadata first. 
-            const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
-            this.logger.log(`[Start] Processing module metadata for ${moduleMetadata.name}`)
+            this.logger.log(`Seeding Module / Model / Fields`);
             await this.seedModuleModelFields(moduleMetadata);
-            this.logger.log(`[End] Processing module metadata for ${moduleMetadata.name}`)
 
             // Media Storage provider templates
-            this.logger.log(`[Start] Processing Media Storage Provider for ${moduleMetadata.name}`);
-            const mediaStorageProviders = overallMetadata.mediaStorageProviders;
-            await this.seedMediaStorageProviders(mediaStorageProviders);
-            this.logger.log(`[End] Processing Media Storage Provider for ${moduleMetadata.name}`);
+            this.logger.log(`Seeding Media Storage Providers`);
+            await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
 
             // Custom role handling
-            this.logger.log(`[End] Processing roles for ${moduleMetadata.name}`)
-            const roles = overallMetadata.roles;
-
-            // Every role configuration in the seeder json can optionally have a permissions attribute. 
-            // While creating roles we are only passing the role name to be used. 
-            await this.roleService.createRolesIfNotExists(roles.map(role => { return { name: role.name } }));
-
-            // After roles are created, we iterate over all roles and attach permissions (if specified in the seeder json) to the respective role.
-            for (let roleI = 0; roleI < roles.length; roleI++) {
-                const role = roles[roleI];
-                if (role.permissions) {
-                    await this.roleService.addPermissionsToRole(role.name, role.permissions)
-                }
-            }
-            this.logger.log(`[End] Processing roles for ${moduleMetadata.name}`)
+            this.logger.log(`Seeding Roles`);
+            await this.seedRoles(overallMetadata);
 
             // Custom user handling
-            this.logger.log(`[Start] Processing users for ${moduleMetadata.name}`);
-            const users = overallMetadata.users;
-            usersDetail = users;
-            await this.seedUsers(users);
-            this.logger.log(`[End] Processing users for ${moduleMetadata.name}`)
+            this.logger.log(`Seeding Users`);
+            await this.seedUsers(overallMetadata);
 
             // Application Module View handling 
-            this.logger.log(`[Start] Processing views for ${moduleMetadata.name}`);
-            const views = overallMetadata.views;
-            await this.seedViews(views);
-            this.logger.log(`[End] Processing views for ${moduleMetadata.name}`)
+            this.logger.log(`Seeding Views`);
+            await this.seedViews(overallMetadata);
 
             // Application Module Action handling
-            this.logger.log(`[Start] Processing actions for ${moduleMetadata.name}`);
-            const actions = overallMetadata.actions;
-            await this.seedActions(actions);
-            this.logger.log(`[End] Processing actions for ${moduleMetadata.name}`)
+            this.logger.log(`Seeding Actions`);
+            await this.seedActions(overallMetadata);
 
             // Application Module Menu handling 
-            this.logger.log(`[Start] Processing menus for ${moduleMetadata.name}`);
-            const menus = overallMetadata.menus;
-            await this.seedMenus(menus);
-            this.logger.log(`[End] Processing menus for ${moduleMetadata.name}`)
+            this.logger.log(`Seeding Menus`);
+            await this.seedMenus(overallMetadata);
 
             // Email templates 
-            this.logger.log(`[Start] Processing email templates for ${moduleMetadata.name}`);
-            const emailTemplates: CreateEmailTemplateDto[] = overallMetadata.emailTemplates;
-            await this.seedEmailTemplates(emailTemplates, moduleMetadata);
-            this.logger.log(`[End] Processing email templates for ${moduleMetadata.name}`);
+            this.logger.log(`Seeding Email Templates`);
+            await this.seedEmailTemplates(overallMetadata, moduleMetadata.name);
 
             // Sms templates
-            this.logger.log(`[Start] Processing sms templates for ${moduleMetadata.name}`);
-            const smsTemplates: CreateSmsTemplateDto[] = overallMetadata.smsTemplates;
-            await this.seedSmsTemplates(smsTemplates, moduleMetadata);
-            this.logger.log(`[End] Processing sms templates for ${moduleMetadata.name}`);
+            this.logger.log(`Seeding Sms Templates`);
+            await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
 
             // Settings
-            this.logger.log(`[Start] Processing settings for ${moduleMetadata.name}`);
-            await this.seetingService.seedDefaultSettings();
-            this.logger.log(`[End] Processing settings for ${moduleMetadata.name}`);
+            this.logger.log(`Seeding Default Settings`);
+            await this.seedDefaultSettings();
 
             // Security rules
-            this.logger.log(`[Start] Processing security rules for ${moduleMetadata.name}`);
-            const securityRules: CreateSecurityRuleDto[] = overallMetadata.securityRules;
-            await this.seedSecurityRules(securityRules);
-            this.logger.log(`[End] Processing security rules for ${moduleMetadata.name}`);
+            this.logger.log(`Seeding Security Rules`);
+            await this.seedSecurityRules(overallMetadata);
 
             // List Of Values
-            this.logger.log(`[Start] Processing List Of Values for ${moduleMetadata.name}`);
-            const listOfValues: CreateListOfValuesDto[] = overallMetadata.listOfValues;
-            await this.seedListOfValues(listOfValues);
-            this.logger.log(`[End] Processing List Of Values for ${moduleMetadata.name}`);
+            this.logger.log(`Seeding List Of Values`);
+            await this.seedListOfValues(moduleMetadata, overallMetadata);
 
             // Dashboards
-            this.logger.log(`[Start] Processing dashboards for ${moduleMetadata.name}`);
-            const dashboards: CreateDashboardDto[] = overallMetadata.dashboards;
-            await this.seedDashboards(dashboards);
-            this.logger.log(`[End] Processing dashboards for ${moduleMetadata.name}`);
+            this.logger.log(`Seeding Dashboards`);
+            await this.seedDashboards(moduleMetadata, overallMetadata);
 
             // Scheduled Jobs
-            this.logger.debug(`[Start] Processing scheduled jobs for ${moduleMetadata.name}`);
-            const scheduledJobs: CreateScheduledJobDto[] = overallMetadata.scheduledJobs;
-            if (scheduledJobs?.length > 0) {
-                await this.seedScheduledJobs(scheduledJobs);
-            }
-            this.logger.debug(`[End] Processing scheduled jobs for ${moduleMetadata.name}`);
+            this.logger.log(`Seeding Scheduled Jobs`);
+            await this.seedScheduledJobs(moduleMetadata, overallMetadata);
 
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
         }
 
-        // Post seed data file processing. 
+        // Setup default roles with permissions.
+        await this.setupDefaultRolesWithPermissions();
 
-        // 1. Give all permissions to the Admin role.
-        this.logger.log(`About to add all permissions to the Admin role`);
-        await this.roleService.addAllPermissionsToRole("Admin");
-        // 2. Give  permissions to the Internal / Public role.
-        const internalRolePermission = [
-            // User permissions
-            'UserController.findMany', //Why do we need this?
-            'UserController.checkIfPermissionExists',
-            'UserController.findOne',
-            // Menu permissions
-            'MenuItemMetadataController.findMany',
-            'MenuItemMetadataController.findUserMenus',
-            'MenuItemMetadataController.findOne',
-            // View metadata permissions
-            'ViewMetadataController.getLayout',
-            'ViewMetadataController.findMany',
-            'ViewMetadataController.findOne',
-            // IAM permissions
-            'AuthenticationController.changePassword',
-            // Field Metadata permissions
-            'FieldMetadataController.getSelectionDynamicValues',
-            'FieldMetadataController.getSelectionDynamicValue',
-            'FieldMetadataController.findFieldDefaultMetaData',
-            // Saved Filters permissions
-            'SavedFiltersController.delete',
-            'SavedFiltersController.deleteMany',
-            'SavedFiltersController.findOne',
-            'SavedFiltersController.findMany',
-            'SavedFiltersController.recover',
-            'SavedFiltersController.recoverMany',
-            'SavedFiltersController.partialUpdate',
-            'SavedFiltersController.update',
-            'SavedFiltersController.insertMany',
-            'SavedFiltersController.create',
-            // Logout permissions
-            'AuthenticationController.logout',
-            // Other permissions can be added here as required.
-            // Chatter permissions
-            'ChatterMessageController.create',
-            'ChatterMessageController.getChatterMessages',
-            // 'ChatterMessageController.postMessage', // Does not seem to be used from ui
-            // Import
-            'ImportTransactionController.getImportTemplate',
-            'ImportTransactionController.getImportInstructions',
-            'ImportTransactionController.getImportMappingInfo',
-            'ImportTransactionController.startImportSync',
-            'ImportTransactionController.startImportAsync',
-            'ImportTransactionController.exportFailedImportedImports',
-            // Export permissions
-            'ExportTemplateController.startExportSync',
-            'ExportTemplateController.startExportAsync',
-            // List of values
-            'ListOfValuesController.findMany',
-            'ListOfValuesController.findOne',
-            // Media // [Not required], since media is always populated as part of a model
-        ]
-        await this.roleService.addPermissionToRole('Internal User', internalRolePermission);
-        await this.roleService.addPermissionToRole('Public', ['SettingController.wrapSettings', 'AuthenticationController.logout']);
         this.logger.log(`All Seeders finished`);
-        this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
+
+        //FIXME: Handle displaying the created users credentials in a better way.
+        // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
+    }
+
+    private async seedScheduledJobs(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any) {
+        this.logger.debug(`[Start] Processing scheduled jobs for ${moduleMetadata.name}`);
+        const scheduledJobs: CreateScheduledJobDto[] = overallMetadata.scheduledJobs;
+        if (scheduledJobs?.length > 0) {
+            await this.handleSeedScheduledJobs(scheduledJobs);
+        }
+        this.logger.debug(`[End] Processing scheduled jobs for ${moduleMetadata.name}`);
+    }
+
+    private async seedDashboards(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any) {
+        this.logger.debug(`[Start] Processing dashboards for ${moduleMetadata.name}`);
+        const dashboards: CreateDashboardDto[] = overallMetadata.dashboards;
+        await this.handleSeedDashboards(dashboards);
+        this.logger.debug(`[End] Processing dashboards for ${moduleMetadata.name}`);
+    }
+
+    private async seedListOfValues(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any) {
+        this.logger.debug(`[Start] Processing List Of Values for ${moduleMetadata.name}`);
+        const listOfValues: CreateListOfValuesDto[] = overallMetadata.listOfValues;
+        await this.handleSeedListOfValues(listOfValues);
+        this.logger.debug(`[End] Processing List Of Values for ${moduleMetadata.name}`);
+    }
+
+    private async setupDefaultRolesWithPermissions() {
+        this.logger.debug(`About to add all permissions to the Admin role`);
+        await this.roleService.addAllPermissionsToRole(ADMIN_ROLE_NAME);
+        // 2. Give  permissions to the Internal / Public role.
+        this.logger.debug(`About to add all permissions to the Internal role`);
+        await this.roleService.addPermissionToRole(INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS);
+        this.logger.debug(`About to add all permissions to the Public role`);
+        await this.roleService.addPermissionToRole(PUBLIC_ROLE_NAME, ['SettingController.wrapSettings', 'AuthenticationController.logout']);
+    }
+
+    private async seedSecurityRules(overallMetadata: any) {
+        this.logger.debug(`[Start] Processing security rules`);
+        const securityRules: CreateSecurityRuleDto[] = overallMetadata.securityRules;
+        await this.handleSeedSecurityRules(securityRules);
+        this.logger.debug(`[End] Processing security rules`);
+    }
+
+    // Ok
+    private async seedDefaultSettings() {
+        this.logger.debug(`[Start] Processing settings`);
+        await this.settingService.seedDefaultSettings();
+        this.logger.debug(`[End] Processing settings`);
+    }
+
+    private async seedSmsTemplates(overallMetadata: any, moduleName: string) {
+        this.logger.debug(`[Start] Processing sms templates`);
+        const smsTemplates: CreateSmsTemplateDto[] = overallMetadata.smsTemplates;
+        await this.handleSeedSmsTemplates(smsTemplates, moduleName);
+        this.logger.debug(`[End] Processing sms templates`);
+    }
+
+    // OK
+    private async seedEmailTemplates(overallMetadata: any, moduleName: string) {
+        this.logger.debug(`[Start] Processing email templates`);
+        const emailTemplates: CreateEmailTemplateDto[] = overallMetadata.emailTemplates;
+        await this.handleSeedEmailTemplates(emailTemplates, moduleName);
+        this.logger.debug(`[End] Processing email templates`);
+    }
+
+    // Ok
+    private async seedMenus(overallMetadata: any) {
+        this.logger.debug(`[Start] Processing menus`);
+        const menus = overallMetadata.menus;
+        await this.handleSeedMenus(menus);
+        this.logger.debug(`[End] Processing menus`);
+    }
+
+    // Ok
+    private async seedActions(overallMetadata: any) {
+        this.logger.debug(`[Start] Processing actions`);
+        const actions = overallMetadata.actions;
+        await this.handleSeedActions(actions);
+        this.logger.debug(`[End] Processing actions`);
+    }
+
+    // Ok
+    private async seedViews(overallMetadata: any) {
+        this.logger.debug(`[Start] Processing views`);
+        const views = overallMetadata.views;
+        await this.handleSeedViews(views);
+        this.logger.debug(`[End] Processing views`);
+    }
+
+    // Ok
+    private async seedUsers(overallMetadata: any) {
+        this.logger.debug(`[Start] Processing users`);
+        const users = overallMetadata.users;
+        // usersDetail = users;
+        await this.handleSeedUsers(users);
+        this.logger.debug(`[End] Processing users`);
+    }
+
+    // OK
+    private async seedRoles(overallMetadata: any) {
+        this.logger.debug(`[Start] Processing roles`);
+        // While creating roles we are only passing the role name to be used. 
+        await this.roleService.createRolesIfNotExists(overallMetadata.roles.map(role => { return { name: role.name }; }));
+        // After roles are created, we iterate over all roles and attach permissions (if specified in the seeder json) to the respective role.
+        // Every role configuration in the seeder json can optionally have a permissions attribute. 
+        for (const role of overallMetadata.roles) {
+            if (role.permissions) {
+                await this.roleService.addPermissionsToRole(role.name, role.permissions);
+            }
+        }
+        this.logger.debug(`[End] Processing roles`);
+    }
+
+    // OK
+    private get seedDataFiles(): any[] {
+        const typedSolidCoreMetadata = structuredClone(solidCoreMetadata);
+        const seedDataFiles = [typedSolidCoreMetadata];
+        const enabledModules = getDynamicModuleNames();
+        for (const enabledModule of enabledModules) {
+            const enabledModuleSeedFile = `module-metadata/${enabledModule}/${enabledModule}-metadata.json`;
+            const fullPath = path.join(process.cwd(), enabledModuleSeedFile);
+
+            if (fs.existsSync(fullPath)) {
+                const overallMetadata = JSON.parse(fs.readFileSync(fullPath, 'utf-8'));
+                seedDataFiles.push(overallMetadata);
+            }
+        }
+
+        return seedDataFiles;
+    }
+
+    // OK
+    private async seedGlobalMetadata() {
+        this.logger.log(`Seeding Permissions`);
+        await this.seedPermissions();
+
+        this.logger.log(`Seeding Default Media Storage Providers`);
+        await this.seedDefaultMediaStorageProviders();
+
+        this.logger.log(`Seeding System Fields Metadata`);
+        await this.seedDefaultSystemFields();
+    }
+
+    private async seedDefaultSystemFields() {
+        await this.systemFieldsSeederService.seed();
     }
 
 
-    async seedPermissions() {
+    // OK
+    private async seedPermissions() {
 
         const controllers = this.solidRegistry.getControllers();
 
@@ -309,7 +321,7 @@ export class ModuleMetadataSeederService {
         for (let id = 0; id < controllers.length; id++) {
             try {
                 const controller = controllers[id];
-                this.logger.log(`Resolving controller: ${controller.name}`);
+                // this.logger.log(`Resolving controller: ${controller.name}`);
 
                 const methods = controller.methods;
                 for (let mId = 0; mId < methods.length; mId++) {
@@ -323,16 +335,20 @@ export class ModuleMetadataSeederService {
                         }
                     });
 
-                    if (existingPermission) {
-                        this.logger.log(`Permission ${permissionName} already exists.`);
-                    }
-                    else {
+                    // if (existingPermission) {
+                    //     this.logger.log(`Permission ${permissionName} already exists.`);
+                    // }
+                    // else { }
+
+                    if (!existingPermission) {
+
                         this.logger.log(`Permission ${permissionName} does not exist, creating new.`);
 
                         const newPermission = this.permissionRepo.create({
                             name: permissionName
                         });
                         await this.permissionRepo.save(newPermission);
+
 
                     }
                 }
@@ -343,37 +359,47 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedMediaStorageProviders(mediaStorageProviders: any) {
-        for (let i = 0; i < mediaStorageProviders.length; i++) {
-            const mediaStorageProivder = mediaStorageProviders[i];
-            await this.mediaStorageProviderMetadataService.upsert(mediaStorageProivder);
-        }
+    // OK
+    private async seedDefaultMediaStorageProviders() {
+        await this.mediaStorageProviderSeederService.seed();
     }
 
-    async seedEmailTemplates(emailTemplates: CreateEmailTemplateDto[], moduleMetadata: CreateModuleMetadataDto) {
+    // OK
+    private async seedMediaStorageProviders(mediaStorageProviders: any[]) {
+        this.logger.debug(`[Start] Processing Media Storage Provider`);
+
+        for (let i = 0; i < mediaStorageProviders.length; i++) {
+            const mediaStorageProvider = mediaStorageProviders[i];
+            await this.mediaStorageProviderMetadataService.upsert(mediaStorageProvider);
+        }
+        this.logger.debug(`[End] Processing Media Storage Provider`);
+    }
+
+    // OK
+    private async handleSeedEmailTemplates(emailTemplates: CreateEmailTemplateDto[], moduleName: string) {
         if (!emailTemplates) {
             return;
         }
 
         for (let i = 0; i < emailTemplates.length; i++) {
             const emailTemplate = emailTemplates[i];
-            this.logger.log(`Found ${emailTemplate.name} email template`);
+            // this.logger.log(`Found ${emailTemplate.name} email template`);
 
             // We need to load the actual template contents. 
-            if (moduleMetadata.name === 'solid-core') {
+            if (moduleName === 'solid-core') {
                 const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
                 const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/email-templates');
                 const filePath = path.join(seedDataPath, emailTemplate.body);
-                this.logger.log(`Seeding email template from solid-core at path: ${filePath}`);
+                // this.logger.log(`Seeding email template from solid-core at path: ${filePath}`);
                 if (fs.existsSync(filePath)) {
                     emailTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
                 }
             }
             else {
                 // Check if file exists
-                const emailTemplateHandlebar = `module-metadata/${moduleMetadata.name}/email-templates/${emailTemplate.body}`
+                const emailTemplateHandlebar = `module-metadata/${moduleName}/email-templates/${emailTemplate.body}`
                 const fullPath = path.join(process.cwd(), emailTemplateHandlebar);
-                this.logger.log(`Seeding custom email template from consuming model at path: ${fullPath}`);
+                // this.logger.log(`Seeding custom email template from consuming model at path: ${fullPath}`);
                 if (fs.existsSync(fullPath)) {
                     emailTemplate.body = fs.readFileSync(fullPath, 'utf-8').toString();
                 }
@@ -386,30 +412,31 @@ export class ModuleMetadataSeederService {
 
     }
 
-    async seedSmsTemplates(smsTemplates: CreateSmsTemplateDto[], moduleMetadata: CreateModuleMetadataDto) {
+    // Ok
+    private async handleSeedSmsTemplates(smsTemplates: CreateSmsTemplateDto[], moduleName: string) {
         if (!smsTemplates) {
             return;
         }
 
         for (let i = 0; i < smsTemplates.length; i++) {
             const smsTemplate = smsTemplates[i];
-            this.logger.log(`Found ${smsTemplate.name} sms template`);
+            // this.logger.log(`Found ${smsTemplate.name} sms template`);
 
             // We need to load the actual template contents. 
-            if (moduleMetadata.name === 'solid-core') {
+            if (moduleName === 'solid-core') {
                 const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
                 const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/sms-templates');
                 const filePath = path.join(seedDataPath, smsTemplate.body);
-                this.logger.log(`Seeding sms template from solid-core at path: ${filePath}`);
+                // this.logger.log(`Seeding sms template from solid-core at path: ${filePath}`);
                 if (fs.existsSync(filePath)) {
                     smsTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
                 }
             }
             else {
                 // Check if file exists
-                const emailTemplateHandlebar = `module-metadata/${moduleMetadata.name}/sms-templates/${smsTemplate.body}`
+                const emailTemplateHandlebar = `module-metadata/${moduleName}/sms-templates/${smsTemplate.body}`
                 const fullPath = path.join(process.cwd(), emailTemplateHandlebar);
-                this.logger.log(`Seeding custom sms template from consuming model at path: ${fullPath}`);
+                // this.logger.log(`Seeding custom sms template from consuming model at path: ${fullPath}`);
                 if (fs.existsSync(fullPath)) {
                     smsTemplate.body = fs.readFileSync(fullPath, 'utf-8').toString();
                 }
@@ -422,45 +449,99 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedMenus(menus: any) {
+    // Not OK
+    private async handleSeedMenus(menus: any) {
         if (!menus) {
             return;
         }
 
-        for (let j = 0; j < menus.length; j++) {
-            const menuData = menus[j];
+        await this.dataSource.transaction(async (trx) => {
+            const menuRepo = trx.getRepository(MenuItemMetadata);
+            const roleRepo = trx.getRepository(RoleMetadata);
+            const actionRepo = trx.getRepository(ActionMetadata);
+            const moduleRepo = trx.getRepository(ModuleMetadata);
 
-            const adminRole = await this.roleService.findRoleByName('Admin');
+            // 1) Upsert menus WITHOUT roles
+            for (const m of menus) {
+                const entity = menuRepo.create({
+                    name: m.name,
+                    displayName: m.displayName,
+                    action: m.actionUserKey
+                        ? await actionRepo.findOne({ where: { name: m.actionUserKey }, select: ["id"] })
+                        : null,
+                    module: m.moduleUserKey
+                        ? await moduleRepo.findOne({ where: { name: m.moduleUserKey }, select: ["id"] })
+                        : null,
+                    parentMenuItem: m.parentMenuItemUserKey
+                        ? await menuRepo.findOne({ where: { name: m.parentMenuItemUserKey }, select: ["id"] })
+                        : null,
+                });
+                await menuRepo.upsert(entity, ["name"]); // or ["userKey"]
+            }
 
-            const specifiedRoles = menuData['roles'];
+            // 2) Fetch ids for batching
+            const seeded = await menuRepo.find({
+                where: { name: In(menus.map((m: any) => m.name)) },
+                select: ["id", "name"],
+            });
+            const idByName = new Map(seeded.map(s => [s.name, s.id]));
 
-            // If the developer has specified roles, then resolve them, making sure that admin role is also given.
-            const specifiedRoleObjects = [adminRole];
-            if (specifiedRoles) {
-                for (let i = 0; i < specifiedRoles.length; i++) {
-                    const specifiedRole = specifiedRoles[i];
-                    const specifiedRoleObject = await this.roleService.findRoleByName(specifiedRole);
-                    if (!specifiedRoleObject) {
-                        throw new Error(`Invalid role: (${specifiedRole}) specified against menu with display name ${menuData.displayName}.`);
-                    }
-                    specifiedRoleObjects.push(specifiedRoleObject);
+            // 3) Build desired join rows once
+            const admin = await roleRepo.findOne({ where: { name: ADMIN_ROLE_NAME }, select: ["id", "name"] });
+            const allRoleNames = new Set<string>();
+            for (const m of menus) (m.roles ?? []).forEach((r: string) => allRoleNames.add(r));
+            if (admin) allRoleNames.add(admin.name);
+
+            const roles = await roleRepo.find({
+                where: { name: In([...allRoleNames]) },
+                select: ["id", "name"],
+            });
+            const roleByName = new Map(roles.map(r => [r.name, r]));
+
+            const joinRows: Array<{ menuId: number; roleId: number }> = [];
+            for (const m of menus) {
+                const menuId = idByName.get(m.name)!;
+                const roleNames = new Set<string>([...(m.roles ?? []), admin?.name].filter(Boolean) as string[]);
+                for (const rn of roleNames) {
+                    const role = roleByName.get(rn);
+                    if (role) joinRows.push({ menuId, roleId: role.id });
                 }
             }
 
-            menuData['roles'] = specifiedRoleObjects;
-            menuData['action'] = await this.solidActionService.findOneByUserKey(menuData.actionUserKey);
-            menuData['module'] = await this.moduleMetadataService.findOneByUserKey(menuData.moduleUserKey);
+            // 4) Replace in bulk — QueryBuilder version
 
-            if (menuData.parentMenuItemUserKey) {
-                menuData['parentMenuItem'] = await this.solidMenuItemService.findOneByUserKey(menuData.parentMenuItemUserKey);
-            } else {
-                menuData['parentMenuItem'] = null
+            // 4a) delete existing for affected menus
+            const menuIds = [...new Set(joinRows.map(r => r.menuId))];
+            if (menuIds.length) {
+                await trx
+                    .createQueryBuilder()
+                    .delete()
+                    .from(MENU_ROLE_JOIN_TABLE_NAME) // string table name is fine
+                    .where(`${MENU_ROLE_JOIN_TABLE_NAME_MENU_COL} IN (:...ids)`, { ids: menuIds })
+                    .execute();
             }
-            await this.solidMenuItemService.upsert(menuData);
-        }
+
+            // 4b) bulk insert all pairs
+            if (joinRows.length) {
+                // Build objects with the exact column names used by the join table
+                const values = joinRows.map(r => ({
+                    [MENU_ROLE_JOIN_TABLE_NAME_MENU_COL]: r.menuId,
+                    [MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL]: r.roleId,
+                }));
+
+                await trx
+                    .createQueryBuilder()
+                    .insert()
+                    .into(MENU_ROLE_JOIN_TABLE_NAME) // string table name
+                    .values(values)
+                    .orIgnore() // optional if you have a UNIQUE(menuItemId, roleId) and want to skip dups
+                    .execute();
+            }
+        });
     }
 
-    async seedActions(actions: any) {
+    // Ok
+    private async handleSeedActions(actions: any) {
         if (!actions) {
             return;
         }
@@ -481,7 +562,8 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedViews(views: any) {
+    // Ok
+    private async handleSeedViews(views: any) {
         if (!views) {
             return;
         }
@@ -491,20 +573,17 @@ export class ModuleMetadataSeederService {
 
             // preety format the layout & context. 
             viewData['layout'] = JSON.stringify(viewData['layout'], null, 2);
-            // viewData['context'] = JSON.stringify(viewData['context'], null, 2);
 
             viewData['module'] = await this.moduleMetadataService.findOneByUserKey(viewData.moduleUserKey);
             viewData['model'] = await this.modelMetadataService.findOneByUserKey(viewData.modelUserKey);
-            // await this.solidViewService.upsert(viewData);
-            // First check if module already exists using name
 
             // Changed the below to upsert as now we are saving modifications to the view json to file system also.
-            // await this.solidViewService.createIfNotPresent(viewData);
             await this.solidViewService.upsert(viewData);
         }
     }
 
-    async seedUsers(users) {
+    // OK
+    private async handleSeedUsers(users) {
         if (!users) {
             return;
         }
@@ -517,6 +596,7 @@ export class ModuleMetadataSeederService {
 
                 this.logger.log(`Newly created user is ${user}`);
             }
+            //FIXME: Create the user roles assignment logic here.
             // now add Roles to user.
             // for (let m = 0; m < roles.length; m++) {
             //     const role = roles[m];
@@ -525,11 +605,11 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedModuleModelFields(moduleMetadata: CreateModuleMetadataDto) {
+    // OK
+    private async seedModuleModelFields(moduleMetadata: CreateModuleMetadataDto) {
+        this.logger.debug(`[Start] Processing module metadata`);
 
         // First we create the module. 
-        // await this.moduleMetadataService.removeByName(moduleMetadata.name);
-        // const module = await this.moduleMetadataService.create(moduleMetadata);
         const module = await this.moduleMetadataService.upsert(moduleMetadata);
 
         // Next create all the models. 
@@ -538,16 +618,7 @@ export class ModuleMetadataSeederService {
             const modelMetadata = modelsMetadata[j];
 
             // Before creating the model, we need to make sure we are linking it to the newly created module.
-            // modelMetdata['moduleId'] = module.id;
             modelMetadata['module'] = module;
-
-            // Please note that all the fields will also get created as we have setup the relation in model.entity.ts as cascade=true
-            // await this.modelMetadataService.removeBySingularName(modelMetdata.singularName);
-            // await this.modelMetadataService.modelSeeder(modelMetdata);
-
-            // upsert the model information.
-            // const fieldsMetadata = modelMetdata.fields;
-            // delete modelMetdata['fields'];
             const { fields: fieldsMetadata, ...modelMetaDataWithoutFields } = modelMetadata;
 
             // Load and set the parent model if it exists.
@@ -565,7 +636,7 @@ export class ModuleMetadataSeederService {
             for (let k = 0; k < fieldsMetadata.length; k++) {
                 const fieldMetadata = fieldsMetadata[k];
 
-                // TODO: resolve model & mediaStorageProvider. 
+                // Link model & mediaStorageProvider. 
                 fieldMetadata['model'] = model;
                 if (fieldMetadata.mediaStorageProviderUserKey) {
                     fieldMetadata['mediaStorageProvider'] = await this.mediaStorageProviderMetadataService.findOneByUserKey(fieldMetadata.mediaStorageProviderUserKey);
@@ -585,16 +656,17 @@ export class ModuleMetadataSeederService {
                 await this.modelMetadataService.upsert(modelMetaDataWithoutFields);
             }
         }
+        this.logger.debug(`[End] Processing module metadata`);
     }
 
-    async seedSettings(createDto: CreateSettingDto) {
+    private async seedSettings(createDto: CreateSettingDto) {
         const settingsArray: any[] = await this.settingsRepo.find();
         if (!settingsArray || settingsArray.length === 0) {
-            this.seetingService.create(createDto);
+            this.settingService.create(createDto);
         }
     }
 
-    async seedSecurityRules(rulesDto: CreateSecurityRuleDto[]) {
+    private async handleSeedSecurityRules(rulesDto: CreateSecurityRuleDto[]) {
         if (!rulesDto || rulesDto.length === 0) {
             this.logger.debug(`No security rules found to seed`);
             return;
@@ -604,7 +676,8 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedListOfValues(listOfValuesDto: CreateListOfValuesDto[]) {
+    // Not Ok
+    private async handleSeedListOfValues(listOfValuesDto: CreateListOfValuesDto[]) {
         if (!listOfValuesDto || listOfValuesDto.length === 0) {
             this.logger.debug(`No List Of Values found to seed`);
             return;
@@ -616,7 +689,7 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedDashboards(dashboardDtos: CreateDashboardDto[]) {
+    private async handleSeedDashboards(dashboardDtos: CreateDashboardDto[]) {
         if (!dashboardDtos || dashboardDtos.length === 0) {
             this.logger.debug(`No dashboards found to seed`);
             return;
@@ -626,7 +699,7 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    async seedScheduledJobs(createScheduledJobDto: CreateScheduledJobDto[]) {
+    private async handleSeedScheduledJobs(createScheduledJobDto: CreateScheduledJobDto[]) {
         if (!createScheduledJobDto || createScheduledJobDto.length === 0) {
             this.logger.debug(`No scheduled jobs found to seed`);
             return;

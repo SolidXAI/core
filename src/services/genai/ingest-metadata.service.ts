@@ -123,6 +123,20 @@ export class IngestMetadataService {
             // Delete and re-insert a document representing the full json...
             // await this.deleteInsertRagDocumentForModuleMetadataJsonFile(ingestionInfo, fullPath, fileName)
 
+            // Delete all metadata chunks. 
+            // const collectionName = `${enabledModule}-rag-collection`;
+            // const deleteResult = await this.ragClient.documents.deleteByFilter({
+            //     filters: {
+            //         // AND semantics across fields:
+            //         "$and": [
+            //             { 'metadata.kind': { $eq: 'solidx-metadata' } },
+            //             { 'metadata.collectionName': { $eq: collectionName } },
+            //             { 'title': { $like: '%Ingested Chunks%' } },
+            //         ]
+            //     },
+            // });
+            // this.logger.log(`Deleted existing documents for collectionName: ${collectionName}. Got response:`, deleteResult);
+
             // Delete and re-insert a chunk representing the module.
             await this.deleteInsertRagChunkForModule(ingestionInfo, moduleMetadata);
 
@@ -160,37 +174,52 @@ export class IngestMetadataService {
     private async resolveRagCollectionForModule(ingestionInfo: ModuleRAGIngestionInfo, moduleName: string): Promise<string> {
         this.logger.debug(`Resolving RAG collection for module: ${moduleName}`);
 
-        let existingCollection: CollectionResponse = null;
-        if (ingestionInfo.collectionId) {
-            // See if collection already exists... 
-            const r = await this.ragClient.collections.list({
-                ids: [
-                    ingestionInfo.collectionId
-                ]
-            });
+        const collectionName = `${moduleName}-rag-collection`;
 
-            if (r) {
-                if (r.results.length === 1) {
-                    existingCollection = r.results[0];
-                }
-                if (r.results.length > 1) {
-                    // TODO: do something that will print a meaningful error on the console...
-                }
+        // delete and recreate 
+        // if (alwaysRecreate === true) {
+        const existingCollection = await this.ragClient.collections.retrieveByName({
+            name: collectionName
+        });
+
+        if (existingCollection) {
+            try {
+                await this.ragClient.collections.delete({ id: existingCollection.results.id });
+            } catch (e) {
+                this.logger.warn(`[Warn] Failed deleteByFilter for collection': ${String(e)}`);
             }
         }
+        // }
 
-        if (!existingCollection) {
-            const r = await this.ragClient.collections.create({
-                name: `${moduleName}-rag-collection`,
-                description: `Collection created to group all documents, chunks related to module: ${moduleName}`
-            });
+        // let existingCollection: CollectionResponse = null;
+        // if (ingestionInfo.collectionId) {
+        //     // See if collection already exists... 
+        //     const r = await this.ragClient.collections.list({
+        //         ids: [
+        //             ingestionInfo.collectionId
+        //         ]
+        //     });
 
-            // TODO: for some reason if we are unable to create a collection then fail with a visible error message in the console...
+        //     if (r) {
+        //         if (r.results.length === 1) {
+        //             existingCollection = r.results[0];
+        //         }
+        //         if (r.results.length > 1) {
+        //             // TODO: do something that will print a meaningful error on the console...
+        //         }
+        //     }
+        // }
 
-            return r.results.id;
-        }
+        // if (!existingCollection) {
+        const r = await this.ragClient.collections.create({
+            name: collectionName,
+            description: `Collection created to group all documents, chunks related to module: ${moduleName}`
+        });
 
-        return existingCollection.id;
+        // TODO: for some reason if we are unable to create a collection then fail with a visible error message in the console...
+        return r.results.id;
+        // }
+        // return existingCollection.id;
     }
 
     private async deleteInsertRagDocumentForModuleMetadataJsonFile(ingestionInfo: ModuleRAGIngestionInfo, fullPath: string, fileName: string): Promise<void> {
@@ -298,12 +327,35 @@ Usage: Use this chunk to choose the correct model/field chunks for code generati
         };
 
         // Delete previous chunk if we have one
-        if (ingestionInfo.moduleChunkId) {
-            try {
-                await this.ragClient.documents.delete({ id: ingestionInfo.moduleChunkId });
-            } catch (e) {
-                this.logger.warn(`[Warn] Failed deleting old module chunk (${ingestionInfo.moduleChunkId}): ${String(e)}`);
-            }
+        // if (ingestionInfo.moduleChunkId) {
+        //     try {
+        //         await this.ragClient.documents.delete({ id: ingestionInfo.moduleChunkId });
+        //     } catch (e) {
+        //         this.logger.warn(`[Warn] Failed deleting old module chunk (${ingestionInfo.moduleChunkId}): ${String(e)}`);
+        //     }
+        // }
+
+        // We changed the approach to delete and re-create using metadata.
+        // delete any existing module records by metadata (idempotent)
+        try {
+            const deleteResult = await this.ragClient.documents.deleteByFilter({
+                filters: {
+                    // AND semantics across fields:
+                    "$and": [
+                        { 'metadata.kind': { $eq: 'solidx-metadata' } },
+                        { 'metadata.type': { $eq: 'module' } },
+                        { 'metadata.moduleName': { $eq: moduleName } },
+                        // (optional but nice to constrain tightly if you always set it)
+                        { 'metadata.collectionName': { $eq: `${moduleName}-rag-collection` } },
+                    ]
+                },
+            });
+
+            this.logger.log(`Deleted existing module document for moduleName: ${moduleName}. Got response:`, deleteResult);
+
+        } catch (e) {
+            this.logger.warn(`[Warn] Failed deleteByFilter for module '${moduleName}': ${String(e)}`);
+            // Non-fatal: we can still proceed to create; caller’s auth will limit scope anyway
         }
 
         const r = await this.ragClient.documents.create({
@@ -407,12 +459,36 @@ ${JSON.stringify(model)}
         };
 
         // 5) Delete previous chunk if present
-        if (modelEntry.modelChunkId) {
-            try {
-                await this.ragClient.documents.delete({ id: modelEntry.modelChunkId });
-            } catch (e) {
-                this.logger.warn(`[Warn] Failed deleting old model chunk (${modelEntry.modelChunkId}): ${String(e)}`);
-            }
+        // if (modelEntry.modelChunkId) {
+        //     try {
+        //         await this.ragClient.documents.delete({ id: modelEntry.modelChunkId });
+        //     } catch (e) {
+        //         this.logger.warn(`[Warn] Failed deleting old model chunk (${modelEntry.modelChunkId}): ${String(e)}`);
+        //     }
+        // }
+
+        // We changed the approach to delete and re-create using metadata.
+        // delete any existing module records by metadata (idempotent)
+        try {
+            const deleteResult = await this.ragClient.documents.deleteByFilter({
+                filters: {
+                    // AND semantics across fields:
+                    "$and": [
+                        { 'metadata.kind': { $eq: 'solidx-metadata' } },
+                        { 'metadata.type': { $eq: 'model' } },
+                        { 'metadata.moduleName': { $eq: moduleName } },
+                        { 'metadata.modelName': { $eq: modelName } },
+                        // (optional but nice to constrain tightly if you always set it)
+                        { 'metadata.collectionName': { $eq: `${moduleName}-rag-collection` } },
+                    ]
+                },
+            });
+
+            this.logger.log(`Deleted existing model document for modelName: ${modelName}. Got response:`, deleteResult);
+
+        } catch (e) {
+            this.logger.warn(`[Warn] Failed deleteByFilter for module '${moduleName}': ${String(e)}`);
+            // Non-fatal: we can still proceed to create; caller’s auth will limit scope anyway
         }
 
         // 6) Create new document (R2R auto-generates the ID)

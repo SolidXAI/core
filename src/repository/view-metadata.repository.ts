@@ -28,4 +28,19 @@ export class ViewMetadataRepository extends Repository<ViewMetadata> {
         });
         return viewMetadata;
     }
+
+    async findByTypeModelNameAndModuleName(type: string, modelUserKey: string, moduleUserKey: string): Promise<ViewMetadata | null> {
+        const viewMetadata = await this.findOne({
+            where: {
+                type: type,
+                model: {
+                    singularName: modelUserKey,
+                    module: {
+                        name: moduleUserKey
+                    }
+                }
+            }
+        });
+        return viewMetadata;
+    }
 }
