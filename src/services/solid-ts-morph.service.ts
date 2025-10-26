@@ -1,0 +1,263 @@
+// src/ai/services/solid-ts-morph.service.ts
+import { Injectable, Logger } from "@nestjs/common";
+import { join, dirname, normalize, isAbsolute, basename } from "node:path";
+import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
+import { Project, Node, ObjectLiteralExpression, ArrayLiteralExpression, QuoteKind, IndentationText } from "ts-morph";
+
+type Bucket = "providers" | "exports";
+
+// interface SolidTsMorphOptions {
+//     /** Absolute path to monorepo root. Defaults to auto-detect or ENV. */
+//     repoRoot?: string;
+//     /** Map of workspace prefixes to absolute directories. Defaults for solid-api / solid-ui. */
+//     workspaceMap?: Record<string, string>;
+// }
+
+@Injectable()
+export class SolidTsMorphService {
+    private readonly logger = new Logger(SolidTsMorphService.name);
+    private project: Project;
+
+    // transaction state
+    private inTxn = false;
+    private stagedWrites = new Map<string, { content: string; overwrite: boolean }>(); // absPath -> write
+    private dirtySourceFiles = new Set<string>(); // absPath
+
+    // path roots
+    private readonly repoRoot: string;
+    private readonly workspaceMap: Record<string, string>;
+
+    // constructor(opts: SolidTsMorphOptions = {}) {
+    constructor() {
+        // this.repoRoot = this.discoverRepoRoot(opts.repoRoot);
+        this.repoRoot = this.discoverRepoRoot();
+        this.workspaceMap = {
+            "solid-api": join(this.repoRoot, "solid-api"),
+            "solid-ui": join(this.repoRoot, "solid-ui"),
+            // ...(opts.workspaceMap ?? {}),
+        };
+
+        this.project = new Project({
+            skipAddingFilesFromTsConfig: true,
+            manipulationSettings: {
+                quoteKind: QuoteKind.Double,
+                indentationText: IndentationText.FourSpaces,
+                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: true,
+            },
+        });
+
+        this.logger.log(`SolidTsMorphService repoRoot = ${this.repoRoot}`);
+        Object.entries(this.workspaceMap).forEach(([k, v]) => this.logger.log(`workspace '${k}' => ${v}`));
+    }
+
+    // ---- repo-root discovery ----
+    private discoverRepoRoot(): string {
+        // if (input && isAbsolute(input)) return normalize(input);
+
+        // ENV override
+        const envRoot = process.env.SOLID_REPO_ROOT;
+        if (envRoot && isAbsolute(envRoot)) return normalize(envRoot);
+
+        // Auto-detect: if current cwd is a workspace (solid-api/solid-ui), then repoRoot = parent(cwd)
+        const cwd = normalize(process.cwd());
+        const base = basename(cwd);
+        if (base === "solid-api" || base === "solid-ui") {
+            return normalize(dirname(cwd));
+        }
+
+        // Otherwise assume cwd itself is the repo root
+        return cwd;
+    }
+
+    /** Resolve a repo-relative path with optional workspace prefix (e.g. 'solid-api/...', 'solid-ui/...'). */
+    private resolveRepoPath(relPath: string): string {
+        if (!relPath) throw new Error("resolveRepoPath: empty path");
+        const p = normalize(relPath);
+
+        if (isAbsolute(p)) return p;
+
+        // Prefix-aware mapping: 'solid-api/...', 'solid-ui/...'
+        for (const [prefix, root] of Object.entries(this.workspaceMap)) {
+            if (p === prefix || p.startsWith(prefix + "/") || p.startsWith(prefix + "\\")) {
+                const suffix = p.slice(prefix.length + (p.length > prefix.length ? 1 : 0));
+                return normalize(join(root, suffix));
+            }
+        }
+
+        // Default: treat as repo-root relative
+        return normalize(join(this.repoRoot, p));
+    }
+
+    private rel(abs: string): string {
+        const root = this.repoRoot.replace(/\\/g, "/");
+        return abs.replace(/\\/g, "/").replace(root + "/", "");
+    }
+
+    // ---- transaction API ----
+    begin(): void {
+        if (this.inTxn) {
+            this.logger.warn("begin(): already in a transaction; reusing current transaction.");
+            return;
+        }
+        this.inTxn = true;
+        this.stagedWrites.clear();
+        this.dirtySourceFiles.clear();
+        this.project = new Project({
+            skipAddingFilesFromTsConfig: true,
+            manipulationSettings: {
+                quoteKind: QuoteKind.Double,
+                indentationText: IndentationText.FourSpaces,
+                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: true,
+            },
+        });
+        this.logger.log("Transaction started.");
+    }
+
+    rollback(): void {
+        if (!this.inTxn) return;
+        this.inTxn = false;
+        this.stagedWrites.clear();
+        this.dirtySourceFiles.clear();
+        this.project = new Project({
+            skipAddingFilesFromTsConfig: true,
+            manipulationSettings: {
+                quoteKind: QuoteKind.Double,
+                indentationText: IndentationText.FourSpaces,
+                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: true,
+            },
+        });
+        this.logger.log("Transaction rolled back.");
+    }
+
+    async commit(): Promise<{ wrote: number }> {
+        if (!this.inTxn) {
+            this.logger.log("commit(): not in a transaction; nothing to commit.");
+            return { wrote: 0 };
+        }
+
+        let writes = 0;
+
+        // 1) write staged new/overwritten files
+        for (const [abs, { content, overwrite }] of this.stagedWrites.entries()) {
+            const dir = dirname(abs);
+            if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+            if (existsSync(abs) && !overwrite) {
+                this.logger.log(`createNewFile (staged): skipped (exists) ${this.rel(abs)}`);
+            } else {
+                writeFileSync(abs, content, "utf8");
+                writes++;
+                this.logger.log(`${existsSync(abs) && overwrite ? "Overwrote" : "Created"} file: ${this.rel(abs)}`);
+            }
+        }
+
+        // 2) save all mutated module files once
+        for (const abs of this.dirtySourceFiles.values()) {
+            const sf = this.project.getSourceFile(abs);
+            if (!sf) continue;
+            sf.fixMissingImports();
+            sf.organizeImports();
+            await sf.save();
+            writes++;
+            this.logger.log(`Updated module: ${this.rel(abs)}`);
+        }
+
+        // end txn
+        this.inTxn = false;
+        this.stagedWrites.clear();
+        this.dirtySourceFiles.clear();
+        this.project = new Project({
+            skipAddingFilesFromTsConfig: true,
+            manipulationSettings: {
+                quoteKind: QuoteKind.Double,
+                indentationText: IndentationText.FourSpaces,
+                insertSpaceAfterOpeningAndBeforeClosingNonemptyBraces: true,
+            },
+        });
+
+        return { wrote: writes };
+    }
+
+    // ---- operations ----
+    createNewFile(path: string, content: string, overwrite = false): { createdOrStaged: boolean; skipped: boolean } {
+        const abs = this.resolveRepoPath(path);
+        const dir = dirname(abs);
+
+        if (this.inTxn) {
+            if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+            this.stagedWrites.set(abs, { content, overwrite });
+            this.logger.log(`Staged createNewFile: ${this.rel(abs)} (overwrite=${overwrite})`);
+            return { createdOrStaged: true, skipped: false };
+        }
+
+        if (!existsSync(dir)) mkdirSync(dir, { recursive: true });
+        if (existsSync(abs) && !overwrite) {
+            this.logger.log(`createNewFile: skipped (exists): ${path}`);
+            return { createdOrStaged: false, skipped: true };
+        }
+        writeFileSync(abs, content, "utf8");
+        this.logger.log(`${existsSync(abs) && overwrite ? "Overwrote" : "Created"} file: ${path}`);
+        return { createdOrStaged: true, skipped: false };
+    }
+
+    registerNestProvider(
+        modulePath: string,
+        providerClassName: string,
+        importFrom: string,
+        registerIn: Array<Bucket>,
+        uniqueGuard = true
+    ): { staged: boolean } {
+        const abs = this.resolveRepoPath(modulePath);
+        if (!existsSync(abs)) throw new Error(`registerNestProvider: module file not found at ${modulePath}`);
+
+        const existing = this.project.getSourceFile(abs);
+        const sourceFile = existing
+            ? existing
+            : this.project.createSourceFile(abs, readFileSync(abs, "utf8"), { overwrite: true });
+
+        // ensure import
+        const imp = sourceFile.getImportDeclarations().find(d => d.getModuleSpecifierValue() === importFrom);
+        if (imp) {
+            const has = imp.getNamedImports().some(ni => ni.getName() === providerClassName);
+            if (!has) imp.addNamedImport(providerClassName);
+        } else {
+            sourceFile.addImportDeclaration({ moduleSpecifier: importFrom, namedImports: [providerClassName] });
+        }
+
+        // mutate @Module metadata
+        const nestModuleClass = sourceFile.getClasses().find(cls =>
+            cls.getDecorators().some(dec => dec.getName() === "Module")
+        );
+        if (!nestModuleClass) throw new Error(`registerNestProvider: No @Module() class found in ${modulePath}`);
+
+        const moduleDec = nestModuleClass.getDecorators().find(dec => dec.getName() === "Module");
+        const callExpr = moduleDec!.getCallExpression();
+        const arg0 = callExpr?.getArguments()[0];
+        if (!arg0 || !Node.isObjectLiteralExpression(arg0)) {
+            throw new Error(`registerNestProvider: Malformed @Module() in ${modulePath}`);
+        }
+        const meta = arg0 as ObjectLiteralExpression;
+
+        const ensureInArray = (propName: Bucket) => {
+            let prop = meta.getProperty(propName);
+            if (!prop) {
+                meta.addPropertyAssignment({ name: propName, initializer: "[]" });
+                prop = meta.getProperty(propName);
+            }
+            let arr: ArrayLiteralExpression | undefined;
+            if (Node.isPropertyAssignment(prop)) {
+                const init = prop.getInitializer();
+                if (init && Node.isArrayLiteralExpression(init)) arr = init;
+            }
+            if (!arr) throw new Error(`registerNestProvider: Property ${propName} is not an array in ${modulePath}`);
+
+            const exists = arr.getElements().some(el => el.getText().replace(/\s/g, "") === providerClassName);
+            if (!exists || !uniqueGuard) arr.addElement(providerClassName);
+        };
+
+        for (const bucket of registerIn) ensureInArray(bucket);
+
+        this.dirtySourceFiles.add(abs); // defer save to commit()
+        this.logger.log(`Staged provider registration in: ${this.rel(abs)} (${registerIn.join(", ")})`);
+        return { staged: true };
+    }
+}

@@ -8,6 +8,10 @@ import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.serv
 import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
 import { AiInteractionService } from 'src/services/ai-interaction.service';
 import { PollerService } from 'src/services/poller.service';
+import { ModuleMetadata } from 'src/entities/module-metadata.entity';
+import { ModelMetadata } from 'src/entities/model-metadata.entity';
+import { ModuleMetadataService } from 'src/services/module-metadata.service';
+import { ModelMetadataService } from 'src';
 
 @Injectable()
 export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<TriggerMcpClientOptions> {
@@ -18,6 +22,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         readonly mqMessageQueueService: MqMessageQueueService,
         readonly poller: PollerService,
         readonly aiInteractionService: AiInteractionService,
+        readonly moduleMetadataService: ModuleMetadataService,
+        readonly modelMetadataService: ModelMetadataService,
     ) {
         super(mqMessageService, mqMessageQueueService, poller);
     }
@@ -95,6 +101,43 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             status: 'pending' // Updated after we receive the response
         });
 
+        const { records: existingModules } = await this.moduleMetadataService.findMany({
+            filters: {
+                name: { $ne: 'solid-core' }
+            },
+            fields: ['id', 'name', 'displayName', 'description'],
+            limit: 1000
+        });
+        const { records: existingModels } = await this.modelMetadataService.findMany({
+            filters: {
+                module: {
+                    name: {
+                        $ne: 'solid-core',
+                    }
+                }
+            },
+            limit: 1000,
+            populate: ['module']
+        });
+
+        // Build markdown sections using template interpolation
+        const modulesSection = (existingModules ?? [])
+            .map(m => [
+                `### ${m.displayName}`,
+                `- name: ${m.name}`,
+                `- description: ${m.description ?? ""}`,
+            ].join('\n'))
+            .join('\n\n');
+
+        const modelsSection = (existingModels ?? [])
+            .map(m => [
+                `### ${m.displayName}`,
+                `- singularName: ${m.singularName}`,
+                `- description: ${m.description ?? ""}`,
+                `- moduleName: ${m.module.name}`,
+            ].join('\n'))
+            .join('\n\n');
+
         const finalPrompt = `
 # User Prompt: 
 ${prompt}
@@ -111,22 +154,14 @@ ${prompt}
 ## LIST OF EXISTING MODULES
 Use the below list of models with module names to infer which module & models the user is referring to, you can try to pull out the singularName incase of models.
 
-{% for module in existing_modules %}
-### {{ module['display_name'] }}
-- name: {{ module['name'] }}
-- description: {{ module['description'] }}
-{% endfor %}
+${modulesSection}
 
 ## LIST OF EXISTING MODELS
 Use the below list of modules to infer which module the user is referring to.
 
-{% for model in existing_models %}
-### {{ model['display_name'] }}
-- singularName: {{ model['singular_name'] }}
-- description: {{ model['description'] }}
-- moduleName: {{ model['module_name'] }}
-{% endfor %}
-`
+${modelsSection}
+
+`.trim();
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);
         this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);

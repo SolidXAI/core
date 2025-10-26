@@ -1172,7 +1172,6 @@ export class ModelMetadataService {
     return `${refreshOuput}`;
   }
 
-
   private async executeRefreshModelCommand(model: ModelMetadata, dryRun: boolean = false): Promise<string> {
     const fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
     const output = await this.schematicService.executeSchematicCommand(
@@ -1264,5 +1263,3 @@ export class ModelMetadataService {
   }
 
 }
-
-

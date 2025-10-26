@@ -119,6 +119,7 @@ export class ModuleMetadataService {
       throw error;
     }
   }
+
   async createInDB(manager: EntityManager, createDto: CreateModuleMetadataDto, files: Express.Multer.File[] = []) {
     if (files.length > 0) {
       const fileStoragePath = this.getFileSysytemFullFilePath(this.getFileName(files[0]));
@@ -407,8 +408,6 @@ export class ModuleMetadataService {
   private getFileSysytemFullFilePath(fileName: string): string {
     return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
   }
-
-
 
   private getFileName(file: Express.Multer.File): string {
     return `${file.filename}-${file.originalname}`;
