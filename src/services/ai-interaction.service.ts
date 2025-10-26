@@ -14,11 +14,9 @@ import { AiInteraction } from '../entities/ai-interaction.entity';
 import * as fs from 'fs/promises';
 import { McpResponse, TriggerMcpClientOptions } from 'src/interfaces';
 import { PublisherFactory } from './queues/publisher-factory.service';
-import { RequestContextService } from './request-context.service';
-import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
-import { McpToolResponseHandlerFactory } from './mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { InvokeAiPromptDto } from 'src/dtos/invoke-ai-prompt.dto';
+import { McpHandlerFactory } from './genai/mcp-handlers/mcp-handler-factory.service';
 
 @Injectable()
 export class AiInteractionService extends CRUDService<AiInteraction> {
@@ -38,7 +36,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     readonly moduleRef: ModuleRef,
     readonly publisherFactory: PublisherFactory<TriggerMcpClientOptions>,
     // readonly requestContextService: RequestContextService,
-    readonly mcpToolResponseHandlerFactory: McpToolResponseHandlerFactory,
+    readonly mcpHandlerFactory: McpHandlerFactory,
 
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'aiInteraction', 'solid-core', moduleRef);
@@ -230,7 +228,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
 
     // TODO: use the toolInvoked to identify a service using some convention.
     // TODO: Eg. if toolInvoked is solid_create_module <> SolidCreateModuleMcpToolHandler ... create a factory class to do this mapping and identify the relevant provider. 
-    const mcpToolHandler = this.mcpToolResponseHandlerFactory.getInstance(toolInvoked);
+    const mcpToolHandler = this.mcpHandlerFactory.getInstance(toolInvoked);
     if (!mcpToolHandler) {
       // TODO: RESPONSE SHAPE ALERT Check if we want to control the shape of the response....
       throw new Error(ERROR_MESSAGES.UNABLE_TO_RESOLVE_MCP_HANDLER);
