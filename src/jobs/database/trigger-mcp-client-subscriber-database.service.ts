@@ -101,7 +101,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             status: 'pending' // Updated after we receive the response
         });
 
-        const existingSelectionProviders = this.solidRegistry.getComputedFieldProviders();
+        const existingComputationProviders = this.solidRegistry.getComputedFieldProviders();
 
         const { records: existingModules } = await this.moduleMetadataService.findMany({
             filters: {
@@ -140,16 +140,13 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             ].join('\n'))
             .join('\n\n');
 
-
-        const selectionProvidersSection = (existingSelectionProviders ?? [])
+        const computationProvidersSection = (existingComputationProviders ?? [])
             .map(m => [
                 `### ${m.instance.name()}`,
                 `- name: ${m.instance.name()}`,
                 `- description: ${m.instance.help() ?? ""}`,
             ].join('\n'))
             .join('\n\n');
-
-
 
         const finalPrompt = `
 # User Prompt: 
@@ -162,7 +159,7 @@ ${prompt}
 - Do not wrap the result in quotes, JSON, or markdown fences.
 - Do not explain what the result means.
 
-# LISTS TO RESOLVE MODULE & MODEL
+# LISTS FOR REFERENCE AND VALIDATIONS
 
 ## LIST OF EXISTING MODULES
 Use the below list of models with module names to infer which module & models the user is referring to, you can try to pull out the singularName incase of models.
@@ -174,10 +171,10 @@ Use the below list of modules to infer which module the user is referring to.
 
 ${modelsSection}
 
-## LIST OF EXISTING COMPUTED FIELD SELECTION PROVIDERS
-Use the below list of computed field selection providers to infer which provider the user is referring to.
+## LIST OF EXISTING COMPUTED FIELD PROVIDERS
+Use the below list of computed field providers to infer which provider the user is referring to.
 
-${selectionProvidersSection}
+${computationProvidersSection}
 `.trim();
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);

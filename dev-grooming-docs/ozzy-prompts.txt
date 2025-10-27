@@ -11,3 +11,28 @@ This model needs to have the following fields.
 After I add this model I want to start storing student address. 
 
 To do this if you can also give me instructions on how to add a relation field to the student model, you can call this field studentAddress.
+
+
+
+
+
+
+Can you now create a new computed field provider. 
+- You can call this provider: StateTotalCitiesComputedFieldProvider
+- This will be a post computation provider and will depend on the city model being inserted, deleted, updated. 
+- The implementation simply needs to take a count of cities that belong to the same state as the city being mutated and update the state totalCities field.
+
+
+Can you now create a new computed field provider. 
+- You can call this provider: StateTotalPopulationComputedFieldProvider
+- This will be a post computation provider and will depend on the city model being inserted, deleted, updated. 
+- The implementation simply needs to take a sum of population of each city that belong to the same state as the city being mutated and update the state totalPopulation field.
+
+
+Can you now create a new computed field provider. 
+- You can call this provider: StateTotalGdpComputedFieldProvider
+- This will be a post computation provider and will depend on the city model being inserted, deleted, updated. 
+- The implementation simply needs to take a sum of gdp of each city that belong to the same state as the city being mutated and update the state totalGdp field.
+- I will add the totalGdp field to the state model after I have the computed provider TS code. 
+
+
