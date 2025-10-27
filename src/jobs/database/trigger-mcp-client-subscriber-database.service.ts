@@ -101,7 +101,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             status: 'pending' // Updated after we receive the response
         });
 
-        const existingSelectionProviders = this.solidRegistry.getSelectionProviders();
+        const existingSelectionProviders = this.solidRegistry.getComputedFieldProviders();
 
         const { records: existingModules } = await this.moduleMetadataService.findMany({
             filters: {
