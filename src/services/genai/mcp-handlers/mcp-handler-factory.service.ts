@@ -2,12 +2,12 @@ import { Injectable, Logger } from '@nestjs/common';
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
 import { IMcpToolResponseHandler } from 'src/interfaces';
-import { SolidIntrospectService } from '../solid-introspect.service';
+import { SolidIntrospectService } from '../../solid-introspect.service';
 
 
 @Injectable()
-export class McpToolResponseHandlerFactory {
-    private readonly logger = new Logger(McpToolResponseHandlerFactory.name);
+export class McpHandlerFactory {
+    private readonly logger = new Logger(McpHandlerFactory.name);
 
     constructor(
         private readonly solidIntrospectionService: SolidIntrospectService
@@ -17,9 +17,9 @@ export class McpToolResponseHandlerFactory {
     getInstance(toolInvoked: string): IMcpToolResponseHandler {
         toolInvoked = classify(toolInvoked);
 
-        let resolvedHandlerName = `${toolInvoked}McpToolResponseHandler`;
+        let resolvedHandlerName = `${toolInvoked}McpHandler`;
 
-        // Register all ISolidDatabaseModules implementations
+        // Get hold of the tool response handler instance using the tool name used. 
         let actualHandler = this.solidIntrospectionService.getProvider(resolvedHandlerName);
         if (!actualHandler) {
             throw new Error(`Unable to locate mcp tool handler with name ${resolvedHandlerName}`);

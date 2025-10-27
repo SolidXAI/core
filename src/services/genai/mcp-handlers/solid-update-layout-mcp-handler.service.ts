@@ -1,10 +1,10 @@
 import { Injectable } from "@nestjs/common";
 import { AiInteraction } from "src/entities/ai-interaction.entity";
 import { ViewMetadataRepository } from "src/repository/view-metadata.repository";
-import { IMcpToolResponseHandler } from "../../interfaces";
+import { IMcpToolResponseHandler } from "../../../interfaces";
 
 @Injectable()
-export class SolidUpdateLayoutMcpToolResponseHandler implements IMcpToolResponseHandler {
+export class SolidUpdateLayoutMcpHandler implements IMcpToolResponseHandler {
 
     constructor(
         private readonly viewMetadataRepository: ViewMetadataRepository,

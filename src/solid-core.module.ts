@@ -247,15 +247,6 @@ import { ImportTransactionErrorLogService } from './services/import-transaction-
 import { ImportTransactionService } from './services/import-transaction.service';
 import { ListOfValuesMetadataService } from './services/list-of-values-metadata.service';
 import { LocaleService } from './services/locale.service';
-import { McpToolResponseHandlerFactory } from './services/mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
-import { SolidAddFieldsToModelMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-add-fields-to-model-mcp-tool-response-handler.service';
-import { SolidCreateDashboardMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-mcp-tool-response-handler.service';
-import { SolidCreateDashboardQuestionMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-question-mcp-tool-response-handler.service';
-import { SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-question-sql-dataset-config-mcp-tool-response-handler.service';
-import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-widget-mcp-tool-response-handler.service';
-import { SolidCreateModelWithFieldsMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-model-with-fields-mcp-tool-response-handler.service';
-import { SolidCreateModuleMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-module-mcp-tool-response-handler.service';
-import { SolidUpdateLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-update-layout-mcp-tool-response-handler.service';
 import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
 import { PollerService } from './services/poller.service';
@@ -292,6 +283,17 @@ import { ListOfValuesMetadataSubscriber } from './subscribers/list-of-values-met
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { McpHandlerFactory } from './services/genai/mcp-handlers/mcp-handler-factory.service';
+import { SolidCreateModuleMcpHandler } from './services/genai/mcp-handlers/solid-create-module-mcp-handler.service';
+import { SolidCreateModelWithFieldsMcpHandler } from './services/genai/mcp-handlers/solid-create-model-with-fields-mcp-handler.service';
+import { SolidAddFieldsToModelMcpHandler } from './services/genai/mcp-handlers/solid-add-fields-to-model-mcp-handler.service';
+import { SolidUpdateLayoutMcpHandler } from './services/genai/mcp-handlers/solid-update-layout-mcp-handler.service';
+import { SolidCreateDashboardMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-mcp-handler.service';
+import { SolidCreateDashboardQuestionMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-mcp-handler.service';
+import { SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-sql-dataset-config-mcp-handler.service';
+import { SolidCreateDashboardWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-widget-mcp-handler.service';
+import { SolidCreateComputedProviderMcpHandler } from './services/genai/mcp-handlers/solid-create-computed-provider-mcp-handler.service';
+import { SolidTsMorphService } from './services/solid-ts-morph.service';
 
 
 @Global()
@@ -493,9 +495,6 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     ErrorMapperService,
     SolidCoreErrorCodesProvider,
 
-    McpToolResponseHandlerFactory,
-    SolidCreateModuleMcpToolResponseHandler,
-
     TriggerMcpClientPublisherDatabase,
     TriggerMcpClientSubscriberDatabase,
     TriggerMcpClientPublisherRabbitmq,
@@ -625,14 +624,21 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     DashboardQuestionSubscriber,
     DashboardQuestionSqlDatasetConfigSubscriber,
     NoopsEntityComputedFieldProviderService,
-    SolidCreateDashboardMcpToolResponseHandler,
-    SolidCreateDashboardQuestionMcpToolResponseHandler,
-    SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler,
-    SolidCreateDashboardWidgetMcpToolResponseHandler,
-    SolidCreateModelWithFieldsMcpToolResponseHandler,
-    SolidAddFieldsToModelMcpToolResponseHandler,
+
+    McpHandlerFactory,
+    SolidCreateModuleMcpHandler,
+    SolidCreateModelWithFieldsMcpHandler,
+    SolidAddFieldsToModelMcpHandler,
+    SolidUpdateLayoutMcpHandler,
+
+    SolidCreateDashboardMcpHandler,
+    SolidCreateDashboardQuestionMcpHandler,
+    SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler,
+    SolidCreateDashboardWidgetMcpHandler,
+    SolidCreateComputedProviderMcpHandler,
+    SolidTsMorphService,
+
     ViewMetadataRepository,
-    SolidUpdateLayoutMcpToolResponseHandler,
     ScheduledJobRepository,
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,

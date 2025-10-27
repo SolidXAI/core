@@ -66,7 +66,7 @@ export interface CodeGenerationOptions {
 
 export interface TriggerMcpClientOptions {
   aiInteractionId: number;
-  moduleName:string;
+  moduleName: string;
 }
 
 export interface McpResponse {
@@ -274,4 +274,31 @@ export interface IErrorCodeProvider {
    * If omitted, the ErrorMapperService will rely on the rule.meta of the first matching rule.
    */
   resolve?(code: ErrorCode): ErrorMeta | undefined;
+}
+
+// MCP Tool Related
+
+export type PlanStep = CreateNewFileStep | RegisterNestProviderStep;
+
+export interface CreateNewFileStep {
+  type: "createNewFile";
+  path: string;         // repo-relative e.g. solid-api/api/src/computed-providers/foo.provider.ts
+  content: string;      // full file content
+  overwrite?: boolean;  // default=false
+  rationale?: string;   // optional, ignored by executor
+}
+
+export interface RegisterNestProviderStep {
+  type: "registerNestProvider";
+  modulePath: string;           // e.g. apps/api/src/address-master/address-master.module.ts
+  providerClassName: string;    // e.g. StateTotalCitiesComputedFieldProvider
+  importFrom: string;           // e.g. "@/computed-providers/state-total-cities.provider"
+  registerIn: Array<"providers" | "exports">; // which arrays to add to
+  uniqueGuard?: boolean;        // default=true
+  rationale?: string;           // optional, ignored by executor
+}
+
+export interface McpComputedProviderResponse {
+  plan: PlanStep[];
+  // provider?: any;  // (intentionally ignored per your note)
 }

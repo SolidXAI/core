@@ -2,12 +2,12 @@ import { Injectable } from "@nestjs/common";
 import { UpdateModelMetaDataDto } from "src/dtos/update-model-metadata.dto";
 import { AiInteraction } from "src/entities/ai-interaction.entity";
 import { FieldMetadata } from "src/entities/field-metadata.entity";
-import { IMcpToolResponseHandler } from "../../interfaces";
-import { ModelMetadataService } from "../model-metadata.service";
+import { IMcpToolResponseHandler } from "../../../interfaces";
+import { ModelMetadataService } from "../../model-metadata.service";
 
 @Injectable()
 // solid_add_field
-export class SolidAddFieldsToModelMcpToolResponseHandler implements IMcpToolResponseHandler {
+export class SolidAddFieldsToModelMcpHandler implements IMcpToolResponseHandler {
 
     constructor(
         private readonly modelMetadataService: ModelMetadataService,

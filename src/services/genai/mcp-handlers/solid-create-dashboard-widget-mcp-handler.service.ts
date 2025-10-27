@@ -2,11 +2,11 @@ import { Injectable } from "@nestjs/common";
 import { plainToInstance } from "class-transformer";
 import { CreateDashboardQuestionDto } from "src/dtos/create-dashboard-question.dto";
 import { AiInteraction } from "src/entities/ai-interaction.entity";
-import { IMcpToolResponseHandler } from "../../interfaces";
-import { DashboardQuestionService } from "../dashboard-question.service";
+import { IMcpToolResponseHandler } from "../../../interfaces";
+import { DashboardQuestionService } from "../../dashboard-question.service";
 
 @Injectable()
-export class SolidCreateDashboardQuestionMcpToolResponseHandler implements IMcpToolResponseHandler {
+export class SolidCreateDashboardWidgetMcpHandler implements IMcpToolResponseHandler {
 
     constructor(
         private readonly dashboardQuestionService: DashboardQuestionService,
@@ -25,6 +25,7 @@ export class SolidCreateDashboardQuestionMcpToolResponseHandler implements IMcpT
         //     throw new Error("Dashboard User Key is required to create a Dashboard Question.");
         // }
         const dashboardQuestionDto = plainToInstance(CreateDashboardQuestionDto, aiResponseMessage);
+        dashboardQuestionDto['questionSqlDatasetConfigsCommand'] = "update";
 
         const dashboardQuestion = await this.dashboardQuestionService.create(dashboardQuestionDto, []);
 

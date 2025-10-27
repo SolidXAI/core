@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-
 import { QueueMessage } from 'src/interfaces/mq';
 import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
@@ -8,9 +7,9 @@ import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.serv
 import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
 import { AiInteractionService } from 'src/services/ai-interaction.service';
 import { PollerService } from 'src/services/poller.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { ModuleMetadataService } from 'src/services/module-metadata.service';
+import { ModelMetadataService } from 'src';
 
 @Injectable()
 export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<TriggerMcpClientOptions> {
@@ -24,7 +23,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         readonly moduleMetadataService: ModuleMetadataService,
         readonly modelMetadataService: ModelMetadataService,
         private readonly solidRegistry: SolidRegistry,
-        
+
     ) {
         super(mqMessageService, mqMessageQueueService, poller);
     }
@@ -102,33 +101,54 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             status: 'pending' // Updated after we receive the response
         });
 
-        const existing_modules = await this.moduleMetadataService.findMany({ limit: 100, offset: 0 });
-        const existing_models = await this.modelMetadataService.findMany({ limit: 100, offset: 0, populate: ['module'] });
         const existingSelectionProviders = this.solidRegistry.getSelectionProviders();
-        const existingselectionProvidersList = existingSelectionProviders
-            .map((i) => `
-### ${i.instance.name()}
-- name: ${i.instance.name()}
-- description: ${i.instance.help() || "No description"}
-`).join("\n");
 
-        // Build the dynamic existing modules list
-        const existingModulesList = existing_modules.records
-            .map(
-                (module) => `
-### ${module.displayName}
-- name: ${module.name}
-- description: ${module.description || "No description"}
-`).join("\n");
+        const { records: existingModules } = await this.moduleMetadataService.findMany({
+            filters: {
+                name: { $ne: 'solid-core' }
+            },
+            fields: ['id', 'name', 'displayName', 'description'],
+            limit: 1000
+        });
+        const { records: existingModels } = await this.modelMetadataService.findMany({
+            filters: {
+                module: {
+                    name: {
+                        $ne: 'solid-core',
+                    }
+                }
+            },
+            limit: 1000,
+            populate: ['module']
+        });
 
-        const existingModelsList = existing_models.records
-            .map(
-                (model) => `
-### ${model.displayName}
-- singularName: ${model.singularName}
-- description: ${model.description || "No description"}
-- moduleName: ${model.module.name || "Unknown"}
-`).join("\n");
+        // Build markdown sections using template interpolation
+        const modulesSection = (existingModules ?? [])
+            .map(m => [
+                `### ${m.displayName}`,
+                `- name: ${m.name}`,
+                `- description: ${m.description ?? ""}`,
+            ].join('\n'))
+            .join('\n\n');
+
+        const modelsSection = (existingModels ?? [])
+            .map(m => [
+                `### ${m.displayName}`,
+                `- singularName: ${m.singularName}`,
+                `- description: ${m.description ?? ""}`,
+                `- moduleName: ${m.module.name}`,
+            ].join('\n'))
+            .join('\n\n');
+
+
+        const selectionProvidersSection = (existingSelectionProviders ?? [])
+            .map(m => [
+                `### ${m.instance.name()}`,
+                `- name: ${m.instance.name()}`,
+                `- description: ${m.instance.help() ?? ""}`,
+            ].join('\n'))
+            .join('\n\n');
+
 
 
         const finalPrompt = `
@@ -147,16 +167,18 @@ ${prompt}
 ## LIST OF EXISTING MODULES
 Use the below list of models with module names to infer which module & models the user is referring to, you can try to pull out the singularName incase of models.
 
-${existingModulesList}
+${modulesSection}
+
 ## LIST OF EXISTING MODELS
 Use the below list of modules to infer which module the user is referring to.
 
-${existingModelsList}
+${modelsSection}
+
 ## LIST OF EXISTING COMPUTED FIELD SELECTION PROVIDERS
 Use the below list of computed field selection providers to infer which provider the user is referring to.
 
-${existingselectionProvidersList}`
-
+${selectionProvidersSection}
+`.trim();
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);
         this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);
