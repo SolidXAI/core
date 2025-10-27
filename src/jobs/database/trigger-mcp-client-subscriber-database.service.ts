@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-
 import { QueueMessage } from 'src/interfaces/mq';
 import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
@@ -8,8 +7,7 @@ import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.serv
 import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
 import { AiInteractionService } from 'src/services/ai-interaction.service';
 import { PollerService } from 'src/services/poller.service';
-import { ModuleMetadata } from 'src/entities/module-metadata.entity';
-import { ModelMetadata } from 'src/entities/model-metadata.entity';
+import { SolidRegistry } from 'src/helpers/solid-registry';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { ModelMetadataService } from 'src';
 
@@ -24,6 +22,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         readonly aiInteractionService: AiInteractionService,
         readonly moduleMetadataService: ModuleMetadataService,
         readonly modelMetadataService: ModelMetadataService,
+        private readonly solidRegistry: SolidRegistry,
+
     ) {
         super(mqMessageService, mqMessageQueueService, poller);
     }
@@ -101,6 +101,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             status: 'pending' // Updated after we receive the response
         });
 
+        const existingSelectionProviders = this.solidRegistry.getComputedFieldProviders();
+
         const { records: existingModules } = await this.moduleMetadataService.findMany({
             filters: {
                 name: { $ne: 'solid-core' }
@@ -138,6 +140,17 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             ].join('\n'))
             .join('\n\n');
 
+
+        const selectionProvidersSection = (existingSelectionProviders ?? [])
+            .map(m => [
+                `### ${m.instance.name()}`,
+                `- name: ${m.instance.name()}`,
+                `- description: ${m.instance.help() ?? ""}`,
+            ].join('\n'))
+            .join('\n\n');
+
+
+
         const finalPrompt = `
 # User Prompt: 
 ${prompt}
@@ -161,6 +174,10 @@ Use the below list of modules to infer which module the user is referring to.
 
 ${modelsSection}
 
+## LIST OF EXISTING COMPUTED FIELD SELECTION PROVIDERS
+Use the below list of computed field selection providers to infer which provider the user is referring to.
+
+${selectionProvidersSection}
 `.trim();
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);
@@ -220,7 +237,9 @@ ${modelsSection}
             // });
 
             // TODO: Update the previously created genAiInteraction record with the respective success fields and save to DB
-            const errorsStr = nestedResponse.status == "error" && nestedResponse.errors.join('\n ');
+            const errorsStr = nestedResponse?.status == "error" && nestedResponse?.errors.join('\n ');
+            // const errorTrace = nestedResponse?.status == "error" && nestedResponse?.error_trace?.join('\n');
+
 
             await this.aiInteractionService.update(genAiInteraction.id, {
                 errorMessage: nestedResponse.status == "error" ? `${errorsStr}` : "",

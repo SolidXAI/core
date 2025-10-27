@@ -12136,6 +12136,7 @@
       "modelUserKey": "aiInteraction",
       "layout": {
         "type": "form",
+        "edit": false,
         "attrs": {
           "name": "form-1",
           "label": "AI Interaction",
