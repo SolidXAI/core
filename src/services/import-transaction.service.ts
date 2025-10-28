@@ -659,10 +659,10 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         return dtoRecord;
       }
      // Use flexible date parser
-     console.log(cellValue,'cellValue');
+     this.logger.verbose(cellValue,'cellValue');
      
   const dateValue = parseFlexibleDate(cellValue);
-  console.log(dateValue,'dateValue');
+  this.logger.verbose(dateValue,'dateValue');
 
   if (!dateValue) {
     throw new Error(
