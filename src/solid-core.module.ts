@@ -288,7 +288,7 @@ import { SolidCreateModuleMcpHandler } from './services/genai/mcp-handlers/solid
 import { SolidCreateModelWithFieldsMcpHandler } from './services/genai/mcp-handlers/solid-create-model-with-fields-mcp-handler.service';
 import { SolidAddFieldsToModelMcpHandler } from './services/genai/mcp-handlers/solid-add-fields-to-model-mcp-handler.service';
 import { SolidUpdateLayoutMcpHandler } from './services/genai/mcp-handlers/solid-update-layout-mcp-handler.service';
-import { SolidCreateDashboardMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-mcp-handler.service';
+import { SolidCreateDashboardWithWidgetsMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-mcp-handler.service';
 import { SolidCreateDashboardQuestionMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-mcp-handler.service';
 import { SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-sql-dataset-config-mcp-handler.service';
 import { SolidCreateDashboardWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-widget-mcp-handler.service';
@@ -631,7 +631,7 @@ import { SolidTsMorphService } from './services/solid-ts-morph.service';
     SolidAddFieldsToModelMcpHandler,
     SolidUpdateLayoutMcpHandler,
 
-    SolidCreateDashboardMcpHandler,
+    SolidCreateDashboardWithWidgetsMcpHandler,
     SolidCreateDashboardQuestionMcpHandler,
     SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler,
     SolidCreateDashboardWidgetMcpHandler,

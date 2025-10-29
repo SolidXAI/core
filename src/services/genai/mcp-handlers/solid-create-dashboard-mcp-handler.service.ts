@@ -13,7 +13,7 @@ import { ModuleMetadataService } from "../../module-metadata.service";
 import { RoleMetadataService } from "../../role-metadata.service";
 
 @Injectable()
-export class SolidCreateDashboardMcpHandler implements IMcpToolResponseHandler {
+export class SolidCreateDashboardWithWidgetsMcpHandler implements IMcpToolResponseHandler {
 
     constructor(
         private readonly dashboardService: DashboardService,
@@ -28,8 +28,9 @@ export class SolidCreateDashboardMcpHandler implements IMcpToolResponseHandler {
     async apply(aiInteraction: AiInteraction) {
         const escapedMessage = aiInteraction.message.replace(/\\'/g, "'");
         const aiResponseMessage = JSON.parse(escapedMessage);
-
-        const { dashboardDto, dashboard } = await this.createDashboard(aiResponseMessage);
+        const { data } = aiResponseMessage;
+        const { schema } = data;
+        const { dashboardDto, dashboard } = await this.createDashboard(schema);
 
         const { moduleUserKey, actionMetadataEntity } = await this.createActionMetadataEntry(dashboardDto, dashboard);
 
