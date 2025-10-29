@@ -294,6 +294,8 @@ import { SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler } from './servic
 import { SolidCreateDashboardWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-widget-mcp-handler.service';
 import { SolidCreateComputedProviderMcpHandler } from './services/genai/mcp-handlers/solid-create-computed-provider-mcp-handler.service';
 import { SolidTsMorphService } from './services/solid-ts-morph.service';
+import { SolidAddVariableToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-variable-to-dashboard-mcp-handler.service';
+import { SolidAddQuestionToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-question-to-dashboard-mcp-handler.service';
 
 
 @Global()
@@ -636,6 +638,8 @@ import { SolidTsMorphService } from './services/solid-ts-morph.service';
     SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler,
     SolidCreateDashboardWidgetMcpHandler,
     SolidCreateComputedProviderMcpHandler,
+    SolidAddVariableToDashboardMcpHandler,
+    SolidAddQuestionToDashboardMcpHandler,
     SolidTsMorphService,
 
     ViewMetadataRepository,
