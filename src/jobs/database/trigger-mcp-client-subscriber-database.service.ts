@@ -1,15 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { QueueMessage } from 'src/interfaces/mq';
-import { MqMessageService } from '../../services/mq-message.service';
-import { MqMessageQueueService } from '../../services/mq-message-queue.service';
-import { McpResponse, QueuesModuleOptions, TriggerMcpClientOptions } from "../../interfaces";
-import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
-import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
-import { AiInteractionService } from 'src/services/ai-interaction.service';
-import { PollerService } from 'src/services/poller.service';
-import { SolidRegistry } from 'src/helpers/solid-registry';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { ModelMetadataService } from 'src';
+import { SolidRegistry } from 'src/helpers/solid-registry';
+import { QueueMessage } from 'src/interfaces/mq';
+import { DashboardRepository } from 'src/repository/dashboard.repository';
+import { AiInteractionService } from 'src/services/ai-interaction.service';
+import { ModuleMetadataService } from 'src/services/module-metadata.service';
+import { PollerService } from 'src/services/poller.service';
+import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
+import { Not } from 'typeorm';
+import { McpResponse, QueuesModuleOptions, TriggerMcpClientOptions } from "../../interfaces";
+import { MqMessageQueueService } from '../../services/mq-message-queue.service';
+import { MqMessageService } from '../../services/mq-message.service';
+import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
 
 @Injectable()
 export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<TriggerMcpClientOptions> {
@@ -23,6 +25,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         readonly moduleMetadataService: ModuleMetadataService,
         readonly modelMetadataService: ModelMetadataService,
         private readonly solidRegistry: SolidRegistry,
+        // private readonly dashboardService: DashboardService
+        private readonly dashboardRepository: DashboardRepository
 
     ) {
         super(mqMessageService, mqMessageQueueService, poller);
@@ -122,6 +126,22 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             populate: ['module']
         });
 
+        // Get the list of dashboards
+        //TODO: Ideally we should fetch dashboard like below, but used below approach to avoid below CLS issues for now.
+        // Cannot set the key "filter". No CLS context available, please make sure that a ClsMiddleware/Guard/Interceptor has set up the context, or wrap any calls that depend on CLS with "ClsService#run"
+        // const { records: existingDashboards } = await this.dashboardService.find({
+        //     fields
+        // })
+        const existingDashboards = await this.dashboardRepository.find(
+            {
+                where: {
+                    module: {
+                        name: Not('solid-core')
+                    }
+                },
+            }
+        );
+
         // Build markdown sections using template interpolation
         const modulesSection = (existingModules ?? [])
             .map(m => [
@@ -140,6 +160,14 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             ].join('\n'))
             .join('\n\n');
 
+        const dashboardsSection = (existingDashboards ?? [])
+            .map(d => [
+                `### ${d.displayName}`,
+                `- name: ${d.name}`,
+                `- description: ${d.description ?? ""}`,
+            ].join('\n'))
+            .join('\n\n');    
+
         const computationProvidersSection = (existingComputationProviders ?? [])
             .map(m => [
                 `### ${m.instance.name()}`,
@@ -147,6 +175,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 `- description: ${m.instance.help() ?? ""}`,
             ].join('\n'))
             .join('\n\n');
+
 
         const finalPrompt = `
 # User Prompt: 
@@ -170,6 +199,11 @@ ${modulesSection}
 Use the below list of modules to infer which module the user is referring to.
 
 ${modelsSection}
+
+## LIST OF EXISTING DASHBOARDS
+Use the below list of dashboards to infer which dashboard the user is referring to.
+
+${dashboardsSection}
 
 ## LIST OF EXISTING COMPUTED FIELD PROVIDERS
 Use the below list of computed field providers to infer which provider the user is referring to.
