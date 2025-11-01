@@ -191,12 +191,13 @@ ${prompt}
 # LISTS FOR REFERENCE AND VALIDATIONS
 
 ## LIST OF EXISTING MODULES
-Use the below list of models with module names to infer which module & models the user is referring to, you can try to pull out the singularName incase of models.
+Use the below list of modules to infer which module the user is referring to, .
 
 ${modulesSection}
 
 ## LIST OF EXISTING MODELS
-Use the below list of modules to infer which module the user is referring to.
+Use the below list of models to infer which model the user is referring to.
+You need to pull out the singularName for the model from the user prompt to match against the below list.
 
 ${modelsSection}
 
