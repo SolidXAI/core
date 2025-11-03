@@ -278,7 +278,7 @@ export interface IErrorCodeProvider {
 
 // MCP Tool Related
 
-export type PlanStep = CreateNewFileStep | RegisterNestProviderStep;
+export type PlanStep = CreateNewFileStep | RegisterNestProviderStep | AddMethodToExistingClassStep;
 
 export interface CreateNewFileStep {
   type: "createNewFile";
@@ -297,6 +297,17 @@ export interface RegisterNestProviderStep {
   uniqueGuard?: boolean;        // default=true
   rationale?: string;           // optional, ignored by executor
 }
+
+export interface AddMethodToExistingClassStep {
+  type: "addMethodToExistingClass";
+  path: string;                 // e.g. apps/api/src/address-master/services/address-master.service.ts
+  className: string             // e.g. CountryService
+  methodName: string            // e.g. addCountry
+  content: string               // Full Method Code
+  rationale?: string;           // optional, ignored by executor
+}
+
+
 
 export interface McpComputedProviderResponse {
   plan: PlanStep[];

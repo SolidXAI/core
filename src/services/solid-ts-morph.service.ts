@@ -3,6 +3,7 @@ import { Injectable, Logger } from "@nestjs/common";
 import { join, dirname, normalize, isAbsolute, basename } from "node:path";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { Project, Node, ObjectLiteralExpression, ArrayLiteralExpression, QuoteKind, IndentationText } from "ts-morph";
+import { MethodDeclarationStructure, StructureKind } from "ts-morph";
 
 type Bucket = "providers" | "exports";
 
@@ -260,4 +261,40 @@ export class SolidTsMorphService {
         this.logger.log(`Staged provider registration in: ${this.rel(abs)} (${registerIn.join(", ")})`);
         return { staged: true };
     }
+
+
+    addMethodToExistingClass(
+        filePath: string,
+        className: string,
+        methodName: string,
+        methodCode: string,
+    ): { staged: boolean; overwritten: boolean; skipped: boolean } {
+        const abs = this.resolveRepoPath(filePath);
+        if (!existsSync(abs))
+            throw new Error(`addMethodToExistingClass: File not found at ${filePath}`);
+
+        const existing = this.project.getSourceFile(abs);
+        const sourceFile = existing
+            ? existing
+            : this.project.createSourceFile(abs, readFileSync(abs, "utf8"), { overwrite: true });
+
+        const targetClass = sourceFile.getClass(className);
+        if (!targetClass)
+            throw new Error(`addMethodToExistingClass: Class ${className} not found in ${filePath}`);
+
+        const existingMethod = targetClass.getMethod(methodName);
+        if (existingMethod) {
+
+            this.logger.log(`Skipped adding method '${methodName}' (already exists)`);
+            return { staged: false, overwritten: false, skipped: true };
+        }
+        // Add the LLM-generated method directly
+        targetClass.addMember(methodCode);
+
+
+        this.dirtySourceFiles.add(abs);
+        this.logger.log(`Staged method '${methodName}' in class ${className} at ${this.rel(abs)}`);
+        return { staged: true, overwritten: !!existingMethod, skipped: false };
+    }
+
 }
