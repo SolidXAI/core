@@ -127,7 +127,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         });
 
         // Get the list of dashboards
-        //TODO: Ideally we should fetch dashboard like below, but used below approach to avoid below CLS issues for now.
+        // TODO: Ideally we should fetch dashboard like below, but used below approach to avoid below CLS issues for now.
         // Cannot set the key "filter". No CLS context available, please make sure that a ClsMiddleware/Guard/Interceptor has set up the context, or wrap any calls that depend on CLS with "ClsService#run"
         // const { records: existingDashboards } = await this.dashboardService.find({
         //     fields
