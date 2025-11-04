@@ -6242,7 +6242,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -6432,7 +6432,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -6577,7 +6577,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -6643,7 +6643,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -6774,7 +6774,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -6893,7 +6893,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -7106,7 +7106,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -7251,7 +7251,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -7375,7 +7375,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -7485,7 +7485,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -7637,7 +7637,7 @@
                             "attrs": {
                               "name": "page-1-row-1-col-1",
                               "label": "",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -7677,7 +7677,7 @@
                             "attrs": {
                               "name": "page-1-row-1-col-2",
                               "label": "",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -7825,7 +7825,7 @@
                             "attrs": {
                               "name": "page-1-row-1-col-1",
                               "label": "",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -7841,7 +7841,7 @@
                             "attrs": {
                               "name": "page-1-row-1-col-2",
                               "label": "",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -8013,7 +8013,7 @@
                             "attrs": {
                               "name": "page-1-row-1-col-1",
                               "label": "",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -8059,7 +8059,7 @@
                             "attrs": {
                               "name": "page-1-row-1-col-2",
                               "label": "",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -8106,7 +8106,7 @@
                             "attrs": {
                               "name": "page-2-row-1-col-1",
                               "label": "",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -8123,7 +8123,7 @@
                             "attrs": {
                               "name": "page-2-row-1-col-1",
                               "label": "",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -8246,7 +8246,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -8337,7 +8337,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -8558,7 +8558,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -8915,7 +8915,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -9240,7 +9240,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -9472,7 +9472,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -9582,7 +9582,7 @@
                         "attrs": {
                           "name": "group-1",
                           "label": "",
-                          "className": "col-6"
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                         },
                         "children": [
                           {
@@ -9635,7 +9635,7 @@
                         "attrs": {
                           "name": "group-1",
                           "label": "",
-                          "className": "col-6"
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                         },
                         "children": [
                           {
@@ -9661,7 +9661,7 @@
                         "attrs": {
                           "name": "group-1",
                           "label": "",
-                          "className": "col-6"
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                         },
                         "children": [
                           {
@@ -10091,7 +10091,7 @@
                             "type": "column",
                             "attrs": {
                               "name": "col-1",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -10107,7 +10107,7 @@
                             "type": "column",
                             "attrs": {
                               "name": "col-2",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -10390,7 +10390,7 @@
                             "attrs": {
                               "name": "group-basic",
                               "label": "Basic",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -10424,7 +10424,7 @@
                             "attrs": {
                               "name": "group-config",
                               "label": "Configuration",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -10584,7 +10584,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -10783,7 +10783,7 @@
                     "attrs": {
                       "name": "group-1",
                       "label": "",
-                      "className": "col-6"
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                     },
                     "children": [
                       {
@@ -10811,7 +10811,7 @@
                     "attrs": {
                       "name": "group-2",
                       "label": "",
-                      "className": "col-6"
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                     },
                     "children": [
                       {
@@ -10899,7 +10899,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -10937,7 +10937,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -11031,7 +11031,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -11062,7 +11062,7 @@
                 "attrs": {
                   "name": "group-1",
                   "label": "",
-                  "className": "col-6"
+                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                 },
                 "children": [
                   {
@@ -11166,7 +11166,7 @@
                     "attrs": {
                       "name": "group-1",
                       "label": "",
-                      "className": "col-6"
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                     },
                     "children": [
                       {
@@ -11182,7 +11182,7 @@
                     "attrs": {
                       "name": "group-2",
                       "label": "",
-                      "className": "col-6"
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                     },
                     "children": []
                   }
@@ -11266,7 +11266,7 @@
                     "attrs": {
                       "name": "group-1",
                       "label": "",
-                      "className": "col-6"
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                     },
                     "children": [
                       {
@@ -11282,7 +11282,7 @@
                     "attrs": {
                       "name": "group-2",
                       "label": "",
-                      "className": "col-6"
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                     },
                     "children": []
                   }
@@ -11387,7 +11387,7 @@
                             "attrs": {
                               "name": "group-1",
                               "label": "",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -11421,7 +11421,7 @@
                             "attrs": {
                               "name": "group-2",
                               "label": "",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -11726,7 +11726,7 @@
                             "attrs": {
                               "name": "group-1",
                               "label": "General Info",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -11760,7 +11760,7 @@
                             "attrs": {
                               "name": "group-1",
                               "label": "Data Source",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -12173,7 +12173,7 @@
                             "attrs": {
                               "name": "left-col",
                               "label": "Interaction Details",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
@@ -12214,7 +12214,7 @@
                             "attrs": {
                               "name": "right-col",
                               "label": "Message Properties",
-                              "className": "col-6"
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                             },
                             "children": [
                               {
