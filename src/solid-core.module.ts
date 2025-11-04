@@ -102,7 +102,7 @@ import { UserSeederService } from './seeders/user-seeder.service';
 import { AuthenticationService } from './services/authentication.service';
 import { BcryptService } from './services/bcrypt.service';
 import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/uuid-external-id-computed-field-provider.service';
-import { NewUuidExternalIdComputedFieldProvider } from './services/computed-fields/entity/new-uuid-external-id-computed-field-provider.service';
+import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
 import { EmailTemplateService } from './services/email-template.service';
 import { FileService } from './services/file.service';
 import { HashingService } from './services/hashing.service';
@@ -228,7 +228,6 @@ import { AiInteractionService } from './services/ai-interaction.service';
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageService } from './services/chatter-message.service';
 import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
-import { NewConcatComputedFieldProvider } from './services/computed-fields/entity/new-concat-computed-field-provider.service';
 import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
 import { ConcatEntityComputedFieldProvider } from './services/computed-fields/entity/concat-entity-computed-field-provider.service';
 import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
@@ -541,7 +540,7 @@ import { SolidAddCustomServiceMethodMcpHandler } from './services/genai/mcp-hand
     TinyUrlService,
     PdfService,
     UuidExternalIdComputedFieldProvider,
-    NewUuidExternalIdComputedFieldProvider,
+    UuidExternalIdEntityComputedFieldProvider,
     ListOfModelsSelectionProvider,
     ListOfScheduledJobsSelectionProvider,
     LocaleListSelectionProvider,
@@ -578,7 +577,6 @@ import { SolidAddCustomServiceMethodMcpHandler } from './services/genai/mcp-hand
     UserRepository,
     SettingService,
     ConcatComputedFieldProvider,
-    NewConcatComputedFieldProvider,
     FileStorageProvider,
     FileS3StorageProvider,
     MediaRepository,
