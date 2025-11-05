@@ -83,6 +83,9 @@ export interface McpResponse {
 }
 
 export interface ISelectionProviderContext {
+  limit: number;
+  offset: number;
+  formValues: Record<string, any>;
   // query: string;
 }
 
