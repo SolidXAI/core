@@ -102,6 +102,7 @@ import { UserSeederService } from './seeders/user-seeder.service';
 import { AuthenticationService } from './services/authentication.service';
 import { BcryptService } from './services/bcrypt.service';
 import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/uuid-external-id-computed-field-provider.service';
+import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
 import { EmailTemplateService } from './services/email-template.service';
 import { FileService } from './services/file.service';
 import { HashingService } from './services/hashing.service';
@@ -539,6 +540,7 @@ import { SolidAddCustomServiceMethodMcpHandler } from './services/genai/mcp-hand
     TinyUrlService,
     PdfService,
     UuidExternalIdComputedFieldProvider,
+    UuidExternalIdEntityComputedFieldProvider,
     ListOfModelsSelectionProvider,
     ListOfScheduledJobsSelectionProvider,
     LocaleListSelectionProvider,
