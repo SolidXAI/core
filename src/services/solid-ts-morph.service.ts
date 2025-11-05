@@ -297,13 +297,13 @@ export class SolidTsMorphService {
         return { staged: true, overwritten: !!existingMethod, skipped: false };
     }
 
-    registerExtensionToSolidExtension(
+    registerSolidUiExtension(
         filePath: string,
         lineToAdd: string
     ): { staged: boolean; overwritten: boolean; skipped: boolean } {
         const abs = this.resolveRepoPath(filePath);
         if (!existsSync(abs))
-            throw new Error(`registerExtensionToSolidExtension: File not found at ${filePath}`);
+            throw new Error(`registerSolidUiExtension: File not found at ${filePath}`);
 
         const fileContent = readFileSync(abs, "utf8");
 
@@ -324,13 +324,13 @@ export class SolidTsMorphService {
         return { staged: true, overwritten: false, skipped: false };
     }
 
-    addImportToSolidExtensions(
+    addImport(
         filePath: string,
         importLine: string
     ): { staged: boolean; overwritten: boolean; skipped: boolean } {
         const abs = this.resolveRepoPath(filePath);
         if (!existsSync(abs))
-            throw new Error(`addImportToSolidExtensions: File not found at ${filePath}`);
+            throw new Error(`addImport: File not found at ${filePath}`);
 
         let fileContent = readFileSync(abs, "utf8");
 

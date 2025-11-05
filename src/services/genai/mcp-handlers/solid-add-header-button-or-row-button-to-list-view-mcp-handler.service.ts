@@ -36,11 +36,11 @@ export class SolidAddHeaderButtonOrRowButtonToListViewMcpHandler implements IMcp
                         break;
                     }
                     case "registerSolidXExtensionComponent": {
-                        this.tsMorph.registerExtensionToSolidExtension(
+                        this.tsMorph.registerSolidUiExtension(
                             step.path,
                             step.content,
                         );
-                        this.tsMorph.addImportToSolidExtensions(
+                        this.tsMorph.addImport(
                             step.path,
                             step.importExtensionComponent,
                         );
