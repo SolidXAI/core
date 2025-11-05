@@ -298,6 +298,7 @@ import { SolidTsMorphService } from './services/solid-ts-morph.service';
 import { SolidAddVariableToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-variable-to-dashboard-mcp-handler.service';
 import { SolidAddQuestionToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-question-to-dashboard-mcp-handler.service';
 import { SolidAddCustomServiceMethodMcpHandler } from './services/genai/mcp-handlers/solid-add-custom-service-method-mcp-handler.service';
+import { SolidAddHeaderButtonOrRowButtonToListViewMcpHandler } from './services/genai/mcp-handlers/solid-add-header-button-or-row-button-to-list-view-mcp-handler.service';
 import { SolidAddControllerHandlerMcpHandler } from './services/genai/mcp-handlers/solid-add-controller-handler-method-mcp-handler.service';
 
 
@@ -646,6 +647,7 @@ import { SolidAddControllerHandlerMcpHandler } from './services/genai/mcp-handle
     SolidAddQuestionToDashboardMcpHandler,
 
     SolidAddCustomServiceMethodMcpHandler,
+    SolidAddHeaderButtonOrRowButtonToListViewMcpHandler,
     SolidAddControllerHandlerMcpHandler,
     SolidTsMorphService,
 
