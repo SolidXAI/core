@@ -324,13 +324,13 @@ export class SolidTsMorphService {
         return { staged: true, overwritten: false, skipped: false };
     }
 
-    addImportToSolidExtension(
+    addImportToSolidExtensions(
         filePath: string,
         importLine: string
     ): { staged: boolean; overwritten: boolean; skipped: boolean } {
         const abs = this.resolveRepoPath(filePath);
         if (!existsSync(abs))
-            throw new Error(`addImportToSolidExtension: File not found at ${filePath}`);
+            throw new Error(`addImportToSolidExtensions: File not found at ${filePath}`);
 
         let fileContent = readFileSync(abs, "utf8");
 

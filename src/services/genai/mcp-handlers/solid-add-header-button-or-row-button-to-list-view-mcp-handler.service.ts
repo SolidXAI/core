@@ -40,7 +40,7 @@ export class SolidAddHeaderButtonOrRowButtonToListViewMcpHandler implements IMcp
                             step.path,
                             step.content,
                         );
-                        this.tsMorph.addImportToSolidExtension(
+                        this.tsMorph.addImportToSolidExtensions(
                             step.path,
                             step.importExtensionComponent,
                         );
