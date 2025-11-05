@@ -901,12 +901,12 @@ export class ModelMetadataService {
                 children: [
                   {
                     type: "column",
-                    attrs: { name: "group-1", label: "", className: "col-6" },
+                    attrs: { name: "group-1", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
                     children: column1Fields
                   },
                   {
                     type: "column",
-                    attrs: { name: "group-2", label: "", className: "col-6" },
+                    attrs: { name: "group-2", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
                     children: column2Fields
                   }
                 ]
@@ -1014,12 +1014,12 @@ export class ModelMetadataService {
                   children: [
                     {
                       type: "column",
-                      attrs: { name: "group-1", label: "", className: "col-6" },
+                      attrs: { name: "group-1", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
                       children: firstHalf
                     },
                     {
                       type: "column",
-                      attrs: { name: "group-2", label: "", className: "col-6" },
+                      attrs: { name: "group-2", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
                       children: secondHalf
                     }
                   ]

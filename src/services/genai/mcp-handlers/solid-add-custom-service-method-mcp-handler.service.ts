@@ -47,7 +47,7 @@ export class SolidAddCustomServiceMethodMcpHandler implements IMcpToolResponseHa
 
       return {
         seedingRequired: false,
-        serverRebooting: false,
+        serverRebooting: true,
         appliedSteps: payload.plan.length,
         wroteFiles: result.wrote,
       };
