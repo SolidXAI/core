@@ -297,4 +297,79 @@ export class SolidTsMorphService {
         return { staged: true, overwritten: !!existingMethod, skipped: false };
     }
 
+    registerExtensionToSolidExtension(
+        filePath: string,
+        lineToAdd: string
+    ): { staged: boolean; overwritten: boolean; skipped: boolean } {
+        const abs = this.resolveRepoPath(filePath);
+        if (!existsSync(abs))
+            throw new Error(`registerExtensionToSolidExtension: File not found at ${filePath}`);
+
+        const fileContent = readFileSync(abs, "utf8");
+
+        // Check if the line already exists (avoid duplicates)
+        if (fileContent.includes(lineToAdd.trim())) {
+            this.logger.log(`Skipped adding line (already exists): ${lineToAdd}`);
+            return { staged: false, overwritten: false, skipped: true };
+        }
+
+        // Append the new line at the end, ensuring newline
+        const newContent = fileContent.trimEnd() + "\n" + lineToAdd.trim() + "\n";
+
+        // Write updated content back
+        writeFileSync(abs, newContent, "utf8");
+
+        this.dirtySourceFiles.add(abs);
+        this.logger.log(`Staged new line in ${this.rel(abs)}: ${lineToAdd}`);
+        return { staged: true, overwritten: false, skipped: false };
+    }
+
+    addImportToSolidExtension(
+        filePath: string,
+        importLine: string
+    ): { staged: boolean; overwritten: boolean; skipped: boolean } {
+        const abs = this.resolveRepoPath(filePath);
+        if (!existsSync(abs))
+            throw new Error(`addImportToSolidExtension: File not found at ${filePath}`);
+
+        let fileContent = readFileSync(abs, "utf8");
+
+        // If import already exists — skip
+        if (fileContent.includes(importLine.trim())) {
+            this.logger.log(`Skipped adding import (already exists): ${importLine}`);
+            return { staged: false, overwritten: false, skipped: true };
+        }
+
+        // Find last import statement (so we can insert after all imports)
+        const importRegex = /^import .+ from .+;$/gm;
+        let lastImportMatch: RegExpExecArray | null;
+        let lastImportIndex = -1;
+
+        while ((lastImportMatch = importRegex.exec(fileContent)) !== null) {
+            lastImportIndex = lastImportMatch.index + lastImportMatch[0].length;
+        }
+
+        // Insert after last import (or at top if none exist)
+        let newContent: string;
+        if (lastImportIndex !== -1) {
+            newContent =
+                fileContent.slice(0, lastImportIndex) +
+                "\n" +
+                importLine.trim() +
+                "\n" +
+                fileContent.slice(lastImportIndex);
+        } else {
+            // No imports found — insert at top
+            newContent = importLine.trim() + "\n\n" + fileContent;
+        }
+
+        writeFileSync(abs, newContent, "utf8");
+
+        this.dirtySourceFiles.add(abs);
+        this.logger.log(`Staged import in ${this.rel(abs)}: ${importLine}`);
+        return { staged: true, overwritten: false, skipped: false };
+    }
+
+
+
 }

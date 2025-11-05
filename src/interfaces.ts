@@ -278,7 +278,7 @@ export interface IErrorCodeProvider {
 
 // MCP Tool Related
 
-export type PlanStep = CreateNewFileStep | RegisterNestProviderStep | AddMethodToExistingClassStep;
+export type PlanStep = CreateNewFileStep | RegisterNestProviderStep | AddMethodToExistingClassStep | RegisterSolidXExtensionComponentStep | AddListViewButtonStep;
 
 export interface CreateNewFileStep {
   type: "createNewFile";
@@ -307,7 +307,20 @@ export interface AddMethodToExistingClassStep {
   rationale?: string;           // optional, ignored by executor
 }
 
+export interface RegisterSolidXExtensionComponentStep {
+  type: "registerSolidXExtensionComponent";
+  path: string;                 // e.g. apps/api/src/address-master/services/address-master.service.ts
+  content?: string;               // Code
+  importExtensionComponent?: string;
+}
 
+export interface AddListViewButtonStep {
+  type: "addListViewButton";
+  moduleName?: string;
+  modelName?: string;
+  buttonType?: string;
+  content?: string;            // Code
+}
 
 export interface McpComputedProviderResponse {
   plan: PlanStep[];
