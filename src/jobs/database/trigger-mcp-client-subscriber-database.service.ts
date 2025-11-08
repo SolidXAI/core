@@ -142,6 +142,10 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             }
         );
 
+        const existingControllerAndTheirMethods = this.solidRegistry.getControllers();
+
+        
+
         // Build markdown sections using template interpolation
         const modulesSection = (existingModules ?? [])
             .map(m => [
@@ -175,6 +179,14 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 `- description: ${m.instance.help() ?? ""}`,
             ].join('\n'))
             .join('\n\n');
+
+        const controllersAndTheirMethods = (existingControllerAndTheirMethods ?? [])
+            .map(m => [
+                `### ${m.name}`,
+                `- methods: ${m.methods.length ? m.methods.map(m => `- ${m}`).join('\n'): '- No methods found'}`,
+            ].join('\n'))
+            .join('\n\n');
+
 
 
         const finalPrompt = `
@@ -211,6 +223,12 @@ Use the below list of computed field providers to infer which provider the user 
 
 ${computationProvidersSection}
 `.trim();
+
+
+// ## LIST OF EXISTING CONTROLLERS AND THEIR METHODS
+// Use the below list of controllers and their methods to infer whether the api call being made to a particular controller exists or not.
+
+// ${controllersAndTheirMethods}
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);
         this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);
