@@ -26,4 +26,8 @@ export class SelectionDynamicQueryDto extends PaginationQueryDto {
     @IsString()
     @IsOptional()
     optionValue?: string = '';
+
+    @ApiProperty({ description: "Form Values", type: Object })
+    @IsOptional()
+    formValues: Record<string, any>;
 }

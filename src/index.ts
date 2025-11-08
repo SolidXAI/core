@@ -24,6 +24,7 @@ export * from './decorators/solid-database-module.decorator'
 export * from './decorators/solid-service.decorator'
 export * from './decorators/mail-provider.decorator'
 
+export * from './dtos/post-chatter-message.dto'
 export * from './dtos/basic-filters.dto'
 export * from './dtos/solid-request-context.dto'
 export * from './dtos/change-password.dto'

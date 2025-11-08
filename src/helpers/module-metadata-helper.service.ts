@@ -16,8 +16,15 @@ export class ModuleMetadataHelperService {
     // }
 
     async getModuleMetadataConfiguration(configFilePath: string): Promise<any> {
-        const fileContent = await fs.readFile(configFilePath, 'utf8');
-        return JSON.parse(fileContent);
+        try {
+            const fileContent = await fs.readFile(configFilePath, 'utf8');
+            return JSON.parse(fileContent);
+        }
+        catch (error) {
+            this.logger.error(`module metadata configuration non existent at: ${configFilePath}`);
+        }
+
+        return null;
     }
 
     async getModulePath(moduleName: string): Promise<string> {
@@ -30,7 +37,7 @@ export class ModuleMetadataHelperService {
         const filePath = path.join(folderPath, `${dashModuleName}-metadata.json`);
         // Check if filePath exists
         const fileExists = await this.fileService.fileExists(filePath);
-        this.logger.debug(`File exists: ${fileExists} at ${filePath}`);
+        // this.logger.debug(`File exists: ${fileExists} at ${filePath}`);
         if (!fileExists) {
             // If the module is solid-core, try the fallback path, in case the current root directory is the solid core project
             if (dashModuleName === SOLID_CORE_MODULE_NAME) {
