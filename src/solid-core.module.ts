@@ -300,6 +300,8 @@ import { SolidAddQuestionToDashboardMcpHandler } from './services/genai/mcp-hand
 import { SolidAddCustomServiceMethodMcpHandler } from './services/genai/mcp-handlers/solid-add-custom-service-method-mcp-handler.service';
 import { SolidAddHeaderButtonOrRowButtonToListViewMcpHandler } from './services/genai/mcp-handlers/solid-add-header-button-or-row-button-to-list-view-mcp-handler.service';
 import { SolidAddControllerHandlerMcpHandler } from './services/genai/mcp-handlers/solid-add-controller-handler-method-mcp-handler.service';
+import { SolidAddButtonToFormViewMcpHandler } from './services/genai/mcp-handlers/solid-add-button-to-form-view-mcp-handler.service';
+import { SolidCreateCustomFormViewWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-custom-form-view-widget-mcp-handler.service';
 
 
 @Global()
@@ -649,6 +651,9 @@ import { SolidAddControllerHandlerMcpHandler } from './services/genai/mcp-handle
     SolidAddCustomServiceMethodMcpHandler,
     SolidAddHeaderButtonOrRowButtonToListViewMcpHandler,
     SolidAddControllerHandlerMcpHandler,
+    SolidAddButtonToFormViewMcpHandler,
+    SolidCreateCustomFormViewWidgetMcpHandler,
+    
     SolidTsMorphService,
 
     ViewMetadataRepository,

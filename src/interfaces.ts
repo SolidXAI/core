@@ -278,7 +278,7 @@ export interface IErrorCodeProvider {
 
 // MCP Tool Related
 
-export type PlanStep = CreateNewFileStep | RegisterNestProviderStep | AddMethodToExistingClassStep | RegisterSolidXExtensionComponentStep | AddListViewButtonStep;
+export type PlanStep = CreateNewFileStep | RegisterNestProviderStep | AddMethodToExistingClassStep | RegisterSolidXExtensionComponentStep | AddListViewButtonStep | AddFormViewButtonStep;
 
 export interface CreateNewFileStep {
   type: "createNewFile";
@@ -316,6 +316,14 @@ export interface RegisterSolidXExtensionComponentStep {
 
 export interface AddListViewButtonStep {
   type: "addListViewButton";
+  moduleName?: string;
+  modelName?: string;
+  buttonType?: string;
+  content?: string;            // Code
+}
+
+export interface AddFormViewButtonStep {
+  type: "addFormViewButton";
   moduleName?: string;
   modelName?: string;
   buttonType?: string;
