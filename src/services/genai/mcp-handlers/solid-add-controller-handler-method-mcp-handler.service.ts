@@ -36,6 +36,13 @@ export class SolidAddControllerHandlerMcpHandler implements IMcpToolResponseHand
             );
             break;
           }
+          case "addImport": {
+            this.tsMorph.addImport(
+              step.path,
+              step.importStatement,
+            );
+            break;
+          }
           default:
             throw new Error(`Unsupported plan step type: ${(step as any).type}`);
         }

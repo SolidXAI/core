@@ -281,7 +281,14 @@ export interface IErrorCodeProvider {
 
 // MCP Tool Related
 
-export type PlanStep = CreateNewFileStep | RegisterNestProviderStep | AddMethodToExistingClassStep | RegisterSolidXExtensionComponentStep | AddListViewButtonStep | AddFormViewButtonStep;
+export type PlanStep = CreateNewFileStep | RegisterNestProviderStep | AddMethodToExistingClassStep | RegisterSolidXExtensionComponentStep | AddListViewButtonStep | AddFormViewButtonStep | AddImportStep;
+export interface AddImportStep {
+  type: "addImport";
+  path: string;                 // e.g. apps/api/src/address-master/services/address-master.service.ts
+  importStatement: string;      // e.g. import { Something } from 'somewhere';
+  overwrite?: boolean;        // default=false
+  rationale?: string;           // optional, ignored by executor
+}
 
 export interface CreateNewFileStep {
   type: "createNewFile";
