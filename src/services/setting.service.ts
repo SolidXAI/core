@@ -77,7 +77,8 @@ export class SettingService extends CRUDService<Setting> {
             defaultProvider: "",
             availableProviders: []
         }),
-      showNameFieldsForRegistration:this.iamConfiguration.showNameFieldsForRegistration
+      showNameFieldsForRegistration:this.iamConfiguration.showNameFieldsForRegistration,
+      forceChangePasswordOnFirstLogin: this.iamConfiguration.forceChangePasswordOnFirstLogin
     };
 
     const existingSettings = await this.repo.find();
@@ -175,7 +176,7 @@ export class SettingService extends CRUDService<Setting> {
       shouldQueueSms: this.commonConfiguration.shouldQueueSms,
       enableDarkMode: true,
       copyright: null,
-      forceChangePasswordOnFirstLogin: false,
+      forceChangePasswordOnFirstLogin: this.iamConfiguration.forceChangePasswordOnFirstLogin,
       enableUsername: true,
       enabledNotification: true,
       contactSupportEmail : null,
