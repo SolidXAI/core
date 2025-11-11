@@ -58,7 +58,7 @@ export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
         if (Array.isArray(fieldValue)) {
             return { isValid: true, values: fieldValue };
         }
-    
+
         try {
             const parsed = typeof fieldValue === 'string' ? JSON.parse(fieldValue) : null;
             if (Array.isArray(parsed)) {
@@ -67,10 +67,10 @@ export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
         } catch {
             // fall through
         }
-    
+
         return { isValid: false, values: [] };
     }
-    
+
 
     private async applyValidations(fieldValue: any): Promise<ValidationError[]> {
         const errors: ValidationError[] = [];
@@ -108,9 +108,19 @@ export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
 
     private async isValidSelectionValue(fieldValue: any, selectionDynamicProvider: string): Promise<boolean> {
         const providerInstance = this.providerInstance<any>(selectionDynamicProvider);
-        const values = await providerInstance.values('', JSON.parse(this.options.selectionDynamicProviderCtxt));
-        // return values.map(v => v.split(":")[0]).includes(fieldValue);
-        return values.map(v => v.value).includes(fieldValue);
+        try {
+            // Use the value method first
+            const value = await providerInstance.value(fieldValue, JSON.parse(this.options.selectionDynamicProviderCtxt));
+            if (!value) {
+                return false;
+            }
+        }
+        catch (error) {
+            // Use the values method as a fallback, if the value method is not implemented
+            const values = await providerInstance.values('', JSON.parse(this.options.selectionDynamicProviderCtxt));
+            const isValid = values.some(v => v.value === fieldValue);
+            return isValid;
+        }
     }
 
     private providerInstance<T extends ISelectionProviderContext>(selectionDynamicProvider: string): ISelectionProvider<T> {
