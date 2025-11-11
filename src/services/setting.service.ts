@@ -175,7 +175,7 @@ export class SettingService extends CRUDService<Setting> {
       shouldQueueSms: this.commonConfiguration.shouldQueueSms,
       enableDarkMode: true,
       copyright: null,
-      forceChangePasswordOnFirstLogin: true,
+      forceChangePasswordOnFirstLogin: false,
       enableUsername: true,
       enabledNotification: true,
       contactSupportEmail : null,
