@@ -655,14 +655,9 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         return entity;
     }
 
-    async insertMany(createDtos: any[], filesArray: Express.Multer.File[][] = [], solidRequestContext: any = {}): Promise<T[]> {
-
-
-        // if (createDtos.length !== filesArray.length) {
-        //     throw new BadRequestException('Mismatch between data objects and file arrays.');
-        // }
-
+    async createMany(createDtos: any[], solidRequestContext: any = {}): Promise<T[]> {
         const loadedmodel = await this.loadModel();
+
         // Check wheather user has create permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasCreatePermissionOnModel(solidRequestContext.activeUser, loadedmodel.singularName);
@@ -680,37 +675,28 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             module: true,
         });
 
-        // Process each createDto in parallel
-        const createAndSavePromises = createDtos.map(async (createDto, index) => {
-            const files = []; // TODO, This is set, because we are not supporting files for insertMany currently
-            let hasMediaFields = false;
-
-            // Process each field
+        const entitiesForSave: T[] = [];
+        for (const createDto of createDtos) {
+            // Validate and transform each createDto sequentially
+            let transformedDto = createDto;
             for (const field of model.fields) {
                 const fieldManager: FieldCrudManager = await this.fieldCrudManager(field, this.entityManager);
-                const validationErrors = await fieldManager.validate(createDto, files);
+                const validationErrors = await fieldManager.validate(createDto, []); // TODO, This is set, because we are not supporting files for insertMany currently
                 if (validationErrors.length > 0) {
                     throw new BadRequestException(`Validation errors in ${field.name} are invalid: ${validationErrors.map(e => e.error).join(', ')}`);
                 }
-                createDto = await fieldManager.transformForCreate(createDto);
-                hasMediaFields = hasMediaFields || field.type === 'mediaSingle' || field.type === 'mediaMultiple';
+                transformedDto = await fieldManager.transformForCreate(createDto);
             }
+            const entity = this.repo.create(transformedDto);
+            entitiesForSave.push(entity as T);
+        }
+        // Save all entities in a single batch
+        const savedEntities = await this.repo.save(entitiesForSave) as T[];
+        return savedEntities;
+    }
 
-            // Save the entity
-            const entity = this.repo.create(createDto);
-            const savedEntity = await this.repo.save(entity) as T;
-
-            //Commented since currently Files are not supported for insertmany
-            // if (hasMediaFields) {
-            //     await this.saveMedia(model, files, savedEntity);
-            // }
-
-            return savedEntity;
-        });
-
-        // Await all promises in parallel
-        const savedEntities = await Promise.all(createAndSavePromises);
-
+    async insertMany(createDtos: any[], filesArray: Express.Multer.File[][] = [], solidRequestContext: any = {}): Promise<T[]> {
+        const savedEntities = await this.createMany(createDtos, solidRequestContext);
         return savedEntities;
     }
 

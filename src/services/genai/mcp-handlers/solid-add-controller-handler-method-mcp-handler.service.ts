@@ -1,6 +1,6 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { AiInteraction } from "src/entities/ai-interaction.entity";
-import { IMcpToolResponseHandler, McpComputedProviderResponse, PlanStep } from "../../../interfaces";
+import { AddMethodToExistingClassStep, IMcpToolResponseHandler, McpComputedProviderResponse, PlanStep } from "../../../interfaces";
 import { SolidTsMorphService } from "src/services/solid-ts-morph.service";
 
 @Injectable()
@@ -28,19 +28,7 @@ export class SolidAddControllerHandlerMcpHandler implements IMcpToolResponseHand
             break;
           }
           case "addMethodToExistingClass": {
-            this.tsMorph.addMethodToExistingClass(
-              step.path,
-              step.className,
-              step.methodName,
-              step.content,
-            );
-            break;
-          }
-          case "addImport": {
-            this.tsMorph.addImport(
-              step.path,
-              step.importStatement,
-            );
+            this.handleAddMethodToExistingClass(step);
             break;
           }
           default:
@@ -70,5 +58,24 @@ export class SolidAddControllerHandlerMcpHandler implements IMcpToolResponseHand
       const unescaped = str.replace(/\\'/g, "'");
       return JSON.parse(unescaped);
     }
+  }
+
+  private handleAddMethodToExistingClass(step: PlanStep) {
+    // Cast step to the appropriate type if necessary
+    const addMethodStep = step as AddMethodToExistingClassStep
+    // Add the import statement to the specified file
+    if (addMethodStep.importStatements && addMethodStep.importStatements.length > 0) {
+      this.tsMorph.addImport(
+        addMethodStep.path,
+        (addMethodStep.importStatements || []).join('\n'),
+      );
+    }
+    // Add the method content to the specified class in the file
+    this.tsMorph.addMethodToExistingClass(
+      addMethodStep.path,
+      addMethodStep.className,
+      addMethodStep.methodName,
+      addMethodStep.content,
+    );
   }
 }

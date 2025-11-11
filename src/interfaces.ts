@@ -314,6 +314,7 @@ export interface AddMethodToExistingClassStep {
   className: string             // e.g. CountryService
   methodName: string            // e.g. addCountry
   content: string               // Full Method Code
+  importStatements?: string[];  // e.g. [ "import { X } from 'y';" ]
   rationale?: string;           // optional, ignored by executor
 }
 
