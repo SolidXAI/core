@@ -5674,7 +5674,7 @@
     },
     {
       "displayName": "App Settings",
-      "name": "app-settings-action",
+      "name": "appSettings-action",
       "type": "custom",
       "domain": "",
       "context": "",
@@ -5687,7 +5687,7 @@
     },
     {
       "displayName": "Authentication Settings Action",
-      "name": "authentication-settings-action",
+      "name": "authenticationSettings-action",
       "type": "custom",
       "domain": "",
       "context": "",
@@ -5700,7 +5700,7 @@
     },
     {
       "displayName": "Ai settings Action",
-      "name": "ai-settings-action",
+      "name": "aiSettings-action",
       "type": "custom",
       "domain": "",
       "context": "",
@@ -5713,7 +5713,7 @@
     },
     {
       "displayName": "Misc Action",
-      "name": "misc-settings-action",
+      "name": "miscSettings-action",
       "type": "custom",
       "domain": "",
       "context": "",
@@ -5788,6 +5788,19 @@
       "viewUserKey": "aiInteraction-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "aiInteraction"
+    },
+    {
+      "displayName": "Import Transaction Error Logs List Action",
+      "name": "importTransactionErrorLog-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "importTransactionErrorLog-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "importTransactionErrorLog"
     }
   ],
   "menus": [
@@ -5960,14 +5973,6 @@
       "parentMenuItemUserKey": "queues-menu-item"
     },
     {
-      "displayName": "Scheduled Jobs",
-      "name": "scheduledJob-menu-item",
-      "sequenceNumber": 2,
-      "actionUserKey": "scheduledJob-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
-    },
-    {
       "displayName": "Notification",
       "name": "notification-menu-item",
       "sequenceNumber": 3,
@@ -6000,6 +6005,30 @@
       "parentMenuItemUserKey": ""
     },
     {
+      "displayName": "List of Values",
+      "name": "listOfValues-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "listOfValues-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },   
+    {
+      "displayName": "Scheduled Jobs",
+      "name": "scheduledJob-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "scheduledJob-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "AI Interactions",
+      "name": "aiInteraction-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "aiInteraction-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },    
+    {
       "displayName": "Saved Filters",
       "name": "savedFilters-menu-item",
       "sequenceNumber": 7,
@@ -6007,14 +6036,7 @@
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
-    {
-      "displayName": "List of Values",
-      "name": "listOfValues-menu-item",
-      "sequenceNumber": 1,
-      "actionUserKey": "listOfValues-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
-    },
+
     {
       "displayName": "Chatter Message",
       "name": "chatterMessage-menu-item",
@@ -6040,6 +6062,14 @@
       "parentMenuItemUserKey": "other-menu-item"
     },
     {
+      "displayName": "Import Transaction Error Logs",
+      "name": "importTransactionErrorLog-menu-item",
+      "sequenceNumber": 12,
+      "actionUserKey": "importTransactionErrorLog-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
       "displayName": "Locale",
       "name": "locale-menu-item",
       "sequenceNumber": 10,
@@ -6055,6 +6085,7 @@
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
+
     {
       "displayName": "Settings",
       "name": "settings-menu-item",
@@ -6118,14 +6149,6 @@
       "actionUserKey": "dashboardQuestion-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "dashboardManagement-menu-item"
-    },
-    {
-      "displayName": "AI Interactions",
-      "name": "aiInteraction-menu-item",
-      "sequenceNumber": 1,
-      "actionUserKey": "aiInteraction-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
     }
   ],
   "views": [
@@ -12339,6 +12362,102 @@
                         ]
                       }
                     ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "importTransactionErrorLog-list-view",
+      "displayName": "Import Transaction Error Logs",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "importTransactionErrorLog",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "importTransaction"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "importTransactionErrorLog-form-view",
+      "displayName": "Import Transaction Error Logs",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "importTransactionErrorLog",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Import Transaction Error Logs",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "importTransaction"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": []
                   }
                 ]
               }
