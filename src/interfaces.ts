@@ -66,7 +66,7 @@ export interface CodeGenerationOptions {
 
 export interface TriggerMcpClientOptions {
   aiInteractionId: number;
-  moduleName:string;
+  moduleName: string;
 }
 
 export interface McpResponse {
@@ -83,6 +83,9 @@ export interface McpResponse {
 }
 
 export interface ISelectionProviderContext {
+  limit: number;
+  offset: number;
+  formValues: Record<string, any>;
   // query: string;
 }
 
@@ -274,4 +277,71 @@ export interface IErrorCodeProvider {
    * If omitted, the ErrorMapperService will rely on the rule.meta of the first matching rule.
    */
   resolve?(code: ErrorCode): ErrorMeta | undefined;
+}
+
+// MCP Tool Related
+
+export type PlanStep = CreateNewFileStep | RegisterNestProviderStep | AddMethodToExistingClassStep | RegisterSolidXExtensionComponentStep | AddListViewButtonStep | AddFormViewButtonStep | AddImportStep;
+export interface AddImportStep {
+  type: "addImport";
+  path: string;                 // e.g. apps/api/src/address-master/services/address-master.service.ts
+  importStatement: string;      // e.g. import { Something } from 'somewhere';
+  overwrite?: boolean;        // default=false
+  rationale?: string;           // optional, ignored by executor
+}
+
+export interface CreateNewFileStep {
+  type: "createNewFile";
+  path: string;         // repo-relative e.g. solid-api/api/src/computed-providers/foo.provider.ts
+  content: string;      // full file content
+  overwrite?: boolean;  // default=false
+  rationale?: string;   // optional, ignored by executor
+}
+
+export interface RegisterNestProviderStep {
+  type: "registerNestProvider";
+  modulePath: string;           // e.g. apps/api/src/address-master/address-master.module.ts
+  providerClassName: string;    // e.g. StateTotalCitiesComputedFieldProvider
+  importFrom: string;           // e.g. "@/computed-providers/state-total-cities.provider"
+  registerIn: Array<"providers" | "exports">; // which arrays to add to
+  uniqueGuard?: boolean;        // default=true
+  rationale?: string;           // optional, ignored by executor
+}
+
+export interface AddMethodToExistingClassStep {
+  type: "addMethodToExistingClass";
+  path: string;                 // e.g. apps/api/src/address-master/services/address-master.service.ts
+  className: string             // e.g. CountryService
+  methodName: string            // e.g. addCountry
+  content: string               // Full Method Code
+  importStatements?: string[];  // e.g. [ "import { X } from 'y';" ]
+  rationale?: string;           // optional, ignored by executor
+}
+
+export interface RegisterSolidXExtensionComponentStep {
+  type: "registerSolidXExtensionComponent";
+  path: string;                 // e.g. apps/api/src/address-master/services/address-master.service.ts
+  content?: string;               // Code
+  importExtensionComponent?: string;
+}
+
+export interface AddListViewButtonStep {
+  type: "addListViewButton";
+  moduleName?: string;
+  modelName?: string;
+  buttonType?: string;
+  content?: string;            // Code
+}
+
+export interface AddFormViewButtonStep {
+  type: "addFormViewButton";
+  moduleName?: string;
+  modelName?: string;
+  buttonType?: string;
+  content?: string;            // Code
+}
+
+export interface McpComputedProviderResponse {
+  plan: PlanStep[];
+  // provider?: any;  // (intentionally ignored per your note)
 }

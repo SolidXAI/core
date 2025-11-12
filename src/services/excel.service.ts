@@ -59,7 +59,7 @@ export class ExcelService {
         //   headers.reduce((acc, header) => ({ ...acc, [header]: '' }), {})
         // ).commit(); // Write a dummy record with headers
 
-        await workbook.commit();
+         workbook.commit();
         return passThrough;
       }
 
@@ -86,7 +86,7 @@ export class ExcelService {
         this.logger.debug(`✅ Chunk ${chunkIndex} written to Excel`);
       }
 
-      await workbook.commit();
+       workbook.commit();
       // passThrough.end(); // ✅ Properly close the stream
     } catch (error) {
       this.logger.error(`❌ Error writing Excel: ${error.message}`);

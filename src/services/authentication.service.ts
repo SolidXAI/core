@@ -15,10 +15,21 @@ import { JwtService } from '@nestjs/jwt';
 import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { isEmpty, isNotEmpty } from 'class-validator';
 import { randomInt, randomUUID } from 'crypto';
-import { SMTPEMailService } from 'src/services/mail/smtp-email.service';
+import commonConfig from 'src/config/common.config';
+import { jwtConfig } from 'src/config/jwt.config';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { SUCCESS_MESSAGES } from 'src/constants/success-messages';
+import { CreateUserDto } from 'src/dtos/create-user.dto';
+import { MailFactory } from 'src/factories/mail.factory';
 import { Msg91OTPService } from 'src/services/sms/Msg91OTPService';
 import { DataSource, Repository } from 'typeorm';
-import { iamConfig, jwtConfig } from '../config/iam.config';
+import { v4 as uuidv4 } from 'uuid';
+import { iamConfig } from '../config/iam.config';
+import {
+    ForgotPasswordSendVerificationTokenOn,
+    RegistrationValidationSource,
+    TransactionalRegistrationValidationSource
+} from "../constants";
 import { ChangePasswordDto } from "../dtos/change-password.dto";
 import { ConfirmForgotPasswordDto } from '../dtos/confirm-forgot-password.dto';
 import { InitiateForgotPasswordDto } from '../dtos/initiate-forgot-password.dto';
@@ -29,26 +40,15 @@ import { RefreshTokenDto } from '../dtos/refresh-token.dto';
 import { SignInDto } from '../dtos/sign-in.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
 import { User } from '../entities/user.entity';
+import { EventDetails, EventType } from "../interfaces";
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { HashingService } from './hashing.service';
 import { InvalidatedRefreshTokenError, RefreshTokenIdsStorageService } from './refresh-token-ids-storage.service';
-import { UserService } from './user.service';
-import { EventDetails, EventType, IMail } from "../interfaces";
-import {
-    ForgotPasswordSendVerificationTokenOn,
-    RegistrationValidationSource,
-    TransactionalRegistrationValidationSource
-} from "../constants";
-import { SettingService } from './setting.service';
-import { CreateUserDto } from 'src/dtos/create-user.dto';
-import { RoleMetadataService } from './role-metadata.service';
-import commonConfig from 'src/config/common.config';
-import { UserActivityHistoryService } from './user-activity-history.service';
 import { RequestContextService } from './request-context.service';
-import { ERROR_MESSAGES } from 'src/constants/error-messages';
-import { SUCCESS_MESSAGES } from 'src/constants/success-messages';
-import { MailFactory } from 'src/factories/mail.factory';
-import { v4 as uuidv4 } from 'uuid';
+import { RoleMetadataService } from './role-metadata.service';
+import { SettingService } from './setting.service';
+import { UserActivityHistoryService } from './user-activity-history.service';
+import { UserService } from './user.service';
 
 enum LoginProvider {
     LOCAL = 'local',
@@ -986,7 +986,7 @@ export class AuthenticationService {
         return accessToken;
     }
 
-    async generateRefreshToken(user: User) {
+    async generateRefreshToken(user: User, previousRefreshToken?: string) {
         const refreshTokenId = randomUUID();
 
         const refreshToken = await this.signToken(user.id, this.jwtConfiguration.refreshTokenTtl, {
@@ -994,7 +994,7 @@ export class AuthenticationService {
         })
 
         // store the refresh token id in the redis storage.
-        await this.refreshTokenIdsStorage.insert(user.id, refreshToken);
+        await this.refreshTokenIdsStorage.insert(user.id, refreshToken, previousRefreshToken);
 
         return refreshToken;
     }
@@ -1164,7 +1164,11 @@ export class AuthenticationService {
                 roles: true
             }
         });
-        const tokens = await this.generateTokens(user);
+
+        // const tokens = await this.generateTokens(user);
+
+        // Get the refresh token for a user from refresh token storage.
+        const refreshTokenState = await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(user.id);
 
         const response = {
             user: {
@@ -1175,7 +1179,8 @@ export class AuthenticationService {
                 id: user.id,
                 roles: user.roles.map((role) => role.name)
             },
-            ...tokens
+            refreshToken: refreshTokenState.currentRefreshToken,
+            // ...tokens
         }
         return response;
     }

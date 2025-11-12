@@ -1,0 +1,70 @@
+Hi Ozzy, 
+Can you give me instructions to create a new model in the fees portal module, you can call it address-master. 
+This model needs to have the following fields. 
+1. address1 - shortText 
+2. address2 - shortText 
+3. addressType - selectionStatic with values - home, office & other. 
+4. city - many2one with the city model
+5. state - many2one with the state model
+6. pincode - many2one with the state model. 
+
+After I add this model I want to start storing student address. 
+
+To do this if you can also give me instructions on how to add a relation field to the student model, you can call this field studentAddress.
+
+
+
+
+
+
+Can you now create a new computed field provider. 
+- You can call this provider: StateTotalCitiesComputedFieldProvider
+- This will be a post computation provider and will depend on the city model being inserted, deleted, updated. 
+- The implementation simply needs to take a count of cities that belong to the same state as the city being mutated and update the state totalCities field.
+
+
+Can you now create a new computed field provider. 
+- You can call this provider: StateTotalPopulationComputedFieldProvider
+- This will be a post computation provider and will depend on the city model being inserted, deleted, updated. 
+- The implementation simply needs to take a sum of population of each city that belong to the same state as the city being mutated and update the state totalPopulation field.
+
+
+Can you now create a new computed field provider. 
+- You can call this provider: StateTotalGdpComputedFieldProvider
+- This will be a post computation provider and will depend on the city model being inserted, deleted, updated. 
+- The implementation simply needs to take a sum of gdp of each city that belong to the same state as the city being mutated and update the state totalGdp field.
+- I will add the totalGdp field to the state model after I have the computed provider TS code. 
+
+
+# Testing prompt sequence
+
+## Create Module 
+Can you create a new module called address-master. This will be used to store address master data. 
+
+## Add Model - Country 
+Can you add a new model to the address-master module called country. 
+This will have name, description (richText), countryCode. You can assume name & countryCode to be unique. But only name will be used as a userkey. 
+Also enable audit tracking on the model and all its fields.
+Make sure the table name is properly prefixed with the module name snake case. 
+
+## Add Model - Language
+Can you add a new model to the address-master module called language. 
+This will have language, languageIsoCode. You can assume language to be unique. 
+Also for the languageIsoCode, can you create a field with type staticSelection add a bunch (20 odd, include at-least 7-8 indian languages also) of commonly spoken languages with their respective language codes as values.
+Also enable audit tracking on the model and all its fields.
+Make sure the table name is properly prefixed with the module name snake case. 
+
+## Add Model - Country Language 
+
+Can you now add a new model called CountrySpokenLanguages, this model will have 2 many-to-one fields. 
+1. country - many-to-one with the country model. 
+2. spokenLanguage - many-to-one with the language model. 
+3. spokenBy - int field storing data representing how many people speak that language.
+Also enable audit tracking on the model and all its fields.
+Make sure the table name is properly prefixed with the module name snake case. 
+
+## Add Model - Country Population Trend 
+Can you add a model called CountryPopulationTrend, this model has the following fields. 
+1. country - many-to-one with the country model. 
+2. entryDate - date field. 
+3. populationAsOnDate - int field storing the population of that country as on that date. 

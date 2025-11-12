@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
 import { plainToInstance } from "class-transformer";
 import { AiInteraction } from "src/entities/ai-interaction.entity";
-import { IMcpToolResponseHandler } from "../../interfaces";
-import { DashboardQuestionSqlDatasetConfigService } from "../dashboard-question-sql-dataset-config.service";
+import { IMcpToolResponseHandler } from "../../../interfaces";
+import { DashboardQuestionSqlDatasetConfigService } from "../../dashboard-question-sql-dataset-config.service";
 import { CreateDashboardQuestionSqlDatasetConfigDto } from "src/dtos/create-dashboard-question-sql-dataset-config.dto";
 
 @Injectable()
-export class SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler implements IMcpToolResponseHandler {
+export class SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler implements IMcpToolResponseHandler {
 
     constructor(
         private readonly dashboardQuestionSqlDatasetConfigService: DashboardQuestionSqlDatasetConfigService,

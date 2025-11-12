@@ -11,7 +11,7 @@ export class CreateChatterMessageDto {
     @IsString()
     @ApiProperty()
     messageSubType: string;
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
     @ApiProperty()
     messageBody: string;

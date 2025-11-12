@@ -22,4 +22,7 @@ newValueDisplay: string;
 
 @Column({ type: "varchar" })
 fieldName: string;
+
+@Column({ type: "text", nullable: true })
+fieldDisplayName: string;
 }

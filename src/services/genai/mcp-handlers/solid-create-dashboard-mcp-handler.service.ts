@@ -4,16 +4,16 @@ import { CreateDashboardDto } from "src/dtos/create-dashboard.dto";
 import { UpdateMenuItemMetadataDto } from "src/dtos/update-menu-item-metadata.dto";
 import { AiInteraction } from "src/entities/ai-interaction.entity";
 import { Dashboard } from "src/entities/dashboard.entity";
-import { IMcpToolResponseHandler } from "../../interfaces";
-import { ActionMetadataService } from "../action-metadata.service";
-import { DashboardService } from "../dashboard.service";
-import { MenuItemMetadataService } from "../menu-item-metadata.service";
-import { ModelMetadataService } from "../model-metadata.service";
-import { ModuleMetadataService } from "../module-metadata.service";
-import { RoleMetadataService } from "../role-metadata.service";
+import { IMcpToolResponseHandler } from "../../../interfaces";
+import { ActionMetadataService } from "../../action-metadata.service";
+import { DashboardService } from "../../dashboard.service";
+import { MenuItemMetadataService } from "../../menu-item-metadata.service";
+import { ModelMetadataService } from "../../model-metadata.service";
+import { ModuleMetadataService } from "../../module-metadata.service";
+import { RoleMetadataService } from "../../role-metadata.service";
 
 @Injectable()
-export class SolidCreateDashboardMcpToolResponseHandler implements IMcpToolResponseHandler {
+export class SolidCreateDashboardWithWidgetsMcpHandler implements IMcpToolResponseHandler {
 
     constructor(
         private readonly dashboardService: DashboardService,
@@ -28,8 +28,9 @@ export class SolidCreateDashboardMcpToolResponseHandler implements IMcpToolRespo
     async apply(aiInteraction: AiInteraction) {
         const escapedMessage = aiInteraction.message.replace(/\\'/g, "'");
         const aiResponseMessage = JSON.parse(escapedMessage);
-
-        const { dashboardDto, dashboard } = await this.createDashboard(aiResponseMessage);
+        const { data } = aiResponseMessage;
+        const { schema } = data;
+        const { dashboardDto, dashboard } = await this.createDashboard(schema);
 
         const { moduleUserKey, actionMetadataEntity } = await this.createActionMetadataEntry(dashboardDto, dashboard);
 

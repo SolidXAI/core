@@ -657,28 +657,30 @@ export class ModelMetadataService {
     // <moduleName>-metadata.json | Remove references to this model in the model metadata, menu, action & view sections. | Automatic
     const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.module.name);
     const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
-    const existingModelIndex = metaData.moduleMetadata.models.findIndex(
-      (existingModel: any) => existingModel.singularName === modelEntity.singularName
-    );
+    if (metaData) {
+      const existingModelIndex = metaData.moduleMetadata.models.findIndex(
+        (existingModel: any) => existingModel.singularName === modelEntity.singularName
+      );
 
-    // Remove the model to be deleted from the metadata
-    if (existingModelIndex !== -1) {
-      metaData.moduleMetadata.models.splice(existingModelIndex, 1);
+      // Remove the model to be deleted from the metadata
+      if (existingModelIndex !== -1) {
+        metaData.moduleMetadata.models.splice(existingModelIndex, 1);
+      }
+
+      // Remove references to this model in the menu, action & view sections.
+      metaData.moduleMetadata.menus = metaData.moduleMetadata.menus.filter(
+        (menu: any) => menu.modelUserKey !== modelEntity.singularName
+      );
+      metaData.moduleMetadata.actions = metaData.moduleMetadata.actions.filter(
+        (action: any) => action.modelUserKey !== modelEntity.singularName
+      );
+      metaData.moduleMetadata.views = metaData.moduleMetadata.views.filter(
+        (view: any) => view.modelUserKey !== modelEntity.singularName
+      );
+
+      const updatedContent = JSON.stringify(metaData, null, 2);
+      await fs.writeFile(filePath, updatedContent);
     }
-
-    // Remove references to this model in the menu, action & view sections.
-    metaData.moduleMetadata.menus = metaData.moduleMetadata.menus.filter(
-      (menu: any) => menu.modelUserKey !== modelEntity.singularName
-    );
-    metaData.moduleMetadata.actions = metaData.moduleMetadata.actions.filter(
-      (action: any) => action.modelUserKey !== modelEntity.singularName
-    );
-    metaData.moduleMetadata.views = metaData.moduleMetadata.views.filter(
-      (view: any) => view.modelUserKey !== modelEntity.singularName
-    );
-
-    const updatedContent = JSON.stringify(metaData, null, 2);
-    await fs.writeFile(filePath, updatedContent);
 
     // <moduleName>.module.ts | Remove all references and imports of the above files. | Manual (X)
     // const moduleFilePath = path.resolve(modulePath, `${dasherize(modelEntity.module.name)}.module.ts`);
@@ -901,12 +903,12 @@ export class ModelMetadataService {
                 children: [
                   {
                     type: "column",
-                    attrs: { name: "group-1", label: "", className: "col-6" },
+                    attrs: { name: "group-1", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
                     children: column1Fields
                   },
                   {
                     type: "column",
-                    attrs: { name: "group-2", label: "", className: "col-6" },
+                    attrs: { name: "group-2", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
                     children: column2Fields
                   }
                 ]
@@ -1014,12 +1016,12 @@ export class ModelMetadataService {
                   children: [
                     {
                       type: "column",
-                      attrs: { name: "group-1", label: "", className: "col-6" },
+                      attrs: { name: "group-1", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
                       children: firstHalf
                     },
                     {
                       type: "column",
-                      attrs: { name: "group-2", label: "", className: "col-6" },
+                      attrs: { name: "group-2", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
                       children: secondHalf
                     }
                   ]
@@ -1043,8 +1045,8 @@ export class ModelMetadataService {
     let view = await viewRepo.findOne({ where: { name: `${model.singularName}-list-view` } });
 
     const actionData = {
-      displayName: `${model.displayName} List View`,
-      name: `${model.singularName}-list-view`,
+      displayName: `${model.displayName} List Action`,
+      name: `${model.singularName}-list-action`,
       type: "solid",
       domain: "" as any,
       context: "" as any,
@@ -1172,7 +1174,6 @@ export class ModelMetadataService {
     return `${refreshOuput}`;
   }
 
-
   private async executeRefreshModelCommand(model: ModelMetadata, dryRun: boolean = false): Promise<string> {
     const fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
     const output = await this.schematicService.executeSchematicCommand(
@@ -1264,5 +1265,3 @@ export class ModelMetadataService {
   }
 
 }
-
-

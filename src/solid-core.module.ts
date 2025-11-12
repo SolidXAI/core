@@ -57,7 +57,8 @@ import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { SeedCommand } from './commands/seed.command';
 import commonConfig from './config/common.config';
-import { iamConfig, jwtConfig } from './config/iam.config';
+import { iamConfig } from './config/iam.config';
+import { jwtConfig } from './config/jwt.config';
 import { AuthenticationController } from './controllers/authentication.controller';
 import { EmailTemplateController } from './controllers/email-template.controller';
 import { GoogleAuthenticationController } from './controllers/google-authentication.controller';
@@ -102,6 +103,7 @@ import { UserSeederService } from './seeders/user-seeder.service';
 import { AuthenticationService } from './services/authentication.service';
 import { BcryptService } from './services/bcrypt.service';
 import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/uuid-external-id-computed-field-provider.service';
+import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
 import { EmailTemplateService } from './services/email-template.service';
 import { FileService } from './services/file.service';
 import { HashingService } from './services/hashing.service';
@@ -247,15 +249,6 @@ import { ImportTransactionErrorLogService } from './services/import-transaction-
 import { ImportTransactionService } from './services/import-transaction.service';
 import { ListOfValuesMetadataService } from './services/list-of-values-metadata.service';
 import { LocaleService } from './services/locale.service';
-import { McpToolResponseHandlerFactory } from './services/mcp-tool-response-handlers/mcp-tool-response-handler-factory.service';
-import { SolidAddFieldMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-add-field-mcp-tool-response-handler.service';
-import { SolidCreateDashboardMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-mcp-tool-response-handler.service';
-import { SolidCreateDashboardQuestionMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-question-mcp-tool-response-handler.service';
-import { SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-question-sql-dataset-config-mcp-tool-response-handler.service';
-import { SolidCreateDashboardWidgetMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-dashboard-widget-mcp-tool-response-handler.service';
-import { SolidCreateModelWithFieldsMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-model-with-fields-mcp-tool-response-handler.service';
-import { SolidCreateModuleMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-create-module-mcp-tool-response-handler.service';
-import { SolidCreateModelLayoutMcpToolResponseHandler } from './services/mcp-tool-response-handlers/solid-save-model-layout-mcp-tool-response-handler.service';
 import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
 import { PollerService } from './services/poller.service';
@@ -292,6 +285,24 @@ import { ListOfValuesMetadataSubscriber } from './subscribers/list-of-values-met
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { McpHandlerFactory } from './services/genai/mcp-handlers/mcp-handler-factory.service';
+import { SolidCreateModuleMcpHandler } from './services/genai/mcp-handlers/solid-create-module-mcp-handler.service';
+import { SolidCreateModelWithFieldsMcpHandler } from './services/genai/mcp-handlers/solid-create-model-with-fields-mcp-handler.service';
+import { SolidAddFieldsToModelMcpHandler } from './services/genai/mcp-handlers/solid-add-fields-to-model-mcp-handler.service';
+import { SolidUpdateLayoutMcpHandler } from './services/genai/mcp-handlers/solid-update-layout-mcp-handler.service';
+import { SolidCreateDashboardWithWidgetsMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-mcp-handler.service';
+import { SolidCreateDashboardQuestionMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-mcp-handler.service';
+import { SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-sql-dataset-config-mcp-handler.service';
+import { SolidCreateDashboardWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-widget-mcp-handler.service';
+import { SolidCreateComputedProviderMcpHandler } from './services/genai/mcp-handlers/solid-create-computed-provider-mcp-handler.service';
+import { SolidTsMorphService } from './services/solid-ts-morph.service';
+import { SolidAddVariableToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-variable-to-dashboard-mcp-handler.service';
+import { SolidAddQuestionToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-question-to-dashboard-mcp-handler.service';
+import { SolidAddCustomServiceMethodMcpHandler } from './services/genai/mcp-handlers/solid-add-custom-service-method-mcp-handler.service';
+import { SolidAddHeaderButtonOrRowButtonToListViewMcpHandler } from './services/genai/mcp-handlers/solid-add-header-button-or-row-button-to-list-view-mcp-handler.service';
+import { SolidAddControllerHandlerMcpHandler } from './services/genai/mcp-handlers/solid-add-controller-handler-method-mcp-handler.service';
+import { SolidAddButtonToFormViewMcpHandler } from './services/genai/mcp-handlers/solid-add-button-to-form-view-mcp-handler.service';
+import { SolidCreateCustomFormViewWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-custom-form-view-widget-mcp-handler.service';
 
 
 @Global()
@@ -493,9 +504,6 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     ErrorMapperService,
     SolidCoreErrorCodesProvider,
 
-    McpToolResponseHandlerFactory,
-    SolidCreateModuleMcpToolResponseHandler,
-
     TriggerMcpClientPublisherDatabase,
     TriggerMcpClientSubscriberDatabase,
     TriggerMcpClientPublisherRabbitmq,
@@ -537,6 +545,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     TinyUrlService,
     PdfService,
     UuidExternalIdComputedFieldProvider,
+    UuidExternalIdEntityComputedFieldProvider,
     ListOfModelsSelectionProvider,
     ListOfScheduledJobsSelectionProvider,
     LocaleListSelectionProvider,
@@ -625,14 +634,30 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     DashboardQuestionSubscriber,
     DashboardQuestionSqlDatasetConfigSubscriber,
     NoopsEntityComputedFieldProviderService,
-    SolidCreateDashboardMcpToolResponseHandler,
-    SolidCreateDashboardQuestionMcpToolResponseHandler,
-    SolidCreateDashboardQuestionSqlDatasetConfigMcpToolResponseHandler,
-    SolidCreateDashboardWidgetMcpToolResponseHandler,
-    SolidCreateModelWithFieldsMcpToolResponseHandler,
-    SolidAddFieldMcpToolResponseHandler,
+
+    McpHandlerFactory,
+    SolidCreateModuleMcpHandler,
+    SolidCreateModelWithFieldsMcpHandler,
+    SolidAddFieldsToModelMcpHandler,
+    SolidUpdateLayoutMcpHandler,
+    
+    SolidCreateDashboardWithWidgetsMcpHandler,
+    SolidCreateDashboardQuestionMcpHandler,
+    SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler,
+    SolidCreateDashboardWidgetMcpHandler,
+    SolidCreateComputedProviderMcpHandler,
+    SolidAddVariableToDashboardMcpHandler,
+    SolidAddQuestionToDashboardMcpHandler,
+
+    SolidAddCustomServiceMethodMcpHandler,
+    SolidAddHeaderButtonOrRowButtonToListViewMcpHandler,
+    SolidAddControllerHandlerMcpHandler,
+    SolidAddButtonToFormViewMcpHandler,
+    SolidCreateCustomFormViewWidgetMcpHandler,
+    
+    SolidTsMorphService,
+
     ViewMetadataRepository,
-    SolidCreateModelLayoutMcpToolResponseHandler,
     ScheduledJobRepository,
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
@@ -645,8 +670,9 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 
   ],
   exports: [
-    ModuleMetadataService,
     ModelMetadataService,
+    ModelMetadataHelperService,
+    ModuleMetadataService,
     FieldMetadataService,
     MediaStorageProviderMetadataService,
     MediaService,
@@ -689,6 +715,11 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     MailFactory,
     PollerService,
     AiInteractionService,
+    ChatterMessageService,
+    ChatterMessageRepository,
+    ChatterMessageDetailsService,
+    ChatterMessageDetailsRepository,
+    TypeOrmModule
     // ThrottlerModule,
   ],
 })

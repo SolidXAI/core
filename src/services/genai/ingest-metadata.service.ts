@@ -121,7 +121,21 @@ export class IngestMetadataService {
             ingestionInfo.collectionId = collectionId;
 
             // Delete and re-insert a document representing the full json...
-            await this.deleteInsertRagDocumentForModuleMetadataJsonFile(ingestionInfo, fullPath, fileName)
+            // await this.deleteInsertRagDocumentForModuleMetadataJsonFile(ingestionInfo, fullPath, fileName)
+
+            // Delete all metadata chunks. 
+            // const collectionName = `${enabledModule}-rag-collection`;
+            // const deleteResult = await this.ragClient.documents.deleteByFilter({
+            //     filters: {
+            //         // AND semantics across fields:
+            //         "$and": [
+            //             { 'metadata.kind': { $eq: 'solidx-metadata' } },
+            //             { 'metadata.collectionName': { $eq: collectionName } },
+            //             { 'title': { $like: '%Ingested Chunks%' } },
+            //         ]
+            //     },
+            // });
+            // this.logger.log(`Deleted existing documents for collectionName: ${collectionName}. Got response:`, deleteResult);
 
             // Delete and re-insert a chunk representing the module.
             await this.deleteInsertRagChunkForModule(ingestionInfo, moduleMetadata);
@@ -129,10 +143,28 @@ export class IngestMetadataService {
             // Delete and re-insert chunks representing each model.
             for (const model of moduleMetadata.models) {
                 await this.deleteInsertRagChunkForModel(ingestionInfo, enabledModule, model);
-                for (const field of model.fields) {
-                    await this.deleteInsertRagChunkForField(ingestionInfo, enabledModule, model.singularName, field);
-                }
+
+                // Disabling this for now...
+                // for (const field of model.fields) {
+                //     await this.deleteInsertRagChunkForField(ingestionInfo, enabledModule, model.singularName, field);
+                // }
             }
+
+            // TODO: Delete and re-insert chunks representing roles
+
+            // TODO: Delete and re-insert chunks representing menus 
+
+            // TODO: Delete and re-insert chunks representing actions
+
+            // TODO: Delete and re-insert chunks representing list views 
+
+            // TODO: Delete and re-insert chunks representing kanban views 
+
+            // TODO: Delete and re-insert chunks representing form views
+
+            // TODO: Delete and re-insert chunks representing security rules
+
+            // TODO: Delete and re-insert chunks representing scheduled jobs
 
             // Save ingestion info to disk...
             fs.writeFileSync(enabledModulIngestionInfoFullPath, JSON.stringify({ ...ingestionInfo }, null, 2), 'utf8');
@@ -142,37 +174,52 @@ export class IngestMetadataService {
     private async resolveRagCollectionForModule(ingestionInfo: ModuleRAGIngestionInfo, moduleName: string): Promise<string> {
         this.logger.debug(`Resolving RAG collection for module: ${moduleName}`);
 
-        let existingCollection: CollectionResponse = null;
-        if (ingestionInfo.collectionId) {
-            // See if collection already exists... 
-            const r = await this.ragClient.collections.list({
-                ids: [
-                    ingestionInfo.collectionId
-                ]
-            });
+        const collectionName = `${moduleName}-rag-collection`;
 
-            if (r) {
-                if (r.results.length === 1) {
-                    existingCollection = r.results[0];
-                }
-                if (r.results.length > 1) {
-                    // TODO: do something that will print a meaningful error on the console...
-                }
+        // delete and recreate 
+        // if (alwaysRecreate === true) {
+        const existingCollection = await this.ragClient.collections.retrieveByName({
+            name: collectionName
+        });
+
+        if (existingCollection) {
+            try {
+                await this.ragClient.collections.delete({ id: existingCollection.results.id });
+            } catch (e) {
+                this.logger.warn(`[Warn] Failed deleteByFilter for collection': ${String(e)}`);
             }
         }
+        // }
 
-        if (!existingCollection) {
-            const r = await this.ragClient.collections.create({
-                name: `${moduleName}-rag-collection`,
-                description: `Collection created to group all documents, chunks related to module: ${moduleName}`
-            });
+        // let existingCollection: CollectionResponse = null;
+        // if (ingestionInfo.collectionId) {
+        //     // See if collection already exists... 
+        //     const r = await this.ragClient.collections.list({
+        //         ids: [
+        //             ingestionInfo.collectionId
+        //         ]
+        //     });
 
-            // TODO: for some reason if we are unable to create a collection then fail with a visible error message in the console...
+        //     if (r) {
+        //         if (r.results.length === 1) {
+        //             existingCollection = r.results[0];
+        //         }
+        //         if (r.results.length > 1) {
+        //             // TODO: do something that will print a meaningful error on the console...
+        //         }
+        //     }
+        // }
 
-            return r.results.id;
-        }
+        // if (!existingCollection) {
+        const r = await this.ragClient.collections.create({
+            name: collectionName,
+            description: `Collection created to group all documents, chunks related to module: ${moduleName}`
+        });
 
-        return existingCollection.id;
+        // TODO: for some reason if we are unable to create a collection then fail with a visible error message in the console...
+        return r.results.id;
+        // }
+        // return existingCollection.id;
     }
 
     private async deleteInsertRagDocumentForModuleMetadataJsonFile(ingestionInfo: ModuleRAGIngestionInfo, fullPath: string, fileName: string): Promise<void> {
@@ -242,7 +289,7 @@ export class IngestMetadataService {
                 description: m?.description ?? null,
 
                 // Include field names to detect field-level changes at module granularity - maybe remove this later?
-                fields: Array.isArray(m?.fields) ? m.fields.map((f: any) => f?.name ?? null) : [],
+                // fields: Array.isArray(m?.fields) ? m.fields.map((f: any) => f?.name ?? null) : [],
             })),
         });
 
@@ -270,6 +317,7 @@ Usage: Use this chunk to choose the correct model/field chunks for code generati
 
         // metadata has to be concise and queryable
         const metadata = {
+            collectionName: `${moduleName}-rag-collection`,
             kind: 'solidx-metadata',
             type: 'module',
             moduleName,
@@ -279,16 +327,40 @@ Usage: Use this chunk to choose the correct model/field chunks for code generati
         };
 
         // Delete previous chunk if we have one
-        if (ingestionInfo.moduleChunkId) {
-            try {
-                await this.ragClient.documents.delete({ id: ingestionInfo.moduleChunkId });
-            } catch (e) {
-                this.logger.warn(`[Warn] Failed deleting old module chunk (${ingestionInfo.moduleChunkId}): ${String(e)}`);
-            }
+        // if (ingestionInfo.moduleChunkId) {
+        //     try {
+        //         await this.ragClient.documents.delete({ id: ingestionInfo.moduleChunkId });
+        //     } catch (e) {
+        //         this.logger.warn(`[Warn] Failed deleting old module chunk (${ingestionInfo.moduleChunkId}): ${String(e)}`);
+        //     }
+        // }
+
+        // We changed the approach to delete and re-create using metadata.
+        // delete any existing module records by metadata (idempotent)
+        try {
+            const deleteResult = await this.ragClient.documents.deleteByFilter({
+                filters: {
+                    // AND semantics across fields:
+                    "$and": [
+                        { 'metadata.kind': { $eq: 'solidx-metadata' } },
+                        { 'metadata.type': { $eq: 'module' } },
+                        { 'metadata.moduleName': { $eq: moduleName } },
+                        // (optional but nice to constrain tightly if you always set it)
+                        { 'metadata.collectionName': { $eq: `${moduleName}-rag-collection` } },
+                    ]
+                },
+            });
+
+            this.logger.log(`Deleted existing module document for moduleName: ${moduleName}. Got response:`, deleteResult);
+
+        } catch (e) {
+            this.logger.warn(`[Warn] Failed deleteByFilter for module '${moduleName}': ${String(e)}`);
+            // Non-fatal: we can still proceed to create; caller’s auth will limit scope anyway
         }
 
         const r = await this.ragClient.documents.create({
-            raw_text: text,
+            chunks: [text],
+            // raw_text: text,
             metadata: metadata,
             collectionIds: [ingestionInfo.collectionId],
         });
@@ -364,10 +436,15 @@ Fields (${fields.length}) [name:type|flags]:
 ${fieldSummaryLines.join('\n')}
 
 Usage: Use this chunk to generate DTOs, subscribers, custom service methods, and CRUD handlers for ${modelName}.
-For exact constraints (enum/min/max/regex/default), consult the individual field chunks.`;
+
+Full model metadata json: 
+${JSON.stringify(model)}
+
+`;
 
         // 4) Metadata (concise & queryable)
         const metadata = {
+            collectionName: `${moduleName}-rag-collection`,
             kind: 'solidx-metadata',
             type: 'model',
             moduleName,
@@ -382,17 +459,41 @@ For exact constraints (enum/min/max/regex/default), consult the individual field
         };
 
         // 5) Delete previous chunk if present
-        if (modelEntry.modelChunkId) {
-            try {
-                await this.ragClient.documents.delete({ id: modelEntry.modelChunkId });
-            } catch (e) {
-                this.logger.warn(`[Warn] Failed deleting old model chunk (${modelEntry.modelChunkId}): ${String(e)}`);
-            }
+        // if (modelEntry.modelChunkId) {
+        //     try {
+        //         await this.ragClient.documents.delete({ id: modelEntry.modelChunkId });
+        //     } catch (e) {
+        //         this.logger.warn(`[Warn] Failed deleting old model chunk (${modelEntry.modelChunkId}): ${String(e)}`);
+        //     }
+        // }
+
+        // We changed the approach to delete and re-create using metadata.
+        // delete any existing module records by metadata (idempotent)
+        try {
+            const deleteResult = await this.ragClient.documents.deleteByFilter({
+                filters: {
+                    // AND semantics across fields:
+                    "$and": [
+                        { 'metadata.kind': { $eq: 'solidx-metadata' } },
+                        { 'metadata.type': { $eq: 'model' } },
+                        { 'metadata.moduleName': { $eq: moduleName } },
+                        { 'metadata.modelName': { $eq: modelName } },
+                        // (optional but nice to constrain tightly if you always set it)
+                        { 'metadata.collectionName': { $eq: `${moduleName}-rag-collection` } },
+                    ]
+                },
+            });
+
+            this.logger.log(`Deleted existing model document for modelName: ${modelName}. Got response:`, deleteResult);
+
+        } catch (e) {
+            this.logger.warn(`[Warn] Failed deleteByFilter for module '${moduleName}': ${String(e)}`);
+            // Non-fatal: we can still proceed to create; caller’s auth will limit scope anyway
         }
 
         // 6) Create new document (R2R auto-generates the ID)
         const r = await this.ragClient.documents.create({
-            raw_text: text,
+            chunks: [text],
             metadata,
             collectionIds: [ingestionInfo.collectionId],
         });
@@ -661,6 +762,7 @@ For exact constraints (enum/min/max/regex/default), consult the individual field
 
         // 4) Build text + metadata tailored to FieldMetadata
         const { text, metadata } = this._buildFieldTextAndMetadata(moduleName, modelName, field);
+
         // also keep the hash in metadata for audit/debug
         (metadata as any).schemaHash = schemaHash;
 

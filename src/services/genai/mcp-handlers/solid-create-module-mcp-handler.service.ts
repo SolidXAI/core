@@ -1,12 +1,12 @@
 import { Injectable } from "@nestjs/common";
-import { IMcpToolResponseHandler } from "../../interfaces";
+import { IMcpToolResponseHandler } from "../../../interfaces";
 import { AiInteraction } from "src/entities/ai-interaction.entity";
-import { ModuleMetadataService } from "../module-metadata.service";
+import { ModuleMetadataService } from "../../module-metadata.service";
 import { CreateModuleMetadataDto } from "src/dtos/create-module-metadata.dto";
 import { SolidRegistry } from "src/helpers/solid-registry";
 
 @Injectable()
-export class SolidCreateModuleMcpToolResponseHandler implements IMcpToolResponseHandler {
+export class SolidCreateModuleMcpHandler implements IMcpToolResponseHandler {
 
     constructor(
         private readonly moduleMetadataService: ModuleMetadataService,
@@ -16,9 +16,12 @@ export class SolidCreateModuleMcpToolResponseHandler implements IMcpToolResponse
     }
 
     async apply(aiInteraction: AiInteraction) {
-        const aiResponse = JSON.parse(aiInteraction.message);
+        const escapedMessage = aiInteraction.message.replace(/\\'/g, "'");
+        const aiResponseMessage = JSON.parse(escapedMessage);
 
-        const moduleMetadata = aiResponse?.data?.moduleMetadata ?? {};
+        const { generation_status, instructions, data } = aiResponseMessage;
+        const { schema } = data;
+        const { moduleMetadata } = schema;
 
         // TODO: Validate if another module with same name exists, if it does then raise an error...
 

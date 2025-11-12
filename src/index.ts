@@ -24,6 +24,7 @@ export * from './decorators/solid-database-module.decorator'
 export * from './decorators/solid-service.decorator'
 export * from './decorators/mail-provider.decorator'
 
+export * from './dtos/post-chatter-message.dto'
 export * from './dtos/basic-filters.dto'
 export * from './dtos/solid-request-context.dto'
 export * from './dtos/change-password.dto'
@@ -170,6 +171,7 @@ export * from './helpers/field-crud-managers/UUIDFieldCrudManager' //rename
 export * from './helpers/environment.helper'
 export * from './helpers/cors.helper'
 export * from './helpers/security.helper'
+export * from './helpers/model-metadata-helper.service'
 
 export * from './services/crud.service'
 export * from './interceptors/logging.interceptor'
@@ -280,6 +282,7 @@ export * from './repository/solid-base.repository'
 export * from './repository/security-rule.repository'
 export * from './repository/field.repository'
 export * from './repository/chatter-message.repository'
+export * from './repository/chatter-message-details.repository'
 
 
 //softDeleteAwareEventSubscriber.subscriber.ts

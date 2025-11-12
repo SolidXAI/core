@@ -1,13 +1,17 @@
 import { Injectable, Logger } from '@nestjs/common';
-
+import { ModelMetadataService } from 'src';
+import { SolidRegistry } from 'src/helpers/solid-registry';
 import { QueueMessage } from 'src/interfaces/mq';
-import { MqMessageService } from '../../services/mq-message.service';
-import { MqMessageQueueService } from '../../services/mq-message-queue.service';
-import { McpResponse, QueuesModuleOptions, TriggerMcpClientOptions } from "../../interfaces";
-import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
-import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
+import { DashboardRepository } from 'src/repository/dashboard.repository';
 import { AiInteractionService } from 'src/services/ai-interaction.service';
+import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { PollerService } from 'src/services/poller.service';
+import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
+import { Not } from 'typeorm';
+import { McpResponse, QueuesModuleOptions, TriggerMcpClientOptions } from "../../interfaces";
+import { MqMessageQueueService } from '../../services/mq-message-queue.service';
+import { MqMessageService } from '../../services/mq-message.service';
+import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
 
 @Injectable()
 export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<TriggerMcpClientOptions> {
@@ -18,6 +22,12 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         readonly mqMessageQueueService: MqMessageQueueService,
         readonly poller: PollerService,
         readonly aiInteractionService: AiInteractionService,
+        readonly moduleMetadataService: ModuleMetadataService,
+        readonly modelMetadataService: ModelMetadataService,
+        private readonly solidRegistry: SolidRegistry,
+        // private readonly dashboardService: DashboardService
+        private readonly dashboardRepository: DashboardRepository
+
     ) {
         super(mqMessageService, mqMessageQueueService, poller);
     }
@@ -92,22 +102,133 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             responseTimeMs: 0, // Updated after we receive the response
             metadata: '', // Updated in the tool
             isApplied: false, // Updated after we receive the response
-            status: '' // Updated after we receive the response
+            status: 'pending' // Updated after we receive the response
         });
 
-        const finalPrompt = `
-        # User Prompt: 
-        ${prompt}
+        const existingComputationProviders = this.solidRegistry.getComputedFieldProviders();
+
+        const { records: existingModules } = await this.moduleMetadataService.findMany({
+            filters: {
+                name: { $ne: 'solid-core' }
+            },
+            fields: ['id', 'name', 'displayName', 'description'],
+            limit: 1000
+        });
+        const { records: existingModels } = await this.modelMetadataService.findMany({
+            filters: {
+                module: {
+                    name: {
+                        $ne: 'solid-core',
+                    }
+                }
+            },
+            limit: 1000,
+            populate: ['module']
+        });
+
+        // Get the list of dashboards
+        // TODO: Ideally we should fetch dashboard like below, but used below approach to avoid below CLS issues for now.
+        // Cannot set the key "filter". No CLS context available, please make sure that a ClsMiddleware/Guard/Interceptor has set up the context, or wrap any calls that depend on CLS with "ClsService#run"
+        // const { records: existingDashboards } = await this.dashboardService.find({
+        //     fields
+        // })
+        const existingDashboards = await this.dashboardRepository.find(
+            {
+                where: {
+                    module: {
+                        name: Not('solid-core')
+                    }
+                },
+            }
+        );
+
+        const existingControllerAndTheirMethods = this.solidRegistry.getControllers();
+
         
-        # System Instructions:
-        - aiInteractionId: ${genAiInteraction.id}
-        - moduleName:${message.payload.moduleName}
-        - You will be invoking tools if needed.
-        - If a tool is invoked, you must return **exactly** the raw output from the tool, without any additional formatting, commentary, or text.
-        - Do not wrap the result in quotes, JSON, or markdown fences.
-        - Do not explain what the result means.
-        - Your final response must be identical to the tool output.
-        `
+
+        // Build markdown sections using template interpolation
+        const modulesSection = (existingModules ?? [])
+            .map(m => [
+                `### ${m.displayName}`,
+                `- name: ${m.name}`,
+                `- description: ${m.description ?? ""}`,
+            ].join('\n'))
+            .join('\n\n');
+
+        const modelsSection = (existingModels ?? [])
+            .map(m => [
+                `### ${m.displayName}`,
+                `- singularName: ${m.singularName}`,
+                `- description: ${m.description ?? ""}`,
+                `- moduleName: ${m.module.name}`,
+            ].join('\n'))
+            .join('\n\n');
+
+        const dashboardsSection = (existingDashboards ?? [])
+            .map(d => [
+                `### ${d.displayName}`,
+                `- name: ${d.name}`,
+                `- description: ${d.description ?? ""}`,
+            ].join('\n'))
+            .join('\n\n');    
+
+        const computationProvidersSection = (existingComputationProviders ?? [])
+            .map(m => [
+                `### ${m.instance.name()}`,
+                `- name: ${m.instance.name()}`,
+                `- description: ${m.instance.help() ?? ""}`,
+            ].join('\n'))
+            .join('\n\n');
+
+        const controllersAndTheirMethods = (existingControllerAndTheirMethods ?? [])
+            .map(m => [
+                `### ${m.name}`,
+                `- methods: ${m.methods.length ? m.methods.map(m => `- ${m}`).join('\n'): '- No methods found'}`,
+            ].join('\n'))
+            .join('\n\n');
+
+
+
+        const finalPrompt = `
+# User Prompt: 
+${prompt}
+
+# System Instructions:
+- aiInteractionId: ${genAiInteraction.id}
+- You will be invoking tools if needed, hence you will have to choose the applicable tools based on the tool context given to you.
+- If a tool is invoked, you must return **exactly** the raw output from the tool, without any json envelopes, additional formatting, commentary, or text.
+- Do not wrap the result in quotes, JSON, or markdown fences.
+- Do not explain what the result means.
+
+# LISTS FOR REFERENCE AND VALIDATIONS
+
+## LIST OF EXISTING MODULES
+Use the below list of modules to infer which module the user is referring to, .
+
+${modulesSection}
+
+## LIST OF EXISTING MODELS
+Use the below list of models to infer which model the user is referring to.
+You need to pull out the singularName for the model from the user prompt to match against the below list.
+
+${modelsSection}
+
+## LIST OF EXISTING DASHBOARDS
+Use the below list of dashboards to infer which dashboard the user is referring to.
+
+${dashboardsSection}
+
+## LIST OF EXISTING COMPUTED FIELD PROVIDERS
+Use the below list of computed field providers to infer which provider the user is referring to.
+
+${computationProvidersSection}
+`.trim();
+
+
+// ## LIST OF EXISTING CONTROLLERS AND THEIR METHODS
+// Use the below list of controllers and their methods to infer whether the api call being made to a particular controller exists or not.
+
+// ${controllersAndTheirMethods}
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);
         this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);
@@ -116,8 +237,8 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         if (!aiResponse.success) {
             this.triggerMcpClientSubscriberLogger.log(`Gen ai has returned with a false status code`);
 
-            const errorsStr = aiResponse.errors.join('\n ');
-            const errorTrace = aiResponse.error_trace.join('\n');
+            const errorsStr = aiResponse.errors?.join('\n ');
+            const errorTrace = aiResponse.error_trace?.join('\n');
 
             // await this.aiInteractionService.create({
             //     userId: aiInteraction.user.id,
@@ -148,7 +269,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             throw new Error(errorsStr);
         }
         else {
-            // let nestedResponse = this.cleanNestedResponse(aiResponse);
+            let nestedResponse = this.cleanNestedResponse(aiResponse);
 
             // const genAiInteraction = await this.aiInteractionService.create({
             //     userId: aiInteraction.user.id,
@@ -166,14 +287,21 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             // });
 
             // TODO: Update the previously created genAiInteraction record with the respective success fields and save to DB
+            const errorsStr = nestedResponse?.status == "error" && nestedResponse?.errors.join('\n ');
+            // const errorTrace = nestedResponse?.status == "error" && nestedResponse?.error_trace?.join('\n');
+
+
             await this.aiInteractionService.update(genAiInteraction.id, {
+                errorMessage: nestedResponse.status == "error" ? `${errorsStr}` : "",
+                // errorMessage:"",
                 // contentType: aiResponse.content_type,
-                errorMessage: '',
                 // message: nestedResponse,
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
                 isApplied: aiInteraction.isApplied,
-                status: aiResponse.success ? 'succeeded' : 'failed'
+
+                // status: aiResponse.success ? 'succeeded' : 'failed'
+                status: aiResponse.success && nestedResponse.status == "success" ? 'succeeded' : 'failed'
             }, [], true);
 
             // If the human interaction was with isAutoApply=true, then we can go ahead and autoApply.

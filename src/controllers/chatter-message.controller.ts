@@ -7,6 +7,7 @@ import { UpdateChatterMessageDto } from '../dtos/update-chatter-message.dto';
 import { PostChatterMessageDto } from '../dtos/post-chatter-message.dto';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
+import { Public } from 'src/decorators/public.decorator';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -25,40 +26,59 @@ export class ChatterMessageController {
     return this.service.create(createDto, files);
   }
 
-  @ApiBearerAuth("jwt")
-  @Post('/bulk')
-  @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateChatterMessageDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
-    return this.service.insertMany(createDtos, filesArray);
-  }
+  // @ApiBearerAuth("jwt")
+  // @Post('/bulk')
+  // @UseInterceptors(AnyFilesInterceptor())
+  // insertMany(@Body() createDtos: CreateChatterMessageDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+  //   return this.service.insertMany(createDtos, filesArray);
+  // }
 
 
-  @ApiBearerAuth("jwt")
-  @Put(':id')
-  @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateChatterMessageDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-    return this.service.update(id, updateDto, files);
+  // @ApiBearerAuth("jwt")
+  // @Put(':id')
+  // @UseInterceptors(AnyFilesInterceptor())
+  // update(@Param('id') id: number, @Body() updateDto: UpdateChatterMessageDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  //   return this.service.update(id, updateDto, files);
+  // }
+
+  // @ApiBearerAuth("jwt")
+  // @Patch(':id')
+  // @UseInterceptors(AnyFilesInterceptor())
+  // partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateChatterMessageDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  //   return this.service.update(id, updateDto, files, true);
+  // }
+
+  // @ApiBearerAuth("jwt")
+  // @Post('/bulk-recover')
+  // async recoverMany(@Body() ids: number[]) {
+  //   return this.service.recoverMany(ids);
+  // }
+
+  // @ApiBearerAuth("jwt")
+  // @Get('/recover/:id')
+  // async recover(@Param('id') id: number) {
+  //   return this.service.recover(id);
+  // }
+
+  @Public()
+  @Get('/getChatterMessages/:entityId/:entityName')
+  @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
+  @ApiQuery({ name: 'fields', required: false, type: Array })
+  @ApiQuery({ name: 'sort', required: false, type: Array })
+  @ApiQuery({ name: 'groupBy', required: false, type: Array })
+  @ApiQuery({ name: 'populate', required: false, type: Array })
+  @ApiQuery({ name: 'populateMedia', required: false, type: Array })
+  @ApiQuery({ name: 'filters', required: false, type: Array })
+  async getChatterMessages(
+    @Param('entityId') entityId: number,
+    @Param('entityName') entityName: string,
+    @Query() query: any
+  ) {
+    return this.service.getChatterMessages(entityId, entityName, query);
   }
 
-  @ApiBearerAuth("jwt")
-  @Patch(':id')
-  @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateChatterMessageDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-    return this.service.update(id, updateDto, files, true);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Post('/bulk-recover')
-  async recoverMany(@Body() ids: number[]) {
-    return this.service.recoverMany(ids);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Get('/recover/:id')
-  async recover(@Param('id') id: number) {
-    return this.service.recover(id);
-  }
-    
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -80,17 +100,17 @@ export class ChatterMessageController {
     return this.service.findOne(+id, query);
   }
 
-  @ApiBearerAuth("jwt")
-  @Delete('/bulk')
-  async deleteMany(@Body() ids: number[]) {
-    return this.service.deleteMany(ids);
-  }
+  // @ApiBearerAuth("jwt")
+  // @Delete('/bulk')
+  // async deleteMany(@Body() ids: number[]) {
+  //   return this.service.deleteMany(ids);
+  // }
 
-  @ApiBearerAuth("jwt")
-  @Delete(':id')
-  async delete(@Param('id') id: number) {
-    return this.service.delete(id);
-  }
+  // @ApiBearerAuth("jwt")
+  // @Delete(':id')
+  // async delete(@Param('id') id: number) {
+  //   return this.service.delete(id);
+  // }
 
   @ApiBearerAuth("jwt")
   @Post('post')

@@ -82,6 +82,7 @@ export class DashboardQuestionService extends CRUDService<DashboardQuestion> {
 
   private getExpressions(isPreview: boolean, dashboardVariables: DashboardVariable[], inputExpressions: SqlExpression[]) {
     const expressions: SqlExpression[] = [];
+
     if (isPreview) {
       // Convert the dashboard variables into objects of interface type SqlExpression using the default value, default operator and the variable name
       const expr: SqlExpression[] = dashboardVariables.map(variable => {
@@ -94,9 +95,35 @@ export class DashboardQuestionService extends CRUDService<DashboardQuestion> {
       expressions.push(...expr);
     }
     else {
-      expressions.push(...inputExpressions);
+      // Loop through the dashboard variables and see if there is a matching input expression
+      // If there is, use that expression instead of the default value
+      for (const variable of dashboardVariables) {
+        const matchingInputExpression = inputExpressions.find(expr => expr.variableName === variable.variableName);
+        if (matchingInputExpression) {
+          expressions.push(matchingInputExpression);
+        }
+        else {
+          expressions.push({
+            variableName: variable.variableName,
+            operator: variable.defaultOperator as SqlExpressionOperator,
+            value: JSON.parse(variable.defaultValue || '[]'),
+          });
+        }
+      }
+      expressions.push(...expressions);
     }
-    return expressions;
+
+    // Remove duplicate expressions based on variableName in the expressions array
+    const deduplicatedExpressions: SqlExpression[] = [];
+    const variableNames = new Set<string>();
+    for (const expr of expressions) {
+      if (!variableNames.has(expr.variableName)) {
+        deduplicatedExpressions.push(expr);
+        variableNames.add(expr.variableName);
+      }
+    }
+
+    return deduplicatedExpressions;
   }
 
   private async loadQuestion(id: number) {

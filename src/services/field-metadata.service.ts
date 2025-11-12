@@ -15,6 +15,7 @@ import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ISelectionProviderValues } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import qs from 'qs';
 
 
 @Injectable()
@@ -1046,6 +1047,11 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         const selectionDynamicProviderCtxt = JSON.parse(entity.selectionDynamicProviderCtxt ? entity.selectionDynamicProviderCtxt : '{}');
         selectionDynamicProviderCtxt['limit'] = query.limit;
         selectionDynamicProviderCtxt['offset'] = query.offset;
+        const formValues = query.formValues || {};
+        // Parse the form values if they are in string format using qs
+        const parsedFormValues = typeof formValues === 'string' ? qs.parse(formValues, { allowDots: true }) : formValues;
+        selectionDynamicProviderCtxt['formValues'] = parsedFormValues;
+
 
         // 3. get hold of the provider instance from the SolidRegistry
         const selectionProviderInstance = this.solidRegistry.getSelectionProviderInstance(selectionDynamicProvider);
@@ -1073,6 +1079,10 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         const selectionDynamicProviderCtxt = JSON.parse(entity.selectionDynamicProviderCtxt ? entity.selectionDynamicProviderCtxt : '{}');
         selectionDynamicProviderCtxt['limit'] = query.limit;
         selectionDynamicProviderCtxt['offset'] = query.offset;
+        const formValues = query.formValues || {};
+        // Parse the form values if they are in string format using qs
+        const parsedFormValues = typeof formValues === 'string' ? qs.parse(formValues, { allowDots: true }) : formValues;
+        selectionDynamicProviderCtxt['formValues'] = parsedFormValues;
 
         // 3. get hold of the provider instance from the SolidRegistry
         const selectionProviderInstance = this.solidRegistry.getSelectionProviderInstance(selectionDynamicProvider);

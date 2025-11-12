@@ -5,10 +5,14 @@ import { Public } from 'src/decorators/public.decorator';
 import { ErrorMapperService } from 'src/helpers/error-mapper.service';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { AiInteractionService } from 'src/services/ai-interaction.service';
+import { IngestMetadataService } from 'src/services/genai/ingest-metadata.service';
 import { MqMessageService } from 'src/services/mq-message.service';
 import { SolidRegistry } from '../helpers/solid-registry';
 
-
+export interface PostProcessCodeGenConfig {
+    runModuleMetadataSeeder?: boolean; // If true, regenerate module metadata
+    runSolidIngestion?: boolean; // If true, run solid ingestion command
+}
 @Controller('')
 @ApiTags("Common")
 // @UseGuards(ThrottlerGuard)
@@ -20,7 +24,9 @@ export class ServiceController {
         private readonly solidRegistry: SolidRegistry,
         private readonly aiInteractionService: AiInteractionService,
         private readonly mqMessageService: MqMessageService,
-        private readonly errorMapper: ErrorMapperService
+        private readonly errorMapper: ErrorMapperService,
+        private readonly ingestMetadataService: IngestMetadataService,
+        
     ) { }
 
     @Public()
@@ -102,6 +108,41 @@ export class ServiceController {
         await seeder.seed();
         return { message: `seed data for ${seedData.seeder}` };
     }
+
+    @ApiBearerAuth("jwt")
+    @Post('code-generation/post-process')
+    async postProcessCodeGeneration(@Body() config : PostProcessCodeGenConfig) {
+        // Set defaults if not provided
+        config.runModuleMetadataSeeder = config.runModuleMetadataSeeder ?? true;
+        config.runSolidIngestion = config.runSolidIngestion ?? true;
+
+        // Run the Module Metadata Seeder Service
+        if (config.runModuleMetadataSeeder) {
+            this.logger.debug(`Running the Module Metadata Seeder Service as part of post-process code generation`);
+            const seeder = this.solidRegistry
+                .getSeeders()
+                .filter((seeder) => seeder.name === 'ModuleMetadataSeederService')
+                .map((seeder) => seeder.instance)
+                .pop();
+            if (!seeder) {
+                this.logger.error(`Seeder service ModuleMetadataSeederService not found. Does your service have a seed() method?`);
+            } else {
+                await seeder.seed();
+            }
+        } else {
+            this.logger.debug(`Skipping the Module Metadata Seeder Service as part of post-process code generation`);
+        }
+        
+        // Run the Solid ingestion command
+        if (config.runSolidIngestion) {
+            this.logger.debug(`Running the Solid ingestion command as part of post-process code generation`);
+
+            // TODO: disabled this till we figure out a way to make this stable...
+            // This keeps failing for a variety of reasons... 
+            // await this.ingestMetadataService.ingest();
+        }
+    }
+
 
     // @Public()
     // @Get('play')
