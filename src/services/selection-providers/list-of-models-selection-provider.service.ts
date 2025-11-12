@@ -33,7 +33,7 @@ export class ListOfModelsSelectionProvider implements ISelectionProvider<ISelect
         const models = (await this.modelMetadataService.findMany(queryData)).records;
 
         const model = models.filter(i => i.singularName === optionValue)[0];
-        return { label: model.singularName, value: model.id }
+        return { label: model.displayName, value: model.singularName }
     }
 
     async values(query: string, ctxt: ISelectionProviderContext): Promise<readonly ISelectionProviderValues[]> {
@@ -63,7 +63,7 @@ export class ListOfModelsSelectionProvider implements ISelectionProvider<ISelect
         // });
 
         return filteredModels.map(i => {
-            return { label: i.singularName, value: i.singularName };
+            return { label: i.displayName, value: i.singularName };
         });
 
     }
