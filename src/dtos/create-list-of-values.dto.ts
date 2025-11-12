@@ -33,5 +33,6 @@ export class CreateListOfValuesDto {
     moduleId: number;
     @IsString()
     @IsOptional()
+    @ApiProperty()
     moduleUserKey: string;
 }

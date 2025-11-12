@@ -1045,8 +1045,8 @@ export class ModelMetadataService {
     let view = await viewRepo.findOne({ where: { name: `${model.singularName}-list-view` } });
 
     const actionData = {
-      displayName: `${model.displayName} List View`,
-      name: `${model.singularName}-list-view`,
+      displayName: `${model.displayName} List Action`,
+      name: `${model.singularName}-list-action`,
       type: "solid",
       domain: "" as any,
       context: "" as any,

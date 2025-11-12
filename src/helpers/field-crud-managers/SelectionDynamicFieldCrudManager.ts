@@ -110,10 +110,11 @@ export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
         const providerInstance = this.providerInstance<any>(selectionDynamicProvider);
         try {
             // Use the value method first
-            const value = await providerInstance.value(fieldValue, JSON.parse(this.options.selectionDynamicProviderCtxt));
-            if (!value) {
-                return false;
+            const valueOption = await providerInstance.value(fieldValue, JSON.parse(this.options.selectionDynamicProviderCtxt));
+            if (valueOption && valueOption.value === fieldValue) {
+                return true;
             }
+            return false;
         }
         catch (error) {
             // Use the values method as a fallback, if the value method is not implemented

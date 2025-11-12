@@ -5296,7 +5296,7 @@
   ],
   "actions": [
     {
-      "displayName": "Module list view",
+      "displayName": "Module List Action",
       "name": "moduleMetadata-list-action",
       "type": "custom",
       "domain": "",
@@ -5309,7 +5309,7 @@
       "modelUserKey": "moduleMetadata"
     },
     {
-      "displayName": "Model list view",
+      "displayName": "Model List Action",
       "name": "modelMetadata-list-action",
       "type": "custom",
       "domain": "",
@@ -5322,7 +5322,7 @@
       "modelUserKey": "modelMetadata"
     },
     {
-      "displayName": "Field list view",
+      "displayName": "Field List Action",
       "name": "fieldMetadata-list-action",
       "type": "custom",
       "domain": "",
@@ -5335,7 +5335,7 @@
       "modelUserKey": "fieldMetadata"
     },
     {
-      "displayName": "View Metadata list action",
+      "displayName": "View Metadata List Action",
       "name": "viewMetadata-list-action",
       "type": "solid",
       "domain": "",
@@ -5348,7 +5348,7 @@
       "modelUserKey": "viewMetadata"
     },
     {
-      "displayName": "User View Metadata list action",
+      "displayName": "User View Metadata List Action",
       "name": "userViewMetadata-list-action",
       "type": "solid",
       "domain": "",
@@ -5361,7 +5361,7 @@
       "modelUserKey": "userViewMetadata"
     },
     {
-      "displayName": "Action Metadata list action",
+      "displayName": "Action Metadata List Action",
       "name": "actionMetadata-list-action",
       "type": "solid",
       "domain": "",
@@ -5374,7 +5374,7 @@
       "modelUserKey": "actionMetadata"
     },
     {
-      "displayName": "Menu Item Metadata list action",
+      "displayName": "Menu Item Metadata List Action",
       "name": "menuItemMetadata-list-action",
       "type": "solid",
       "domain": "",
@@ -5387,7 +5387,7 @@
       "modelUserKey": "menuItemMetadata"
     },
     {
-      "displayName": "Saved Filters list action",
+      "displayName": "Saved Filters List Action",
       "name": "savedFilters-list-action",
       "type": "solid",
       "domain": "",
@@ -5400,12 +5400,12 @@
       "modelUserKey": "savedFilters"
     },
     {
-      "displayName": "Media list action",
+      "displayName": "Media List Action",
       "name": "media-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/app-builder/media/all",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "media-list-view",
@@ -5413,12 +5413,12 @@
       "modelUserKey": "media"
     },
     {
-      "displayName": "Solid Media Storage Provider Model list action",
+      "displayName": "Solid Media Storage Provider Model List Action",
       "name": "mediaStorageProviderMetadata-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/app-builder/media-storage-provider/all",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "mediaStorageProviderMetadata-list-view",
@@ -5426,8 +5426,8 @@
       "modelUserKey": "mediaStorageProviderMetadata"
     },
     {
-      "displayName": "Chatter Message list action",
-      "name": "chatter-message-list-action",
+      "displayName": "Chatter Message List Action",
+      "name": "chatterMessage-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
@@ -5439,8 +5439,8 @@
       "modelUserKey": "chatterMessage"
     },
     {
-      "displayName": "Chatter Message Details list action",
-      "name": "chatter-message-details-list-action",
+      "displayName": "Chatter Message Details List Action",
+      "name": "chatterMessageDetails-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
@@ -5452,7 +5452,7 @@
       "modelUserKey": "chatterMessageDetails"
     },
     {
-      "displayName": "locale list action",
+      "displayName": "locale List Action",
       "name": "locale-list-action",
       "type": "solid",
       "domain": "",
@@ -5465,12 +5465,12 @@
       "modelUserKey": "locale"
     },
     {
-      "displayName": "User list action",
+      "displayName": "User List Action",
       "name": "user-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/iam/users/all",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "user-list-view",
@@ -5504,12 +5504,12 @@
       "modelUserKey": "user"
     },
     {
-      "displayName": "Role list action",
+      "displayName": "Role List Action",
       "name": "roleMetadata-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/iam/roles/all",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "roleMetadata-list-view",
@@ -5517,12 +5517,12 @@
       "modelUserKey": "roleMetadata"
     },
     {
-      "displayName": "Permission list action",
+      "displayName": "Permission List Action",
       "name": "permissionMetadata-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/iam/permissions/all",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "permissionMetadata-list-view",
@@ -5530,7 +5530,7 @@
       "modelUserKey": "permissionMetadata"
     },
     {
-      "displayName": "Message list action",
+      "displayName": "Message List Action",
       "name": "mqMessage-list-action",
       "type": "solid",
       "domain": "",
@@ -5543,7 +5543,7 @@
       "modelUserKey": "mqMessage"
     },
     {
-      "displayName": "Queues list action",
+      "displayName": "Queues List Action",
       "name": "mqMessageQueue-list-action",
       "type": "solid",
       "domain": "",
@@ -5556,7 +5556,7 @@
       "modelUserKey": "mqMessageQueue"
     },
     {
-      "displayName": "Scheduled Jobs list action",
+      "displayName": "Scheduled Jobs List Action",
       "name": "scheduledJob-list-action",
       "type": "solid",
       "domain": "",
@@ -5569,7 +5569,7 @@
       "modelUserKey": "scheduledJob"
     },
     {
-      "displayName": "Settings action",
+      "displayName": "Settings List Action",
       "name": "settings-list-action",
       "type": "solid",
       "domain": "",
@@ -5582,7 +5582,7 @@
       "modelUserKey": "setting"
     },
     {
-      "displayName": "Security rules list view",
+      "displayName": "Security Rules List Action",
       "name": "securityRule-list-action",
       "type": "solid",
       "domain": "",
@@ -5595,7 +5595,7 @@
       "modelUserKey": "securityRule"
     },
     {
-      "displayName": "Email list action",
+      "displayName": "Email List Action",
       "name": "emailTemplate-list-action",
       "type": "solid",
       "domain": "",
@@ -5608,7 +5608,7 @@
       "modelUserKey": "emailTemplate"
     },
     {
-      "displayName": "SMS list action",
+      "displayName": "SMS List Action",
       "name": "smsTemplate-list-action",
       "type": "solid",
       "domain": "",
@@ -5621,8 +5621,8 @@
       "modelUserKey": "smsTemplate"
     },
     {
-      "displayName": "List of Values",
-      "name": "list-of-values-list-action",
+      "displayName": "List of Values List Action",
+      "name": "listOfValues-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
@@ -5634,12 +5634,12 @@
       "modelUserKey": "listOfValues"
     },
     {
-      "displayName": "Import Transactions List View",
-      "name": "importTransaction-list-view",
+      "displayName": "Import Transactions List Action",
+      "name": "importTransaction-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/address-master/importTransaction/all",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "importTransaction-list-view",
@@ -5647,12 +5647,12 @@
       "modelUserKey": "importTransaction"
     },
     {
-      "displayName": "locale List View",
+      "displayName": "locale List Action",
       "name": "locale-list-view",
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/address-master/locale/all",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "locale-list-view",
@@ -5660,12 +5660,12 @@
       "modelUserKey": "locale"
     },
     {
-      "displayName": "User Activity History List View",
-      "name": "userActivityHistory-list-view",
+      "displayName": "User Activity History List Action",
+      "name": "userActivityHistory-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/address-master/userActivityHistory/all",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "userActivityHistory-list-view",
@@ -5686,7 +5686,7 @@
       "modelUserKey": "setting"
     },
     {
-      "displayName": "Authentication Settings",
+      "displayName": "Authentication Settings Action",
       "name": "authentication-settings-action",
       "type": "custom",
       "domain": "",
@@ -5699,7 +5699,7 @@
       "modelUserKey": "setting"
     },
     {
-      "displayName": "Ai settings",
+      "displayName": "Ai settings Action",
       "name": "ai-settings-action",
       "type": "custom",
       "domain": "",
@@ -5712,7 +5712,7 @@
       "modelUserKey": "setting"
     },
     {
-      "displayName": "Misc",
+      "displayName": "Misc Action",
       "name": "misc-settings-action",
       "type": "custom",
       "domain": "",
@@ -5772,7 +5772,7 @@
       "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "dsahboardQuestionSqlDatasetConfig-list-view",
+      "viewUserKey": "dashboardQuestionSqlDatasetConfig-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "dashboardQuestionSqlDatasetConfig"
     },
@@ -5793,87 +5793,87 @@
   "menus": [
     {
       "displayName": "App Builder",
-      "name": "app-builder-menu-item",
+      "name": "appBuilder-menu-item",
       "sequenceNumber": 1,
-      "actionUserKey": "app-builder-root",
+      "actionUserKey": "appBuilder-root",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
     },
     {
       "displayName": "Module",
-      "name": "module",
+      "name": "moduleMetadata-menu-item",
       "sequenceNumber": 1,
       "actionUserKey": "moduleMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "app-builder-menu-item"
+      "parentMenuItemUserKey": "appBuilder-menu-item"
     },
     {
       "displayName": "Model",
-      "name": "model",
+      "name": "modelMetadata-menu-item",
       "sequenceNumber": 2,
       "actionUserKey": "modelMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "app-builder-menu-item"
+      "parentMenuItemUserKey": "appBuilder-menu-item"
     },
     {
       "displayName": "Field",
-      "name": "field",
+      "name": "fieldMetadata-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "fieldMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "app-builder-menu-item"
+      "parentMenuItemUserKey": "appBuilder-menu-item"
     },
     {
       "displayName": "Layout Builder",
-      "name": "layout-builder-menu-item",
+      "name": "layoutBuilder-menu-item",
       "sequenceNumber": 2,
-      "actionUserKey": "layout-builder-root",
+      "actionUserKey": "layoutBuilder-root",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
     },
     {
       "displayName": "Menu Item",
-      "name": "menu-item-metadata",
+      "name": "menuItemMetadata-menu-item",
       "sequenceNumber": 4,
       "actionUserKey": "menuItemMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layout-builder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item"
     },
     {
       "displayName": "View",
-      "name": "view-metadata",
+      "name": "viewMetadata-menu-item",
       "sequenceNumber": 5,
       "actionUserKey": "viewMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layout-builder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item"
     },
     {
       "displayName": "Action",
-      "name": "action-metadata",
+      "name": "actionMetadata-menu-item",
       "sequenceNumber": 6,
       "actionUserKey": "actionMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layout-builder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item"
     },
     {
       "displayName": "Saved Filters",
-      "name": "savedFilters-metadata",
+      "name": "savedFilters-menu-item",
       "sequenceNumber": 7,
       "actionUserKey": "savedFilters-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layout-builder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item"
     },
     {
       "displayName": "User View",
-      "name": "user-view-metadata",
+      "name": "userViewMetadata-menu-item",
       "sequenceNumber": 7,
       "actionUserKey": "userViewMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layout-builder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item"
     },
     {
-      "displayName": "Media",
-      "name": "media-menu-item",
+      "displayName": "Media Management",
+      "name": "mediaManagement-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "media-root",
       "moduleUserKey": "solid-core",
@@ -5881,19 +5881,19 @@
     },
     {
       "displayName": "Media",
-      "name": "media-metadata-menu-item",
+      "name": "media-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "media-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "media-menu-item"
+      "parentMenuItemUserKey": "mediaManagement-menu-item"
     },
     {
       "displayName": "Media Storage Provider",
-      "name": "media-storage-provider",
+      "name": "mediaStorageProviderMetadata-menu-item",
       "sequenceNumber": 7,
       "actionUserKey": "mediaStorageProviderMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "media-menu-item"
+      "parentMenuItemUserKey": "mediaManagement-menu-item"
     },
     {
       "displayName": "IAM",
@@ -6001,7 +6001,7 @@
     },
     {
       "displayName": "Saved Filters",
-      "name": "savedFilters-metadata",
+      "name": "savedFilters-menu-item",
       "sequenceNumber": 7,
       "actionUserKey": "savedFilters-list-action",
       "moduleUserKey": "solid-core",
@@ -6009,25 +6009,25 @@
     },
     {
       "displayName": "List of Values",
-      "name": "list-of-values-menu-item",
+      "name": "listOfValues-menu-item",
       "sequenceNumber": 1,
-      "actionUserKey": "list-of-values-list-action",
+      "actionUserKey": "listOfValues-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
     {
       "displayName": "Chatter Message",
-      "name": "chatter-message-menu-item",
+      "name": "chatterMessage-menu-item",
       "sequenceNumber": 8,
-      "actionUserKey": "chatter-message-list-action",
+      "actionUserKey": "chatterMessage-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
     {
       "displayName": "Chatter Message Details",
-      "name": "chatter-message-details",
+      "name": "chatterMessageDetails-menu-item",
       "sequenceNumber": 9,
-      "actionUserKey": "chatter-message-details-list-action",
+      "actionUserKey": "chatterMessageDetails-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
@@ -6041,7 +6041,7 @@
     },
     {
       "displayName": "Locale",
-      "name": "locale",
+      "name": "locale-menu-item",
       "sequenceNumber": 10,
       "actionUserKey": "locale-list-action",
       "moduleUserKey": "solid-core",
@@ -6065,39 +6065,39 @@
     },
     {
       "displayName": "App Settings",
-      "name": "app-settings-menu-item",
+      "name": "appSettings-menu-item",
       "sequenceNumber": 1,
-      "actionUserKey": "app-settings-action",
+      "actionUserKey": "appSettings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
     },
     {
       "displayName": "Authentication Settings",
-      "name": "authentication-settings-menu-item",
+      "name": "authenticationSettings-menu-item",
       "sequenceNumber": 2,
-      "actionUserKey": "authentication-settings-action",
+      "actionUserKey": "authenticationSettings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
     },
     {
       "displayName": "Ai Settings",
-      "name": "ai-settings-menu-item",
+      "name": "aiSettings-menu-item",
       "sequenceNumber": 3,
-      "actionUserKey": "ai-settings-action",
+      "actionUserKey": "aiSettings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
     },
     {
       "displayName": "Misc",
-      "name": "misc-settings-menu-item",
+      "name": "miscSettings-menu-item",
       "sequenceNumber": 3,
-      "actionUserKey": "misc-settings-action",
+      "actionUserKey": "miscSettings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
     },
     {
-      "displayName": "Dashboard",
-      "name": "dashboard-root-menu-item",
+      "displayName": "Dashboard Management",
+      "name": "dashboardManagement-menu-item",
       "sequenceNumber": 9,
       "actionUserKey": "dasbhoard-root",
       "moduleUserKey": "solid-core",
@@ -6109,7 +6109,7 @@
       "sequenceNumber": 1,
       "actionUserKey": "dashboard-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "dashboard-root-menu-item"
+      "parentMenuItemUserKey": "dashboardManagement-menu-item"
     },
     {
       "displayName": "Dashboard Question",
@@ -6117,7 +6117,7 @@
       "sequenceNumber": 2,
       "actionUserKey": "dashboardQuestion-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "dashboard-root-menu-item"
+      "parentMenuItemUserKey": "dashboardManagement-menu-item"
     },
     {
       "displayName": "AI Interactions",
@@ -7166,7 +7166,7 @@
       }
     },
     {
-      "name": "chatter-message-details-list-view",
+      "name": "chatterMessageDetails-list-view",
       "displayName": "Chatter Message Details Model",
       "type": "list",
       "context": "{}",
@@ -7226,7 +7226,7 @@
       }
     },
     {
-      "name": "chatter-message-details-form-view",
+      "name": "chatterMessageDetails-form-view",
       "displayName": "Chatter Message Details Model",
       "type": "form",
       "context": "{}",
@@ -7297,7 +7297,7 @@
       }
     },
     {
-      "name": "chatter-message-list-view",
+      "name": "chatterMessage-list-view",
       "displayName": "Chatter Message Model",
       "type": "list",
       "context": "{}",
@@ -7350,7 +7350,7 @@
       }
     },
     {
-      "name": "chatter-message-form-view",
+      "name": "chatterMessage-form-view",
       "displayName": "Chatter Message Model",
       "type": "form",
       "context": "{}",
