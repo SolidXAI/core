@@ -67,12 +67,15 @@ export class SettingService extends CRUDService<Setting> {
       copyright: null,
       enableUsername: true,
       enabledNotification: true,
-      contactSupportEmail : null,
+      contactSupportEmail: null,
       contactSupportDisplayName: null,
       contactSupportIcon: null,
       authScreenRightBackgroundImage: null,
       authScreenLeftBackgroundImage: null,
       authScreenCenterBackgroundImage: null,
+      authenticationPasswordRegex: this.iamConfiguration.PASSWORD_REGEX,
+      authenticationPasswordRegexErrorMessage: this.iamConfiguration.PASSWORD_REGEX_ERROR_MESSAGE,
+      authenticationPasswordComplexityDescription: this.iamConfiguration.PASSWORD_COMPLEXITY_DESC,
       solidXGenAiCodeBuilderConfig: JSON.stringify({
             defaultProvider: "",
             availableProviders: []
@@ -91,7 +94,7 @@ export class SettingService extends CRUDService<Setting> {
         setting.key = key;
         setting.value = typeof value === 'boolean' ? value.toString() :
           Array.isArray(value) ? value.join(',') :
-            value === null || value === undefined ? '' : String(value);
+            value === null || value === undefined ? null : String(value);
         settingsToInsert.push(setting);
       }
     }
@@ -109,17 +112,22 @@ export class SettingService extends CRUDService<Setting> {
     }
 
     const settingsMap: Record<string, any> = {};
+    const arrayKeysToSkip = [
+      'authenticationPasswordRegex',
+      'authenticationPasswordRegexErrorMessage',
+      'authenticationPasswordComplexityDescription',
+    ];
     for (const setting of settingsArray) {
       if (setting.key && setting.value !== undefined && setting.value !== null) {
         let value = setting.value;
-                try {
+        try {
           settingsMap[setting.key] = JSON.parse(value);
         } catch {
           if (value === 'true' || value === 'false') {
             settingsMap[setting.key] = value === 'true';
           } else if (!isNaN(Number(value)) && value.trim() !== '') {
             settingsMap[setting.key] = Number(value);
-          } else if (value.includes(',')) {
+          } else if (!arrayKeysToSkip.includes(setting.key) && value.includes(',')) {
             settingsMap[setting.key] = value.split(',').map(item => item.trim());
           } else {
             settingsMap[setting.key] = value;
@@ -139,7 +147,7 @@ export class SettingService extends CRUDService<Setting> {
         //   settingsMap[setting.key] = value;
         // }
       }
-    } 
+    }
 
     const defaultSettings = this.getDefaultSettings();
 
@@ -179,12 +187,15 @@ export class SettingService extends CRUDService<Setting> {
       forceChangePasswordOnFirstLogin: this.iamConfiguration.forceChangePasswordOnFirstLogin,
       enableUsername: true,
       enabledNotification: true,
-      contactSupportEmail : null,
+      contactSupportEmail: null,
       contactSupportDisplayName: null,
       contactSupportIcon: null,
       authScreenRightBackgroundImage: null,
       authScreenLeftBackgroundImage: null,
       authScreenCenterBackgroundImage: null,
+      authenticationPasswordRegex: this.iamConfiguration.PASSWORD_REGEX,
+      authenticationPasswordRegexErrorMessage: this.iamConfiguration.PASSWORD_REGEX_ERROR_MESSAGE,
+      authenticationPasswordComplexityDescription: this.iamConfiguration.PASSWORD_COMPLEXITY_DESC,
       solidXGenAiCodeBuilderConfig: JSON.stringify({
             defaultProvider: "",
             availableProviders: []
@@ -322,7 +333,11 @@ export class SettingService extends CRUDService<Setting> {
 
     const system: Record<string, any> = {};
     const user: Record<string, any> = {};
-
+    const arrayKeysToSkip = [
+      'authenticationPasswordRegex',
+      'authenticationPasswordRegexErrorMessage',
+      'authenticationPasswordComplexityDescription',
+    ];
     for (const setting of settingsArray) {
       if (setting.key && setting.value !== undefined && setting.value !== null) {
         const value = setting.value;
@@ -335,7 +350,7 @@ export class SettingService extends CRUDService<Setting> {
             parsedValue = value === 'true';
           } else if (!isNaN(Number(value)) && value.trim() !== '') {
             parsedValue = Number(value);
-          } else if (value.includes(',')) {
+          } else if (!arrayKeysToSkip.includes(setting.key) && value.includes(',')) {
             parsedValue = value.split(',').map(item => item.trim());
           } else {
             parsedValue = value;
