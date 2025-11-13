@@ -218,6 +218,7 @@ export class UserService extends CRUDService<User> {
       const user = new User();
       user.username = oauthUserDto.email;
       user.email = oauthUserDto.email;
+      user.fullName = oauthUserDto.name;
       user.lastLoginProvider = oauthUserDto.provider;
       user.accessCode = oauthUserDto.accessCode;
       user.googleAccessToken = oauthUserDto.accessToken;
