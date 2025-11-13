@@ -124,30 +124,7 @@ export class FileService {
   }
 
   async copyToS3WithPublic(filePath: string, ContentType: string, fileName: string, bucketName: string): Promise<string> {
-    this.checkIfS3ClientExists();
-    try {
-      // Read Image File TO Fetch Buffer 
-      const data = await this.readImageFile(filePath);
-
-      const params = {
-        Bucket: bucketName,
-        Key: fileName,
-        Body: data,
-        ContentType: ContentType, // Set the correct MIME type
-        ACL: "public-read" as ObjectCannedACL
-      };
-      // Upload it to S3
-      // const response = await this.s3.upload(params).promise();
-      const command = new PutObjectCommand(params);
-      const response = await this.s3Client.send(command);
-
-      // Return the URL file Name
-      // To access the file  - https://rep-public-files.s3.amazonaws.com/${fileName}
-      return fileName
-
-    } catch (error) {
-      throw new Error(`${ERROR_MESSAGES.FILE_COPY_ERROR}: ${error.message}`);
-    }
+    return this.copyToS3(filePath, ContentType, fileName, bucketName);
   }
 
   async deleteFromS3(fileName: string, bucketName: string): Promise<string> {
