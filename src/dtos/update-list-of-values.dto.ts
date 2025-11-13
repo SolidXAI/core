@@ -39,5 +39,6 @@ export class UpdateListOfValuesDto {
     moduleId: number;
     @IsString()
     @IsOptional()
+    @ApiProperty()
     moduleUserKey: string;
 }

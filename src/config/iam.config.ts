@@ -1,5 +1,4 @@
 import { registerAs } from '@nestjs/config';
-import { Environment } from 'src';
 
 export const iamConfig = registerAs('iam', () => {
     return {
@@ -14,7 +13,7 @@ export const iamConfig = registerAs('iam', () => {
         defaultRole: process.env.IAM_DEFAULT_ROLE ?? 'Public',
         dummyOtp: process.env.IAM_OTP_DUMMY,
         forgotPasswordSendVerificationTokenOn: process.env.IAM_FORGOT_PASSWORD_SEND_VERIFICATION_TOKEN_ON ?? 'email',
-        forceChangePasswordOnFirstLogin:true,
+        forceChangePasswordOnFirstLogin:false,
         PASSWORD_REGEX: process.env.PASSWORD_REGEX || '^$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\da-zA-Z]).*$',
         PASSWORD_COMPLEXITY_DESC : process.env.PASSWORD_COMPLEXITY_DESC || 'Password must contain at least one uppercase, one lowercase, one number, and one special character.',
         googleOauth: {
@@ -29,12 +28,3 @@ export const iamConfig = registerAs('iam', () => {
     };
 })
 
-export const jwtConfig = registerAs('jwt', () => {
-    return {
-        secret: process.env.IAM_JWT_SECRET,
-        audience: process.env.IAM_JWT_TOKEN_AUDIENCE,
-        issuer: process.env.IAM_JWT_TOKEN_ISSUER,
-        accessTokenTtl: parseInt(process.env.IAM_JWT_ACCESS_TOKEN_TTL ?? (process.env.ENV as Environment) === Environment.Production ? '1200' : '86400', 10), // 20 minutes in prod, 1 day otherwise
-        refreshTokenTtl: parseInt(process.env.IAM_JWT_REFRESH_TOKEN_TTL ?? '604800', 10), // 7 days
-    };
-});

@@ -111,8 +111,6 @@ export class ListOfValuesMetadataService extends CRUDService<ListOfValues> {
     await this.deleteFromConfig(metaData, listofvalue, filePath);
   }
 
-
-
   private async getConfigFileDetails(moduleName: string): Promise<{ filePath: string; metaData: any }> {
     const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
     try {
@@ -184,7 +182,6 @@ export class ListOfValuesMetadataService extends CRUDService<ListOfValues> {
     const updatedContent = JSON.stringify(metaData, null, 2);
     await fs.writeFile(filePath, updatedContent);
   }
-
 
   private async deleteFromConfig(metaData: any, listofvalues: ListOfValues, filePath: string) {
     const dto = await this.listOfValuesMapper.toDto(listofvalues);
