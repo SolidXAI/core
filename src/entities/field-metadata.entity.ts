@@ -3,6 +3,7 @@ import { CommonEntity } from "src/entities/common.entity";
 import { Column, Entity, Index, JoinColumn, ManyToOne } from "typeorm";
 import { MediaStorageProviderMetadata } from "./media-storage-provider-metadata.entity";
 import { ModelMetadata } from "./model-metadata.entity";
+import { ERROR_MESSAGES } from "src/constants/error-messages";
 
 @Entity("ss_field_metadata")
 export class FieldMetadata extends CommonEntity {
@@ -35,7 +36,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'regex_pattern', nullable: true })
     regexPattern: string;
 
-    @Column({ name: 'regex_pattern_not_maching_error_msg', nullable: true })
+    @Column({ name: 'regex_pattern_not_matching_error_msg', type: 'text', nullable: true, default: ERROR_MESSAGES.DEFAULT_REGEX_PATTERN_NOT_MATCHING_ERROR_MSG })
     regexPatternNotMatchingErrorMsg: string;
 
     @Column({ name: "required", default: false })

@@ -121,4 +121,6 @@ export const ERROR_MESSAGES = {
     PYTHON_EXECUTABLE_NOT_CONFIGURED: 'SolidX AI MCP python executable or client path not configured.',
     UNABLE_TO_RESOLVE_SOLID_COMMAND: 'Unable to resolve a solid_ command that was used to come up with this response.',
     UNABLE_TO_RESOLVE_MCP_HANDLER: 'Unable to resolve a mcp tool handler.',
+
+    DEFAULT_REGEX_PATTERN_NOT_MATCHING_ERROR_MSG: 'Invalid regex pattern.',
 };
