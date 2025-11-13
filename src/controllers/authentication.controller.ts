@@ -99,7 +99,7 @@ export class AuthenticationController {
     @Post('logout')
     @Public()
     @HttpCode(HttpStatus.OK)
-    async logout() {
-        return this.authService.logout();
+    async logout(@Body('refreshToken') refreshToken: string) {
+        return this.authService.logout(refreshToken);
     }
 }

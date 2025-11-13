@@ -85,7 +85,6 @@ export class AuthenticationService {
         @Inject(commonConfig.KEY)
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         private readonly userActivityHistoryService: UserActivityHistoryService,
-        private readonly requestContextService: RequestContextService,
         @InjectDataSource()
         private readonly dataSource: DataSource,
     ) {
@@ -903,7 +902,7 @@ export class AuthenticationService {
             const pwdSchemeVersion = this.hashingService.currentVersion(); // e.g. 1, 2, 3 ...
 
             // Check reuse with your existing method (ensure it looks at hashes).
-            await m.getRepository(User).update({ id: user.id }, { password: pwdHash, passwordScheme: pwdScheme, passwordSchemeVersion: pwdSchemeVersion});
+            await m.getRepository(User).update({ id: user.id }, { password: pwdHash, passwordScheme: pwdScheme, passwordSchemeVersion: pwdSchemeVersion });
             this.notifyUserOnPasswordChanged(user);
 
             return {
@@ -1121,21 +1120,35 @@ export class AuthenticationService {
     //     // Invalidate the refresh token
     //     // await this.refreshTokenIdsStorage.invalidate(user.id);
     // }
-    async logout() {
+    async logout(refreshToken: string) {
         try {
-            const activeUser = this.requestContextService.getActiveUser();
-            const userId = activeUser?.sub;
+            // const activeUser = this.requestContextService.getActiveUser();
+            // const userId = activeUser?.sub;
+            // const user = await this.userRepository.findOne({
+            //     where: {
+            //         id: userId,
+            //     }
+            // })
+            // // Invalidate refresh token if you store them
+            // await this.refreshTokenIdsStorage.invalidate(userId); // ← Your existing logic
+            // if (!refreshToken) {
+            //     throw new UnauthorizedException('Refresh token is required');
+            // }
+            const payload = this.jwtService.decode(refreshToken) as any;
+
+            if (!payload || !payload.sub) {
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_REFRESH_TOKEN);
+            }
+
+            const userId = payload.sub;
+            await this.refreshTokenIdsStorage.invalidate(userId);
             const user = await this.userRepository.findOne({
                 where: {
                     id: userId,
                 }
             })
-            // Invalidate refresh token if you store them
-            await this.refreshTokenIdsStorage.invalidate(userId); // ← Your existing logic
-
             // Log logout event
             await this.userActivityHistoryService.logEvent('logout', user);
-
 
             return { message: SUCCESS_MESSAGES.LOGOUT_SUCCESS };
         } catch (err) {

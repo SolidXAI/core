@@ -23,6 +23,7 @@ export const ERROR_MESSAGES = {
     INCORRECT_CURRENT_PASSWORD: 'Incorrect current password specified.',
     PASSWORD_REUSED: 'Try a different password',
     INVALID_VERIFICATION_TOKEN: 'Invalid verification token',
+    INVALID_REFRESH_TOKEN: 'Invalid refresh token',
     ACCESS_DENIED: 'Access denied',
     INVALID_USER_PROFILE: 'Invalid user profile',
     GOOGLE_OAUTH_PROFILE_FETCH_FAILED: 'Failed to fetch user profile from Google OAuth service',
