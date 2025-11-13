@@ -35,7 +35,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'regex_pattern', nullable: true })
     regexPattern: string;
 
-    @Column({ name: 'regex_pattern_not_matching_error_msg', type: 'text', nullable: false, default: 'Invalid regex pattern' })
+    @Column({ name: 'regex_pattern_not_matching_error_msg', type: 'text', nullable: true, default: 'Invalid regex pattern' })
     regexPatternNotMatchingErrorMsg: string;
 
     @Column({ name: "required", default: false })
