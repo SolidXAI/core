@@ -1131,13 +1131,13 @@ export class AuthenticationService {
             // })
             // // Invalidate refresh token if you store them
             // await this.refreshTokenIdsStorage.invalidate(userId); // ← Your existing logic
-            if (!refreshToken) {
-                throw new UnauthorizedException('Refresh token is required');
-            }
+            // if (!refreshToken) {
+            //     throw new UnauthorizedException('Refresh token is required');
+            // }
             const payload = this.jwtService.decode(refreshToken) as any;
 
             if (!payload || !payload.sub) {
-                throw new UnauthorizedException('Invalid refresh token');
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_REFRESH_TOKEN);
             }
 
             const userId = payload.sub;
