@@ -21,7 +21,7 @@ export class MediaStorageProviderMetadataService {
         let { limit, offset, populateMedia } = basicFilterDto;
 
         // Create above query on pincode table using query builder
-        var qb: SelectQueryBuilder<MediaStorageProviderMetadata> = this.mediaStorageProviderRepo.createQueryBuilder(alias)
+        var qb: SelectQueryBuilder<MediaStorageProviderMetadata> = this.mediaStorageProviderRepo.createSecurityRuleAwareQueryBuilder(alias)
         qb = await this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
 
         // Get the records and the count

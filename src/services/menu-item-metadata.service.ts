@@ -84,7 +84,7 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
     //     relations: ['module', 'parentMenuItem', 'action']
     // });
     const menuItems = await this.repo
-      .createQueryBuilder('menuItem')
+      .createSecurityRuleAwareQueryBuilder('menuItem')
       .leftJoinAndSelect('menuItem.module', 'module')
       .leftJoinAndSelect('menuItem.parentMenuItem', 'parentMenuItem')
       .leftJoinAndSelect('menuItem.action', 'action')

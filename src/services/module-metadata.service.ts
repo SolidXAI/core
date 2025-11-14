@@ -50,7 +50,7 @@ export class ModuleMetadataService {
     let { limit, offset } = basicFilterDto;
 
     // Create above query on pincode table using query builder
-    var qb: SelectQueryBuilder<ModuleMetadata> = this.moduleMetadataRepo.createQueryBuilder(alias)
+    var qb: SelectQueryBuilder<ModuleMetadata> = this.moduleMetadataRepo.createSecurityRuleAwareQueryBuilder(alias)
     qb = await this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
 
     // Get the records and the count

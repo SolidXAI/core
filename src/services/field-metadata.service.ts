@@ -221,7 +221,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         let { limit, offset, populateMedia } = basicFilterDto;
 
         // Create above query on pincode table using query builder
-        var qb: SelectQueryBuilder<FieldMetadata> = this.fieldMetadataRepo.createQueryBuilder(alias)
+        var qb: SelectQueryBuilder<FieldMetadata> = this.fieldMetadataRepo.createSecurityRuleAwareQueryBuilder(alias)
         qb = await this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
 
         // Get the records and the count

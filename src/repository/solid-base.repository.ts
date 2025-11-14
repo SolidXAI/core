@@ -33,12 +33,12 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
         return camelize(this.metadata.name);
     }
 
-    createQueryBuilder(alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<T> {
+    async createSecurityRuleAwareQueryBuilder(alias?: string, queryRunner?: QueryRunner): Promise<SelectQueryBuilder<T>> {
         const activeUserOrUndefined = this.requestContextService.getActiveUser();
         const qb = super.createQueryBuilder(alias, queryRunner);
         if (!activeUserOrUndefined) return qb;
 
-        return this.securityRuleRepository.applySecurityRules(
+        return await this.securityRuleRepository.applySecurityRules(
             qb,
             this.modelSingularName(),
             activeUserOrUndefined as ActiveUserData
@@ -51,7 +51,7 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
     */
     override async findOne(options?: FindOneOptions<T>): Promise<T | null> {
         const alias = this.modelSingularName();
-        const qb = this.createQueryBuilder(alias);
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
 
         if (options) {
             // Apply all standard find options (relations, selects, order, where, etc.)
@@ -85,7 +85,7 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
      */
     override async find(options?: FindManyOptions<T>): Promise<T[]> {
         const alias = this.modelSingularName();
-        const qb = this.createQueryBuilder(alias);
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
 
         if (options) {
             qb.setFindOptions(options);
@@ -100,7 +100,7 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
      */
     override async findAndCount(options?: FindManyOptions<T>): Promise<[T[], number]> {
         const alias = this.modelSingularName();
-        const qb = this.createQueryBuilder(alias);
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
 
         if (options) {
             qb.setFindOptions(options);

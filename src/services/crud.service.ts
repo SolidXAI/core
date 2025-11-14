@@ -444,7 +444,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         requestContextService.setRequestFilter(basicFilterDto);
 
         // Create above query on pincode table using query builder
-        var qb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias)
+        var qb: SelectQueryBuilder<T> = this.repo.createSecurityRuleAwareQueryBuilder(alias)
         qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
         if (internationalisation && draftPublishWorkflow) {
             qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef);
@@ -493,7 +493,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // For each group, get the records and the count
         for (const group of groupByResult) {
             if (populateGroup) {
-                let groupByQb: SelectQueryBuilder<T> = this.repo.createQueryBuilder(alias);
+                let groupByQb: SelectQueryBuilder<T> = this.repo.createSecurityRuleAwareQueryBuilder(alias);
                 groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
                 const [entities, count] = await groupByQb.getManyAndCount();

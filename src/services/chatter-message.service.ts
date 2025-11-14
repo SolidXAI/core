@@ -551,7 +551,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             }
         }
 
-        const qb = this.repo.createQueryBuilder('entity');
+        const qb = this.repo.createSecurityRuleAwareQueryBuilder('entity');
 
         const orConditions: string[] = [];
         const parameters: any = {};
