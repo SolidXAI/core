@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Param, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public.decorator';
 import { CreateSmsTemplateDto } from '../dtos/create-sms-template.dto';
 import { UpdateSmsTemplateDto } from '../dtos/update-sms-template.dto';
@@ -14,28 +14,28 @@ import { SmsTemplateService } from '../services/sms-template.service';
 export class SmsTemplateController {
   constructor(private readonly service: SmsTemplateService) { }
 
-   @Public()
+   @ApiBearerAuth("jwt")
     @Post()
     @UseInterceptors(AnyFilesInterceptor())
     create(@Body() createDto: CreateSmsTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
       return this.service.create(createDto, files);
     }
   
-    @Public()
+    @ApiBearerAuth("jwt")
     @Post('/bulk')
     @UseInterceptors(AnyFilesInterceptor())
     insertMany(@Body() createDtos: CreateSmsTemplateDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
       return this.service.insertMany(createDtos, filesArray);
     }
   
-    @Public()
+    @ApiBearerAuth("jwt")
     @Put(':id')
     @UseInterceptors(AnyFilesInterceptor())
     update(@Param('id') id: number, @Body() updateDto: UpdateSmsTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
       return this.service.update(id, updateDto, files);
     }
   
-    @Public()
+    @ApiBearerAuth("jwt")
     @ApiQuery({ name: 'showSoftDeleted', required: false, type: Boolean })
     @ApiQuery({ name: 'showOnlySoftDeleted', required: false, type: Boolean })
     @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -51,18 +51,19 @@ export class SmsTemplateController {
       return this.service.find(query);
     }
   
-    @Public()
+    @ApiBearerAuth("jwt")
     @Get(':id')
     async findOne(@Param('id') id: string, @Query() query: any) {
       return this.service.findOne(+id, query);
     }
   
+    @ApiBearerAuth("jwt")
     @Delete('/bulk')
     async deleteMany(@Body() ids: number[]) {
       return this.service.deleteMany(ids);
     }
   
-    @Public()
+    @ApiBearerAuth("jwt")
     @Delete(':id')
     async delete(@Param('id') id: number) {
       return this.service.delete(id);

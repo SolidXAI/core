@@ -1,6 +1,6 @@
 import { Body, Controller, Delete, Get, Header, Param, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public.decorator';
 import { CreateEmailTemplateDto } from '../dtos/create-email-template.dto';
 import { UpdateEmailTemplateDto } from '../dtos/update-email-template.dto';
@@ -20,28 +20,28 @@ import Mailgen = require('mailgen');
 export class EmailTemplateController {
   constructor(private readonly service: EmailTemplateService) { }
 
-   @Public()
+   @ApiBearerAuth("jwt")
     @Post()
     @UseInterceptors(AnyFilesInterceptor())
     create(@Body() createDto: CreateEmailTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
       return this.service.create(createDto, files);
     }
   
-    @Public()
+    @ApiBearerAuth("jwt")
     @Post('/bulk')
     @UseInterceptors(AnyFilesInterceptor())
     insertMany(@Body() createDtos: CreateEmailTemplateDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
       return this.service.insertMany(createDtos, filesArray);
     }
   
-    @Public()
+    @ApiBearerAuth("jwt")
     @Put(':id')
     @UseInterceptors(AnyFilesInterceptor())
     update(@Param('id') id: number, @Body() updateDto: UpdateEmailTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
       return this.service.update(id, updateDto, files);
     }
   
-    @Public()
+    @ApiBearerAuth("jwt")
     @ApiQuery({ name: 'showSoftDeleted', required: false, type: Boolean })
     @ApiQuery({ name: 'showOnlySoftDeleted', required: false, type: Boolean })
     @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -57,18 +57,19 @@ export class EmailTemplateController {
       return this.service.find(query);
     }
   
-    @Public()
+    @ApiBearerAuth("jwt")
     @Get(':id')
     async findOne(@Param('id') id: string, @Query() query: any) {
       return this.service.findOne(+id, query);
     }
   
+    @ApiBearerAuth("jwt")
     @Delete('/bulk')
     async deleteMany(@Body() ids: number[]) {
       return this.service.deleteMany(ids);
     }
   
-    @Public()
+    @ApiBearerAuth("jwt")
     @Delete(':id')
     async delete(@Param('id') id: number) {
       return this.service.delete(id);
@@ -76,7 +77,7 @@ export class EmailTemplateController {
   // /api/email-templates/mailgen-template/otp-template
   // @ApiBearerAuth("jwt")
   // @Roles('Admin')
-  @Public()
+  @ApiBearerAuth("jwt")
   @Get('mailgen-template/:templateType')
   @Header('content-type', 'text/html')
   generateMailgenTemplate(@Param('templateType') templateType: string) {
