@@ -23,7 +23,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         if (!this.serviceRole) {
             this.logger.debug('Queue service Role is not defined in the environment variables');
         }
-        this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
+        // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
     }
 
     abstract subscribe(message: QueueMessage<T>);
@@ -55,13 +55,13 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         // we will start subscriber only if the current service role is subscriber. 
         if (this.url && ['both', 'subscriber'].includes(this.serviceRole)) {
 
-            this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
+            // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
             // const connection = await amqp.connect(this.url);
 
             let connection;
             try {
                 connection = await this.establishConnection();
-                this.logger.debug(`RabbitMqSubscriber connection established: ${JSON.stringify(this.options())} and url: ${this.url}`);
+                // this.logger.debug(`RabbitMqSubscriber connection established: ${JSON.stringify(this.options())} and url: ${this.url}`);
             }
             catch (err) {
                 this.logger.error(`Failed to connect to RabbitMQ: ${(err as Error).message}`, (err as Error).stack);

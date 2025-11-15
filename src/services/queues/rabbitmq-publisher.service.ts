@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { Logger, OnModuleDestroy } from '@nestjs/common';
 import * as amqp from 'amqplib';
 import { v4 as uuidv4 } from 'uuid';
 import { QueuesModuleOptions } from "../../interfaces";
@@ -6,10 +6,15 @@ import { QueueMessage, QueuePublisher } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
 
-export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> {
+export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePublisher<T> {
     private readonly logger = new Logger(RabbitMqPublisher.name);
     private readonly url: string;
     private readonly serviceRole: string;
+
+    // Maintain connection...
+    private connection: amqp.Connection | null = null;
+    private channel: amqp.Channel | null = null;
+    private connectingPromise: Promise<void> | null = null;
 
     constructor(
         protected readonly mqMessageService: MqMessageService,
@@ -23,31 +28,105 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> {
         if (!this.serviceRole) {
             this.logger.debug('Queue service Role is not defined in the environment variables');
         }
-        this.logger.debug(`RabbitMqPublisher instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
+        // this.logger.debug(`RabbitMqPublisher instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
     }
 
     abstract options(): QueuesModuleOptions;
 
-    async establishConnection(): Promise<amqp.Connection> {
+    private async ensureConnectionAndChannel(): Promise<amqp.Channel> {
+        if (this.channel) {
+            return this.channel;
+        }
 
-        const url = new URL(this.url);
+        // If another call is already connecting, wait for it
+        if (this.connectingPromise) {
+            await this.connectingPromise;
+            if (this.channel) return this.channel;
+        }
 
-        // this.logger.debug(`user: ${url.username}`);
-        // // just for local debug, don’t log in prod
-        // this.logger.debug(`pass: ${url.password}`, );
-        // this.logger.debug(`path (vhost): ${url.pathname}`, );
+        this.connectingPromise = (async () => {
+            const url = new URL(this.url);
 
-        const connection = await amqp.connect({
-            protocol: url.protocol.replace(':', ''),
-            hostname: url.hostname,
-            port: parseInt(url.port),
-            username: url.username,
-            password: decodeURIComponent(url.password),
-            frameMax: 131072,
-        });
+            const conn = await amqp.connect({
+                protocol: url.protocol.replace(':', ''), // "amqps"
+                hostname: url.hostname,
+                port: parseInt(url.port),
+                username: url.username,
+                // Node's URL already decodes percent-encoding; decodeURIComponent is not needed
+                // But without it does not seem to be working...
+                password: decodeURIComponent(url.password),
+                frameMax: 131072,
+            });
 
-        return connection
+            conn.on('error', (err) => {
+                this.logger.error(`RabbitMQ connection error: ${err.message}`, err.stack);
+            });
+
+            conn.on('close', () => {
+                this.logger.warn('RabbitMQ connection closed, resetting');
+                this.connection = null;
+                this.channel = null;
+            });
+
+            const channel = await conn.createChannel();
+
+            const options = this.options();
+            const queueName = options.queueName;
+            const exchangeName = `${queueName}.exchange`;
+            const routingKey = `${queueName}.routing-key`;
+
+            await channel.assertExchange(exchangeName, 'direct', {});
+            const queue = await channel.assertQueue(queueName, {});
+            await channel.bindQueue(queue.queue, exchangeName, routingKey);
+
+            this.connection = conn;
+            this.channel = channel;
+        })();
+
+        try {
+            await this.connectingPromise;
+        } finally {
+            this.connectingPromise = null;
+        }
+
+        if (!this.channel) {
+            throw new Error('Failed to initialize RabbitMQ channel');
+        }
+
+        return this.channel;
     }
+
+    // Nest will call this for every subclass instance, because they inherit the method
+    async onModuleDestroy(): Promise<void> {
+        await this.closeConnectionAndChannel();
+    }
+
+    private async closeConnectionAndChannel(): Promise<void> {
+        if (this.channel) {
+            try {
+                await this.channel.close();
+            } catch (err) {
+                this.logger.warn(
+                    `RabbitMqPublisher error closing channel: ${(err as Error).message}`,
+                );
+            } finally {
+                this.channel = null;
+            }
+        }
+
+        if (this.connection) {
+            try {
+                await this.connection.close();
+            } catch (err) {
+                this.logger.warn(
+                    `RabbitMqPublisher error closing connection: ${(err as Error).message}`,
+                );
+            } finally {
+                this.connection = null;
+            }
+        }
+    }
+
 
     async publish(message: QueueMessage<T>): Promise<string> {
         if (!this.url) {
@@ -63,21 +142,7 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> {
             throw new Error('Queue service Role is subscriber, cannot publish messages');
         }
 
-        this.logger.debug(`RabbitMqPublisher publishing with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
-
-        let connection;
-        try {
-            connection = await this.establishConnection();
-            this.logger.debug(`RabbitMqPublisher with options: ${JSON.stringify(this.options())} connected to broker.`);
-        }
-        catch (err) {
-            this.logger.error(`Failed to connect to RabbitMQ: ${(err as Error).message}`, (err as Error).stack);
-            throw err;
-        }
-
-        // this.logger.debug(`RabbitMqPublisher publisher connected options: ${JSON.stringify(this.options())} and url: ${url}`);
-
-        const channel = await connection.createChannel();
+        const channel = await this.ensureConnectionAndChannel();
         // this.logger.debug(`RabbitMqPublisher publisher channel created options: ${JSON.stringify(this.options())} and url: ${url}`);
 
         const options = this.options();
@@ -85,15 +150,6 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> {
         const queueName = options.queueName;
         const exchangeName = `${queueName}.exchange`;
         const routingKey = `${queueName}.routing-key`;
-
-        await channel.assertExchange(exchangeName, 'direct', {});
-        // this.logger.debug(`RabbitMqPublisher channel asserted: ${JSON.stringify(this.options())} and url: ${url}`);
-
-        const queue = await channel.assertQueue(queueName, {});
-        // this.logger.debug(`RabbitMqPublisher queue asserted: ${JSON.stringify(this.options())} and url: ${url}`);
-
-        await channel.bindQueue(queue.queue, exchangeName, routingKey);
-        // this.logger.debug(`RabbitMqPublisher queue bound: ${JSON.stringify(this.options())} and url: ${url}`);
 
         // Set default values for retry. 
         // by default there are no retries.
@@ -124,19 +180,8 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> {
             }
         }
         finally {
-            // TODO: check if we want to do this or keep the connection open all the time. 
-            // connection.close();
-            // setTimeout(() => {
-            //     connection.close();
-            //     this.logger.error('RabbitMqPublisher connection closed');
-            // }, 3000);
         }
         // this.logger.debug(`Sent message: ${JSON.stringify(message)}`);
-
-        // TODO: check if we want to do this or keep the connection open all the time. 
-        // setTimeout(() => {
-        //     connection.close();
-        // }, 500);
 
         // return the newly created message id.
         return message.messageId;
