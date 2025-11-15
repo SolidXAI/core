@@ -32,12 +32,17 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> {
 
         const url = new URL(this.url);
 
+        // this.logger.debug(`user: ${url.username}`);
+        // // just for local debug, don’t log in prod
+        // this.logger.debug(`pass: ${url.password}`, );
+        // this.logger.debug(`path (vhost): ${url.pathname}`, );
+
         const connection = await amqp.connect({
             protocol: url.protocol.replace(':', ''),
             hostname: url.hostname,
             port: parseInt(url.port),
             username: url.username,
-            password: url.password,
+            password: decodeURIComponent(url.password),
             frameMax: 131072,
         });
 
@@ -60,8 +65,16 @@ export abstract class RabbitMqPublisher<T> implements QueuePublisher<T> {
 
         this.logger.debug(`RabbitMqPublisher publishing with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
 
-        // const connection = await amqp.connect(this.url);
-        const connection = await this.establishConnection();
+        let connection;
+        try {
+            connection = await this.establishConnection();
+            this.logger.debug(`RabbitMqPublisher with options: ${JSON.stringify(this.options())} connected to broker.`);
+        }
+        catch (err) {
+            this.logger.error(`Failed to connect to RabbitMQ: ${(err as Error).message}`, (err as Error).stack);
+            throw err;
+        }
+
         // this.logger.debug(`RabbitMqPublisher publisher connected options: ${JSON.stringify(this.options())} and url: ${url}`);
 
         const channel = await connection.createChannel();
