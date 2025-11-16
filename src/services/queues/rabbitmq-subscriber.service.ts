@@ -23,7 +23,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         if (!this.serviceRole) {
             this.logger.debug('Queue service Role is not defined in the environment variables');
         }
-        this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
+        // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
     }
 
     abstract subscribe(message: QueueMessage<T>);
@@ -34,12 +34,17 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
 
         const url = new URL(this.url);
 
+        // this.logger.debug(`user: ${url.username}`);
+        // // just for local debug, don’t log in prod
+        // this.logger.debug(`pass: ${url.password}`);
+        // this.logger.debug(`path (vhost): ${url.pathname}`);
+
         const connection = await amqp.connect({
             protocol: url.protocol.replace(':', ''),
             hostname: url.hostname,
             port: parseInt(url.port),
             username: url.username,
-            password: url.password,
+            password: decodeURIComponent(url.password),
             frameMax: 131072,
         });
 
@@ -50,10 +55,18 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         // we will start subscriber only if the current service role is subscriber. 
         if (this.url && ['both', 'subscriber'].includes(this.serviceRole)) {
 
-            // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${url}`);
+            // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
             // const connection = await amqp.connect(this.url);
-            const connection = await this.establishConnection();
-            // this.logger.debug(`RabbitMqSubscriber connection established: ${JSON.stringify(this.options())} and url: ${url}`);
+
+            let connection;
+            try {
+                connection = await this.establishConnection();
+                // this.logger.debug(`RabbitMqSubscriber connection established: ${JSON.stringify(this.options())} and url: ${this.url}`);
+            }
+            catch (err) {
+                this.logger.error(`Failed to connect to RabbitMQ: ${(err as Error).message}`, (err as Error).stack);
+                throw err;
+            }
 
             const channel = await connection.createChannel();
             // this.logger.debug(`RabbitMqSubscriber channel created: ${JSON.stringify(this.options())} and url: ${url}`);

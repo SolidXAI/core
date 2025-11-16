@@ -4,13 +4,13 @@ import { QueueMessage } from 'src/interfaces/mq';
 import triggerMcpClientQueueOptions from "./trigger-mcp-client-queue-options";
 import { AiInteractionService } from 'src/services/ai-interaction.service';
 import { PollerService } from 'src/services/poller.service';
-import { RabbitMqPublisher } from 'src/services/queues/rabbitmq-publisher.service';
 import { TriggerMcpClientOptions, QueuesModuleOptions } from 'src/interfaces';
 import { MqMessageQueueService } from 'src/services/mq-message-queue.service';
 import { MqMessageService } from 'src/services/mq-message.service';
+import { RabbitMqSubscriber } from 'src/services/queues/rabbitmq-subscriber.service';
 
 @Injectable()
-export class TriggerMcpClientSubscriberRabbitmq extends RabbitMqPublisher<TriggerMcpClientOptions> {
+export class TriggerMcpClientSubscriberRabbitmq extends RabbitMqSubscriber<TriggerMcpClientOptions> {
     private readonly triggerMcpClientSubscriberLogger = new Logger(TriggerMcpClientSubscriberRabbitmq.name);
 
     constructor(

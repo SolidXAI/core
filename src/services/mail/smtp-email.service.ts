@@ -114,7 +114,13 @@ export class SMTPEMailService implements IMail {
     }
 
     async sendEmailSynchronously(message: QueueMessage<any>) {
-        const { from, to, subject, body, attachments = [], cc, bcc } = message.payload;
+        let from;
+        const { to, subject, body, attachments = [], cc, bcc } = message.payload;
+
+        const envFrom = this.commonConfiguration.smtpMail.from;
+        if (envFrom) {
+            from = envFrom;
+        }
 
         // if any of the required fields are missing, throw an error.
         if (!from || !to || !subject || !body) {
