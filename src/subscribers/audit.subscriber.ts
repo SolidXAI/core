@@ -1,10 +1,10 @@
 import { Injectable } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityMetadata, EntitySubscriberInterface, EventSubscriber, InsertEvent, RemoveEvent, Repository, UpdateEvent } from 'typeorm';
-import { ModelMetadata } from '../entities/model-metadata.entity';
-import { ChatterMessageService } from '../services/chatter-message.service';
-import { lowerFirst } from 'src/helpers/string.helper';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
+import { lowerFirst } from 'src/helpers/string.helper';
+import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
+import { DataSource, EntityMetadata, EntitySubscriberInterface, EventSubscriber, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
+import { ChatterMessageService } from '../services/chatter-message.service';
 
 
 type DeferredCall =
@@ -20,8 +20,9 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         @InjectDataSource()
         private readonly dataSource: DataSource,
         private readonly chatterMessageService: ChatterMessageService,
-        @InjectRepository(ModelMetadata)
-        private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        // @InjectRepository(ModelMetadata)
+        // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        private readonly modelMetadataRepo: ModelMetadataRepository,
         private readonly modelMetadataHelperService: ModelMetadataHelperService,
     ) {
         this.dataSource.subscribers.push(this);

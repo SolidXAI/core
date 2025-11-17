@@ -22,8 +22,8 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
     constructor(
         entity: EntityTarget<T>,
         dataSource: DataSource,
-        protected readonly requestContextService: RequestContextService,
-        protected readonly securityRuleRepository: SecurityRuleRepository
+        protected readonly requestContextService: RequestContextService | null,
+        protected readonly securityRuleRepository: SecurityRuleRepository | null,
     ) {
         super(entity, dataSource.createEntityManager());
         this.logger = new Logger(this.constructor.name);
@@ -33,12 +33,20 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
         return camelize(this.metadata.name);
     }
 
-    createQueryBuilder(alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<T> {
-        const activeUserOrUndefined = this.requestContextService.getActiveUser();
+    override createQueryBuilder(alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<T> {
+        throw new Error('createQueryBuilder() is disabled. Use createSecurityRuleAwareQueryBuilder instead');
+    }
+
+    async createSecurityRuleAwareQueryBuilder(alias?: string, queryRunner?: QueryRunner): Promise<SelectQueryBuilder<T>> {
         const qb = super.createQueryBuilder(alias, queryRunner);
+
+        if (!this.securityRuleRepository) return qb;
+        if (!this.requestContextService) return qb;
+
+        const activeUserOrUndefined = this.requestContextService.getActiveUser();
         if (!activeUserOrUndefined) return qb;
 
-        return this.securityRuleRepository.applySecurityRules(
+        return await this.securityRuleRepository.applySecurityRules(
             qb,
             this.modelSingularName(),
             activeUserOrUndefined as ActiveUserData
@@ -51,7 +59,7 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
     */
     override async findOne(options?: FindOneOptions<T>): Promise<T | null> {
         const alias = this.modelSingularName();
-        const qb = this.createQueryBuilder(alias);
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
 
         if (options) {
             // Apply all standard find options (relations, selects, order, where, etc.)
@@ -85,7 +93,7 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
      */
     override async find(options?: FindManyOptions<T>): Promise<T[]> {
         const alias = this.modelSingularName();
-        const qb = this.createQueryBuilder(alias);
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
 
         if (options) {
             qb.setFindOptions(options);
@@ -100,7 +108,7 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
      */
     override async findAndCount(options?: FindManyOptions<T>): Promise<[T[], number]> {
         const alias = this.modelSingularName();
-        const qb = this.createQueryBuilder(alias);
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
 
         if (options) {
             qb.setFindOptions(options);

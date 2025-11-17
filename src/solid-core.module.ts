@@ -102,8 +102,8 @@ import { SmsTemplateSeederService } from './seeders/sms-template-seeder.service'
 import { UserSeederService } from './seeders/user-seeder.service';
 import { AuthenticationService } from './services/authentication.service';
 import { BcryptService } from './services/bcrypt.service';
-import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/uuid-external-id-computed-field-provider.service';
 import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
+import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/uuid-external-id-computed-field-provider.service';
 import { EmailTemplateService } from './services/email-template.service';
 import { FileService } from './services/file.service';
 import { HashingService } from './services/hashing.service';
@@ -213,14 +213,37 @@ import { TwilioSmsQueuePublisherRabbitmq } from './jobs/twilio-sms-publisher.ser
 import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/twilio-sms-subscriber.service';
 import { DashboardMapper } from './mappers/dashboard-mapper';
 import { ListOfValuesMapper } from './mappers/list-of-values-mapper';
+import { ActionMetadataRepository } from './repository/action-metadata.repository';
+import { AiInteractionRepository } from './repository/ai-interaction.repository';
 import { ChatterMessageDetailsRepository } from './repository/chatter-message-details.repository';
 import { ChatterMessageRepository } from './repository/chatter-message.repository';
+import { DashboardQuestionSqlDatasetConfigRepository } from './repository/dashboard-question-sql-dataset-config.repository';
+import { DashboardQuestionRepository } from './repository/dashboard-question.repository';
+import { DashboardVariableRepository } from './repository/dashboard-variable.repository';
 import { DashboardRepository } from './repository/dashboard.repository';
+import { EmailTemplateRepository } from './repository/email-template.repository';
+import { ExportTemplateRepository } from './repository/export-template.repository';
+import { ExportTransactionRepository } from './repository/export-transaction.repository';
 import { FieldMetadataRepository } from './repository/field-metadata.repository';
-import { FieldRepository } from './repository/field.repository';
+import { ImportTransactionErrorLogRepository } from './repository/import-transaction-error-log.repository';
+import { ImportTransactionRepository } from './repository/import-transaction.repository';
+import { ListOfValuesRepository } from './repository/list-of-values.repository';
+import { LocaleRepository } from './repository/locale.repository';
 import { MediaRepository } from './repository/media.repository';
+import { MenuItemMetadataRepository } from './repository/menu-item-metadata.repository';
+import { ModelMetadataRepository } from './repository/model-metadata.repository';
+import { ModuleMetadataRepository } from './repository/module-metadata.repository';
+import { MqMessageQueueRepository } from './repository/mq-message-queue.repository';
+import { MqMessageRepository } from './repository/mq-message.repository';
+import { PermissionMetadataRepository } from './repository/permission-metadata.repository';
+import { RoleMetadataRepository } from './repository/role-metadata.repository';
+import { SavedFiltersRepository } from './repository/saved-filters.repository';
 import { ScheduledJobRepository } from './repository/scheduled-job.repository';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
+import { SettingRepository } from './repository/setting.repository';
+import { SmsTemplateRepository } from './repository/sms-template.repository';
+import { UserActivityHistoryRepository } from './repository/user-activity-history.repository';
+import { UserViewMetadataRepository } from './repository/user-view-metadata.repository';
 import { UserRepository } from './repository/user.repository';
 import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
@@ -244,10 +267,26 @@ import { ExcelService } from './services/excel.service';
 import { ExportTemplateService } from './services/export-template.service';
 import { ExportTransactionService } from './services/export-transaction.service';
 import { IngestMetadataService } from './services/genai/ingest-metadata.service';
+import { McpHandlerFactory } from './services/genai/mcp-handlers/mcp-handler-factory.service';
+import { SolidAddButtonToFormViewMcpHandler } from './services/genai/mcp-handlers/solid-add-button-to-form-view-mcp-handler.service';
+import { SolidAddControllerHandlerMcpHandler } from './services/genai/mcp-handlers/solid-add-controller-handler-method-mcp-handler.service';
+import { SolidAddCustomServiceMethodMcpHandler } from './services/genai/mcp-handlers/solid-add-custom-service-method-mcp-handler.service';
+import { SolidAddFieldsToModelMcpHandler } from './services/genai/mcp-handlers/solid-add-fields-to-model-mcp-handler.service';
+import { SolidAddHeaderButtonOrRowButtonToListViewMcpHandler } from './services/genai/mcp-handlers/solid-add-header-button-or-row-button-to-list-view-mcp-handler.service';
+import { SolidAddQuestionToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-question-to-dashboard-mcp-handler.service';
+import { SolidAddVariableToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-variable-to-dashboard-mcp-handler.service';
+import { SolidCreateComputedProviderMcpHandler } from './services/genai/mcp-handlers/solid-create-computed-provider-mcp-handler.service';
+import { SolidCreateCustomFormViewWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-custom-form-view-widget-mcp-handler.service';
+import { SolidCreateDashboardWithWidgetsMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-mcp-handler.service';
+import { SolidCreateDashboardQuestionMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-mcp-handler.service';
+import { SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-sql-dataset-config-mcp-handler.service';
+import { SolidCreateDashboardWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-widget-mcp-handler.service';
+import { SolidCreateModelWithFieldsMcpHandler } from './services/genai/mcp-handlers/solid-create-model-with-fields-mcp-handler.service';
+import { SolidCreateModuleMcpHandler } from './services/genai/mcp-handlers/solid-create-module-mcp-handler.service';
+import { SolidUpdateLayoutMcpHandler } from './services/genai/mcp-handlers/solid-update-layout-mcp-handler.service';
 import { R2RHelperService } from './services/genai/r2r-helper.service';
 import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
 import { ImportTransactionService } from './services/import-transaction.service';
-import { ListOfValuesMetadataService } from './services/list-of-values-metadata.service';
 import { LocaleService } from './services/locale.service';
 import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
@@ -268,6 +307,7 @@ import { ListOfScheduledJobsSelectionProvider } from './services/selection-provi
 import { LocaleListSelectionProvider } from './services/selection-providers/locale-list-selection-provider.service';
 import { SettingService } from './services/setting.service';
 import { TwilioSMSService } from './services/sms/TwilioSMSService';
+import { SolidTsMorphService } from './services/solid-ts-morph.service';
 import { SqlExpressionResolverService } from './services/sql-expression-resolver.service';
 import { TextractService } from './services/textract.service';
 import { UserActivityHistoryService } from './services/user-activity-history.service';
@@ -281,70 +321,52 @@ import { DashboardQuestionSqlDatasetConfigSubscriber } from './subscribers/dashb
 import { DashboardQuestionSubscriber } from './subscribers/dashboard-question.subscriber';
 import { DashboardVariableSubscriber } from './subscribers/dashboard-variable.subscriber';
 import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
-import { ListOfValuesMetadataSubscriber } from './subscribers/list-of-values-metadata.subscriber';
+import { ListOfValuesSubscriber } from './subscribers/list-of-values.subscriber';
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
-import { McpHandlerFactory } from './services/genai/mcp-handlers/mcp-handler-factory.service';
-import { SolidCreateModuleMcpHandler } from './services/genai/mcp-handlers/solid-create-module-mcp-handler.service';
-import { SolidCreateModelWithFieldsMcpHandler } from './services/genai/mcp-handlers/solid-create-model-with-fields-mcp-handler.service';
-import { SolidAddFieldsToModelMcpHandler } from './services/genai/mcp-handlers/solid-add-fields-to-model-mcp-handler.service';
-import { SolidUpdateLayoutMcpHandler } from './services/genai/mcp-handlers/solid-update-layout-mcp-handler.service';
-import { SolidCreateDashboardWithWidgetsMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-mcp-handler.service';
-import { SolidCreateDashboardQuestionMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-mcp-handler.service';
-import { SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-sql-dataset-config-mcp-handler.service';
-import { SolidCreateDashboardWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-widget-mcp-handler.service';
-import { SolidCreateComputedProviderMcpHandler } from './services/genai/mcp-handlers/solid-create-computed-provider-mcp-handler.service';
-import { SolidTsMorphService } from './services/solid-ts-morph.service';
-import { SolidAddVariableToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-variable-to-dashboard-mcp-handler.service';
-import { SolidAddQuestionToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-question-to-dashboard-mcp-handler.service';
-import { SolidAddCustomServiceMethodMcpHandler } from './services/genai/mcp-handlers/solid-add-custom-service-method-mcp-handler.service';
-import { SolidAddHeaderButtonOrRowButtonToListViewMcpHandler } from './services/genai/mcp-handlers/solid-add-header-button-or-row-button-to-list-view-mcp-handler.service';
-import { SolidAddControllerHandlerMcpHandler } from './services/genai/mcp-handlers/solid-add-controller-handler-method-mcp-handler.service';
-import { SolidAddButtonToFormViewMcpHandler } from './services/genai/mcp-handlers/solid-add-button-to-form-view-mcp-handler.service';
-import { SolidCreateCustomFormViewWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-custom-form-view-widget-mcp-handler.service';
+import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
 
 
 @Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([
-      ModelMetadata,
-      FieldMetadata,
-      ModuleMetadata,
-      ListOfValues,
-      MediaStorageProviderMetadata,
-      Media,
-      EmailTemplate,
-      SmsTemplate,
-      EmailAttachment,
-      User,
-      ViewMetadata,
       ActionMetadata,
-      MenuItemMetadata,
-      MqMessageQueue,
-      MqMessage,
-      ScheduledJob,
-      PermissionMetadata,
-      RoleMetadata,
-      Setting,
-      SavedFilters,
-      UserViewMetadata,
-      SecurityRule,
-      ListOfValues,
+      AiInteraction,
       ChatterMessage,
       ChatterMessageDetails,
-      Locale,
-      ExportTemplate,
-      ExportTransaction,
-      ImportTransaction,
-      ImportTransactionErrorLog,
-      UserActivityHistory,
-      AiInteraction,
       Dashboard,
-      DashboardVariable,
       DashboardQuestion,
       DashboardQuestionSqlDatasetConfig,
+      DashboardVariable,
+      EmailAttachment,
+      EmailTemplate,
+      ExportTemplate,
+      ExportTransaction,
+      FieldMetadata,
+      ImportTransaction,
+      ImportTransactionErrorLog,
+      ListOfValues,
+      Locale,
+      Media,
+      MediaStorageProviderMetadata,
+      MenuItemMetadata,
+      ModelMetadata,
+      ModuleMetadata,
+      MqMessage,
+      MqMessageQueue,
+      PermissionMetadata,
+      RoleMetadata,
+      SavedFilters,
+      ScheduledJob,
+      SecurityRule,
+      Setting,
+      SmsTemplate,
+      User,
+      UserActivityHistory,
+      UserViewMetadata,
+      ViewMetadata,
     ]),
     ConfigModule.forFeature(appBuilderConfig),
     ConfigModule.forFeature(commonConfig),
@@ -377,62 +399,48 @@ import { SolidCreateCustomFormViewWidgetMcpHandler } from './services/genai/mcp-
     HttpModule,
     ConfigModule,
     ClsModule,
-    // ThrottlerModule.forRootAsync({
-    //   imports: [ConfigModule],
-    //   inject: [ConfigService],
-    //   useFactory: (configService: ConfigService) => ({
-    //     throttlers: [
-    //       { name: 'short', ttl: seconds(10), limit: 10 },
-    //       { name: 'login', ttl: seconds(10), limit: 5 },
-    //       { name: 'burst', ttl: seconds(1), limit: 100 },
-    //       { name: 'sustained', ttl: seconds(300), limit: 500 },
-    //     ],
-    //     storage: isRedisConfigured(configService) ? new ThrottlerStorageRedisService(`redis://${configService.get<string>('REDIS_HOST')}:${configService.get<string>('REDIS_PORT')}`) : undefined,
-    //   }),
-    // }),
   ],
   controllers: [
-    ModuleMetadataController,
-    ModelMetadataController,
-    FieldMetadataController,
-    TestController,
-    MediaController,
-    MediaStorageProviderMetadataController,
-    ViewMetadataController,
     ActionMetadataController,
-    MenuItemMetadataController,
-    ServiceController,
-    SmsTemplateController,
-    EmailTemplateController,
+    AiInteractionController,
     AuthenticationController,
-    GoogleAuthenticationController,
-    OTPAuthenticationController,
-    TestQueueController,
-    MqMessageQueueController,
-    MqMessageController,
-    ScheduledJobController,
-    PermissionMetadataController,
-    RoleMetadataController,
-    UserController,
-    SettingController,
-    SavedFiltersController,
-    UserViewMetadataController,
-    SecurityRuleController,
-    SavedFiltersController,
-    ListOfValuesController,
     ChatterMessageController,
     ChatterMessageDetailsController,
-    LocaleController,
-    ExportTemplateController,
-    ExportTransactionController,
-    ImportTransactionController,
-    ImportTransactionErrorLogController,
-    UserActivityHistoryController,
     DashboardController,
-    DashboardVariableController,
     DashboardQuestionController,
     DashboardQuestionSqlDatasetConfigController,
-    AiInteractionController,
+    DashboardVariableController,
+    EmailTemplateController,
+    ExportTemplateController,
+    ExportTransactionController,
+    FieldMetadataController,
+    GoogleAuthenticationController,
+    ImportTransactionController,
+    ImportTransactionErrorLogController,
+    ListOfValuesController,
+    LocaleController,
+    MediaController,
+    MediaStorageProviderMetadataController,
+    MenuItemMetadataController,
+    ModelMetadataController,
+    ModuleMetadataController,
+    MqMessageController,
+    MqMessageQueueController,
+    OTPAuthenticationController,
+    PermissionMetadataController,
+    RoleMetadataController,
+    SavedFiltersController,
+    ScheduledJobController,
+    SecurityRuleController,
+    ServiceController,
+    SettingController,
+    SmsTemplateController,
+    TestController,
+    TestQueueController,
+    UserActivityHistoryController,
+    UserController,
+    UserViewMetadataController,
+    ViewMetadataController,
   ],
   providers: [
     {
@@ -601,7 +609,6 @@ import { SolidCreateCustomFormViewWidgetMcpHandler } from './services/genai/mcp-
     ExportTransactionService,
     ExcelService,
     CsvService,
-    FieldRepository,
     ImportTransactionService,
     ImportTransactionErrorLogService,
     CreatedByUpdatedBySubscriber,
@@ -640,7 +647,7 @@ import { SolidCreateCustomFormViewWidgetMcpHandler } from './services/genai/mcp-
     SolidCreateModelWithFieldsMcpHandler,
     SolidAddFieldsToModelMcpHandler,
     SolidUpdateLayoutMcpHandler,
-    
+
     SolidCreateDashboardWithWidgetsMcpHandler,
     SolidCreateDashboardQuestionMcpHandler,
     SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler,
@@ -654,73 +661,94 @@ import { SolidCreateCustomFormViewWidgetMcpHandler } from './services/genai/mcp-
     SolidAddControllerHandlerMcpHandler,
     SolidAddButtonToFormViewMcpHandler,
     SolidCreateCustomFormViewWidgetMcpHandler,
-    
+
     SolidTsMorphService,
 
     ViewMetadataRepository,
     ScheduledJobRepository,
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
-    ListOfValuesMetadataService,
-    ListOfValuesMetadataSubscriber,
+    ListOfValuesSubscriber,
     ListOfValuesMapper,
     MailFactory,
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,
-
+    AiInteractionRepository,
+    DashboardQuestionSqlDatasetConfigRepository,
+    DashboardQuestionRepository,
+    DashboardVariableRepository,
+    EmailTemplateRepository,
+    ExportTemplateRepository,
+    ExportTransactionRepository,
+    ImportTransactionErrorLogRepository,
+    ImportTransactionRepository,
+    ListOfValuesRepository,
+    LocaleRepository,
+    MenuItemMetadataRepository,
+    MqMessageQueueRepository,
+    MqMessageRepository,
+    PermissionMetadataRepository,
+    RoleMetadataRepository,
+    SavedFiltersRepository,
+    SettingRepository,
+    SmsTemplateRepository,
+    UserActivityHistoryRepository,
+    UserViewMetadataRepository,
+    ModelMetadataRepository,
+    ModuleMetadataRepository,
+    ActionMetadataRepository,
+    MediaStorageProviderMetadataRepository,
   ],
   exports: [
-    ModelMetadataService,
-    ModelMetadataHelperService,
-    ModuleMetadataService,
-    FieldMetadataService,
-    MediaStorageProviderMetadataService,
-    MediaService,
-    DiscoveryService,
+    AiInteractionService,
+    AuthenticationService,
+    ChatterMessageDetailsRepository,
+    ChatterMessageDetailsService,
+    ChatterMessageRepository,
+    ChatterMessageService,
+    ConfigModule,
     CrudHelperService,
     CRUDService,
-    MulterModule,
-    FileService,
-    TextractService,
-    SolidRegistry,
-    SMTPEMailService,
-    ElasticEmailService,
-    Msg91SMSService,
-    Msg91OTPService,
-    TwilioSMSService,
-    Msg91WhatsappService,
-    TinyUrlService,
-    PdfService,
+    CsvService,
+    DiscoveryService,
     EmailTemplateService,
-    SmsTemplateService,
-    UserSeederService,
-    AuthenticationService,
+    ElasticEmailService,
+    ExcelService,
+    FieldMetadataService,
+    FileService,
+    HttpModule,
+    ImportTransactionService,
+    ListOfValuesService,
+    MailFactory,
+    MediaService,
+    MediaStorageProviderMetadataService,
+    ModelMetadataHelperService,
+    ModelMetadataService,
+    ModuleMetadataService,
     MqMessageQueueService,
     MqMessageService,
+    Msg91OTPService,
+    Msg91SMSService,
+    Msg91WhatsappService,
+    MulterModule,
+    PdfService,
+    PollerService,
+    PublisherFactory,
     RefreshModelCommand,
     RefreshModuleCommand,
     RequestContextService,
-    SecurityRuleRepository,
-    FieldRepository,
     SchedulerServiceImpl,
-    UserActivityHistoryService,
-    CsvService,
-    ExcelService,
+    SecurityRuleRepository,
+    SmsTemplateService,
+    SMTPEMailService,
     SolidIntrospectService,
-    ImportTransactionService,
-    HttpModule,
-    ListOfValuesService,
-    ConfigModule,
-    PublisherFactory,
-    MailFactory,
-    PollerService,
-    AiInteractionService,
-    ChatterMessageService,
-    ChatterMessageRepository,
-    ChatterMessageDetailsService,
-    ChatterMessageDetailsRepository,
-    TypeOrmModule
-    // ThrottlerModule,
+    SolidRegistry,
+    TextractService,
+    TinyUrlService,
+    TwilioSMSService,
+    TypeOrmModule,
+    UserActivityHistoryService,
+    UserSeederService,
   ],
 })
 export class SolidCoreModule { }

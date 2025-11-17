@@ -1,15 +1,17 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
-import { DataSource, Repository } from 'typeorm';
+import { DataSource } from 'typeorm';
+import { SolidBaseRepository } from './solid-base.repository';
 
 @Injectable()
-export class FieldMetadataRepository extends Repository<FieldMetadata> {
-    private readonly logger = new Logger(FieldMetadataRepository.name);
+export class FieldMetadataRepository extends SolidBaseRepository<FieldMetadata> {
     constructor(
-        dataSource: DataSource,
+        readonly dataSource: DataSource,
+        // readonly requestContextService: RequestContextService,
+        // readonly securityRuleRepository: SecurityRuleRepository,
     ) {
-        super(FieldMetadata, dataSource.createEntityManager());
+        super(FieldMetadata, dataSource, null, null);
     }
 
     async findComputedFieldsPopulatedWithModelAndModule() {

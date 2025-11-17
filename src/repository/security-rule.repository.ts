@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
 import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
 import { SecurityRuleConfig } from 'src/dtos/security-rule-config.dto';
 import { UpdateSecurityRuleDto } from 'src/dtos/update-security-rule.dto';
@@ -8,21 +8,22 @@ import { RoleMetadata } from 'src/entities/role-metadata.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
-import { CrudHelperService, FilterCombinator } from 'src/services/crud-helper.service';
-import { Brackets, DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import { CrudHelperService } from 'src/services/crud-helper.service';
+import { Brackets, DataSource, SelectQueryBuilder } from 'typeorm';
+import { SolidBaseRepository } from './solid-base.repository';
 
 @Injectable()
-export class SecurityRuleRepository extends Repository<SecurityRule> {
-    private readonly logger = new Logger(SecurityRuleRepository.name);
+export class SecurityRuleRepository extends SolidBaseRepository<SecurityRule> {
     constructor(
-        private dataSource: DataSource,
-        private readonly solidRegistry: SolidRegistry,
-        private readonly crudHelperService: CrudHelperService,
+        readonly dataSource: DataSource,
+        // readonly requestContextService: RequestContextService,
+        readonly solidRegistry: SolidRegistry,
+        readonly crudHelperService: CrudHelperService,
     ) {
-        super(SecurityRule, dataSource.createEntityManager());
+        super(SecurityRule, dataSource, null, null);
     }
 
-    applySecurityRules<T extends CommonEntity>(qb: SelectQueryBuilder<T>, modelSingularName: string, activeUser: ActiveUserData, securityRuleAlias: string = qb.alias): SelectQueryBuilder<T> {
+    async applySecurityRules<T extends CommonEntity>(qb: SelectQueryBuilder<T>, modelSingularName: string, activeUser: ActiveUserData, securityRuleAlias: string = qb.alias): Promise<SelectQueryBuilder<T>> {
         // Fetch the security rules for the model and roles
         const securityRules = this.solidRegistry.getSecurityRules(modelSingularName, activeUser.roles);
 
@@ -31,30 +32,48 @@ export class SecurityRuleRepository extends Repository<SecurityRule> {
             return qb;
         }
 
-        // Apply each security rule to the query builder. The rules are combined with OR logic at the top level.
-        qb.andWhere(new Brackets((outerQb) => {
-            for (const rule of securityRules) {
-                try {
-                    const parsedRule = JSON.parse(
+        const evaluatedRules = [];
+
+        for (const rule of securityRules) {
+
+            let evaluatedRule = null;
+
+            try {
+                // First check if the rule has a "dynamic" security rule config provider. 
+                if (rule.securityRuleConfigProvider) {
+                    // TODO: Evaluation of the securityRuleConfig Provider should happen outside first...
+                    const securityRuleConfigProviderInstance = this.solidRegistry.getSecurityRuleConfigProviderInstance(rule.securityRuleConfigProvider);
+                    evaluatedRule = await securityRuleConfigProviderInstance.securityRuleConfig(activeUser, rule);
+                }
+                else {
+                    evaluatedRule = JSON.parse(
                         this.resolveSecurityRuleConfig(rule.securityRuleConfig, activeUser)
                     ) as SecurityRuleConfig;
+                }
 
-                if (parsedRule && parsedRule.filters) {
-                        outerQb.orWhere( // combine each rule-group with OR at the outer level
-                            new Brackets((innerQb) => {
-                               this.crudHelperService.applyFilters(innerQb, parsedRule.filters, securityRuleAlias, qb); // AND within a rule
-                            })
-                        );
-                    }
-                } catch (error) {
-                    this.logger.warn(`Error parsing security rule: ${rule.securityRuleConfig}`, error);
+                evaluatedRules.push(evaluatedRule);
+
+            } catch (error) {
+                this.logger.warn(`Error parsing security rule: ${rule.securityRuleConfig}`, error);
+            }
+        }
+
+
+        // Apply each security rule to the query builder. The rules are combined with OR logic at the top level.
+        qb.andWhere(new Brackets(async (outerQb) => {
+            for (const evaluatedRule of evaluatedRules) {
+                if (evaluatedRule && evaluatedRule.filters) {
+                    outerQb.orWhere( // combine each rule-group with OR at the outer level
+                        new Brackets((innerQb) => {
+                            this.crudHelperService.applyFilters(innerQb, evaluatedRule.filters, securityRuleAlias, qb); // AND within a rule
+                        })
+                    );
                 }
             }
         }));
 
         return qb;
     }
-
 
     private resolveSecurityRuleConfig(configString: string, activeUser: ActiveUserData) {
         return configString.replace('$activeUserId', activeUser.sub.toString());
@@ -85,6 +104,7 @@ export class SecurityRuleRepository extends Repository<SecurityRule> {
             modelMetadataId: populatedSecurityRule.modelMetadata.id,
             modelMetadataUserKey: populatedSecurityRule.modelMetadata.singularName,
             securityRuleConfig: populatedSecurityRule.securityRuleConfig,
+            securityRuleConfigProvider: ""
         };
     }
 

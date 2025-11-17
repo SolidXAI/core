@@ -5,7 +5,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISelectionProvider, ISelectionProviderContext } from "../interfaces";
+import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext } from "../interfaces";
 
 type ControllerMetadata = {
   name: string;
@@ -66,8 +66,8 @@ export class SolidRegistry {
   private dashboardQuestionDataProviders: Set<InstanceWrapper> = new Set();
   private mailProviders: Set<InstanceWrapper> = new Set();
   private whatsappProviders: Set<InstanceWrapper> = new Set();
+  private securityRuleConfigProviders: Set<InstanceWrapper> = new Set();
   private errorCodeProviders: Set<InstanceWrapper> = new Set();
-
 
   registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
     this.errorCodeProviders.add(errorCodeProvider);
@@ -75,6 +75,10 @@ export class SolidRegistry {
 
   registerWhatsappProvider(whatsappProvider: InstanceWrapper): void {
     this.whatsappProviders.add(whatsappProvider);
+  }
+
+  registerSecurityRuleConfigProvider(securityRuleConfigProvider: InstanceWrapper): void {
+    this.securityRuleConfigProviders.add(securityRuleConfigProvider);
   }
 
   registerMailProvider(mailProvider: InstanceWrapper): void {
@@ -127,6 +131,21 @@ export class SolidRegistry {
 
   getWhatsappProviders(): Array<InstanceWrapper> {
     return Array.from(this.whatsappProviders);
+  }
+
+  getSecurityRuleConfigProviders(): Array<InstanceWrapper> {
+    return Array.from(this.securityRuleConfigProviders);
+  }
+
+  getSecurityRuleConfigProviderInstance(name: string): ISecurityRuleConfigProvider {
+    const securityRuleConfigProviders = this.getSecurityRuleConfigProviders();
+
+    for (let i = 0; i < securityRuleConfigProviders.length; i++) {
+      const securityRuleConfigProvider = securityRuleConfigProviders[i];
+      if (securityRuleConfigProvider.name === name) {
+        return securityRuleConfigProvider.instance;
+      }
+    }
   }
 
   getSeeders(): Array<InstanceWrapper> {

@@ -1,24 +1,30 @@
-import { Repository, DataSource } from 'typeorm';
 import { Injectable } from '@nestjs/common';
 import { Media } from 'src/entities/media.entity';
-import { FieldMetadata } from 'src/entities/field-metadata.entity';
-import { InjectRepository } from '@nestjs/typeorm';
-import { ModelMetadata } from 'src/entities/model-metadata.entity';
-import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
+import { RequestContextService } from 'src/services/request-context.service';
+import { DataSource } from 'typeorm';
+import { FieldMetadataRepository } from './field-metadata.repository';
+import { MediaStorageProviderMetadataRepository } from './media-storage-provider-metadata.repository';
+import { ModelMetadataRepository } from './model-metadata.repository';
+import { SecurityRuleRepository } from './security-rule.repository';
+import { SolidBaseRepository } from './solid-base.repository';
 
 @Injectable()
-export class MediaRepository extends Repository<Media> {
+export class MediaRepository extends SolidBaseRepository<Media> {
     constructor(
-        private dataSource: DataSource,
-        @InjectRepository(ModelMetadata)
-        private readonly modelMetadataRepo: Repository<ModelMetadata>,
-        @InjectRepository(MediaStorageProviderMetadata)
-        private readonly mediaStorageProviderMetadataRepo: Repository<MediaStorageProviderMetadata>,
-        @InjectRepository(FieldMetadata)
-        private readonly fieldMetadataRepo: Repository<FieldMetadata>,
-
+        readonly dataSource: DataSource,
+        readonly requestContextService: RequestContextService,
+        readonly securityRuleRepository: SecurityRuleRepository,
+        // @InjectRepository(FieldMetadata)
+        // private readonly fieldMetadataRepo: Repository<FieldMetadata>,
+        // @InjectRepository(ModelMetadata)
+        // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        // @InjectRepository(MediaStorageProviderMetadata)
+        // private readonly mediaStorageProviderMetadataRepo: Repository<MediaStorageProviderMetadata>,
+        private readonly fieldMetadataRepo: FieldMetadataRepository,
+        private readonly modelMetadataRepo: ModelMetadataRepository,
+        private readonly mediaStorageProviderMetadataRepo: MediaStorageProviderMetadataRepository,
     ) {
-        super(Media, dataSource.createEntityManager());
+        super(Media, dataSource, requestContextService, securityRuleRepository);
     }
 
     async createMedia(createDto: any) {

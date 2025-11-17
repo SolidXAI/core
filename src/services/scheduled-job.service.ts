@@ -10,6 +10,7 @@ import { FileService } from './file.service';
 import { CrudHelperService } from './crud-helper.service';
 import { CRUDService } from './crud.service';
 import { Logger } from '@nestjs/common';
+import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
 
 @Injectable()
 export class ScheduledJobService extends CRUDService<ScheduledJob> {
@@ -24,8 +25,9 @@ export class ScheduledJobService extends CRUDService<ScheduledJob> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(ScheduledJob)
-    readonly repo: Repository<ScheduledJob>,
+    // @InjectRepository(ScheduledJob)
+    // readonly repo: Repository<ScheduledJob>,
+    readonly repo: ScheduledJobRepository,
     readonly moduleRef: ModuleRef
 
   ) {

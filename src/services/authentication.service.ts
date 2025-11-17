@@ -12,7 +12,7 @@ import {
 import { ConfigType } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { isEmpty, isNotEmpty } from 'class-validator';
 import { randomInt, randomUUID } from 'crypto';
 import commonConfig from 'src/config/common.config';
@@ -21,6 +21,7 @@ import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { SUCCESS_MESSAGES } from 'src/constants/success-messages';
 import { CreateUserDto } from 'src/dtos/create-user.dto';
 import { MailFactory } from 'src/factories/mail.factory';
+import { UserRepository } from 'src/repository/user.repository';
 import { Msg91OTPService } from 'src/services/sms/Msg91OTPService';
 import { DataSource, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
@@ -44,7 +45,6 @@ import { EventDetails, EventType } from "../interfaces";
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { HashingService } from './hashing.service';
 import { InvalidatedRefreshTokenError, RefreshTokenIdsStorageService } from './refresh-token-ids-storage.service';
-import { RequestContextService } from './request-context.service';
 import { RoleMetadataService } from './role-metadata.service';
 import { SettingService } from './setting.service';
 import { UserActivityHistoryService } from './user-activity-history.service';
@@ -67,7 +67,8 @@ export class AuthenticationService {
     // private readonly mailService: IMail;
     constructor(
         private readonly userService: UserService,
-        @InjectRepository(User) private readonly userRepository: Repository<User>,
+        // @InjectRepository(User) private readonly userRepository: Repository<User>,
+        private readonly userRepository: UserRepository,
         private readonly hashingService: HashingService,
         private readonly jwtService: JwtService,
         @Inject(jwtConfig.KEY)

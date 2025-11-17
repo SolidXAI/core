@@ -1,13 +1,19 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 
+import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
+import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
+import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
+import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { UpdateModelMetaDataDto } from '../dtos/update-model-metadata.dto';
 import { ActionMetadata } from '../entities/action-metadata.entity';
@@ -24,19 +30,17 @@ import { CrudHelperService } from './crud-helper.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
 import { RoleMetadataService } from './role-metadata.service';
-import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
-import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
-import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
-import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 @Injectable()
 export class ModelMetadataService {
   private logger = new Logger('ModelMetadataService');
   constructor(
-    @InjectRepository(ModelMetadata)
-    private readonly modelMetadataRepo: Repository<ModelMetadata>,
-    @InjectRepository(FieldMetadata)
-    private readonly fieldMetadataRepo: Repository<FieldMetadata>,
+    // @InjectRepository(ModelMetadata)
+    // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+    // @InjectRepository(FieldMetadata)
+    // private readonly fieldMetadataRepo: Repository<FieldMetadata>,
+    private readonly modelMetadataRepo: ModelMetadataRepository,
+    private readonly fieldMetadataRepo: FieldMetadataRepository,
     private readonly schematicService: SchematicService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
@@ -55,7 +59,7 @@ export class ModelMetadataService {
     let { limit, offset } = basicFilterDto;
 
     // Create above query on pincode table using query builder
-    var qb: SelectQueryBuilder<ModelMetadata> = this.modelMetadataRepo.createQueryBuilder(alias)
+    var qb: SelectQueryBuilder<ModelMetadata> = await this.modelMetadataRepo.createSecurityRuleAwareQueryBuilder(alias)
     qb = await this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
 
     // Get the records and the count

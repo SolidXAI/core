@@ -17,6 +17,7 @@ import { DashboardQuestion } from '../entities/dashboard-question.entity';
 import { SqlExpression, SqlExpressionOperator } from './question-data-providers/chartjs-sql-data-provider.service';
 import { DashboardService } from './dashboard.service';
 import { Dashboard } from 'src/entities/dashboard.entity';
+import { DashboardQuestionRepository } from 'src/repository/dashboard-question.repository';
 
 enum SOURCE_TYPE {
   SQL = 'sql',
@@ -39,8 +40,9 @@ export class DashboardQuestionService extends CRUDService<DashboardQuestion> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(DashboardQuestion, 'default')
-    readonly repo: Repository<DashboardQuestion>,
+    // @InjectRepository(DashboardQuestion, 'default')
+    // readonly repo: Repository<DashboardQuestion>,
+    readonly repo: DashboardQuestionRepository,
     readonly moduleRef: ModuleRef,
     readonly solidRegistry: SolidRegistry, // Assuming solidRegistry is injected for data providers
   ) {

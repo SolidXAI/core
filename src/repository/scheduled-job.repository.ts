@@ -1,10 +1,11 @@
-import { Injectable, Logger } from "@nestjs/common";
+import { Injectable } from "@nestjs/common";
 import { CreateScheduledJobDto } from "src/dtos/create-scheduled-job.dto";
 import { ModuleMetadata } from "src/entities/module-metadata.entity";
 import { ScheduledJob } from "src/entities/scheduled-job.entity";
-import { SolidRegistry } from "src/helpers/solid-registry";
-import { CrudHelperService } from "src/services/crud-helper.service";
-import { DataSource, Repository } from "typeorm";
+import { RequestContextService } from "src/services/request-context.service";
+import { DataSource } from "typeorm";
+import { SecurityRuleRepository } from "./security-rule.repository";
+import { SolidBaseRepository } from "./solid-base.repository";
 
 // This should match whatever DTO structure you’re using in your seeding logic
 // export type CreateScheduledJobDto = {
@@ -24,16 +25,14 @@ import { DataSource, Repository } from "typeorm";
 // };
 
 @Injectable()
-export class ScheduledJobRepository extends Repository<ScheduledJob> {
-  private readonly logger = new Logger(ScheduledJobRepository.name);
-
-  constructor(
-    private dataSource: DataSource,
-    private readonly solidRegistry: SolidRegistry,
-    private readonly crudHelperService: CrudHelperService
-  ) {
-    super(ScheduledJob, dataSource.createEntityManager());
-  }
+export class ScheduledJobRepository extends SolidBaseRepository<ScheduledJob> {
+    constructor(
+        readonly dataSource: DataSource,
+        readonly requestContextService: RequestContextService,
+        readonly securityRuleRepository: SecurityRuleRepository,
+    ) {
+        super(ScheduledJob, dataSource, requestContextService, securityRuleRepository);
+    }
 
   /**
    * Converts an entity to a plain DTO object.

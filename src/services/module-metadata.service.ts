@@ -23,6 +23,8 @@ import { ModelMetadataService } from './model-metadata.service';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import Module from 'module';
+import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
 
 @Injectable()
 export class ModuleMetadataService {
@@ -31,8 +33,9 @@ export class ModuleMetadataService {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    @InjectRepository(ModuleMetadata)
-    private readonly moduleMetadataRepo: Repository<ModuleMetadata>,
+    // @InjectRepository(ModuleMetadata)
+    // private readonly moduleMetadataRepo: Repository<ModuleMetadata>,
+    private readonly moduleMetadataRepo: ModuleMetadataRepository,
     private readonly crudHelperService: CrudHelperService,
     private readonly schematicService: SchematicService,
     private readonly configService: ConfigService,
@@ -50,7 +53,7 @@ export class ModuleMetadataService {
     let { limit, offset } = basicFilterDto;
 
     // Create above query on pincode table using query builder
-    var qb: SelectQueryBuilder<ModuleMetadata> = this.moduleMetadataRepo.createQueryBuilder(alias)
+    var qb: SelectQueryBuilder<ModuleMetadata> = await this.moduleMetadataRepo.createSecurityRuleAwareQueryBuilder(alias)
     qb = await this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
 
     // Get the records and the count

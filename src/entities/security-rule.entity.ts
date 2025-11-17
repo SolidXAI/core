@@ -22,4 +22,6 @@ export class SecurityRule extends CommonEntity {
     @Column({ type: "text" })
     securityRuleConfig: any;
 
+    @Column({ type: "varchar", nullable: true })
+    securityRuleConfigProvider: string;
 }

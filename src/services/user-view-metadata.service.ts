@@ -14,6 +14,7 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 import { UserViewMetadata } from '../entities/user-view-metadata.entity';
 import { UpsertUserViewMetadataDto } from 'src/dtos/upsert-user-view-metadata.dto';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
+import { UserViewMetadataRepository } from 'src/repository/user-view-metadata.repository';
 
 @Injectable()
 export class UserViewMetadataService extends CRUDService<UserViewMetadata> {
@@ -26,8 +27,9 @@ export class UserViewMetadataService extends CRUDService<UserViewMetadata> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(UserViewMetadata, 'default')
-    readonly repo: Repository<UserViewMetadata>,
+    // @InjectRepository(UserViewMetadata, 'default')
+    // readonly repo: Repository<UserViewMetadata>,
+    readonly repo: UserViewMetadataRepository,
     readonly moduleRef: ModuleRef
 
   ) {

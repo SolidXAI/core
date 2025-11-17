@@ -1,22 +1,23 @@
-import { BadRequestException, Logger, Injectable } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { EntityManager, Repository } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
-import { CRUDService } from 'src/services/crud.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { ConfigService } from '@nestjs/config';
-import { FileService } from 'src/services/file.service';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 import { spawn } from 'child_process';
-import { AiInteraction } from '../entities/ai-interaction.entity';
 import * as fs from 'fs/promises';
-import { McpResponse, TriggerMcpClientOptions } from 'src/interfaces';
-import { PublisherFactory } from './queues/publisher-factory.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { InvokeAiPromptDto } from 'src/dtos/invoke-ai-prompt.dto';
+import { McpResponse, TriggerMcpClientOptions } from 'src/interfaces';
+import { AiInteractionRepository } from 'src/repository/ai-interaction.repository';
+import { CrudHelperService } from 'src/services/crud-helper.service';
+import { CRUDService } from 'src/services/crud.service';
+import { FileService } from 'src/services/file.service';
+import { ModelMetadataService } from 'src/services/model-metadata.service';
+import { ModuleMetadataService } from 'src/services/module-metadata.service';
+import { AiInteraction } from '../entities/ai-interaction.entity';
 import { McpHandlerFactory } from './genai/mcp-handlers/mcp-handler-factory.service';
+import { PublisherFactory } from './queues/publisher-factory.service';
 
 @Injectable()
 export class AiInteractionService extends CRUDService<AiInteraction> {
@@ -31,8 +32,9 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(AiInteraction, 'default')
-    readonly repo: Repository<AiInteraction>,
+    // @InjectRepository(AiInteraction, 'default')
+    // readonly repo: Repository<AiInteraction>,
+    readonly repo: AiInteractionRepository,
     readonly moduleRef: ModuleRef,
     readonly publisherFactory: PublisherFactory<TriggerMcpClientOptions>,
     // readonly requestContextService: RequestContextService,

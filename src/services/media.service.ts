@@ -19,6 +19,10 @@ import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { MediaRepository } from 'src/repository/media.repository';
+import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
+import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
+import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 
 
 @Injectable()
@@ -32,14 +36,18 @@ export class MediaService extends CRUDService<Media> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(Media, 'default')
-    readonly repo: Repository<Media>,
-    @InjectRepository(ModelMetadata)
-    private readonly modelMetadataRepo: Repository<ModelMetadata>,
-    @InjectRepository(MediaStorageProviderMetadata)
-    private readonly mediaStorageProviderMetadataRepo: Repository<MediaStorageProviderMetadata>,
-    @InjectRepository(FieldMetadata)
-    private readonly fieldMetadataRepo: Repository<FieldMetadata>,
+    // @InjectRepository(Media, 'default')
+    // readonly repo: Repository<Media>,
+    readonly repo: MediaRepository,
+    // @InjectRepository(ModelMetadata)
+    // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+    // @InjectRepository(MediaStorageProviderMetadata)
+    // private readonly mediaStorageProviderMetadataRepo: Repository<MediaStorageProviderMetadata>,
+    // @InjectRepository(FieldMetadata)
+    // private readonly fieldMetadataRepo: Repository<FieldMetadata>,
+    private readonly modelMetadataRepo: ModelMetadataRepository,
+    private readonly mediaStorageProviderMetadataRepo: MediaStorageProviderMetadataRepository,
+    private readonly fieldMetadataRepo: FieldMetadataRepository,
     readonly moduleRef: ModuleRef,
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'media', 'solid-core', moduleRef);

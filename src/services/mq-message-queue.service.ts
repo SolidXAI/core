@@ -11,6 +11,7 @@ import { CrudHelperService } from "src/services/crud-helper.service";
 
 
 import { MqMessageQueue } from '../entities/mq-message-queue.entity';
+import { MqMessageQueueRepository } from 'src/repository/mq-message-queue.repository';
 
 @Injectable()
 export class MqMessageQueueService extends CRUDService<MqMessageQueue> {
@@ -24,8 +25,9 @@ export class MqMessageQueueService extends CRUDService<MqMessageQueue> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(MqMessageQueue)
-    readonly repo: Repository<MqMessageQueue>,
+    // @InjectRepository(MqMessageQueue)
+    // readonly repo: Repository<MqMessageQueue>,
+    readonly repo: MqMessageQueueRepository,
     readonly moduleRef: ModuleRef
 
   ) {

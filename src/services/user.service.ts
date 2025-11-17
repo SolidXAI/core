@@ -17,6 +17,7 @@ import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { iamConfig } from 'src/config/iam.config';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { UserRepository } from 'src/repository/user.repository';
+import { RoleMetadataRepository } from 'src/repository/role-metadata.repository';
 
 @Injectable()
 export class UserService extends CRUDService<User> {
@@ -33,8 +34,9 @@ export class UserService extends CRUDService<User> {
     readonly repo: UserRepository,
     @InjectRepository(User, 'default')
     readonly nonSecurityRuleAwareRepo : Repository<User>,
-    @InjectRepository(RoleMetadata)
-    private readonly roleRepository: Repository<RoleMetadata>,
+    // @InjectRepository(RoleMetadata)
+    // private readonly roleRepository: Repository<RoleMetadata>,
+    private readonly roleRepository: RoleMetadataRepository,
     readonly moduleRef: ModuleRef,
     @Inject(iamConfig.KEY)
     private readonly iamConfiguration: ConfigType<typeof iamConfig>,

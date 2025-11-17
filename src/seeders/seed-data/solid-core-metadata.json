@@ -3150,6 +3150,22 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "securityRuleConfigProvider",
+            "displayName": "Security Rule Config Provider",
+            "type": "selectionDynamic",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionDynamicProvider": "SecurityRuleConfigSelectionProvider",
+            "selectionDynamicProviderCtxt": "{}"
           }
         ]
       },
@@ -5804,351 +5820,351 @@
     }
   ],
   "menus": [
-  {
-    "displayName": "App Builder",
-    "name": "appBuilder-menu-item",
-    "sequenceNumber": 1,
-    "actionUserKey": "appBuilder-root",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": ""
-  },
-  {
-    "displayName": "Module",
-    "name": "moduleMetadata-menu-item",
-    "sequenceNumber": 1,
-    "actionUserKey": "moduleMetadata-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "appBuilder-menu-item"
-  },
-  {
-    "displayName": "Model",
-    "name": "modelMetadata-menu-item",
-    "sequenceNumber": 2,
-    "actionUserKey": "modelMetadata-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "appBuilder-menu-item"
-  },
-  {
-    "displayName": "Field",
-    "name": "fieldMetadata-menu-item",
-    "sequenceNumber": 3,
-    "actionUserKey": "fieldMetadata-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "appBuilder-menu-item"
-  },
-  {
-    "displayName": "Layout Builder",
-    "name": "layoutBuilder-menu-item",
-    "sequenceNumber": 2,
-    "actionUserKey": "layoutBuilder-root",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": ""
-  },
-  {
-    "displayName": "Menu Item",
-    "name": "menuItemMetadata-menu-item",
-    "sequenceNumber": 1,
-    "actionUserKey": "menuItemMetadata-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "layoutBuilder-menu-item"
-  },
-  {
-    "displayName": "View",
-    "name": "viewMetadata-menu-item",
-    "sequenceNumber": 2,
-    "actionUserKey": "viewMetadata-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "layoutBuilder-menu-item"
-  },
-  {
-    "displayName": "Action",
-    "name": "actionMetadata-menu-item",
-    "sequenceNumber": 3,
-    "actionUserKey": "actionMetadata-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "layoutBuilder-menu-item"
-  },
-  {
-    "displayName": "Saved Filters",
-    "name": "savedFilters-menu-item",
-    "sequenceNumber": 4,
-    "actionUserKey": "savedFilters-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "layoutBuilder-menu-item"
-  },
-  {
-    "displayName": "User View",
-    "name": "userViewMetadata-menu-item",
-    "sequenceNumber": 5,
-    "actionUserKey": "userViewMetadata-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "layoutBuilder-menu-item"
-  },
-  {
-    "displayName": "Media Management",
-    "name": "mediaManagement-menu-item",
-    "sequenceNumber": 3,
-    "actionUserKey": "media-root",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": ""
-  },
-  {
-    "displayName": "Media",
-    "name": "media-menu-item",
-    "sequenceNumber": 1,
-    "actionUserKey": "media-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "mediaManagement-menu-item"
-  },
-  {
-    "displayName": "Media Storage Provider",
-    "name": "mediaStorageProviderMetadata-menu-item",
-    "sequenceNumber": 2,
-    "actionUserKey": "mediaStorageProviderMetadata-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "mediaManagement-menu-item"
-  },
-  {
-    "displayName": "IAM",
-    "name": "iam-menu-item",
-    "sequenceNumber": 4,
-    "actionUserKey": "iam-root",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": ""
-  },
-  {
-    "displayName": "User",
-    "name": "user-menu-item",
-    "sequenceNumber": 1,
-    "actionUserKey": "user-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "iam-menu-item"
-  },
-  {
-    "displayName": "Role",
-    "name": "roleMetadata-menu-item",
-    "sequenceNumber": 2,
-    "actionUserKey": "roleMetadata-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "iam-menu-item"
-  },
-  {
-    "displayName": "Permission",
-    "name": "permissionMetadata-menu-item",
-    "sequenceNumber": 3,
-    "actionUserKey": "permissionMetadata-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "iam-menu-item"
-  },
-  {
-    "displayName": "Security rules",
-    "name": "securityRule-menu-item",
-    "sequenceNumber": 4,
-    "actionUserKey": "securityRule-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "iam-menu-item"
-  },
-  {
-    "displayName": "User Activity History",
-    "name": "userActivityHistory-menu-item",
-    "sequenceNumber": 5,
-    "actionUserKey": "userActivityHistory-list-view",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "iam-menu-item"
-  },
-  {
-    "displayName": "Queues",
-    "name": "queues-menu-item",
-    "sequenceNumber": 5,
-    "actionUserKey": "queues-root",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": ""
-  },
-  {
-    "displayName": "Messages",
-    "name": "mqMessage-menu-item",
-    "sequenceNumber": 1,
-    "actionUserKey": "mqMessage-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "queues-menu-item"
-  },
-  {
-    "displayName": "Queues",
-    "name": "mqMessageQueue-menu-item",
-    "sequenceNumber": 2,
-    "actionUserKey": "mqMessageQueue-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "queues-menu-item"
-  },
-  {
-    "displayName": "Notification",
-    "name": "notification-menu-item",
-    "sequenceNumber": 6,
-    "actionUserKey": "notification-root",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": ""
-  },
-  {
-    "displayName": "Email",
-    "name": "emailTemplate-menu-item",
-    "sequenceNumber": 1,
-    "actionUserKey": "emailTemplate-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "notification-menu-item"
-  },
-  {
-    "displayName": "SMS",
-    "name": "smsTemplate-menu-item",
-    "sequenceNumber": 2,
-    "actionUserKey": "smsTemplate-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "notification-menu-item"
-  },
-  {
-    "displayName": "Other",
-    "name": "other-menu-item",
-    "sequenceNumber": 7,
-    "actionUserKey": "other-root",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": ""
-  },
-  {
-    "displayName": "List of Values",
-    "name": "listOfValues-menu-item",
-    "sequenceNumber": 1,
-    "actionUserKey": "listOfValues-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "other-menu-item"
-  },
-  {
-    "displayName": "Scheduled Jobs",
-    "name": "scheduledJob-menu-item",
-    "sequenceNumber": 2,
-    "actionUserKey": "scheduledJob-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "other-menu-item"
-  },
-  {
-    "displayName": "AI Interactions",
-    "name": "aiInteraction-menu-item",
-    "sequenceNumber": 3,
-    "actionUserKey": "aiInteraction-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "other-menu-item"
-  },
-  {
-    "displayName": "Saved Filters",
-    "name": "savedFilters-menu-item",
-    "sequenceNumber": 4,
-    "actionUserKey": "savedFilters-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "other-menu-item"
-  },
-  {
-    "displayName": "Chatter Message",
-    "name": "chatterMessage-menu-item",
-    "sequenceNumber": 5,
-    "actionUserKey": "chatterMessage-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "other-menu-item"
-  },
-  {
-    "displayName": "Chatter Message Details",
-    "name": "chatterMessageDetails-menu-item",
-    "sequenceNumber": 6,
-    "actionUserKey": "chatterMessageDetails-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "other-menu-item"
-  },
-  {
-    "displayName": "Locale",
-    "name": "locale-menu-item",
-    "sequenceNumber": 7,
-    "actionUserKey": "locale-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "other-menu-item"
-  },
-  {
-    "displayName": "Import Transactions",
-    "name": "importTransaction-menu-item",
-    "sequenceNumber": 8,
-    "actionUserKey": "importTransaction-list-view",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "other-menu-item"
-  },
-  {
-    "displayName": "Import Transaction Error Logs",
-    "name": "importTransactionErrorLog-menu-item",
-    "sequenceNumber": 9,
-    "actionUserKey": "importTransactionErrorLog-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "other-menu-item"
-  },
-  {
-    "displayName": "Dashboard Management",
-    "name": "dashboardManagement-menu-item",
-    "sequenceNumber": 8,
-    "actionUserKey": "dasbhoard-root",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": ""
-  },
-  {
-    "displayName": "Dashboard",
-    "name": "dashboard-menu-item",
-    "sequenceNumber": 1,
-    "actionUserKey": "dashboard-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "dashboardManagement-menu-item"
-  },
-  {
-    "displayName": "Dashboard Question",
-    "name": "dashboardQuestion-menu-item",
-    "sequenceNumber": 2,
-    "actionUserKey": "dashboardQuestion-list-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "dashboardManagement-menu-item"
-  },
-  {
-    "displayName": "Settings",
-    "name": "settings-menu-item",
-    "sequenceNumber": 9,
-    "actionUserKey": "settings-root",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": ""
-  },
-  {
-    "displayName": "App Settings",
-    "name": "appSettings-menu-item",
-    "sequenceNumber": 1,
-    "actionUserKey": "appSettings-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "settings-menu-item"
-  },
-  {
-    "displayName": "Authentication Settings",
-    "name": "authenticationSettings-menu-item",
-    "sequenceNumber": 2,
-    "actionUserKey": "authenticationSettings-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "settings-menu-item"
-  },
-  {
-    "displayName": "Ai Settings",
-    "name": "aiSettings-menu-item",
-    "sequenceNumber": 3,
-    "actionUserKey": "aiSettings-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "settings-menu-item"
-  },
-  {
-    "displayName": "Misc",
-    "name": "miscSettings-menu-item",
-    "sequenceNumber": 4,
-    "actionUserKey": "miscSettings-action",
-    "moduleUserKey": "solid-core",
-    "parentMenuItemUserKey": "settings-menu-item"
-  }
-],
+    {
+      "displayName": "App Builder",
+      "name": "appBuilder-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "appBuilder-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Module",
+      "name": "moduleMetadata-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "moduleMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "appBuilder-menu-item"
+    },
+    {
+      "displayName": "Model",
+      "name": "modelMetadata-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "modelMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "appBuilder-menu-item"
+    },
+    {
+      "displayName": "Field",
+      "name": "fieldMetadata-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "fieldMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "appBuilder-menu-item"
+    },
+    {
+      "displayName": "Layout Builder",
+      "name": "layoutBuilder-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "layoutBuilder-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Menu Item",
+      "name": "menuItemMetadata-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "menuItemMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+    },
+    {
+      "displayName": "View",
+      "name": "viewMetadata-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "viewMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+    },
+    {
+      "displayName": "Action",
+      "name": "actionMetadata-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "actionMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+    },
+    {
+      "displayName": "Saved Filters",
+      "name": "savedFilters-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "savedFilters-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+    },
+    {
+      "displayName": "User View",
+      "name": "userViewMetadata-menu-item",
+      "sequenceNumber": 5,
+      "actionUserKey": "userViewMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+    },
+    {
+      "displayName": "Media Management",
+      "name": "mediaManagement-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "media-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Media",
+      "name": "media-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "media-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "mediaManagement-menu-item"
+    },
+    {
+      "displayName": "Media Storage Provider",
+      "name": "mediaStorageProviderMetadata-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "mediaStorageProviderMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "mediaManagement-menu-item"
+    },
+    {
+      "displayName": "IAM",
+      "name": "iam-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "iam-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "User",
+      "name": "user-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "user-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
+      "displayName": "Role",
+      "name": "roleMetadata-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "roleMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
+      "displayName": "Permission",
+      "name": "permissionMetadata-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "permissionMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
+      "displayName": "Security rules",
+      "name": "securityRule-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "securityRule-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
+      "displayName": "User Activity History",
+      "name": "userActivityHistory-menu-item",
+      "sequenceNumber": 5,
+      "actionUserKey": "userActivityHistory-list-view",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
+      "displayName": "Queues",
+      "name": "queues-menu-item",
+      "sequenceNumber": 5,
+      "actionUserKey": "queues-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Messages",
+      "name": "mqMessage-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "mqMessage-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "queues-menu-item"
+    },
+    {
+      "displayName": "Queues",
+      "name": "mqMessageQueue-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "mqMessageQueue-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "queues-menu-item"
+    },
+    {
+      "displayName": "Notification",
+      "name": "notification-menu-item",
+      "sequenceNumber": 6,
+      "actionUserKey": "notification-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Email",
+      "name": "emailTemplate-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "emailTemplate-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "notification-menu-item"
+    },
+    {
+      "displayName": "SMS",
+      "name": "smsTemplate-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "smsTemplate-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "notification-menu-item"
+    },
+    {
+      "displayName": "Other",
+      "name": "other-menu-item",
+      "sequenceNumber": 7,
+      "actionUserKey": "other-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "List of Values",
+      "name": "listOfValues-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "listOfValues-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Scheduled Jobs",
+      "name": "scheduledJob-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "scheduledJob-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "AI Interactions",
+      "name": "aiInteraction-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "aiInteraction-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Saved Filters",
+      "name": "savedFilters-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "savedFilters-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Chatter Message",
+      "name": "chatterMessage-menu-item",
+      "sequenceNumber": 5,
+      "actionUserKey": "chatterMessage-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Chatter Message Details",
+      "name": "chatterMessageDetails-menu-item",
+      "sequenceNumber": 6,
+      "actionUserKey": "chatterMessageDetails-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Locale",
+      "name": "locale-menu-item",
+      "sequenceNumber": 7,
+      "actionUserKey": "locale-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Import Transactions",
+      "name": "importTransaction-menu-item",
+      "sequenceNumber": 8,
+      "actionUserKey": "importTransaction-list-view",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Import Transaction Error Logs",
+      "name": "importTransactionErrorLog-menu-item",
+      "sequenceNumber": 9,
+      "actionUserKey": "importTransactionErrorLog-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Dashboard Management",
+      "name": "dashboardManagement-menu-item",
+      "sequenceNumber": 8,
+      "actionUserKey": "dasbhoard-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Dashboard",
+      "name": "dashboard-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "dashboard-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "dashboardManagement-menu-item"
+    },
+    {
+      "displayName": "Dashboard Question",
+      "name": "dashboardQuestion-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "dashboardQuestion-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "dashboardManagement-menu-item"
+    },
+    {
+      "displayName": "Settings",
+      "name": "settings-menu-item",
+      "sequenceNumber": 9,
+      "actionUserKey": "settings-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "App Settings",
+      "name": "appSettings-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "appSettings-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "settings-menu-item"
+    },
+    {
+      "displayName": "Authentication Settings",
+      "name": "authenticationSettings-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "authenticationSettings-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "settings-menu-item"
+    },
+    {
+      "displayName": "Ai Settings",
+      "name": "aiSettings-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "aiSettings-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "settings-menu-item"
+    },
+    {
+      "displayName": "Misc",
+      "name": "miscSettings-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "miscSettings-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "settings-menu-item"
+    }
+  ],
   "views": [
     {
       "name": "moduleMetadata-list-view",

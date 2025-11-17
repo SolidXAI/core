@@ -1,15 +1,16 @@
 import { Injectable } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { EntityManager, Repository } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { CrudHelperService } from "src/services/crud-helper.service";
 import { CRUDService } from 'src/services/crud.service';
+import { FileService } from "src/services/file.service";
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { ConfigService } from '@nestjs/config';
-import { FileService } from "src/services/file.service";
-import { CrudHelperService } from "src/services/crud-helper.service";
+import { EntityManager } from 'typeorm';
 
 
+import { ActionMetadataRepository } from 'src/repository/action-metadata.repository';
 import { ActionMetadata } from '../entities/action-metadata.entity';
 
 @Injectable()
@@ -23,8 +24,9 @@ export class ActionMetadataService extends CRUDService<ActionMetadata> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(ActionMetadata, 'default')
-    readonly repo: Repository<ActionMetadata>,
+    // @InjectRepository(ActionMetadata, 'default')
+    // readonly repo: Repository<ActionMetadata>,
+    readonly repo: ActionMetadataRepository,
     readonly moduleRef: ModuleRef
 
   ) {

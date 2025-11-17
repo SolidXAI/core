@@ -10,6 +10,7 @@ import { FileService } from "src/services/file.service";
 import { CrudHelperService } from "src/services/crud-helper.service";
 import { MqMessage } from '../entities/mq-message.entity';
 import { Logger } from '@nestjs/common';
+import { MqMessageRepository } from 'src/repository/mq-message.repository';
 
 @Injectable()
 export class MqMessageService extends CRUDService<MqMessage> {
@@ -25,8 +26,9 @@ export class MqMessageService extends CRUDService<MqMessage> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(MqMessage)
-    readonly repo: Repository<MqMessage>,
+    // @InjectRepository(MqMessage)
+    // readonly repo: Repository<MqMessage>,
+    readonly repo: MqMessageRepository,
     readonly moduleRef: ModuleRef
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'mqMessage', 'solid-core', moduleRef);

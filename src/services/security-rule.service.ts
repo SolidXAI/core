@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, Repository } from 'typeorm';
@@ -13,6 +13,7 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 
 import { SecurityRule } from '../entities/security-rule.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { SecurityRuleRepository } from 'src';
 
 @Injectable()
 export class SecurityRuleService extends CRUDService<SecurityRule> implements OnApplicationBootstrap {
@@ -25,8 +26,10 @@ export class SecurityRuleService extends CRUDService<SecurityRule> implements On
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(SecurityRule, 'default')
-    readonly repo: Repository<SecurityRule>,
+    // @InjectRepository(SecurityRule, 'default')
+    // readonly repo: Repository<SecurityRule>,
+    @Inject(forwardRef(() => SecurityRuleRepository))
+    readonly repo: SecurityRuleRepository,
     readonly moduleRef: ModuleRef,
     readonly solidRegistry: SolidRegistry,
 
