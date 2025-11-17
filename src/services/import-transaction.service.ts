@@ -27,6 +27,7 @@ import { ExcelService } from './excel.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { parseFlexibleDate } from 'src/helpers/date.helper';
+import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 
 interface ImportTemplateFileInfo {
   stream: NodeJS.ReadableStream;
@@ -104,6 +105,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     readonly csvService: CsvService,
     readonly httpService: HttpService,
     readonly introspectService: SolidIntrospectService,
+    private readonly modelMetadataHelperService: ModelMetadataHelperService,
     // readonly fieldMetadataService: FieldMetadataService,
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'importTransaction', 'solid-core', moduleRef);
@@ -124,8 +126,16 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     if (!modelMetadata) {
       throw new Error(ERROR_MESSAGES.MODEL_METADATA_NOT_FOUND(modelMetadataId));
     }
+
+    const allFields = await this.modelMetadataHelperService.loadFieldHierarchy(
+      modelMetadata.singularName,
+    );
+  
+    // Replace original fields with full hierarchy fields
+    // modelMetadata.fields = allFields;  
+   
     // Create a header row with the display names of the fields, excluding the media fields,computed fields
-    const headers = this.fieldsAllowedForImport(modelMetadata.fields)
+    const headers = this.fieldsAllowedForImport(allFields)
       .map(field => field.displayName);
 
     // Depending on the format, generate the template
@@ -163,6 +173,14 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       throw new Error(ERROR_MESSAGES.MODEL_METADATA_NOT_FOUND(modelMetadataId));
     }
 
+    // Step 2: Load full field hierarchy (includes parent model fields)
+    const allFields = await this.modelMetadataHelperService.loadFieldHierarchy(
+      modelMetadata.singularName,
+    );
+
+    // Replace modelMetadata.fields with combined (child + parent) fields
+    // modelMetadata.fields = allFields;
+
     // Create the standard import instructions
     const standardInstructions: StandardImportInstructionsResponseDto = {
       requiredFields: [],
@@ -176,8 +194,15 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     };
 
     // Iterate through the fields and populate the standard instructions
-    for (const field of modelMetadata.fields) {
-      if (field.isSystem) continue; // Skip system fields
+    for (const field of allFields) {
+       // Skip system fields
+      const systemFieldNames = this.modelMetadataHelperService
+      .getSystemFieldsMetadata()
+      .map(field => field.name);
+      if (systemFieldNames.includes(field.name)) {
+        continue;
+      }    
+      // if (field.isSystem) continue; // Skip system fields
       if (field.required) {
         standardInstructions.requiredFields.push(field.displayName);
       }
@@ -366,18 +391,41 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   }
 
 
+  // private async loadImportTransaction(importTransactionId: number) {
+  //   const importTransaction = await this.findOne(importTransactionId, {
+  //     populate: ['modelMetadata', 'modelMetadata.fields'],
+  //     populateMedia: ['fileLocation'],
+  //   });
+  //   if (!importTransaction) {
+  //     throw new Error(`Import transaction with ID ${importTransactionId} not found.`);
+  //   }
+  //   return importTransaction;
+  // }
+
   private async loadImportTransaction(importTransactionId: number) {
+    // Step 1: Load the transaction with model metadata
     const importTransaction = await this.findOne(importTransactionId, {
-      populate: ['modelMetadata', 'modelMetadata.fields'],
+      populate: ['modelMetadata'],
       populateMedia: ['fileLocation'],
     });
-    if (!importTransaction) {
-      throw new Error(`Import transaction with ID ${importTransactionId} not found.`);
-    }
+
+    // Step 2: Load full field hierarchy (child + parent fields)
+    const modelFields = await this.modelMetadataHelperService.loadFieldHierarchy(
+      importTransaction.modelMetadata.singularName,
+    );
+
+    // Step 3: Attach the combined fields back into the modelMetadata
+    importTransaction.modelMetadata.fields = modelFields;
+
     return importTransaction;
   }
 
   private fieldsAllowedForImport(fields: FieldMetadata[]): FieldMetadata[] {
+     // Get system field names (e.g. id, createdAt, updatedAt...)
+    const systemFieldNames = this.modelMetadataHelperService
+    .getSystemFieldsMetadata()
+    .map(field => field.name);
+
     // Filter out fields that are not allowed for import
     return fields.filter(field =>
       field.type !== SolidFieldType.mediaMultiple && // Exclude media multiple fields
@@ -387,7 +435,8 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       field.type !== SolidFieldType.richText &&
       field.type !== SolidFieldType.uuid &&
       field.relationType !== RelationType.oneToMany &&
-      field.isSystem !== true // Exclude system fields
+      !systemFieldNames.includes(field.name)
+      // field.isSystem !== true // Exclude system fields
     );
   }
 
@@ -567,11 +616,11 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     // TODO Move this logic to field crud managers i.e add a parse method to the field crud manager interface
     switch (fieldType) {
       case SolidFieldType.relation: {
-        return await this.populateDtoForRelations(fieldMetadata, record, key, dtoRecord); 
+        return await this.populateDtoForRelations(fieldMetadata, record, key, dtoRecord);
       }
       case SolidFieldType.date:
       case SolidFieldType.datetime:
-         return this.populateDtoForDate(record, key, fieldMetadata, dtoRecord);
+        return this.populateDtoForDate(record, key, fieldMetadata, dtoRecord);
       case SolidFieldType.int:
       case SolidFieldType.bigint:
       case SolidFieldType.decimal:
@@ -594,7 +643,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       }
     }
   }
-  
+
   private populateDtoForSelectionValues(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string) {
     const rawValue = record[key];
 
@@ -658,17 +707,17 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         dtoRecord[fieldMetadata.name] = null; // If the cell is empty, set the field to null
         return dtoRecord;
       }
-     // Use flexible date parser
+      // Use flexible date parser
      this.logger.verbose(cellValue,'cellValue');
-     
-  const dateValue = parseFlexibleDate(cellValue);
+
+      const dateValue = parseFlexibleDate(cellValue);
   this.logger.verbose(dateValue,'dateValue');
 
-  if (!dateValue) {
-    throw new Error(
-      `Invalid date value for cell ${key} with value ${cellValue}`
-    );
-  }
+      if (!dateValue) {
+        throw new Error(
+          `Invalid date value for cell ${key} with value ${cellValue}`
+        );
+      }
       dtoRecord[fieldMetadata.name] = dateValue;
       return dtoRecord;
     }
