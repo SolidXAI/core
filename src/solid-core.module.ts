@@ -213,14 +213,36 @@ import { TwilioSmsQueuePublisherRabbitmq } from './jobs/twilio-sms-publisher.ser
 import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/twilio-sms-subscriber.service';
 import { DashboardMapper } from './mappers/dashboard-mapper';
 import { ListOfValuesMapper } from './mappers/list-of-values-mapper';
+import { AiInteractionRepository } from './repository/ai-interaction.repository';
 import { ChatterMessageDetailsRepository } from './repository/chatter-message-details.repository';
 import { ChatterMessageRepository } from './repository/chatter-message.repository';
+import { DashboardQuestionSqlDatasetConfigRepository } from './repository/dashboard-question-sql-dataset-config.repository';
+import { DashboardQuestionRepository } from './repository/dashboard-question.repository';
+import { DashboardVariableRepository } from './repository/dashboard-variable.repository';
 import { DashboardRepository } from './repository/dashboard.repository';
+import { EmailTemplateRepository } from './repository/email-template.repository';
+import { ExportTemplateRepository } from './repository/export-template.repository';
+import { ExportTransactionRepository } from './repository/export-transaction.repository';
 import { FieldMetadataRepository } from './repository/field-metadata.repository';
-import { FieldRepository } from './repository/field.repository';
+import { ImportTransactionErrorLogRepository } from './repository/import-transaction-error-log.repository';
+import { ImportTransactionRepository } from './repository/import-transaction.repository';
+import { ListOfValuesRepository } from './repository/list-of-values.repository';
+import { LocaleRepository } from './repository/locale.repository';
 import { MediaRepository } from './repository/media.repository';
+import { MenuItemMetadataRepository } from './repository/menu-item-metadata.repository';
+import { ModelMetadataRepository } from './repository/model-metadata.repository';
+import { ModuleMetadataRepository } from './repository/module-metadata.repository';
+import { MqMessageQueueRepository } from './repository/mq-message-queue.repository';
+import { MqMessageRepository } from './repository/mq-message.repository';
+import { PermissionMetadataRepository } from './repository/permission-metadata.repository';
+import { RoleMetadataRepository } from './repository/role-metadata.repository';
+import { SavedFiltersRepository } from './repository/saved-filters.repository';
 import { ScheduledJobRepository } from './repository/scheduled-job.repository';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
+import { SettingRepository } from './repository/setting.repository';
+import { SmsTemplateRepository } from './repository/sms-template.repository';
+import { UserActivityHistoryRepository } from './repository/user-activity-history.repository';
+import { UserViewMetadataRepository } from './repository/user-view-metadata.repository';
 import { UserRepository } from './repository/user.repository';
 import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
@@ -302,6 +324,8 @@ import { ListOfValuesSubscriber } from './subscribers/list-of-values.subscriber'
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { Action } from 'rxjs/internal/scheduler/Action';
+import { ActionMetadataRepository } from './repository/action-metadata.repository';
 
 
 @Global()
@@ -600,7 +624,6 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     ExportTransactionService,
     ExcelService,
     CsvService,
-    FieldRepository,
     ImportTransactionService,
     ImportTransactionErrorLogService,
     CreatedByUpdatedBySubscriber,
@@ -665,7 +688,30 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     MailFactory,
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,
-
+    AiInteractionRepository,
+    DashboardQuestionSqlDatasetConfigRepository,
+    DashboardQuestionRepository,
+    DashboardVariableRepository,
+    EmailTemplateRepository,
+    ExportTemplateRepository,
+    ExportTransactionRepository,
+    ImportTransactionErrorLogRepository,
+    ImportTransactionRepository,
+    ListOfValuesRepository,
+    LocaleRepository,
+    MenuItemMetadataRepository,
+    MqMessageQueueRepository,
+    MqMessageRepository,
+    PermissionMetadataRepository,
+    RoleMetadataRepository,
+    SavedFiltersRepository,
+    SettingRepository,
+    SmsTemplateRepository,
+    UserActivityHistoryRepository,
+    UserViewMetadataRepository,
+    ModelMetadataRepository,
+    ModuleMetadataRepository,
+    ActionMetadataRepository,
   ],
   exports: [
     ModelMetadataService,
@@ -699,7 +745,6 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     RefreshModuleCommand,
     RequestContextService,
     SecurityRuleRepository,
-    FieldRepository,
     SchedulerServiceImpl,
     UserActivityHistoryService,
     CsvService,

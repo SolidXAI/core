@@ -40,10 +40,12 @@ import { ViewMetadataService } from '../services/view-metadata.service';
 import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
+import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata } from 'src';
 import { ADMIN_ROLE_NAME, INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS, PUBLIC_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
-import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata } from 'src';
+import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
+import { SettingRepository } from 'src/repository/setting.repository';
 
 
 @Injectable()
@@ -66,8 +68,9 @@ export class ModuleMetadataSeederService {
         private readonly emailTemplateService: EmailTemplateService,
         private readonly smsTemplateService: SmsTemplateService,
         private readonly listOfValuesService: ListOfValuesService,
-        @InjectRepository(PermissionMetadata)
-        private readonly permissionRepo: Repository<PermissionMetadata>,
+        // @InjectRepository(PermissionMetadata)
+        // private readonly permissionRepo: Repository<PermissionMetadata>,
+        private readonly permissionRepo: PermissionMetadataRepository,
         private readonly solidRegistry: SolidRegistry,
         @Inject(appBuilderConfig.KEY)
         private readonly appBuilderConfiguration: ConfigType<typeof appBuilderConfig>,
@@ -75,8 +78,9 @@ export class ModuleMetadataSeederService {
         @Inject(commonConfig.KEY)
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         private readonly settingService: SettingService,
-        @InjectRepository(Setting, 'default')
-        readonly settingsRepo: Repository<Setting>,
+        // @InjectRepository(Setting, 'default')
+        // readonly settingsRepo: Repository<Setting>,
+        private readonly settingsRepo: SettingRepository,
         readonly securityRuleRepo: SecurityRuleRepository,
         readonly systemFieldsSeederService: SystemFieldsSeederService,
         readonly dashboardRepo: DashboardRepository,

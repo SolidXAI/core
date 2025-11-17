@@ -1,19 +1,18 @@
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { DiscoveryService, ModuleRef  } from "@nestjs/core";
-import { EntityManager, Repository } from 'typeorm';
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
-import { CRUDService } from 'src/services/crud.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { ConfigService } from '@nestjs/config';
-import { FileService } from 'src/services/file.service';
-import { CrudHelperService } from 'src/services/crud-helper.service';
-import { ModelMetadata } from 'src/entities/model-metadata.entity';
-import { RequestContextService } from './request-context.service';
 import { Locale } from 'src/entities/locale.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { LocaleRepository } from 'src/repository/locale.repository';
+import { CrudHelperService } from 'src/services/crud-helper.service';
+import { CRUDService } from 'src/services/crud.service';
+import { FileService } from 'src/services/file.service';
+import { ModelMetadataService } from 'src/services/model-metadata.service';
+import { ModuleMetadataService } from 'src/services/module-metadata.service';
+import { RequestContextService } from './request-context.service';
 @Injectable()
 export class LocaleService extends CRUDService<Locale> implements OnApplicationBootstrap{
   constructor(
@@ -28,10 +27,11 @@ export class LocaleService extends CRUDService<Locale> implements OnApplicationB
     // @InjectRepository(Locale, 'default')
     // readonly repo: Repository<Locale>,
     readonly repo: LocaleRepository,
-    @InjectRepository(Locale, 'default')
+    // @InjectRepository(Locale, 'default')
     readonly moduleRef: ModuleRef,
-    @InjectRepository(ModelMetadata)
-    private readonly modelMetadataRepo: Repository<ModelMetadata>,
+    // @InjectRepository(ModelMetadata)
+    // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+    // private readonly modelMetadataRepo: ModelMetadataRepository,
     readonly requestContextService: RequestContextService,
     readonly solidRegistry: SolidRegistry,
  ) {

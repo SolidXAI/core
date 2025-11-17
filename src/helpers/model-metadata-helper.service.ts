@@ -1,18 +1,17 @@
 // Return the system fields metadata for a model
 
 import { Injectable, Logger } from "@nestjs/common";
+import { ModelMetadataRepository } from "src/repository/model-metadata.repository";
 import { SolidRegistry } from "./solid-registry";
-import { In, Repository } from "typeorm";
-import { InjectRepository } from "@nestjs/typeorm";
-import { ModelMetadata } from "src/entities/model-metadata.entity";
 
 @Injectable()
 export class ModelMetadataHelperService {
     private readonly logger = new Logger(ModelMetadataHelperService.name);
 
     constructor(private readonly registry: SolidRegistry,
-        @InjectRepository(ModelMetadata)
-        private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        // @InjectRepository(ModelMetadata)
+        // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        private readonly modelMetadataRepo: ModelMetadataRepository,
     ) {
     }
 

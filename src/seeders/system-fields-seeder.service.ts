@@ -5,6 +5,7 @@ import { InjectRepository } from "@nestjs/typeorm";
 import { ModelMetadata } from "src/entities/model-metadata.entity";
 import { ModelMetadataHelperService } from "src/helpers/model-metadata-helper.service";
 import { FieldMetadataRepository } from "src/repository/field-metadata.repository";
+import { ModelMetadataRepository } from "src/repository/model-metadata.repository";
 import { Repository } from "typeorm";
 
 export class SystemFieldsSeederService {
@@ -13,8 +14,9 @@ export class SystemFieldsSeederService {
    // If not, it will add them.
    constructor(
       private readonly modelHelperService: ModelMetadataHelperService,
-      @InjectRepository(ModelMetadata)
-      private readonly modelRepository: Repository<ModelMetadata>, // Replace with actual model repository type
+    //   @InjectRepository(ModelMetadata)
+    //   private readonly modelRepository: Repository<ModelMetadata>, // Replace with actual model repository type
+      private readonly modelRepository: ModelMetadataRepository, // Replace with actual model repository type
       private readonly fieldMetadataRepository: FieldMetadataRepository, // Replace with actual field repository type
    ) {}
   

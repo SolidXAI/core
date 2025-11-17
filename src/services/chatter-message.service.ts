@@ -23,6 +23,7 @@ import { ChatterMessageDetailsRepository } from 'src/repository/chatter-message-
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { CHATTER_MESSAGE_TYPE, CHATTER_MESSAGE_SUBTYPE } from 'src/constants/chatter-message.constants';
 import { classify } from '@angular-devkit/core/src/utils/strings';
+import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
     constructor(
@@ -38,11 +39,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         readonly repo: ChatterMessageRepository,
         // @InjectRepository(ChatterMessageDetailsRepository, 'default')
         readonly chatterMessageDetailsRepo: ChatterMessageDetailsRepository,
-        @InjectRepository(FieldMetadata, 'default')
+        // @InjectRepository(FieldMetadata, 'default')
+        // readonly fieldMetadataRepo: Repository<FieldMetadata>,
         readonly fieldMetadataRepo: Repository<FieldMetadata>,
         readonly moduleRef: ModuleRef,
-        @InjectRepository(ModelMetadata)
-        private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        // @InjectRepository(ModelMetadata)
+        // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        private readonly modelMetadataRepo: ModelMetadataRepository,
         readonly requestContextService: RequestContextService,
         private readonly modelMetadataHelperService: ModelMetadataHelperService,
     ) {

@@ -31,6 +31,9 @@ import { UpdateExportTemplateDto } from 'src/dtos/update-export-template.dto';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { ExportTransactionRepository } from 'src/repository/export-transaction.repository';
+import { Field } from 'mysql2/typings/mysql/lib/parsers/typeCast';
+import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
+import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
 
 const EXPORT_CHUNK_SIZE = 100;
 enum ExportStatus {
@@ -71,10 +74,12 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     readonly excelService: ExcelService,
     readonly csvService: CsvService,
     // readonly fieldMetadataService: FieldMetadataService,
-    @InjectRepository(FieldMetadata, 'default')
-    readonly fieldRepo: Repository<FieldMetadata>,
-    @InjectRepository(ModelMetadata, 'default')
-    readonly modelMetadataRepo: Repository<ModelMetadata>,
+    // @InjectRepository(FieldMetadata, 'default')
+    // readonly fieldRepo: Repository<FieldMetadata>,
+    // @InjectRepository(ModelMetadata, 'default')
+    // readonly modelMetadataRepo: Repository<ModelMetadata>,
+    readonly fieldRepo: FieldMetadataRepository,
+    readonly modelMetadataRepo: ModelMetadataRepository,
     readonly moduleRef: ModuleRef,
     private readonly modelMetadataHelperService: ModelMetadataHelperService,
 
