@@ -28,6 +28,7 @@ import { SolidIntrospectService } from './solid-introspect.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { parseFlexibleDate } from 'src/helpers/date.helper';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
+import { getUserExcludedFields } from 'src/helpers/user-excluded-fields.helper';
 
 interface ImportTemplateFileInfo {
   stream: NodeJS.ReadableStream;
@@ -178,6 +179,11 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       modelMetadata.singularName,
     );
 
+    const systemFieldNames = this.modelMetadataHelperService
+    .getSystemFieldsMetadata()
+    .map(field => field.name);
+
+    const userExcluded = getUserExcludedFields();
     // Replace modelMetadata.fields with combined (child + parent) fields
     // modelMetadata.fields = allFields;
 
@@ -196,12 +202,15 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     // Iterate through the fields and populate the standard instructions
     for (const field of allFields) {
        // Skip system fields
-      const systemFieldNames = this.modelMetadataHelperService
-      .getSystemFieldsMetadata()
-      .map(field => field.name);
       if (systemFieldNames.includes(field.name)) {
         continue;
-      }    
+      }   
+      
+      // Skip excluded user fields (NO model name check needed)
+      if (userExcluded.includes(field.name)) {
+        continue;
+      }
+      
       // if (field.isSystem) continue; // Skip system fields
       if (field.required) {
         standardInstructions.requiredFields.push(field.displayName);
@@ -426,6 +435,8 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     .getSystemFieldsMetadata()
     .map(field => field.name);
 
+    const userExcluded = getUserExcludedFields();
+
     // Filter out fields that are not allowed for import
     return fields.filter(field =>
       field.type !== SolidFieldType.mediaMultiple && // Exclude media multiple fields
@@ -435,8 +446,10 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       field.type !== SolidFieldType.richText &&
       field.type !== SolidFieldType.uuid &&
       field.relationType !== RelationType.oneToMany &&
-      !systemFieldNames.includes(field.name)
+      !systemFieldNames.includes(field.name) &&
       // field.isSystem !== true // Exclude system fields
+
+      !userExcluded.includes(field.name)
     );
   }
 
