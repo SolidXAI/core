@@ -325,6 +325,7 @@ import { ListOfValuesSubscriber } from './subscribers/list-of-values.subscriber'
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
 
 
 @Global()
@@ -696,6 +697,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
     ModelMetadataRepository,
     ModuleMetadataRepository,
     ActionMetadataRepository,
+    MediaStorageProviderMetadataRepository,
   ],
   exports: [
     AiInteractionService,

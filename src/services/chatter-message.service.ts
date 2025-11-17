@@ -1,29 +1,28 @@
 import { Injectable } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { EntityManager, Repository, EntityMetadata, Brackets } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { Brackets, EntityManager, EntityMetadata } from 'typeorm';
 
+import { classify } from '@angular-devkit/core/src/utils/strings';
+import { ConfigService } from '@nestjs/config';
+import { CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE } from 'src/constants/chatter-message.constants';
+import { PostChatterMessageDto } from 'src/dtos/post-chatter-message.dto';
+import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
+import { lowerFirst } from 'src/helpers/string.helper';
+import { ChatterMessageDetailsRepository } from 'src/repository/chatter-message-details.repository';
+import { ChatterMessageRepository } from 'src/repository/chatter-message.repository';
+import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
+import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
+import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
+import { FileService } from 'src/services/file.service';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { ConfigService } from '@nestjs/config';
-import { FileService } from 'src/services/file.service';
-import { CrudHelperService } from 'src/services/crud-helper.service';
-import { PostChatterMessageDto } from 'src/dtos/post-chatter-message.dto';
-import { ChatterMessage } from '../entities/chatter-message.entity';
-import { getMediaStorageProvider } from './mediaStorageProviders';
 import { MediaStorageProviderType } from '../dtos/create-media-storage-provider-metadata.dto';
 import { ChatterMessageDetails } from '../entities/chatter-message-details.entity';
-import { ModelMetadata } from 'src/entities/model-metadata.entity';
+import { ChatterMessage } from '../entities/chatter-message.entity';
+import { getMediaStorageProvider } from './mediaStorageProviders';
 import { RequestContextService } from './request-context.service';
-import { ChatterMessageRepository } from 'src/repository/chatter-message.repository';
-import { lowerFirst } from 'src/helpers/string.helper';
-import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
-import { ChatterMessageDetailsRepository } from 'src/repository/chatter-message-details.repository';
-import { FieldMetadata } from 'src/entities/field-metadata.entity';
-import { CHATTER_MESSAGE_TYPE, CHATTER_MESSAGE_SUBTYPE } from 'src/constants/chatter-message.constants';
-import { classify } from '@angular-devkit/core/src/utils/strings';
-import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
     constructor(
@@ -41,7 +40,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         readonly chatterMessageDetailsRepo: ChatterMessageDetailsRepository,
         // @InjectRepository(FieldMetadata, 'default')
         // readonly fieldMetadataRepo: Repository<FieldMetadata>,
-        readonly fieldMetadataRepo: Repository<FieldMetadata>,
+        readonly fieldMetadataRepo: FieldMetadataRepository,
         readonly moduleRef: ModuleRef,
         // @InjectRepository(ModelMetadata)
         // private readonly modelMetadataRepo: Repository<ModelMetadata>,

@@ -1,13 +1,13 @@
 // This class will add the system fields in the field-metadata table if they are missing.
 // Fetch all the models and their fields metadata and check if the system fields are present.
 
-import { InjectRepository } from "@nestjs/typeorm";
+import { Injectable } from "@nestjs/common";
 import { ModelMetadata } from "src/entities/model-metadata.entity";
 import { ModelMetadataHelperService } from "src/helpers/model-metadata-helper.service";
 import { FieldMetadataRepository } from "src/repository/field-metadata.repository";
 import { ModelMetadataRepository } from "src/repository/model-metadata.repository";
-import { Repository } from "typeorm";
 
+@Injectable()
 export class SystemFieldsSeederService {
    // This service is responsible for seeding the system fields metadata for all models.
    // It will check if the system fields are already present in the field-metadata table.

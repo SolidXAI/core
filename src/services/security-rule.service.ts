@@ -1,4 +1,4 @@
-import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, Repository } from 'typeorm';
@@ -28,6 +28,7 @@ export class SecurityRuleService extends CRUDService<SecurityRule> implements On
     readonly entityManager: EntityManager,
     // @InjectRepository(SecurityRule, 'default')
     // readonly repo: Repository<SecurityRule>,
+    @Inject(forwardRef(() => SecurityRuleRepository))
     readonly repo: SecurityRuleRepository,
     readonly moduleRef: ModuleRef,
     readonly solidRegistry: SolidRegistry,

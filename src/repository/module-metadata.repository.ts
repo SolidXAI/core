@@ -1,6 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleMetadata, SecurityRuleRepository } from 'src';
-import { RequestContextService } from 'src/services/request-context.service';
+import { ModuleMetadata } from 'src';
 import { DataSource } from 'typeorm';
 import { SolidBaseRepository } from './solid-base.repository';
 
@@ -8,9 +7,9 @@ import { SolidBaseRepository } from './solid-base.repository';
 export class ModuleMetadataRepository extends SolidBaseRepository<ModuleMetadata> {
     constructor(
         readonly dataSource: DataSource,
-        readonly requestContextService: RequestContextService,
-        readonly securityRuleRepository: SecurityRuleRepository,
+        // readonly requestContextService: RequestContextService,
+        // readonly securityRuleRepository: SecurityRuleRepository,
     ) {
-        super(ModuleMetadata, dataSource, requestContextService, securityRuleRepository);
+        super(ModuleMetadata, dataSource, null, null);
     }
 }

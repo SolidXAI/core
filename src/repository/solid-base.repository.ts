@@ -22,8 +22,8 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
     constructor(
         entity: EntityTarget<T>,
         dataSource: DataSource,
-        protected readonly requestContextService: RequestContextService,
-        protected readonly securityRuleRepository: SecurityRuleRepository
+        protected readonly requestContextService: RequestContextService | null,
+        protected readonly securityRuleRepository: SecurityRuleRepository | null,
     ) {
         super(entity, dataSource.createEntityManager());
         this.logger = new Logger(this.constructor.name);
@@ -38,8 +38,12 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
     }
 
     async createSecurityRuleAwareQueryBuilder(alias?: string, queryRunner?: QueryRunner): Promise<SelectQueryBuilder<T>> {
-        const activeUserOrUndefined = this.requestContextService.getActiveUser();
         const qb = super.createQueryBuilder(alias, queryRunner);
+
+        if (!this.securityRuleRepository) return qb;
+        if (!this.requestContextService) return qb;
+
+        const activeUserOrUndefined = this.requestContextService.getActiveUser();
         if (!activeUserOrUndefined) return qb;
 
         return await this.securityRuleRepository.applySecurityRules(

@@ -1,5 +1,4 @@
 import { Injectable } from '@nestjs/common';
-import { RequestContextService } from 'src';
 import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
 import { SecurityRuleConfig } from 'src/dtos/security-rule-config.dto';
 import { UpdateSecurityRuleDto } from 'src/dtos/update-security-rule.dto';
@@ -17,12 +16,11 @@ import { SolidBaseRepository } from './solid-base.repository';
 export class SecurityRuleRepository extends SolidBaseRepository<SecurityRule> {
     constructor(
         readonly dataSource: DataSource,
-        readonly requestContextService: RequestContextService,
-        readonly securityRuleRepository: SecurityRuleRepository,
+        // readonly requestContextService: RequestContextService,
         readonly solidRegistry: SolidRegistry,
         readonly crudHelperService: CrudHelperService,
     ) {
-        super(SecurityRule, dataSource, requestContextService, securityRuleRepository);
+        super(SecurityRule, dataSource, null, null);
     }
 
     async applySecurityRules<T extends CommonEntity>(qb: SelectQueryBuilder<T>, modelSingularName: string, activeUser: ActiveUserData, securityRuleAlias: string = qb.alias): Promise<SelectQueryBuilder<T>> {
