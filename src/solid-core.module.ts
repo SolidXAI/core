@@ -213,6 +213,7 @@ import { TwilioSmsQueuePublisherRabbitmq } from './jobs/twilio-sms-publisher.ser
 import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/twilio-sms-subscriber.service';
 import { DashboardMapper } from './mappers/dashboard-mapper';
 import { ListOfValuesMapper } from './mappers/list-of-values-mapper';
+import { ActionMetadataRepository } from './repository/action-metadata.repository';
 import { AiInteractionRepository } from './repository/ai-interaction.repository';
 import { ChatterMessageDetailsRepository } from './repository/chatter-message-details.repository';
 import { ChatterMessageRepository } from './repository/chatter-message.repository';
@@ -324,8 +325,6 @@ import { ListOfValuesSubscriber } from './subscribers/list-of-values.subscriber'
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
-import { Action } from 'rxjs/internal/scheduler/Action';
-import { ActionMetadataRepository } from './repository/action-metadata.repository';
 
 
 @Global()
