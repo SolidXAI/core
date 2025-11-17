@@ -280,7 +280,6 @@ export * from './factories/mail.factory'
 // Repositories
 export * from './repository/solid-base.repository'
 export * from './repository/security-rule.repository'
-export * from './repository/field.repository'
 export * from './repository/chatter-message.repository'
 export * from './repository/chatter-message-details.repository'
 
