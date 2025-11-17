@@ -19,6 +19,7 @@ import { Readable } from 'stream';
 import { ExportTemplate } from '../entities/export-template.entity';
 import { ExportTransactionFileInfo, ExportTransactionService } from './export-transaction.service';
 import { UpdateExportTemplateDto } from 'src/dtos/update-export-template.dto';
+import { ExportTemplateRepository } from 'src/repository/export-template.repository';
 
 @Injectable()
 export class ExportTemplateService extends CRUDService<ExportTemplate>{
@@ -62,8 +63,9 @@ export class ExportTemplateService extends CRUDService<ExportTemplate>{
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(ExportTemplate, 'default')
-    readonly repo: Repository<ExportTemplate>,
+    // @InjectRepository(ExportTemplate, 'default')
+    // readonly repo: Repository<ExportTemplate>,
+    readonly repo: ExportTemplateRepository,
     readonly exportTransactionService: ExportTransactionService,
     readonly moduleRef: ModuleRef
  ) {

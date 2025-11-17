@@ -5,20 +5,24 @@ import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { InjectRepository } from '@nestjs/typeorm';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
+import { SolidBaseRepository } from './solid-base.repository';
+import { RequestContextService } from 'src/services/request-context.service';
+import { SecurityRuleRepository } from './security-rule.repository';
 
 @Injectable()
-export class MediaRepository extends Repository<Media> {
+export class MediaRepository extends SolidBaseRepository<Media> {
     constructor(
-        private dataSource: DataSource,
+        readonly dataSource: DataSource,
+        readonly requestContextService: RequestContextService,
+        readonly securityRuleRepository: SecurityRuleRepository,
+        @InjectRepository(FieldMetadata)
+        private readonly fieldMetadataRepo: Repository<FieldMetadata>,
         @InjectRepository(ModelMetadata)
         private readonly modelMetadataRepo: Repository<ModelMetadata>,
         @InjectRepository(MediaStorageProviderMetadata)
         private readonly mediaStorageProviderMetadataRepo: Repository<MediaStorageProviderMetadata>,
-        @InjectRepository(FieldMetadata)
-        private readonly fieldMetadataRepo: Repository<FieldMetadata>,
-
     ) {
-        super(Media, dataSource.createEntityManager());
+        super(Media, dataSource, requestContextService, securityRuleRepository);
     }
 
     async createMedia(createDto: any) {

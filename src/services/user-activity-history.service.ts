@@ -14,6 +14,7 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 import { UserActivityHistory } from '../entities/user-activity-history.entity';
 import { RequestContextService } from './request-context.service';
 import { User } from 'src/entities/user.entity';
+import { UserActivityHistoryRepository } from 'src/repository/user-activity-history.repository';
 
 @Injectable()
 export class UserActivityHistoryService extends CRUDService<UserActivityHistory> {
@@ -26,8 +27,9 @@ export class UserActivityHistoryService extends CRUDService<UserActivityHistory>
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(UserActivityHistory, 'default')
-    readonly repo: Repository<UserActivityHistory>,
+    // @InjectRepository(UserActivityHistory, 'default')
+    // readonly repo: Repository<UserActivityHistory>,
+    readonly repo: UserActivityHistoryRepository,
     readonly moduleRef: ModuleRef,
     readonly requestContextService: RequestContextService,
 

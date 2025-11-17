@@ -1,18 +1,20 @@
 import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { ConfigService } from '@nestjs/config';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { EntityManager, In, Repository } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { CrudHelperService } from "src/services/crud-helper.service";
 import { CRUDService } from 'src/services/crud.service';
+import { FileService } from "src/services/file.service";
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { ConfigService } from '@nestjs/config';
-import { FileService } from "src/services/file.service";
-import { CrudHelperService } from "src/services/crud-helper.service";
+import { EntityManager, In } from 'typeorm';
 
-import { RoleMetadata } from '../entities/role-metadata.entity';
-import { PermissionMetadata } from '../entities/permission-metadata.entity';
-import { CreateRoleMetadataDto } from '../dtos/create-role-metadata.dto';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
+import { RoleMetadataRepository } from 'src/repository/role-metadata.repository';
+import { CreateRoleMetadataDto } from '../dtos/create-role-metadata.dto';
+import { PermissionMetadata } from '../entities/permission-metadata.entity';
+import { RoleMetadata } from '../entities/role-metadata.entity';
 
 @Injectable()
 export class RoleMetadataService extends CRUDService<RoleMetadata> {
@@ -28,10 +30,12 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(RoleMetadata, 'default')
-    readonly repo: Repository<RoleMetadata>,
-    @InjectRepository(PermissionMetadata)
-    private readonly permissionRepository: Repository<PermissionMetadata>,
+    // @InjectRepository(RoleMetadata, 'default')
+    // readonly repo: Repository<RoleMetadata>,
+    readonly repo: RoleMetadataRepository,
+    // @InjectRepository(PermissionMetadata)
+    // private readonly permissionRepository: Repository<PermissionMetadata>,
+    readonly permissionRepository: PermissionMetadataRepository,
     readonly moduleRef: ModuleRef
 
   ) {

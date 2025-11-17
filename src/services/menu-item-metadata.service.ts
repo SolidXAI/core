@@ -15,6 +15,7 @@ import { UpdateMenuItemMetadataDto } from '../dtos/update-menu-item-metadata.dto
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 import { dasherize } from '@angular-devkit/core/src/utils/strings';
+import { MenuItemMetadataRepository } from 'src/repository/menu-item-metadata.repository';
 
 @Injectable()
 export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
@@ -27,8 +28,9 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(MenuItemMetadata, 'default')
-    readonly repo: Repository<MenuItemMetadata>,
+    // @InjectRepository(MenuItemMetadata, 'default')
+    // readonly repo: Repository<MenuItemMetadata>,
+    readonly repo: MenuItemMetadataRepository,
     readonly moduleRef: ModuleRef
 
   ) {
@@ -83,8 +85,9 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
     //     },
     //     relations: ['module', 'parentMenuItem', 'action']
     // });
-    const menuItems = await this.repo
-      .createSecurityRuleAwareQueryBuilder('menuItem')
+    const qb = await this.repo.createSecurityRuleAwareQueryBuilder('menuItem')
+
+    const menuItems = await qb
       .leftJoinAndSelect('menuItem.module', 'module')
       .leftJoinAndSelect('menuItem.parentMenuItem', 'parentMenuItem')
       .leftJoinAndSelect('menuItem.action', 'action')

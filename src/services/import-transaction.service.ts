@@ -1,7 +1,7 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
 import { ConfigService } from '@nestjs/config';
 import { CrudHelperService } from 'src/services/crud-helper.service';
@@ -13,20 +13,21 @@ import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
 import { HttpService } from '@nestjs/axios';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { RelationFieldsCommand, RelationType, SolidFieldType } from 'src/dtos/create-field-metadata.dto';
 import { ImportInstructionsResponseDto, StandardImportInstructionsResponseDto } from 'src/dtos/import-instructions.dto';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { ImportTransactionErrorLog } from 'src/entities/import-transaction-error-log.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
+import { parseFlexibleDate } from 'src/helpers/date.helper';
 import { MediaWithFullUrl } from 'src/interfaces';
+import { ImportTransactionRepository } from 'src/repository/import-transaction.repository';
 import { Readable } from 'stream';
 import { v4 as uuidv4 } from 'uuid';
 import { ImportTransaction } from '../entities/import-transaction.entity';
 import { CsvService } from './csv.service';
 import { ExcelService } from './excel.service';
 import { SolidIntrospectService } from './solid-introspect.service';
-import { ERROR_MESSAGES } from 'src/constants/error-messages';
-import { parseFlexibleDate } from 'src/helpers/date.helper';
 
 interface ImportTemplateFileInfo {
   stream: NodeJS.ReadableStream;
@@ -97,8 +98,9 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(ImportTransaction, 'default')
-    readonly repo: Repository<ImportTransaction>,
+    // @InjectRepository(ImportTransaction, 'default')
+    // readonly repo: Repository<ImportTransaction>,
+    readonly repo: ImportTransactionRepository,
     readonly moduleRef: ModuleRef,
     readonly excelService: ExcelService,
     readonly csvService: CsvService,

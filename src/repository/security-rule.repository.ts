@@ -1,4 +1,5 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable } from '@nestjs/common';
+import { RequestContextService } from 'src';
 import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
 import { SecurityRuleConfig } from 'src/dtos/security-rule-config.dto';
 import { UpdateSecurityRuleDto } from 'src/dtos/update-security-rule.dto';
@@ -8,19 +9,20 @@ import { RoleMetadata } from 'src/entities/role-metadata.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
-import { CrudHelperService, FilterCombinator } from 'src/services/crud-helper.service';
-import { SolidIntrospectService } from 'src/services/solid-introspect.service';
-import { Brackets, DataSource, Repository, SelectQueryBuilder } from 'typeorm';
+import { CrudHelperService } from 'src/services/crud-helper.service';
+import { Brackets, DataSource, SelectQueryBuilder } from 'typeorm';
+import { SolidBaseRepository } from './solid-base.repository';
 
 @Injectable()
-export class SecurityRuleRepository extends Repository<SecurityRule> {
-    private readonly logger = new Logger(SecurityRuleRepository.name);
+export class SecurityRuleRepository extends SolidBaseRepository<SecurityRule> {
     constructor(
-        private dataSource: DataSource,
-        private readonly solidRegistry: SolidRegistry,
-        private readonly crudHelperService: CrudHelperService,
+        readonly dataSource: DataSource,
+        readonly requestContextService: RequestContextService,
+        readonly securityRuleRepository: SecurityRuleRepository,
+        readonly solidRegistry: SolidRegistry,
+        readonly crudHelperService: CrudHelperService,
     ) {
-        super(SecurityRule, dataSource.createEntityManager());
+        super(SecurityRule, dataSource, requestContextService, securityRuleRepository);
     }
 
     async applySecurityRules<T extends CommonEntity>(qb: SelectQueryBuilder<T>, modelSingularName: string, activeUser: ActiveUserData, securityRuleAlias: string = qb.alias): Promise<SelectQueryBuilder<T>> {

@@ -13,6 +13,7 @@ import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { RequestContextService } from './request-context.service';
 import { Locale } from 'src/entities/locale.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { LocaleRepository } from 'src/repository/locale.repository';
 @Injectable()
 export class LocaleService extends CRUDService<Locale> implements OnApplicationBootstrap{
   constructor(
@@ -24,8 +25,9 @@ export class LocaleService extends CRUDService<Locale> implements OnApplicationB
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(Locale, 'default')
-    readonly repo: Repository<Locale>,
+    // @InjectRepository(Locale, 'default')
+    // readonly repo: Repository<Locale>,
+    readonly repo: LocaleRepository,
     @InjectRepository(Locale, 'default')
     readonly moduleRef: ModuleRef,
     @InjectRepository(ModelMetadata)

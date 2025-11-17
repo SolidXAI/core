@@ -30,6 +30,7 @@ import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { UpdateExportTemplateDto } from 'src/dtos/update-export-template.dto';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
+import { ExportTransactionRepository } from 'src/repository/export-transaction.repository';
 
 const EXPORT_CHUNK_SIZE = 100;
 enum ExportStatus {
@@ -63,8 +64,9 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(ExportTransaction, 'default')
-    readonly repo: Repository<ExportTransaction>,
+    // @InjectRepository(ExportTransaction, 'default')
+    // readonly repo: Repository<ExportTransaction>,
+    readonly repo: ExportTransactionRepository,
     readonly introspectService: SolidIntrospectService,
     readonly excelService: ExcelService,
     readonly csvService: CsvService,
@@ -72,7 +74,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     @InjectRepository(FieldMetadata, 'default')
     readonly fieldRepo: Repository<FieldMetadata>,
     @InjectRepository(ModelMetadata, 'default')
-    readonly ModelMetadataRepo: Repository<ModelMetadata>,
+    readonly modelMetadataRepo: Repository<ModelMetadata>,
     readonly moduleRef: ModuleRef,
     private readonly modelMetadataHelperService: ModelMetadataHelperService,
 
@@ -85,7 +87,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     try {
       // const loadedExportTransaction = await this.loadExportTransaction(id);
       // from updateDto, get modelId and get modelMetadata
-      const modeldata = await this.ModelMetadataRepo.findOne({
+      const modeldata = await this.modelMetadataRepo.findOne({
         where: { id: updateDto?.modelMetadataId },
         relations: { fields: true },
       })
@@ -109,7 +111,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     try {
       // const loadedExportTransaction = await this.loadExportTransaction(id)
       // from updateDto, get modelId and get modelMetadata
-      const modeldata = await this.ModelMetadataRepo.findOne({
+      const modeldata = await this.modelMetadataRepo.findOne({
         where: { id: updateDto?.modelMetadataId },
         relations: { fields: true },
       })
@@ -226,7 +228,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     const relatedModelsUserKeyMap = new Map<string, string>();
     for (const field of modelFields) {
       if (field.relationType && field.relationCoModelSingularName) {
-        const relatedModelMetadata = await this.ModelMetadataRepo.findOne({
+        const relatedModelMetadata = await this.modelMetadataRepo.findOne({
           where: { singularName: field.relationCoModelSingularName },
           relations: ['userKeyField'],
         });

@@ -1,8 +1,12 @@
-import { BadRequestException, Inject, NotFoundException, Optional } from "@nestjs/common";
-import { ConfigService, ConfigType } from "@nestjs/config";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { EntityManager, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
-import { Repository } from "typeorm/repository/Repository";
+import { isArray } from "class-validator";
+import { CommonEntity, SolidBaseRepository } from "src";
+import { ERROR_MESSAGES } from "src/constants/error-messages";
+import { SUCCESS_MESSAGES } from "src/constants/success-messages";
+import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
+import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { ComputedFieldValueType, RelationType, SelectionValueType, SolidFieldType } from "../dtos/create-field-metadata.dto";
 import { MediaStorageProviderType } from "../dtos/create-media-storage-provider-metadata.dto";
@@ -31,16 +35,13 @@ import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCr
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
 import { CrudHelperService } from "./crud-helper.service";
 import { FileService } from "./file.service";
+import { HashingService } from "./hashing.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
-import { isArray } from "class-validator";
-import { ERROR_MESSAGES } from "src/constants/error-messages";
-import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 import { RequestContextService } from "./request-context.service";
-import { HashingService } from "./hashing.service";
 
-export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
+export class CRUDService<T extends CommonEntity> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
     constructor(
         readonly modelMetadataService: ModelMetadataService,
@@ -50,7 +51,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         readonly discoveryService: DiscoveryService,
         readonly crudHelperService: CrudHelperService,
         readonly entityManager: EntityManager,
-        readonly repo: Repository<T>,
+        readonly repo: SolidBaseRepository<T>,
         readonly modelName: string,
         readonly moduleName: string,
         readonly moduleRef: ModuleRef,
@@ -87,7 +88,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             // 5. Save the entity
             // For media, we need to use a storage provider and save the media, then save the associated uri against the entity or media table
             const entity = this.repo.create(createDto);
-            const savedEntity = await this.repo.save(entity) as T;
+            const savedEntity = await this.repo.save(entity) as unknown as T;
 
             // 6. Save the media
             if (hasMediaFields) {
@@ -170,9 +171,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         }
         const entity = await this.repo.findOne({
             where: {
-                //@ts-ignore
                 id: id,
-            }
+            } as unknown as FindOptionsWhere<T>,
         });
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
@@ -231,10 +231,10 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         });
         const entity = await this.repo.findOne({
             where: {
-                //@ts-ignore
                 id: id,
-            }
-        });
+            } as unknown as FindOptionsWhere<T>,
+        }
+        );
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
@@ -444,7 +444,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         requestContextService.setRequestFilter(basicFilterDto);
 
         // Create above query on pincode table using query builder
-        var qb: SelectQueryBuilder<T> = this.repo.createSecurityRuleAwareQueryBuilder(alias)
+        var qb: SelectQueryBuilder<T> = await this.repo.createSecurityRuleAwareQueryBuilder(alias)
         qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
         if (internationalisation && draftPublishWorkflow) {
             qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef);
@@ -493,7 +493,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
         // For each group, get the records and the count
         for (const group of groupByResult) {
             if (populateGroup) {
-                let groupByQb: SelectQueryBuilder<T> = this.repo.createSecurityRuleAwareQueryBuilder(alias);
+                let groupByQb: SelectQueryBuilder<T> = await this.repo.createSecurityRuleAwareQueryBuilder(alias);
                 groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
                 const [entities, count] = await groupByQb.getManyAndCount();
@@ -638,9 +638,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
 
         let entity = await this.repo.findOne({
             where: {
-                //@ts-ignore
                 id: id,
-            },
+            } as unknown as FindOptionsWhere<T>,
             relations: normalizedPopulate,
             select: fields,
         });
@@ -688,7 +687,7 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
                 transformedDto = await fieldManager.transformForCreate(createDto);
             }
             const entity = this.repo.create(transformedDto);
-            entitiesForSave.push(entity as T);
+            entitiesForSave.push(entity as unknown as T);
         }
         // Save all entities in a single batch
         const savedEntities = await this.repo.save(entitiesForSave) as T[];
@@ -729,9 +728,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             const id = ids[i]
             const entity = await this.repo.findOne({
                 where: {
-                    //@ts-ignore
                     id: id,
-                }
+                } as unknown as FindOptionsWhere<T>,
             });
             removedEntities.push(entity);
         }
@@ -757,9 +755,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
 
             const softDeletedRows = await this.repo.findOne({
                 where: {
-                    //@ts-ignore
                     id, deletedAt: Not(IsNull())
-                },
+                } as unknown as FindOptionsWhere<T>,
                 withDeleted: true,
             });
 
@@ -768,9 +765,9 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             }
 
             await this.repo.update(id, {
-                //@ts-ignore
                 deletedAt: null, deletedTracker: "not-deleted"
-            });
+            } as unknown as QueryDeepPartialEntity<T>
+         );
 
             return { message: SUCCESS_MESSAGES.RECORD_RECOVERED, data: softDeletedRows };
         } catch (error) {
@@ -802,10 +799,9 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
             // Find soft-deleted records matching the given IDs
             const softDeletedRows = await this.repo.find({
                 where: {
-                    //@ts-ignore
                     id: In(ids),
                     deletedAt: Not(IsNull()),
-                },
+                } as unknown as FindOptionsWhere<T>,
                 withDeleted: true,
             });
 
@@ -815,9 +811,8 @@ export class CRUDService<T> { // Add two generic value i.e Person,CreatePersonDt
 
             // Recover the specific records by setting deletedAt to null
             await this.repo.update(
-                //@ts-ignore
-                { id: In(ids) },
-                { deletedAt: null, deletedTracker: "not-deleted" }
+                { id: In(ids) } as unknown as FindOptionsWhere<T>,
+                { deletedAt: null, deletedTracker: "not-deleted" } as unknown as QueryDeepPartialEntity<T>
             );
 
             return { message: SUCCESS_MESSAGES.SELECTED_RECORDS_RECOVERED, recoveredIds: ids };

@@ -12,6 +12,7 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 
 
 import { DashboardQuestionSqlDatasetConfig } from '../entities/dashboard-question-sql-dataset-config.entity';
+import { DashboardQuestionSqlDatasetConfigRepository } from 'src/repository/dashboard-question-sql-dataset-config.repository';
 
 @Injectable()
 export class DashboardQuestionSqlDatasetConfigService extends CRUDService<DashboardQuestionSqlDatasetConfig>{
@@ -24,8 +25,9 @@ export class DashboardQuestionSqlDatasetConfigService extends CRUDService<Dashbo
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(DashboardQuestionSqlDatasetConfig, 'default')
-    readonly repo: Repository<DashboardQuestionSqlDatasetConfig>,
+    // @InjectRepository(DashboardQuestionSqlDatasetConfig, 'default')
+    // readonly repo: Repository<DashboardQuestionSqlDatasetConfig>,
+    readonly repo: DashboardQuestionSqlDatasetConfigRepository,
     readonly moduleRef: ModuleRef
 
  ) {

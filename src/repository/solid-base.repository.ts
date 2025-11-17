@@ -33,6 +33,10 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
         return camelize(this.metadata.name);
     }
 
+    override createQueryBuilder(alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<T> {
+        throw new Error('createQueryBuilder() is disabled. Use createSecurityRuleAwareQueryBuilder instead');
+    }
+
     async createSecurityRuleAwareQueryBuilder(alias?: string, queryRunner?: QueryRunner): Promise<SelectQueryBuilder<T>> {
         const activeUserOrUndefined = this.requestContextService.getActiveUser();
         const qb = super.createQueryBuilder(alias, queryRunner);

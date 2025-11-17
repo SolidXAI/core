@@ -13,6 +13,7 @@ import { CrudHelperService } from 'src/services/crud-helper.service';
 
 import { SecurityRule } from '../entities/security-rule.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { SecurityRuleRepository } from 'src';
 
 @Injectable()
 export class SecurityRuleService extends CRUDService<SecurityRule> implements OnApplicationBootstrap {
@@ -25,8 +26,9 @@ export class SecurityRuleService extends CRUDService<SecurityRule> implements On
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(SecurityRule, 'default')
-    readonly repo: Repository<SecurityRule>,
+    // @InjectRepository(SecurityRule, 'default')
+    // readonly repo: Repository<SecurityRule>,
+    readonly repo: SecurityRuleRepository,
     readonly moduleRef: ModuleRef,
     readonly solidRegistry: SolidRegistry,
 
