@@ -7219,9 +7219,9 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false
         },
         "children": [
           {
@@ -7274,7 +7274,10 @@
         "attrs": {
           "name": "form-1",
           "label": "Chatter Message Details Model",
-          "className": "grid"
+          "className": "grid",
+          "showEditFormButton": false,
+          "showAddFormButton": false,
+          "showDeleteFormButton": false 
         },
         "children": [
           {
@@ -7350,9 +7353,9 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false
         },
         "children": [
           {
@@ -7398,7 +7401,10 @@
         "attrs": {
           "name": "form-1",
           "label": "Chatter Message Model",
-          "className": "grid"
+          "className": "grid",
+          "showEditFormButton": false,
+          "showAddFormButton": false,
+          "showDeleteFormButton": false 
         },
         "children": [
           {
