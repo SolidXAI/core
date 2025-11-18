@@ -45,8 +45,8 @@ export class SettingService extends CRUDService<Setting> {
   async seedDefaultSettings(): Promise<void> {
     const settingsSeederData = {
       allowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
-      iamPasswordRegistrationEnabled: this.iamConfiguration.iamPasswordRegistrationEnabled,
-      passwordlessRegistration: this.iamConfiguration.passwordlessRegistration,
+      passwordBasedAuth: this.iamConfiguration.passwordBasedAuth,
+      passwordLessAuth: this.iamConfiguration.passwordLessAuth,
       activateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
       iamGoogleOAuthEnabled: false,
       authPagesLayout: "center",
@@ -164,8 +164,8 @@ export class SettingService extends CRUDService<Setting> {
   private getDefaultSettings(): Record<string, any> {
     return {
       allowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
-      iamPasswordRegistrationEnabled: this.iamConfiguration.iamPasswordRegistrationEnabled,
-      passwordlessRegistration: this.iamConfiguration.passwordlessRegistration,
+      passwordBasedAuth: this.iamConfiguration.passwordBasedAuth,
+      passwordLessAuth: this.iamConfiguration.passwordLessAuth,
       activateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
       iamGoogleOAuthEnabled: false,
       authPagesLayout: "center",
