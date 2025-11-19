@@ -11112,6 +11112,13 @@
                   {
                     "type": "field",
                     "attrs": {
+                      "name": "smsProviderTemplateId",
+                      "label": "Sms Provider Template Id"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
                       "name": "description",
                       "label": "Description"
                     }
