@@ -7448,6 +7448,12 @@
                       "name": "coModelName",
                       "isSearchable": true
                     }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "chatterMessageDetails"
+                    }
                   }
                 ]
               }
