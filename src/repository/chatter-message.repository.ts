@@ -19,9 +19,9 @@ export class ChatterMessageRepository extends SolidBaseRepository<ChatterMessage
     }
 
     private readonly CO_MODEL_NAME_PATH = 'filters.coModelName.$eq';
-    override createQueryBuilder(alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<ChatterMessage> {
+    override async createSecurityRuleAwareQueryBuilder(alias?: string, queryRunner?: QueryRunner): Promise<SelectQueryBuilder<ChatterMessage>> {
         const activeUserOrUndefined = this.requestContextService.getActiveUser();
-        let qb = super.createQueryBuilder(alias, queryRunner);
+        let qb = await super.createSecurityRuleAwareQueryBuilder(alias, queryRunner);
         if (!activeUserOrUndefined) return qb;
         
         //Left join on the associated chatter model entity

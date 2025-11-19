@@ -2,17 +2,17 @@ import { Injectable, Logger } from '@nestjs/common';
 import { InjectDataSource } from "@nestjs/typeorm";
 import { ListOfValues } from 'src/entities/list-of-values.entity';
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
-import { ListOfValuesMetadataService } from 'src/services/list-of-values-metadata.service';
-import { DataSource, EntityManager, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from "typeorm";
+import { ListOfValuesService } from 'src/services/list-of-values.service';
+import { DataSource, EntityManager, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
 
 @Injectable()
-export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface<ListOfValues> {
+export class ListOfValuesSubscriber implements EntitySubscriberInterface<ListOfValues> {
     private readonly logger = new Logger(this.constructor.name);
     constructor(
         @InjectDataSource()
         private readonly dataSource: DataSource,
         readonly moduleMetadataHelperService: ModuleMetadataHelperService,
-        readonly listOfValuesMetadataService: ListOfValuesMetadataService,
+        readonly listOfValuesService: ListOfValuesService,
     ) {
         this.dataSource.subscribers.push(this);
     }
@@ -67,7 +67,7 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
         }
 
         // Call the saveListofValuesToConfig method from the ListOfValuesMetadataService
-        await this.listOfValuesMetadataService.saveListofValuesToConfig(populatedLov);
+        await this.listOfValuesService.saveListofValuesToConfig(populatedLov);
     }
 
     private async updateListOfValuesToConfig(oldlistOfValues: ListOfValues, listOfValues: ListOfValues, entityManager: EntityManager): Promise<void> {
@@ -88,7 +88,7 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
         }
 
         // Call the updateListofValuesToConfig method from the ListOfValuesMetadataService
-        await this.listOfValuesMetadataService.updateListofValuesToConfig(oldlistOfValues, populatedLov);
+        await this.listOfValuesService.updateListofValuesToConfig(oldlistOfValues, populatedLov);
     }
 
     private async deleteListOfValuesFromConfig(listOfValues: ListOfValues, entityManager: EntityManager): Promise<void> {
@@ -109,7 +109,7 @@ export class ListOfValuesMetadataSubscriber implements EntitySubscriberInterface
         }
 
         // Call the deleteListOfValuesFromConfig method from the ListOfValuesMetadataService
-        await this.listOfValuesMetadataService.deleteListOfValuesFromConfig(populatedLov);
+        await this.listOfValuesService.deleteListOfValuesFromConfig(populatedLov);
     }
 
 }

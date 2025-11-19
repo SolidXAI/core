@@ -31,4 +31,9 @@ export class CreateSecurityRuleDto {
     @IsJSON()
     @ApiProperty()
     securityRuleConfig: any;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    securityRuleConfigProvider: string;
 }

@@ -31,12 +31,12 @@ export class ChatterMessageDetailsRepository extends SolidBaseRepository<Chatter
    *  - left join the polymorphic co-model table using message.co_model_* fields
    *  - (optionally) apply security rules on the co-model alias
    */
-  override createQueryBuilder(
+  override async createSecurityRuleAwareQueryBuilder(
     alias = 'detail',
     queryRunner?: QueryRunner,
-  ): SelectQueryBuilder<ChatterMessageDetails> {
+  ): Promise<SelectQueryBuilder<ChatterMessageDetails>> {
     const activeUser = this.requestContextService.getActiveUser();
-    let qb = super.createQueryBuilder(alias, queryRunner);
+    let qb = await super.createSecurityRuleAwareQueryBuilder(alias, queryRunner);
     if (!activeUser) return qb;
 
     // Example: join the "client" co-model (pass whatever co-model name you need)

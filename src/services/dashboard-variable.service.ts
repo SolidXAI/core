@@ -12,6 +12,8 @@ import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
 import { DashboardVariable } from '../entities/dashboard-variable.entity';
+import { Dashboard } from 'src/entities/dashboard.entity';
+import { DashboardVariableRepository } from 'src/repository/dashboard-variable.repository';
 
 @Injectable()
 export class DashboardVariableService extends CRUDService<DashboardVariable> {
@@ -25,8 +27,9 @@ export class DashboardVariableService extends CRUDService<DashboardVariable> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(DashboardVariable, 'default')
-    readonly repo: Repository<DashboardVariable>,
+    // @InjectRepository(DashboardVariable, 'default')
+    // readonly repo: Repository<DashboardVariable>,
+    readonly repo: DashboardVariableRepository,
     readonly moduleRef: ModuleRef,
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'dashboardVariable', 'solid-core', moduleRef);

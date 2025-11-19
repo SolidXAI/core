@@ -15,6 +15,7 @@ import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
 import { User } from 'src/entities/user.entity';
 import { CreateSettingDto } from 'src/dtos/create-setting.dto';
+import { SettingRepository } from 'src/repository/setting.repository';
 
 @Injectable()
 export class SettingService extends CRUDService<Setting> {
@@ -30,8 +31,9 @@ export class SettingService extends CRUDService<Setting> {
     private readonly commonConfiguration: ConfigType<typeof commonConfig>,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(Setting, 'default')
-    readonly repo: Repository<Setting>,
+    // @InjectRepository(Setting, 'default')
+    // readonly repo: Repository<Setting>,
+    readonly repo: SettingRepository,
     readonly moduleRef: ModuleRef,
     private readonly requestContextService: RequestContextService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
@@ -43,8 +45,8 @@ export class SettingService extends CRUDService<Setting> {
   async seedDefaultSettings(): Promise<void> {
     const settingsSeederData = {
       allowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
-      iamPasswordRegistrationEnabled: this.iamConfiguration.iamPasswordRegistrationEnabled,
-      passwordlessRegistration: this.iamConfiguration.passwordlessRegistration,
+      passwordBasedAuth: this.iamConfiguration.passwordBasedAuth,
+      passwordLessAuth: this.iamConfiguration.passwordLessAuth,
       activateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
       iamGoogleOAuthEnabled: false,
       authPagesLayout: "center",
@@ -162,8 +164,8 @@ export class SettingService extends CRUDService<Setting> {
   private getDefaultSettings(): Record<string, any> {
     return {
       allowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
-      iamPasswordRegistrationEnabled: this.iamConfiguration.iamPasswordRegistrationEnabled,
-      passwordlessRegistration: this.iamConfiguration.passwordlessRegistration,
+      passwordBasedAuth: this.iamConfiguration.passwordBasedAuth,
+      passwordLessAuth: this.iamConfiguration.passwordLessAuth,
       activateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
       iamGoogleOAuthEnabled: false,
       authPagesLayout: "center",

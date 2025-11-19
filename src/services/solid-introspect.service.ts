@@ -13,6 +13,7 @@ import { IS_DASHBOARD_QUESTION_DATA_PROVIDER } from 'src/decorators/dashboard-qu
 import { IS_MAIL_PROVIDER } from 'src/decorators/mail-provider.decorator';
 import { IS_WA_PROVIDER } from 'src/decorators/whatsapp-provider.decorator';
 import { IS_ERROR_CODE_PROVIDER } from 'src/decorators/error-codes-provider.decorator';
+import { IS_SECURITY_RULE_CONFIG_PROVIDER } from 'src/decorators/security-rule-config-provider.decorator';
 
 @Injectable()
 export class SolidIntrospectService implements OnApplicationBootstrap {
@@ -73,7 +74,6 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       this.solidRegistry.registerDashboardQuestionDataProvider(provider);
     });
 
-
     // Register all IComputedProvider implementations
     const computedFieldProviders = this.discoveryService
       .getProviders()
@@ -130,13 +130,22 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       this.solidRegistry.registerMailProvider(mailProvider);
     });
 
-    // Register all IMail implementations
+    // Register all IWhatsappTransport implementations
     const whatsappProviders = this.discoveryService
       .getProviders()
       .filter((provider) => this.isWhatsappProvider(provider));
 
     whatsappProviders.forEach((whatsappProvider) => {
       this.solidRegistry.registerWhatsappProvider(whatsappProvider);
+    });
+
+    // Register all ISecurityRuleConfigProvider implementations
+    const securityRuleConfigProviders = this.discoveryService
+      .getProviders()
+      .filter((provider) => this.isSecurityRuleConfigProvider(provider));
+
+    securityRuleConfigProviders.forEach((securityRuleConfigProvider) => {
+      this.solidRegistry.registerSecurityRuleConfigProvider(securityRuleConfigProvider);
     });
   }
 
@@ -254,6 +263,18 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     );
 
     return !!isWhatsappProvider;
+  }
+
+  private isSecurityRuleConfigProvider(provider: InstanceWrapper) {
+    const { instance } = provider;
+    if (!instance) return false;
+
+    const isSecurityRuleConfigProvider = this.reflector.get<boolean>(
+      IS_SECURITY_RULE_CONFIG_PROVIDER,
+      instance.constructor,
+    );
+
+    return !!isSecurityRuleConfigProvider;
   }
 
   private isModule(provider: InstanceWrapper): boolean {

@@ -1,17 +1,18 @@
 import { Injectable, NotFoundException } from "@nestjs/common";
-import { InjectRepository } from "@nestjs/typeorm";
-import { Repository, SelectQueryBuilder } from "typeorm";
-import { MediaStorageProviderMetadata } from "../entities/media-storage-provider-metadata.entity";
-import { BasicFilterDto } from "../dtos/basic-filters.dto";
-import { CrudHelperService } from "./crud-helper.service";
-import { UpdateMediaStorageProviderMetadataDto } from "../dtos/update-media-storage-provider.dto";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
+import { MediaStorageProviderMetadataRepository } from "src/repository/media-storage-provider-metadata.repository";
+import { SelectQueryBuilder } from "typeorm";
+import { BasicFilterDto } from "../dtos/basic-filters.dto";
+import { UpdateMediaStorageProviderMetadataDto } from "../dtos/update-media-storage-provider.dto";
+import { MediaStorageProviderMetadata } from "../entities/media-storage-provider-metadata.entity";
+import { CrudHelperService } from "./crud-helper.service";
 
 @Injectable()
 export class MediaStorageProviderMetadataService {
     constructor(
-        @InjectRepository(MediaStorageProviderMetadata)
-        private readonly mediaStorageProviderRepo: Repository<MediaStorageProviderMetadata>,
+        // @InjectRepository(MediaStorageProviderMetadata)
+        // private readonly mediaStorageProviderRepo: Repository<MediaStorageProviderMetadata>,
+        private readonly mediaStorageProviderRepo: MediaStorageProviderMetadataRepository,
         private readonly crudHelperService: CrudHelperService
     ) { }
 
@@ -21,8 +22,8 @@ export class MediaStorageProviderMetadataService {
         let { limit, offset, populateMedia } = basicFilterDto;
 
         // Create above query on pincode table using query builder
-        var qb: SelectQueryBuilder<MediaStorageProviderMetadata> = this.mediaStorageProviderRepo.createQueryBuilder(alias)
-        qb = await this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
+        var qb: SelectQueryBuilder<MediaStorageProviderMetadata> = await this.mediaStorageProviderRepo.createSecurityRuleAwareQueryBuilder(alias)
+        qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
 
         // Get the records and the count
         const [entities, count] = await qb.getManyAndCount();
