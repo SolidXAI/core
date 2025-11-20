@@ -26,7 +26,7 @@ export class AiInteraction extends CommonEntity {
     modelUsed: string;
     @Column({ type: "integer", nullable: true })
     responseTimeMs: number;
-    @Column({ type: "jsonb", nullable: true })
+    @Column({ type: "simple-json", nullable: true })
     metadata: any;
     @Column({ type: "boolean", nullable: true, default: false })
     isApplied: boolean = false;

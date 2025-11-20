@@ -21,7 +21,7 @@ export class DashboardQuestion extends CommonEntity {
     dashboard: Dashboard;
     @OneToMany(() => DashboardQuestionSqlDatasetConfig, dashboardQuestionSqlDatasetConfig => dashboardQuestionSqlDatasetConfig.question, { cascade: true })
     questionSqlDatasetConfigs: DashboardQuestionSqlDatasetConfig[];
-    @Column({ type: "jsonb", nullable: true })
+    @Column({ type: "simple-json", nullable: true })
     chartOptions: any;
     @Column({ type: "text", nullable: true })
     labelSql: string;

@@ -1,0 +1,13 @@
+# Specified Types 
+
+## JSON
+- changed explicit type to "simple-json"
+
+    modified:   src/dtos/create-field-metadata.dto.ts
+    modified:   src/entities/ai-interaction.entity.ts
+    modified:   src/entities/dashboard-question.entity.ts
+    modified:   src/entities/dashboard-variable.entity.ts
+    modified:   src/entities/field-metadata.entity.ts
+    deleted:    src/entities/user.entity.ts.bkp
+    modified:   src/seeders/seed-data/solid-core-metadata.json
+    modified:   src/services/field-metadata.service.ts

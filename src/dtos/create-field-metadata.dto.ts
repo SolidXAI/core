@@ -118,6 +118,7 @@ export enum PSQLType { //FIXME Currently this type is being used in the definiti
   // Other types
   json = 'json',
   jsonb = 'jsonb',
+  simplejson = 'simple-json'
 }
 
 

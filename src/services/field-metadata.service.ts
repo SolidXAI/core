@@ -35,9 +35,9 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         this.loadAndRegisterComputedFieldsDetails();
     }
 
-   async loadAndRegisterComputedFieldsDetails() {
+    async loadAndRegisterComputedFieldsDetails() {
         // Load all the modules and models and within that load all the computed fields
-        const computedFieldsWithModelAndModule =  await this.fieldMetadataRepo.findComputedFieldsPopulatedWithModelAndModule();
+        const computedFieldsWithModelAndModule = await this.fieldMetadataRepo.findComputedFieldsPopulatedWithModelAndModule();
 
         // Convert the computed fields object above to the ComputedFieldMetadata type
         const computedFieldMetadata: ComputedFieldMetadata[] = computedFieldsWithModelAndModule.map((field) => {
@@ -379,6 +379,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 },
                 "json": {
                     "ormTypes": [
+                        { label: PSQLType.simplejson, description: "Creates DB agnostic column for storing json style data." },
                         { label: PSQLType.json, description: "Stores JSON data without indexing." },
                         { label: PSQLType.jsonb, description: "Stores JSON data with indexing for faster queries." }
                     ]
@@ -445,7 +446,6 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 }
             }
         };
-
 
         // Fetch Data Source Type 
         const dataSourceTypes = Object.keys(ormFieldTypeForSolid); // ["psql"]

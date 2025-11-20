@@ -10,7 +10,7 @@ export class DashboardVariable extends CommonEntity {
     @Index()
     @Column({ type: "varchar" })
     variableType: string;
-    @Column({ type: "jsonb", nullable: true })
+    @Column({ type: "simple-json", nullable: true })
     selectionStaticValues: any;
     @Column({ nullable: true })
     selectionDynamicSourceType: string;
