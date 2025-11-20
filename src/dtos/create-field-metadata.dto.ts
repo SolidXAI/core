@@ -121,6 +121,20 @@ export enum PSQLType { //FIXME Currently this type is being used in the definiti
   simplejson = 'simple-json'
 }
 
+export enum MSSQLType {
+  int = "int",
+  bigint = "bigint",
+  decimal = "decimal",
+  varchar = "varchar",
+  nvarchar = "nvarchar",
+  text = "text",
+  bit = "bit",
+  date = "date",
+  datetime = "datetime",
+  datetime2 = "datetime2",
+  time = "time",
+  uniqueidentifier = "uniqueidentifier"
+}
 
 export enum EncryptionType {
   aes128 = 'aes-128',
@@ -173,12 +187,12 @@ export enum ComputedFieldValueType {
 }
 
 export enum ComputedFieldTriggerOperation {
-    beforeInsert = "before-insert",
-    afterInsert = "after-insert",
-    beforeUpdate = "before-update",
-    afterUpdate = "after-update",
-    beforeRemove = "before-delete",
-    afterRemove = "after-delete",
+  beforeInsert = "before-insert",
+  afterInsert = "after-insert",
+  beforeUpdate = "before-update",
+  afterUpdate = "after-update",
+  beforeRemove = "before-delete",
+  afterRemove = "after-delete",
 }
 
 export class ComputedFieldTriggerConfig {

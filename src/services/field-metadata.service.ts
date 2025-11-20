@@ -7,7 +7,7 @@ import { ComputedFieldMetadata, SolidRegistry } from 'src/helpers/solid-registry
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
-import { CascadeType, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MediaType, PSQLType, RelationType, SelectionValueType, SolidFieldType } from '../dtos/create-field-metadata.dto';
+import { CascadeType, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MediaType, MSSQLType, PSQLType, RelationType, SelectionValueType, SolidFieldType } from '../dtos/create-field-metadata.dto';
 import { SelectionDynamicQueryDto } from '../dtos/selection-dynamic-query.dto';
 import { UpdateFieldMetaDataDto } from '../dtos/update-field-metadata.dto';
 import { FieldMetadata } from '../entities/field-metadata.entity';
@@ -379,7 +379,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 },
                 "json": {
                     "ormTypes": [
-                        { label: PSQLType.simplejson, description: "Creates DB agnostic column for storing json style data." },
+                        // { label: PSQLType.simplejson, description: "Creates DB agnostic column for storing json style data." },
                         { label: PSQLType.json, description: "Stores JSON data without indexing." },
                         { label: PSQLType.jsonb, description: "Stores JSON data with indexing for faster queries." }
                     ]
@@ -444,7 +444,128 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 "uuid": {
                     "ormTypes": [{ label: PSQLType.varchar, description: "Stores universally unique identifiers (UUIDs)." }]
                 }
+            },
+            "mssql": {
+                // Numeric types
+                "int": {
+                    ormTypes: [
+                        { label: MSSQLType.int, description: "A 4-byte integer for general numeric data." }
+                    ]
+                },
+                "bigint": {
+                    ormTypes: [
+                        { label: MSSQLType.bigint, description: "An 8-byte integer for large numeric values." }
+                    ]
+                },
+                "decimal": {
+                    ormTypes: [
+                        { label: MSSQLType.decimal, description: "A high-precision numeric type for financial or exact values." }
+                    ]
+                },
+
+                // Text types
+                "shortText": {
+                    ormTypes: [
+                        { label: MSSQLType.varchar, description: "A variable-length string for short text." }
+                    ]
+                },
+                "longText": {
+                    ormTypes: [
+                        { label: MSSQLType.text, description: "A large or unbounded string type." }
+                    ]
+                },
+                "richText": {
+                    ormTypes: [
+                        { label: MSSQLType.text, description: "A large text field for formatted or long content." }
+                    ]
+                },
+                "json": {
+                    ormTypes: [
+                        { label: MSSQLType.nvarchar, description: "Stores JSON data as string (MSSQL doesn't have native JSON type)." }
+                    ]
+                },
+
+                // Boolean types
+                "boolean": {
+                    ormTypes: [
+                        { label: MSSQLType.bit, description: "Stores true or false values as 0 or 1." }
+                    ]
+                },
+
+                // Date and time types
+                "date": {
+                    ormTypes: [
+                        { label: MSSQLType.date, description: "Stores calendar dates (YYYY-MM-DD)." }
+                    ]
+                },
+                "datetime": {
+                    ormTypes: [
+                        { label: MSSQLType.datetime, description: "Stores date and time without timezone." },
+                        { label: MSSQLType.datetime2, description: "High-precision date and time type." }
+                    ]
+                },
+                "time": {
+                    ormTypes: [
+                        { label: MSSQLType.time, description: "Stores time values (HH:MM:SS)." }
+                    ]
+                },
+
+                // Relation
+                "relation": {
+                    ormTypes: [
+                        { label: MSSQLType.int, description: "Used for foreign keys referencing other entities." }
+                    ]
+                },
+
+                // Media types
+                "mediaSingle": {
+                    ormTypes: [
+                        { label: MSSQLType.varchar, description: "Stores file paths or URLs for single media files." }
+                    ]
+                },
+                "mediaMultiple": {
+                    ormTypes: [
+                        { label: MSSQLType.varchar, description: "Stores file paths or URLs for multiple media files." }
+                    ]
+                },
+
+                // Email and password
+                "email": {
+                    ormTypes: [
+                        { label: MSSQLType.varchar, description: "Stores email addresses." }
+                    ]
+                },
+                "password": {
+                    ormTypes: [
+                        { label: MSSQLType.varchar, description: "Stores hashed or plain-text passwords." }
+                    ]
+                },
+
+                // Selection types
+                "selectionStatic": {
+                    ormTypes: [
+                        { label: MSSQLType.varchar, description: "Used for predefined selection options." }
+                    ]
+                },
+                "selectionDynamic": {
+                    ormTypes: [
+                        { label: MSSQLType.varchar, description: "Used for dynamic selection options." }
+                    ]
+                },
+
+                // Computed and external ID
+                "computed": {
+                    ormTypes: [
+                        { label: MSSQLType.varchar, description: "Represents computed or derived fields." }
+                    ]
+                },
+                "uuid": {
+                    ormTypes: [
+                        { label: MSSQLType.uniqueidentifier, description: "Stores universally unique identifiers (UUIDs)." }
+                    ]
+                }
             }
+
         };
 
         // Fetch Data Source Type 

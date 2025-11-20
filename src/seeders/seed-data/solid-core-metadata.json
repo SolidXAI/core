@@ -5856,14 +5856,6 @@
       "parentMenuItemUserKey": "layoutBuilder-menu-item"
     },
     {
-      "displayName": "Saved Filters",
-      "name": "savedFilters-menu-item",
-      "sequenceNumber": 4,
-      "actionUserKey": "savedFilters-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layoutBuilder-menu-item"
-    },
-    {
       "displayName": "User View",
       "name": "userViewMetadata-menu-item",
       "sequenceNumber": 5,
@@ -5939,7 +5931,7 @@
       "displayName": "User Activity History",
       "name": "userActivityHistory-menu-item",
       "sequenceNumber": 5,
-      "actionUserKey": "userActivityHistory-list-view",
+      "actionUserKey": "userActivityHistory-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "iam-menu-item"
     },
@@ -6059,7 +6051,7 @@
       "displayName": "Import Transactions",
       "name": "importTransaction-menu-item",
       "sequenceNumber": 8,
-      "actionUserKey": "importTransaction-list-view",
+      "actionUserKey": "importTransaction-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
