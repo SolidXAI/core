@@ -30,4 +30,14 @@
     modified:   src/entities/user.entity.ts
     modified:   src/seeders/seed-data/solid-core-metadata.json
 
+- Removed explicit type timestamp, as this has a separate meaning in SQL server. TypeORM will now automatically infer DB types based on TS type.
 
+    modified:   sql-server-changes.txt
+    deleted:    src/commands/ingest-rag-chunking-strategy-for.md
+    modified:   src/entities/common.entity.ts
+    modified:   src/entities/export-transaction.entity.ts
+    modified:   src/entities/mq-message.entity.ts
+    modified:   src/entities/scheduled-job.entity.ts
+    modified:   src/entities/user.entity.ts
+    modified:   src/helpers/model-metadata-helper.service.ts
+    modified:   src/seeders/seed-data/solid-core-metadata.json

@@ -21,9 +21,9 @@ export class ScheduledJob extends CommonEntity {
     endDate: Date;
     @Column({ type: "integer", nullable: true })
     dayOfMonth: number;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     lastRunAt: Date;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     nextRunAt: Date;
     @Column({ type: "varchar", nullable: true })
     dayOfWeek: string;

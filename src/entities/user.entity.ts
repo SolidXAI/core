@@ -47,49 +47,49 @@ export class User extends CommonEntity {
     @Column({ default: true })
     @Expose()
     active: boolean = true;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     // don't send to client
     forgotPasswordConfirmedAt: Date;
     @Column({ type: "varchar", nullable: true })
     // don't send to client
     verificationTokenOnForgotPassword: string;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     // don't send to client
     verificationTokenOnForgotPasswordExpiresAt: Date;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     // don't send to client
     emailVerifiedOnRegistrationAt: Date;
     @Column({ type: "varchar", nullable: true })
     // don't send to client
     emailVerificationTokenOnRegistration: string;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     // don't send to client
     emailVerificationTokenOnRegistrationExpiresAt: Date;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     // don't send to client
     mobileVerifiedOnRegistrationAt: Date;
     @Column({ type: "varchar", nullable: true })
     // don't send to client
     mobileVerificationTokenOnRegistration: string;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     // don't send to client
     mobileVerificationTokenOnRegistrationExpiresAt: Date;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     // don't send to client
     emailVerifiedOnLoginAt: Date;
     @Column({ type: "varchar", nullable: true })
     // don't send to client
     emailVerificationTokenOnLogin: string;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     // don't send to client
     emailVerificationTokenOnLoginExpiresAt: Date;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     // don't send to client
     mobileVerifiedOnLoginAt: Date;
     @Column({ type: "varchar", nullable: true })
     // don't send to client
     mobileVerificationTokenOnLogin: string;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     // don't send to client
     mobileVerificationTokenOnLoginExpiresAt: Date;
     @Column({ type: "varchar", nullable: true })
@@ -109,7 +109,7 @@ export class User extends CommonEntity {
     @Column({ type: "int", default: 1 })
     passwordSchemeVersion: number;
     // dont send to client
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     rehashedAt: Date;
     @Expose()
     _media: any;

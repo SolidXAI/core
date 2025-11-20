@@ -6,7 +6,7 @@ import { ExportTemplate } from 'src/entities/export-template.entity'
 @Index(["exportTransactionId", "deletedTracker"], { unique: true })
 export class ExportTransaction extends CommonEntity {
     @Index()
-    @Column({ type: "timestamp" })
+    @Column({})
     datetime: Date;
     @Index()
     @Column({ type: "varchar" })

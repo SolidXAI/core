@@ -28,21 +28,18 @@ export class ModelMetadataHelperService {
                 name: "createdAt",
                 displayName: "Created At",
                 type: "datetime",
-                ormType: "timestamp",
                 isSystem: true,
             },
             {
                 name: "updatedAt",
                 displayName: "Updated At",
                 type: "datetime",
-                ormType: "timestamp",
                 isSystem: true,
             },
             {
                 name: "deletedAt",
                 displayName: "Deleted At",
                 type: "datetime",
-                ormType: "timestamp",
                 isSystem: true,
             },
             {
@@ -56,7 +53,6 @@ export class ModelMetadataHelperService {
                 name: "publishedAt",
                 displayName: "Published At",
                 type: "datetime",
-                ormType: "timestamp",
                 isSystem: true,
             },
             {

@@ -22,10 +22,10 @@ messageType: string;
 @Column({ type: "varchar" })
 stage: string;
 
-@Column({ type: "timestamp", nullable: true })
+@Column({ nullable: true })
 startedAt: Date;
 
-@Column({ type: "timestamp", nullable: true })
+@Column({ nullable: true })
 finishedAt: Date;
 
 @Column({ type: "integer", nullable: true })
