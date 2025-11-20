@@ -453,7 +453,7 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    // Not OK
+    // Ok
     private async handleSeedMenus(menus: any) {
         if (!menus) {
             return;
@@ -465,22 +465,41 @@ export class ModuleMetadataSeederService {
             const actionRepo = trx.getRepository(ActionMetadata);
             const moduleRepo = trx.getRepository(ModuleMetadata);
 
-            // 1) Upsert menus WITHOUT roles
+            // 1) Upsert menus WITHOUT roles (manual upsert)
             for (const m of menus) {
-                const entity = menuRepo.create({
+                const action = m.actionUserKey
+                    ? await actionRepo.findOne({ where: { name: m.actionUserKey }, select: ["id"] })
+                    : null;
+
+                const module = m.moduleUserKey
+                    ? await moduleRepo.findOne({ where: { name: m.moduleUserKey }, select: ["id"] })
+                    : null;
+
+                const parentMenuItem = m.parentMenuItemUserKey
+                    ? await menuRepo.findOne({ where: { name: m.parentMenuItemUserKey }, select: ["id"] })
+                    : null;
+
+                // Check if a menu with this name already exists
+                const existing = await menuRepo.findOne({
+                    where: { name: m.name },
+                    select: ["id"],
+                });
+
+                // Build the entity data (without id)
+                const base = {
                     name: m.name,
                     displayName: m.displayName,
-                    action: m.actionUserKey
-                        ? await actionRepo.findOne({ where: { name: m.actionUserKey }, select: ["id"] })
-                        : null,
-                    module: m.moduleUserKey
-                        ? await moduleRepo.findOne({ where: { name: m.moduleUserKey }, select: ["id"] })
-                        : null,
-                    parentMenuItem: m.parentMenuItemUserKey
-                        ? await menuRepo.findOne({ where: { name: m.parentMenuItemUserKey }, select: ["id"] })
-                        : null,
-                });
-                await menuRepo.upsert(entity, ["name"]); // or ["userKey"]
+                    action,
+                    module,
+                    parentMenuItem,
+                };
+
+                // If existing, set its id so save() will perform an update, otherwise insert
+                const entity = menuRepo.create(
+                    existing ? { id: existing.id, ...base } : base,
+                );
+
+                await menuRepo.save(entity);
             }
 
             // 2) Fetch ids for batching
@@ -512,8 +531,7 @@ export class ModuleMetadataSeederService {
                 }
             }
 
-            // 4) Replace in bulk — QueryBuilder version
-
+            // 4) Replace in bulk — no orIgnore, safe for MSSQL
             // 4a) delete existing for affected menus
             const menuIds = [...new Set(joinRows.map(r => r.menuId))];
             if (menuIds.length) {
@@ -527,7 +545,6 @@ export class ModuleMetadataSeederService {
 
             // 4b) bulk insert all pairs
             if (joinRows.length) {
-                // Build objects with the exact column names used by the join table
                 const values = joinRows.map(r => ({
                     [MENU_ROLE_JOIN_TABLE_NAME_MENU_COL]: r.menuId,
                     [MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL]: r.roleId,
@@ -536,9 +553,9 @@ export class ModuleMetadataSeederService {
                 await trx
                     .createQueryBuilder()
                     .insert()
-                    .into(MENU_ROLE_JOIN_TABLE_NAME) // string table name
+                    .into(MENU_ROLE_JOIN_TABLE_NAME)
                     .values(values)
-                    .orIgnore() // optional if you have a UNIQUE(menuItemId, roleId) and want to skip dups
+                    // .orIgnore()  // ❌ remove this – it triggers unsupported onUpdate path
                     .execute();
             }
         });
