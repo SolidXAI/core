@@ -15,7 +15,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: "display_name" })
     displayName: string;
 
-    @Column({ name: "decription", nullable: true })
+    @Column({ name: "description", nullable: true, length: 1024 })
     description: string;
 
     /** int, char etc... */
