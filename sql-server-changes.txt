@@ -69,3 +69,17 @@
     modified:   src/entities/user-activity-history.entity.ts
     modified:   src/entities/user-view-metadata.entity.ts
     modified:   src/entities/view-metadata.entity.ts
+
+- Issues with defaultValue attribute on field metadata being a non string values. 
+
+  modified:   sql-server-changes.txt
+  modified:   src/seeders/seed-data/solid-core-metadata.json
+
+- description field given explicit length 1024
+  modified:   sql-server-changes.txt
+  modified:   src/entities/field-metadata.entity.ts
+
+- weird onUpdate fix TypeORM does not like for mssql seed menus issue
+
+  modified:   sql-server-changes.txt
+  modified:   src/seeders/module-metadata-seeder.service.ts
