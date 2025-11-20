@@ -12,15 +12,15 @@ export class MenuItemMetadata extends CommonEntity {
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;
     @Index()
-    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ModuleMetadata, { nullable: false })
     @JoinColumn({ referencedColumnName: 'id' })
     module: ModuleMetadata;
     @Index()
-    @ManyToOne(() => MenuItemMetadata, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => MenuItemMetadata, { nullable: true })
     @JoinColumn({ referencedColumnName: 'id' })
     parentMenuItem: MenuItemMetadata;
     @Index()
-    @ManyToOne(() => ActionMetadata, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => ActionMetadata, { nullable: true })
     @JoinColumn({ referencedColumnName: 'id' })
     action: ActionMetadata;
     @ManyToMany(() => RoleMetadata, roleMetadata => roleMetadata.menuItems, { cascade: true })

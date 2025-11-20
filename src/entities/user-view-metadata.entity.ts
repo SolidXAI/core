@@ -6,13 +6,13 @@ import { User } from 'src/entities/user.entity'
 @Entity("ss_user_view_metadata")
 export class UserViewMetadata extends CommonEntity {
     @Index()
-    @ManyToOne(() => User, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => User, { nullable: false })
     @JoinColumn()
     user: User;
     @Column({ name: "layout", type: "text", nullable: true })
     layout: any = "{}";
     @Index()
-    @ManyToOne(() => ViewMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ViewMetadata, { nullable: false })
     @JoinColumn()
     viewMetadata: ViewMetadata;
 }

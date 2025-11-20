@@ -18,11 +18,11 @@ export class ViewMetadata extends CommonEntity {
     @Column({ name: "layout", type: "text" })
     layout: any;
     @Index()
-    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ModuleMetadata, { nullable: false })
     @JoinColumn({ referencedColumnName: 'id' })
     module: ModuleMetadata;
     @Index()
-    @ManyToOne(() => ModelMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ModelMetadata, { nullable: false })
     @JoinColumn({ referencedColumnName: 'id' })
     model: ModelMetadata;
     @OneToMany(() => UserViewMetadata, userViewMetadata => userViewMetadata.viewMetadata, { cascade: true })

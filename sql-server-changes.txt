@@ -41,3 +41,31 @@
     modified:   src/entities/user.entity.ts
     modified:   src/helpers/model-metadata-helper.service.ts
     modified:   src/seeders/seed-data/solid-core-metadata.json
+
+- Removed all onDelete attributes from all entities. This now defaults to "no action" which will stop cascading deletes from happening.
+
+    modified:   src/entities/action-metadata.entity.ts
+    modified:   src/entities/ai-interaction.entity.ts
+    modified:   src/entities/chatter-message-details.entity.ts
+    modified:   src/entities/chatter-message.entity.ts
+    modified:   src/entities/common.entity.ts
+    modified:   src/entities/dashboard-question-sql-dataset-config.entity.ts
+    modified:   src/entities/dashboard-question.entity.ts
+    modified:   src/entities/dashboard-variable.entity.ts
+    modified:   src/entities/dashboard.entity.ts
+    modified:   src/entities/export-template.entity.ts
+    modified:   src/entities/export-transaction.entity.ts
+    modified:   src/entities/import-transaction-error-log.entity.ts
+    modified:   src/entities/import-transaction.entity.ts
+    modified:   src/entities/list-of-values.entity.ts
+    modified:   src/entities/media.entity.ts
+    modified:   src/entities/menu-item-metadata.entity.ts
+    modified:   src/entities/model-metadata.entity.ts
+    modified:   src/entities/mq-message.entity.ts
+    modified:   src/entities/saved-filters.entity.ts
+    modified:   src/entities/scheduled-job.entity.ts
+    modified:   src/entities/security-rule.entity.ts
+    modified:   src/entities/setting.entity.ts
+    modified:   src/entities/user-activity-history.entity.ts
+    modified:   src/entities/user-view-metadata.entity.ts
+    modified:   src/entities/view-metadata.entity.ts

@@ -1,11 +1,11 @@
 import { CommonEntity } from 'src/entities/common.entity'
-import {Entity, JoinColumn, ManyToOne, Index, Column} from 'typeorm';
+import { Entity, JoinColumn, ManyToOne, Index, Column } from 'typeorm';
 import { User } from 'src/entities/user.entity'
 
 @Entity("ss_ai_interactions")
 export class AiInteraction extends CommonEntity {
     @Index()
-    @ManyToOne(() => User, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => User, { nullable: false })
     @JoinColumn()
     user: User;
     @Index()
@@ -31,7 +31,7 @@ export class AiInteraction extends CommonEntity {
     @Column({ nullable: true, default: false })
     isApplied: boolean = false;
     @Index()
-    @ManyToOne(() => AiInteraction, { onDelete: "SET NULL", nullable: true })
+    @ManyToOne(() => AiInteraction, { nullable: true })
     @JoinColumn()
     parentInteraction: AiInteraction;
     @Index({ unique: true })
@@ -40,12 +40,12 @@ export class AiInteraction extends CommonEntity {
     @Column({ nullable: true, default: false })
     isAutoApply: boolean = false;
 
-@Column({ type: "integer", nullable: true })
-inputTokens: number;
+    @Column({ type: "integer", nullable: true })
+    inputTokens: number;
 
-@Column({ type: "integer", nullable: true })
-outputTokens: number;
+    @Column({ type: "integer", nullable: true })
+    outputTokens: number;
 
-@Column({ type: "integer", nullable: true })
-totalTokens: number;
+    @Column({ type: "integer", nullable: true })
+    totalTokens: number;
 }

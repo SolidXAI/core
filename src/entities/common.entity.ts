@@ -34,11 +34,11 @@ export abstract class CommonEntity {
 
     @Expose()
     @Type( () => require('./user.entity').User?.default ?? require('./user.entity').User )
-    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { onDelete: 'SET NULL', nullable: true })
+    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
     createdBy: User;
 
     @Expose()
     @Type( () => require('./user.entity').User?.default ?? require('./user.entity').User )
-    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { onDelete: 'SET NULL', nullable: true })
+    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
     updatedBy: User;    
 }

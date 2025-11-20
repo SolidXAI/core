@@ -54,7 +54,7 @@ export class ModelMetadata extends CommonEntity {
     // 1. Single field. 
     // 2. Composite field. 
     // 3. Auto generated human readable sequence. 
-    @ManyToOne(() => FieldMetadata, { onDelete: 'SET NULL' })
+    @ManyToOne(() => FieldMetadata, {})
     userKeyField: FieldMetadata;
 
     @Column({ default: false })
@@ -63,6 +63,6 @@ export class ModelMetadata extends CommonEntity {
     @Column({ default: false })
     isChild: boolean;
 
-    @ManyToOne(() => ModelMetadata, { onDelete: 'CASCADE' })
+    @ManyToOne(() => ModelMetadata, {})
     parentModel: ModelMetadata;
 }

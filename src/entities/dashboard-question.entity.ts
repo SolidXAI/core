@@ -16,7 +16,7 @@ export class DashboardQuestion extends CommonEntity {
     visualisedAs: string;
     @Column({ type: "varchar", nullable: true })
     providerName: string;
-    @ManyToOne(() => Dashboard, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => Dashboard, { nullable: true })
     @JoinColumn()
     dashboard: Dashboard;
     @OneToMany(() => DashboardQuestionSqlDatasetConfig, dashboardQuestionSqlDatasetConfig => dashboardQuestionSqlDatasetConfig.question, { cascade: true })

@@ -31,17 +31,17 @@ export class ActionMetadata extends CommonEntity {
     serverEndpoint: string;
 
     @Index()
-    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE" })
+    @ManyToOne(() => ModuleMetadata, {})
     @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })
     module: ModuleMetadata;
 
     @Index()
-    @ManyToOne(() => ModelMetadata, { onDelete: "CASCADE" })
+    @ManyToOne(() => ModelMetadata, {})
     @JoinColumn({ name: 'model_id', referencedColumnName: 'id' })
     model: ModelMetadata;
 
     @Index()
-    @ManyToOne(() => ViewMetadata, { onDelete: "CASCADE" })
+    @ManyToOne(() => ViewMetadata, {})
     @JoinColumn({ name: 'view_id', referencedColumnName: 'id' })
     view: ViewMetadata;
 }

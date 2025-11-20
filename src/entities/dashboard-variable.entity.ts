@@ -20,7 +20,7 @@ export class DashboardVariable extends CommonEntity {
     selectionDynamicProviderName: string;
     @Column({ nullable: true, default: true })
     isMultiSelect: boolean = true;
-    @ManyToOne(() => Dashboard, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => Dashboard, { nullable: true })
     @JoinColumn()
     dashboard: Dashboard;
     @Column({ type: "text", nullable: true })

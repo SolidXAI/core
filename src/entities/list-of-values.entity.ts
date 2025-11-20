@@ -16,7 +16,7 @@ export class ListOfValues extends CommonEntity {
     default: boolean = false;
     @Column({ type: "integer", nullable: true })
     sequence: number;
-    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => ModuleMetadata, { nullable: true })
     @JoinColumn()
     module: ModuleMetadata;
 }

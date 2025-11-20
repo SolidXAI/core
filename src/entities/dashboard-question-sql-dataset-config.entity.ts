@@ -17,7 +17,7 @@ export class DashboardQuestionSqlDatasetConfig extends CommonEntity {
     labelColumnName: string;
     @Column({ type: "varchar" })
     valueColumnName: string;
-    @ManyToOne(() => DashboardQuestion, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => DashboardQuestion, { nullable: false })
     @JoinColumn()
     question: DashboardQuestion;
     @Column({ type: "text", nullable: true })

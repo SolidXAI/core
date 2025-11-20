@@ -15,6 +15,6 @@ export class ExportTemplate extends CommonEntity {
     @Column({ type: "varchar" })
     fields: any;
     @Index()
-    @ManyToOne(() => ModelMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ModelMetadata, { nullable: false })
     modelMetadata: ModelMetadata;
 }
