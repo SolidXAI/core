@@ -14,7 +14,7 @@ export class SmsTemplate extends CommonEntity {
     smsProviderTemplateId: string;
     @Column({ name: "description", type: "text", nullable: true })
     description: string;
-    @Column({ name: "active", type: "boolean", nullable: true, default: true })
+    @Column({ name: "active", nullable: true, default: true })
     active: boolean = true;
     @Column({ name: "type", type: "varchar", nullable: true })
     type: string;

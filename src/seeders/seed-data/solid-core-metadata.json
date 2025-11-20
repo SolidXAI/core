@@ -102,7 +102,7 @@
             "name": "isSystem",
             "displayName": "Is System",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -225,7 +225,7 @@
             "name": "enableSoftDelete",
             "displayName": "Enable Soft Delete",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "true",
             "required": false,
             "unique": false,
@@ -239,7 +239,7 @@
             "name": "enableAuditTracking",
             "displayName": "Enable Audit Tracking",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -253,7 +253,7 @@
             "name": "internationalisation",
             "displayName": "Internationalisation",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -267,7 +267,7 @@
             "name": "draftPublishWorkflow",
             "displayName": "Draft Publish Workflow",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -313,7 +313,7 @@
             "name": "isSystem",
             "displayName": "Is System",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -326,7 +326,7 @@
             "name": "isChild",
             "displayName": "Is Child Model",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": false,
             "required": false,
             "unique": false,
@@ -475,7 +475,7 @@
             "name": "required",
             "displayName": "Required",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -489,7 +489,7 @@
             "name": "unique",
             "displayName": "Unique",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -503,7 +503,7 @@
             "name": "encrypt",
             "displayName": "Encrypt",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -543,7 +543,7 @@
             "name": "index",
             "displayName": "Index",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -596,7 +596,7 @@
             "name": "private",
             "displayName": "Private",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -691,7 +691,7 @@
             "name": "relationCreateInverse",
             "displayName": "Relation Create Inverse",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -874,7 +874,7 @@
             "name": "isSystem",
             "displayName": "Is System",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -888,7 +888,7 @@
             "name": "isMarkedForRemoval",
             "displayName": "Is Marked For Removal",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -915,7 +915,7 @@
             "name": "isUserKey",
             "displayName": "Is User Key",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -942,7 +942,7 @@
             "name": "isMultiSelect",
             "displayName": "Is MultiSelect",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -1021,7 +1021,7 @@
             "name": "isPublic",
             "displayName": "Is Public",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "required": false,
             "unique": false,
             "index": false,
@@ -1346,7 +1346,7 @@
             "name": "customIsModal",
             "displayName": "Custom Is Modal",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "required": false,
             "unique": false,
             "index": false,
@@ -1772,7 +1772,7 @@
             "name": "forcePasswordChange",
             "displayName": "Force Password Change",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -1863,7 +1863,7 @@
             "name": "active",
             "displayName": "Active",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "length": 512,
             "defaultValue": "false",
             "required": true,
@@ -2627,7 +2627,7 @@
             "displayName": "Is Active",
             "description": null,
             "type": "boolean",
-            "ormType": "boolean",
+            
             "isSystem": false,
             "defaultValue": null,
             "required": true,
@@ -3059,7 +3059,7 @@
             "name": "isPrivate",
             "displayName": "Is Private",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "required": false,
             "unique": false,
             "index": false,
@@ -3268,7 +3268,7 @@
             "name": "active",
             "displayName": "Active",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -3473,7 +3473,7 @@
             "name": "active",
             "displayName": "Active",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -3599,7 +3599,7 @@
             "name": "isPrivate",
             "displayName": "Is Private",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "required": false,
             "unique": false,
             "index": false,
@@ -3688,7 +3688,7 @@
             "name": "default",
             "displayName": "Default",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "required": false,
             "unique": false,
             "index": false,
@@ -4034,7 +4034,7 @@
             "name": "notifyOnEmail",
             "displayName": "Notify On Email",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -4409,7 +4409,7 @@
             "name": "isDefault",
             "displayName": "Is Default",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": true,
             "unique": false,
@@ -4635,7 +4635,7 @@
             "name": "isMultiSelect",
             "displayName": "Is Multi Select",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -5232,7 +5232,7 @@
             "name": "isApplied",
             "displayName": "Is Applied",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "required": false,
             "unique": false,
             "index": false,
@@ -5243,7 +5243,7 @@
             "name": "isAutoApply",
             "displayName": "Is Auto Apply",
             "type": "boolean",
-            "ormType": "boolean",
+            
             "required": false,
             "unique": false,
             "index": false,

@@ -28,7 +28,7 @@ export class AiInteraction extends CommonEntity {
     responseTimeMs: number;
     @Column({ type: "simple-json", nullable: true })
     metadata: any;
-    @Column({ type: "boolean", nullable: true, default: false })
+    @Column({ nullable: true, default: false })
     isApplied: boolean = false;
     @Index()
     @ManyToOne(() => AiInteraction, { onDelete: "SET NULL", nullable: true })
@@ -37,7 +37,7 @@ export class AiInteraction extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     externalId: string;
-    @Column({ type: "boolean", nullable: true, default: false })
+    @Column({ nullable: true, default: false })
     isAutoApply: boolean = false;
 
 @Column({ type: "integer", nullable: true })

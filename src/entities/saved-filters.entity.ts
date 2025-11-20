@@ -10,7 +10,7 @@ export class SavedFilters extends CommonEntity {
     filterQueryJson: any;
     @Column({ type: "varchar" })
     name: string;
-    @Column({ type: "boolean", nullable: true, default: false })
+    @Column({ nullable: true, default: false })
     isPrivate: boolean = false;
     @ManyToOne(() => User, { onDelete: "RESTRICT", nullable: false })
     @JoinColumn()

@@ -12,7 +12,7 @@ export class ListOfValues extends CommonEntity {
     display: string;
     @Column({ type: "varchar" })
     description: string;
-    @Column({ type: "boolean", nullable: true, default: false })
+    @Column({ nullable: true, default: false })
     default: boolean = false;
     @Column({ type: "integer", nullable: true })
     sequence: number;

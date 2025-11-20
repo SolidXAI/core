@@ -26,7 +26,7 @@ export class User extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     // don't send to client
     password: string;
-    @Column({ type: "boolean", nullable: true, default: true })
+    @Column({ nullable: true, default: true })
     @Expose()
     forcePasswordChange: boolean = true;
     @Column({ type: "varchar", default: "local" })
@@ -44,7 +44,7 @@ export class User extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     // don't send to client
     googleProfilePicture: string;
-    @Column({ type: "boolean", default: true })
+    @Column({ default: true })
     @Expose()
     active: boolean = true;
     @Column({ type: "timestamp", nullable: true })

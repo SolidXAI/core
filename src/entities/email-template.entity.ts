@@ -15,7 +15,7 @@ export class EmailTemplate extends CommonEntity {
     subject: string = "{}";
     @Column({ name: "description", type: "text", nullable: true })
     description: string;
-    @Column({ name: "active", type: "boolean", nullable: true, default: true })
+    @Column({ name: "active", nullable: true, default: true })
     active: boolean = true;
     @OneToMany(() => EmailAttachment, (attachment) => attachment.emailTemplate, { cascade: true })
     attachments: EmailAttachment[];

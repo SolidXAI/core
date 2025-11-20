@@ -7,7 +7,7 @@ export class ScheduledJob extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     scheduleName: string;
-    @Column({ type: "boolean", default: false })
+    @Column({ default: false })
     isActive: boolean = false;
     @Column({ type: "varchar" })
     frequency: string;

@@ -24,7 +24,7 @@ export class ActionMetadata extends CommonEntity {
     @Column({ name: "custom_component", type: "varchar", nullable: true })
     customComponent: string;
 
-    @Column({ name: "custom_is_modal", type: "boolean", nullable: true })
+    @Column({ name: "custom_is_modal", nullable: true })
     customIsModal: boolean;
 
     @Column({ name: "server_endpoint", type: "varchar", nullable: true })
