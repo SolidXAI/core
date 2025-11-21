@@ -7,7 +7,7 @@ import { RoleMetadata } from 'src/entities/role-metadata.entity';
 @Entity("ss_menu_item_metadata")
 export class MenuItemMetadata extends CommonEntity {
     @Index({ unique: true })
-    @Column({ name: "name", type: "varchar", unique: true })
+    @Column({ name: "name", type: "varchar" })
     name: string;
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;

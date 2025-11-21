@@ -30,6 +30,6 @@ export class DashboardQuestion extends CommonEntity {
     @Column({ type: "integer", nullable: true })
     sequenceNumber: number;
     @Index({ unique: true })
-    @Column({ type: "varchar", nullable: true })
+    @Column({ type: "varchar", nullable: false })
     externalId: string;
 }

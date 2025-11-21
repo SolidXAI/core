@@ -5,7 +5,7 @@ import { User } from 'src/entities/user.entity'
 @Entity("ss_setting")
 export class Setting extends CommonEntity {
     @Index({ unique: true })
-    @Column({ type: "varchar", nullable: true })
+    @Column({ type: "varchar", nullable: false })
     key: string;
     @Column({ type: "varchar", nullable: true })
     value: string;

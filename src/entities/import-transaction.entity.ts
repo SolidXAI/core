@@ -8,9 +8,6 @@ export class ImportTransaction extends CommonEntity {
     @Index()
     @Column({ type: "varchar", nullable: true, default: "draft" })
     status: string = "draft";
-    @Index({ unique: true })
-    @Column({ type: "varchar", nullable: true })
-    importTransactionId: string;
     @Column({ type: "text", nullable: true })
     mapping: any;
     @Index()

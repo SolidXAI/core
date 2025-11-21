@@ -7,7 +7,7 @@ import { UserViewMetadata } from 'src/entities/user-view-metadata.entity'
 @Entity("ss_view_metadata")
 export class ViewMetadata extends CommonEntity {
     @Index({ unique: true })
-    @Column({ name: "name", type: "varchar", unique: true })
+    @Column({ name: "name", type: "varchar"})
     name: string;
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;

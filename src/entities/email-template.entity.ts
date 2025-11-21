@@ -6,7 +6,7 @@ import { getColumnType } from 'src/helpers/typeorm-db-helper';
 @Entity("ss_email_template")
 export class EmailTemplate extends CommonEntity {
     @Index({ unique: true })
-    @Column({ name: "name", type: "varchar", unique: true })
+    @Column({ name: "name", type: "varchar"})
     name: string;
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;

@@ -4187,19 +4187,6 @@
             "defaultValue": "draft"
           },
           {
-            "name": "importTransactionId",
-            "displayName": "Transaction Id",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 128,
-            "required": false,
-            "unique": true,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
             "name": "fileLocation",
             "displayName": "File Location",
             "type": "mediaSingle",
