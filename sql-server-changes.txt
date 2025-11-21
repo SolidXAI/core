@@ -83,3 +83,6 @@
 
   modified:   sql-server-changes.txt
   modified:   src/seeders/module-metadata-seeder.service.ts
+
+- If a field has been marked as unique and nullable, we should not add the @Unique decorator
+ - removed such instances in solid core
