@@ -12,7 +12,7 @@ export class SavedFilters extends CommonEntity {
     name: string;
     @Column({ nullable: true, default: false })
     isPrivate: boolean = false;
-    @ManyToOne(() => User, { nullable: false })
+    @ManyToOne(() => User, { nullable: true })
     @JoinColumn()
     user: User;
     @ManyToOne(() => ModelMetadata, { nullable: false })
@@ -21,4 +21,6 @@ export class SavedFilters extends CommonEntity {
     @ManyToOne(() => ViewMetadata, { nullable: false })
     @JoinColumn()
     view: ViewMetadata;
+    @Column({ name: "description", type: "text", nullable: true })
+    description: string;
 }
