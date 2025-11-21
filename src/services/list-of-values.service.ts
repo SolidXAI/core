@@ -14,13 +14,16 @@ import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { ListOfValuesRepository } from 'src/repository/list-of-values.repository';
 import { ListOfValues } from '../entities/list-of-values.entity';
+import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
+import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
+import { ListOfValuesMapper } from 'src/mappers/list-of-values-mapper';
 
 
 @Injectable()
 export class ListOfValuesService extends CRUDService<ListOfValues> {
   logger: any;
-  moduleMetadataHelperService: any;
-  listOfValuesMapper: any;
+  // moduleMetadataHelperService: any;
+  // listOfValuesMapper: any;
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
@@ -28,12 +31,15 @@ export class ListOfValuesService extends CRUDService<ListOfValues> {
     readonly fileService: FileService,
     readonly discoveryService: DiscoveryService,
     readonly crudHelperService: CrudHelperService,
+    
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(ListOfValues, 'default')
     // readonly repo: Repository<ListOfValues>,
     readonly repo: ListOfValuesRepository,
-    readonly moduleRef: ModuleRef
+    readonly moduleRef: ModuleRef,
+    private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
+    readonly listOfValuesMapper: ListOfValuesMapper,
 
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'listOfValues', 'solid-core', moduleRef);
