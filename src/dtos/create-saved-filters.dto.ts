@@ -39,4 +39,8 @@ export class CreateSavedFiltersDto {
     @IsOptional()
     @ApiProperty({ description: "This is the view related to saved filter." })
     viewUserKey: string;
+    @IsString()
+    @IsOptional()
+    @ApiProperty({ description: "A brief description providing additional context about the saved filter’s purpose or usage within the view." })
+    description: string;
 }
