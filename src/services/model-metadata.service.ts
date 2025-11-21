@@ -1,5 +1,5 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
+import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
@@ -13,7 +13,6 @@ import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
-import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { UpdateModelMetaDataDto } from '../dtos/update-model-metadata.dto';
 import { ActionMetadata } from '../entities/action-metadata.entity';
@@ -35,11 +34,11 @@ import { RoleMetadataService } from './role-metadata.service';
 export class ModelMetadataService {
   private logger = new Logger('ModelMetadataService');
   constructor(
-    // @InjectRepository(ModelMetadata)
-    // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+    @InjectRepository(ModelMetadata)
+    private readonly modelMetadataRepo: Repository<ModelMetadata>,
     // @InjectRepository(FieldMetadata)
     // private readonly fieldMetadataRepo: Repository<FieldMetadata>,
-    private readonly modelMetadataRepo: ModelMetadataRepository,
+    // private readonly modelMetadataRepo: ModelMetadataRepository, //FIXME: circular dependency issue
     private readonly fieldMetadataRepo: FieldMetadataRepository,
     private readonly schematicService: SchematicService,
     @InjectDataSource()
@@ -59,8 +58,8 @@ export class ModelMetadataService {
     let { limit, offset } = basicFilterDto;
 
     // Create above query on pincode table using query builder
-    var qb: SelectQueryBuilder<ModelMetadata> = await this.modelMetadataRepo.createSecurityRuleAwareQueryBuilder(alias)
-    qb = await this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
+    var qb: SelectQueryBuilder<ModelMetadata> =  this.modelMetadataRepo.createQueryBuilder(alias)
+    qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
 
     // Get the records and the count
     const [entities, count] = await qb.getManyAndCount();

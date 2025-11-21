@@ -3,15 +3,18 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ModelMetadataRepository } from "src/repository/model-metadata.repository";
 import { SolidRegistry } from "./solid-registry";
+import { InjectRepository } from "@nestjs/typeorm";
+import { ModelMetadata } from "src/entities/model-metadata.entity";
+import { Repository } from "typeorm";
 
 @Injectable()
 export class ModelMetadataHelperService {
     private readonly logger = new Logger(ModelMetadataHelperService.name);
 
     constructor(private readonly registry: SolidRegistry,
-        // @InjectRepository(ModelMetadata)
-        // private readonly modelMetadataRepo: Repository<ModelMetadata>,
-        private readonly modelMetadataRepo: ModelMetadataRepository,
+        @InjectRepository(ModelMetadata)
+        private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        // private readonly modelMetadataRepo: ModelMetadataRepository, //FIXME: circular dependency
     ) {
     }
 
