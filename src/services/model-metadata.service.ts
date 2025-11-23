@@ -559,50 +559,52 @@ export class ModelMetadataService {
       return;
     }
 
-    this.logger.log(`Cleaning up for model: ${modelEntity.singularName} belonging to module: ${modelEntity.module.name}`);
+    this.logger.log(`Cleaning up for model: ${modelEntity.singularName} belonging to module: ${modelEntity.module?.name}`);
 
-    const modulePath = await this.moduleMetadataHelperService.getModulePath(modelEntity.module.name);
-    // /Users/harishpatel/Code/javascript/school-fees-portal/solid-api/src/solid-core
-    this.logger.log(`Module path: ${modulePath}`);
+    const modulePath = await this.moduleMetadataHelperService.getModulePath(modelEntity.module?.name);
+    if (modulePath) {
+      // /Users/harishpatel/Code/javascript/school-fees-portal/solid-api/src/solid-core
+      this.logger.log(`Module path: ${modulePath}`);
 
-    const filesToDelete = [];
-    // <singularName>.entity.ts | The TypeORM model that needs to be deleted. | Automatic
-    const entityFilePath = `${modulePath}/entities/${dasherize(modelEntity.singularName)}.entity.ts`;
-    filesToDelete.push(entityFilePath);
-    this.logger.log(`About to delete entity file path: ${entityFilePath}`);
+      const filesToDelete = [];
+      // <singularName>.entity.ts | The TypeORM model that needs to be deleted. | Automatic
+      const entityFilePath = `${modulePath}/entities/${dasherize(modelEntity.singularName)}.entity.ts`;
+      filesToDelete.push(entityFilePath);
+      this.logger.log(`About to delete entity file path: ${entityFilePath}`);
 
-    // <singularName>.create.dto.ts | The TypeORM model that needs to be deleted. | Automatic
-    const createDtoFilePath = `${modulePath}/dtos/create-${dasherize(modelEntity.singularName)}.dto.ts`;
-    filesToDelete.push(createDtoFilePath);
-    this.logger.log(`About to delete create DTO file path: ${createDtoFilePath}`);
+      // <singularName>.create.dto.ts | The TypeORM model that needs to be deleted. | Automatic
+      const createDtoFilePath = `${modulePath}/dtos/create-${dasherize(modelEntity.singularName)}.dto.ts`;
+      filesToDelete.push(createDtoFilePath);
+      this.logger.log(`About to delete create DTO file path: ${createDtoFilePath}`);
 
-    // <singularName>.update.dto.ts | The TypeORM model that needs to be deleted. | Automatic
-    const updateDtoFilePath = `${modulePath}/dtos/update-${dasherize(modelEntity.singularName)}.dto.ts`;
-    filesToDelete.push(updateDtoFilePath);
-    this.logger.log(`About to delete update DTO file path: ${updateDtoFilePath}`);
+      // <singularName>.update.dto.ts | The TypeORM model that needs to be deleted. | Automatic
+      const updateDtoFilePath = `${modulePath}/dtos/update-${dasherize(modelEntity.singularName)}.dto.ts`;
+      filesToDelete.push(updateDtoFilePath);
+      this.logger.log(`About to delete update DTO file path: ${updateDtoFilePath}`);
 
-    // <singularName>.repository.ts | The TypeORM model that needs to be deleted. | Automatic
-    const repositoryFilePath = `${modulePath}/repositories/${dasherize(modelEntity.singularName)}.repository.ts`;
-    filesToDelete.push(repositoryFilePath);
-    this.logger.log(`About to delete repository file path: ${repositoryFilePath}`);
+      // <singularName>.repository.ts | The TypeORM model that needs to be deleted. | Automatic
+      const repositoryFilePath = `${modulePath}/repositories/${dasherize(modelEntity.singularName)}.repository.ts`;
+      filesToDelete.push(repositoryFilePath);
+      this.logger.log(`About to delete repository file path: ${repositoryFilePath}`);
 
-    // <singularName>.service.ts | The TypeORM model that needs to be deleted. | Automatic
-    const serviceFilePath = `${modulePath}/services/${dasherize(modelEntity.singularName)}.service.ts`;
-    filesToDelete.push(serviceFilePath);
-    this.logger.log(`About to delete service file path: ${serviceFilePath}`);
+      // <singularName>.service.ts | The TypeORM model that needs to be deleted. | Automatic
+      const serviceFilePath = `${modulePath}/services/${dasherize(modelEntity.singularName)}.service.ts`;
+      filesToDelete.push(serviceFilePath);
+      this.logger.log(`About to delete service file path: ${serviceFilePath}`);
 
-    // <singularName>.controller.ts | The TypeORM model that needs to be deleted. | Automatic
-    const controllerFilePath = `${modulePath}/controllers/${dasherize(modelEntity.singularName)}.controller.ts`;
-    filesToDelete.push(controllerFilePath);
-    this.logger.log(`About to delete controller file path: ${controllerFilePath}`);
+      // <singularName>.controller.ts | The TypeORM model that needs to be deleted. | Automatic
+      const controllerFilePath = `${modulePath}/controllers/${dasherize(modelEntity.singularName)}.controller.ts`;
+      filesToDelete.push(controllerFilePath);
+      this.logger.log(`About to delete controller file path: ${controllerFilePath}`);
 
-    for (let i = 0; i < filesToDelete.length; i++) {
-      const fileToDelete = filesToDelete[i];
-      try {
-        await fs.unlink(fileToDelete);
-        this.logger.log(`Deleted file: ${fileToDelete}`);
-      } catch (error) {
-        this.logger.error(`Error deleting file: ${fileToDelete}`, error);
+      for (let i = 0; i < filesToDelete.length; i++) {
+        const fileToDelete = filesToDelete[i];
+        try {
+          await fs.unlink(fileToDelete);
+          this.logger.log(`Deleted file: ${fileToDelete}`);
+        } catch (error) {
+          this.logger.error(`Error deleting file: ${fileToDelete}`, error);
+        }
       }
     }
 
@@ -659,7 +661,7 @@ export class ModelMetadataService {
     await viewRepo.delete({ model: { id: modelEntity.id } })
 
     // <moduleName>-metadata.json | Remove references to this model in the model metadata, menu, action & view sections. | Automatic
-    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.module.name);
+    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.module?.name);
     const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
     if (metaData) {
       const existingModelIndex = metaData.moduleMetadata.models.findIndex(
@@ -672,13 +674,13 @@ export class ModelMetadataService {
       }
 
       // Remove references to this model in the menu, action & view sections.
-      metaData.moduleMetadata.menus = metaData.moduleMetadata.menus.filter(
+      metaData.moduleMetadata.menus = metaData.moduleMetadata?.menus?.filter(
         (menu: any) => menu.modelUserKey !== modelEntity.singularName
       );
-      metaData.moduleMetadata.actions = metaData.moduleMetadata.actions.filter(
+      metaData.moduleMetadata.actions = metaData.moduleMetadata?.actions?.filter(
         (action: any) => action.modelUserKey !== modelEntity.singularName
       );
-      metaData.moduleMetadata.views = metaData.moduleMetadata.views.filter(
+      metaData.moduleMetadata.views = metaData.moduleMetadata?.views?.filter(
         (view: any) => view.modelUserKey !== modelEntity.singularName
       );
 
