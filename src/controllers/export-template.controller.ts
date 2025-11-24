@@ -6,6 +6,8 @@ import { CreateExportTemplateDto } from '../dtos/create-export-template.dto';
 import { UpdateExportTemplateDto } from '../dtos/update-export-template.dto';
 import { Response } from 'express';
 import { StartExportSyncDto } from 'src/dtos/export.dto';
+import { ActiveUser } from 'src/decorators/active-user.decorator';
+import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 
 @ApiTags('Solid Core') 
 @Controller('export-template') //FIXME: Change this to the model plural name 
@@ -76,7 +78,7 @@ export class ExportTemplateController {
 
   @ApiBearerAuth("jwt")
   @Post('/startExport/sync')
-  async startExportSync(@Body() dto: StartExportSyncDto, @Res() res: Response) {
+  async startExportSync(@Body() dto: StartExportSyncDto, @Res() res: Response,  @ActiveUser() activeUser: ActiveUserData) {
     const { filters, ...rest } = dto;
     let updateDto = { ...rest };
     // Check if templateName is present → create template
@@ -84,7 +86,7 @@ export class ExportTemplateController {
       const newTemplate = await this.service.create(updateDto, []);
       updateDto = { ...updateDto, id: newTemplate.id };
     }
-    const exportFileInfo = await this.service.startExportSync(updateDto, filters);
+    const exportFileInfo = await this.service.startExportSync(updateDto, filters, activeUser);
     if (exportFileInfo.exportStream === null) {
       throw new InternalServerErrorException("Export stream is null");
     }

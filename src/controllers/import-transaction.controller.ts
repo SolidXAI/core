@@ -5,6 +5,8 @@ import { ImportFormat, ImportTransactionService } from '../services/import-trans
 import { CreateImportTransactionDto } from '../dtos/create-import-transaction.dto';
 import { UpdateImportTransactionDto } from '../dtos/update-import-transaction.dto';
 import { Response } from 'express';
+import { ActiveUser } from 'src/decorators/active-user.decorator';
+import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -124,8 +126,9 @@ export class ImportTransactionController {
 
   @ApiBearerAuth("jwt")
   @Post(':id/start-import/sync')
-  async startImportSync(@Param('id') id: string) {
-    return this.service.startImportSync(+id);
+  async startImportSync(@Param('id') id: string, @ActiveUser() activeUser: ActiveUserData) {
+    console.log("Active User in startImportSync:", activeUser);
+    return this.service.startImportSync(+id, activeUser);
   }
 
   @ApiBearerAuth("jwt")

@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
@@ -30,6 +30,9 @@ import { ExcelService } from './excel.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { getUserExcludedFields } from 'src/helpers/user-helper';
+import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
+import { pascalCase } from 'change-case';
+
 interface ImportTemplateFileInfo {
   stream: NodeJS.ReadableStream;
   fileName: string;
@@ -132,10 +135,10 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     const allFields = await this.modelMetadataHelperService.loadFieldHierarchy(
       modelMetadata.singularName,
     );
-  
+
     // Replace original fields with full hierarchy fields
     // modelMetadata.fields = allFields;  
-   
+
     // Create a header row with the display names of the fields, excluding the media fields,computed fields
     const headers = this.fieldsAllowedForImport(allFields)
       .map(field => field.displayName);
@@ -181,8 +184,8 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     );
 
     const systemFieldNames = this.modelMetadataHelperService
-    .getSystemFieldsMetadata()
-    .map(field => field.name);
+      .getSystemFieldsMetadata()
+      .map(field => field.name);
 
     const userExcluded = getUserExcludedFields();
     // Replace modelMetadata.fields with combined (child + parent) fields
@@ -202,16 +205,16 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
 
     // Iterate through the fields and populate the standard instructions
     for (const field of allFields) {
-       // Skip system fields
+      // Skip system fields
       if (systemFieldNames.includes(field.name)) {
         continue;
-      }   
-      
+      }
+
       // Skip excluded user fields (NO model name check needed)
       if (userExcluded.includes(field.name)) {
         continue;
       }
-      
+
       // if (field.isSystem) continue; // Skip system fields
       if (field.required) {
         standardInstructions.requiredFields.push(field.displayName);
@@ -290,9 +293,22 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     };
   }
 
-  async startImportSync(importTransactionId: number): Promise<ImportSyncResult> {
+  async startImportSync(importTransactionId: number, activeUser: ActiveUserData): Promise<ImportSyncResult> {
     // Load the import transaction for the given ID
     const importTransaction = await this.loadImportTransaction(importTransactionId);
+    const modelName = pascalCase(importTransaction.modelMetadata.singularName);
+    const permissionKey = `${modelName}Controller.insertMany`;
+
+    const userPermissions = activeUser.permissions ?? [];
+    const hasPermission = Array.isArray(userPermissions)
+      ? userPermissions.includes(permissionKey)
+      : userPermissions[permissionKey] === true;
+
+    if (!hasPermission) {
+      throw new ForbiddenException(
+        `Missing permission: ${permissionKey}`
+      );
+    }
 
     // Get the import file media object from the import transaction
     const importFileMediaObject = this.getImportFileObject(importTransaction);
@@ -431,10 +447,10 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   }
 
   private fieldsAllowedForImport(fields: FieldMetadata[]): FieldMetadata[] {
-     // Get system field names (e.g. id, createdAt, updatedAt...)
+    // Get system field names (e.g. id, createdAt, updatedAt...)
     const systemFieldNames = this.modelMetadataHelperService
-    .getSystemFieldsMetadata()
-    .map(field => field.name);
+      .getSystemFieldsMetadata()
+      .map(field => field.name);
 
     const userExcluded = getUserExcludedFields();
 
@@ -722,10 +738,10 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         return dtoRecord;
       }
       // Use flexible date parser
-     this.logger.verbose(cellValue,'cellValue');
+      this.logger.verbose(cellValue, 'cellValue');
 
       const dateValue = parseFlexibleDate(cellValue);
-  this.logger.verbose(dateValue,'dateValue');
+      this.logger.verbose(dateValue, 'dateValue');
 
       if (!dateValue) {
         throw new Error(
