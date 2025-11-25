@@ -354,7 +354,71 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         };
 
         // Orm Data type and Solid Dat Type Mapping
-        const ormFieldTypeForSolid = {
+        const ormFieldTypeForSolid = this.getOrmFieldTypes();
+
+        // Fetch Data Source Type 
+        const dataSourceTypes = Object.keys(ormFieldTypeForSolid); // ["psql"]
+
+        const fieldTypes = Object.entries(ormFieldTypeForSolid.postgres).map(([key, value]) => ({
+            type: key,
+            label: key,
+            value: key,
+            fieldType: key,
+            ormTypes: value.ormTypes,
+            fields: this.fetchCurrentFields(key)
+        }));
+
+        const dataSource = this.solidRegistry.getSolidDatabaseModules().map((solidDatabaseModule) => {
+            return {
+                'name': solidDatabaseModule.instance.name(),
+                'type': solidDatabaseModule.instance.type()
+            }
+        });
+
+        // Creating response arrays for each enum
+        // Get all selection providers. 
+        const sps = [];
+        const selectionProviders = this.solidRegistry.getSelectionProviders();
+        for (let i = 0; i < selectionProviders.length; i++) {
+            const selectionProvider = selectionProviders[i];
+            sps.push({
+                provider: selectionProvider.instance.name(),
+                help: selectionProvider.instance.help(),
+            });
+        }
+
+        const cps = [];
+        const computedProviders = this.solidRegistry.getComputedFieldProviders();
+        for (let i = 0; i < computedProviders.length; i++) {
+            const computedProvider = computedProviders[i];
+            cps.push({
+                provider: computedProvider.instance.name(),
+                help: computedProvider.instance.help(),
+            });
+        }
+
+        const r = {
+            // Field Types with ormtypes, available fields  
+            fieldTypes: fieldTypes,
+            encryptionTypes: enumToResponseArray(EncryptionType),
+            ormType: ormFieldTypeForSolid,
+            decryptWhenTypes: enumToResponseArray(DecryptWhenType),
+            mediaTypes: enumToResponseArray(MediaType),
+            relationTypes: enumToResponseArray(RelationType),
+            selectionDynamicProviders: sps,
+            computedProviders: cps,
+            cascadeTypes: enumToResponseArray(CascadeType),
+            selectionValueTypes: enumToResponseArray(SelectionValueType),
+            computedFieldValueTypes: enumToResponseArray(ComputedFieldValueType),
+            dataSourceType: dataSourceTypes,
+            dataSource: dataSource,
+        };
+
+        return r
+    }
+
+    private getOrmFieldTypes() {
+        return {
             "postgres": {
                 // Numeric types
                 "int": {
@@ -380,6 +444,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 "json": {
                     "ormTypes": [
                         // { label: PSQLType.simplejson, description: "Creates DB agnostic column for storing json style data." },
+                        { label: MSSQLType.simplejson, description: "Creates DB agnostic column for storing json style data." },
                         { label: PSQLType.json, description: "Stores JSON data without indexing." },
                         { label: PSQLType.jsonb, description: "Stores JSON data with indexing for faster queries." }
                     ]
@@ -466,21 +531,22 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 // Text types
                 "shortText": {
                     ormTypes: [
-                        { label: MSSQLType.varchar, description: "A variable-length string for short text." }
+                        { label: MSSQLType.nvarchar, description: "A variable-length string for short text." }
                     ]
                 },
                 "longText": {
                     ormTypes: [
-                        { label: MSSQLType.text, description: "A large or unbounded string type." }
+                        { label: MSSQLType.nvarchar, description: "A large or unbounded string type." }
                     ]
                 },
                 "richText": {
                     ormTypes: [
-                        { label: MSSQLType.text, description: "A large text field for formatted or long content." }
+                        { label: MSSQLType.nvarchar, description: "A large text field for formatted or long content." }
                     ]
                 },
                 "json": {
                     ormTypes: [
+                        { label: MSSQLType.simplejson, description: "Creates DB agnostic column for storing json style data." },
                         { label: MSSQLType.nvarchar, description: "Stores JSON data as string (MSSQL doesn't have native JSON type)." }
                     ]
                 },
@@ -532,31 +598,31 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 // Email and password
                 "email": {
                     ormTypes: [
-                        { label: MSSQLType.varchar, description: "Stores email addresses." }
+                        { label: MSSQLType.nvarchar, description: "Stores email addresses." }
                     ]
                 },
                 "password": {
                     ormTypes: [
-                        { label: MSSQLType.varchar, description: "Stores hashed or plain-text passwords." }
+                        { label: MSSQLType.nvarchar, description: "Stores hashed or plain-text passwords." }
                     ]
                 },
 
                 // Selection types
                 "selectionStatic": {
                     ormTypes: [
-                        { label: MSSQLType.varchar, description: "Used for predefined selection options." }
+                        { label: MSSQLType.nvarchar, description: "Used for predefined selection options." }
                     ]
                 },
                 "selectionDynamic": {
                     ormTypes: [
-                        { label: MSSQLType.varchar, description: "Used for dynamic selection options." }
+                        { label: MSSQLType.nvarchar, description: "Used for dynamic selection options." }
                     ]
                 },
 
                 // Computed and external ID
                 "computed": {
                     ormTypes: [
-                        { label: MSSQLType.varchar, description: "Represents computed or derived fields." }
+                        { label: MSSQLType.nvarchar, description: "Represents computed or derived fields." }
                     ]
                 },
                 "uuid": {
@@ -565,68 +631,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     ]
                 }
             }
-
         };
-
-        // Fetch Data Source Type 
-        const dataSourceTypes = Object.keys(ormFieldTypeForSolid); // ["psql"]
-
-        const fieldTypes = Object.entries(ormFieldTypeForSolid.postgres).map(([key, value]) => ({
-            type: key,
-            label: key,
-            value: key,
-            fieldType: key,
-            ormTypes: value.ormTypes,
-            fields: this.fetchCurrentFields(key)
-        }));
-
-        const dataSource = this.solidRegistry.getSolidDatabaseModules().map((solidDatabaseModule) => {
-            return {
-                'name': solidDatabaseModule.instance.name(),
-                'type': solidDatabaseModule.instance.type()
-            }
-        });
-
-        // Creating response arrays for each enum
-        // Get all selection providers. 
-        const sps = [];
-        const selectionProviders = this.solidRegistry.getSelectionProviders();
-        for (let i = 0; i < selectionProviders.length; i++) {
-            const selectionProvider = selectionProviders[i];
-            sps.push({
-                provider: selectionProvider.instance.name(),
-                help: selectionProvider.instance.help(),
-            });
-        }
-
-        const cps = [];
-        const computedProviders = this.solidRegistry.getComputedFieldProviders();
-        for (let i = 0; i < computedProviders.length; i++) {
-            const computedProvider = computedProviders[i];
-            cps.push({
-                provider: computedProvider.instance.name(),
-                help: computedProvider.instance.help(),
-            });
-        }
-
-        const r = {
-            // Field Types with ormtypes, available fields  
-            fieldTypes: fieldTypes,
-            encryptionTypes: enumToResponseArray(EncryptionType),
-            ormType: ormFieldTypeForSolid,
-            decryptWhenTypes: enumToResponseArray(DecryptWhenType),
-            mediaTypes: enumToResponseArray(MediaType),
-            relationTypes: enumToResponseArray(RelationType),
-            selectionDynamicProviders: sps,
-            computedProviders: cps,
-            cascadeTypes: enumToResponseArray(CascadeType),
-            selectionValueTypes: enumToResponseArray(SelectionValueType),
-            computedFieldValueTypes: enumToResponseArray(ComputedFieldValueType),
-            dataSourceType: dataSourceTypes,
-            dataSource: dataSource,
-        };
-
-        return r
     }
 
     async fetchCurrentFieldsBasedOnType(type: string) {
