@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -60,10 +61,6 @@ export enum SolidFieldType {
   computed = 'computed',
 
   uuid = 'uuid'
-}
-
-export enum OrmType {
-  MySQLType,
 }
 
 export enum MySQLType { //FIXME Currently this type is being used in the definition, Need to use OrmType instead
@@ -136,6 +133,16 @@ export enum MSSQLType {
   time = "time",
   uniqueidentifier = "uniqueidentifier"
 }
+
+export const ALL_ORM_TYPES = [
+  ...Object.values(PSQLType),
+  ...Object.values(MSSQLType),
+  ...Object.values(MySQLType),
+] as const;
+
+export type OrmType = typeof ALL_ORM_TYPES[number];
+
+// export type OrmType = PSQLType | MySQLType | MSSQLType;
 
 export enum EncryptionType {
   aes128 = 'aes-128',
@@ -233,9 +240,9 @@ export class CreateFieldMetadataDto {
 
   //For all types of fields
   @ApiProperty({ description: 'Field can have orm types specific to your database', })
-  @IsEnum(PSQLType)
+  @IsIn(ALL_ORM_TYPES)
   @IsOptional()
-  readonly ormType: PSQLType;
+  readonly ormType: OrmType;
 
   @ApiProperty({ description: 'Length of the field. Only for type=text' })
   @IsInt()
