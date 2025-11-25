@@ -35,7 +35,8 @@ export class ModelMetadataSubscriber implements EntitySubscriberInterface<ModelM
 
 
   private systemFieldMetadataToBeAdded(event: InsertEvent<ModelMetadata>) {
-    const systemFieldsDefaultMetadata = this.modelHelperService.getSystemFieldsMetadata();
+    const isLegacyTable = event.entity.isLegacyTable;
+    const systemFieldsDefaultMetadata = this.modelHelperService.getSystemFieldsMetadata(isLegacyTable);
     // map and add the model as event.entity for the above metadata
     const systemFieldsMetadata = systemFieldsDefaultMetadata.map(field => ({
       ...field,
