@@ -31,7 +31,7 @@ import { SolidIntrospectService } from './solid-introspect.service';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { getUserExcludedFields } from 'src/helpers/user-helper';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
-import { pascalCase } from 'change-case';
+import {upperFirst, camelCase} from 'lodash';
 
 interface ImportTemplateFileInfo {
   stream: NodeJS.ReadableStream;
@@ -296,7 +296,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   async startImportSync(importTransactionId: number, activeUser: ActiveUserData): Promise<ImportSyncResult> {
     // Load the import transaction for the given ID
     const importTransaction = await this.loadImportTransaction(importTransactionId);
-    const modelName = pascalCase(importTransaction.modelMetadata.singularName);
+    const modelName = upperFirst(camelCase(importTransaction.modelMetadata.singularName));
     const permissionKey = `${modelName}Controller.insertMany`;
 
     const userPermissions = activeUser.permissions ?? [];

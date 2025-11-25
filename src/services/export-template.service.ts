@@ -21,14 +21,14 @@ import { ExportTransactionFileInfo, ExportTransactionService } from './export-tr
 import { UpdateExportTemplateDto } from 'src/dtos/update-export-template.dto';
 import { ExportTemplateRepository } from 'src/repository/export-template.repository';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
-import { pascalCase } from 'change-case';
+import {upperFirst, camelCase} from 'lodash';
 
 @Injectable()
 export class ExportTemplateService extends CRUDService<ExportTemplate>{
   async startExportSync(updateDto: UpdateExportTemplateDto, filters:any,  activeUser: ActiveUserData): Promise<ExportTransactionFileInfo> {
     // Create the export transaction entry, with status 'started'
     const modelMetadata = await this.modelMetadataService.findOne(updateDto?.modelMetadataId);
-    const modelName = pascalCase(modelMetadata.singularName);
+    const modelName = upperFirst(camelCase(modelMetadata.singularName));
     const permissionKey = `${modelName}Controller.findMany`;
 
     const userPermissions = activeUser.permissions ?? [];
