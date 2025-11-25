@@ -1195,6 +1195,7 @@ export class ModelMetadataService {
         parentModel: model.parentModel?.singularName,
         parentModule: model.parentModel?.module?.name,
         draftPublishWorkflowEnabled: model.draftPublishWorkflow,
+        isLegacyTable: model.isLegacyTable,
       },
       dryRun
     );

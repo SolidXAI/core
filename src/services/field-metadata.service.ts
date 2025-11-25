@@ -654,7 +654,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "enableAuditTracking"
+                    "enableAuditTracking",
+                    "isPrimaryKey"
                 ];
 
             case SolidFieldType.bigint:
@@ -674,7 +675,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "enableAuditTracking"
+                    "enableAuditTracking",
+                    "isPrimaryKey"
                 ];
 
             // case SolidFieldType.float:
@@ -737,7 +739,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "decryptWhen",
                     "columnName",
                     "isUserKey",
-                    "enableAuditTracking"
+                    "enableAuditTracking",
+                    "isPrimaryKey"
                 ];
 
             case SolidFieldType.longtext:
@@ -973,7 +976,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "enableAuditTracking"
+                    "enableAuditTracking",
+                    "isPrimaryKey"
                 ];
 
             case SolidFieldType.password:
@@ -1085,10 +1089,6 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "decryptWhen",
                     "columnName"
                 ];
-
-
-
-
             default:
                 return [
                     "name",
