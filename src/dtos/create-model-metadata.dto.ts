@@ -112,4 +112,9 @@ export class CreateModelMetadataDto {
     @IsString()
     @IsOptional()
     parentModelUserKey: string;
+
+    @ApiProperty({ description: 'Is legacy table' })
+    @IsBoolean()
+    @IsOptional()
+    isLegacyTable?: boolean;
 }

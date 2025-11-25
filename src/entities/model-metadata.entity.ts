@@ -65,4 +65,7 @@ export class ModelMetadata extends CommonEntity {
 
     @ManyToOne(() => ModelMetadata, {})
     parentModel: ModelMetadata;
+
+    @Column({ default: false })
+    isLegacyTable: boolean;
 }

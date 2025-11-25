@@ -441,6 +441,7 @@ export class CreateFieldMetadataDto {
   @IsOptional()
   relationJoinTableName: string
 
+  @ApiProperty({ description: 'Enable Audit Tracking for this field', })
   @IsOptional()
   @IsBoolean()
   enableAuditTracking?: boolean;
@@ -449,4 +450,9 @@ export class CreateFieldMetadataDto {
   @ApiProperty({ description: 'Is MultiSelect Field', })
   @IsBoolean()
   isMultiSelect: boolean;
+
+  @IsOptional()
+  @ApiProperty({ description: 'Is Primary Key Field', })
+  @IsBoolean()
+  isPrimaryKey?: boolean;
 }

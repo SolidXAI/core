@@ -163,4 +163,7 @@ export class FieldMetadata extends CommonEntity {
 
     @Column({ name: "is_multiSelect", default: false })
     isMultiSelect: boolean;
+
+    @Column({ name: "is_primary_key", default: false })
+    isPrimaryKey: boolean;
 }

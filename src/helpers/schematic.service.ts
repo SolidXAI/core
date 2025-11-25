@@ -1,7 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { CommandService } from './command.service';
 import { snakeCase } from "lodash";
-import { CommonEntity } from 'src/entities/common.entity';
+import { CommandService } from './command.service';
 import { SolidRegistry } from './solid-registry';
 
 export const ADD_MODULE_COMMAND = 'add-module';
@@ -19,6 +18,7 @@ type FieldOptions = {
   parentModel?: string; 
   parentModule?: string;
   draftPublishWorkflowEnabled?: boolean;
+  isLegacyTable?: boolean;
 };
 export const REMOVE_FIELDS_COMMAND = 'remove-fields';
 export const REFRESH_MODEL_COMMAND = 'refresh-model';
@@ -77,6 +77,10 @@ export class SchematicService {
 
       if (fieldOptions.draftPublishWorkflowEnabled) {
         modelCommand += ` --draft-publish-workflow-enabled=${fieldOptions.draftPublishWorkflowEnabled}`;
+      }
+      
+      if (fieldOptions.isLegacyTable) {
+        modelCommand += ` --is-legacy-table=${fieldOptions.isLegacyTable}`;
       }
       
       let fieldCommand = fieldOptions.fields
