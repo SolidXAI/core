@@ -5980,7 +5980,7 @@
       "displayName": "User Activity History",
       "name": "userActivityHistory-menu-item",
       "sequenceNumber": 5,
-      "actionUserKey": "userActivityHistory-list-view",
+      "actionUserKey": "userActivityHistory-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "iam-menu-item"
     },
@@ -6100,7 +6100,7 @@
       "displayName": "Import Transactions",
       "name": "importTransaction-menu-item",
       "sequenceNumber": 8,
-      "actionUserKey": "importTransaction-list-view",
+      "actionUserKey": "importTransaction-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
