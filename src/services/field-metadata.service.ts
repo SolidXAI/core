@@ -531,7 +531,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 // Text types
                 "shortText": {
                     ormTypes: [
-                        { label: MSSQLType.nvarchar, description: "A variable-length string for short text." }
+                        { label: MSSQLType.varchar, description: "A variable-length string for short text." },
+                        { label: MSSQLType.nvarchar, description: "A unicode supported variable-length string for short text." }
                     ]
                 },
                 "longText": {
