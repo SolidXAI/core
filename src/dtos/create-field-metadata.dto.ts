@@ -122,6 +122,7 @@ export enum MSSQLType {
   int = "int",
   bigint = "bigint",
   decimal = "decimal",
+  numeric = "numeric",
   varchar = "varchar",
   nvarchar = "nvarchar",
   simplejson = "simple-json",
