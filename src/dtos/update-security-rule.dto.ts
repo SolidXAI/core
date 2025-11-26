@@ -1,4 +1,4 @@
-import { IsInt,IsOptional, IsString, IsNotEmpty, IsJSON } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsNotEmpty, IsJSON } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateSecurityRuleDto {
@@ -36,4 +36,9 @@ export class UpdateSecurityRuleDto {
     @IsJSON()
     @ApiProperty()
     securityRuleConfig: any;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    securityRuleConfigProvider: string;
 }

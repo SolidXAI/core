@@ -1,13 +1,19 @@
 import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 
+import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
+import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
+import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
+import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { UpdateModelMetaDataDto } from '../dtos/update-model-metadata.dto';
 import { ActionMetadata } from '../entities/action-metadata.entity';
@@ -24,19 +30,17 @@ import { CrudHelperService } from './crud-helper.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
 import { RoleMetadataService } from './role-metadata.service';
-import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
-import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
-import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
-import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 @Injectable()
 export class ModelMetadataService {
   private logger = new Logger('ModelMetadataService');
   constructor(
-    @InjectRepository(ModelMetadata)
-    private readonly modelMetadataRepo: Repository<ModelMetadata>,
-    @InjectRepository(FieldMetadata)
-    private readonly fieldMetadataRepo: Repository<FieldMetadata>,
+    // @InjectRepository(ModelMetadata)
+    // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+    // @InjectRepository(FieldMetadata)
+    // private readonly fieldMetadataRepo: Repository<FieldMetadata>,
+    private readonly modelMetadataRepo: ModelMetadataRepository,
+    private readonly fieldMetadataRepo: FieldMetadataRepository,
     private readonly schematicService: SchematicService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
@@ -55,7 +59,7 @@ export class ModelMetadataService {
     let { limit, offset } = basicFilterDto;
 
     // Create above query on pincode table using query builder
-    var qb: SelectQueryBuilder<ModelMetadata> = this.modelMetadataRepo.createQueryBuilder(alias)
+    var qb: SelectQueryBuilder<ModelMetadata> = await this.modelMetadataRepo.createSecurityRuleAwareQueryBuilder(alias)
     qb = await this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
 
     // Get the records and the count
@@ -555,50 +559,52 @@ export class ModelMetadataService {
       return;
     }
 
-    this.logger.log(`Cleaning up for model: ${modelEntity.singularName} belonging to module: ${modelEntity.module.name}`);
+    this.logger.log(`Cleaning up for model: ${modelEntity.singularName} belonging to module: ${modelEntity.module?.name}`);
 
-    const modulePath = await this.moduleMetadataHelperService.getModulePath(modelEntity.module.name);
-    // /Users/harishpatel/Code/javascript/school-fees-portal/solid-api/src/solid-core
-    this.logger.log(`Module path: ${modulePath}`);
+    const modulePath = await this.moduleMetadataHelperService.getModulePath(modelEntity.module?.name);
+    if (modulePath) {
+      // /Users/harishpatel/Code/javascript/school-fees-portal/solid-api/src/solid-core
+      this.logger.log(`Module path: ${modulePath}`);
 
-    const filesToDelete = [];
-    // <singularName>.entity.ts | The TypeORM model that needs to be deleted. | Automatic
-    const entityFilePath = `${modulePath}/entities/${dasherize(modelEntity.singularName)}.entity.ts`;
-    filesToDelete.push(entityFilePath);
-    this.logger.log(`About to delete entity file path: ${entityFilePath}`);
+      const filesToDelete = [];
+      // <singularName>.entity.ts | The TypeORM model that needs to be deleted. | Automatic
+      const entityFilePath = `${modulePath}/entities/${dasherize(modelEntity.singularName)}.entity.ts`;
+      filesToDelete.push(entityFilePath);
+      this.logger.log(`About to delete entity file path: ${entityFilePath}`);
 
-    // <singularName>.create.dto.ts | The TypeORM model that needs to be deleted. | Automatic
-    const createDtoFilePath = `${modulePath}/dtos/create-${dasherize(modelEntity.singularName)}.dto.ts`;
-    filesToDelete.push(createDtoFilePath);
-    this.logger.log(`About to delete create DTO file path: ${createDtoFilePath}`);
+      // <singularName>.create.dto.ts | The TypeORM model that needs to be deleted. | Automatic
+      const createDtoFilePath = `${modulePath}/dtos/create-${dasherize(modelEntity.singularName)}.dto.ts`;
+      filesToDelete.push(createDtoFilePath);
+      this.logger.log(`About to delete create DTO file path: ${createDtoFilePath}`);
 
-    // <singularName>.update.dto.ts | The TypeORM model that needs to be deleted. | Automatic
-    const updateDtoFilePath = `${modulePath}/dtos/update-${dasherize(modelEntity.singularName)}.dto.ts`;
-    filesToDelete.push(updateDtoFilePath);
-    this.logger.log(`About to delete update DTO file path: ${updateDtoFilePath}`);
+      // <singularName>.update.dto.ts | The TypeORM model that needs to be deleted. | Automatic
+      const updateDtoFilePath = `${modulePath}/dtos/update-${dasherize(modelEntity.singularName)}.dto.ts`;
+      filesToDelete.push(updateDtoFilePath);
+      this.logger.log(`About to delete update DTO file path: ${updateDtoFilePath}`);
 
-    // <singularName>.repository.ts | The TypeORM model that needs to be deleted. | Automatic
-    const repositoryFilePath = `${modulePath}/repositories/${dasherize(modelEntity.singularName)}.repository.ts`;
-    filesToDelete.push(repositoryFilePath);
-    this.logger.log(`About to delete repository file path: ${repositoryFilePath}`);
+      // <singularName>.repository.ts | The TypeORM model that needs to be deleted. | Automatic
+      const repositoryFilePath = `${modulePath}/repositories/${dasherize(modelEntity.singularName)}.repository.ts`;
+      filesToDelete.push(repositoryFilePath);
+      this.logger.log(`About to delete repository file path: ${repositoryFilePath}`);
 
-    // <singularName>.service.ts | The TypeORM model that needs to be deleted. | Automatic
-    const serviceFilePath = `${modulePath}/services/${dasherize(modelEntity.singularName)}.service.ts`;
-    filesToDelete.push(serviceFilePath);
-    this.logger.log(`About to delete service file path: ${serviceFilePath}`);
+      // <singularName>.service.ts | The TypeORM model that needs to be deleted. | Automatic
+      const serviceFilePath = `${modulePath}/services/${dasherize(modelEntity.singularName)}.service.ts`;
+      filesToDelete.push(serviceFilePath);
+      this.logger.log(`About to delete service file path: ${serviceFilePath}`);
 
-    // <singularName>.controller.ts | The TypeORM model that needs to be deleted. | Automatic
-    const controllerFilePath = `${modulePath}/controllers/${dasherize(modelEntity.singularName)}.controller.ts`;
-    filesToDelete.push(controllerFilePath);
-    this.logger.log(`About to delete controller file path: ${controllerFilePath}`);
+      // <singularName>.controller.ts | The TypeORM model that needs to be deleted. | Automatic
+      const controllerFilePath = `${modulePath}/controllers/${dasherize(modelEntity.singularName)}.controller.ts`;
+      filesToDelete.push(controllerFilePath);
+      this.logger.log(`About to delete controller file path: ${controllerFilePath}`);
 
-    for (let i = 0; i < filesToDelete.length; i++) {
-      const fileToDelete = filesToDelete[i];
-      try {
-        await fs.unlink(fileToDelete);
-        this.logger.log(`Deleted file: ${fileToDelete}`);
-      } catch (error) {
-        this.logger.error(`Error deleting file: ${fileToDelete}`, error);
+      for (let i = 0; i < filesToDelete.length; i++) {
+        const fileToDelete = filesToDelete[i];
+        try {
+          await fs.unlink(fileToDelete);
+          this.logger.log(`Deleted file: ${fileToDelete}`);
+        } catch (error) {
+          this.logger.error(`Error deleting file: ${fileToDelete}`, error);
+        }
       }
     }
 
@@ -655,7 +661,7 @@ export class ModelMetadataService {
     await viewRepo.delete({ model: { id: modelEntity.id } })
 
     // <moduleName>-metadata.json | Remove references to this model in the model metadata, menu, action & view sections. | Automatic
-    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.module.name);
+    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.module?.name);
     const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
     if (metaData) {
       const existingModelIndex = metaData.moduleMetadata.models.findIndex(
@@ -668,13 +674,13 @@ export class ModelMetadataService {
       }
 
       // Remove references to this model in the menu, action & view sections.
-      metaData.moduleMetadata.menus = metaData.moduleMetadata.menus.filter(
+      metaData.moduleMetadata.menus = metaData.moduleMetadata?.menus?.filter(
         (menu: any) => menu.modelUserKey !== modelEntity.singularName
       );
-      metaData.moduleMetadata.actions = metaData.moduleMetadata.actions.filter(
+      metaData.moduleMetadata.actions = metaData.moduleMetadata?.actions?.filter(
         (action: any) => action.modelUserKey !== modelEntity.singularName
       );
-      metaData.moduleMetadata.views = metaData.moduleMetadata.views.filter(
+      metaData.moduleMetadata.views = metaData.moduleMetadata?.views?.filter(
         (view: any) => view.modelUserKey !== modelEntity.singularName
       );
 

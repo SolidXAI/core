@@ -1,20 +1,20 @@
-import { Injectable, Logger, Inject } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
-import { IsNull, LessThanOrEqual, Repository } from 'typeorm';
+import { Injectable, Logger } from '@nestjs/common';
+import { IsNull, LessThanOrEqual } from 'typeorm';
 
-import { ISchedulerService } from './scheduler.interface';
-import { SolidRegistry } from 'src/helpers/solid-registry';
-import { ScheduledJob } from 'src/entities/scheduled-job.entity';
-import { IScheduledJob } from './scheduled-job.interface';
 import { Cron, CronExpression } from '@nestjs/schedule';
+import { ScheduledJob } from 'src/entities/scheduled-job.entity';
+import { SolidRegistry } from 'src/helpers/solid-registry';
+import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
+import { ISchedulerService } from './scheduler.interface';
 
 @Injectable()
 export class SchedulerServiceImpl implements ISchedulerService {
     private readonly logger = new Logger(SchedulerServiceImpl.name);
 
     constructor(
-        @InjectRepository(ScheduledJob)
-        private readonly scheduledJobRepo: Repository<ScheduledJob>,
+        // @InjectRepository(ScheduledJob)
+        // private readonly scheduledJobRepo: Repository<ScheduledJob>,
+        private readonly scheduledJobRepo: ScheduledJobRepository,
         private readonly solidRegistry: SolidRegistry,
     ) { }
 

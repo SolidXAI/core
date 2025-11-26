@@ -15,6 +15,7 @@ import { FileService } from './file.service';
 import { MediaService } from './media.service';
 import { DiscoveryService, ModuleRef } from '@nestjs/core';
 import { CrudHelperService } from './crud-helper.service';
+import { SmsTemplateRepository } from 'src/repository/sms-template.repository';
 
 @Injectable()
 export class SmsTemplateService extends CRUDService<SmsTemplate>{
@@ -29,8 +30,9 @@ export class SmsTemplateService extends CRUDService<SmsTemplate>{
             readonly crudHelperService: CrudHelperService,
             @InjectEntityManager()
             readonly entityManager: EntityManager,
-            @InjectRepository(SmsTemplate, 'default')
-            readonly repo: Repository<SmsTemplate>,
+            // @InjectRepository(SmsTemplate, 'default')
+            // readonly repo: Repository<SmsTemplate>,
+            readonly repo: SmsTemplateRepository,
             readonly moduleRef: ModuleRef,
     ) {
         super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'smsTemplate', 'app-builder', moduleRef);

@@ -1,82 +1,75 @@
 import { Body, Controller, Delete, Get, Header, Param, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
-import { ApiQuery, ApiTags } from '@nestjs/swagger';
-import { Public } from 'src/decorators/public.decorator';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CreateEmailTemplateDto } from '../dtos/create-email-template.dto';
 import { UpdateEmailTemplateDto } from '../dtos/update-email-template.dto';
 import { EmailTemplateService } from '../services/email-template.service';
 
-
-
 // TODO: esInterop not working somehow, defaulted to using the require syntax to import Mailgen. Figure a better way to do this. 
-// import { Mailgen } from 'mailgen';
 import Mailgen = require('mailgen');
 
 
 @Controller('email-template')
 @ApiTags("Common")
-// @UseGuards(ThrottlerGuard)
-// @SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only 
 export class EmailTemplateController {
   constructor(private readonly service: EmailTemplateService) { }
 
-   @Public()
-    @Post()
-    @UseInterceptors(AnyFilesInterceptor())
-    create(@Body() createDto: CreateEmailTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-      return this.service.create(createDto, files);
-    }
-  
-    @Public()
-    @Post('/bulk')
-    @UseInterceptors(AnyFilesInterceptor())
-    insertMany(@Body() createDtos: CreateEmailTemplateDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
-      return this.service.insertMany(createDtos, filesArray);
-    }
-  
-    @Public()
-    @Put(':id')
-    @UseInterceptors(AnyFilesInterceptor())
-    update(@Param('id') id: number, @Body() updateDto: UpdateEmailTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-      return this.service.update(id, updateDto, files);
-    }
-  
-    @Public()
-    @ApiQuery({ name: 'showSoftDeleted', required: false, type: Boolean })
-    @ApiQuery({ name: 'showOnlySoftDeleted', required: false, type: Boolean })
-    @ApiQuery({ name: 'limit', required: false, type: Number })
-    @ApiQuery({ name: 'offset', required: false, type: Number })
-    @ApiQuery({ name: 'fields', required: false, type: Array })
-    @ApiQuery({ name: 'sort', required: false, type: Array })
-    @ApiQuery({ name: 'groupBy', required: false, type: Array })
-    @ApiQuery({ name: 'populate', required: false, type: Array })
-    @ApiQuery({ name: 'populateMedia', required: false, type: Array })
-    @ApiQuery({ name: 'filters', required: false, type: Array })
-    @Get()
-    async findMany(@Query() query: any) {
-      return this.service.find(query);
-    }
-  
-    @Public()
-    @Get(':id')
-    async findOne(@Param('id') id: string, @Query() query: any) {
-      return this.service.findOne(+id, query);
-    }
-  
-    @Delete('/bulk')
-    async deleteMany(@Body() ids: number[]) {
-      return this.service.deleteMany(ids);
-    }
-  
-    @Public()
-    @Delete(':id')
-    async delete(@Param('id') id: number) {
-      return this.service.delete(id);
-    }
-  // /api/email-templates/mailgen-template/otp-template
-  // @ApiBearerAuth("jwt")
-  // @Roles('Admin')
-  @Public()
+  @ApiBearerAuth("jwt")
+  @Post()
+  @UseInterceptors(AnyFilesInterceptor())
+  create(@Body() createDto: CreateEmailTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+    return this.service.create(createDto, files);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Post('/bulk')
+  @UseInterceptors(AnyFilesInterceptor())
+  insertMany(@Body() createDtos: CreateEmailTemplateDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+    return this.service.insertMany(createDtos, filesArray);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Put(':id')
+  @UseInterceptors(AnyFilesInterceptor())
+  update(@Param('id') id: number, @Body() updateDto: UpdateEmailTemplateDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+    return this.service.update(id, updateDto, files);
+  }
+
+  @ApiBearerAuth("jwt")
+  @ApiQuery({ name: 'showSoftDeleted', required: false, type: Boolean })
+  @ApiQuery({ name: 'showOnlySoftDeleted', required: false, type: Boolean })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
+  @ApiQuery({ name: 'fields', required: false, type: Array })
+  @ApiQuery({ name: 'sort', required: false, type: Array })
+  @ApiQuery({ name: 'groupBy', required: false, type: Array })
+  @ApiQuery({ name: 'populate', required: false, type: Array })
+  @ApiQuery({ name: 'populateMedia', required: false, type: Array })
+  @ApiQuery({ name: 'filters', required: false, type: Array })
+  @Get()
+  async findMany(@Query() query: any) {
+    return this.service.find(query);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Get(':id')
+  async findOne(@Param('id') id: string, @Query() query: any) {
+    return this.service.findOne(+id, query);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Delete('/bulk')
+  async deleteMany(@Body() ids: number[]) {
+    return this.service.deleteMany(ids);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Delete(':id')
+  async delete(@Param('id') id: number) {
+    return this.service.delete(id);
+  }
+ 
+  @ApiBearerAuth("jwt")
   @Get('mailgen-template/:templateType')
   @Header('content-type', 'text/html')
   generateMailgenTemplate(@Param('templateType') templateType: string) {

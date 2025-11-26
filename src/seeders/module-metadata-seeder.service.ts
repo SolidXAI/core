@@ -40,10 +40,14 @@ import { ViewMetadataService } from '../services/view-metadata.service';
 import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
+import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata } from 'src';
 import { ADMIN_ROLE_NAME, INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS, PUBLIC_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
-import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata } from 'src';
+import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
+import { SettingRepository } from 'src/repository/setting.repository';
+import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
+import { SavedFiltersRepository } from 'src/repository/saved-filters.repository';
 
 
 @Injectable()
@@ -66,8 +70,9 @@ export class ModuleMetadataSeederService {
         private readonly emailTemplateService: EmailTemplateService,
         private readonly smsTemplateService: SmsTemplateService,
         private readonly listOfValuesService: ListOfValuesService,
-        @InjectRepository(PermissionMetadata)
-        private readonly permissionRepo: Repository<PermissionMetadata>,
+        // @InjectRepository(PermissionMetadata)
+        // private readonly permissionRepo: Repository<PermissionMetadata>,
+        private readonly permissionRepo: PermissionMetadataRepository,
         private readonly solidRegistry: SolidRegistry,
         @Inject(appBuilderConfig.KEY)
         private readonly appBuilderConfiguration: ConfigType<typeof appBuilderConfig>,
@@ -75,12 +80,14 @@ export class ModuleMetadataSeederService {
         @Inject(commonConfig.KEY)
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         private readonly settingService: SettingService,
-        @InjectRepository(Setting, 'default')
-        readonly settingsRepo: Repository<Setting>,
+        // @InjectRepository(Setting, 'default')
+        // readonly settingsRepo: Repository<Setting>,
+        private readonly settingsRepo: SettingRepository,
         readonly securityRuleRepo: SecurityRuleRepository,
         readonly systemFieldsSeederService: SystemFieldsSeederService,
         readonly dashboardRepo: DashboardRepository,
         readonly scheduledJobRepository: ScheduledJobRepository,
+        readonly savedFiltersRepo : SavedFiltersRepository,
         readonly dataSource: DataSource,
     ) { }
 
@@ -155,6 +162,10 @@ export class ModuleMetadataSeederService {
             this.logger.log(`Seeding Scheduled Jobs`);
             await this.seedScheduledJobs(moduleMetadata, overallMetadata);
 
+             // Saved Filters
+             this.logger.log(`Seeding Saved Filters`);
+             await this.seedSavedFilters(moduleMetadata, overallMetadata);
+ 
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
         }
 
@@ -175,6 +186,15 @@ export class ModuleMetadataSeederService {
         }
         this.logger.debug(`[End] Processing scheduled jobs for ${moduleMetadata.name}`);
     }
+
+    private async seedSavedFilters(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any) {
+        this.logger.debug(`[Start] Processing saved filters for ${moduleMetadata.name}`);
+        const savedFilters: CreateSavedFiltersDto[] = overallMetadata.savedFilters;
+        if (savedFilters?.length > 0) {
+            await this.handleSeedSavedFilters(savedFilters);
+        }
+        this.logger.debug(`[End] Processing saved filters for ${moduleMetadata.name}`);
+    }   
 
     private async seedDashboards(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any) {
         this.logger.debug(`[Start] Processing dashboards for ${moduleMetadata.name}`);
@@ -706,6 +726,16 @@ export class ModuleMetadataSeederService {
         }
         for (const dto of createScheduledJobDto) {
             await this.scheduledJobRepository.upsertWithDto(dto);
+        }
+    }
+
+    private async handleSeedSavedFilters(createSavedFilterDto: CreateSavedFiltersDto[]) {
+        if (!createSavedFilterDto || createSavedFilterDto.length === 0) {
+            this.logger.debug(`No saved filters found to seed`);
+            return;
+        }
+        for (const dto of createSavedFilterDto) {
+            await this.savedFiltersRepo.upsertWithDto({ ...dto, filterQueryJson: JSON.stringify(dto.filterQueryJson) });
         }
     }
 

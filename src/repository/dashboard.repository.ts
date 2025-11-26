@@ -1,19 +1,19 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { CreateDashboardDto } from "src/dtos/create-dashboard.dto";
-import { DashboardVariable } from "src/entities/dashboard-variable.entity";
+import { Injectable } from "@nestjs/common";
 import { Dashboard } from "src/entities/dashboard.entity";
 import { ModuleMetadata } from "src/entities/module-metadata.entity";
-import { DashboardQuestionSqlDatasetConfig } from "src/entities/dashboard-question-sql-dataset-config.entity";
-import { DashboardQuestion } from "src/entities/dashboard-question.entity";
-import { DataSource, Repository } from "typeorm";
+import { RequestContextService } from "src/services/request-context.service";
+import { DataSource } from "typeorm";
+import { SecurityRuleRepository } from "./security-rule.repository";
+import { SolidBaseRepository } from "./solid-base.repository";
 
 @Injectable()
-export class DashboardRepository extends Repository<Dashboard> {
-    private readonly logger = new Logger(this.constructor.name);
+export class DashboardRepository extends SolidBaseRepository<Dashboard> {
     constructor(
-        private dataSource: DataSource,
+        readonly dataSource: DataSource,
+        readonly requestContextService: RequestContextService,
+        readonly securityRuleRepository: SecurityRuleRepository,
     ) {
-        super(Dashboard, dataSource.createEntityManager());
+        super(Dashboard, dataSource, requestContextService, securityRuleRepository);
     }
 
 

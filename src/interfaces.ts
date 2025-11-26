@@ -14,6 +14,9 @@ import { ComputedFieldMetadata } from './helpers/solid-registry';
 import { SqlExpression } from './services/question-data-providers/chartjs-sql-data-provider.service';
 import { CreateDashboardDto } from './dtos/create-dashboard.dto';
 import { AiInteraction } from './entities/ai-interaction.entity';
+import { ActiveUserData } from './interfaces/active-user-data.interface';
+import { SecurityRuleConfig } from './dtos/security-rule-config.dto';
+import { SecurityRule } from './entities/security-rule.entity';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -344,4 +347,8 @@ export interface AddFormViewButtonStep {
 export interface McpComputedProviderResponse {
   plan: PlanStep[];
   // provider?: any;  // (intentionally ignored per your note)
+}
+
+export interface ISecurityRuleConfigProvider {
+  securityRuleConfig(activeUser: ActiveUserData, securityRule: SecurityRule): Promise<SecurityRuleConfig>;
 }

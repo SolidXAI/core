@@ -12,7 +12,7 @@ import {
 import { ConfigType } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
 import { isEmpty, isNotEmpty } from 'class-validator';
 import { randomInt, randomUUID } from 'crypto';
 import commonConfig from 'src/config/common.config';
@@ -21,6 +21,7 @@ import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { SUCCESS_MESSAGES } from 'src/constants/success-messages';
 import { CreateUserDto } from 'src/dtos/create-user.dto';
 import { MailFactory } from 'src/factories/mail.factory';
+import { UserRepository } from 'src/repository/user.repository';
 import { Msg91OTPService } from 'src/services/sms/Msg91OTPService';
 import { DataSource, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
@@ -44,7 +45,6 @@ import { EventDetails, EventType } from "../interfaces";
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { HashingService } from './hashing.service';
 import { InvalidatedRefreshTokenError, RefreshTokenIdsStorageService } from './refresh-token-ids-storage.service';
-import { RequestContextService } from './request-context.service';
 import { RoleMetadataService } from './role-metadata.service';
 import { SettingService } from './setting.service';
 import { UserActivityHistoryService } from './user-activity-history.service';
@@ -67,7 +67,8 @@ export class AuthenticationService {
     // private readonly mailService: IMail;
     constructor(
         private readonly userService: UserService,
-        @InjectRepository(User) private readonly userRepository: Repository<User>,
+        // @InjectRepository(User) private readonly userRepository: Repository<User>,
+        private readonly userRepository: UserRepository,
         private readonly hashingService: HashingService,
         private readonly jwtService: JwtService,
         @Inject(jwtConfig.KEY)
@@ -85,7 +86,6 @@ export class AuthenticationService {
         @Inject(commonConfig.KEY)
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         private readonly userActivityHistoryService: UserActivityHistoryService,
-        private readonly requestContextService: RequestContextService,
         @InjectDataSource()
         private readonly dataSource: DataSource,
     ) {
@@ -903,7 +903,7 @@ export class AuthenticationService {
             const pwdSchemeVersion = this.hashingService.currentVersion(); // e.g. 1, 2, 3 ...
 
             // Check reuse with your existing method (ensure it looks at hashes).
-            await m.getRepository(User).update({ id: user.id }, { password: pwdHash, passwordScheme: pwdScheme, passwordSchemeVersion: pwdSchemeVersion});
+            await m.getRepository(User).update({ id: user.id }, { password: pwdHash, passwordScheme: pwdScheme, passwordSchemeVersion: pwdSchemeVersion });
             this.notifyUserOnPasswordChanged(user);
 
             return {
@@ -1121,21 +1121,35 @@ export class AuthenticationService {
     //     // Invalidate the refresh token
     //     // await this.refreshTokenIdsStorage.invalidate(user.id);
     // }
-    async logout() {
+    async logout(refreshToken: string) {
         try {
-            const activeUser = this.requestContextService.getActiveUser();
-            const userId = activeUser?.sub;
+            // const activeUser = this.requestContextService.getActiveUser();
+            // const userId = activeUser?.sub;
+            // const user = await this.userRepository.findOne({
+            //     where: {
+            //         id: userId,
+            //     }
+            // })
+            // // Invalidate refresh token if you store them
+            // await this.refreshTokenIdsStorage.invalidate(userId); // ← Your existing logic
+            // if (!refreshToken) {
+            //     throw new UnauthorizedException('Refresh token is required');
+            // }
+            const payload = this.jwtService.decode(refreshToken) as any;
+
+            if (!payload || !payload.sub) {
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_REFRESH_TOKEN);
+            }
+
+            const userId = payload.sub;
+            await this.refreshTokenIdsStorage.invalidate(userId);
             const user = await this.userRepository.findOne({
                 where: {
                     id: userId,
                 }
             })
-            // Invalidate refresh token if you store them
-            await this.refreshTokenIdsStorage.invalidate(userId); // ← Your existing logic
-
             // Log logout event
             await this.userActivityHistoryService.logEvent('logout', user);
-
 
             return { message: SUCCESS_MESSAGES.LOGOUT_SUCCESS };
         } catch (err) {

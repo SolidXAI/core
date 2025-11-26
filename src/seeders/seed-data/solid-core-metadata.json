@@ -2969,7 +2969,7 @@
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
             "relationCascade": "restrict",
-            "required": true,
+            "required": false,
             "unique": false,
             "index": false,
             "private": false,
@@ -3049,6 +3049,18 @@
             "ormType": "varchar",
             "length": 512,
             "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
             "unique": false,
             "index": false,
             "private": false,
@@ -3150,6 +3162,22 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "securityRuleConfigProvider",
+            "displayName": "Security Rule Config Provider",
+            "type": "selectionDynamic",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionDynamicProvider": "SecurityRuleConfigSelectionProvider",
+            "selectionDynamicProviderCtxt": "{}"
           }
         ]
       },
@@ -5847,7 +5875,7 @@
     {
       "displayName": "Menu Item",
       "name": "menuItemMetadata-menu-item",
-      "sequenceNumber": 4,
+      "sequenceNumber": 1,
       "actionUserKey": "menuItemMetadata-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "layoutBuilder-menu-item"
@@ -5855,7 +5883,7 @@
     {
       "displayName": "View",
       "name": "viewMetadata-menu-item",
-      "sequenceNumber": 5,
+      "sequenceNumber": 2,
       "actionUserKey": "viewMetadata-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "layoutBuilder-menu-item"
@@ -5863,7 +5891,7 @@
     {
       "displayName": "Action",
       "name": "actionMetadata-menu-item",
-      "sequenceNumber": 6,
+      "sequenceNumber": 3,
       "actionUserKey": "actionMetadata-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "layoutBuilder-menu-item"
@@ -5871,7 +5899,7 @@
     {
       "displayName": "Saved Filters",
       "name": "savedFilters-menu-item",
-      "sequenceNumber": 7,
+      "sequenceNumber": 4,
       "actionUserKey": "savedFilters-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "layoutBuilder-menu-item"
@@ -5879,7 +5907,7 @@
     {
       "displayName": "User View",
       "name": "userViewMetadata-menu-item",
-      "sequenceNumber": 7,
+      "sequenceNumber": 5,
       "actionUserKey": "userViewMetadata-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "layoutBuilder-menu-item"
@@ -5895,7 +5923,7 @@
     {
       "displayName": "Media",
       "name": "media-menu-item",
-      "sequenceNumber": 3,
+      "sequenceNumber": 1,
       "actionUserKey": "media-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "mediaManagement-menu-item"
@@ -5903,7 +5931,7 @@
     {
       "displayName": "Media Storage Provider",
       "name": "mediaStorageProviderMetadata-menu-item",
-      "sequenceNumber": 7,
+      "sequenceNumber": 2,
       "actionUserKey": "mediaStorageProviderMetadata-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "mediaManagement-menu-item"
@@ -5911,7 +5939,7 @@
     {
       "displayName": "IAM",
       "name": "iam-menu-item",
-      "sequenceNumber": 3,
+      "sequenceNumber": 4,
       "actionUserKey": "iam-root",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
@@ -5949,9 +5977,17 @@
       "parentMenuItemUserKey": "iam-menu-item"
     },
     {
+      "displayName": "User Activity History",
+      "name": "userActivityHistory-menu-item",
+      "sequenceNumber": 5,
+      "actionUserKey": "userActivityHistory-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "iam-menu-item"
+    },
+    {
       "displayName": "Queues",
       "name": "queues-menu-item",
-      "sequenceNumber": 3,
+      "sequenceNumber": 5,
       "actionUserKey": "queues-root",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
@@ -5975,7 +6011,7 @@
     {
       "displayName": "Notification",
       "name": "notification-menu-item",
-      "sequenceNumber": 3,
+      "sequenceNumber": 6,
       "actionUserKey": "notification-root",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
@@ -5991,7 +6027,7 @@
     {
       "displayName": "SMS",
       "name": "smsTemplate-menu-item",
-      "sequenceNumber": 1,
+      "sequenceNumber": 2,
       "actionUserKey": "smsTemplate-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "notification-menu-item"
@@ -5999,7 +6035,7 @@
     {
       "displayName": "Other",
       "name": "other-menu-item",
-      "sequenceNumber": 3,
+      "sequenceNumber": 7,
       "actionUserKey": "other-root",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
@@ -6011,7 +6047,7 @@
       "actionUserKey": "listOfValues-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
-    },   
+    },
     {
       "displayName": "Scheduled Jobs",
       "name": "scheduledJob-menu-item",
@@ -6027,20 +6063,19 @@
       "actionUserKey": "aiInteraction-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
-    },    
+    },
     {
       "displayName": "Saved Filters",
       "name": "savedFilters-menu-item",
-      "sequenceNumber": 7,
+      "sequenceNumber": 4,
       "actionUserKey": "savedFilters-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
-
     {
       "displayName": "Chatter Message",
       "name": "chatterMessage-menu-item",
-      "sequenceNumber": 8,
+      "sequenceNumber": 5,
       "actionUserKey": "chatterMessage-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
@@ -6048,48 +6083,63 @@
     {
       "displayName": "Chatter Message Details",
       "name": "chatterMessageDetails-menu-item",
-      "sequenceNumber": 9,
+      "sequenceNumber": 6,
       "actionUserKey": "chatterMessageDetails-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
-    },
-    {
-      "displayName": "Import Transactions",
-      "name": "importTransaction-menu-item",
-      "sequenceNumber": 11,
-      "actionUserKey": "importTransaction-list-view",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
-    },
-    {
-      "displayName": "Import Transaction Error Logs",
-      "name": "importTransactionErrorLog-menu-item",
-      "sequenceNumber": 12,
-      "actionUserKey": "importTransactionErrorLog-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
     {
       "displayName": "Locale",
       "name": "locale-menu-item",
-      "sequenceNumber": 10,
+      "sequenceNumber": 7,
       "actionUserKey": "locale-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
     {
-      "displayName": "User Activity History",
-      "name": "userActivityHistory-menu-item",
-      "sequenceNumber": 1,
-      "actionUserKey": "userActivityHistory-list-view",
+      "displayName": "Import Transactions",
+      "name": "importTransaction-menu-item",
+      "sequenceNumber": 8,
+      "actionUserKey": "importTransaction-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
-
+    {
+      "displayName": "Import Transaction Error Logs",
+      "name": "importTransactionErrorLog-menu-item",
+      "sequenceNumber": 9,
+      "actionUserKey": "importTransactionErrorLog-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Dashboard Management",
+      "name": "dashboardManagement-menu-item",
+      "sequenceNumber": 8,
+      "actionUserKey": "dasbhoard-root",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Dashboard",
+      "name": "dashboard-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "dashboard-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "dashboardManagement-menu-item"
+    },
+    {
+      "displayName": "Dashboard Question",
+      "name": "dashboardQuestion-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "dashboardQuestion-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "dashboardManagement-menu-item"
+    },
     {
       "displayName": "Settings",
       "name": "settings-menu-item",
-      "sequenceNumber": 3,
+      "sequenceNumber": 9,
       "actionUserKey": "settings-root",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
@@ -6121,34 +6171,10 @@
     {
       "displayName": "Misc",
       "name": "miscSettings-menu-item",
-      "sequenceNumber": 3,
+      "sequenceNumber": 4,
       "actionUserKey": "miscSettings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
-    },
-    {
-      "displayName": "Dashboard Management",
-      "name": "dashboardManagement-menu-item",
-      "sequenceNumber": 9,
-      "actionUserKey": "dasbhoard-root",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
-    },
-    {
-      "displayName": "Dashboard",
-      "name": "dashboard-menu-item",
-      "sequenceNumber": 1,
-      "actionUserKey": "dashboard-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "dashboardManagement-menu-item"
-    },
-    {
-      "displayName": "Dashboard Question",
-      "name": "dashboardQuestion-menu-item",
-      "sequenceNumber": 2,
-      "actionUserKey": "dashboardQuestion-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "dashboardManagement-menu-item"
     }
   ],
   "views": [
@@ -7205,9 +7231,9 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false
         },
         "children": [
           {
@@ -7260,7 +7286,10 @@
         "attrs": {
           "name": "form-1",
           "label": "Chatter Message Details Model",
-          "className": "grid"
+          "className": "grid",
+          "showEditFormButton": false,
+          "showAddFormButton": false,
+          "showDeleteFormButton": false 
         },
         "children": [
           {
@@ -7336,9 +7365,9 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false
         },
         "children": [
           {
@@ -7384,7 +7413,10 @@
         "attrs": {
           "name": "form-1",
           "label": "Chatter Message Model",
-          "className": "grid"
+          "className": "grid",
+          "showEditFormButton": false,
+          "showAddFormButton": false,
+          "showDeleteFormButton": false 
         },
         "children": [
           {
@@ -7427,6 +7459,12 @@
                     "attrs": {
                       "name": "coModelName",
                       "isSearchable": true
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "chatterMessageDetails"
                     }
                   }
                 ]
@@ -11093,6 +11131,13 @@
                     "attrs": {
                       "name": "body",
                       "label": "Body"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "smsProviderTemplateId",
+                      "label": "Sms Provider Template Id"
                     }
                   },
                   {

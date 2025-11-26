@@ -12,7 +12,7 @@ export class SavedFilters extends CommonEntity {
     name: string;
     @Column({ type: "boolean", nullable: true, default: false })
     isPrivate: boolean = false;
-    @ManyToOne(() => User, { onDelete: "RESTRICT", nullable: false })
+    @ManyToOne(() => User, { onDelete: "CASCADE", nullable: true })
     @JoinColumn()
     user: User;
     @ManyToOne(() => ModelMetadata, { onDelete: "RESTRICT", nullable: false })
@@ -21,4 +21,6 @@ export class SavedFilters extends CommonEntity {
     @ManyToOne(() => ViewMetadata, { onDelete: "RESTRICT", nullable: false })
     @JoinColumn()
     view: ViewMetadata;
+    @Column({ name: "description", type: "text", nullable: true })
+    description: string;
 }

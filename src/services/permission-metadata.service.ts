@@ -13,6 +13,7 @@ import { CrudHelperService } from "src/services/crud-helper.service";
 import { PermissionMetadata } from '../entities/permission-metadata.entity';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { classify } from '@angular-devkit/core/src/utils/strings';
+import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
 
 @Injectable()
 export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
@@ -25,9 +26,10 @@ export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
-    @InjectRepository(PermissionMetadata, 'default')
-    readonly repo: Repository<PermissionMetadata>,
-      readonly moduleRef: ModuleRef
+    // @InjectRepository(PermissionMetadata, 'default')
+    // readonly repo: Repository<PermissionMetadata>,
+    readonly repo: PermissionMetadataRepository,
+    readonly moduleRef: ModuleRef
   
   ) {
     super(modelMetadataService, moduleMetadataService,  configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'permissionMetadata', 'solid-core',moduleRef);

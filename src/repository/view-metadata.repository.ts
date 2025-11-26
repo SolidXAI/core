@@ -1,16 +1,18 @@
-import { Injectable, Logger } from "@nestjs/common";
-import { Dashboard } from "src/entities/dashboard.entity";
+import { Injectable } from "@nestjs/common";
 import { ViewMetadata } from "src/entities/view-metadata.entity";
-import { DataSource, Repository, View } from "typeorm";
+import { RequestContextService } from "src/services/request-context.service";
+import { DataSource } from "typeorm";
+import { SecurityRuleRepository } from "./security-rule.repository";
+import { SolidBaseRepository } from "./solid-base.repository";
 
 @Injectable()
-export class ViewMetadataRepository extends Repository<ViewMetadata> {
-    private readonly logger = new Logger(this.constructor.name);
-
+export class ViewMetadataRepository extends SolidBaseRepository<ViewMetadata> {
     constructor(
-        private dataSource: DataSource,
+        readonly dataSource: DataSource,
+        readonly requestContextService: RequestContextService,
+        readonly securityRuleRepository: SecurityRuleRepository,
     ) {
-        super(ViewMetadata, dataSource.createEntityManager());
+        super(ViewMetadata, dataSource, requestContextService, securityRuleRepository);
     }
 
     // Custom repository methods can be added here if needed

@@ -8,34 +8,42 @@ import {
 } from 'class-validator';
 import { Injectable } from '@nestjs/common';
 import { iamConfig } from '../config/iam.config';
+import { SettingService } from 'src/services/setting.service';
 
 interface SolidPasswordOptions extends ValidationOptions {
     regex?: RegExp | string;
-    message ?: string;
+    message?: string;
 }
 
 @ValidatorConstraint({ async: false })
 @Injectable()
 export class SolidPasswordConstraint implements ValidatorConstraintInterface {
-    validate(value: string, args: ValidationArguments) {
-        if (!value) return false;
-
-        const opts = args.constraints[0] as SolidPasswordOptions;
-
-        // priority: decorator-provided regex → iamConfig().PASSWORD_REGEX
-        const regex = opts?.regex || iamConfig().PASSWORD_REGEX;
-
-        return new RegExp(regex).test(value);
+    private lastMessage = 'Password does not meet complexity requirements';
+  
+    constructor(private readonly settingService: SettingService) {}
+  
+    async validate(value: string, args: ValidationArguments) {
+      if (!value) return false;
+  
+      const opts = args.constraints[0] as SolidPasswordOptions;
+  
+      // Regex source
+      let regex = opts?.regex;
+      if (!regex) {
+        regex = await this.settingService.getConfigValue('authenticationPasswordRegex');
+      }
+  
+      // Message source
+      this.lastMessage =
+        opts?.message || await this.settingService.getConfigValue('authenticationPasswordRegexErrorMessage');
+  
+      return new RegExp(regex).test(value);
     }
-
+  
     defaultMessage(args?: ValidationArguments): string {
-        const opts = args?.constraints?.[0] as SolidPasswordOptions;
-
-        // Just use the string from decorator if passed, otherwise use iamConfig
-        return opts?.message || iamConfig().PASSWORD_COMPLEXITY_DESC;
+      return this.lastMessage;
     }
-}
-
+  }
 export function SolidPasswordRegex(
     options?: SolidPasswordOptions,
 ): PropertyDecorator {

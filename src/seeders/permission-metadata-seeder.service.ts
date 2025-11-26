@@ -4,14 +4,16 @@ import { Repository } from 'typeorm';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { PermissionMetadata } from '../entities/permission-metadata.entity';
 import { RoleMetadataService } from '../services/role-metadata.service';
+import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
 
 @Injectable()
 export class PermissionMetadataSeederService {
   private readonly logger = new Logger(PermissionMetadataSeederService.name);
 
   constructor(
-    @InjectRepository(PermissionMetadata)
-    private readonly permissionRepo: Repository<PermissionMetadata>,
+    // @InjectRepository(PermissionMetadata)
+    // private readonly permissionRepo: Repository<PermissionMetadata>,
+    private readonly permissionRepo: PermissionMetadataRepository,
     private readonly solidRegistry: SolidRegistry,
     @Inject(forwardRef(() => RoleMetadataService))
     private readonly roleService: RoleMetadataService,

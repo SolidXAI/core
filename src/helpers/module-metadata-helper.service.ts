@@ -16,6 +16,9 @@ export class ModuleMetadataHelperService {
     // }
 
     async getModuleMetadataConfiguration(configFilePath: string): Promise<any> {
+        if (!configFilePath) {
+            return null;
+        }
         try {
             const fileContent = await fs.readFile(configFilePath, 'utf8');
             return JSON.parse(fileContent);
@@ -28,10 +31,16 @@ export class ModuleMetadataHelperService {
     }
 
     async getModulePath(moduleName: string): Promise<string> {
+        if (!moduleName) {
+            return '';
+        }
         return path.resolve(process.cwd(), 'src', moduleName);
     }
 
     async getModuleMetadataFilePath(moduleName: string): Promise<string> {
+        if (!moduleName) {
+            return '';
+        }
         const dashModuleName = dasherize(moduleName);
         const folderPath = path.resolve(process.cwd(), 'module-metadata', dashModuleName);
         const filePath = path.join(folderPath, `${dashModuleName}-metadata.json`);
