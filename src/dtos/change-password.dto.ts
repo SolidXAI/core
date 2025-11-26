@@ -12,6 +12,6 @@ export class ChangePasswordDto {
     currentPassword: string;
 
     @IsNotEmpty()
-    @SolidPasswordRegex({ regex: /^$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).*$/})
+    @SolidPasswordRegex({ regex: /^$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^\da-zA-Z]).*$/, message: 'Password must contain at least one uppercase, one lowercase, one number, and one special character.' })
     newPassword: string;
 }

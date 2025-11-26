@@ -35,7 +35,7 @@ export class SolidPasswordConstraint implements ValidatorConstraintInterface {
   
       // Message source
       this.lastMessage =
-        opts?.message || await this.settingService.getConfigValue('authenticationPasswordComplexityDescription');
+        opts?.message || await this.settingService.getConfigValue('authenticationPasswordRegexErrorMessage');
   
       return new RegExp(regex).test(value);
     }
