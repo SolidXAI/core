@@ -25,7 +25,7 @@ import { ModelMetadata } from './entities/model-metadata.entity';
 import { ModuleMetadata } from './entities/module-metadata.entity';
 import { CommandService } from './helpers/command.service';
 import { SchematicService } from './helpers/schematic.service';
-import { ListOfValuesSelectionProvider } from './providers/list-of-values-selection-providers.service';
+import { ListOfValuesSelectionProvider } from './services/selection-providers/list-of-values-selection-providers.service';
 import { ModuleMetadataSeederService } from './seeders/module-metadata-seeder.service';
 import { CrudHelperService } from './services/crud-helper.service';
 import { FieldMetadataService } from './services/field-metadata.service';

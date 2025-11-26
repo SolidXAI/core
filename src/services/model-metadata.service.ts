@@ -270,6 +270,7 @@ export class ModelMetadataService {
         tableName: model.tableName,
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
         isChild: model?.isChild,
+        isLegacyTable: model?.isLegacyTable,
         parentModelUserKey: model?.parentModel?.singularName,
         enableAuditTracking: model?.enableAuditTracking,
         enableSoftDelete: model?.enableSoftDelete,

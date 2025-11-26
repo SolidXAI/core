@@ -524,7 +524,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 },
                 "decimal": {
                     ormTypes: [
-                        { label: MSSQLType.decimal, description: "A high-precision numeric type for financial or exact values." }
+                        { label: MSSQLType.numeric, description: "A high-precision numeric type for financial or exact values." },
+                        { label: MSSQLType.decimal, description: "A high-precision decimal type for financial or exact values." }
                     ]
                 },
 

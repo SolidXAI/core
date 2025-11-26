@@ -205,7 +205,7 @@ export * from './listeners/user-registration.listener'
 export * from './passport-strategies/google-oauth.strategy'
 export * from './passport-strategies/local.strategy'
 
-export * from './providers/list-of-values-selection-providers.service'
+export * from './services/selection-providers/list-of-values-selection-providers.service'
 
 // seed-data
 export * from './seeders/email-template-seeder.service'
