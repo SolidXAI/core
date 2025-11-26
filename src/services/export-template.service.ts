@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { ForbiddenException, Injectable } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -20,11 +20,27 @@ import { ExportTemplate } from '../entities/export-template.entity';
 import { ExportTransactionFileInfo, ExportTransactionService } from './export-transaction.service';
 import { UpdateExportTemplateDto } from 'src/dtos/update-export-template.dto';
 import { ExportTemplateRepository } from 'src/repository/export-template.repository';
+import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
+import {upperFirst, camelCase} from 'lodash';
 
 @Injectable()
 export class ExportTemplateService extends CRUDService<ExportTemplate>{
-  async startExportSync(updateDto: UpdateExportTemplateDto, filters:any): Promise<ExportTransactionFileInfo> {
+  async startExportSync(updateDto: UpdateExportTemplateDto, filters:any,  activeUser: ActiveUserData): Promise<ExportTransactionFileInfo> {
     // Create the export transaction entry, with status 'started'
+    const modelMetadata = await this.modelMetadataService.findOne(updateDto?.modelMetadataId);
+    const modelName = upperFirst(camelCase(modelMetadata.singularName));
+    const permissionKey = `${modelName}Controller.findMany`;
+
+    const userPermissions = activeUser.permissions ?? [];
+    const hasPermission = Array.isArray(userPermissions)
+      ? userPermissions.includes(permissionKey)
+      : userPermissions[permissionKey] === true;
+
+    if (!hasPermission) {
+      throw new ForbiddenException(
+        `Missing permission: ${permissionKey}`
+      );
+    }
     const exportTransaction: CreateExportTransactionDto =  await this.exportTransactionService.toDto({
       datetime: new Date(),
       status: 'started',
