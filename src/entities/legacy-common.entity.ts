@@ -1,15 +1,15 @@
 import { Exclude, Expose, Type } from "class-transformer";
-import { Column, CreateDateColumn, DeleteDateColumn, Generated, JoinColumn, ManyToOne, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, JoinColumn, ManyToOne, UpdateDateColumn } from "typeorm";
 import type { User } from "./user.entity";
 
 export const LEGACY_TABLE_FIELDS_PREFIX = 'ss';
 
 @Exclude()
 export abstract class LegacyCommonEntity {
-    @Expose()
-    @Column({ type: 'integer', name: `${LEGACY_TABLE_FIELDS_PREFIX}_id`, unique: true })
-    @Generated("increment")
-    id: number
+    // @Expose()
+    // @Column({ type: 'integer', name: `${LEGACY_TABLE_FIELDS_PREFIX}_id`, unique: true })
+    // @Generated("increment")
+    // id: number
 
     @CreateDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_created_at` })
     createdAt: Date;
