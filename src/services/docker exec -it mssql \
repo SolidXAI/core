@@ -1,0 +1,8 @@
+docker exec -it mssql \
+  /opt/mssql-tools18/bin/sqlcmd \
+  -S localhost \
+  -U sa \
+  -P 'YourStrong!Passw0rd' \
+  -d mswipe_erp_solidx \
+  -C -b -r1 -e \
+  -i /tmp/ReportsAndHRMS.sql

@@ -21,6 +21,7 @@ type ModelAndFieldGenerationOptions = {
   parentModule?: string;
   draftPublishWorkflowEnabled?: boolean;
   isLegacyTable?: boolean;
+  isLegacyTableWithId?: boolean;
   dataSourceType?: string;
   fields: FieldMetadata[]; //FIXME This type can be improved
 };
@@ -114,6 +115,10 @@ export class SchematicService {
 
     if (modelSpecificOptions.isLegacyTable) {
       modelCommand += ` --is-legacy-table=${modelSpecificOptions.isLegacyTable}`;
+    }
+
+    if (modelSpecificOptions.isLegacyTableWithId) {
+      modelCommand += ` --is-legacy-table-with-id=${modelSpecificOptions.isLegacyTableWithId}`;
     }
 
     if (modelSpecificOptions.dataSourceType) {

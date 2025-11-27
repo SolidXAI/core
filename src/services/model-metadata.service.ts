@@ -271,6 +271,7 @@ export class ModelMetadataService {
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
         isChild: model?.isChild,
         isLegacyTable: model?.isLegacyTable,
+        isLegacyTableWithId: model?.isLegacyTableWithId,
         parentModelUserKey: model?.parentModel?.singularName,
         enableAuditTracking: model?.enableAuditTracking,
         enableSoftDelete: model?.enableSoftDelete,
@@ -1197,6 +1198,7 @@ export class ModelMetadataService {
         parentModule: model.parentModel?.module?.name,
         draftPublishWorkflowEnabled: model.draftPublishWorkflow,
         isLegacyTable: model.isLegacyTable,
+        isLegacyTableWithId: model.isLegacyTableWithId,
         dataSourceType: model.dataSourceType,
       },
       dryRun

@@ -34,7 +34,7 @@ export class SystemFieldsSeederService {
 
   private async seedMissingSystemFields(model: ModelMetadata) {
     const existingSystemFields = model.fields.filter(field => field.isSystem);
-    const systemFieldsMetadata = this.modelHelperService.getSystemFieldsMetadata(model.isLegacyTable);
+    const systemFieldsMetadata = this.modelHelperService.getSystemFieldsMetadata(model.isLegacyTable, model.isLegacyTableWithId);
 
     // Find out which system fields are missing
     const missingFields = systemFieldsMetadata.filter(

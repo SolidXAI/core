@@ -17,8 +17,17 @@ export class ModelMetadataHelperService {
     ) {
     }
 
-    getSystemFieldsMetadata(isLegacyTable: boolean=false): any[] {
-        const systemFieldsMetadata = isLegacyTable ? this.getSystemFieldsMetadataMappingForLegacyTable() : this.getSystemFieldsMetadataMapping()
+    getSystemFieldsMetadata(isLegacyTable: boolean=false, isLegacyTableWithId: boolean=false): any[] {
+        let systemFieldsMetadata: any[];
+        if (isLegacyTableWithId) {
+            systemFieldsMetadata = this.getSystemFieldsMetadataMappingForLegacyTable(true);
+        }
+        else if (isLegacyTable) {
+            systemFieldsMetadata = this.getSystemFieldsMetadataMappingForLegacyTable(false);
+        }
+        else {
+            systemFieldsMetadata = this.getSystemFieldsMetadataMapping();
+        }
 
         this.checkWithRegistry(systemFieldsMetadata);
 
@@ -117,8 +126,15 @@ export class ModelMetadataHelperService {
         ];
     }
 
-    private getSystemFieldsMetadataMappingForLegacyTable() {
+    private getSystemFieldsMetadataMappingForLegacyTable(withId: boolean=true) {
         const systemFieldsMetadata = this.getSystemFieldsMetadataMapping();
+        if (!withId) {
+            // Remove the id field metadata
+            const index = systemFieldsMetadata.findIndex(field => field.name === 'id');
+            if (index !== -1) {
+                systemFieldsMetadata.splice(index, 1);
+            }
+        }
 
         // For legacy table, system fields, remove the ormType atribute from the metadata
         systemFieldsMetadata.forEach(field => {

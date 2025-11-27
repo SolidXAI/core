@@ -68,4 +68,8 @@ export class ModelMetadata extends CommonEntity {
 
     @Column({ default: false })
     isLegacyTable: boolean;
+
+    @Column({ default: false })
+    isLegacyTableWithId: boolean;
+
 }
