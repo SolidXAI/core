@@ -558,6 +558,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                     const user = await userRepository.findOne({
                         where: { id: userId },
                     });
+                    // @ts-ignore
                     entity[userFieldPath] = user;
                 }
             }

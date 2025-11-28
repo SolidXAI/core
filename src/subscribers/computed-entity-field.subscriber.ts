@@ -1,28 +1,34 @@
 import { camelize } from "@angular-devkit/core/src/utils/strings";
-import { Injectable, InternalServerErrorException, Logger } from "@nestjs/common";
-import { InjectDataSource } from "@nestjs/typeorm";
+import { forwardRef, Inject, Injectable, InternalServerErrorException, Logger, Scope } from "@nestjs/common";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
 import { ComputedFieldMetadata, SolidRegistry } from "src/helpers/solid-registry";
 import { IEntityPreComputeFieldProvider } from "src/interfaces";
 import { PublisherFactory } from "src/services/queues/publisher-factory.service";
-import { DataSource, EntitySubscriberInterface, EventSubscriber, InsertEvent, UpdateEvent } from "typeorm";
+import { DataSource, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
 
 // Create an interface i.e ComputedFieldEvaluationPayload which has same fields as the ComputedFieldMetadata and an additional field for the database entity
 export interface ComputedFieldEvaluationPayload extends ComputedFieldMetadata {
     databaseEntity: any;
 }
 
-@Injectable()
-@EventSubscriber()
+@Injectable({scope: Scope.TRANSIENT})
+// @EventSubscriber()
 export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface {
     private readonly logger = new Logger(this.constructor.name);
+    private dataSource: DataSource;
     constructor(
-        @InjectDataSource()
-        private readonly dataSource: DataSource,
+        // @InjectDataSource()
+        // private readonly dataSource: DataSource,
         private readonly solidRegistry: SolidRegistry,
+        @Inject(forwardRef(() => PublisherFactory))
         private readonly publisherFactory: PublisherFactory<ComputedFieldEvaluationPayload>
         // private readonly computedFieldPublisher: ComputedFieldEvaluationPublisherDatabase,
     ) {
+        // this.dataSource.subscribers.push(this);
+    }
+
+    bindToDataSource(dataSource: DataSource) {
+        this.dataSource = dataSource;
         this.dataSource.subscribers.push(this);
     }
 

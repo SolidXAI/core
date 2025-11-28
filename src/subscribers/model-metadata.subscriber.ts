@@ -5,7 +5,7 @@ import { DataSource, EntitySubscriberInterface, EventSubscriber, InsertEvent } f
 import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 
-@EventSubscriber()
+// @EventSubscriber()
 @Injectable()
 export class ModelMetadataSubscriber implements EntitySubscriberInterface<ModelMetadata> {
   private readonly logger = new Logger(ModelMetadataSubscriber.name);

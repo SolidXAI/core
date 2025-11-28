@@ -44,9 +44,9 @@ export abstract class CommonEntity {
 
     @Expose()
     @Column({ name: `created_by_id`, nullable: true })
-    createdById: number;
+    createdBy: number;
 
     @Expose()
     @Column({ name: `updated_by_id`, nullable: true })
-    updatedById: number;
+    updatedBy: number;
 }

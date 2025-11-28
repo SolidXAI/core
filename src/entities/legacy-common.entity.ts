@@ -49,9 +49,9 @@ export abstract class LegacyCommonEntity {
 
     @Expose()
     @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_created_by_id`, nullable: true })
-    createdById: number;
+    createdBy: number;
     
     @Expose()
     @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_updated_by_id`, nullable: true })
-    updatedById: number;
+    updatedBy: number;
 }
