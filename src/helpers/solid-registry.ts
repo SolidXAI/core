@@ -288,7 +288,7 @@ export class SolidRegistry {
     });
   }
 
-  getCommonEntityKeys(): (keyof CommonEntity)[] {
+  getCommonEntityKeys(): (keyof CommonEntity | 'createdBy' | 'updatedBy')[] {
     return ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt'];
     // return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
   }

@@ -51,7 +51,6 @@ export class ModelMetadataHelperService {
                 name: "id",
                 displayName: "Id",
                 type: "int",
-                ormType: "bigint",
                 isSystem: true,
             },
             {
@@ -76,7 +75,6 @@ export class ModelMetadataHelperService {
                 name: "deletedTracker",
                 displayName: "Deleted Tracker",
                 type: "shortText",
-                ormType: "varchar",
                 isSystem: true,
             },
             {
@@ -89,39 +87,27 @@ export class ModelMetadataHelperService {
                 name: "localeName",
                 displayName: "Locale",
                 type: "shortText",
-                ormType: "varchar",
                 isSystem: true,
             },
             {
                 name: "defaultEntityLocaleId",
                 displayName: "Default Entity Locale Id",
                 type: "int",
-                ormType: "integer",
                 isSystem: true,
             },
             {
                 name: "createdBy",
                 displayName: "Created By",
-                type: "relation",
-                ormType: "integer",
+                type: "int",
                 isSystem: true,
-                relationType: "many-to-one",
-                relationCoModelSingularName: "user",
-                relationCreateInverse: false,
-                relationCascade: "restrict",
-                relationModelModuleName: "solid-core"
+                columnName: "created_by_id",
             },
             {
                 name: "updatedBy",
                 displayName: "Updated By",
-                type: "relation",
-                ormType: "integer",
+                type: "int",
                 isSystem: true,
-                relationType: "many-to-one",
-                relationCoModelSingularName: "user",
-                relationCreateInverse: false,
-                relationCascade: "restrict",
-                relationModelModuleName: "solid-core"
+                columnName: "updated_by_id",
             },
         ];
     }
@@ -137,9 +123,9 @@ export class ModelMetadataHelperService {
         }
 
         // For legacy table, system fields, remove the ormType atribute from the metadata
-        systemFieldsMetadata.forEach(field => {
-            delete field.ormType;
-        });
+        // systemFieldsMetadata.forEach(field => {
+        //     delete field.ormType;
+        // });
 
         // Except for createdBy and updatedBy fields, for which we need to keep the columnName as created_by_id and updated_by_id respectively,
         // we need to add a columnName attribute with legacy prefix concatenated with the kebab cased field name of the system field

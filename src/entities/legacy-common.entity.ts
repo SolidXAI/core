@@ -35,15 +35,23 @@ export abstract class LegacyCommonEntity {
     @Column({ type: "int", name: `${LEGACY_TABLE_FIELDS_PREFIX}_default_entity_locale_id`, default: null })
     defaultEntityLocaleId: number;
 
-    @Expose()
-    @Type( () => require('./user.entity').User?.default ?? require('./user.entity').User )
-    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
-    @JoinColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_created_by_id` })
-    createdBy: User;
+    // @Expose()
+    // @Type( () => require('./user.entity').User?.default ?? require('./user.entity').User )
+    // @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
+    // @JoinColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_created_by_id` })
+    // createdBy: User;
+
+    // @Expose()
+    // @Type( () => require('./user.entity').User?.default ?? require('./user.entity').User )
+    // @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
+    // @JoinColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_updated_by_id` })
+    // updatedBy: User;    
 
     @Expose()
-    @Type( () => require('./user.entity').User?.default ?? require('./user.entity').User )
-    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
-    @JoinColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_updated_by_id` })
-    updatedBy: User;    
+    @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_created_by_id`, nullable: true })
+    createdById: number;
+    
+    @Expose()
+    @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_updated_by_id`, nullable: true })
+    updatedById: number;
 }
