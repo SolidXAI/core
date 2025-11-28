@@ -23,8 +23,6 @@ export * from './decorators/error-codes-provider.decorator'
 export * from './decorators/solid-database-module.decorator'
 export * from './decorators/solid-service.decorator'
 export * from './decorators/mail-provider.decorator'
-export * from './decorators/disallow-in-production.decorator'
-export * from './decorators/inject-datasource.decorator'
 
 export * from './dtos/post-chatter-message.dto'
 export * from './dtos/basic-filters.dto'
@@ -139,6 +137,7 @@ export * from './entities/dashboard-question-sql-dataset-config.entity'
 export * from './entities/ai-interaction.entity'
 
 export * from './enums/auth-type.enum'
+export * from './decorators/disallow-in-production.decorator'
 
 export * from './filters/http-exception.filter'
 
