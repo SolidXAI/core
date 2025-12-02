@@ -87,11 +87,11 @@ export class ModuleMetadataSeederService {
         readonly systemFieldsSeederService: SystemFieldsSeederService,
         readonly dashboardRepo: DashboardRepository,
         readonly scheduledJobRepository: ScheduledJobRepository,
-        readonly savedFiltersRepo : SavedFiltersRepository,
+        readonly savedFiltersRepo: SavedFiltersRepository,
         readonly dataSource: DataSource,
     ) { }
 
-    async seed() {
+    async seed(conf?: any) {
         // Global seeding steps i.e across all modules
         await this.seedGlobalMetadata();
 
@@ -162,10 +162,10 @@ export class ModuleMetadataSeederService {
             this.logger.log(`Seeding Scheduled Jobs`);
             await this.seedScheduledJobs(moduleMetadata, overallMetadata);
 
-             // Saved Filters
-             this.logger.log(`Seeding Saved Filters`);
-             await this.seedSavedFilters(moduleMetadata, overallMetadata);
- 
+            // Saved Filters
+            this.logger.log(`Seeding Saved Filters`);
+            await this.seedSavedFilters(moduleMetadata, overallMetadata);
+
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
         }
 
@@ -194,7 +194,7 @@ export class ModuleMetadataSeederService {
             await this.handleSeedSavedFilters(savedFilters);
         }
         this.logger.debug(`[End] Processing saved filters for ${moduleMetadata.name}`);
-    }   
+    }
 
     private async seedDashboards(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any) {
         this.logger.debug(`[Start] Processing dashboards for ${moduleMetadata.name}`);

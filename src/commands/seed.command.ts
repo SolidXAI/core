@@ -3,7 +3,7 @@ import { Command, CommandRunner, Option } from 'nest-commander';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 
 interface SeedCommandOptions {
-  // module?: string;
+  conf?: string;
   seeder?: string;
 }
 
@@ -16,6 +16,9 @@ export class SeedCommand extends CommandRunner {
   }
 
   async run(passedParam: string[], options?: SeedCommandOptions): Promise<void> {
+    // TODO: check if options.conf is non empty and a valid json string.
+    // TODO: convert to json object JSON.parse
+
     const seeder = this.solidRegistry
       .getSeeders()
       .filter((seeder) => seeder.name === options.seeder)
@@ -29,19 +32,19 @@ export class SeedCommand extends CommandRunner {
     await seeder.seed();
   }
 
-  // @Option({
-  //   flags: '-m, --module [module name]',
-  //   description: 'Name of the module, all seeders inside this module will be run automatically.',
-  //   required: true
-  // })
-  // /**
-  //  * TODO
-  //  * This parameter will be useful, to support seeders with the same name in different modules
-  //  * Currently the seeder service won't support seeder with same classname within a module
-  //  **/
-  // parseModule(val: string): string {
-  //   return val;
-  // }
+  @Option({
+    flags: '-c, --conf [configuration json]',
+    description: 'A configuration json, pass a valid json string.',
+    required: true
+  })
+  /**
+   * TODO
+   * This parameter will be useful, to support seeders with the same name in different modules
+   * Currently the seeder service won't support seeder with same classname within a module
+   **/
+  parseConf(val: string): string {
+    return val;
+  }
 
   @Option({
     flags: '-s, --seeder [seeder name]',
