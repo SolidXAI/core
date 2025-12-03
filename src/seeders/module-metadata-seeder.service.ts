@@ -101,10 +101,10 @@ export class ModuleMetadataSeederService {
         this.logger.debug(`Seed data files are: ${seedDataFiles}`);
 
         /** -------------------------------------------------------------
-     * Selective module seeding via: 
-     *   solid seed -c "{\"modulesToSeed\": [\"onboarding\", \"reports\"]}"
-     * -------------------------------------------------------------
-     */
+         * Selective module seeding via: 
+         *   solid seed -c "{\"modulesToSeed\": [\"onboarding\", \"reports\"]}"
+         * -------------------------------------------------------------
+         */
         let modulesToSeed: string[] | null = null;
 
         if (conf && Array.isArray(conf.modulesToSeed)) {
@@ -125,8 +125,6 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`No modules matched the provided modulesToSeed list.`);
             return;
         }
-
-
 
         // let usersDetail;
         // For each module metadata file, we will process the seeding steps one by one.
