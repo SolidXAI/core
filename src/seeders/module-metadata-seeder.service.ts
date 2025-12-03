@@ -99,10 +99,39 @@ export class ModuleMetadataSeederService {
         // Get all the module metadata files which needs to be seeded.
         const seedDataFiles = this.seedDataFiles;
         this.logger.debug(`Seed data files are: ${seedDataFiles}`);
+
+        /** -------------------------------------------------------------
+     * Selective module seeding via: 
+     *   solid seed -c "{\"modulesToSeed\": [\"onboarding\", \"reports\"]}"
+     * -------------------------------------------------------------
+     */
+        let modulesToSeed: string[] | null = null;
+
+        if (conf && Array.isArray(conf.modulesToSeed)) {
+            modulesToSeed = conf.modulesToSeed;
+            this.logger.log(`Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
+        } else {
+            this.logger.log(`No modulesToSeed provided. Seeding ALL modules.`);
+        }
+
+        // Filter modules if needed
+        const filteredSeedDataFiles = modulesToSeed
+            ? seedDataFiles.filter((file) =>
+                modulesToSeed.includes(file.moduleMetadata?.name)
+            )
+            : seedDataFiles;
+
+        if (filteredSeedDataFiles.length === 0) {
+            this.logger.warn(`No modules matched the provided modulesToSeed list.`);
+            return;
+        }
+
+
+
         // let usersDetail;
         // For each module metadata file, we will process the seeding steps one by one.
-        for (let i = 0; i < seedDataFiles.length; i++) {
-            const overallMetadata = seedDataFiles[i];
+        for (let i = 0; i < filteredSeedDataFiles.length; i++) {
+            const overallMetadata = filteredSeedDataFiles[i];
             const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
             this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
 

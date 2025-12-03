@@ -16,8 +16,24 @@ export class SeedCommand extends CommandRunner {
   }
 
   async run(passedParam: string[], options?: SeedCommandOptions): Promise<void> {
-    // TODO: check if options.conf is non empty and a valid json string.
+    // TODO: check if options.conf is non empty and a valid json string only is -c flag is passed.
     // TODO: convert to json object JSON.parse
+    let parsedConf: any = null;
+
+    // Parse conf only if provided
+    if (options?.conf !== undefined) {
+      try {
+        parsedConf = JSON.parse(options.conf);
+        this.logger.log(`Parsed conf: ${JSON.stringify(parsedConf, null, 2)}`);
+      } catch (err) {
+        this.logger.error('Failed to parse --conf. Please provide valid JSON.');
+        return;
+      }
+    } else {
+      this.logger.log('No --conf flag provided. Running with default seeder behavior.');
+    }
+
+
 
     const seeder = this.solidRegistry
       .getSeeders()
@@ -29,13 +45,13 @@ export class SeedCommand extends CommandRunner {
       return;
     }
     this.logger.log(`Running the seed() method for seeder :${seeder.constructor.name}`);
-    await seeder.seed();
+    await seeder.seed(parsedConf);
   }
 
   @Option({
     flags: '-c, --conf [configuration json]',
     description: 'A configuration json, pass a valid json string.',
-    required: true
+    required: false
   })
   /**
    * TODO
