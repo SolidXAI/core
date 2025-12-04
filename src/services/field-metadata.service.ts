@@ -16,12 +16,18 @@ import { ISelectionProviderValues } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import qs from 'qs';
+import { ResolveS3UrlDto } from 'src/dtos/resolve-s3-url.dto';
+import { ConfigService } from '@nestjs/config';
+import { FileService } from './file.service';
 
 
 @Injectable()
 export class FieldMetadataService implements OnApplicationBootstrap {
     constructor(
         private readonly fieldMetadataRepo: FieldMetadataRepository,
+        private readonly configService: ConfigService,
+        private readonly fileService: FileService,
+
         @InjectDataSource()
         private readonly dataSource: DataSource,
         private readonly solidRegistry: SolidRegistry,
@@ -1272,6 +1278,18 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         }
 
         return fieldObject;
+    }
+
+    async resolveS3Url(resolveS3UrlDto: ResolveS3UrlDto) {
+        let url = "";
+        // TODO  - get 
+        if (resolveS3UrlDto.isPrivate == "true") {
+            const expiryInSeconds = 60 * 60;
+            url = await this.fileService.getSignedUrl(resolveS3UrlDto.s3Key, expiryInSeconds, resolveS3UrlDto.bucketName);
+        } else {
+            url = `https://${resolveS3UrlDto.bucketName}.s3.${this.configService.get('S3_AWS_REGION_NAME')}.amazonaws.com/${resolveS3UrlDto.s3Key}`;
+        }
+        return { url: url }
     }
 }
 
