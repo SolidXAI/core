@@ -327,6 +327,7 @@ import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
+import { McpCommand } from './commands/mcp.command';
 
 
 @Global()
@@ -499,6 +500,7 @@ import { MediaStorageProviderMetadataRepository } from './repository/media-stora
     TextractService,
     SolidRegistry,
     SeedCommand,
+    McpCommand,
     IngestCommand,
     IngestMetadataService,
     SMTPEMailService,
