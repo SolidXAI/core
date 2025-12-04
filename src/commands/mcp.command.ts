@@ -51,7 +51,7 @@ export class McpCommand extends CommandRunner {
             return;
         }
 
-        const detached = options?.detached ?? true;
+        const detached = options?.detached ?? false;
 
         this.logger.log(`Using repo path: ${repoPath}`);
         this.logger.log(`Detached mode: ${detached}`);
@@ -66,24 +66,23 @@ export class McpCommand extends CommandRunner {
             args.push('-d');
         }
 
-        args.push('mcp', 'mcp_celery_worker');
+        args.push('mcp_server', 'mcp_celery_worker');
+
+        const env = {
+            ...process.env,                   // preserve existing env
+            MCP_API_KEY: apiKey,              // pass to docker process
+            HOST_SOLIDX_CONSUMING_PROJECT_ROOT: consumingProjectPath,
+        }
 
         this.logger.log(`Running: ${cmd} ${args.join(' ')}`);
+        this.logger.log(`Using env: ${JSON.stringify(env)}`);
 
         // ---------------------------------------------------------------
         // 4. Run docker with environment variable passed along
         // ---------------------------------------------------------------
-        await this.runDockerCommand(cmd, args, repoPath, {
-            ...process.env,                   // preserve existing env
-            MCP_API_KEY: apiKey,              // pass to docker process
-            HOST_SOLIDX_CONSUMING_PROJECT_ROOT: consumingProjectPath,
-        });
+        await this.runDockerCommand(cmd, args, repoPath, env);
 
-        this.logger.log(
-            detached
-                ? 'MCP containers started in detached mode.'
-                : 'MCP containers started in foreground.'
-        );
+        this.logger.log(detached ? 'MCP containers started in detached mode.' : 'MCP containers started in foreground.');
     }
 
     // Resolve ~ and relative paths
@@ -94,13 +93,9 @@ export class McpCommand extends CommandRunner {
         return path.resolve(inputPath);
     }
 
-    private runDockerCommand(
-        cmd: string,
-        args: string[],
-        cwd: string,
-        env: NodeJS.ProcessEnv,
-    ): Promise<void> {
+    private runDockerCommand(cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv): Promise<void> {
         return new Promise((resolve, reject) => {
+
             const child = spawn(cmd, args, {
                 cwd,
                 env,
