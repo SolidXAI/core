@@ -11,7 +11,7 @@ interface McpCommandOptions {
 
 @Command({
     name: 'mcp',
-    description: 'Start the SolidX MCP server and Celery worker docker containers',
+    description: 'Manage the SolidX MCP server and Celery worker docker containers (start/stop)',
 })
 export class McpCommand extends CommandRunner {
     private readonly logger = new Logger(McpCommand.name);
@@ -21,11 +21,36 @@ export class McpCommand extends CommandRunner {
     }
 
     async run(passedParams: string[], options?: McpCommandOptions): Promise<void> {
+        const mode = (passedParams[0] || 'start').toLowerCase();
 
-        // ---------------------------------------------------------------
+        if (mode === 'stop') {
+            await this.stopContainers(options);
+        } else if (mode === 'start') {
+            await this.startContainers(options);
+        } else {
+            this.logger.error(
+                `Unknown mode "${mode}". Supported modes are: start, stop.\n` +
+                'Examples:\n' +
+                '  solid mcp start -p ~/mcp/servers/solidx_mcp_server\n' +
+                '  solid mcp stop  -p ~/mcp/servers/solidx_mcp_server\n'
+            );
+        }
+    }
+
+    // ---------------------------------------------------------------
+    // START
+    // ---------------------------------------------------------------
+    private async startContainers(options?: McpCommandOptions): Promise<void> {
         // 1. Validate license key
-        // ---------------------------------------------------------------
         const apiKey = process.env.MCP_API_KEY;
+
+        const defaultDatabaseUser = process.env.DEFAULT_DATABASE_USER;
+        const defaultDatabasePwd = process.env.DEFAULT_DATABASE_PASSWORD
+            ? encodeURIComponent(process.env.DEFAULT_DATABASE_PASSWORD)
+            : '';
+        const defaultDatabaseHost = process.env.DEFAULT_DATABASE_HOST === 'localhost' ? 'host.docker.internal' : process.env.DEFAULT_DATABASE_HOST;
+        const defaultDatabaseName = process.env.DEFAULT_DATABASE_NAME;
+        const databaseUrl = `postgresql://${defaultDatabaseUser}:${defaultDatabasePwd}@${defaultDatabaseHost}/${defaultDatabaseName}`;
 
         if (!apiKey || apiKey.trim() === '') {
             this.logger.error(
@@ -38,12 +63,9 @@ export class McpCommand extends CommandRunner {
 
         this.logger.log('✔ MCP_API_KEY found.');
 
-        // ---------------------------------------------------------------
-        // 2. Resolve repo path
-        // ---------------------------------------------------------------
+        // 2. Resolve paths
         const repoPath = options?.repoPath ? this.resolvePath(options.repoPath) : process.cwd();
         const consumingProjectPath = path.resolve(process.cwd(), '..');
-
         const composeFile = path.join(repoPath, 'docker-compose.yml');
 
         if (!fs.existsSync(composeFile)) {
@@ -53,12 +75,12 @@ export class McpCommand extends CommandRunner {
 
         const detached = options?.detached ?? false;
 
+        this.logger.log(`Mode: start`);
         this.logger.log(`Using repo path: ${repoPath}`);
         this.logger.log(`Detached mode: ${detached}`);
+        this.logger.log(`Consuming project root: ${consumingProjectPath}`);
 
-        // ---------------------------------------------------------------
         // 3. Build docker compose args
-        // ---------------------------------------------------------------
         const cmd = 'docker';
         const args = ['compose', '-f', composeFile, 'up'];
 
@@ -66,26 +88,59 @@ export class McpCommand extends CommandRunner {
             args.push('-d');
         }
 
+        // Service names as defined in docker-compose.yml
         args.push('mcp_server', 'mcp_celery_worker');
 
-        const env = {
-            ...process.env,                   // preserve existing env
-            MCP_API_KEY: apiKey,              // pass to docker process
+        const env: NodeJS.ProcessEnv = {
+            ...process.env,
+            MCP_API_KEY: apiKey,
             HOST_SOLIDX_CONSUMING_PROJECT_ROOT: consumingProjectPath,
-        }
+            DATABASE_URL: databaseUrl,
+        };
 
         this.logger.log(`Running: ${cmd} ${args.join(' ')}`);
-        this.logger.log(`Using env: ${JSON.stringify(env)}`);
+        const envLog = Object.entries(env)
+            .map(([key, value]) => `${key}=${value ?? ''}`)
+            .join('\n');
+        this.logger.log(`Using env overrides:\n${envLog}`);
 
-        // ---------------------------------------------------------------
-        // 4. Run docker with environment variable passed along
-        // ---------------------------------------------------------------
         await this.runDockerCommand(cmd, args, repoPath, env);
 
-        this.logger.log(detached ? 'MCP containers started in detached mode.' : 'MCP containers started in foreground.');
+        this.logger.log(
+            detached
+                ? 'MCP containers started in detached mode.'
+                : 'MCP containers started in foreground.'
+        );
     }
 
-    // Resolve ~ and relative paths
+    // ---------------------------------------------------------------
+    // STOP
+    // ---------------------------------------------------------------
+    private async stopContainers(options?: McpCommandOptions): Promise<void> {
+        const repoPath = options?.repoPath ? this.resolvePath(options.repoPath) : process.cwd();
+        const composeFile = path.join(repoPath, 'docker-compose.yml');
+
+        if (!fs.existsSync(composeFile)) {
+            this.logger.error(`docker-compose.yml not found at ${composeFile}`);
+            return;
+        }
+
+        this.logger.log(`Mode: stop`);
+        this.logger.log(`Using repo path: ${repoPath}`);
+
+        const cmd = 'docker';
+        const args = ['compose', '-f', composeFile, 'down'];
+
+        this.logger.log(`Running: ${cmd} ${args.join(' ')}`);
+
+        await this.runDockerCommand(cmd, args, repoPath, process.env);
+
+        this.logger.log('MCP containers stopped (docker compose down).');
+    }
+
+    // ---------------------------------------------------------------
+    // Helpers
+    // ---------------------------------------------------------------
     private resolvePath(inputPath: string): string {
         if (inputPath.startsWith('~')) {
             return path.join(process.env.HOME!, inputPath.slice(1));
@@ -93,9 +148,13 @@ export class McpCommand extends CommandRunner {
         return path.resolve(inputPath);
     }
 
-    private runDockerCommand(cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv): Promise<void> {
+    private runDockerCommand(
+        cmd: string,
+        args: string[],
+        cwd: string,
+        env: NodeJS.ProcessEnv,
+    ): Promise<void> {
         return new Promise((resolve, reject) => {
-
             const child = spawn(cmd, args, {
                 cwd,
                 env,
@@ -118,11 +177,11 @@ export class McpCommand extends CommandRunner {
 
     @Option({
         flags: '-d, --detached [boolean]',
-        description: 'Run containers in detached mode (default: true)',
+        description: 'Run containers in detached mode (only for start, default: false)',
         required: false,
     })
     parseDetached(val: string): boolean {
-        if (val === undefined) return true;
+        if (val === undefined) return false;
         return val === 'true' || val === '1';
     }
 
