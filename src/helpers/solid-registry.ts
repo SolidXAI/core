@@ -5,7 +5,8 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext } from "../interfaces";
+import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule } from "../interfaces";
+import { DatasourceType } from 'src/dtos/create-model-metadata.dto';
 
 type ControllerMetadata = {
   name: string;
@@ -245,6 +246,17 @@ export class SolidRegistry {
 
   getSolidDatabaseModules(): Array<InstanceWrapper> {
     return Array.from(this.solidDatabaseModules);
+  }
+
+  getDefaultSolidDatabaseModule(): ISolidDatabaseModule {
+    const solidDatabaseModulesAsArray = Array.from(this.solidDatabaseModules);
+    for (let i = 0; i < solidDatabaseModulesAsArray.length; i++) {
+      const solidDatabaseModule = solidDatabaseModulesAsArray[i];
+      const solidDatabaseModuleInstance: ISolidDatabaseModule = solidDatabaseModule.instance;
+      if (solidDatabaseModuleInstance.name() === 'default') {
+        return solidDatabaseModuleInstance;
+      }
+    }
   }
 
   getModules(): Array<InstanceWrapper> {

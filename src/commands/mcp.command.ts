@@ -3,6 +3,9 @@ import { Logger } from '@nestjs/common';
 import { spawn } from 'child_process';
 import * as path from 'path';
 import * as fs from 'fs';
+import { SolidRegistry } from 'src/helpers/solid-registry';
+import { ISolidDatabaseModule } from 'src/interfaces';
+import { DatasourceType } from 'src/dtos/create-model-metadata.dto';
 
 interface McpCommandOptions {
     repoPath?: string;
@@ -16,7 +19,9 @@ interface McpCommandOptions {
 export class McpCommand extends CommandRunner {
     private readonly logger = new Logger(McpCommand.name);
 
-    constructor() {
+    constructor(
+        private readonly solidRegistry: SolidRegistry
+    ) {
         super();
     }
 
@@ -44,13 +49,27 @@ export class McpCommand extends CommandRunner {
         // 1. Validate license key
         const apiKey = process.env.MCP_API_KEY;
 
+        // Form the Database url to be used by the MCP server based on the consuming projects details. 
         const defaultDatabaseUser = process.env.DEFAULT_DATABASE_USER;
         const defaultDatabasePwd = process.env.DEFAULT_DATABASE_PASSWORD
             ? encodeURIComponent(process.env.DEFAULT_DATABASE_PASSWORD)
             : '';
         const defaultDatabaseHost = process.env.DEFAULT_DATABASE_HOST === 'localhost' ? 'host.docker.internal' : process.env.DEFAULT_DATABASE_HOST;
         const defaultDatabaseName = process.env.DEFAULT_DATABASE_NAME;
-        const databaseUrl = `postgresql://${defaultDatabaseUser}:${defaultDatabasePwd}@${defaultDatabaseHost}/${defaultDatabaseName}`;
+        const databaseDialect = process.env.DEFAULT_DATABASE_TYPE?.toLowerCase() === 'mssql' ? 'mssql+pyodbc' : 'postgresql';
+        // const databaseUrl = `${databaseDialect}://${defaultDatabaseUser}:${defaultDatabasePwd}@${defaultDatabaseHost}/${defaultDatabaseName}`;
+
+        const defaultDatasource: ISolidDatabaseModule = this.solidRegistry.getDefaultSolidDatabaseModule()
+
+        let databaseUrl: string;
+        if (defaultDatasource.type() === DatasourceType.mssql) {
+            const base = `mssql+pyodbc://${defaultDatabaseUser}:${defaultDatabasePwd}@${defaultDatabaseHost}/${defaultDatabaseName}`;
+            const driver = encodeURIComponent('ODBC Driver 18 for SQL Server');
+            databaseUrl = `${base}?driver=${driver}&TrustServerCertificate=yes`;
+        }
+        if (defaultDatasource.type() === DatasourceType.postgres) {
+            databaseUrl = `postgresql://${defaultDatabaseUser}:${defaultDatabasePwd}@${defaultDatabaseHost}/${defaultDatabaseName}`;
+        }
 
         if (!apiKey || apiKey.trim() === '') {
             this.logger.error(
