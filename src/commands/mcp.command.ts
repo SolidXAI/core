@@ -118,10 +118,10 @@ export class McpCommand extends CommandRunner {
         };
 
         this.logger.log(`Running: ${cmd} ${args.join(' ')}`);
-        const envLog = Object.entries(env)
-            .map(([key, value]) => `${key}=${value ?? ''}`)
-            .join('\n');
-        this.logger.log(`Using env overrides:\n${envLog}`);
+        // const envLog = Object.entries(env)
+        //     .map(([key, value]) => `${key}=${value ?? ''}`)
+        //     .join('\n');
+        // this.logger.log(`Using env overrides:\n${envLog}`);
 
         await this.runDockerCommand(cmd, args, repoPath, env);
 
