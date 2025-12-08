@@ -144,7 +144,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
 
         const existingControllerAndTheirMethods = this.solidRegistry.getControllers();
 
-        
+
 
         // Build markdown sections using template interpolation
         const modulesSection = (existingModules ?? [])
@@ -170,7 +170,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 `- name: ${d.name}`,
                 `- description: ${d.description ?? ""}`,
             ].join('\n'))
-            .join('\n\n');    
+            .join('\n\n');
 
         const computationProvidersSection = (existingComputationProviders ?? [])
             .map(m => [
@@ -183,7 +183,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         const controllersAndTheirMethods = (existingControllerAndTheirMethods ?? [])
             .map(m => [
                 `### ${m.name}`,
-                `- methods: ${m.methods.length ? m.methods.map(m => `- ${m}`).join('\n'): '- No methods found'}`,
+                `- methods: ${m.methods.length ? m.methods.map(m => `- ${m}`).join('\n') : '- No methods found'}`,
             ].join('\n'))
             .join('\n\n');
 
@@ -224,11 +224,10 @@ Use the below list of computed field providers to infer which provider the user 
 ${computationProvidersSection}
 `.trim();
 
+        // ## LIST OF EXISTING CONTROLLERS AND THEIR METHODS
+        // Use the below list of controllers and their methods to infer whether the api call being made to a particular controller exists or not.
 
-// ## LIST OF EXISTING CONTROLLERS AND THEIR METHODS
-// Use the below list of controllers and their methods to infer whether the api call being made to a particular controller exists or not.
-
-// ${controllersAndTheirMethods}
+        // ${controllersAndTheirMethods}
 
         const aiResponse = await this.aiInteractionService.runMcpPrompt(finalPrompt);
         this.triggerMcpClientSubscriberLogger.log(`aiResponse: `);
@@ -247,7 +246,7 @@ ${computationProvidersSection}
             //     role: 'gen-ai',
             //     message: '-',
             //     contentType: aiResponse.content_type,
-            //     errorMessage: errorsStr,
+            //     errorMessage: `${errorsStr}\n\n${errorTrace}`,
             //     modelUsed: aiResponse.model,
             //     responseTimeMs: aiResponse.duration_ms,
             //     metadata: JSON.stringify(aiResponse, null, 2),
@@ -257,7 +256,7 @@ ${computationProvidersSection}
 
             // TODO: Update the previously created genAiInteraction record with the respective error fields and save to DB
             await this.aiInteractionService.update(genAiInteraction.id, {
-                // contentType: aiResponse.content_type,
+                contentType: aiResponse.content_type,
                 errorMessage: `${errorsStr}\n\n${errorTrace}`,
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
@@ -271,6 +270,10 @@ ${computationProvidersSection}
         else {
             let nestedResponse = this.cleanNestedResponse(aiResponse);
 
+            // TODO: Update the previously created genAiInteraction record with the respective success fields and save to DB
+            const errorsStr = nestedResponse?.status == "error" && nestedResponse?.errors.join('\n ');
+            const errorTrace = nestedResponse?.status == "error" && nestedResponse?.error_trace?.join('\n');
+
             // const genAiInteraction = await this.aiInteractionService.create({
             //     userId: aiInteraction.user.id,
             //     threadId: aiInteraction.threadId,
@@ -278,7 +281,7 @@ ${computationProvidersSection}
             //     role: 'gen-ai',
             //     message: nestedResponse,
             //     contentType: aiResponse.content_type,
-            //     errorMessage: '',
+            //     errorMessage: `${errorsStr}\n\n${errorTrace}`,
             //     modelUsed: aiResponse.model,
             //     responseTimeMs: aiResponse.duration_ms,
             //     metadata: JSON.stringify(aiResponse, null, 2),
@@ -286,21 +289,14 @@ ${computationProvidersSection}
             //     status: aiResponse.success ? 'succeeded' : 'failed'
             // });
 
-            // TODO: Update the previously created genAiInteraction record with the respective success fields and save to DB
-            const errorsStr = nestedResponse?.status == "error" && nestedResponse?.errors.join('\n ');
-            // const errorTrace = nestedResponse?.status == "error" && nestedResponse?.error_trace?.join('\n');
-
-
             await this.aiInteractionService.update(genAiInteraction.id, {
-                errorMessage: nestedResponse.status == "error" ? `${errorsStr}` : "",
-                // errorMessage:"",
-                // contentType: aiResponse.content_type,
-                // message: nestedResponse,
+                errorMessage: nestedResponse.status == "error" ? `${errorsStr}\n\n${errorTrace}` : "",
+                contentType: aiResponse.content_type,
+                message: JSON.stringify(nestedResponse),
                 modelUsed: aiResponse.model,
                 responseTimeMs: aiResponse.duration_ms,
+                metadata: JSON.stringify(aiResponse, null, 2),
                 isApplied: aiInteraction.isApplied,
-
-                // status: aiResponse.success ? 'succeeded' : 'failed'
                 status: aiResponse.success && nestedResponse.status == "success" ? 'succeeded' : 'failed'
             }, [], true);
 
