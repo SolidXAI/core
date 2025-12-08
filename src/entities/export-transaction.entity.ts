@@ -6,7 +6,7 @@ import { ExportTemplate } from 'src/entities/export-template.entity'
 @Index(["exportTransactionId", "deletedTracker"], { unique: true })
 export class ExportTransaction extends CommonEntity {
     @Index()
-    @Column({ type: "timestamp" })
+    @Column({})
     datetime: Date;
     @Index()
     @Column({ type: "varchar" })
@@ -17,6 +17,6 @@ export class ExportTransaction extends CommonEntity {
     @Column({ type: "text", nullable: true })
     error: string;
     @Index()
-    @ManyToOne(() => ExportTemplate, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => ExportTemplate, { nullable: true })
     exportTemplate: ExportTemplate;
 }

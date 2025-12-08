@@ -15,7 +15,7 @@ export class Dashboard extends CommonEntity {
     dashboardVariables: DashboardVariable[];
     @OneToMany(() => DashboardQuestion, dashboardQuestion => dashboardQuestion.dashboard, { cascade: true })
     questions: DashboardQuestion[];
-    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ModuleMetadata, { nullable: false })
     @JoinColumn()
     module: ModuleMetadata;
     @Column({ type: "varchar", nullable: true })

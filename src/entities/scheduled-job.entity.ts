@@ -7,7 +7,7 @@ export class ScheduledJob extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     scheduleName: string;
-    @Column({ type: "boolean", default: false })
+    @Column({ default: false })
     isActive: boolean = false;
     @Column({ type: "varchar" })
     frequency: string;
@@ -21,16 +21,16 @@ export class ScheduledJob extends CommonEntity {
     endDate: Date;
     @Column({ type: "integer", nullable: true })
     dayOfMonth: number;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     lastRunAt: Date;
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     nextRunAt: Date;
     @Column({ type: "varchar", nullable: true })
     dayOfWeek: string;
     @Column({ type: "varchar" })
     job: string;
     @Index()
-    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ModuleMetadata, { nullable: false })
     @JoinColumn({ referencedColumnName: 'id' })
     module: ModuleMetadata;
 }

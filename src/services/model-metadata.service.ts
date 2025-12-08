@@ -270,6 +270,8 @@ export class ModelMetadataService {
         tableName: model.tableName,
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
         isChild: model?.isChild,
+        isLegacyTable: model?.isLegacyTable,
+        isLegacyTableWithId: model?.isLegacyTableWithId,
         parentModelUserKey: model?.parentModel?.singularName,
         enableAuditTracking: model?.enableAuditTracking,
         enableSoftDelete: model?.enableSoftDelete,
@@ -1174,14 +1176,24 @@ export class ModelMetadataService {
     };
     const model = options.modelId ? await this.findOne(options.modelId, query) : await this.findOneByUserKey(options.modelUserKey, query.populate);
 
+    let fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
+
+    // If a list of field ids or field names is passed for refresh, use these fields only
+    if (options.fieldIdsForRefresh && options.fieldIdsForRefresh.length > 0) {
+      fieldsForRefresh = fieldsForRefresh.filter((field) => options.fieldIdsForRefresh.includes(+field.id));
+    } else if (options.fieldNamesForRefresh && options.fieldNamesForRefresh.length > 0) {
+      fieldsForRefresh = fieldsForRefresh.filter((field) => options.fieldNamesForRefresh.includes(field.name));
+    }
+    // const fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
+
     //Execute the schematic command to refresh the model
-    const refreshOuput = await this.executeRefreshModelCommand(model, options.dryRun);
+    const refreshOuput = await this.executeRefreshModelCommand(model, fieldsForRefresh, options.dryRun);
 
     return `${refreshOuput}`;
   }
 
-  private async executeRefreshModelCommand(model: ModelMetadata, dryRun: boolean = false): Promise<string> {
-    const fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
+  private async executeRefreshModelCommand(model: ModelMetadata, fieldsForRefresh: FieldMetadata[], dryRun: boolean = false): Promise<string> {
+    // const fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
     const output = await this.schematicService.executeSchematicCommand(
       REFRESH_MODEL_COMMAND,
       {
@@ -1195,6 +1207,9 @@ export class ModelMetadataService {
         parentModel: model.parentModel?.singularName,
         parentModule: model.parentModel?.module?.name,
         draftPublishWorkflowEnabled: model.draftPublishWorkflow,
+        isLegacyTable: model.isLegacyTable,
+        isLegacyTableWithId: model.isLegacyTableWithId,
+        dataSourceType: model.dataSourceType,
       },
       dryRun
     );

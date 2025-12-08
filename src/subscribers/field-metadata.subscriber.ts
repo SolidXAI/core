@@ -4,7 +4,7 @@ import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.se
 import { DataSource, EntitySubscriberInterface, EventSubscriber, InsertEvent, UpdateEvent } from 'typeorm';
 import { FieldMetadata } from '../entities/field-metadata.entity';
 
-@EventSubscriber()
+// @EventSubscriber()
 @Injectable()
 export class FieldMetadataSubscriber implements EntitySubscriberInterface<FieldMetadata> {
   private readonly logger = new Logger(FieldMetadataSubscriber.name);

@@ -11,7 +11,7 @@ interface CommandOptions {
 
 @Command({
   name: 'remove-fields',
-  description: 'Adds fields to a model',
+  description: 'Removes fields from a model',
 })
 export class RemoveFieldsCommand extends CommandRunner {
   constructor(

@@ -1,19 +1,36 @@
 import { classify } from '@angular-devkit/core/src/utils/strings';
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
-import { DiscoveryService, MetadataScanner, Reflector } from '@nestjs/core';
+import { forwardRef, Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { DiscoveryService, MetadataScanner, ModuleRef, Reflector } from '@nestjs/core';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
+import { getDataSourceToken } from '@nestjs/typeorm';
 import { IS_COMPUTED_FIELD_PROVIDER } from 'src/decorators/computed-field-provider.decorator';
+import { IS_DASHBOARD_QUESTION_DATA_PROVIDER } from 'src/decorators/dashboard-question-data-provider.decorator';
+import { IS_DASHBOARD_VARIABLE_SELECTION_PROVIDER } from 'src/decorators/dashboard-selection-provider.decorator';
+import { IS_ERROR_CODE_PROVIDER } from 'src/decorators/error-codes-provider.decorator';
+import { IS_MAIL_PROVIDER } from 'src/decorators/mail-provider.decorator';
+import { IS_SCHEDULED_JOB_PROVIDER } from 'src/decorators/scheduled-job-provider.decorator';
+import { IS_SECURITY_RULE_CONFIG_PROVIDER } from 'src/decorators/security-rule-config-provider.decorator';
 import { IS_SELECTION_PROVIDER } from 'src/decorators/selection-provider.decorator';
 import { IS_SOLID_DATABASE_MODULE } from 'src/decorators/solid-database-module.decorator';
-import { SolidRegistry } from 'src/helpers/solid-registry';
-import { CRUDService } from './crud.service';
-import { IS_SCHEDULED_JOB_PROVIDER } from 'src/decorators/scheduled-job-provider.decorator';
-import { IS_DASHBOARD_VARIABLE_SELECTION_PROVIDER } from 'src/decorators/dashboard-selection-provider.decorator';
-import { IS_DASHBOARD_QUESTION_DATA_PROVIDER } from 'src/decorators/dashboard-question-data-provider.decorator';
-import { IS_MAIL_PROVIDER } from 'src/decorators/mail-provider.decorator';
 import { IS_WA_PROVIDER } from 'src/decorators/whatsapp-provider.decorator';
-import { IS_ERROR_CODE_PROVIDER } from 'src/decorators/error-codes-provider.decorator';
-import { IS_SECURITY_RULE_CONFIG_PROVIDER } from 'src/decorators/security-rule-config-provider.decorator';
+import { SolidRegistry } from 'src/helpers/solid-registry';
+import { DataSource } from 'typeorm';
+import { CRUDService } from './crud.service';
+import { RequestContextService } from './request-context.service';
+import { CreatedByUpdatedBySubscriber } from 'src/subscribers/created-by-updated-by.subscriber';
+import { AuditSubscriber } from 'src/subscribers/audit.subscriber';
+import { ComputedEntityFieldSubscriber, ComputedFieldEvaluationPayload } from 'src/subscribers/computed-entity-field.subscriber';
+import { SoftDeleteAwareEventSubscriber } from 'src/subscribers/soft-delete-aware-event.subscriber';
+import { ChatterMessageService } from './chatter-message.service';
+import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
+import { ModelMetadataHelperService, PublisherFactory } from 'src';
+
+export const coreSubscriberClasses = [
+  AuditSubscriber,
+  ComputedEntityFieldSubscriber,
+  CreatedByUpdatedBySubscriber,
+  SoftDeleteAwareEventSubscriber
+];
 
 @Injectable()
 export class SolidIntrospectService implements OnApplicationBootstrap {
@@ -22,10 +39,20 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     private readonly reflector: Reflector,
     private readonly metadataScanner: MetadataScanner,
     private readonly solidRegistry: SolidRegistry,
+    private readonly moduleRef: ModuleRef,
+    private readonly requestContextService: RequestContextService,
+    // AuditSubscribe related dependencies
+    private readonly chatterMessageService: ChatterMessageService,
+    private readonly modelMetadataHelperService: ModelMetadataHelperService,
+    private readonly modelMetadataRepo: ModelMetadataRepository,
+    // ComputedEntityFieldSubscriber related dependencies
+   @Inject(forwardRef(() => PublisherFactory))
+    private readonly publisherFactory: PublisherFactory<any>,
+    
   ) { }
 
   private readonly logger = new Logger(SolidIntrospectService.name);
-  onApplicationBootstrap() {
+  async onApplicationBootstrap() {
     this.logger.log('Introspecting the application for Solid metadata');
 
     // Register all seeders
@@ -147,6 +174,79 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     securityRuleConfigProviders.forEach((securityRuleConfigProvider) => {
       this.solidRegistry.registerSecurityRuleConfigProvider(securityRuleConfigProvider);
     });
+
+    // Register the core subscribers against all the configured database modules / datasources
+    await this.bootstrapCoreTypeOrmSubscribers(solidDatabaseModules)
+  }
+
+  async bootstrapCoreTypeOrmSubscribers(dbModules: Array<InstanceWrapper<any>>): Promise<void> {
+    // Register core subscribers for each Solid database module
+    for (const wrapper of dbModules) {
+      // Get the Database Module instance
+      const instance = (wrapper as InstanceWrapper).instance as any;
+      if (!instance || typeof instance.name !== 'function') {
+        this.logger.warn('Skipping a solid DB module wrapper with no instance or name() method');
+        continue;
+      }
+
+      // Get the DataSource for this module
+      const dsName: string | undefined = instance.name();
+      // getDataSourceToken() without name = default; pass dsName if non-default
+      const token = dsName ? getDataSourceToken(dsName) : getDataSourceToken();
+      let ds: DataSource | undefined;
+      try {
+        ds = this.moduleRef.get<DataSource>(token, { strict: false });
+      } catch (err) {
+        this.logger.warn(`DataSource token for "${dsName ?? 'default'}" not found: ${err?.message ?? err}`);
+      }
+      if (!ds) {
+        this.logger.warn(`No DataSource found for module "${dsName}". Skipping subscriber registration.`);
+        continue;
+      }
+
+      // Ensure DataSource is initialized (optional)
+      if (!ds.isInitialized) {
+        try {
+          await ds.initialize(); // only if you need to initialize here; in many apps datasources are created earlier
+        } catch (err) {
+          this.logger.error(`Failed to initialize DataSource "${dsName}": ${err}`);
+          continue;
+        }
+      }
+
+      // Register each subscriber class for this DataSource
+      // const auditSubscriberInstance = new AuditSubscriber(this.chatterMessageService, this.modelMetadataRepo, this.modelMetadataHelperService);
+      // auditSubscriberInstance.bindToDataSource(ds);
+
+      // const computedEntityFieldSubscriberInstance = new ComputedEntityFieldSubscriber(this.solidRegistry, this.publisherFactory);
+      // computedEntityFieldSubscriberInstance.bindToDataSource(ds);
+
+      // const createdByUpdatedBySubscriberInstance = new CreatedByUpdatedBySubscriber(this.requestContextService);
+      // createdByUpdatedBySubscriberInstance.bindToDataSource(ds);
+
+      // const softDeleteAwareEventSubscriberInstance = new SoftDeleteAwareEventSubscriber();
+      // softDeleteAwareEventSubscriberInstance.bindToDataSource(ds);
+      for (const SubClass of coreSubscriberClasses) {
+        const alreadyRegistered = ds.subscribers.some(
+          (s) => (s as any).constructor?.name === SubClass.name,
+        );
+        if (alreadyRegistered) {
+          this.logger.debug(`Subscriber ${SubClass.name} already registered on datasource ${dsName ?? 'default'}`);
+          continue;
+        }
+
+        // Resolve subscriber from NestJS moduleRef to ensure dependencies are injected
+        const subscriberInstance = await this.moduleRef.resolve(SubClass, undefined, { strict: false });
+        subscriberInstance.bindToDataSource(ds);
+
+        // instantiate subscriber bound to this DataSource
+        // NOTE: constructor signature must be (dataSource: DataSource, requestContextService: RequestContextService, ...)
+        // const subscriberInstance = new (SubClass as any)(ds, this.requestContextService);
+
+        // ds.subscribers.push(subscriberInstance);
+        // this.logger.log(`Registered subscriber ${SubClass.name} on datasource ${dsName ?? 'default'}`);
+      }
+    }
   }
 
   isDashboardQuestionDataProvider(providerWrapper: InstanceWrapper<any>) {

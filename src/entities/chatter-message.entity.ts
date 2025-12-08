@@ -1,5 +1,5 @@
 import { CommonEntity } from 'src/entities/common.entity'
-import {Entity, Column, Index, JoinColumn, ManyToOne, OneToMany} from 'typeorm';
+import { Entity, Column, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { User } from 'src/entities/user.entity'
 import { ChatterMessageDetails } from './chatter-message-details.entity';
 
@@ -17,7 +17,7 @@ export class ChatterMessage extends CommonEntity {
     coModelEntityId: number;
     @Column({ type: "varchar" })
     coModelName: string;
-    @ManyToOne(() => User, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => User, { nullable: true })
     @JoinColumn()
     user: User;
     @OneToMany(() => ChatterMessageDetails, (chatterMessageDetails) => chatterMessageDetails.chatterMessage, { cascade: true })

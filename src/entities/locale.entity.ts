@@ -9,6 +9,6 @@ export class Locale extends CommonEntity {
     @Column({ type: "varchar" })
     displayName: string;
     @Index()
-    @Column({ type: "boolean", default: true })
+    @Column({ default: true })
     isDefault: boolean = true;
 }

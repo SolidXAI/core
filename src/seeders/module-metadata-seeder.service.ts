@@ -87,11 +87,11 @@ export class ModuleMetadataSeederService {
         readonly systemFieldsSeederService: SystemFieldsSeederService,
         readonly dashboardRepo: DashboardRepository,
         readonly scheduledJobRepository: ScheduledJobRepository,
-        readonly savedFiltersRepo : SavedFiltersRepository,
+        readonly savedFiltersRepo: SavedFiltersRepository,
         readonly dataSource: DataSource,
     ) { }
 
-    async seed() {
+    async seed(conf?: any) {
         // Global seeding steps i.e across all modules
         await this.seedGlobalMetadata();
 
@@ -99,10 +99,37 @@ export class ModuleMetadataSeederService {
         // Get all the module metadata files which needs to be seeded.
         const seedDataFiles = this.seedDataFiles;
         this.logger.debug(`Seed data files are: ${seedDataFiles}`);
+
+        /** -------------------------------------------------------------
+         * Selective module seeding via: 
+         *   solid seed -c "{\"modulesToSeed\": [\"onboarding\", \"reports\"]}"
+         * -------------------------------------------------------------
+         */
+        let modulesToSeed: string[] | null = null;
+
+        if (conf && Array.isArray(conf.modulesToSeed)) {
+            modulesToSeed = conf.modulesToSeed;
+            this.logger.log(`Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
+        } else {
+            this.logger.log(`No modulesToSeed provided. Seeding ALL modules.`);
+        }
+
+        // Filter modules if needed
+        const filteredSeedDataFiles = modulesToSeed
+            ? seedDataFiles.filter((file) =>
+                modulesToSeed.includes(file.moduleMetadata?.name)
+            )
+            : seedDataFiles;
+
+        if (filteredSeedDataFiles.length === 0) {
+            this.logger.warn(`No modules matched the provided modulesToSeed list.`);
+            return;
+        }
+
         // let usersDetail;
         // For each module metadata file, we will process the seeding steps one by one.
-        for (let i = 0; i < seedDataFiles.length; i++) {
-            const overallMetadata = seedDataFiles[i];
+        for (let i = 0; i < filteredSeedDataFiles.length; i++) {
+            const overallMetadata = filteredSeedDataFiles[i];
             const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
             this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
 
@@ -162,10 +189,10 @@ export class ModuleMetadataSeederService {
             this.logger.log(`Seeding Scheduled Jobs`);
             await this.seedScheduledJobs(moduleMetadata, overallMetadata);
 
-             // Saved Filters
-             this.logger.log(`Seeding Saved Filters`);
-             await this.seedSavedFilters(moduleMetadata, overallMetadata);
- 
+            // Saved Filters
+            this.logger.log(`Seeding Saved Filters`);
+            await this.seedSavedFilters(moduleMetadata, overallMetadata);
+
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
         }
 
@@ -194,7 +221,7 @@ export class ModuleMetadataSeederService {
             await this.handleSeedSavedFilters(savedFilters);
         }
         this.logger.debug(`[End] Processing saved filters for ${moduleMetadata.name}`);
-    }   
+    }
 
     private async seedDashboards(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any) {
         this.logger.debug(`[Start] Processing dashboards for ${moduleMetadata.name}`);
@@ -469,7 +496,7 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    // Not OK
+    // Ok
     private async handleSeedMenus(menus: any) {
         if (!menus) {
             return;
@@ -481,22 +508,41 @@ export class ModuleMetadataSeederService {
             const actionRepo = trx.getRepository(ActionMetadata);
             const moduleRepo = trx.getRepository(ModuleMetadata);
 
-            // 1) Upsert menus WITHOUT roles
+            // 1) Upsert menus WITHOUT roles (manual upsert)
             for (const m of menus) {
-                const entity = menuRepo.create({
+                const action = m.actionUserKey
+                    ? await actionRepo.findOne({ where: { name: m.actionUserKey }, select: ["id"] })
+                    : null;
+
+                const module = m.moduleUserKey
+                    ? await moduleRepo.findOne({ where: { name: m.moduleUserKey }, select: ["id"] })
+                    : null;
+
+                const parentMenuItem = m.parentMenuItemUserKey
+                    ? await menuRepo.findOne({ where: { name: m.parentMenuItemUserKey }, select: ["id"] })
+                    : null;
+
+                // Check if a menu with this name already exists
+                const existing = await menuRepo.findOne({
+                    where: { name: m.name },
+                    select: ["id"],
+                });
+
+                // Build the entity data (without id)
+                const base = {
                     name: m.name,
                     displayName: m.displayName,
-                    action: m.actionUserKey
-                        ? await actionRepo.findOne({ where: { name: m.actionUserKey }, select: ["id"] })
-                        : null,
-                    module: m.moduleUserKey
-                        ? await moduleRepo.findOne({ where: { name: m.moduleUserKey }, select: ["id"] })
-                        : null,
-                    parentMenuItem: m.parentMenuItemUserKey
-                        ? await menuRepo.findOne({ where: { name: m.parentMenuItemUserKey }, select: ["id"] })
-                        : null,
-                });
-                await menuRepo.upsert(entity, ["name"]); // or ["userKey"]
+                    action,
+                    module,
+                    parentMenuItem,
+                };
+
+                // If existing, set its id so save() will perform an update, otherwise insert
+                const entity = menuRepo.create(
+                    existing ? { id: existing.id, ...base } : base,
+                );
+
+                await menuRepo.save(entity);
             }
 
             // 2) Fetch ids for batching
@@ -528,8 +574,7 @@ export class ModuleMetadataSeederService {
                 }
             }
 
-            // 4) Replace in bulk — QueryBuilder version
-
+            // 4) Replace in bulk — no orIgnore, safe for MSSQL
             // 4a) delete existing for affected menus
             const menuIds = [...new Set(joinRows.map(r => r.menuId))];
             if (menuIds.length) {
@@ -543,7 +588,6 @@ export class ModuleMetadataSeederService {
 
             // 4b) bulk insert all pairs
             if (joinRows.length) {
-                // Build objects with the exact column names used by the join table
                 const values = joinRows.map(r => ({
                     [MENU_ROLE_JOIN_TABLE_NAME_MENU_COL]: r.menuId,
                     [MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL]: r.roleId,
@@ -552,9 +596,9 @@ export class ModuleMetadataSeederService {
                 await trx
                     .createQueryBuilder()
                     .insert()
-                    .into(MENU_ROLE_JOIN_TABLE_NAME) // string table name
+                    .into(MENU_ROLE_JOIN_TABLE_NAME)
                     .values(values)
-                    .orIgnore() // optional if you have a UNIQUE(menuItemId, roleId) and want to skip dups
+                    // .orIgnore()  // ❌ remove this – it triggers unsupported onUpdate path
                     .execute();
             }
         });

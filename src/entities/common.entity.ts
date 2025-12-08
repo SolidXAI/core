@@ -8,20 +8,20 @@ export abstract class CommonEntity {
     @PrimaryGeneratedColumn({ type: 'integer' })
     id: number
 
-    @CreateDateColumn({ type: "timestamp", name: "created_at" })
+    @CreateDateColumn({ name: "created_at" })
     createdAt: Date;
 
-    @UpdateDateColumn({ type: "timestamp", name: "updated_at" })
+    @UpdateDateColumn({ name: "updated_at" })
     updatedAt: Date;
 
-    @DeleteDateColumn({ type: "timestamp", name: "deleted_at" })
+    @DeleteDateColumn({ name: "deleted_at" })
     deletedAt: Date;
 
     @Column({ name: "deletedTracker", default: "not-deleted" })
     deletedTracker: string;
 
     @Expose()
-    @Column({ type: "timestamp", name: 'published_at', default: null ,nullable: true})
+    @Column({ name: 'published_at', default: null, nullable: true })
     publishedAt: Date;
 
     @Expose()
@@ -32,13 +32,21 @@ export abstract class CommonEntity {
     @Column({ type: "int", name: 'default_entity_locale_id', default: null })
     defaultEntityLocaleId: number;
 
-    @Expose()
-    @Type( () => require('./user.entity').User?.default ?? require('./user.entity').User )
-    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { onDelete: 'SET NULL', nullable: true })
-    createdBy: User;
+    // @Expose()
+    // @Type( () => require('./user.entity').User?.default ?? require('./user.entity').User )
+    // @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
+    // createdBy: User;
+
+    // @Expose()
+    // @Type( () => require('./user.entity').User?.default ?? require('./user.entity').User )
+    // @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { nullable: true })
+    // updatedBy: User;
 
     @Expose()
-    @Type( () => require('./user.entity').User?.default ?? require('./user.entity').User )
-    @ManyToOne(() => require('./user.entity').User?.default ?? require('./user.entity').User, { onDelete: 'SET NULL', nullable: true })
-    updatedBy: User;    
+    @Column({ name: `created_by_id`, nullable: true })
+    createdBy: number;
+
+    @Expose()
+    @Column({ name: `updated_by_id`, nullable: true })
+    updatedBy: number;
 }

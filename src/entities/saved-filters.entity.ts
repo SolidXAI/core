@@ -1,5 +1,5 @@
 import { CommonEntity } from 'src/entities/common.entity'
-import {Entity, Column, JoinColumn, ManyToOne} from 'typeorm';
+import { Entity, Column, JoinColumn, ManyToOne } from 'typeorm';
 import { User } from 'src/entities/user.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { ViewMetadata } from 'src/entities/view-metadata.entity'
@@ -10,15 +10,15 @@ export class SavedFilters extends CommonEntity {
     filterQueryJson: any;
     @Column({ type: "varchar" })
     name: string;
-    @Column({ type: "boolean", nullable: true, default: false })
+    @Column({ nullable: true, default: false })
     isPrivate: boolean = false;
-    @ManyToOne(() => User, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => User, { nullable: true })
     @JoinColumn()
     user: User;
-    @ManyToOne(() => ModelMetadata, { onDelete: "RESTRICT", nullable: false })
+    @ManyToOne(() => ModelMetadata, { nullable: false })
     @JoinColumn()
     model: ModelMetadata;
-    @ManyToOne(() => ViewMetadata, { onDelete: "RESTRICT", nullable: false })
+    @ManyToOne(() => ViewMetadata, { nullable: false })
     @JoinColumn()
     view: ViewMetadata;
     @Column({ name: "description", type: "text", nullable: true })

@@ -10,7 +10,7 @@ export class DashboardVariable extends CommonEntity {
     @Index()
     @Column({ type: "varchar" })
     variableType: string;
-    @Column({ type: "jsonb", nullable: true })
+    @Column({ type: "simple-json", nullable: true })
     selectionStaticValues: any;
     @Column({ nullable: true })
     selectionDynamicSourceType: string;
@@ -18,9 +18,9 @@ export class DashboardVariable extends CommonEntity {
     selectionDynamicSQL: string;
     @Column({ type: "varchar", nullable: true })
     selectionDynamicProviderName: string;
-    @Column({ type: "boolean", nullable: true, default: true })
+    @Column({ nullable: true, default: true })
     isMultiSelect: boolean = true;
-    @ManyToOne(() => Dashboard, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => Dashboard, { nullable: true })
     @JoinColumn()
     dashboard: Dashboard;
     @Column({ type: "text", nullable: true })

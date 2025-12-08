@@ -10,10 +10,6 @@ export class CreateImportTransactionDto {
     @ApiProperty()
     status: string = "draft";
     @IsOptional()
-    @IsString()
-    @ApiProperty()
-    importTransactionId: string;
-    @IsOptional()
     @IsJSON()
     @ApiProperty()
     mapping: any;

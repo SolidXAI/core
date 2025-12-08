@@ -5,7 +5,7 @@ import { DataSource, EntitySubscriberInterface, EventSubscriber, InsertEvent } f
 import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 
-@EventSubscriber()
+// @EventSubscriber()
 @Injectable()
 export class ModelMetadataSubscriber implements EntitySubscriberInterface<ModelMetadata> {
   private readonly logger = new Logger(ModelMetadataSubscriber.name);
@@ -35,7 +35,9 @@ export class ModelMetadataSubscriber implements EntitySubscriberInterface<ModelM
 
 
   private systemFieldMetadataToBeAdded(event: InsertEvent<ModelMetadata>) {
-    const systemFieldsDefaultMetadata = this.modelHelperService.getSystemFieldsMetadata();
+    const isLegacyTable = event.entity.isLegacyTable;
+    const isLegacyTableWithId = event.entity.isLegacyTableWithId;
+    const systemFieldsDefaultMetadata = this.modelHelperService.getSystemFieldsMetadata(isLegacyTable, isLegacyTableWithId);
     // map and add the model as event.entity for the above metadata
     const systemFieldsMetadata = systemFieldsDefaultMetadata.map(field => ({
       ...field,

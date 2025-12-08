@@ -1,9 +1,8 @@
-import { Injectable } from '@nestjs/common';
-import { InjectDataSource } from '@nestjs/typeorm';
+import { Injectable, Scope } from '@nestjs/common';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { lowerFirst } from 'src/helpers/string.helper';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
-import { DataSource, EntityMetadata, EntitySubscriberInterface, EventSubscriber, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
+import { DataSource, EntityMetadata, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
 import { ChatterMessageService } from '../services/chatter-message.service';
 
 
@@ -12,19 +11,24 @@ type DeferredCall =
     | { kind: 'update'; args: Parameters<ChatterMessageService['postAuditMessageOnUpdate']> }
     | { kind: 'delete'; args: Parameters<ChatterMessageService['postAuditMessageOnDelete']> };
 
-@Injectable()
-@EventSubscriber()
+@Injectable({scope: Scope.TRANSIENT})
+// @EventSubscriber()
 export class AuditSubscriber implements EntitySubscriberInterface {
-
+    private dataSource: DataSource;
     constructor(
-        @InjectDataSource()
-        private readonly dataSource: DataSource,
+        // @InjectDataSource()
+        // private readonly dataSource: DataSource,
         private readonly chatterMessageService: ChatterMessageService,
         // @InjectRepository(ModelMetadata)
         // private readonly modelMetadataRepo: Repository<ModelMetadata>,
         private readonly modelMetadataRepo: ModelMetadataRepository,
         private readonly modelMetadataHelperService: ModelMetadataHelperService,
     ) {
+        // this.dataSource.subscribers.push(this);
+    }
+
+    bindToDataSource(dataSource: DataSource) {
+        this.dataSource = dataSource;
         this.dataSource.subscribers.push(this);
     }
 

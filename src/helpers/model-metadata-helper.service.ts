@@ -3,6 +3,8 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { ModelMetadataRepository } from "src/repository/model-metadata.repository";
 import { SolidRegistry } from "./solid-registry";
+import {_ } from "lodash";
+import { LEGACY_TABLE_FIELDS_PREFIX } from "src/entities/legacy-common.entity";
 
 @Injectable()
 export class ModelMetadataHelperService {
@@ -15,97 +17,125 @@ export class ModelMetadataHelperService {
     ) {
     }
 
-    getSystemFieldsMetadata(): any[] {
-        const systemFieldsMetadata = [
-            {
-                name: "id",
-                displayName: "Id",
-                type: "int",
-                ormType: "bigint",
-                isSystem: true,
-            },
-            {
-                name: "createdAt",
-                displayName: "Created At",
-                type: "datetime",
-                ormType: "timestamp",
-                isSystem: true,
-            },
-            {
-                name: "updatedAt",
-                displayName: "Updated At",
-                type: "datetime",
-                ormType: "timestamp",
-                isSystem: true,
-            },
-            {
-                name: "deletedAt",
-                displayName: "Deleted At",
-                type: "datetime",
-                ormType: "timestamp",
-                isSystem: true,
-            },
-            {
-                name: "deletedTracker",
-                displayName: "Deleted Tracker",
-                type: "shortText",
-                ormType: "varchar",
-                isSystem: true,
-            },
-            {
-                name: "publishedAt",
-                displayName: "Published At",
-                type: "datetime",
-                ormType: "timestamp",
-                isSystem: true,
-            },
-            {
-                name: "localeName",
-                displayName: "Locale",
-                type: "shortText",
-                ormType: "varchar",
-                isSystem: true,
-            },
-            {
-                name: "defaultEntityLocaleId",
-                displayName: "Default Entity Locale Id",
-                type: "int",
-                ormType: "integer",
-                isSystem: true,
-            },
-            {
-                name: "createdBy",
-                displayName: "Created By",
-                type: "relation",
-                ormType: "integer",
-                isSystem: true,
-                relationType: "many-to-one",
-                relationCoModelSingularName: "user",
-                relationCreateInverse: false,
-                relationCascade: "restrict",
-                relationModelModuleName: "solid-core"
-            },
-            {
-                name: "updatedBy",
-                displayName: "Updated By",
-                type: "relation",
-                ormType: "integer",
-                isSystem: true,
-                relationType: "many-to-one",
-                relationCoModelSingularName: "user",
-                relationCreateInverse: false,
-                relationCascade: "restrict",
-                relationModelModuleName: "solid-core"
-            },
-        ]
+    getSystemFieldsMetadata(isLegacyTable: boolean=false, isLegacyTableWithId: boolean=false): any[] {
+        let systemFieldsMetadata: any[];
+        if (isLegacyTableWithId) {
+            systemFieldsMetadata = this.getSystemFieldsMetadataMappingForLegacyTable(true);
+        }
+        else if (isLegacyTable) {
+            systemFieldsMetadata = this.getSystemFieldsMetadataMappingForLegacyTable(false);
+        }
+        else {
+            systemFieldsMetadata = this.getSystemFieldsMetadataMapping();
+        }
 
-        // Do an additional check and add a warning if the common entity keys and system field metadata keys don't match exactly
+        this.checkWithRegistry(systemFieldsMetadata);
+
+        return systemFieldsMetadata;
+    }
+
+    // TODO: Do an additional check and add a warning if the common entity keys and system field metadata keys don't match exactly
+    // Ideally this should be reflection based code
+    private checkWithRegistry(systemFieldsMetadata: ({ name: string; displayName: string; type: string; ormType: string; isSystem: boolean; relationType?: undefined; relationCoModelSingularName?: undefined; relationCreateInverse?: undefined; relationCascade?: undefined; relationModelModuleName?: undefined; } | { name: string; displayName: string; type: string; isSystem: boolean; ormType?: undefined; relationType?: undefined; relationCoModelSingularName?: undefined; relationCreateInverse?: undefined; relationCascade?: undefined; relationModelModuleName?: undefined; } | { name: string; displayName: string; type: string; ormType: string; isSystem: boolean; relationType: string; relationCoModelSingularName: string; relationCreateInverse: boolean; relationCascade: string; relationModelModuleName: string; })[]) {
         const commonEntityKeys = this.registry.getCommonEntityKeys();
         const systemFieldNames = systemFieldsMetadata.map(field => field.name);
         const missingKeys = commonEntityKeys.filter(key => !systemFieldNames.includes(key));
         if (missingKeys.length > 0) {
             this.logger.warn(`Missing system fields metadata for common entity keys: ${missingKeys.join(', ')}`);
         }
+    }
+
+    private getSystemFieldsMetadataMapping() {
+        return [
+            {
+                name: "id",
+                displayName: "Id",
+                type: "int",
+                isSystem: true,
+            },
+            {
+                name: "createdAt",
+                displayName: "Created At",
+                type: "datetime",
+                isSystem: true,
+            },
+            {
+                name: "updatedAt",
+                displayName: "Updated At",
+                type: "datetime",
+                isSystem: true,
+            },
+            {
+                name: "deletedAt",
+                displayName: "Deleted At",
+                type: "datetime",
+                isSystem: true,
+            },
+            {
+                name: "deletedTracker",
+                displayName: "Deleted Tracker",
+                type: "shortText",
+                isSystem: true,
+            },
+            {
+                name: "publishedAt",
+                displayName: "Published At",
+                type: "datetime",
+                isSystem: true,
+            },
+            {
+                name: "localeName",
+                displayName: "Locale",
+                type: "shortText",
+                isSystem: true,
+            },
+            {
+                name: "defaultEntityLocaleId",
+                displayName: "Default Entity Locale Id",
+                type: "int",
+                isSystem: true,
+            },
+            {
+                name: "createdBy",
+                displayName: "Created By",
+                type: "int",
+                isSystem: true,
+                columnName: "created_by_id",
+            },
+            {
+                name: "updatedBy",
+                displayName: "Updated By",
+                type: "int",
+                isSystem: true,
+                columnName: "updated_by_id",
+            },
+        ];
+    }
+
+    private getSystemFieldsMetadataMappingForLegacyTable(withId: boolean=true) {
+        const systemFieldsMetadata = this.getSystemFieldsMetadataMapping();
+        if (!withId) {
+            // Remove the id field metadata
+            const index = systemFieldsMetadata.findIndex(field => field.name === 'id');
+            if (index !== -1) {
+                systemFieldsMetadata.splice(index, 1);
+            }
+        }
+
+        // For legacy table, system fields, remove the ormType atribute from the metadata
+        // systemFieldsMetadata.forEach(field => {
+        //     delete field.ormType;
+        // });
+
+        // Except for createdBy and updatedBy fields, for which we need to keep the columnName as created_by_id and updated_by_id respectively,
+        // we need to add a columnName attribute with legacy prefix concatenated with the kebab cased field name of the system field
+        systemFieldsMetadata.forEach(field => {
+            if (field.name === 'createdBy' || field.name === 'updatedBy') {
+                field['columnName'] = `${LEGACY_TABLE_FIELDS_PREFIX}_${_.snakeCase(field.name)}_id`;
+            } else {
+                field['columnName'] = `${LEGACY_TABLE_FIELDS_PREFIX}_${_.snakeCase(field.name)}`;
+            }
+        });
         return systemFieldsMetadata;
     }
 

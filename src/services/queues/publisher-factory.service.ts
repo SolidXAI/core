@@ -1,4 +1,4 @@
-import { Logger } from '@nestjs/common';
+import { forwardRef, Inject, Logger } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 
 import { QueueMessage, QueuePublisher } from 'src/interfaces/mq';
@@ -11,6 +11,7 @@ export class PublisherFactory<T> {
     private readonly logger = new Logger(PublisherFactory.name);
 
     constructor(
+        @Inject(forwardRef(() => SolidIntrospectService))
         private readonly solidIntrospectionService: SolidIntrospectService
     ) {
     }

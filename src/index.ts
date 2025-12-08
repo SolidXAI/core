@@ -23,8 +23,10 @@ export * from './decorators/error-codes-provider.decorator'
 export * from './decorators/solid-database-module.decorator'
 export * from './decorators/solid-service.decorator'
 export * from './decorators/mail-provider.decorator'
+export * from './decorators/security-rule-config-provider.decorator'
 
 export * from './dtos/post-chatter-message.dto'
+export * from './dtos/security-rule-config.dto'
 export * from './dtos/basic-filters.dto'
 export * from './dtos/solid-request-context.dto'
 export * from './dtos/change-password.dto'
@@ -98,6 +100,8 @@ export * from './dtos/update-user-activity-history.dto'
 
 export * from './entities/action-metadata.entity'
 export * from './entities/common.entity'
+export * from './entities/legacy-common.entity'
+export * from './entities/legacy-common-with-id.entity'
 export * from './entities/email-attachment.entity'
 export * from './entities/email-template.entity'
 export * from './entities/field-metadata.entity'
@@ -204,7 +208,7 @@ export * from './listeners/user-registration.listener'
 export * from './passport-strategies/google-oauth.strategy'
 export * from './passport-strategies/local.strategy'
 
-export * from './providers/list-of-values-selection-providers.service'
+export * from './services/selection-providers/list-of-values-selection-providers.service'
 
 // seed-data
 export * from './seeders/email-template-seeder.service'

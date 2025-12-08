@@ -15,7 +15,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: "display_name" })
     displayName: string;
 
-    @Column({ name: "decription", nullable: true })
+    @Column({ name: "description", nullable: true, length: 1024 })
     description: string;
 
     /** int, char etc... */
@@ -69,7 +69,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: "private", default: false })
     private: boolean;
 
-    @Column("json", { name: 'media_types', nullable: true })
+    @Column({ name: 'media_types', nullable: true, type: "simple-json" })
     mediaTypes: string[];
 
     @Column({ name: 'media_max_size_kb', nullable: true })
@@ -134,7 +134,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'computed_field_value_type', nullable: true })
     computedFieldValueType: string;
 
-    @Column({ name: 'computed_field_trigger_config', nullable: true, type: 'jsonb' })
+    @Column({ name: 'computed_field_trigger_config', nullable: true, type: 'simple-json' })
     computedFieldTriggerConfig: ComputedFieldTriggerConfig[];
 
     @Column({ name: 'uuid', nullable: true })
@@ -163,4 +163,7 @@ export class FieldMetadata extends CommonEntity {
 
     @Column({ name: "is_multiSelect", default: false })
     isMultiSelect: boolean;
+
+    @Column({ name: "is_primary_key", default: false })
+    isPrimaryKey: boolean;
 }

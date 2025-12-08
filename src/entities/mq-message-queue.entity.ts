@@ -6,7 +6,7 @@ export class MqMessageQueue extends CommonEntity{
 @Column({ type: "varchar", unique: true })
 name: string;
 
-@Column({ type: "varchar", unique: true, nullable: true })
+@Column({ type: "varchar", nullable: true })
 description: string;
 
 @OneToMany(() => MqMessage, mqMessage => mqMessage.mqMessageQueue, { cascade: true })

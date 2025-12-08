@@ -1,5 +1,5 @@
 import { CommonEntity } from 'src/entities/common.entity'
-import {Entity, Column, Index, JoinColumn, ManyToOne, OneToMany} from 'typeorm';
+import { Entity, Column, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { ImportTransactionErrorLog } from 'src/entities/import-transaction-error-log.entity'
 
@@ -8,13 +8,10 @@ export class ImportTransaction extends CommonEntity {
     @Index()
     @Column({ type: "varchar", nullable: true, default: "draft" })
     status: string = "draft";
-    @Index({ unique: true })
-    @Column({ type: "varchar", nullable: true })
-    importTransactionId: string;
     @Column({ type: "text", nullable: true })
     mapping: any;
     @Index()
-    @ManyToOne(() => ModelMetadata, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => ModelMetadata, { nullable: true })
     @JoinColumn()
     modelMetadata: ModelMetadata;
     @OneToMany(() => ImportTransactionErrorLog, importTransactionErrorLog => importTransactionErrorLog.importTransaction, { cascade: true })
