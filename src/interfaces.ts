@@ -64,7 +64,10 @@ export interface CodeGenerationOptions {
   modelId?: number;
   modelUserKey?: string;
   fieldIdsForRemoval?: number[];
+  fieldNamesForRemoval?: string[];
   dryRun?: boolean;
+  fieldIdsForRefresh?: number[];
+  fieldNamesForRefresh?: string[];
 }
 
 export interface TriggerMcpClientOptions {
