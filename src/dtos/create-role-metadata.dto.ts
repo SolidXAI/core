@@ -76,6 +76,8 @@ export const INTERNAL_ROLE_PERMISSIONS = [
     'UserViewMetadataController.findOne',
     // IAM permissions
     'AuthenticationController.changePassword',
+    'AuthenticationController.logout',
+    'AuthenticationController.me',
     // Field Metadata permissions
     'FieldMetadataController.getSelectionDynamicValues',
     'FieldMetadataController.getSelectionDynamicValue',
