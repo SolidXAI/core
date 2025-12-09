@@ -108,7 +108,7 @@ export class McpCommand extends CommandRunner {
         }
 
         // Service names as defined in docker-compose.yml
-        args.push('mcp_server', 'mcp_celery_worker');
+        args.push('mcp_redis', 'mcp_server', 'mcp_celery_worker');
 
         const env: NodeJS.ProcessEnv = {
             ...process.env,
