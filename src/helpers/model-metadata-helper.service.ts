@@ -109,6 +109,13 @@ export class ModelMetadataHelperService {
                 isSystem: true,
                 columnName: "updated_by_id",
             },
+            {
+                name: "isPublished",
+                displayName: "Is Published",
+                type: "boolean",
+                isSystem: true,
+                columnName: "is_published",
+            },
         ];
     }
 

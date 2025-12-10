@@ -902,5 +902,105 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         }
         return model.userKeyField?.name || '';
     }
+
+    /**
+     * Publish a record - sets publishedAt timestamp and isPublished flag
+     */
+    async publishRecord(
+        id: number,
+        solidRequestContext: any = {}
+    ): Promise<T> {
+        const model = await this.loadModel();
+
+        // Check if publish workflow is enabled for this model
+        if (!model.draftPublishWorkflow) {
+            throw new BadRequestException(
+                `Publish workflow is not enabled for ${this.modelName}`
+            );
+        }
+
+        // Check user permissions
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasPublishPermissionOnModel(
+                solidRequestContext.activeUser,
+                model.singularName
+            );
+            if (!hasPermission) {
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
+            }
+        }
+
+        // Find the entity
+        const entity = await this.repo.findOne({ where: { id } as any });
+        if (!entity) {
+            throw new NotFoundException(`${this.modelName} with id ${id} not found`);
+        }
+
+        // Check if already published
+        if (entity.isPublished) {
+            throw new BadRequestException(
+                `${this.modelName} with id ${id} is already published`
+            );
+        }
+
+        // Update publish status
+        const updatedEntity = await this.repo.save({
+            ...entity,
+            isPublished: true,
+            publishedAt: new Date(),
+        } as any);
+
+        return updatedEntity;
+    }
+
+    /**
+     * Unpublish a record - clears publishedAt timestamp and isPublished flag
+     */
+    async unpublishRecord(
+        id: number,
+        solidRequestContext: any = {}
+    ): Promise<T> {
+        const model = await this.loadModel();
+
+        // Check if publish workflow is enabled for this model
+        if (!model.draftPublishWorkflow) {
+            throw new BadRequestException(
+                `Publish workflow is not enabled for ${this.modelName}`
+            );
+        }
+
+        // Check user permissions
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasUnpublishPermissionOnModel(
+                solidRequestContext.activeUser,
+                model.singularName
+            );
+            if (!hasPermission) {
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
+            }
+        }
+
+        // Find the entity
+        const entity = await this.repo.findOne({ where: { id } as any });
+        if (!entity) {
+            throw new NotFoundException(`${this.modelName} with id ${id} not found`);
+        }
+
+        // Check if already unpublished
+        if (!entity.isPublished) {
+            throw new BadRequestException(
+                `${this.modelName} with id ${id} is already unpublished`
+            );
+        }
+
+        // Update publish status
+        const updatedEntity = await this.repo.save({
+            ...entity,
+            isPublished: false,
+            publishedAt: null,
+        } as any);
+
+        return updatedEntity;
+    }
 }
 
