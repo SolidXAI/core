@@ -92,7 +92,7 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
       .leftJoinAndSelect('menuItem.parentMenuItem', 'parentMenuItem')
       .leftJoinAndSelect('menuItem.action', 'action')
       .leftJoinAndSelect('action.model', 'model') // Join the model relation of action
-      .leftJoinAndSelect('action.view', 'view') // Join the model relation of action
+      .leftJoinAndSelect('action.view', 'view') // Join the view relation of action
       .leftJoinAndSelect('menuItem.roles', 'roles')
       .where('roles.name IN (:...roleNames)', { roleNames: activeUser.roles })
       .addOrderBy('module.menuSequenceNumber', 'ASC')
@@ -153,13 +153,16 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
       });
       // Get immediate children of the current loop variable menuItem.
       const children = allowedMenuItems.filter(item => item.parentMenuItem && item.parentMenuItem.id === rootItem.id);
-
+      const menuItemId = rootItem?.id ?? "";
+      const menuItemName = rootItem?.name ?? "";
+      const actionId = rootItem?.action?.id ?? "";
+      const actionName = rootItem?.action?.name ?? "";
       // TODO: We should specify path only if there are no more children present. 
       // For now adding path everywhere. 
       let path = '';
 
       if (rootItem.action && rootItem.action.type === 'custom') {
-        path = rootItem.action.customComponent;
+        path = `${rootItem.action.customComponent}?menuItemId=${menuItemId}&menuItemName=${menuItemName}&actionId=${actionId}&actionName=${actionName}`;
       }
       if (rootItem.action && rootItem.action.type === 'solid') {
         if (this.crudHelperService.hasReadPermissionOnModel(activeUser, rootItem.action.model.singularName)) {
@@ -168,7 +171,7 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
           // TODO: Here we are assuming that we will always take the user to collection view of a model. 
           // We can make provision to take them other views also in the future. 
           // path = `/admin/core/${rootItem.module.name}/${rootItem.action.model.singularName}/${rootItem.action.view.name}`;
-          path = `/admin/core/${rootItem.module.name}/${dasherize(rootItem.action?.model?.singularName ?? 'unknown')}/${rootItem.action?.view?.type ?? 'list'}`;
+          path = `/admin/core/${rootItem.module.name}/${dasherize(rootItem.action?.model?.singularName ?? 'unknown')}/${rootItem.action?.view?.type ?? 'list'}?menuItemId=${menuItemId}&menuItemName=${menuItemName}&actionId=${actionId}&actionName=${actionName}`;
 
         }
       }
