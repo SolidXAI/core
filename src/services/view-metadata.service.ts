@@ -141,13 +141,13 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     if (menuItemId) {
       menuItem = await this.menuItemMetadataService.findOne(menuItemId, menuItemQuery, solidRequestContext);
     }
-
+    const viewId = action?.view?.id
     // 3. Fetch the view based on module, model & view name.
     const entity = await this.repo.findOne({
       where: {
         model: { singularName: modelName },
         module: { name: moduleName },
-        ...(actionId ? { id: action.view.id } : { type: viewType })
+        ...(actionId && viewId ? { id: action.view.id } : { type: viewType })
       },
       relations: {
         model: {
