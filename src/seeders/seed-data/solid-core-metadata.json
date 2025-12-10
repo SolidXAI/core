@@ -2495,8 +2495,8 @@
           {
             "name": "input",
             "displayName": "Input",
-            "type": "json",
-            "ormType": "simple-json",
+            "type": "longText",
+            "ormType": "text",
             "length": 1024,
             "required": false,
             "unique": false,
@@ -2508,8 +2508,8 @@
           {
             "name": "output",
             "displayName": "Output",
-            "type": "json",
-            "ormType": "simple-json",
+            "type": "longText",
+            "ormType": "text",
             "length": 1024,
             "required": false,
             "unique": false,
@@ -2521,8 +2521,8 @@
           {
             "name": "error",
             "displayName": "Error",
-            "type": "json",
-            "ormType": "simple-json",
+            "type": "longText",
+            "ormType": "text",
             "length": 1024,
             "required": false,
             "unique": false,

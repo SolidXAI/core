@@ -31,14 +31,14 @@ export class MqMessage extends CommonEntity {
     @Column({ type: "integer", nullable: true })
     elapsedMillis: number;
 
-    @Column({ type: "varchar", nullable: true })
-    input: any;
+    @Column({ type: "text", nullable: true })
+    input: string;
 
-    @Column({ type: "varchar", nullable: true })
-    output: any;
+    @Column({ type: "text", nullable: true })
+    output: string;
 
-    @Column({ type: "varchar", nullable: true })
-    error: any;
+    @Column({ type: "text", nullable: true })
+    error: string;
 
     @Column({ type: "integer", nullable: true })
     parentEntityId: number;
