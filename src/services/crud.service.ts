@@ -177,7 +177,11 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
-
+        
+        if (model.draftPublishWorkflow === true && entity.isPublished) {
+            throw new BadRequestException(`Cannot update a published record for model ${this.modelName}. Unpublish it first.`
+        );
+}
         updateDto.id = id;
         // This class will be extended by the generated service class i.e PersonService
         // The data required to identify the model and module name will be passed from the generate CrudService subclass
@@ -237,6 +241,10 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         );
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
+        }
+        
+        if (model.draftPublishWorkflow === true && entity.isPublished) {
+            throw new BadRequestException(`Cannot update a published record for model ${this.modelName}. Unpublish it first.`);
         }
 
         // If the model has internationalisation enabled, delete children with defaultEntityLocaleId === this entity's id
@@ -906,10 +914,8 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     /**
      * Publish a record - sets publishedAt timestamp and isPublished flag
      */
-    async publishRecord(
-        id: number,
-        solidRequestContext: any = {}
-    ): Promise<T> {
+    async publishRecord(id: number,solidRequestContext: any = {}): Promise<T> {
+
         const model = await this.loadModel();
 
         // Check if publish workflow is enabled for this model
@@ -956,10 +962,8 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     /**
      * Unpublish a record - clears publishedAt timestamp and isPublished flag
      */
-    async unpublishRecord(
-        id: number,
-        solidRequestContext: any = {}
-    ): Promise<T> {
+    async unpublishRecord(id: number,solidRequestContext: any = {}): Promise<T> {
+
         const model = await this.loadModel();
 
         // Check if publish workflow is enabled for this model
