@@ -70,6 +70,11 @@ export const INTERNAL_ROLE_PERMISSIONS = [
     'ViewMetadataController.getLayout',
     'ViewMetadataController.findMany',
     'ViewMetadataController.findOne',
+    
+    // Action metadata permissions
+    'ActionMetadataController.findMany',
+    'ActionMetadataController.findOne',
+
     // User View metadata permissions
     'UserViewMetadataController.upsert',
     'UserViewMetadataController.findMany',
