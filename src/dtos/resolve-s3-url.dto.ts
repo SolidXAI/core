@@ -7,6 +7,8 @@ export class ResolveS3UrlDto {
     @IsNotEmpty()
     fieldName: string;
 
+    @IsNotEmpty()
+    entityId: string;
 
     @IsNotEmpty()
     fileType?: string;

@@ -1282,6 +1282,40 @@ export class FieldMetadataService implements OnApplicationBootstrap {
 
     async resolveS3Url(resolveS3UrlDto: ResolveS3UrlDto) {
         let url = "";
+        const { modelName, fieldName, entityId } = resolveS3UrlDto;
+
+        // 1. Get the model metadata
+        const modelRepo = this.dataSource.getRepository(ModelMetadata);
+        const model = await modelRepo.findOne({
+            where: { singularName: modelName },
+            relations: ['fields']
+        });
+
+        if (!model) {
+            throw new NotFoundException(`Model ${modelName} not found`);
+        }
+
+        // 2. Find the field in the model metadata
+        const fieldMeta = model.fields.find(f => f.name === fieldName);
+        if (!fieldMeta) {
+            throw new NotFoundException(`Field ${fieldName} not found in model ${modelName}`);
+        }
+
+        // 3. Dynamically load the actual model entity repository
+        const entityRepo = this.dataSource.getRepository(model.singularName);
+
+        // 4. Fetch the actual DB record
+        const record = await entityRepo.findOne({ where: { entityId } });
+        if (!record) {
+            throw new NotFoundException(`${modelName} #${entityId} not found`);
+        }
+
+        // 5. Extract the S3 key from the field
+        const s3Key = record[fieldName];
+        if (!s3Key) {
+            throw new NotFoundException(`Field ${fieldName} has no value for ${modelName} #${entityId}`);
+        }
+
         // TODO  - get 
         if (resolveS3UrlDto.isPrivate == "true") {
             const expiryInSeconds = 60 * 60;
