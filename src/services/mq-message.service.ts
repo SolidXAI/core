@@ -70,17 +70,17 @@ export class MqMessageService extends CRUDService<MqMessage> {
     });
   }
 
-/**
- * Wait until a queue message reaches a terminal status (succeeded/failed).
- *
- * @param messageId string – the external message id you store in `ss_mq_message.messageId`
- * @param opts.timeoutMs total time to wait before giving up (default 60s)
- * @param opts.intervalMs initial poll interval (default 500ms)
- * @param opts.maxIntervalMs cap for exponential backoff (default 2000ms)
- * @param opts.throwOnFailure if true, throws when stage === 'failed' (default false)
- * @param opts.parseJson try JSON.parse on `output` and `error` (default true)
- * @returns resolves with the final MqMessage row when terminal, rejects on timeout (or failure if throwOnFailure)
- */
+  /**
+   * Wait until a queue message reaches a terminal status (succeeded/failed).
+   *
+   * @param messageId string – the external message id you store in `ss_mq_message.messageId`
+   * @param opts.timeoutMs total time to wait before giving up (default 60s)
+   * @param opts.intervalMs initial poll interval (default 500ms)
+   * @param opts.maxIntervalMs cap for exponential backoff (default 2000ms)
+   * @param opts.throwOnFailure if true, throws when stage === 'failed' (default false)
+   * @param opts.parseJson try JSON.parse on `output` and `error` (default true)
+   * @returns resolves with the final MqMessage row when terminal, rejects on timeout (or failure if throwOnFailure)
+   */
   async waitForTerminalStatus(
     messageId: string,
     opts?: {
@@ -139,14 +139,15 @@ export class MqMessageService extends CRUDService<MqMessage> {
       } else if (rec.stage === 'succeeded' || rec.stage === 'failed') {
         // Optionally parse output/error if they contain JSON strings
         if (parseJson) {
-          rec.output = this.safeJsonParse(rec.output);
-          rec.error = this.safeJsonParse(rec.error);
+          // rec.output = this.safeJsonParse(rec.output);
+          rec.output = rec.output;
+          // rec.error = this.safeJsonParse(rec.error);
+          rec.error = rec.error;
         }
 
         if (rec.stage === 'failed' && throwOnFailure) {
           throw new Error(
-            `Queue message ${messageId} failed` +
-            (rec.error ? `: ${JSON.stringify(rec.error).slice(0, 500)}` : '')
+            `Queue message ${messageId} failed` + (rec.error ? `: ${JSON.stringify(rec.error).slice(0, 500)}` : '')
           );
         }
         return rec;

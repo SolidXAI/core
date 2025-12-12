@@ -649,7 +649,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return mediaDetails as MediaWithFullUrl[];
     }
 
-    async findOne(id: number, query: any, solidRequestContext: any = {}) {
+    async findOne(id: number, query: any={}, solidRequestContext: any = {}) {
         const { populate = [], fields = [], populateMedia = [] } = query;
 
         // const normalizedFields = this.crudHelperService.normalize(fields);

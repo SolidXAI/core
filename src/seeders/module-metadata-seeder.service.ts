@@ -708,7 +708,7 @@ export class ModuleMetadataSeederService {
                 // console.log(fieldMetadata.displayName);
 
                 const affectedField = await this.fieldMetadataService.upsert(fieldMetadata);
-                if (fieldMetadata.name === userKeyFieldName) {
+                if (fieldMetadata.name === userKeyFieldName || fieldMetadata.isUserKey) {
                     const { model, ...fieldData } = affectedField;
                     userKeyField = fieldData;
                 }
