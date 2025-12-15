@@ -177,11 +177,11 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
-        
-        if (model.draftPublishWorkflow === true && entity.isPublished) {
+
+        if (model.draftPublishWorkflow === true && entity.publishedAt) {
             throw new BadRequestException(`Cannot update a published record for model ${this.modelName}. Unpublish it first.`
-        );
-}
+            );
+        }
         updateDto.id = id;
         // This class will be extended by the generated service class i.e PersonService
         // The data required to identify the model and module name will be passed from the generate CrudService subclass
@@ -242,9 +242,9 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
-        
-        if (model.draftPublishWorkflow === true && entity.isPublished) {
-            throw new BadRequestException(`Cannot update a published record for model ${this.modelName}. Unpublish it first.`);
+
+        if (model.draftPublishWorkflow === true && entity.publishedAt) {
+            throw new BadRequestException(`Cannot update a published record for model ${this.modelName}, Unpublish it first.`);
         }
 
         // If the model has internationalisation enabled, delete children with defaultEntityLocaleId === this entity's id
@@ -773,8 +773,30 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                     id: id,
                 } as unknown as FindOptionsWhere<T>,
             });
+
             removedEntities.push(entity);
         }
+
+
+        // entity-level flag
+        const isDraftPublishEnabled = model?.draftPublishWorkflow === true;
+
+        let publishedEntitiesExists: T[] = [];
+
+        if (isDraftPublishEnabled) {
+            publishedEntitiesExists = removedEntities.filter(
+                (x) => !!x?.publishedAt
+            );
+        }
+
+        if (publishedEntitiesExists.length > 0) {
+            const publishedEntitiesExistsID = publishedEntitiesExists.map(x => x.id);
+
+            throw new BadRequestException(
+                `Cannot delete published record(s) for model ${this.modelName} with Ids ${publishedEntitiesExistsID.join(', ')}. Unpublish them first.`
+            );
+        }
+
         if (model.enableSoftDelete === true) {
             await this.repo.softRemove(removedEntities);
             return this.repo.save(removedEntities);
@@ -809,7 +831,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             await this.repo.update(id, {
                 deletedAt: null, deletedTracker: "not-deleted"
             } as unknown as QueryDeepPartialEntity<T>
-         );
+            );
 
             return { message: SUCCESS_MESSAGES.RECORD_RECOVERED, data: softDeletedRows };
         } catch (error) {
@@ -911,10 +933,8 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return model.userKeyField?.name || '';
     }
 
-    /**
-     * Publish a record - sets publishedAt timestamp and isPublished flag
-     */
-    async publishRecord(id: number,solidRequestContext: any = {}): Promise<T> {
+    /* Publish a record - sets publishedAt timestamp */
+    async publishRecord(id: number, solidRequestContext: any = {}): Promise<T> {
 
         const model = await this.loadModel();
 
@@ -943,26 +963,20 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         }
 
         // Check if already published
-        if (entity.isPublished) {
+        if (entity.publishedAt) {
             throw new BadRequestException(
                 `${this.modelName} with id ${id} is already published`
             );
         }
 
         // Update publish status
-        const updatedEntity = await this.repo.save({
-            ...entity,
-            isPublished: true,
-            publishedAt: new Date(),
-        } as any);
+        const updatedEntity = await this.repo.save({ ...entity, publishedAt: new Date() });
 
-        return updatedEntity;
+        return updatedEntity
     }
 
-    /**
-     * Unpublish a record - clears publishedAt timestamp and isPublished flag
-     */
-    async unpublishRecord(id: number,solidRequestContext: any = {}): Promise<T> {
+    /* Unpublish a record - clears publishedAt timestamp */
+    async unpublishRecord(id: number, solidRequestContext: any = {}): Promise<T> {
 
         const model = await this.loadModel();
 
@@ -991,20 +1005,16 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         }
 
         // Check if already unpublished
-        if (!entity.isPublished) {
+        if (!entity.publishedAt) {
             throw new BadRequestException(
                 `${this.modelName} with id ${id} is already unpublished`
             );
         }
 
-        // Update publish status
-        const updatedEntity = await this.repo.save({
-            ...entity,
-            isPublished: false,
-            publishedAt: null,
-        } as any);
+        // Update unpublish status
+        const updatedEntity = await this.repo.save({ ...entity, publishedAt: null });
 
-        return updatedEntity;
+        return updatedEntity
     }
 }
 

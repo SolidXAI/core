@@ -82,6 +82,7 @@ export class ModelMetadataHelperService {
                 displayName: "Published At",
                 type: "datetime",
                 isSystem: true,
+                enableAuditTracking:true
             },
             {
                 name: "localeName",
@@ -108,14 +109,7 @@ export class ModelMetadataHelperService {
                 type: "int",
                 isSystem: true,
                 columnName: "updated_by_id",
-            },
-            {
-                name: "isPublished",
-                displayName: "Is Published",
-                type: "boolean",
-                isSystem: true,
-                columnName: "is_published",
-            },
+            }
         ];
     }
 
