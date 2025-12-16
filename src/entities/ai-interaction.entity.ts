@@ -48,4 +48,8 @@ export class AiInteraction extends CommonEntity {
 
     @Column({ type: "integer", nullable: true })
     totalTokens: number;
+    @Column({ type: "text", nullable: true })
+    originalMessage: string;
+    @Column({ nullable: true, default: false })
+    isEdited: boolean = false;
 }

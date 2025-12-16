@@ -16,6 +16,7 @@ import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 import { dasherize } from '@angular-devkit/core/src/utils/strings';
 import { MenuItemMetadataRepository } from 'src/repository/menu-item-metadata.repository';
+import { SavedFiltersRepository } from 'src/repository/saved-filters.repository';
 
 @Injectable()
 export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
@@ -31,6 +32,7 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
     // @InjectRepository(MenuItemMetadata, 'default')
     // readonly repo: Repository<MenuItemMetadata>,
     readonly repo: MenuItemMetadataRepository,
+    readonly savedFiltersRepo: SavedFiltersRepository,
     readonly moduleRef: ModuleRef
 
   ) {
@@ -120,76 +122,102 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
     // 3. Then for each module, do a recursive compilation of children based on parentMenuItem, while doing this use the relation - action to get hold of the path. 
     const menu: any[] = [];
 
-    modulesToMenuItemsMap.forEach((menuItems, moduleName) => {
-      const rootMenuItems = menuItems.filter(item => !item.parentMenuItem);
+    // modulesToMenuItemsMap.forEach((menuItems, moduleName) => {
+    //   const rootMenuItems = menuItems.filter(item => !item.parentMenuItem);
+    //   const moduleMetadata = modulesMap.get(moduleName);
+
+    //   const moduleMenu = {
+    //     title: moduleMetadata.displayName,
+    //     // No need for path the module level.
+    //     // path: ``,
+    //     key: moduleName.toLowerCase().replace(/\s+/g, '-'),
+    //     // TODO: We need to add the module icon as part of the metadata so it can be brought here. 
+    //     // icon: `/images/menu/${moduleName.toLowerCase().replace(/\s+/g, '-')}.svg`,
+    //     children: this.buildMenuTree(rootMenuItems, menuItems, activeUser),
+    //     icon: moduleMetadata.menuIconUrl,
+    //   };
+
+    //   menu.push(moduleMenu);
+    // });
+    for (const [moduleName, menuItemsForModule] of modulesToMenuItemsMap.entries()) {
+      const rootMenuItems = menuItemsForModule.filter(item => !item.parentMenuItem);
       const moduleMetadata = modulesMap.get(moduleName);
 
       const moduleMenu = {
         title: moduleMetadata.displayName,
-        // No need for path the module level.
-        // path: ``,
         key: moduleName.toLowerCase().replace(/\s+/g, '-'),
-        // TODO: We need to add the module icon as part of the metadata so it can be brought here. 
-        // icon: `/images/menu/${moduleName.toLowerCase().replace(/\s+/g, '-')}.svg`,
-        children: this.buildMenuTree(rootMenuItems, menuItems, activeUser),
+        children: await this.buildMenuTree(rootMenuItems, menuItemsForModule, activeUser), // ✅ await here
         icon: moduleMetadata.menuIconUrl,
       };
 
       menu.push(moduleMenu);
-    });
+    }
+
 
     return menu.filter(m => m.children.length > 0);
   }
 
   // Recursive function to build the tree
-  private buildMenuTree(rootItems: MenuItemMetadata[], allMenuItems: MenuItemMetadata[], activeUser: ActiveUserData): any[] {
-    const menuItemsData = rootItems.map(rootItem => {
-      const allowedMenuItems = allMenuItems.filter(i => {
-        if (!i.parentMenuItem) {
-          return true
-        } else {
-          return this.crudHelperService.hasReadPermissionOnModel(activeUser, i.action.model.singularName)
+  private async buildMenuTree(rootItems: MenuItemMetadata[], allMenuItems: MenuItemMetadata[], activeUser: ActiveUserData): Promise<any[]> {
+    const menuItemsData = await Promise.all(
+      rootItems.map(async rootItem => {
+        const allowedMenuItems = allMenuItems.filter(i => {
+          if (!i.parentMenuItem) {
+            return true
+          } else {
+            return this.crudHelperService.hasReadPermissionOnModel(activeUser, i.action.model.singularName)
+          }
+        });
+        // Get immediate children of the current loop variable menuItem.
+        const children = allowedMenuItems.filter(item => item.parentMenuItem && item.parentMenuItem.id === rootItem.id);
+        const menuItemId = rootItem?.id ?? "";
+        const menuItemName = rootItem?.name ?? "";
+        const actionId = rootItem?.action?.id ?? "";
+        const actionName = rootItem?.action?.name ?? "";
+        // TODO: We should specify path only if there are no more children present. 
+        // For now adding path everywhere. 
+        let path = '';
+
+        const layout = rootItem?.action?.view && rootItem?.action?.view?.layout ? JSON.parse(rootItem?.action?.view?.layout) : null
+        let savedFilterId = null;
+        if (layout && layout?.attrs?.defaultSavedFilter) {
+          const savedFilter = await this.savedFiltersRepo.findOne({
+            where: {
+              name: layout?.attrs?.defaultSavedFilter,
+              isPrivate: false
+            },
+          });
+          if (savedFilter) {
+            savedFilterId = savedFilter.id
+          }
         }
-      });
-      // Get immediate children of the current loop variable menuItem.
-      const children = allowedMenuItems.filter(item => item.parentMenuItem && item.parentMenuItem.id === rootItem.id);
-      const menuItemId = rootItem?.id ?? "";
-      const menuItemName = rootItem?.name ?? "";
-      const actionId = rootItem?.action?.id ?? "";
-      const actionName = rootItem?.action?.name ?? "";
-      // TODO: We should specify path only if there are no more children present. 
-      // For now adding path everywhere. 
-      let path = '';
-
-      if (rootItem.action && rootItem.action.type === 'custom') {
-        path = `${rootItem.action.customComponent}?menuItemId=${menuItemId}&menuItemName=${menuItemName}&actionId=${actionId}&actionName=${actionName}`;
-      }
-      if (rootItem.action && rootItem.action.type === 'solid') {
-        if (this.crudHelperService.hasReadPermissionOnModel(activeUser, rootItem.action.model.singularName)) {
-
-
-          // TODO: Here we are assuming that we will always take the user to collection view of a model. 
-          // We can make provision to take them other views also in the future. 
-          // path = `/admin/core/${rootItem.module.name}/${rootItem.action.model.singularName}/${rootItem.action.view.name}`;
-          path = `/admin/core/${rootItem.module.name}/${dasherize(rootItem.action?.model?.singularName ?? 'unknown')}/${rootItem.action?.view?.type ?? 'list'}?menuItemId=${menuItemId}&menuItemName=${menuItemName}&actionId=${actionId}&actionName=${actionName}`;
-
+        if (rootItem.action && rootItem.action.type === 'custom') {
+          path = `${rootItem.action.customComponent}?menuItemId=${menuItemId}&menuItemName=${menuItemName}&actionId=${actionId}&actionName=${actionName}${savedFilterId ? `&savedQuery=${savedFilterId}` : ''}`;
         }
-      }
+        if (rootItem.action && rootItem.action.type === 'solid') {
+          if (this.crudHelperService.hasReadPermissionOnModel(activeUser, rootItem.action.model.singularName)) {
+            // TODO: Here we are assuming that we will always take the user to collection view of a model. 
+            // We can make provision to take them other views also in the future. 
+            // path = `/admin/core/${rootItem.module.name}/${rootItem.action.model.singularName}/${rootItem.action.view.name}`;
+            path = `/admin/core/${rootItem.module.name}/${dasherize(rootItem.action?.model?.singularName ?? 'unknown')}/${rootItem.action?.view?.type ?? 'list'}?menuItemId=${menuItemId}&menuItemName=${menuItemName}&actionId=${actionId}&actionName=${actionName}${savedFilterId ? `&savedQuery=${savedFilterId}` : ''}`;
 
-      // We are not checking for empty path coz, this is required for parent menu items.
-      const data = {
-        title: rootItem.displayName || rootItem.name,
-        path: path,
-        key: rootItem.name.toLowerCase().replace(/\s+/g, '-'),
-        icon: rootItem.iconName,
-        // iconVariant : rootItem.iconVariant
-      }
-      if (children.length > 0) {
-        data["children"] = this.buildMenuTree(children, allMenuItems, activeUser);
-      }
-      return data;
+          }
+        }
 
-    });
+        // We are not checking for empty path coz, this is required for parent menu items.
+        const data = {
+          title: rootItem.displayName || rootItem.name,
+          path: path,
+          key: rootItem.name.toLowerCase().replace(/\s+/g, '-'),
+          icon: rootItem.iconName,
+          // iconVariant : rootItem.iconVariant
+        }
+        if (children.length > 0) {
+          data["children"] = this.buildMenuTree(children, allMenuItems, activeUser);
+        }
+        return data;
+
+      }));
     return menuItemsData.filter(mi => mi && mi)
   }
 

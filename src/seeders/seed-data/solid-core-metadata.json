@@ -102,7 +102,6 @@
             "name": "isSystem",
             "displayName": "Is System",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -225,7 +224,6 @@
             "name": "enableSoftDelete",
             "displayName": "Enable Soft Delete",
             "type": "boolean",
-            
             "defaultValue": "true",
             "required": false,
             "unique": false,
@@ -239,7 +237,6 @@
             "name": "enableAuditTracking",
             "displayName": "Enable Audit Tracking",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -253,7 +250,6 @@
             "name": "internationalisation",
             "displayName": "Internationalisation",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -267,7 +263,6 @@
             "name": "draftPublishWorkflow",
             "displayName": "Draft Publish Workflow",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -313,7 +308,6 @@
             "name": "isSystem",
             "displayName": "Is System",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -326,7 +320,6 @@
             "name": "isChild",
             "displayName": "Is Child Model",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -475,7 +468,6 @@
             "name": "required",
             "displayName": "Required",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -489,7 +481,6 @@
             "name": "unique",
             "displayName": "Unique",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -503,7 +494,6 @@
             "name": "encrypt",
             "displayName": "Encrypt",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -543,7 +533,6 @@
             "name": "index",
             "displayName": "Index",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -596,7 +585,6 @@
             "name": "private",
             "displayName": "Private",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -691,7 +679,6 @@
             "name": "relationCreateInverse",
             "displayName": "Relation Create Inverse",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -874,7 +861,6 @@
             "name": "isSystem",
             "displayName": "Is System",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -888,7 +874,6 @@
             "name": "isMarkedForRemoval",
             "displayName": "Is Marked For Removal",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -915,7 +900,6 @@
             "name": "isUserKey",
             "displayName": "Is User Key",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -942,7 +926,6 @@
             "name": "isMultiSelect",
             "displayName": "Is MultiSelect",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -1021,7 +1004,6 @@
             "name": "isPublic",
             "displayName": "Is Public",
             "type": "boolean",
-            
             "required": false,
             "unique": false,
             "index": false,
@@ -1346,7 +1328,6 @@
             "name": "customIsModal",
             "displayName": "Custom Is Modal",
             "type": "boolean",
-            
             "required": false,
             "unique": false,
             "index": false,
@@ -1772,7 +1753,6 @@
             "name": "forcePasswordChange",
             "displayName": "Force Password Change",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -1863,7 +1843,6 @@
             "name": "active",
             "displayName": "Active",
             "type": "boolean",
-            
             "length": 512,
             "defaultValue": "false",
             "required": true,
@@ -3043,7 +3022,6 @@
             "name": "isPrivate",
             "displayName": "Is Private",
             "type": "boolean",
-            
             "required": false,
             "unique": false,
             "index": false,
@@ -3252,7 +3230,6 @@
             "name": "active",
             "displayName": "Active",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -3457,7 +3434,6 @@
             "name": "active",
             "displayName": "Active",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -3548,7 +3524,6 @@
             "name": "default",
             "displayName": "Default",
             "type": "boolean",
-            
             "required": false,
             "unique": false,
             "index": false,
@@ -3894,7 +3869,6 @@
             "name": "notifyOnEmail",
             "displayName": "Notify On Email",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -4255,7 +4229,6 @@
             "name": "isDefault",
             "displayName": "Is Default",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": true,
             "unique": false,
@@ -4481,7 +4454,6 @@
             "name": "isMultiSelect",
             "displayName": "Is Multi Select",
             "type": "boolean",
-            
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -5001,6 +4973,17 @@
             "encrypt": false
           },
           {
+            "name": "originalMessage",
+            "displayName": "Original Message",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
             "name": "contentType",
             "displayName": "Content Type",
             "type": "shortText",
@@ -5078,7 +5061,16 @@
             "name": "isApplied",
             "displayName": "Is Applied",
             "type": "boolean",
-            
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "isEdited",
+            "displayName": "Is Edited",
+            "type": "boolean",
             "required": false,
             "unique": false,
             "index": false,
@@ -5089,7 +5081,6 @@
             "name": "isAutoApply",
             "displayName": "Is Auto Apply",
             "type": "boolean",
-            
             "required": false,
             "unique": false,
             "index": false,
@@ -6883,7 +6874,7 @@
           "className": "grid",
           "showEditFormButton": false,
           "showAddFormButton": false,
-          "showDeleteFormButton": false 
+          "showDeleteFormButton": false
         },
         "children": [
           {
@@ -7010,7 +7001,7 @@
           "className": "grid",
           "showEditFormButton": false,
           "showAddFormButton": false,
-          "showDeleteFormButton": false 
+          "showDeleteFormButton": false
         },
         "children": [
           {
