@@ -9,7 +9,7 @@ import { SelectionDynamicQueryDto } from '../dtos/selection-dynamic-query.dto';
 import { ResolveS3UrlDto } from 'src/dtos/resolve-s3-url.dto';
 
 @Controller('field-metadata')
-@ApiTags("App Builder")
+@ApiTags("Solid Core")
 export class FieldMetadataController {
 
     constructor(

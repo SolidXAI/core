@@ -102,6 +102,7 @@ export const INTERNAL_ROLE_PERMISSIONS = [
     // Chatter permissions
     'ChatterMessageController.create',
     'ChatterMessageController.getChatterMessages',
+    'ChatterMessageController.postMessage',
     // 'ChatterMessageController.postMessage', // Does not seem to be used from ui
     // Import
     'ImportTransactionController.getImportTemplate',

@@ -7,7 +7,7 @@ import { UpdateModelMetaDataDto } from '../dtos/update-model-metadata.dto';
 import { ModelMetadataService } from '../services/model-metadata.service';
 
 @Controller('model-metadata')
-@ApiTags("App Builder")
+@ApiTags("Solid Core")
 // @UseGuards(ThrottlerGuard)
 // @SkipThrottle({ short: true, login: true, burst: true, sustained: true }) //Skip all
 export class ModelMetadataController {

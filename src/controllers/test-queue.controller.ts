@@ -8,7 +8,7 @@ import { PublisherFactory } from 'src/services/queues/publisher-factory.service'
 
 @Auth(AuthType.None)
 @Controller('queues')
-@ApiTags("Queues")
+@ApiTags("Solid Core")
 export class TestQueueController {
 
     constructor(

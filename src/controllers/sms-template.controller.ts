@@ -7,7 +7,7 @@ import { SmsTemplateService } from '../services/sms-template.service';
 
 
 @Controller('sms-template')
-@ApiTags("Common")
+@ApiTags("Solid Core")
 // @UseGuards(ThrottlerGuard)
 // @SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only
 export class SmsTemplateController {

@@ -8,7 +8,7 @@ import { UpdateMediaStorageProviderMetadataDto } from '../dtos/update-media-stor
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('media-storage-provider-metadata')
-@ApiTags("App Builder")
+@ApiTags("Solid Core")
 export class MediaStorageProviderMetadataController {
     private logger = new Logger(MediaStorageProviderMetadataController.name);
 
