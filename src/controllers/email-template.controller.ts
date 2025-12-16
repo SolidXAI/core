@@ -10,7 +10,7 @@ import Mailgen = require('mailgen');
 
 
 @Controller('email-template')
-@ApiTags("Common")
+@ApiTags("Solid Core")
 export class EmailTemplateController {
   constructor(private readonly service: EmailTemplateService) { }
 
