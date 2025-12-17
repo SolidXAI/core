@@ -213,7 +213,7 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
           // iconVariant : rootItem.iconVariant
         }
         if (children.length > 0) {
-          data["children"] = this.buildMenuTree(children, allMenuItems, activeUser);
+          data["children"] = await this.buildMenuTree(children, allMenuItems, activeUser);
         }
         return data;
 
