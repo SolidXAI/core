@@ -49,4 +49,5 @@ export abstract class CommonEntity {
     @Expose()
     @Column({ name: `updated_by_id`, nullable: true })
     updatedBy: number;
+    
 }

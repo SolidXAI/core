@@ -435,6 +435,18 @@ export class CrudHelperService {
         return matchingPermssions.length > 0
     }
 
+    hasPublishPermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
+        const permissionNames = [`${classify(modelName)}Controller.publish`];
+        const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
+        return matchingPermssions.length > 0
+    }
+
+    hasUnpublishPermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
+        const permissionNames = [`${classify(modelName)}Controller.publish`];
+        const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
+        return matchingPermssions.length > 0
+    }
+
     hasDeletePermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
         const permissionNames = [`${classify(modelName)}Controller.delete`, `${classify(modelName)}Controller.deleteMany`];
         const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
