@@ -3,7 +3,6 @@ import * as fs from 'fs';
 import * as path from 'path';
 
 import { ConfigType } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
 import commonConfig from 'src/config/common.config';
 import { iamConfig } from 'src/config/iam.config';
 import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
@@ -12,7 +11,6 @@ import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
 import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
 import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
-import { Setting } from 'src/entities/setting.entity';
 import { DashboardRepository } from 'src/repository/dashboard.repository';
 import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
 import { AuthenticationService } from 'src/services/authentication.service';
@@ -21,12 +19,11 @@ import { ListOfValuesService } from 'src/services/list-of-values.service';
 import { SettingService } from 'src/services/setting.service';
 import { SmsTemplateService } from 'src/services/sms-template.service';
 import { UserService } from 'src/services/user.service';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import appBuilderConfig from '../config/app-builder.config';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
-import { PermissionMetadata } from '../entities/permission-metadata.entity';
-import { getDynamicModuleNames } from '../helpers/module.helper';
+import { getDynamicModuleNames, getDynamicModuleNamesBasedOnMetadata } from '../helpers/module.helper';
 import { SolidRegistry } from '../helpers/solid-registry';
 import { ActionMetadataService } from '../services/action-metadata.service';
 import { FieldMetadataService } from '../services/field-metadata.service';
@@ -328,7 +325,8 @@ export class ModuleMetadataSeederService {
     private get seedDataFiles(): any[] {
         const typedSolidCoreMetadata = structuredClone(solidCoreMetadata);
         const seedDataFiles = [typedSolidCoreMetadata];
-        const enabledModules = getDynamicModuleNames();
+        // const enabledModules = getDynamicModuleNames();
+        const enabledModules = getDynamicModuleNamesBasedOnMetadata();
         for (const enabledModule of enabledModules) {
             const enabledModuleSeedFile = `module-metadata/${enabledModule}/${enabledModule}-metadata.json`;
             const fullPath = path.join(process.cwd(), enabledModuleSeedFile);
