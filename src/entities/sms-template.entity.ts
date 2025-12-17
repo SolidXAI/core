@@ -4,7 +4,7 @@ import { Column, Entity, Index } from 'typeorm';
 @Entity("ss_sms_template")
 export class SmsTemplate extends CommonEntity {
     @Index({ unique: true })
-    @Column({ name: "name", type: "varchar", unique: true })
+    @Column({ name: "name", type: "varchar"})
     name: string;
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;
@@ -14,7 +14,7 @@ export class SmsTemplate extends CommonEntity {
     smsProviderTemplateId: string;
     @Column({ name: "description", type: "text", nullable: true })
     description: string;
-    @Column({ name: "active", type: "boolean", nullable: true, default: true })
+    @Column({ name: "active", nullable: true, default: true })
     active: boolean = true;
     @Column({ name: "type", type: "varchar", nullable: true })
     type: string;

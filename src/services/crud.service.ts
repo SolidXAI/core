@@ -2,7 +2,7 @@ import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
-import { CommonEntity, SolidBaseRepository } from "src";
+import { CommonEntity, SolidBaseRepository, User } from "src";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
@@ -33,7 +33,7 @@ import { SelectionStaticFieldCrudManager } from "../helpers/field-crud-managers/
 import { ShortTextFieldCrudManager } from "../helpers/field-crud-managers/ShortTextFieldCrudManager";
 import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCrudManager";
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
-import { CrudHelperService } from "./crud-helper.service";
+import { CrudHelperService, UserIdFields } from "./crud-helper.service";
 import { FileService } from "./file.service";
 import { HashingService } from "./hashing.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
@@ -178,6 +178,10 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
 
+        if (model.draftPublishWorkflow === true && entity.publishedAt) {
+            throw new BadRequestException(`Cannot update a published record for model ${this.modelName}. Unpublish it first.`
+            );
+        }
         updateDto.id = id;
         // This class will be extended by the generated service class i.e PersonService
         // The data required to identify the model and module name will be passed from the generate CrudService subclass
@@ -237,6 +241,10 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         );
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
+        }
+
+        if (model.draftPublishWorkflow === true && entity.publishedAt) {
+            throw new BadRequestException(`Cannot update a published record for model ${this.modelName}, Unpublish it first.`);
         }
 
         // If the model has internationalisation enabled, delete children with defaultEntityLocaleId === this entity's id
@@ -430,6 +438,8 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         const alias = 'entity';
         // Extract the required keys from the input query
         let { limit, offset, populateMedia, populateGroup, groupFilter } = basicFilterDto;
+        const populateUserIdFields = this.crudHelperService.extractUserIdFieldsFromPopulate(basicFilterDto.populate);
+
         const { singularName, internationalisation, draftPublishWorkflow } = await this.loadModel();
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
@@ -445,16 +455,19 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = await this.repo.createSecurityRuleAwareQueryBuilder(alias)
-        qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
+        // qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
         if (internationalisation && draftPublishWorkflow) {
             qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef);
+        }
+        else {
+            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
         }
 
         if (basicFilterDto.groupBy) {
             // Get the records and the count
-            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateMedia);
+            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateUserIdFields, populateMedia);
             const totalGroups = await this.crudHelperService.countGroupedRecords(qb, basicFilterDto, alias);
-            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
+            // qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
 
             return {
                 meta: {
@@ -466,7 +479,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         }
         else {
             // Get the records and the count
-            const { meta, records } = await this.handleNonGroupFind(qb, populateMedia, offset, limit, alias);
+            const { meta, records } = await this.handleNonGroupFind(qb, populateUserIdFields, populateMedia, offset, limit, alias);
             return {
                 meta,
                 records,
@@ -474,8 +487,13 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         }
     }
 
-    private async handleNonGroupFind(qb: SelectQueryBuilder<T>, populateMedia: string[], offset: number, limit: number, alias: string) {
+    private async handleNonGroupFind(qb: SelectQueryBuilder<T>, populateUserIdFields: UserIdFields[], populateMedia: string[], offset: number, limit: number, alias: string) {
         const [entities, count] = await qb.getManyAndCount();
+
+        // Populate the entity with the userId fields
+        if (populateUserIdFields && populateUserIdFields.length > 0) {
+            await this.handlePopulateUserIdFields(populateUserIdFields, entities);
+        }
 
         // Populate the entity with the media
         if (populateMedia && populateMedia.length > 0) {
@@ -485,7 +503,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateMedia: string[]) {
+    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateUserIdFields: UserIdFields[], populateMedia: string[]) {
         const groupByResult = await qb.getRawMany();
 
         const groupMeta = [];
@@ -497,6 +515,11 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
                 const [entities, count] = await groupByQb.getManyAndCount();
+
+                // Populate the entity with the userId fields
+                if (populateUserIdFields && populateUserIdFields.length > 0) {
+                    await this.handlePopulateUserIdFields(populateUserIdFields, entities);
+                }
 
                 // Populate the entity with the media
                 if (populateMedia && populateMedia.length > 0) {
@@ -529,6 +552,25 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             records: entities
         };
         return r;
+    }
+
+    // entities is an array of T
+    // T can contain createdBy and updatedBy fields
+    // We need to populate the createdBy and updatedBy fields with the User entity
+    private async handlePopulateUserIdFields(userIdFields: UserIdFields[], entities: T[]) {
+        const userRepository = this.entityManager.getRepository(User);
+        for (const entity of entities) {
+            for (const userFieldPath of userIdFields) {
+                const userId = entity[userFieldPath as keyof T] as unknown as number;
+                if (userId) {
+                    const user = await userRepository.findOne({
+                        where: { id: userId },
+                    });
+                    // @ts-ignore
+                    entity[userFieldPath] = user;
+                }
+            }
+        }
     }
 
     private async handlePopulateMedia(populateMedia: string[], entities: T[]) {
@@ -615,7 +657,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return mediaDetails as MediaWithFullUrl[];
     }
 
-    async findOne(id: number, query: any, solidRequestContext: any = {}) {
+    async findOne(id: number, query: any={}, solidRequestContext: any = {}) {
         const { populate = [], fields = [], populateMedia = [] } = query;
 
         // const normalizedFields = this.crudHelperService.normalize(fields);
@@ -731,8 +773,30 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                     id: id,
                 } as unknown as FindOptionsWhere<T>,
             });
+
             removedEntities.push(entity);
         }
+
+
+        // entity-level flag
+        const isDraftPublishEnabled = model?.draftPublishWorkflow === true;
+
+        let publishedEntitiesExists: T[] = [];
+
+        if (isDraftPublishEnabled) {
+            publishedEntitiesExists = removedEntities.filter(
+                (x) => !!x?.publishedAt
+            );
+        }
+
+        if (publishedEntitiesExists.length > 0) {
+            const publishedEntitiesExistsID = publishedEntitiesExists.map(x => x.id);
+
+            throw new BadRequestException(
+                `Cannot delete published record(s) for model ${this.modelName} with Ids ${publishedEntitiesExistsID.join(', ')}. Unpublish them first.`
+            );
+        }
+
         if (model.enableSoftDelete === true) {
             await this.repo.softRemove(removedEntities);
             return this.repo.save(removedEntities);
@@ -767,7 +831,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             await this.repo.update(id, {
                 deletedAt: null, deletedTracker: "not-deleted"
             } as unknown as QueryDeepPartialEntity<T>
-         );
+            );
 
             return { message: SUCCESS_MESSAGES.RECORD_RECOVERED, data: softDeletedRows };
         } catch (error) {
@@ -867,6 +931,90 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             throw new BadRequestException(`Model ${modelSingularName} not found`);
         }
         return model.userKeyField?.name || '';
+    }
+
+    /* Publish a record - sets publishedAt timestamp */
+    async publishRecord(id: number, solidRequestContext: any = {}): Promise<T> {
+
+        const model = await this.loadModel();
+
+        // Check if publish workflow is enabled for this model
+        if (!model.draftPublishWorkflow) {
+            throw new BadRequestException(
+                `Publish workflow is not enabled for ${this.modelName}`
+            );
+        }
+
+        // Check user permissions
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasPublishPermissionOnModel(
+                solidRequestContext.activeUser,
+                model.singularName
+            );
+            if (!hasPermission) {
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
+            }
+        }
+
+        // Find the entity
+        const entity = await this.repo.findOne({ where: { id } as any });
+        if (!entity) {
+            throw new NotFoundException(`${this.modelName} with id ${id} not found`);
+        }
+
+        // Check if already published
+        if (entity.publishedAt) {
+            throw new BadRequestException(
+                `${this.modelName} with id ${id} is already published`
+            );
+        }
+
+        // Update publish status
+        const updatedEntity = await this.repo.save({ ...entity, publishedAt: new Date() });
+
+        return updatedEntity
+    }
+
+    /* Unpublish a record - clears publishedAt timestamp */
+    async unpublishRecord(id: number, solidRequestContext: any = {}): Promise<T> {
+
+        const model = await this.loadModel();
+
+        // Check if publish workflow is enabled for this model
+        if (!model.draftPublishWorkflow) {
+            throw new BadRequestException(
+                `Publish workflow is not enabled for ${this.modelName}`
+            );
+        }
+
+        // Check user permissions
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasUnpublishPermissionOnModel(
+                solidRequestContext.activeUser,
+                model.singularName
+            );
+            if (!hasPermission) {
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
+            }
+        }
+
+        // Find the entity
+        const entity = await this.repo.findOne({ where: { id } as any });
+        if (!entity) {
+            throw new NotFoundException(`${this.modelName} with id ${id} not found`);
+        }
+
+        // Check if already unpublished
+        if (!entity.publishedAt) {
+            throw new BadRequestException(
+                `${this.modelName} with id ${id} is already unpublished`
+            );
+        }
+
+        // Update unpublish status
+        const updatedEntity = await this.repo.save({ ...entity, publishedAt: null });
+
+        return updatedEntity
     }
 }
 

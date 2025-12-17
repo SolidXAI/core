@@ -1,11 +1,11 @@
 import { CommonEntity } from 'src/entities/common.entity'
-import {Entity, JoinColumn, ManyToOne, Index, Column} from 'typeorm';
+import { Entity, JoinColumn, ManyToOne, Index, Column } from 'typeorm';
 import { User } from 'src/entities/user.entity'
 
 @Entity("ss_ai_interactions")
 export class AiInteraction extends CommonEntity {
     @Index()
-    @ManyToOne(() => User, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => User, { nullable: false })
     @JoinColumn()
     user: User;
     @Index()
@@ -26,26 +26,30 @@ export class AiInteraction extends CommonEntity {
     modelUsed: string;
     @Column({ type: "integer", nullable: true })
     responseTimeMs: number;
-    @Column({ type: "jsonb", nullable: true })
+    @Column({ type: "simple-json", nullable: true })
     metadata: any;
-    @Column({ type: "boolean", nullable: true, default: false })
+    @Column({ nullable: true, default: false })
     isApplied: boolean = false;
     @Index()
-    @ManyToOne(() => AiInteraction, { onDelete: "SET NULL", nullable: true })
+    @ManyToOne(() => AiInteraction, { nullable: true })
     @JoinColumn()
     parentInteraction: AiInteraction;
     @Index({ unique: true })
     @Column({ type: "varchar" })
     externalId: string;
-    @Column({ type: "boolean", nullable: true, default: false })
+    @Column({ nullable: true, default: false })
     isAutoApply: boolean = false;
 
-@Column({ type: "integer", nullable: true })
-inputTokens: number;
+    @Column({ type: "integer", nullable: true })
+    inputTokens: number;
 
-@Column({ type: "integer", nullable: true })
-outputTokens: number;
+    @Column({ type: "integer", nullable: true })
+    outputTokens: number;
 
-@Column({ type: "integer", nullable: true })
-totalTokens: number;
+    @Column({ type: "integer", nullable: true })
+    totalTokens: number;
+    @Column({ type: "text", nullable: true })
+    originalMessage: string;
+    @Column({ nullable: true, default: false })
+    isEdited: boolean = false;
 }

@@ -5,6 +5,7 @@ import {
   IsArray,
   IsBoolean,
   IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
@@ -62,10 +63,6 @@ export enum SolidFieldType {
   uuid = 'uuid'
 }
 
-export enum OrmType {
-  MySQLType,
-}
-
 export enum MySQLType { //FIXME Currently this type is being used in the definition, Need to use OrmType instead
   // Numeric types
   int = 'int',
@@ -118,8 +115,35 @@ export enum PSQLType { //FIXME Currently this type is being used in the definiti
   // Other types
   json = 'json',
   jsonb = 'jsonb',
+  simplejson = 'simple-json'
 }
 
+export enum MSSQLType {
+  int = "int",
+  bigint = "bigint",
+  decimal = "decimal",
+  numeric = "numeric",
+  varchar = "varchar",
+  nvarchar = "nvarchar",
+  simplejson = "simple-json",
+  text = "text",
+  bit = "bit",
+  date = "date",
+  datetime = "datetime",
+  datetime2 = "datetime2",
+  time = "time",
+  uniqueidentifier = "uniqueidentifier"
+}
+
+export const ALL_ORM_TYPES = [
+  ...Object.values(PSQLType),
+  ...Object.values(MSSQLType),
+  ...Object.values(MySQLType),
+] as const;
+
+export type OrmType = typeof ALL_ORM_TYPES[number];
+
+// export type OrmType = PSQLType | MySQLType | MSSQLType;
 
 export enum EncryptionType {
   aes128 = 'aes-128',
@@ -172,12 +196,12 @@ export enum ComputedFieldValueType {
 }
 
 export enum ComputedFieldTriggerOperation {
-    beforeInsert = "before-insert",
-    afterInsert = "after-insert",
-    beforeUpdate = "before-update",
-    afterUpdate = "after-update",
-    beforeRemove = "before-delete",
-    afterRemove = "after-delete",
+  beforeInsert = "before-insert",
+  afterInsert = "after-insert",
+  beforeUpdate = "before-update",
+  afterUpdate = "after-update",
+  beforeRemove = "before-delete",
+  afterRemove = "after-delete",
 }
 
 export class ComputedFieldTriggerConfig {
@@ -217,9 +241,9 @@ export class CreateFieldMetadataDto {
 
   //For all types of fields
   @ApiProperty({ description: 'Field can have orm types specific to your database', })
-  @IsEnum(PSQLType)
+  @IsIn(ALL_ORM_TYPES)
   @IsOptional()
-  readonly ormType: PSQLType;
+  readonly ormType: OrmType;
 
   @ApiProperty({ description: 'Length of the field. Only for type=text' })
   @IsInt()
@@ -426,6 +450,7 @@ export class CreateFieldMetadataDto {
   @IsOptional()
   relationJoinTableName: string
 
+  @ApiProperty({ description: 'Enable Audit Tracking for this field', })
   @IsOptional()
   @IsBoolean()
   enableAuditTracking?: boolean;
@@ -434,4 +459,9 @@ export class CreateFieldMetadataDto {
   @ApiProperty({ description: 'Is MultiSelect Field', })
   @IsBoolean()
   isMultiSelect: boolean;
+
+  @IsOptional()
+  @ApiProperty({ description: 'Is Primary Key Field', })
+  @IsBoolean()
+  isPrimaryKey?: boolean;
 }

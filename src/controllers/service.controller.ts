@@ -14,7 +14,7 @@ export interface PostProcessCodeGenConfig {
     runSolidIngestion?: boolean; // If true, run solid ingestion command
 }
 @Controller('')
-@ApiTags("Common")
+@ApiTags("Solid Core")
 // @UseGuards(ThrottlerGuard)
 // @SkipThrottle({ short: true, login: true, burst: true, sustained: true }) // Skip all
 export class ServiceController {

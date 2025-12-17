@@ -12,10 +12,6 @@ export class UpdateImportTransactionDto {
     @ApiProperty()
     status: string;
     @IsOptional()
-    @IsString()
-    @ApiProperty()
-    importTransactionId: string;
-    @IsOptional()
     @IsJSON()
     @ApiProperty()
     mapping: any;

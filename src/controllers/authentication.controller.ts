@@ -15,7 +15,7 @@ import { AuthenticationService } from '../services/authentication.service';
 
 // @Auth(AuthType.None)
 @Controller('iam')
-@ApiTags("Iam")
+@ApiTags("Solid Core")
 // @UseGuards(ThrottlerGuard)
 // @SkipThrottle({login: true, short: true, burst: true, sustained: true}) // disable all sets by default for this controller
 export class AuthenticationController {

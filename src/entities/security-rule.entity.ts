@@ -12,11 +12,11 @@ export class SecurityRule extends CommonEntity {
     @Column({ type: "varchar" })
     description: string;
     @Index()
-    @ManyToOne(() => RoleMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => RoleMetadata, { nullable: false })
     @JoinColumn()
     role: RoleMetadata;
     @Index()
-    @ManyToOne(() => ModelMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ModelMetadata, { nullable: false })
     @JoinColumn()
     modelMetadata: ModelMetadata;
     @Column({ type: "text" })

@@ -1,9 +1,9 @@
 
-import { ListOfValuesService } from "../services/list-of-values.service";
+import { ListOfValuesService } from "../list-of-values.service";
 import { PaginationQueryDto } from "src/dtos/pagination-query.dto";
 import { SelectionProvider } from "src/decorators/selection-provider.decorator";
 import { Injectable } from "@nestjs/common";
-import { ISelectionProvider, ISelectionProviderContext, ISelectionProviderValues } from "../interfaces";
+import { ISelectionProvider, ISelectionProviderContext, ISelectionProviderValues } from "../../interfaces";
 import { filter } from "rxjs";
 import { BasicFilterDto } from "src/dtos/basic-filters.dto";
 

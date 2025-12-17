@@ -11,7 +11,7 @@ export class SeedData {
 }
 
 @Controller('test')
-@ApiTags("App Builder")
+@ApiTags("Solid Core")
 export class TestController {
   private readonly logger = new Logger(TestController.name);
   constructor(

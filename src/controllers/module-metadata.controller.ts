@@ -19,7 +19,7 @@ import { ModuleMetadataService } from '../services/module-metadata.service';
 import { AnyFilesInterceptor } from '@nestjs/platform-express';
 
 @Controller('module-metadata')
-@ApiTags("App Builder")
+@ApiTags("Solid Core")
 export class ModuleMetadataController {
   constructor(private readonly moduleMetadataService: ModuleMetadataService) { }
 

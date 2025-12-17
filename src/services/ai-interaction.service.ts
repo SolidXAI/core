@@ -219,7 +219,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
       throw new Error(`Invalid metadata JSON: ${e}`);
     }
 
-    const toolsInvoked = metadata['toolsInvoked'];
+    const toolsInvoked = metadata['tools_invoked'];
     if (!toolsInvoked) {
       // TODO: RESPONSE SHAPE ALERT Check if we want to control the shape of the response....
       throw new Error(ERROR_MESSAGES.UNABLE_TO_RESOLVE_SOLID_COMMAND);

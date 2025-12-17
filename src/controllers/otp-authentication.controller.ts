@@ -13,7 +13,7 @@ import { AuthenticationService } from '../services/authentication.service';
 
 @Auth(AuthType.None)
 @Controller('iam/otp')
-@ApiTags("Iam")
+@ApiTags("Solid Core")
 // @UseGuards(ThrottlerGuard)
 // @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
 export class OTPAuthenticationController {

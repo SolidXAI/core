@@ -64,19 +64,26 @@ export class CreateAiInteractionDto {
     @IsBoolean()
     @ApiProperty()
     isAutoApply: boolean = false;
+    @IsOptional()
+    @IsInt()
+    @ApiProperty()
+    inputTokens: number;
+    @IsOptional()
+    @IsInt()
+    @ApiProperty()
+    outputTokens: number;
+    @IsOptional()
+    @IsInt()
+    @ApiProperty()
+    totalTokens: number;
 
 @IsOptional()
-@IsInt()
+@IsString()
 @ApiProperty()
-inputTokens: number;
+originalMessage: string;
 
 @IsOptional()
-@IsInt()
+@IsBoolean()
 @ApiProperty()
-outputTokens: number;
-
-@IsOptional()
-@IsInt()
-@ApiProperty()
-totalTokens: number;
+isEdited: boolean = false;
 }

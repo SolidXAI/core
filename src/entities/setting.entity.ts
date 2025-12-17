@@ -5,13 +5,13 @@ import { User } from 'src/entities/user.entity'
 @Entity("ss_setting")
 export class Setting extends CommonEntity {
     @Index({ unique: true })
-    @Column({ type: "varchar", nullable: true })
+    @Column({ type: "varchar", nullable: false })
     key: string;
     @Column({ type: "varchar", nullable: true })
     value: string;
     @Column({ name: "type", type: "varchar", nullable: true })
     type: string;
-    @ManyToOne(() => User, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => User, { nullable: true })
     @JoinColumn()
     user: User;
 }

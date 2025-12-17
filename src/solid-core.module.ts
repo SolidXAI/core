@@ -25,7 +25,8 @@ import { ModelMetadata } from './entities/model-metadata.entity';
 import { ModuleMetadata } from './entities/module-metadata.entity';
 import { CommandService } from './helpers/command.service';
 import { SchematicService } from './helpers/schematic.service';
-import { ListOfValuesSelectionProvider } from './providers/list-of-values-selection-providers.service';
+import { ListOfValuesSelectionProvider } from './services/selection-providers/list-of-values-selection-providers.service';
+import { PseudoForeignKeySelectionProvider } from './services/selection-providers/pseudo-foreign-key-selection-provider.service'
 import { ModuleMetadataSeederService } from './seeders/module-metadata-seeder.service';
 import { CrudHelperService } from './services/crud-helper.service';
 import { FieldMetadataService } from './services/field-metadata.service';
@@ -326,6 +327,7 @@ import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
+import { McpCommand } from './commands/mcp.command';
 
 
 @Global()
@@ -486,6 +488,7 @@ import { MediaStorageProviderMetadataRepository } from './repository/media-stora
     ModuleMetadataSeederService,
     ListOfValuesService,
     ListOfValuesSelectionProvider,
+    PseudoForeignKeySelectionProvider,
     ModelMetadataSubscriber,
     ViewMetadataService,
     ActionMetadataService,
@@ -497,6 +500,7 @@ import { MediaStorageProviderMetadataRepository } from './repository/media-stora
     TextractService,
     SolidRegistry,
     SeedCommand,
+    McpCommand,
     IngestCommand,
     IngestMetadataService,
     SMTPEMailService,

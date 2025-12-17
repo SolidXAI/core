@@ -7,7 +7,7 @@ import { ComputedFieldMetadata, SolidRegistry } from 'src/helpers/solid-registry
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
-import { CascadeType, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MediaType, PSQLType, RelationType, SelectionValueType, SolidFieldType } from '../dtos/create-field-metadata.dto';
+import { CascadeType, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MediaType, MSSQLType, PSQLType, RelationType, SelectionValueType, SolidFieldType } from '../dtos/create-field-metadata.dto';
 import { SelectionDynamicQueryDto } from '../dtos/selection-dynamic-query.dto';
 import { UpdateFieldMetaDataDto } from '../dtos/update-field-metadata.dto';
 import { FieldMetadata } from '../entities/field-metadata.entity';
@@ -16,12 +16,18 @@ import { ISelectionProviderValues } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import qs from 'qs';
+import { ResolveS3UrlDto } from 'src/dtos/resolve-s3-url.dto';
+import { ConfigService } from '@nestjs/config';
+import { FileService } from './file.service';
 
 
 @Injectable()
 export class FieldMetadataService implements OnApplicationBootstrap {
     constructor(
         private readonly fieldMetadataRepo: FieldMetadataRepository,
+        private readonly configService: ConfigService,
+        private readonly fileService: FileService,
+
         @InjectDataSource()
         private readonly dataSource: DataSource,
         private readonly solidRegistry: SolidRegistry,
@@ -35,9 +41,9 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         this.loadAndRegisterComputedFieldsDetails();
     }
 
-   async loadAndRegisterComputedFieldsDetails() {
+    async loadAndRegisterComputedFieldsDetails() {
         // Load all the modules and models and within that load all the computed fields
-        const computedFieldsWithModelAndModule =  await this.fieldMetadataRepo.findComputedFieldsPopulatedWithModelAndModule();
+        const computedFieldsWithModelAndModule = await this.fieldMetadataRepo.findComputedFieldsPopulatedWithModelAndModule();
 
         // Convert the computed fields object above to the ComputedFieldMetadata type
         const computedFieldMetadata: ComputedFieldMetadata[] = computedFieldsWithModelAndModule.map((field) => {
@@ -354,7 +360,71 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         };
 
         // Orm Data type and Solid Dat Type Mapping
-        const ormFieldTypeForSolid = {
+        const ormFieldTypeForSolid = this.getOrmFieldTypes();
+
+        // Fetch Data Source Type 
+        const dataSourceTypes = Object.keys(ormFieldTypeForSolid); // ["psql"]
+
+        const fieldTypes = Object.entries(ormFieldTypeForSolid.postgres).map(([key, value]) => ({
+            type: key,
+            label: key,
+            value: key,
+            fieldType: key,
+            ormTypes: value.ormTypes,
+            fields: this.fetchCurrentFields(key)
+        }));
+
+        const dataSource = this.solidRegistry.getSolidDatabaseModules().map((solidDatabaseModule) => {
+            return {
+                'name': solidDatabaseModule.instance.name(),
+                'type': solidDatabaseModule.instance.type()
+            }
+        });
+
+        // Creating response arrays for each enum
+        // Get all selection providers. 
+        const sps = [];
+        const selectionProviders = this.solidRegistry.getSelectionProviders();
+        for (let i = 0; i < selectionProviders.length; i++) {
+            const selectionProvider = selectionProviders[i];
+            sps.push({
+                provider: selectionProvider.instance.name(),
+                help: selectionProvider.instance.help(),
+            });
+        }
+
+        const cps = [];
+        const computedProviders = this.solidRegistry.getComputedFieldProviders();
+        for (let i = 0; i < computedProviders.length; i++) {
+            const computedProvider = computedProviders[i];
+            cps.push({
+                provider: computedProvider.instance.name(),
+                help: computedProvider.instance.help(),
+            });
+        }
+
+        const r = {
+            // Field Types with ormtypes, available fields  
+            fieldTypes: fieldTypes,
+            encryptionTypes: enumToResponseArray(EncryptionType),
+            ormType: ormFieldTypeForSolid,
+            decryptWhenTypes: enumToResponseArray(DecryptWhenType),
+            mediaTypes: enumToResponseArray(MediaType),
+            relationTypes: enumToResponseArray(RelationType),
+            selectionDynamicProviders: sps,
+            computedProviders: cps,
+            cascadeTypes: enumToResponseArray(CascadeType),
+            selectionValueTypes: enumToResponseArray(SelectionValueType),
+            computedFieldValueTypes: enumToResponseArray(ComputedFieldValueType),
+            dataSourceType: dataSourceTypes,
+            dataSource: dataSource,
+        };
+
+        return r
+    }
+
+    private getOrmFieldTypes() {
+        return {
             "postgres": {
                 // Numeric types
                 "int": {
@@ -379,6 +449,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 },
                 "json": {
                     "ormTypes": [
+                        // { label: PSQLType.simplejson, description: "Creates DB agnostic column for storing json style data." },
+                        { label: MSSQLType.simplejson, description: "Creates DB agnostic column for storing json style data." },
                         { label: PSQLType.json, description: "Stores JSON data without indexing." },
                         { label: PSQLType.jsonb, description: "Stores JSON data with indexing for faster queries." }
                     ]
@@ -443,69 +515,131 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 "uuid": {
                     "ormTypes": [{ label: PSQLType.varchar, description: "Stores universally unique identifiers (UUIDs)." }]
                 }
+            },
+            "mssql": {
+                // Numeric types
+                "int": {
+                    ormTypes: [
+                        { label: MSSQLType.int, description: "A 4-byte integer for general numeric data." }
+                    ]
+                },
+                "bigint": {
+                    ormTypes: [
+                        { label: MSSQLType.bigint, description: "An 8-byte integer for large numeric values." }
+                    ]
+                },
+                "decimal": {
+                    ormTypes: [
+                        { label: MSSQLType.numeric, description: "A high-precision numeric type for financial or exact values." },
+                        { label: MSSQLType.decimal, description: "A high-precision decimal type for financial or exact values." }
+                    ]
+                },
+
+                // Text types
+                "shortText": {
+                    ormTypes: [
+                        { label: MSSQLType.varchar, description: "A variable-length string for short text." },
+                        { label: MSSQLType.nvarchar, description: "A unicode supported variable-length string for short text." }
+                    ]
+                },
+                "longText": {
+                    ormTypes: [
+                        { label: MSSQLType.nvarchar, description: "A large or unbounded string type." }
+                    ]
+                },
+                "richText": {
+                    ormTypes: [
+                        { label: MSSQLType.nvarchar, description: "A large text field for formatted or long content." }
+                    ]
+                },
+                "json": {
+                    ormTypes: [
+                        { label: MSSQLType.simplejson, description: "Creates DB agnostic column for storing json style data." },
+                        { label: MSSQLType.nvarchar, description: "Stores JSON data as string (MSSQL doesn't have native JSON type)." }
+                    ]
+                },
+
+                // Boolean types
+                "boolean": {
+                    ormTypes: [
+                        { label: MSSQLType.bit, description: "Stores true or false values as 0 or 1." }
+                    ]
+                },
+
+                // Date and time types
+                "date": {
+                    ormTypes: [
+                        { label: MSSQLType.date, description: "Stores calendar dates (YYYY-MM-DD)." }
+                    ]
+                },
+                "datetime": {
+                    ormTypes: [
+                        { label: MSSQLType.datetime, description: "Stores date and time without timezone." },
+                        { label: MSSQLType.datetime2, description: "High-precision date and time type." }
+                    ]
+                },
+                "time": {
+                    ormTypes: [
+                        { label: MSSQLType.time, description: "Stores time values (HH:MM:SS)." }
+                    ]
+                },
+
+                // Relation
+                "relation": {
+                    ormTypes: [
+                        { label: MSSQLType.int, description: "Used for foreign keys referencing other entities." }
+                    ]
+                },
+
+                // Media types
+                "mediaSingle": {
+                    ormTypes: [
+                        { label: MSSQLType.varchar, description: "Stores file paths or URLs for single media files." }
+                    ]
+                },
+                "mediaMultiple": {
+                    ormTypes: [
+                        { label: MSSQLType.varchar, description: "Stores file paths or URLs for multiple media files." }
+                    ]
+                },
+
+                // Email and password
+                "email": {
+                    ormTypes: [
+                        { label: MSSQLType.nvarchar, description: "Stores email addresses." }
+                    ]
+                },
+                "password": {
+                    ormTypes: [
+                        { label: MSSQLType.nvarchar, description: "Stores hashed or plain-text passwords." }
+                    ]
+                },
+
+                // Selection types
+                "selectionStatic": {
+                    ormTypes: [
+                        { label: MSSQLType.nvarchar, description: "Used for predefined selection options." }
+                    ]
+                },
+                "selectionDynamic": {
+                    ormTypes: [
+                        { label: MSSQLType.nvarchar, description: "Used for dynamic selection options." }
+                    ]
+                },
+
+                // Computed and external ID
+                "computed": {
+                    ormTypes: [
+                        { label: MSSQLType.nvarchar, description: "Represents computed or derived fields." }
+                    ]
+                },
+                "uuid": {
+                    ormTypes: [
+                        { label: MSSQLType.uniqueidentifier, description: "Stores universally unique identifiers (UUIDs)." }
+                    ]
+                }
             }
         };
-
-
-        // Fetch Data Source Type 
-        const dataSourceTypes = Object.keys(ormFieldTypeForSolid); // ["psql"]
-
-        const fieldTypes = Object.entries(ormFieldTypeForSolid.postgres).map(([key, value]) => ({
-            type: key,
-            label: key,
-            value: key,
-            fieldType: key,
-            ormTypes: value.ormTypes,
-            fields: this.fetchCurrentFields(key)
-        }));
-
-        const dataSource = this.solidRegistry.getSolidDatabaseModules().map((solidDatabaseModule) => {
-            return {
-                'name': solidDatabaseModule.instance.name(),
-                'type': solidDatabaseModule.instance.type()
-            }
-        });
-
-        // Creating response arrays for each enum
-        // Get all selection providers. 
-        const sps = [];
-        const selectionProviders = this.solidRegistry.getSelectionProviders();
-        for (let i = 0; i < selectionProviders.length; i++) {
-            const selectionProvider = selectionProviders[i];
-            sps.push({
-                provider: selectionProvider.instance.name(),
-                help: selectionProvider.instance.help(),
-            });
-        }
-
-        const cps = [];
-        const computedProviders = this.solidRegistry.getComputedFieldProviders();
-        for (let i = 0; i < computedProviders.length; i++) {
-            const computedProvider = computedProviders[i];
-            cps.push({
-                provider: computedProvider.instance.name(),
-                help: computedProvider.instance.help(),
-            });
-        }
-
-        const r = {
-            // Field Types with ormtypes, available fields  
-            fieldTypes: fieldTypes,
-            encryptionTypes: enumToResponseArray(EncryptionType),
-            ormType: ormFieldTypeForSolid,
-            decryptWhenTypes: enumToResponseArray(DecryptWhenType),
-            mediaTypes: enumToResponseArray(MediaType),
-            relationTypes: enumToResponseArray(RelationType),
-            selectionDynamicProviders: sps,
-            computedProviders: cps,
-            cascadeTypes: enumToResponseArray(CascadeType),
-            selectionValueTypes: enumToResponseArray(SelectionValueType),
-            computedFieldValueTypes: enumToResponseArray(ComputedFieldValueType),
-            dataSourceType: dataSourceTypes,
-            dataSource: dataSource,
-        };
-
-        return r
     }
 
     async fetchCurrentFieldsBasedOnType(type: string) {
@@ -533,7 +667,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "enableAuditTracking"
+                    "enableAuditTracking",
+                    "isPrimaryKey"
                 ];
 
             case SolidFieldType.bigint:
@@ -553,7 +688,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "enableAuditTracking"
+                    "enableAuditTracking",
+                    "isPrimaryKey"
                 ];
 
             // case SolidFieldType.float:
@@ -616,7 +752,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "decryptWhen",
                     "columnName",
                     "isUserKey",
-                    "enableAuditTracking"
+                    "enableAuditTracking",
+                    "isPrimaryKey"
                 ];
 
             case SolidFieldType.longtext:
@@ -852,7 +989,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "enableAuditTracking"
+                    "enableAuditTracking",
+                    "isPrimaryKey"
                 ];
 
             case SolidFieldType.password:
@@ -964,10 +1102,6 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "decryptWhen",
                     "columnName"
                 ];
-
-
-
-
             default:
                 return [
                     "name",
@@ -1144,6 +1278,77 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         }
 
         return fieldObject;
+    }
+
+    async resolveS3Url(resolveS3UrlDto: ResolveS3UrlDto) {
+
+        const { modelName, fieldName, fieldValue, s3KeyFieldName } = resolveS3UrlDto;
+
+        // ------------------------------------------------
+        // 1. Load model metadata
+        // ------------------------------------------------
+        const modelRepo = this.dataSource.getRepository(ModelMetadata);
+        const model = await modelRepo.findOne({
+            where: { singularName: modelName },
+            relations: ['fields']
+        });
+
+        if (!model) {
+            throw new NotFoundException(`Model ${modelName} not found`);
+        }
+
+        // ------------------------------------------------
+        // 2. Validate the field we are filtering by
+        // ------------------------------------------------
+        const filterFieldMeta = model.fields.find(f => f.name === fieldName);
+        if (!filterFieldMeta) {
+            throw new NotFoundException(
+                `Field ${fieldName} not found in model ${modelName}`
+            );
+        }
+
+        // ------------------------------------------------
+        // 3. Load the actual entity repository
+        // ------------------------------------------------
+        const entityRepo = this.dataSource.getRepository(model.singularName);
+
+        // ------------------------------------------------
+        // 4. Query using fieldName = fieldValue
+        // ------------------------------------------------
+        const record = await entityRepo.findOne({
+            where: { [fieldName]: fieldValue }
+        });
+
+        if (!record) {
+            throw new NotFoundException(
+                `${modelName} record not found for ${fieldName}="${fieldValue}"`
+            );
+        }
+
+        // ------------------------------------------------
+        // 5. Extract S3 key from s3KeyFieldName
+        // ------------------------------------------------
+        const s3Key = record[s3KeyFieldName];
+
+        if (!s3Key) {
+            throw new NotFoundException(
+                `Field "${s3KeyFieldName}" has no value in ${modelName}.${fieldName}="${fieldValue}"`
+            );
+        }
+
+        // ------------------------------------------------
+        // 6. Generate signed or public URL
+        // ------------------------------------------------
+        let url = "";
+
+        // TODO  - get 
+        if (resolveS3UrlDto.isPrivate == "true") {
+            const expiryInSeconds = 60 * 60;
+            url = await this.fileService.getSignedUrl(s3Key, expiryInSeconds, resolveS3UrlDto.bucketName);
+        } else {
+            url = `https://${resolveS3UrlDto.bucketName}.s3.${this.configService.get('S3_AWS_REGION_NAME')}.amazonaws.com/${s3Key}`;
+        }
+        return { url: url }
     }
 }
 

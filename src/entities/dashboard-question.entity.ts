@@ -16,12 +16,12 @@ export class DashboardQuestion extends CommonEntity {
     visualisedAs: string;
     @Column({ type: "varchar", nullable: true })
     providerName: string;
-    @ManyToOne(() => Dashboard, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => Dashboard, { nullable: true })
     @JoinColumn()
     dashboard: Dashboard;
     @OneToMany(() => DashboardQuestionSqlDatasetConfig, dashboardQuestionSqlDatasetConfig => dashboardQuestionSqlDatasetConfig.question, { cascade: true })
     questionSqlDatasetConfigs: DashboardQuestionSqlDatasetConfig[];
-    @Column({ type: "jsonb", nullable: true })
+    @Column({ type: "simple-json", nullable: true })
     chartOptions: any;
     @Column({ type: "text", nullable: true })
     labelSql: string;
@@ -30,6 +30,6 @@ export class DashboardQuestion extends CommonEntity {
     @Column({ type: "integer", nullable: true })
     sequenceNumber: number;
     @Index({ unique: true })
-    @Column({ type: "varchar", nullable: true })
+    @Column({ type: "varchar", nullable: false })
     externalId: string;
 }

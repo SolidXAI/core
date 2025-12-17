@@ -102,7 +102,6 @@
             "name": "isSystem",
             "displayName": "Is System",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -225,7 +224,6 @@
             "name": "enableSoftDelete",
             "displayName": "Enable Soft Delete",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "true",
             "required": false,
             "unique": false,
@@ -239,7 +237,6 @@
             "name": "enableAuditTracking",
             "displayName": "Enable Audit Tracking",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -253,7 +250,6 @@
             "name": "internationalisation",
             "displayName": "Internationalisation",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -267,7 +263,6 @@
             "name": "draftPublishWorkflow",
             "displayName": "Draft Publish Workflow",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -313,7 +308,6 @@
             "name": "isSystem",
             "displayName": "Is System",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -326,8 +320,7 @@
             "name": "isChild",
             "displayName": "Is Child Model",
             "type": "boolean",
-            "ormType": "boolean",
-            "defaultValue": false,
+            "defaultValue": "false",
             "required": false,
             "unique": false,
             "index": false,
@@ -475,7 +468,6 @@
             "name": "required",
             "displayName": "Required",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -489,7 +481,6 @@
             "name": "unique",
             "displayName": "Unique",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -503,7 +494,6 @@
             "name": "encrypt",
             "displayName": "Encrypt",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -543,7 +533,6 @@
             "name": "index",
             "displayName": "Index",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -596,7 +585,6 @@
             "name": "private",
             "displayName": "Private",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -691,7 +679,6 @@
             "name": "relationCreateInverse",
             "displayName": "Relation Create Inverse",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -848,7 +835,7 @@
             "name": "computedFieldTriggerConfig",
             "displayName": "Computed Field Value Trigger Configuration",
             "type": "json",
-            "ormType": "jsonb",
+            "ormType": "simple-json",
             "required": false,
             "unique": false,
             "index": false,
@@ -874,7 +861,6 @@
             "name": "isSystem",
             "displayName": "Is System",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -888,7 +874,6 @@
             "name": "isMarkedForRemoval",
             "displayName": "Is Marked For Removal",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -915,7 +900,6 @@
             "name": "isUserKey",
             "displayName": "Is User Key",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -942,7 +926,6 @@
             "name": "isMultiSelect",
             "displayName": "Is MultiSelect",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -1021,7 +1004,6 @@
             "name": "isPublic",
             "displayName": "Is Public",
             "type": "boolean",
-            "ormType": "boolean",
             "required": false,
             "unique": false,
             "index": false,
@@ -1115,7 +1097,7 @@
             "name": "context",
             "displayName": "Context",
             "type": "json",
-            "ormType": "text",
+            "ormType": "simple-json",
             "required": true,
             "unique": false,
             "index": false,
@@ -1129,7 +1111,7 @@
             "name": "layout",
             "displayName": "Layout",
             "type": "json",
-            "ormType": "text",
+            "ormType": "simple-json",
             "required": true,
             "unique": false,
             "index": false,
@@ -1235,7 +1217,7 @@
             "name": "layout",
             "displayName": "Layout",
             "type": "json",
-            "ormType": "text",
+            "ormType": "simple-json",
             "required": false,
             "unique": false,
             "index": false,
@@ -1306,7 +1288,7 @@
             "name": "domain",
             "displayName": "Domain",
             "type": "json",
-            "ormType": "text",
+            "ormType": "simple-json",
             "required": false,
             "unique": false,
             "index": false,
@@ -1319,7 +1301,7 @@
             "name": "context",
             "displayName": "Context",
             "type": "json",
-            "ormType": "text",
+            "ormType": "simple-json",
             "required": false,
             "unique": false,
             "index": false,
@@ -1346,13 +1328,12 @@
             "name": "customIsModal",
             "displayName": "Custom Is Modal",
             "type": "boolean",
-            "ormType": "boolean",
             "required": false,
             "unique": false,
             "index": false,
             "private": false,
             "encrypt": false,
-            "defaultValue": false,
+            "defaultValue": "false",
             "columnName": "custom_is_modal",
             "isSystem": true
           },
@@ -1597,7 +1578,7 @@
             "type": "int",
             "ormType": "integer",
             "required": false,
-            "defaultValue": 0,
+            "defaultValue": "0",
             "unique": false,
             "index": false,
             "private": false,
@@ -1772,7 +1753,6 @@
             "name": "forcePasswordChange",
             "displayName": "Force Password Change",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -1863,7 +1843,6 @@
             "name": "active",
             "displayName": "Active",
             "type": "boolean",
-            "ormType": "boolean",
             "length": 512,
             "defaultValue": "false",
             "required": true,
@@ -1896,7 +1875,6 @@
             "name": "forgotPasswordConfirmedAt",
             "displayName": "Forgot Password Confirmed At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "unique": false,
@@ -1922,7 +1900,6 @@
             "name": "verificationTokenOnForgotPasswordExpiresAt",
             "displayName": "Verification Token On Forgot Password ExpiresAt",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "unique": false,
@@ -1935,7 +1912,6 @@
             "name": "emailVerifiedOnRegistrationAt",
             "displayName": "Email Verified On Registration At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "unique": false,
@@ -1961,7 +1937,6 @@
             "name": "emailVerificationTokenOnRegistrationExpiresAt",
             "displayName": "Email Verification Token On Registration Expires At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "unique": false,
@@ -1974,7 +1949,6 @@
             "name": "mobileVerifiedOnRegistrationAt",
             "displayName": "Mobile Verified On Registration At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "unique": false,
@@ -2000,7 +1974,6 @@
             "name": "mobileVerificationTokenOnRegistrationExpiresAt",
             "displayName": "Mobile Verification Token On Registration Expires At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "unique": false,
@@ -2013,7 +1986,6 @@
             "name": "emailVerifiedOnLoginAt",
             "displayName": "Email Verified On Login At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "unique": false,
@@ -2039,7 +2011,6 @@
             "name": "emailVerificationTokenOnLoginExpiresAt",
             "displayName": "Email Verification Token On Login Expires At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "unique": false,
@@ -2052,7 +2023,6 @@
             "name": "mobileVerifiedOnLoginAt",
             "displayName": "Mobile Verified On Login At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "unique": false,
@@ -2078,7 +2048,6 @@
             "name": "mobileVerificationTokenOnLoginExpiresAt",
             "displayName": "Mobile Verification Token On Login Expires At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "unique": false,
@@ -2139,7 +2108,7 @@
             "ormType": "integer",
             "length": 512,
             "required": true,
-            "defaultValue": 1,
+            "defaultValue": "1",
             "unique": false,
             "index": false,
             "private": false,
@@ -2150,7 +2119,6 @@
             "name": "rehashedAt",
             "displayName": "Password Rehashed At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "unique": false,
@@ -2481,7 +2449,6 @@
             "name": "startedAt",
             "displayName": "Started At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "index": false,
@@ -2491,7 +2458,6 @@
             "name": "finishedAt",
             "displayName": "Finished At",
             "type": "datetime",
-            "ormType": "timestamp",
             "length": 512,
             "required": false,
             "index": false,
@@ -2508,8 +2474,8 @@
           {
             "name": "input",
             "displayName": "Input",
-            "type": "json",
-            "ormType": "varchar",
+            "type": "longText",
+            "ormType": "text",
             "length": 1024,
             "required": false,
             "unique": false,
@@ -2521,8 +2487,8 @@
           {
             "name": "output",
             "displayName": "Output",
-            "type": "json",
-            "ormType": "varchar",
+            "type": "longText",
+            "ormType": "text",
             "length": 1024,
             "required": false,
             "unique": false,
@@ -2534,8 +2500,8 @@
           {
             "name": "error",
             "displayName": "Error",
-            "type": "json",
-            "ormType": "varchar",
+            "type": "longText",
+            "ormType": "text",
             "length": 1024,
             "required": false,
             "unique": false,
@@ -2608,7 +2574,6 @@
             "type": "shortText",
             "ormType": "varchar",
             "isSystem": false,
-            "defaultValue": null,
             "min": null,
             "max": null,
             "required": true,
@@ -2627,9 +2592,7 @@
             "displayName": "Is Active",
             "description": null,
             "type": "boolean",
-            "ormType": "boolean",
             "isSystem": false,
-            "defaultValue": null,
             "required": true,
             "index": false,
             "private": false,
@@ -2646,7 +2609,6 @@
             "type": "selectionStatic",
             "ormType": "varchar",
             "isSystem": false,
-            "defaultValue": null,
             "selectionStaticValues": [
               "Every Minute:Every Minute",
               "Hourly:Hourly",
@@ -2673,7 +2635,6 @@
             "type": "time",
             "ormType": "time",
             "isSystem": false,
-            "defaultValue": null,
             "required": false,
             "unique": false,
             "index": false,
@@ -2691,7 +2652,6 @@
             "type": "time",
             "ormType": "time",
             "isSystem": false,
-            "defaultValue": null,
             "required": false,
             "unique": false,
             "index": false,
@@ -2709,7 +2669,6 @@
             "type": "date",
             "ormType": "date",
             "isSystem": false,
-            "defaultValue": null,
             "required": false,
             "unique": false,
             "index": false,
@@ -2727,7 +2686,6 @@
             "type": "date",
             "ormType": "date",
             "isSystem": false,
-            "defaultValue": null,
             "required": false,
             "unique": false,
             "index": false,
@@ -2745,7 +2703,6 @@
             "type": "int",
             "ormType": "integer",
             "isSystem": false,
-            "defaultValue": null,
             "min": null,
             "max": null,
             "required": false,
@@ -2763,9 +2720,7 @@
             "displayName": "Last Run At",
             "description": null,
             "type": "datetime",
-            "ormType": "timestamp",
             "isSystem": false,
-            "defaultValue": null,
             "required": false,
             "unique": false,
             "index": false,
@@ -2781,9 +2736,7 @@
             "displayName": "Next Run At",
             "description": null,
             "type": "datetime",
-            "ormType": "timestamp",
             "isSystem": false,
-            "defaultValue": null,
             "required": false,
             "unique": false,
             "index": false,
@@ -2801,7 +2754,6 @@
             "type": "selectionStatic",
             "ormType": "varchar",
             "isSystem": false,
-            "defaultValue": null,
             "selectionStaticValues": [
               "Monday:Monday",
               "Tuesday:Tuesday",
@@ -2830,7 +2782,6 @@
             "type": "selectionDynamic",
             "ormType": "varchar",
             "isSystem": false,
-            "defaultValue": null,
             "min": null,
             "max": null,
             "required": true,
@@ -3034,7 +2985,7 @@
             "name": "filterQueryJson",
             "displayName": "Filter Query Json",
             "type": "json",
-            "ormType": "text",
+            "ormType": "simple-json",
             "required": false,
             "unique": false,
             "index": false,
@@ -3071,7 +3022,6 @@
             "name": "isPrivate",
             "displayName": "Is Private",
             "type": "boolean",
-            "ormType": "boolean",
             "required": false,
             "unique": false,
             "index": false,
@@ -3155,7 +3105,7 @@
             "name": "securityRuleConfig",
             "displayName": "Security Rule",
             "type": "json",
-            "ormType": "text",
+            "ormType": "simple-json",
             "required": true,
             "unique": false,
             "index": false,
@@ -3280,7 +3230,6 @@
             "name": "active",
             "displayName": "Active",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -3485,7 +3434,6 @@
             "name": "active",
             "displayName": "Active",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -3494,130 +3442,6 @@
             "encrypt": false,
             "columnName": "active",
             "isSystem": true
-          }
-        ]
-      },
-      {
-        "singularName": "savedFilters",
-        "pluralName": "savedFilterss",
-        "displayName": "Saved Filters",
-        "description": "This is used to maintain user saved filters",
-        "dataSource": "default",
-        "dataSourceType": "postgres",
-        "tableName": "ss_saved_fitlers",
-        "userKeyFieldUserKey": "filterQueryJson",
-        "fields": [
-          {
-            "name": "user",
-            "displayName": "User",
-            "description": "This is the user id field",
-            "type": "relation",
-            "ormType": "integer",
-            "isSystem": false,
-            "relationType": "many-to-one",
-            "relationCoModelFieldName": "bondTransactionDetailLogs",
-            "relationCreateInverse": false,
-            "relationCoModelSingularName": "user",
-            "relationCoModelColumnName": null,
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "relationJoinTableName": null,
-            "isRelationManyToManyOwner": null
-          },
-          {
-            "name": "model",
-            "displayName": "Model",
-            "description": "This is the model related to saved filter.",
-            "type": "relation",
-            "ormType": "integer",
-            "isSystem": false,
-            "relationType": "many-to-one",
-            "relationCoModelFieldName": "savedFilters",
-            "relationCreateInverse": false,
-            "relationCoModelSingularName": "modelMetadata",
-            "relationCoModelColumnName": null,
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "relationJoinTableName": null,
-            "isRelationManyToManyOwner": null
-          },
-          {
-            "name": "view",
-            "displayName": "View",
-            "description": "This is the view related to saved filter.",
-            "type": "relation",
-            "ormType": "integer",
-            "isSystem": false,
-            "relationType": "many-to-one",
-            "relationCoModelFieldName": "savedFilters",
-            "relationCreateInverse": false,
-            "relationCoModelSingularName": "viewMetadata",
-            "relationCoModelColumnName": null,
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "relationJoinTableName": null,
-            "isRelationManyToManyOwner": null
-          },
-          {
-            "name": "filterQueryJson",
-            "displayName": "Filter Query Json",
-            "type": "longText",
-            "ormType": "text",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": false
-          },
-          {
-            "name": "name",
-            "displayName": "Name",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 512,
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": false
-          },
-          {
-            "name": "isPrivate",
-            "displayName": "Is Private",
-            "type": "boolean",
-            "ormType": "boolean",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": false
           }
         ]
       },
@@ -3700,7 +3524,6 @@
             "name": "default",
             "displayName": "Default",
             "type": "boolean",
-            "ormType": "boolean",
             "required": false,
             "unique": false,
             "index": false,
@@ -4046,7 +3869,6 @@
             "name": "notifyOnEmail",
             "displayName": "Notify On Email",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -4076,7 +3898,7 @@
             "name": "fields",
             "displayName": "Fields",
             "type": "json",
-            "ormType": "varchar",
+            "ormType": "simple-json",
             "length": 2056,
             "required": true,
             "unique": false,
@@ -4102,7 +3924,6 @@
             "name": "datetime",
             "displayName": "Transaction Date Time",
             "type": "datetime",
-            "ormType": "timestamp",
             "required": true,
             "unique": false,
             "index": true,
@@ -4216,19 +4037,6 @@
             "defaultValue": "draft"
           },
           {
-            "name": "importTransactionId",
-            "displayName": "Transaction Id",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 128,
-            "required": false,
-            "unique": true,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
             "name": "fileLocation",
             "displayName": "File Location",
             "type": "mediaSingle",
@@ -4244,7 +4052,7 @@
             "name": "mapping",
             "displayName": "Mapping",
             "type": "json",
-            "ormType": "text",
+            "ormType": "simple-json",
             "required": false,
             "unique": false,
             "index": false,
@@ -4327,7 +4135,7 @@
             "name": "rowData",
             "displayName": "Row Data",
             "type": "json",
-            "ormType": "text",
+            "ormType": "simple-json",
             "required": false,
             "unique": false,
             "index": false,
@@ -4421,7 +4229,6 @@
             "name": "isDefault",
             "displayName": "Is Default",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": true,
             "unique": false,
@@ -4487,7 +4294,7 @@
             "name": "layoutJson",
             "displayName": "Layout Json",
             "type": "json",
-            "ormType": "text",
+            "ormType": "simple-json",
             "required": true,
             "unique": false,
             "index": false,
@@ -4587,7 +4394,7 @@
             "name": "selectionStaticValues",
             "displayName": "Selection Static Values",
             "type": "json",
-            "ormType": "jsonb",
+            "ormType": "simple-json",
             "required": false,
             "unique": false,
             "index": false,
@@ -4647,7 +4454,6 @@
             "name": "isMultiSelect",
             "displayName": "Is Multi Select",
             "type": "boolean",
-            "ormType": "boolean",
             "defaultValue": "false",
             "required": false,
             "unique": false,
@@ -4838,7 +4644,7 @@
             "name": "chartOptions",
             "displayName": "Bar Chart Label Options",
             "type": "json",
-            "ormType": "jsonb",
+            "ormType": "simple-json",
             "required": false,
             "unique": false,
             "index": false,
@@ -5004,7 +4810,7 @@
             "name": "options",
             "displayName": "Dataset options",
             "type": "json",
-            "ormType": "text",
+            "ormType": "simple-json",
             "required": false,
             "unique": false,
             "index": false,
@@ -5167,6 +4973,17 @@
             "encrypt": false
           },
           {
+            "name": "originalMessage",
+            "displayName": "Original Message",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
             "name": "contentType",
             "displayName": "Content Type",
             "type": "shortText",
@@ -5233,7 +5050,7 @@
             "name": "metadata",
             "displayName": "Metadata",
             "type": "json",
-            "ormType": "jsonb",
+            "ormType": "simple-json",
             "required": false,
             "unique": false,
             "index": false,
@@ -5244,7 +5061,16 @@
             "name": "isApplied",
             "displayName": "Is Applied",
             "type": "boolean",
-            "ormType": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "isEdited",
+            "displayName": "Is Edited",
+            "type": "boolean",
             "required": false,
             "unique": false,
             "index": false,
@@ -5255,7 +5081,6 @@
             "name": "isAutoApply",
             "displayName": "Is Auto Apply",
             "type": "boolean",
-            "ormType": "boolean",
             "required": false,
             "unique": false,
             "index": false,
@@ -5893,14 +5718,6 @@
       "name": "actionMetadata-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "actionMetadata-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layoutBuilder-menu-item"
-    },
-    {
-      "displayName": "Saved Filters",
-      "name": "savedFilters-menu-item",
-      "sequenceNumber": 4,
-      "actionUserKey": "savedFilters-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "layoutBuilder-menu-item"
     },
@@ -6658,6 +6475,12 @@
                     "attrs": {
                       "name": "user"
                     }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "isPrivate"
+                    }
                   }
                 ]
               }
@@ -6735,244 +6558,6 @@
                     "type": "field",
                     "attrs": {
                       "name": "module"
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "savedFilters-list-view",
-      "displayName": "Saved Filters list view",
-      "type": "list",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "savedFilters",
-      "layout": {
-        "type": "list",
-        "attrs": {
-          "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
-          "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
-        },
-        "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "name",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "model",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "view",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "filterQueryJson",
-              "isSearchable": true
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "savedFilters-form-view",
-      "displayName": "Saved Filters form view",
-      "type": "form",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "savedFilters",
-      "layout": {
-        "type": "form",
-        "attrs": {
-          "name": "form-1",
-          "label": "Solid Saved Filter Model",
-          "className": "grid"
-        },
-        "children": [
-          {
-            "type": "sheet",
-            "attrs": {
-              "name": "sheet-1"
-            },
-            "children": [
-              {
-                "type": "group",
-                "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                },
-                "children": [
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "name"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "filterQueryJson"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "view"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "model"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "user"
-                    }
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "savedFilters-list-view",
-      "displayName": "Saved Filters list view",
-      "type": "list",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "savedFilters",
-      "layout": {
-        "type": "list",
-        "attrs": {
-          "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
-          "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
-        },
-        "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "name",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "model",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "view",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "filterQueryJson",
-              "isSearchable": true
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "savedFilters-form-view",
-      "displayName": "Saved Filters form view",
-      "type": "form",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "savedFilters",
-      "layout": {
-        "type": "form",
-        "attrs": {
-          "name": "form-1",
-          "label": "Solid Saved Filter Model",
-          "className": "grid"
-        },
-        "children": [
-          {
-            "type": "sheet",
-            "attrs": {
-              "name": "sheet-1"
-            },
-            "children": [
-              {
-                "type": "group",
-                "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                },
-                "children": [
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "name"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "filterQueryJson"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "view"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "model"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "user"
                     }
                   }
                 ]
@@ -7289,7 +6874,7 @@
           "className": "grid",
           "showEditFormButton": false,
           "showAddFormButton": false,
-          "showDeleteFormButton": false 
+          "showDeleteFormButton": false
         },
         "children": [
           {
@@ -7416,7 +7001,7 @@
           "className": "grid",
           "showEditFormButton": false,
           "showAddFormButton": false,
-          "showDeleteFormButton": false 
+          "showDeleteFormButton": false
         },
         "children": [
           {

@@ -11,6 +11,11 @@ export enum FilterCombinator {
     OR = '$or'
 }
 
+export enum UserIdFields {
+    CREATED_BY = 'createdBy',
+    UPDATED_BY = 'updatedBy'
+}
+
 export class CrudHelperService {
     constructor(
     ) { }
@@ -154,6 +159,17 @@ export class CrudHelperService {
         return Array.isArray(value) ? value : [value];        // if the value is an array, return it as is, otherwise return it as an array
     }
 
+    private normalizeAndFilterPopulateAttributes(value: string | string[]): string[] {
+        // Normalize and remove the userId fields from the populate filter, since they are handled separately
+        const normalized = this.normalize(value);
+        return normalized.filter(item => item !== UserIdFields.CREATED_BY && item !== UserIdFields.UPDATED_BY);
+    }
+
+    extractUserIdFieldsFromPopulate(value: string | string[]): UserIdFields[] {
+        const normalized = this.normalize(value);
+        return normalized.filter(item => item === UserIdFields.CREATED_BY || item === UserIdFields.UPDATED_BY);
+    }
+
     private isRelationJoined(queryBuilder: SelectQueryBuilder<any>, joinProperty: string): boolean {
         return queryBuilder.expressionMap.joinAttributes.some(join => join.entityOrProperty === joinProperty);
     }
@@ -176,13 +192,13 @@ export class CrudHelperService {
 
         // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
         const normalizedFields = this.normalize(fields);
-        const normalizedPopulate = this.normalize(populate);
+        const normalizedAndFilteredPopulateAttributes = this.normalizeAndFilterPopulateAttributes(populate);
         const normalizedPopulateMedia = this.normalize(populateMedia);
 
         // if normalizedPopulateMedia, has any nested media paths, then add then to populate excluding the last part
         const additionalPopulate = this.additionalRelationsRequiredForMediaPopulation(normalizedPopulateMedia);
         // Add the additional populate relations to the normalizedPopulate, if they are not already present
-        normalizedPopulate.push(...additionalPopulate.filter((relation) => !normalizedPopulate.includes(relation)));
+        normalizedAndFilteredPopulateAttributes.push(...additionalPopulate.filter((relation) => !normalizedAndFilteredPopulateAttributes.includes(relation)));
 
         const normalizedSort = this.normalize(sort);
         const normalizedGroupBy = this.normalize(groupBy);
@@ -191,8 +207,8 @@ export class CrudHelperService {
         }
 
         // Depending upon the populate option, apply the join clause
-        if (normalizedPopulate && normalizedPopulate.length) {
-            this.buildPopulateQuery(normalizedPopulate, entityAlias, qb);
+        if (normalizedAndFilteredPopulateAttributes && normalizedAndFilteredPopulateAttributes.length) {
+            this.buildPopulateQuery(normalizedAndFilteredPopulateAttributes, entityAlias, qb);
         }
 
         if (filters) {
@@ -415,6 +431,18 @@ export class CrudHelperService {
 
     hasUpdatePermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
         const permissionNames = [`${classify(modelName)}Controller.update`];
+        const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
+        return matchingPermssions.length > 0
+    }
+
+    hasPublishPermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
+        const permissionNames = [`${classify(modelName)}Controller.publish`];
+        const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
+        return matchingPermssions.length > 0
+    }
+
+    hasUnpublishPermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
+        const permissionNames = [`${classify(modelName)}Controller.publish`];
         const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
         return matchingPermssions.length > 0
     }

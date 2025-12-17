@@ -6,9 +6,10 @@ import { FieldMetadataService } from '../services/field-metadata.service';
 import { Public } from 'src/decorators/public.decorator';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { SelectionDynamicQueryDto } from '../dtos/selection-dynamic-query.dto';
+import { ResolveS3UrlDto } from 'src/dtos/resolve-s3-url.dto';
 
 @Controller('field-metadata')
-@ApiTags("App Builder")
+@ApiTags("Solid Core")
 export class FieldMetadataController {
 
     constructor(
@@ -67,6 +68,11 @@ export class FieldMetadataController {
         return this.fieldMetadataService.delete(id);
     }
 
+    @ApiBearerAuth("jwt")
+    @Post('/resolve-s3-url')
+    resolveS3Url(@Body() resolveS3UrlDto: ResolveS3UrlDto) {
+        return this.fieldMetadataService.resolveS3Url(resolveS3UrlDto);
 
+    }
 
 }

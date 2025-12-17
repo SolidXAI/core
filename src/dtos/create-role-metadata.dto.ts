@@ -70,12 +70,19 @@ export const INTERNAL_ROLE_PERMISSIONS = [
     'ViewMetadataController.getLayout',
     'ViewMetadataController.findMany',
     'ViewMetadataController.findOne',
+    
+    // Action metadata permissions
+    'ActionMetadataController.findMany',
+    'ActionMetadataController.findOne',
+
     // User View metadata permissions
     'UserViewMetadataController.upsert',
     'UserViewMetadataController.findMany',
     'UserViewMetadataController.findOne',
     // IAM permissions
     'AuthenticationController.changePassword',
+    'AuthenticationController.logout',
+    'AuthenticationController.me',
     // Field Metadata permissions
     'FieldMetadataController.getSelectionDynamicValues',
     'FieldMetadataController.getSelectionDynamicValue',
@@ -91,12 +98,11 @@ export const INTERNAL_ROLE_PERMISSIONS = [
     'SavedFiltersController.update',
     'SavedFiltersController.insertMany',
     'SavedFiltersController.create',
-    // Logout permissions
-    'AuthenticationController.logout',
     // Other permissions can be added here as required.
     // Chatter permissions
     'ChatterMessageController.create',
     'ChatterMessageController.getChatterMessages',
+    'ChatterMessageController.postMessage',
     // 'ChatterMessageController.postMessage', // Does not seem to be used from ui
     // Import
     'ImportTransactionController.getImportTemplate',

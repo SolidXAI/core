@@ -14,8 +14,7 @@ export interface AlphaNumExternalIdContext {
 
 @ComputedFieldProvider()
 @Injectable()
-export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> implements IEntityPreComputeFieldProvider<T, AlphaNumExternalIdContext>
-{
+export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> implements IEntityPreComputeFieldProvider<T, AlphaNumExternalIdContext> {
   constructor(
     @InjectEntityManager()
     private readonly entityManager: EntityManager
@@ -29,8 +28,8 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
     return 'Provider used to compute external ID for a CommonEntity with support for static or dynamic prefix.';
   }
 
-  async preComputeValue( triggerEntity: T, computedFieldMetadata: ComputedFieldMetadata<AlphaNumExternalIdContext>
- ) {
+  async preComputeValue(triggerEntity: T, computedFieldMetadata: ComputedFieldMetadata<AlphaNumExternalIdContext>
+  ) {
     const { prefix, length, dynamicFieldPrefix } =
       computedFieldMetadata.computedFieldValueProviderCtxt;
 
@@ -46,8 +45,10 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
       }
     }
 
-    const uniqueCode = await this.generateUniqueExternalId( codeLength, triggerEntity, computedFieldMetadata.fieldName );
-    triggerEntity[computedFieldMetadata.fieldName] = resolvedPrefix ? `${resolvedPrefix}-${uniqueCode}` : uniqueCode;
+    const uniqueCode = await this.generateUniqueExternalId(resolvedPrefix, codeLength, triggerEntity, computedFieldMetadata.fieldName);
+    const finalExternalId = resolvedPrefix ? `${resolvedPrefix}-${uniqueCode}` : uniqueCode;
+
+    triggerEntity[computedFieldMetadata.fieldName] = finalExternalId;
   }
 
   private generateRandomCode(length = 5): string {
@@ -59,7 +60,7 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
     return result;
   }
 
-  private async isExternalIdUnique( externalId: string, triggerEntity: T, fieldName: string ): Promise<boolean> {
+  private async isExternalIdUnique(externalId: string, triggerEntity: T, fieldName: string): Promise<boolean> {
     const count = await this.entityManager.count(triggerEntity.constructor as any,
       {
         where: { [fieldName]: externalId },
@@ -68,13 +69,16 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
     return count === 0;
   }
 
-  private async generateUniqueExternalId(codeLength: number, triggerEntity: T, fieldName: string): Promise<string> {
+  private async generateUniqueExternalId(resolvedPrefix: string, codeLength: number, triggerEntity: T, fieldName: string): Promise<string> {
     const maxAttempts = 10;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
+
       const newId = this.generateRandomCode(codeLength);
 
-      const isUnique = await this.isExternalIdUnique(newId,triggerEntity,fieldName);
+      const fullId = resolvedPrefix ? `${resolvedPrefix}-${newId}` : newId;
+
+      const isUnique = await this.isExternalIdUnique(fullId, triggerEntity, fieldName);
 
       if (isUnique) {
         return newId;
