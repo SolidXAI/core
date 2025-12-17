@@ -178,6 +178,10 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
 
+        if (model.draftPublishWorkflow === true && entity.publishedAt) {
+            throw new BadRequestException(`Cannot update a published record for model ${this.modelName}. Unpublish it first.`
+            );
+        }
         updateDto.id = id;
         // This class will be extended by the generated service class i.e PersonService
         // The data required to identify the model and module name will be passed from the generate CrudService subclass
@@ -237,6 +241,10 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         );
         if (!entity) {
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
+        }
+
+        if (model.draftPublishWorkflow === true && entity.publishedAt) {
+            throw new BadRequestException(`Cannot update a published record for model ${this.modelName}, Unpublish it first.`);
         }
 
         // If the model has internationalisation enabled, delete children with defaultEntityLocaleId === this entity's id
@@ -765,8 +773,30 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                     id: id,
                 } as unknown as FindOptionsWhere<T>,
             });
+
             removedEntities.push(entity);
         }
+
+
+        // entity-level flag
+        const isDraftPublishEnabled = model?.draftPublishWorkflow === true;
+
+        let publishedEntitiesExists: T[] = [];
+
+        if (isDraftPublishEnabled) {
+            publishedEntitiesExists = removedEntities.filter(
+                (x) => !!x?.publishedAt
+            );
+        }
+
+        if (publishedEntitiesExists.length > 0) {
+            const publishedEntitiesExistsID = publishedEntitiesExists.map(x => x.id);
+
+            throw new BadRequestException(
+                `Cannot delete published record(s) for model ${this.modelName} with Ids ${publishedEntitiesExistsID.join(', ')}. Unpublish them first.`
+            );
+        }
+
         if (model.enableSoftDelete === true) {
             await this.repo.softRemove(removedEntities);
             return this.repo.save(removedEntities);
@@ -801,7 +831,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             await this.repo.update(id, {
                 deletedAt: null, deletedTracker: "not-deleted"
             } as unknown as QueryDeepPartialEntity<T>
-         );
+            );
 
             return { message: SUCCESS_MESSAGES.RECORD_RECOVERED, data: softDeletedRows };
         } catch (error) {
@@ -901,6 +931,90 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             throw new BadRequestException(`Model ${modelSingularName} not found`);
         }
         return model.userKeyField?.name || '';
+    }
+
+    /* Publish a record - sets publishedAt timestamp */
+    async publishRecord(id: number, solidRequestContext: any = {}): Promise<T> {
+
+        const model = await this.loadModel();
+
+        // Check if publish workflow is enabled for this model
+        if (!model.draftPublishWorkflow) {
+            throw new BadRequestException(
+                `Publish workflow is not enabled for ${this.modelName}`
+            );
+        }
+
+        // Check user permissions
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasPublishPermissionOnModel(
+                solidRequestContext.activeUser,
+                model.singularName
+            );
+            if (!hasPermission) {
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
+            }
+        }
+
+        // Find the entity
+        const entity = await this.repo.findOne({ where: { id } as any });
+        if (!entity) {
+            throw new NotFoundException(`${this.modelName} with id ${id} not found`);
+        }
+
+        // Check if already published
+        if (entity.publishedAt) {
+            throw new BadRequestException(
+                `${this.modelName} with id ${id} is already published`
+            );
+        }
+
+        // Update publish status
+        const updatedEntity = await this.repo.save({ ...entity, publishedAt: new Date() });
+
+        return updatedEntity
+    }
+
+    /* Unpublish a record - clears publishedAt timestamp */
+    async unpublishRecord(id: number, solidRequestContext: any = {}): Promise<T> {
+
+        const model = await this.loadModel();
+
+        // Check if publish workflow is enabled for this model
+        if (!model.draftPublishWorkflow) {
+            throw new BadRequestException(
+                `Publish workflow is not enabled for ${this.modelName}`
+            );
+        }
+
+        // Check user permissions
+        if (solidRequestContext.activeUser) {
+            const hasPermission = this.crudHelperService.hasUnpublishPermissionOnModel(
+                solidRequestContext.activeUser,
+                model.singularName
+            );
+            if (!hasPermission) {
+                throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
+            }
+        }
+
+        // Find the entity
+        const entity = await this.repo.findOne({ where: { id } as any });
+        if (!entity) {
+            throw new NotFoundException(`${this.modelName} with id ${id} not found`);
+        }
+
+        // Check if already unpublished
+        if (!entity.publishedAt) {
+            throw new BadRequestException(
+                `${this.modelName} with id ${id} is already unpublished`
+            );
+        }
+
+        // Update unpublish status
+        const updatedEntity = await this.repo.save({ ...entity, publishedAt: null });
+
+        return updatedEntity
     }
 }
 
