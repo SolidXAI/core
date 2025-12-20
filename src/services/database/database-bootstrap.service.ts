@@ -7,13 +7,17 @@ import * as path from 'path';
 export class DatabaseBootstrapService implements OnModuleInit {
   private readonly logger = new Logger(DatabaseBootstrapService.name);
 
-  constructor(private readonly dataSource: DataSource) {}
+  constructor(private readonly dataSource: DataSource) { }
 
   async onModuleInit() {
     // if (process.env.DB_BOOTSTRAP_SP !== 'true') {
     //   this.logger.log('DB SP bootstrap skipped');
     //   return;
     // }
+    const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
+    if (solidCliRunning === "true") {
+      return;
+    }
 
     if (!this.dataSource.isInitialized) return;
 
@@ -26,6 +30,8 @@ export class DatabaseBootstrapService implements OnModuleInit {
   }
 
   private async applySqlFile(fileName: string) {
+    // TODO: how are we checking if the SP already exists? Should we drop and recreate?
+    // TODO: how do we take care of multiple datasources, since SPs will be different for different datasources?
     const sqlFilePath = path.resolve(
       __dirname,
       '../../../sql/postgres',
@@ -36,7 +42,7 @@ export class DatabaseBootstrapService implements OnModuleInit {
     this.logger.log(`Applying SQL file: ${sqlFilePath}`);
 
     const sql = await readFile(sqlFilePath, 'utf8');
-    
+
     await this.dataSource.query(sql);
   }
 }
