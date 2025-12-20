@@ -57,4 +57,21 @@ export class ModuleMetadataHelperService {
         }
         return filePath;
     }
+    async getModuleMetadataFolderPath(moduleName: string): Promise<string> {
+        if (!moduleName) {
+            return '';
+        }
+
+        const dashModuleName = dasherize(moduleName);
+
+        const folderPath = path.resolve(
+            process.cwd(),
+            'module-metadata',
+            dashModuleName,
+        );
+
+        const exists = await this.fileService.pathExists(folderPath);
+        return exists ? folderPath : '';
+    }
+
 }

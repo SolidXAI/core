@@ -84,7 +84,7 @@ export const ERROR_MESSAGES = {
     FIELD_NOT_FOUND: (id: number | string) => `No field with id #${id} exists`,
     PROVIDER_NOT_FOUND: (provider: string) => `Field incorrectly configured. No provider with name ${provider} registered in backend.`,
     FILE_WRITE_FAILED: 'File creation failed, rolling back transaction',
-
+    FILE_DELETE_FAILED: 'File deletion failed, rolling back transaction',
     // file service errors
     FILE_NOT_FOUND: 'File not found',
     FILE_COPY_ERROR: 'Error copying file',
