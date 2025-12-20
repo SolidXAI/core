@@ -21,11 +21,11 @@ export const getDynamicModuleNames = (): string[] => {
 
       if (!isValidDirectory) return false;
 
-      return true
-      // const fullPath = path.join(srcPath, dirent.name);
-      // const files = fs.readdirSync(fullPath);
+      // return true
+      const fullPath = path.join(srcPath, dirent.name);
+      const files = fs.readdirSync(fullPath);
       // skip if empty directory
-      // return files.length > 0;
+      return files.length > 0;
     })
     .map(dirent => dirent.name);
 
