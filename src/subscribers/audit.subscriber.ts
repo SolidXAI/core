@@ -61,7 +61,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
         const auditFields = modelFields.filter(field =>
             field.enableAuditTracking &&
-            !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
+            !['mediaSingle', 'mediaMultiple', 'richText', 'json'].includes(field.type) &&
             !(field.type === 'relation' && field.relationType === 'one-to-many')
         );
 

@@ -182,7 +182,12 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             throw new BadRequestException(`Cannot update a published record for model ${this.modelName}. Unpublish it first.`
             );
         }
-        updateDto.id = id;
+
+        // // In some instances for legacy tables sometimes id is mapped as a bigint. 
+        // // in these cases the update method ends up attempting to insert records due to some type orm type mismatch issue.
+        // const idFieldMetadata = model.fields.find(f => f.name === 'id');
+        // updateDto.id = idFieldMetadata?.type === 'bigint' ? BigInt(id) : id;
+
         // This class will be extended by the generated service class i.e PersonService
         // The data required to identify the model and module name will be passed from the generate CrudService subclass
         //TODO: Algorithm to create the entity

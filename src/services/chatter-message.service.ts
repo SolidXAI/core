@@ -116,7 +116,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const auditFields = model.fields.filter(field =>
             field.enableAuditTracking &&
-            !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
+            !['mediaSingle', 'mediaMultiple', 'richText', 'json'].includes(field.type) &&
             !(field.type === 'relation' && field.relationType === 'one-to-many')
         );
 
@@ -179,7 +179,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const auditFields = modelFields.filter(field =>
             field.enableAuditTracking &&
-            !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
+            !['mediaSingle', 'mediaMultiple', 'richText', 'json'].includes(field.type) &&
             !(field.type === 'relation' && field.relationType === 'one-to-many')
         );
 
