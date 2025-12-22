@@ -83,6 +83,7 @@ export class ModuleMetadataSeederService {
         // Global seeding steps i.e across all modules
         await this.seedGlobalMetadata();
 
+
         // Module specific seeding steps.
         // Get all the module metadata files which needs to be seeded.
         const seedDataFiles = this.seedDataFiles;
@@ -341,6 +342,8 @@ export class ModuleMetadataSeederService {
 
         this.logger.log(`Seeding System Fields Metadata`);
         await this.seedDefaultSystemFields();
+
+        this.logger.debug(`Global metadata seeding completed`);
     }
 
     private async seedDefaultSystemFields() {
@@ -423,12 +426,41 @@ export class ModuleMetadataSeederService {
 
             // We need to load the actual template contents. 
             if (moduleName === 'solid-core') {
-                const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
-                const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/email-templates');
-                const filePath = path.join(seedDataPath, emailTemplate.body);
-                // this.logger.log(`Seeding email template from solid-core at path: ${filePath}`);
+                let moduleRoot: string | null = null;
+
+                try {
+                    // Always resolve package.json, never the module entry
+                    moduleRoot = path.dirname(
+                        require.resolve('@solidstarters/solid-core/package.json'),
+                    );
+                } catch (err) {
+                    this.logger.debug(
+                        'Could not resolve @solidstarters/solid-core from node_modules, assuming local execution',
+                    );
+                }
+
+                const filePathInternal = 'src/seeders/seed-data/email-templates/';
+                let filePath: string;
+                // Case 1: solid-core installed as dependency
+                if (moduleRoot) {
+                    filePath = path.join(
+                        moduleRoot,
+                        filePathInternal,
+                        emailTemplate.body,
+                    );
+                }
+                else {
+                    // Case 2: running INSIDE solid-core repo
+                    const localCoreRoot = process.cwd(); // or configurable root
+                    filePath = path.join(
+                        localCoreRoot,
+                        filePathInternal,
+                        emailTemplate.body,
+                    );
+                }
+
                 if (fs.existsSync(filePath)) {
-                    emailTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
+                    emailTemplate.body = fs.readFileSync(filePath, 'utf-8');
                 }
             }
             else {
@@ -460,12 +492,41 @@ export class ModuleMetadataSeederService {
 
             // We need to load the actual template contents. 
             if (moduleName === 'solid-core') {
-                const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
-                const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/sms-templates');
-                const filePath = path.join(seedDataPath, smsTemplate.body);
-                // this.logger.log(`Seeding sms template from solid-core at path: ${filePath}`);
+                let moduleRoot: string | null = null;
+
+                try {
+                    // Always resolve package.json, never the module entry
+                    moduleRoot = path.dirname(
+                        require.resolve('@solidstarters/solid-core/package.json'),
+                    );
+                } catch (err) {
+                    this.logger.debug(
+                        'Could not resolve @solidstarters/solid-core from node_modules, assuming local execution',
+                    );
+                }
+
+                const filePathInternal = 'src/seeders/seed-data/sms-templates/';
+                let filePath: string;
+                // Case 1: solid-core installed as dependency
+                if (moduleRoot) {
+                    filePath = path.join(
+                        moduleRoot,
+                        filePathInternal,
+                        smsTemplate.body,
+                    );
+                }
+                else {
+                    // Case 2: running INSIDE solid-core repo
+                    const localCoreRoot = process.cwd(); // or configurable root
+                    filePath = path.join(
+                        localCoreRoot,
+                        filePathInternal,
+                        smsTemplate.body,
+                    );
+                }
+
                 if (fs.existsSync(filePath)) {
-                    smsTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
+                    smsTemplate.body = fs.readFileSync(filePath, 'utf-8');
                 }
             }
             else {
