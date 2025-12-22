@@ -639,7 +639,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.richText:
