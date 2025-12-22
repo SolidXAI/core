@@ -1,27 +1,28 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 
 import { ConfigService, ConfigType } from '@nestjs/config';
+import commonConfig from 'src/config/common.config';
+import { iamConfig } from 'src/config/iam.config';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { CreateSettingDto } from 'src/dtos/create-setting.dto';
+import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
+import { User } from 'src/entities/user.entity';
+import { SettingRepository } from 'src/repository/setting.repository';
 import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
 import { FileService } from 'src/services/file.service';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import commonConfig from 'src/config/common.config';
-import { iamConfig } from 'src/config/iam.config';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
-import { User } from 'src/entities/user.entity';
-import { CreateSettingDto } from 'src/dtos/create-setting.dto';
-import { SettingRepository } from 'src/repository/setting.repository';
-import { ERROR_MESSAGES } from 'src/constants/error-messages';
-import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
 
 @Injectable()
 export class SettingService extends CRUDService<Setting> {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,

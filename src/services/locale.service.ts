@@ -1,4 +1,4 @@
-import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
@@ -16,6 +16,7 @@ import { RequestContextService } from './request-context.service';
 @Injectable()
 export class LocaleService extends CRUDService<Locale> implements OnApplicationBootstrap{
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,

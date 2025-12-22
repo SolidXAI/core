@@ -1,23 +1,22 @@
-import { Injectable } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { ConfigService } from '@nestjs/config';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { EntityManager, In, Repository } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { CrudHelperService } from "src/services/crud-helper.service";
 import { CRUDService } from 'src/services/crud.service';
+import { FileService } from "src/services/file.service";
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { ConfigService } from '@nestjs/config';
-import { FileService } from "src/services/file.service";
-import { CrudHelperService } from "src/services/crud-helper.service";
+import { EntityManager, In } from 'typeorm';
 
 
-import { PermissionMetadata } from '../entities/permission-metadata.entity';
-import { ActiveUserData } from '../interfaces/active-user-data.interface';
-import { classify } from '@angular-devkit/core/src/utils/strings';
 import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
+import { PermissionMetadata } from '../entities/permission-metadata.entity';
 
 @Injectable()
 export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,

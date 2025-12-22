@@ -328,6 +328,9 @@ import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
 import { McpCommand } from './commands/mcp.command';
+import { FixturesService } from './services/fixtures.service';
+import { FixturesSetupCommand } from './commands/fixtures/fixtures-setup.command';
+import { FixturesTearDownCommand } from './commands/fixtures/fixtures-tear-down.command';
 import { DatabaseBootstrapService } from './services/database/database-bootstrap.service';
 
 
@@ -703,7 +706,10 @@ import { DatabaseBootstrapService } from './services/database/database-bootstrap
     ModuleMetadataRepository,
     ActionMetadataRepository,
     MediaStorageProviderMetadataRepository,
-    DatabaseBootstrapService
+    FixturesService,
+    FixturesSetupCommand,
+    FixturesTearDownCommand,
+    DatabaseBootstrapService,
   ],
   exports: [
     AiInteractionService,
