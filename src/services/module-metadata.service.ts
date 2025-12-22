@@ -4,7 +4,7 @@ import { DataSource, EntityManager, Repository, SelectQueryBuilder } from 'typeo
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 
-import { classify } from '@angular-devkit/core/src/utils/strings';
+import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import * as path from 'path'; // To handle file paths
@@ -320,7 +320,54 @@ export class ModuleMetadataService {
 
   async remove(id: number) {
     const entity = await this.findOne(id);
-    return this.moduleMetadataRepo.remove(entity);
+    await this.cleanupOnDelete(entity.id);
+    const r = await this.moduleMetadataRepo.remove(entity);
+    return r
+
+  }
+
+
+  async cleanupOnDelete(moduleEntityId: number) {
+    const moduleEntity = await this.moduleMetadataRepo.findOne({
+      where: {
+        // @ts-ignore
+        id: moduleEntityId,
+      }
+    });
+
+    if (!moduleEntity) {
+      this.logger.log(`Invalid moduleEntityId: ${moduleEntityId} unable to resolve model metadata`);
+      return;
+    }
+    if (moduleEntity.id !== moduleEntityId) {
+      this.logger.log(`Invalid moduleEntityId: ${moduleEntityId} unable to resolve model metadata id ${moduleEntity.id} not matching with the one passed as argument ${moduleEntityId}`);
+      return;
+    }
+
+    this.logger.log(`Cleaning up for module: ${moduleEntity.name}.`);
+
+    const modulePath = await this.moduleMetadataHelperService.getModulePath(moduleEntity.name);
+    if (modulePath) {
+
+      this.logger.log(`Module path: ${modulePath}`);
+
+      // Metadata file to be deleted
+      const moduleMetadataPAth = await this.moduleMetadataHelperService.getModuleMetadataFolderPath(moduleEntity.name)
+      this.logger.log(`About to delete module metadata path: ${moduleMetadataPAth}`);
+
+      try {
+        await fs.rm(modulePath, { recursive: true, force: true });
+        await fs.rm(moduleMetadataPAth, { recursive: true, force: true });
+        this.logger.log(`Deleted file: ${moduleMetadataPAth}`);
+      } catch (error) {
+        this.logger.error(`Error deleting file: ${moduleMetadataPAth}`, error);
+        throw new Error(ERROR_MESSAGES.FILE_DELETE_FAILED); // Trigger rollback
+      }
+    }
+    await this.dataSource.query(
+      `CALL cleanup_module_metadata($1, $2)`,
+      [moduleEntity.name, true],
+    );
   }
 
   async deleteMany(ids: number[]): Promise<any> {

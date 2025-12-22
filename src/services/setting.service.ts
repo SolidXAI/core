@@ -1,21 +1,23 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, In, Repository } from 'typeorm';
+import { EntityManager, Repository } from 'typeorm';
 
 import { ConfigService, ConfigType } from '@nestjs/config';
+import commonConfig from 'src/config/common.config';
+import { iamConfig } from 'src/config/iam.config';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { CreateSettingDto } from 'src/dtos/create-setting.dto';
+import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
+import { User } from 'src/entities/user.entity';
+import { SettingRepository } from 'src/repository/setting.repository';
 import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
 import { FileService } from 'src/services/file.service';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import commonConfig from 'src/config/common.config';
-import { iamConfig } from 'src/config/iam.config';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
-import { User } from 'src/entities/user.entity';
-import { CreateSettingDto } from 'src/dtos/create-setting.dto';
-import { SettingRepository } from 'src/repository/setting.repository';
 
 @Injectable()
 export class SettingService extends CRUDService<Setting> {
@@ -371,6 +373,24 @@ export class SettingService extends CRUDService<Setting> {
     }
 
     return { system, user };
+  }
+
+  async getMcpUrl(getMcpUrlDto: GetMcpUrlDto, solidRequestContext: any = {}): Promise<any> {
+
+    const { showHeader, inListView } = getMcpUrlDto;
+
+    if (solidRequestContext.activeUser) {
+      const permissionNames = ["SettingController.getMcpUrl"];
+      const matchingPermssions = solidRequestContext.activeUser.permissions.filter((p: any) => permissionNames.includes(p));
+      const hasPermission = matchingPermssions.length > 0;
+      if (!hasPermission) {
+        throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
+      }
+    }
+    const apiKey = process.env.MCP_API_KEY;
+    const userId = solidRequestContext.activeUser.sub;
+    const mcpServerUrl = process.env.MCP_SERVER_URL;
+    return { mcpUrl: `${mcpServerUrl}/static/frontend.html?solidx-mcp-api-key=${apiKey}&solidx-user-id=${userId}&solidx-show-header=${showHeader}&solidx-in-list-view=${inListView}` };
   }
 
 }

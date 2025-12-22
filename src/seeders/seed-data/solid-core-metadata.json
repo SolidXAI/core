@@ -6014,8 +6014,19 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true,
+          "delete": false,
           "rowButtons": [
+            {
+              "attrs": {
+                "className": "p-button-text",
+                "icon": "pi pi-trash",
+                "label": "Delete",
+                "action": "DeleteModuleRowAction",
+                "openInPopup": true,
+                "actionInContextMenu": true,
+                "customComponentIsSystem": true
+              }
+            },
             {
               "attrs": {
                 "className": "p-button-text",

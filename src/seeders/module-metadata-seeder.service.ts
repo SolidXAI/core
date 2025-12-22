@@ -16,10 +16,11 @@ import { ListOfValuesService } from 'src/services/list-of-values.service';
 import { SettingService } from 'src/services/setting.service';
 import { SmsTemplateService } from 'src/services/sms-template.service';
 import { UserService } from 'src/services/user.service';
-import { DataSource, In } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
+import appBuilderConfig from '../config/app-builder.config';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
-import { getDynamicModuleNames } from '../helpers/module.helper';
+import { getDynamicModuleNames, getDynamicModuleNamesBasedOnMetadata } from '../helpers/module.helper';
 import { SolidRegistry } from '../helpers/solid-registry';
 import { ActionMetadataService } from '../services/action-metadata.service';
 import { FieldMetadataService } from '../services/field-metadata.service';
@@ -315,7 +316,8 @@ export class ModuleMetadataSeederService {
     private get seedDataFiles(): any[] {
         const typedSolidCoreMetadata = structuredClone(solidCoreMetadata);
         const seedDataFiles = [typedSolidCoreMetadata];
-        const enabledModules = getDynamicModuleNames();
+        // const enabledModules = getDynamicModuleNames();
+        const enabledModules = getDynamicModuleNamesBasedOnMetadata();
         for (const enabledModule of enabledModules) {
             const enabledModuleSeedFile = `module-metadata/${enabledModule}/${enabledModule}-metadata.json`;
             const fullPath = path.join(process.cwd(), enabledModuleSeedFile);

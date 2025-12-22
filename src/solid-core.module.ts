@@ -331,6 +331,7 @@ import { McpCommand } from './commands/mcp.command';
 import { FixturesService } from './services/fixtures.service';
 import { FixturesSetupCommand } from './commands/fixtures/fixtures-setup.command';
 import { FixturesTearDownCommand } from './commands/fixtures/fixtures-tear-down.command';
+import { DatabaseBootstrapService } from './services/database/database-bootstrap.service';
 
 
 @Global()
@@ -708,6 +709,7 @@ import { FixturesTearDownCommand } from './commands/fixtures/fixtures-tear-down.
     FixturesService,
     FixturesSetupCommand,
     FixturesTearDownCommand,
+    DatabaseBootstrapService,
   ],
   exports: [
     AiInteractionService,
