@@ -329,6 +329,7 @@ import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
 import { McpCommand } from './commands/mcp.command';
 import { DatabaseBootstrapService } from './services/database/database-bootstrap.service';
+import { SequenceNumComputedFieldProvider } from './services/computed-fields/entity/sequence-num-computed-field-provider';
 
 
 @Global()
@@ -703,7 +704,9 @@ import { DatabaseBootstrapService } from './services/database/database-bootstrap
     ModuleMetadataRepository,
     ActionMetadataRepository,
     MediaStorageProviderMetadataRepository,
-    DatabaseBootstrapService
+    DatabaseBootstrapService,
+
+    SequenceNumComputedFieldProvider
   ],
   exports: [
     AiInteractionService,
