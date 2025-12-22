@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef  } from "@nestjs/core";
 import { EntityManager, Repository } from 'typeorm';
@@ -17,6 +17,7 @@ import { ImportTransactionErrorLogRepository } from 'src/repository/import-trans
 @Injectable()
 export class ImportTransactionErrorLogService extends CRUDService<ImportTransactionErrorLog>{
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,

@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { forwardRef, Inject, Injectable } from "@nestjs/common";
 import { ModelMetadataService } from "src/services/model-metadata.service";
 import { SelectionProvider } from "src/decorators/selection-provider.decorator";
 import { ISelectionProvider, ISelectionProviderContext, ISelectionProviderValues } from "../../interfaces";
@@ -8,7 +8,10 @@ import { ISelectionProvider, ISelectionProviderContext, ISelectionProviderValues
 @Injectable()
 export class ListOfModelsSelectionProvider implements ISelectionProvider<ISelectionProviderContext> {
     private readonly modelMetadataService: ModelMetadataService;
-    constructor(modelMetadataService: ModelMetadataService) {
+    constructor(
+        @Inject(forwardRef(() => ModelMetadataService))
+        modelMetadataService: ModelMetadataService
+    ) {
         this.modelMetadataService = modelMetadataService;
     }
     help(): string {

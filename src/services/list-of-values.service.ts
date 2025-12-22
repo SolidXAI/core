@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
@@ -12,11 +12,10 @@ import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
-import { ListOfValuesRepository } from 'src/repository/list-of-values.repository';
-import { ListOfValues } from '../entities/list-of-values.entity';
-import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { ListOfValuesMapper } from 'src/mappers/list-of-values-mapper';
+import { ListOfValuesRepository } from 'src/repository/list-of-values.repository';
+import { ListOfValues } from '../entities/list-of-values.entity';
 
 
 @Injectable()
@@ -25,6 +24,7 @@ export class ListOfValuesService extends CRUDService<ListOfValues> {
   // moduleMetadataHelperService: any;
   // listOfValuesMapper: any;
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,

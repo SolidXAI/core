@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
@@ -39,6 +39,7 @@ export class ModelMetadataService {
     // private readonly modelMetadataRepo: Repository<ModelMetadata>,
     // @InjectRepository(FieldMetadata)
     // private readonly fieldMetadataRepo: Repository<FieldMetadata>,
+    @Inject(forwardRef(() => ModelMetadataRepository))
     private readonly modelMetadataRepo: ModelMetadataRepository,
     private readonly fieldMetadataRepo: FieldMetadataRepository,
     private readonly schematicService: SchematicService,

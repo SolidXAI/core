@@ -1,7 +1,8 @@
-import { BadRequestException, Logger } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Logger } from '@nestjs/common';
 import { Command, CommandRunner, Option } from 'nest-commander';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { CommandError } from './helper';
+import { In } from 'typeorm';
 
 interface CommandOptions {
   name?: string;
@@ -17,6 +18,7 @@ interface CommandOptions {
 })
 export class RefreshModelCommand extends CommandRunner {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     private readonly modelMetadataService: ModelMetadataService,
   ) {
     super();

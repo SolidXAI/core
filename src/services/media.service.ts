@@ -1,7 +1,7 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager, In } from 'typeorm';
 
 import { ConfigService } from '@nestjs/config';
 import { CrudHelperService } from 'src/services/crud-helper.service';
@@ -11,23 +11,21 @@ import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
-import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
-import { FieldMetadata } from 'src/entities/field-metadata.entity';
-import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
-import { Media } from 'src/entities/media.entity';
-import { ModelMetadata } from 'src/entities/model-metadata.entity';
-import { getMediaStorageProvider } from "./mediaStorageProviders";
-import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
+import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
+import { Media } from 'src/entities/media.entity';
+import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
+import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
 import { MediaRepository } from 'src/repository/media.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
-import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
-import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
+import { getMediaStorageProvider } from "./mediaStorageProviders";
 
 
 @Injectable()
 export class MediaService extends CRUDService<Media> {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,
@@ -45,6 +43,7 @@ export class MediaService extends CRUDService<Media> {
     // private readonly mediaStorageProviderMetadataRepo: Repository<MediaStorageProviderMetadata>,
     // @InjectRepository(FieldMetadata)
     // private readonly fieldMetadataRepo: Repository<FieldMetadata>,
+    @Inject(forwardRef(() => ModelMetadataRepository))
     private readonly modelMetadataRepo: ModelMetadataRepository,
     private readonly mediaStorageProviderMetadataRepo: MediaStorageProviderMetadataRepository,
     private readonly fieldMetadataRepo: FieldMetadataRepository,

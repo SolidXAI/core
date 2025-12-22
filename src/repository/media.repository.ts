@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { Media } from 'src/entities/media.entity';
 import { RequestContextService } from 'src/services/request-context.service';
-import { DataSource } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { FieldMetadataRepository } from './field-metadata.repository';
 import { MediaStorageProviderMetadataRepository } from './media-storage-provider-metadata.repository';
 import { ModelMetadataRepository } from './model-metadata.repository';
@@ -21,6 +21,7 @@ export class MediaRepository extends SolidBaseRepository<Media> {
         // @InjectRepository(MediaStorageProviderMetadata)
         // private readonly mediaStorageProviderMetadataRepo: Repository<MediaStorageProviderMetadata>,
         private readonly fieldMetadataRepo: FieldMetadataRepository,
+        @Inject(forwardRef(() => ModelMetadataRepository))
         private readonly modelMetadataRepo: ModelMetadataRepository,
         private readonly mediaStorageProviderMetadataRepo: MediaStorageProviderMetadataRepository,
     ) {

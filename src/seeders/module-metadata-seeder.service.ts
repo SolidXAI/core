@@ -1,18 +1,13 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { ConfigType } from '@nestjs/config';
-import { InjectRepository } from '@nestjs/typeorm';
-import commonConfig from 'src/config/common.config';
-import { iamConfig } from 'src/config/iam.config';
 import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
 import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
 import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
-import { Setting } from 'src/entities/setting.entity';
 import { DashboardRepository } from 'src/repository/dashboard.repository';
 import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
 import { AuthenticationService } from 'src/services/authentication.service';
@@ -21,18 +16,15 @@ import { ListOfValuesService } from 'src/services/list-of-values.service';
 import { SettingService } from 'src/services/setting.service';
 import { SmsTemplateService } from 'src/services/sms-template.service';
 import { UserService } from 'src/services/user.service';
-import { DataSource, In, Repository } from 'typeorm';
-import appBuilderConfig from '../config/app-builder.config';
+import { DataSource, In } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
-import { PermissionMetadata } from '../entities/permission-metadata.entity';
 import { getDynamicModuleNames } from '../helpers/module.helper';
 import { SolidRegistry } from '../helpers/solid-registry';
 import { ActionMetadataService } from '../services/action-metadata.service';
 import { FieldMetadataService } from '../services/field-metadata.service';
 import { MediaStorageProviderMetadataSeederService } from '../services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from '../services/media-storage-provider-metadata.service';
-import { MenuItemMetadataService } from '../services/menu-item-metadata.service';
 import { ModelMetadataService } from '../services/model-metadata.service';
 import { ModuleMetadataService } from '../services/module-metadata.service';
 import { RoleMetadataService } from '../services/role-metadata.service';
@@ -42,12 +34,12 @@ import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata } from 'src';
 import { ADMIN_ROLE_NAME, INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS, PUBLIC_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
-import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
-import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
-import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
-import { SettingRepository } from 'src/repository/setting.repository';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
+import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
+import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
 import { SavedFiltersRepository } from 'src/repository/saved-filters.repository';
+import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
+import { SettingRepository } from 'src/repository/setting.repository';
 
 
 @Injectable()
@@ -57,6 +49,7 @@ export class ModuleMetadataSeederService {
 
     constructor(
         private readonly moduleMetadataService: ModuleMetadataService,
+        @Inject(forwardRef(() => ModelMetadataService))
         private readonly modelMetadataService: ModelMetadataService,
         private readonly fieldMetadataService: FieldMetadataService,
         private readonly mediaStorageProviderMetadataService: MediaStorageProviderMetadataService,
@@ -64,7 +57,6 @@ export class ModuleMetadataSeederService {
         private readonly userService: UserService,
         private readonly authenticationService: AuthenticationService,
         private readonly solidActionService: ActionMetadataService,
-        private readonly solidMenuItemService: MenuItemMetadataService,
         private readonly solidViewService: ViewMetadataService,
         private readonly mediaStorageProviderSeederService: MediaStorageProviderMetadataSeederService,
         private readonly emailTemplateService: EmailTemplateService,
@@ -74,11 +66,6 @@ export class ModuleMetadataSeederService {
         // private readonly permissionRepo: Repository<PermissionMetadata>,
         private readonly permissionRepo: PermissionMetadataRepository,
         private readonly solidRegistry: SolidRegistry,
-        @Inject(appBuilderConfig.KEY)
-        private readonly appBuilderConfiguration: ConfigType<typeof appBuilderConfig>,
-        @Inject(iamConfig.KEY) private readonly iamConfiguration: ConfigType<typeof iamConfig>,
-        @Inject(commonConfig.KEY)
-        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         private readonly settingService: SettingService,
         // @InjectRepository(Setting, 'default')
         // readonly settingsRepo: Repository<Setting>,

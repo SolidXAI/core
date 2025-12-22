@@ -1,4 +1,4 @@
-import { BadRequestException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ConfigService, ConfigType } from '@nestjs/config';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
@@ -22,6 +22,7 @@ import { RoleMetadataRepository } from 'src/repository/role-metadata.repository'
 @Injectable()
 export class UserService extends CRUDService<User> {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,

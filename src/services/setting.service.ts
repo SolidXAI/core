@@ -1,7 +1,7 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 
 import { ConfigService, ConfigType } from '@nestjs/config';
 import { CrudHelperService } from 'src/services/crud-helper.service';
@@ -20,6 +20,7 @@ import { SettingRepository } from 'src/repository/setting.repository';
 @Injectable()
 export class SettingService extends CRUDService<Setting> {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,
