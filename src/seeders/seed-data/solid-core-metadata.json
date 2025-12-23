@@ -5798,6 +5798,32 @@
       "viewUserKey": "importTransactionErrorLog-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "importTransactionErrorLog"
+    },
+    {
+      "displayName": "Fixtures Models List Action",
+      "name": "fixturesModels-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "fixturesModels-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fixturesModels"
+    },
+    {
+      "displayName": "Fixtures List Action",
+      "name": "fixtures-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "fixtures-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fixtures"
     }
   ],
   "menus": [
@@ -6136,6 +6162,22 @@
       "actionUserKey": "miscSettings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
+    },
+    {
+      "displayName": "Fixtures Models",
+      "name": "fixturesModels-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "fixturesModels-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Fixtures",
+      "name": "fixtures-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "fixtures-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
     }
   ],
   "views": [
@@ -12234,6 +12276,172 @@
                         }
                       }
                     ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "fixturesModels-list-view",
+      "displayName": "Fixtures Models",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fixturesModels",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "fixturesModels-form-view",
+      "displayName": "Fixtures Models",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fixturesModels",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Fixtures Models",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": []
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "fixtures-list-view",
+      "displayName": "Fixtures",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fixtures",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "fixtures-form-view",
+      "displayName": "Fixtures",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fixtures",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Fixtures",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": []
                   },
                   {
                     "type": "column",

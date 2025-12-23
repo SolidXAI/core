@@ -333,6 +333,14 @@ import { FixturesSetupCommand } from './commands/fixtures/fixtures-setup.command
 import { FixturesTearDownCommand } from './commands/fixtures/fixtures-tear-down.command';
 import { DatabaseBootstrapService } from './services/database/database-bootstrap.service';
 import { SHA256HashComputationProvider } from './services/computed-fields/entity/sha256hash-computed-field-provider.service';
+import { FixturesModels } from './entities/fixtures-models.entity';
+import { FixturesModelsService } from './services/fixtures-models.service';
+import { FixturesModelsController } from './controllers/fixtures-models.controller';
+import { FixturesModelsRepository } from './repositories/fixtures-models.repository';
+import { Fixtures } from './entities/fixtures.entity';
+import { FixturesService } from './services/fixtures.service';
+import { FixturesController } from './controllers/fixtures.controller';
+import { FixturesRepository } from './repositories/fixtures.repository';
 
 
 @Global()
@@ -406,6 +414,8 @@ import { SHA256HashComputationProvider } from './services/computed-fields/entity
     HttpModule,
     ConfigModule,
     ClsModule,
+    TypeOrmModule.forFeature([FixturesModels]),
+    TypeOrmModule.forFeature([Fixtures]),
   ],
   controllers: [
     ActionMetadataController,
@@ -448,6 +458,8 @@ import { SHA256HashComputationProvider } from './services/computed-fields/entity
     UserController,
     UserViewMetadataController,
     ViewMetadataController,
+    FixturesModelsController,
+    FixturesController,
   ],
   providers: [
     {
@@ -712,6 +724,10 @@ import { SHA256HashComputationProvider } from './services/computed-fields/entity
     FixturesTearDownCommand,
     DatabaseBootstrapService,
     SHA256HashComputationProvider,
+    FixturesModelsService,
+    FixturesModelsRepository,
+    FixturesService,
+    FixturesRepository,
   ],
   exports: [
     AiInteractionService,
