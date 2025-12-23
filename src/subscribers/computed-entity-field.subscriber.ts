@@ -40,6 +40,8 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         await this.handleComputedFieldEvaluation(event.databaseEntity, ComputedFieldTriggerOperation.beforeUpdate);
     }
 
+    // beforeRemove implementation missing
+
     afterInsert(event: InsertEvent<any>) {
         this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterInsert);
     }

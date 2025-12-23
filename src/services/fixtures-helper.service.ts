@@ -13,7 +13,7 @@ interface Fixture {
 
 // This service can contain common logic for fixtures setup and tear down
 @Injectable()
-export class FixturesService {
+export class FixturesHelperService {
     private readonly logger = new Logger(this.constructor.name);
 
     constructor(

@@ -5121,6 +5121,150 @@
             "encrypt": false
           }
         ]
+      },
+      {
+        "singularName": "fixtures",
+        "pluralName": "fixtures",
+        "displayName": "Fixtures",
+        "description": "This is used to maintain data fixtures for initial setup and testing",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_fixtures",
+        "userKeyFieldUserKey": "id",
+        "fields": [
+          {
+            "name": "moduleName",
+            "displayName": "Module Name",
+            "type": "shortText",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "scenarioName",
+            "displayName": "Scenario Name",
+            "type": "shortText",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "scenarioDescription",
+            "displayName": "Description",
+            "type": "longText",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "data",
+            "displayName": "Data",
+            "type": "json",
+            "ormType": "simple-json",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "checksum",
+            "displayName": "Checksum",
+            "type": "computed",
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "computedFieldValueType": "string",
+            "computedFieldValueProvider": "SHA256HashComputationProvider",
+            "computedFieldValueProviderCtxt": "{ \"field\": \"data\", \"normalization\": \"canonical\",  \"encoding\": \"hex\" }",
+            "computedFieldTriggerConfig": [
+              {
+                "modelName": "fixtures",
+                "moduleName": "solid-core",
+                "operations": [
+                  "before-insert",
+                  "before-update"
+                ]
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "singularName": "fixturesModels",
+        "pluralName": "fixturesModels",
+        "displayName": "Fixtures Models",
+        "description": "This is used to maintain the fixtures data for the different models for a particular scenario",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_fixtures_models",
+        "userKeyFieldUserKey": "id",
+        "fields": [
+          {
+            "name": "fixture",
+            "displayName": "Fixture",
+            "type": "relation",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "fixtures",
+            "relationCreateInverse": true,
+            "relationCascade": "restrict",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "modelSingularName",
+            "displayName": "Model Name",
+            "type": "shortText",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "modelData",
+            "displayName": "Data",
+            "type": "json",
+            "ormType": "simple-json",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "modelId",
+            "displayName": "Model ID",
+            "type": "int",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
       }
     ]
   },

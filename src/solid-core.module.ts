@@ -328,10 +328,11 @@ import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
 import { McpCommand } from './commands/mcp.command';
-import { FixturesService } from './services/fixtures.service';
+import { FixturesHelperService } from './services/fixtures-helper.service';
 import { FixturesSetupCommand } from './commands/fixtures/fixtures-setup.command';
 import { FixturesTearDownCommand } from './commands/fixtures/fixtures-tear-down.command';
 import { DatabaseBootstrapService } from './services/database/database-bootstrap.service';
+import { SHA256HashComputationProvider } from './services/computed-fields/entity/sha256hash-computed-field-provider.service';
 
 
 @Global()
@@ -706,10 +707,11 @@ import { DatabaseBootstrapService } from './services/database/database-bootstrap
     ModuleMetadataRepository,
     ActionMetadataRepository,
     MediaStorageProviderMetadataRepository,
-    FixturesService,
+    FixturesHelperService,
     FixturesSetupCommand,
     FixturesTearDownCommand,
     DatabaseBootstrapService,
+    SHA256HashComputationProvider,
   ],
   exports: [
     AiInteractionService,
