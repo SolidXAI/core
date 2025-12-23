@@ -2,6 +2,11 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsString } from 'class-validator';
 import { IsNotEmpty, IsOptional, IsJSON } from 'class-validator';
 
+export enum FixtureStatus {
+    IN_PROGRESS = 'inProgress',
+    APPLIED = 'applied',
+    FAILED = 'failed',
+}
 export class CreateFixturesDto {
     @IsNotEmpty()
     @IsString()
@@ -19,4 +24,8 @@ export class CreateFixturesDto {
     @IsJSON()
     @ApiProperty()
     data: any;
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty()
+    status: string;
 }

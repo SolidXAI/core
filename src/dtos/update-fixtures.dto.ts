@@ -24,4 +24,9 @@ export class UpdateFixturesDto {
     @IsJSON()
     @ApiProperty()
     data: any;
+    @IsNotEmpty()
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    status: string;
 }

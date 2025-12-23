@@ -15,11 +15,6 @@ export class UpdateFixturesModelsDto {
     fixtureUserKey: string;
     @IsNotEmpty()
     @IsOptional()
-    @IsString()
-    @ApiProperty()
-    modelName: string;
-    @IsNotEmpty()
-    @IsOptional()
     @IsJSON()
     @ApiProperty()
     modelData: any;
@@ -27,4 +22,9 @@ export class UpdateFixturesModelsDto {
     @IsInt()
     @ApiProperty()
     modelId: number;
+    @IsNotEmpty()
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    modelSingularName: string;
 }

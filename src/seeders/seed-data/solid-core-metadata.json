@@ -5200,6 +5200,23 @@
                 ]
               }
             ]
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "type": "selectionStatic",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "inProgress:In Progress",
+              "applied:Applied",
+              "failed:Failed"
+            ]
           }
         ]
       },

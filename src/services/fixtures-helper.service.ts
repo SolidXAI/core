@@ -1,6 +1,11 @@
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
+import { CreateFixturesDto, FixtureStatus } from "src/dtos/create-fixtures.dto";
 import { ModelMetadataHelperService } from "src/helpers/model-metadata-helper.service";
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
+import { FixturesService } from "./fixtures.service";
+import { SHA256HashService } from "./sha-256-hash.service";
+import { CreateFixturesModelsDto } from "src/dtos/create-fixtures-models.dto";
+import { FixturesModelsService } from "./fixtures-models.service";
 
 interface Fixture {
     scenarioName: string;
@@ -19,15 +24,24 @@ export class FixturesHelperService {
     constructor(
         private readonly moduleMetadataHelper: ModuleMetadataHelperService,
         private readonly modelMetadataHelper: ModelMetadataHelperService,
+        private readonly fixturesService: FixturesService,
+        private readonly fixturesModelsService: FixturesModelsService, // Placeholder for actual FixturesModelsService
+        private readonly sha256HashService: SHA256HashService,
     ) { }
 
     async setupFixtures(moduleName: string, scenarioName: string) {
         // Load the scenario fixture from module metadata
         const scenarioFixture = await this.loadFixture(moduleName, scenarioName);
 
+        // Calculate checksum/hash of the fixture json config
+        const alreadySetup = await this.isAlreadySetup(scenarioFixture);
+        if (alreadySetup) {
+            this.logger.log(`Fixture for scenario: ${scenarioName} in module: ${moduleName} is already setup. Skipping setup.`);
+            return;
+        }
 
-        
-        const fixtureId = await this.initiateFixtureSetup();
+        // Initiate the fixture setup process by creating an entry in the fixtures table
+        const fixtureId = await this.initiateFixtureSetup(moduleName, scenarioFixture);
 
         // For each model in the fixtures, load the appropriate model service and create the instance
         for (const modelFixture of scenarioFixture.models) {
@@ -38,14 +52,14 @@ export class FixturesHelperService {
                 this.logger.debug(`Successfully created fixture for model: ${modelFixture.singularName} with ID: ${createdInstance.id}`);
 
                 // Store the created instance details in the fixtures_models tracking table, with the createdInstance id - TODO
-                await this.trackFixtureModelSetup(fixtureId, modelFixture.singularName, createdInstance.id);
+                await this.trackFixtureModelSetup(fixtureId, modelFixture.singularName, createdInstance.id, scenarioFixture);
             } catch (error) {
                 throw new InternalServerErrorException(`Error creating fixture for scenario ${scenarioName} for model: ${modelFixture.singularName} - ${error.message}`);
             }
         }
 
-        // Update the entry in the fixtures table with status 'completed' - TODO
-        await this.completeFixtureSetup();
+        // Update the entry in the fixtures table with status as APPLIED
+        await this.completeFixtureSetup(fixtureId);
     }
 
     async tearDownFixtures(moduleName: string, scenarioName: string) {
@@ -105,23 +119,65 @@ export class FixturesHelperService {
         return scenarioFixture;
     }
 
-    private async initiateFixtureSetup() {
-        // Create the entry in the fixtures table with status 'in-progress' - TODO
-        return 1; // return fixtureId - TODO
+    private async initiateFixtureSetup(moduleName: string, scenarioFixture: Fixture): Promise<number> {
+        // Create the fixture entry in the fixtures table using the FixturesRepository - TODO
+        const fixturesDto: CreateFixturesDto = {
+            moduleName: moduleName,
+            scenarioName: scenarioFixture.scenarioName,
+            scenarioDescription: scenarioFixture.scenarioDescription,
+            data: scenarioFixture,
+            status: FixtureStatus.IN_PROGRESS,
+        }
+        const newFixture = await this.fixturesService.create(fixturesDto); 
+        return newFixture.id;
     }
 
-    private async completeFixtureSetup() {
-        // Update the entry in the fixtures table with status 'completed' - TODO
+    private async completeFixtureSetup(fixtureId: number) {
+        const patchDto = {
+            id : fixtureId,
+            status: FixtureStatus.APPLIED,
+        }
+        await this.fixturesService.update(fixtureId, patchDto, [], true);
     }
 
-    private async trackFixtureModelSetup (fixtureId: number, modelSingularName: string, createdInstanceId: number) {
+    private async trackFixtureModelSetup (fixtureId: number, modelSingularName: string, createdInstanceId: number, scenarioFixture: Fixture) {
+        const modelFixture = scenarioFixture.models.find(m => m.singularName === modelSingularName);
+
         // Create entry in the fixtures_models tracking table - TODO
+        const fixtureModelDto: CreateFixturesModelsDto = {
+            fixtureId: fixtureId,
+            fixtureUserKey: null,
+            modelSingularName: modelSingularName,
+            modelId: createdInstanceId,
+            modelData: modelFixture,
+        };
+
+        const newFixturesModelsEntity = await this.fixturesModelsService.create(fixtureModelDto);
+        this.logger.debug(`Tracked fixture model setup in fixtures_models with ID: ${newFixturesModelsEntity.id}`);
     }
 
     private async isAlreadySetup (fixture: Fixture): Promise<boolean> {
         // Calculate the checksum/hash of the fixture json - TODO
+        const checksum = this.sha256HashService.compute(fixture, {
+            normalization: 'canonical',
+            encoding: 'hex',
+        });
         // Compare with existing checksum/hash in the fixtures table - TODO
-        // Check in the fixtures table if the given scenario for the module is already setup - TODO
+        const filterDto = {
+            filters: {
+                checksum: {
+                    $eq: checksum,
+                },
+                status: {
+                    $eq: FixtureStatus.APPLIED,
+                }
+            }
+        };
+
+        const existingFixture = await this.fixturesService.find(filterDto);
+        if (existingFixture && existingFixture.records.length > 0) {
+            return true;
+        }
         return false;
     }
 }

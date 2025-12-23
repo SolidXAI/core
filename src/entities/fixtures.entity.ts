@@ -16,4 +16,7 @@ export class Fixtures extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     checksum: string;
+    @Index()
+    @Column({})
+    status: string;
 }

@@ -341,6 +341,7 @@ import { Fixtures } from './entities/fixtures.entity';
 import { FixturesService } from './services/fixtures.service';
 import { FixturesController } from './controllers/fixtures.controller';
 import { FixturesRepository } from './repositories/fixtures.repository';
+import { SHA256HashService } from './services/sha-256-hash.service';
 
 
 @Global()
@@ -724,6 +725,7 @@ import { FixturesRepository } from './repositories/fixtures.repository';
     FixturesTearDownCommand,
     DatabaseBootstrapService,
     SHA256HashComputationProvider,
+    SHA256HashService,
     FixturesModelsService,
     FixturesModelsRepository,
     FixturesService,

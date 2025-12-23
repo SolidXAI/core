@@ -13,10 +13,6 @@ export class CreateFixturesModelsDto {
     @ApiProperty()
     fixtureUserKey: string;
     @IsNotEmpty()
-    @IsString()
-    @ApiProperty()
-    modelName: string;
-    @IsNotEmpty()
     @IsJSON()
     @ApiProperty()
     modelData: any;
@@ -24,4 +20,8 @@ export class CreateFixturesModelsDto {
     @IsInt()
     @ApiProperty()
     modelId: number;
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty()
+    modelSingularName: string;
 }
