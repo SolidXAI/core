@@ -10,7 +10,7 @@ export class FixtureModel extends CommonEntity {
     fixture: Fixture;
     @Column({ type: "simple-json" })
     modelData: any;
-    @Column({ type: "integer", nullable: true })
+    @Column({ nullable: true })
     modelId: number;
     @Index()
     @Column({})

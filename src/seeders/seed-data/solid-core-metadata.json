@@ -5230,9 +5230,8 @@
             "relationCreateInverse": true,
             "relationCoModelSingularName": "fixtureModel",
             "relationModelModuleName": "solid-core",
-            "isSystem": true  
+            "isSystem": true
           }
-
         ]
       },
       {
@@ -5832,30 +5831,30 @@
       "modelUserKey": "importTransactionErrorLog"
     },
     {
-      "displayName": "Fixtures Models List Action",
-      "name": "fixturesModels-list-action",
+      "displayName": "Fixture Model List Action",
+      "name": "fixtureModel-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "fixturesModels-list-view",
+      "viewUserKey": "fixtureModel-list-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "fixturesModels"
+      "modelUserKey": "fixtureModel"
     },
     {
-      "displayName": "Fixtures List Action",
-      "name": "fixtures-list-action",
+      "displayName": "Fixture List Action",
+      "name": "fixture-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "fixtures-list-view",
+      "viewUserKey": "fixture-list-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "fixtures"
+      "modelUserKey": "fixture"
     }
   ],
   "menus": [
@@ -6196,18 +6195,18 @@
       "parentMenuItemUserKey": "settings-menu-item"
     },
     {
-      "displayName": "Fixtures Models",
-      "name": "fixturesModels-menu-item",
+      "displayName": "Fixture Model",
+      "name": "fixtureModel-menu-item",
       "sequenceNumber": 1,
-      "actionUserKey": "fixturesModels-list-action",
+      "actionUserKey": "fixtureModel-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
     },
     {
-      "displayName": "Fixtures",
-      "name": "fixtures-menu-item",
+      "displayName": "Fixture",
+      "name": "fixture-menu-item",
       "sequenceNumber": 1,
-      "actionUserKey": "fixtures-list-action",
+      "actionUserKey": "fixture-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": ""
     }
@@ -12326,12 +12325,12 @@
       }
     },
     {
-      "name": "fixturesModels-list-view",
-      "displayName": "Fixtures Models",
+      "name": "fixtureModel-list-view",
+      "displayName": "Fixture Model",
       "type": "list",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "fixturesModels",
+      "modelUserKey": "fixtureModel",
       "layout": {
         "type": "list",
         "attrs": {
@@ -12357,17 +12356,17 @@
       }
     },
     {
-      "name": "fixturesModels-form-view",
-      "displayName": "Fixtures Models",
+      "name": "fixtureModel-form-view",
+      "displayName": "Fixture Models",
       "type": "form",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "fixturesModels",
+      "modelUserKey": "fixtureModel",
       "layout": {
         "type": "form",
         "attrs": {
           "name": "form-1",
-          "label": "Fixtures Models",
+          "label": "Fixture Model",
           "className": "grid"
         },
         "children": [
@@ -12409,12 +12408,12 @@
       }
     },
     {
-      "name": "fixtures-list-view",
-      "displayName": "Fixtures",
+      "name": "fixture-list-view",
+      "displayName": "Fixture",
       "type": "list",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "fixtures",
+      "modelUserKey": "fixture",
       "layout": {
         "type": "list",
         "attrs": {
@@ -12440,17 +12439,17 @@
       }
     },
     {
-      "name": "fixtures-form-view",
-      "displayName": "Fixtures",
+      "name": "fixture-form-view",
+      "displayName": "Fixture",
       "type": "form",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "fixtures",
+      "modelUserKey": "fixture",
       "layout": {
         "type": "form",
         "attrs": {
           "name": "form-1",
-          "label": "Fixtures",
+          "label": "Fixture",
           "className": "grid"
         },
         "children": [

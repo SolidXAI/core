@@ -1,23 +1,26 @@
 import { CommonEntity } from 'src/entities/common.entity';
-import { Entity, Column, Index } from 'typeorm'
+import { Entity, Column, Index, OneToMany } from 'typeorm';
+import { FixtureModel } from 'src/entities/fixture-model.entity'
 
 @Entity('ss_fixture')
 @Index(['moduleName', 'scenarioName'], { unique: true })
 export class Fixture extends CommonEntity {
     @Index()
-    @Column({ type: "varchar" })
+    @Column({})
     moduleName: string;
     @Index()
-    @Column({ type: "varchar" })
-    scenarioName: string; 
-    @Column({ type: "text", nullable: true })
+    @Column({})
+    scenarioName: string;
+    @Column({ nullable: true })
     scenarioDescription: string;
     @Column({ type: "simple-json" })
     data: any;
     @Index({ unique: true })
-    @Column({ type: "varchar" })
+    @Column({})
     checksum: string;
     @Index()
     @Column({})
     status: string;
+    @OneToMany(() => FixtureModel, fixtureModel => fixtureModel.fixture, { cascade: true })
+    fixtureModels: FixtureModel[];
 }
