@@ -1,6 +1,8 @@
 // Return the system fields metadata for a model
 
-import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
+import { classify } from "@angular-devkit/core/src/utils/strings";
+import { forwardRef, Inject, Injectable, Logger, NotFoundException } from "@nestjs/common";
+import { ModuleRef } from "@nestjs/core";
 import { _ } from "lodash";
 import { LEGACY_TABLE_FIELDS_PREFIX } from "src/entities/legacy-common.entity";
 import { ModelMetadataRepository } from "src/repository/model-metadata.repository";
@@ -16,10 +18,11 @@ export class ModelMetadataHelperService {
         // private readonly modelMetadataRepo: Repository<ModelMetadata>,
         @Inject(forwardRef(() => ModelMetadataRepository))
         private readonly modelMetadataRepo: ModelMetadataRepository,
+        private readonly moduleRef: ModuleRef,
     ) {
     }
 
-    getSystemFieldsMetadata(isLegacyTable: boolean=false, isLegacyTableWithId: boolean=false): any[] {
+    getSystemFieldsMetadata(isLegacyTable: boolean = false, isLegacyTableWithId: boolean = false): any[] {
         let systemFieldsMetadata: any[];
         if (isLegacyTableWithId) {
             systemFieldsMetadata = this.getSystemFieldsMetadataMappingForLegacyTable(true);
@@ -84,7 +87,7 @@ export class ModelMetadataHelperService {
                 displayName: "Published At",
                 type: "datetime",
                 isSystem: true,
-                enableAuditTracking:true
+                enableAuditTracking: true
             },
             {
                 name: "localeName",
@@ -115,7 +118,7 @@ export class ModelMetadataHelperService {
         ];
     }
 
-    private getSystemFieldsMetadataMappingForLegacyTable(withId: boolean=true) {
+    private getSystemFieldsMetadataMappingForLegacyTable(withId: boolean = true) {
         const systemFieldsMetadata = this.getSystemFieldsMetadataMapping();
         if (!withId) {
             // Remove the id field metadata
@@ -166,4 +169,25 @@ export class ModelMetadataHelperService {
         }
         return fields;
     }
+
+    async loadModelService(
+        modelSingularName: string,
+    ): Promise<any | null> {
+        const token = `${classify(modelSingularName)}Service`;
+
+        try {
+            const instance = await this.moduleRef.resolve(token, undefined, {
+                strict: false,
+            });
+
+            this.logger.verbose(
+                `Model service resolved via moduleRef for model: ${modelSingularName}`,
+            );
+
+            return instance;
+        } catch (err) {
+            throw new NotFoundException(`Model service could not be resolved for model: ${modelSingularName}`);
+        }
+    }
+
 }
