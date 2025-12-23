@@ -64,22 +64,23 @@ export class FixtureHelperService {
     }
 
     async tearDownFixtures(moduleName: string, scenarioName: string) {
-        const appliedFixtures = await this.loadFixtureFromDb(moduleName, scenarioName);
+        const appliedFixture = await this.loadFixtureFromDb(moduleName, scenarioName);
+
+        // reverse the appliedFixture.models to delete in reverse order of creation
+        const reversedFixtureModels = appliedFixture.fixtureModels.sort((a, b) => b.id - a.id);
 
         // For each model in reverse order
-        /*
-        for (const modelFixture of appliedFixtures.models.reverse()) {
-            const modelServiceInstance = await this.modelMetadataHelper.loadModelService(modelFixture.singularName);
+        for (const modelFixture of reversedFixtureModels) {
+            const modelServiceInstance = await this.modelMetadataHelper.loadModelService(modelFixture.modelSingularName);
 
-            // Get the user key field for the model to identify the created instances
             try {
                 // Assuming we have some way to identify the created instances, e.g., by a unique field in data
                 await modelServiceInstance.delete();
-                this.logger.log(`Successfully deleted fixture for model: ${modelFixture.singularName}`);
+                this.logger.log(`Successfully tore down fixture for model: ${modelFixture.modelSingularName}`);
             } catch (error) {
-                this.logger.error(`Error deleting fixture for model: ${modelFixture.singularName} - ${error.message}`);
+                this.logger.error(`Error deleting fixture for model: ${modelFixture.modelSingularName} - ${error.message}`);
             }
-        }*/
+        }
     }
 
     private async loadFixtureFromDb(moduleName: string, scenarioName: string): Promise<Fixture> {
@@ -95,7 +96,8 @@ export class FixtureHelperService {
                 status: {
                     $eq: FixtureStatus.APPLIED,
                 }
-            }
+            },
+            populate: ['fixtureModels'],
         };
         const fixtureEntries = await this.fixturesService.find(filterDto);
         if (!fixtureEntries || fixtureEntries.records.length === 0) {
