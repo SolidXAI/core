@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef  } from "@nestjs/core";
 import { EntityManager, Repository, In } from 'typeorm';
@@ -16,6 +16,7 @@ import { ChatterMessageDetailsRepository } from 'src/repository/chatter-message-
 @Injectable()
 export class ChatterMessageDetailsService extends CRUDService<ChatterMessageDetails>{
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,

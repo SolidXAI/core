@@ -1,7 +1,8 @@
+import { Logger } from '@nestjs/common';
 import * as fs from 'fs'; // Use the Promise-based version of fs for async/await
 import * as path from 'path'; // To handle file paths
 
-
+const logger = new Logger('module.helper');
 export const getDynamicModuleNames = (): string[] => {
   const dynamicModulesToExclude = process.env.SOLID_DYNAMIC_MODULES_TO_EXCLUDE?.split(',') || [];
 
@@ -29,7 +30,7 @@ export const getDynamicModuleNames = (): string[] => {
     })
     .map(dirent => dirent.name);
 
-  console.log(`Enabled dynamic modules:`, enabledModules);
+  logger.log(`Enabled dynamic modules:`, enabledModules);
   return enabledModules;
 }
 
@@ -41,6 +42,12 @@ export const getDynamicModuleNamesBasedOnMetadata = (): string[] => {
   const moduleMetadataPath = path.join(process.cwd(), 'module-metadata');
   const coreModuleNames = getCoreModuleNames();
   const allExcludedModules = [...new Set([...coreModuleNames, ...dynamicModulesToExclude])];
+
+  // if module-metadata path does not exist, return empty array
+  if (!fs.existsSync(moduleMetadataPath)) {
+    logger.warn(`Module metadata path does not exist: ${moduleMetadataPath}`);
+    return [];
+  }
 
   const moduleMetadataDirectories = fs.readdirSync(moduleMetadataPath, { withFileTypes: true });
   const enabledModules = moduleMetadataDirectories
@@ -56,7 +63,7 @@ export const getDynamicModuleNamesBasedOnMetadata = (): string[] => {
     })
     .map(dirent => dirent.name);
 
-  console.log(`Enabled dynamic modules basis src:`, enabledModules);
+  logger.log(`Enabled dynamic modules basis src:`, enabledModules);
   return enabledModules;
 }
 

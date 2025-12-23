@@ -1,10 +1,7 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { ConfigType } from '@nestjs/config';
-import commonConfig from 'src/config/common.config';
-import { iamConfig } from 'src/config/iam.config';
 import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
@@ -19,7 +16,7 @@ import { ListOfValuesService } from 'src/services/list-of-values.service';
 import { SettingService } from 'src/services/setting.service';
 import { SmsTemplateService } from 'src/services/sms-template.service';
 import { UserService } from 'src/services/user.service';
-import { DataSource, In } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import appBuilderConfig from '../config/app-builder.config';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
@@ -29,7 +26,6 @@ import { ActionMetadataService } from '../services/action-metadata.service';
 import { FieldMetadataService } from '../services/field-metadata.service';
 import { MediaStorageProviderMetadataSeederService } from '../services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from '../services/media-storage-provider-metadata.service';
-import { MenuItemMetadataService } from '../services/menu-item-metadata.service';
 import { ModelMetadataService } from '../services/model-metadata.service';
 import { ModuleMetadataService } from '../services/module-metadata.service';
 import { RoleMetadataService } from '../services/role-metadata.service';
@@ -39,12 +35,12 @@ import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata } from 'src';
 import { ADMIN_ROLE_NAME, INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS, PUBLIC_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
-import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
-import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
-import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
-import { SettingRepository } from 'src/repository/setting.repository';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
+import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
+import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
 import { SavedFiltersRepository } from 'src/repository/saved-filters.repository';
+import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
+import { SettingRepository } from 'src/repository/setting.repository';
 
 
 @Injectable()
@@ -54,6 +50,7 @@ export class ModuleMetadataSeederService {
 
     constructor(
         private readonly moduleMetadataService: ModuleMetadataService,
+        @Inject(forwardRef(() => ModelMetadataService))
         private readonly modelMetadataService: ModelMetadataService,
         private readonly fieldMetadataService: FieldMetadataService,
         private readonly mediaStorageProviderMetadataService: MediaStorageProviderMetadataService,
@@ -61,7 +58,6 @@ export class ModuleMetadataSeederService {
         private readonly userService: UserService,
         private readonly authenticationService: AuthenticationService,
         private readonly solidActionService: ActionMetadataService,
-        private readonly solidMenuItemService: MenuItemMetadataService,
         private readonly solidViewService: ViewMetadataService,
         private readonly mediaStorageProviderSeederService: MediaStorageProviderMetadataSeederService,
         private readonly emailTemplateService: EmailTemplateService,
@@ -71,11 +67,6 @@ export class ModuleMetadataSeederService {
         // private readonly permissionRepo: Repository<PermissionMetadata>,
         private readonly permissionRepo: PermissionMetadataRepository,
         private readonly solidRegistry: SolidRegistry,
-        @Inject(appBuilderConfig.KEY)
-        private readonly appBuilderConfiguration: ConfigType<typeof appBuilderConfig>,
-        @Inject(iamConfig.KEY) private readonly iamConfiguration: ConfigType<typeof iamConfig>,
-        @Inject(commonConfig.KEY)
-        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         private readonly settingService: SettingService,
         // @InjectRepository(Setting, 'default')
         // readonly settingsRepo: Repository<Setting>,
@@ -91,6 +82,7 @@ export class ModuleMetadataSeederService {
     async seed(conf?: any) {
         // Global seeding steps i.e across all modules
         await this.seedGlobalMetadata();
+
 
         // Module specific seeding steps.
         // Get all the module metadata files which needs to be seeded.
@@ -350,6 +342,8 @@ export class ModuleMetadataSeederService {
 
         this.logger.log(`Seeding System Fields Metadata`);
         await this.seedDefaultSystemFields();
+
+        this.logger.debug(`Global metadata seeding completed`);
     }
 
     private async seedDefaultSystemFields() {
@@ -432,12 +426,41 @@ export class ModuleMetadataSeederService {
 
             // We need to load the actual template contents. 
             if (moduleName === 'solid-core') {
-                const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
-                const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/email-templates');
-                const filePath = path.join(seedDataPath, emailTemplate.body);
-                // this.logger.log(`Seeding email template from solid-core at path: ${filePath}`);
+                let moduleRoot: string | null = null;
+
+                try {
+                    // Always resolve package.json, never the module entry
+                    moduleRoot = path.dirname(
+                        require.resolve('@solidstarters/solid-core/package.json'),
+                    );
+                } catch (err) {
+                    this.logger.debug(
+                        'Could not resolve @solidstarters/solid-core from node_modules, assuming local execution',
+                    );
+                }
+
+                const filePathInternal = 'src/seeders/seed-data/email-templates/';
+                let filePath: string;
+                // Case 1: solid-core installed as dependency
+                if (moduleRoot) {
+                    filePath = path.join(
+                        moduleRoot,
+                        filePathInternal,
+                        emailTemplate.body,
+                    );
+                }
+                else {
+                    // Case 2: running INSIDE solid-core repo
+                    const localCoreRoot = process.cwd(); // or configurable root
+                    filePath = path.join(
+                        localCoreRoot,
+                        filePathInternal,
+                        emailTemplate.body,
+                    );
+                }
+
                 if (fs.existsSync(filePath)) {
-                    emailTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
+                    emailTemplate.body = fs.readFileSync(filePath, 'utf-8');
                 }
             }
             else {
@@ -469,12 +492,41 @@ export class ModuleMetadataSeederService {
 
             // We need to load the actual template contents. 
             if (moduleName === 'solid-core') {
-                const modulePath = path.dirname(require.resolve('@solidstarters/solid-core'));
-                const seedDataPath = path.join(modulePath, '../src/seeders/seed-data/sms-templates');
-                const filePath = path.join(seedDataPath, smsTemplate.body);
-                // this.logger.log(`Seeding sms template from solid-core at path: ${filePath}`);
+                let moduleRoot: string | null = null;
+
+                try {
+                    // Always resolve package.json, never the module entry
+                    moduleRoot = path.dirname(
+                        require.resolve('@solidstarters/solid-core/package.json'),
+                    );
+                } catch (err) {
+                    this.logger.debug(
+                        'Could not resolve @solidstarters/solid-core from node_modules, assuming local execution',
+                    );
+                }
+
+                const filePathInternal = 'src/seeders/seed-data/sms-templates/';
+                let filePath: string;
+                // Case 1: solid-core installed as dependency
+                if (moduleRoot) {
+                    filePath = path.join(
+                        moduleRoot,
+                        filePathInternal,
+                        smsTemplate.body,
+                    );
+                }
+                else {
+                    // Case 2: running INSIDE solid-core repo
+                    const localCoreRoot = process.cwd(); // or configurable root
+                    filePath = path.join(
+                        localCoreRoot,
+                        filePathInternal,
+                        smsTemplate.body,
+                    );
+                }
+
                 if (fs.existsSync(filePath)) {
-                    smsTemplate.body = fs.readFileSync(filePath, 'utf-8').toString();
+                    smsTemplate.body = fs.readFileSync(filePath, 'utf-8');
                 }
             }
             else {

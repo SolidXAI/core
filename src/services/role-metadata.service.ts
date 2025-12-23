@@ -23,6 +23,7 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
   constructor(
     @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
+    @Inject(forwardRef(() => ModuleMetadataService))
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,
     readonly fileService: FileService,

@@ -1,4 +1,4 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Scope } from '@nestjs/common';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { lowerFirst } from 'src/helpers/string.helper';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
@@ -21,6 +21,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         private readonly chatterMessageService: ChatterMessageService,
         // @InjectRepository(ModelMetadata)
         // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        @Inject(forwardRef(() => ModelMetadataRepository))
         private readonly modelMetadataRepo: ModelMetadataRepository,
         private readonly modelMetadataHelperService: ModelMetadataHelperService,
     ) {

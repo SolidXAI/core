@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -7,7 +7,7 @@ import { CRUDService } from 'src/services/crud.service';
 import { FileService } from "src/services/file.service";
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { EntityManager } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 
 
 import { ActionMetadataRepository } from 'src/repository/action-metadata.repository';
@@ -16,6 +16,7 @@ import { ActionMetadata } from '../entities/action-metadata.entity';
 @Injectable()
 export class ActionMetadataService extends CRUDService<ActionMetadata> {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,

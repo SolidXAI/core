@@ -18,6 +18,7 @@ import { SecurityRuleRepository } from 'src';
 @Injectable()
 export class SecurityRuleService extends CRUDService<SecurityRule> implements OnApplicationBootstrap {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,

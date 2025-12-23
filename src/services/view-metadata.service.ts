@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -7,27 +7,27 @@ import { CRUDService } from 'src/services/crud.service';
 import { FileService } from "src/services/file.service";
 import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
-import { EntityManager } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
 import { Locale } from 'src/entities/locale.entity';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
-import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
 import { ViewMetadataRepository } from 'src/repository/view-metadata.repository';
 import { UpdateViewMetadataDto } from '../dtos/update-view-metadata.dto';
 import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ViewMetadata } from '../entities/view-metadata.entity';
 import { ActionMetadataService } from './action-metadata.service';
+import { MenuItemMetadataService } from './menu-item-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { UserViewMetadataService } from './user-view-metadata.service';
-import { MenuItemMetadataService } from './menu-item-metadata.service';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,
@@ -46,6 +46,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     // private readonly fieldMetadataRepo: Repository<FieldMetadata>,
     // @InjectRepository(ModelMetadata)
     // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+    @Inject(forwardRef(() => ModelMetadataRepository))
     private readonly modelMetadataRepo: ModelMetadataRepository,
     private readonly modelMetadataHelperService: ModelMetadataHelperService,
     readonly moduleRef: ModuleRef
