@@ -5124,12 +5124,13 @@
       },
       {
         "singularName": "modelSequence",
+        "tableName": "ss_model_sequence",
         "pluralName": "modelSequences",
         "displayName": "Model Sequence",
         "description": "This is used to maintain model field sequence",
         "dataSource": "default",
         "dataSourceType": "postgres",
-        "tableName": "ss_model_sequence",
+        "isSystem": true,
         "userKeyFieldUserKey": "sequenceName",
         "fields": [
           {
