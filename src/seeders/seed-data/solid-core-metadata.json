@@ -5129,7 +5129,7 @@
         "description": "This is used to maintain data fixtures for initial setup and testing",
         "dataSource": "default",
         "dataSourceType": "postgres",
-        "tableName": "ss_fixtures",
+        "tableName": "ss_fixture",
         "userKeyFieldUserKey": "id",
         "fields": [
           {
@@ -5242,7 +5242,7 @@
         "description": "This is used to maintain the fixtures data for the different models for a particular scenario",
         "dataSource": "default",
         "dataSourceType": "postgres",
-        "tableName": "ss_fixtures_models",
+        "tableName": "ss_fixture_model",
         "userKeyFieldUserKey": "id",
         "fields": [
           {
