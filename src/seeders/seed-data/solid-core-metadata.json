@@ -6018,7 +6018,7 @@
           "rowButtons": [
             {
               "attrs": {
-                "className": "p-button-text",
+                "className": "p-button-danger p-button-text",
                 "icon": "pi pi-trash",
                 "label": "Delete",
                 "action": "DeleteModuleRowAction",
