@@ -1,7 +1,7 @@
 import { IsInt,IsOptional, IsString, IsNotEmpty, IsJSON } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UpdateFixturesModelsDto {
+export class UpdateFixtureModelDto {
     @IsOptional()
     @IsInt()
     id: number;

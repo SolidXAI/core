@@ -1,13 +1,13 @@
 import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, JoinColumn, ManyToOne, Index, Column } from 'typeorm';
-import { Fixtures } from 'src/entities/fixtures.entity'
+import { Fixture } from 'src/entities/fixture.entity'
 
-@Entity('ss_fixtures_models')
-export class FixturesModels extends CommonEntity {
+@Entity('ss_fixture_model')
+export class FixtureModel extends CommonEntity {
     @Index()
-    @ManyToOne(() => Fixtures, { onDelete: "RESTRICT", nullable: false })
+    @ManyToOne(() => Fixture, { onDelete: "RESTRICT", nullable: false })
     @JoinColumn()
-    fixture: Fixtures;
+    fixture: Fixture;
     @Column({ type: "simple-json" })
     modelData: any;
     @Column({ type: "integer", nullable: true })

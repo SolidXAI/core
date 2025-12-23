@@ -3,7 +3,7 @@ import { IsInt } from 'class-validator';
 import { IsOptional } from 'class-validator';
 import { IsString, IsNotEmpty, IsJSON } from 'class-validator';
 
-export class CreateFixturesModelsDto {
+export class CreateFixtureModelDto {
     @IsOptional()
     @IsInt()
     @ApiProperty()

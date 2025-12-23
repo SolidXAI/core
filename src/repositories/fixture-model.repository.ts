@@ -4,16 +4,16 @@ import { SolidBaseRepository } from 'src/repository/solid-base.repository' ;
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { FixturesModels } from '../entities/fixtures-models.entity';
+import { FixtureModel } from '../entities/fixture-model.entity';
 
 @Injectable()
-export class FixturesModelsRepository extends SolidBaseRepository<FixturesModels> {
+export class FixtureModelRepository extends SolidBaseRepository<FixtureModel> {
     constructor(
         @InjectDataSource("default")
         readonly dataSource: DataSource,
         readonly requestContextService: RequestContextService,
         readonly securityRuleRepository: SecurityRuleRepository,
     ) {
-        super(FixturesModels, dataSource, requestContextService, securityRuleRepository);
+        super(FixtureModel, dataSource, requestContextService, securityRuleRepository);
     }
 }

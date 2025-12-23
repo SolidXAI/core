@@ -1,5 +1,5 @@
 import { Command, CommandRunner, Option } from 'nest-commander';
-import { FixturesHelperService } from 'src/services/fixtures-helper.service';
+import { FixtureHelperService } from 'src/services/fixture-helper.service';
 
 interface CommandOptions {
   scenario: string;
@@ -12,7 +12,7 @@ interface CommandOptions {
 })
 export class FixturesSetupCommand extends CommandRunner {
   constructor(
-    private readonly fixturesService: FixturesHelperService,
+    private readonly fixturesService: FixtureHelperService,
   ) {
     super();
   }

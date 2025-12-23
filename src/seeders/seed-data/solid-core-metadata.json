@@ -5123,9 +5123,9 @@
         ]
       },
       {
-        "singularName": "fixtures",
+        "singularName": "fixture",
         "pluralName": "fixtures",
-        "displayName": "Fixtures",
+        "displayName": "Fixture",
         "description": "This is used to maintain data fixtures for initial setup and testing",
         "dataSource": "default",
         "dataSourceType": "postgres",
@@ -5217,13 +5217,28 @@
               "applied:Applied",
               "failed:Failed"
             ]
+          },
+          {
+            "name": "fixtureModels",
+            "displayName": "Fixture Models",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "relationType": "one-to-many",
+            "relationCoModelFieldName": "fixture",
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "fixtureModel",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true  
           }
+
         ]
       },
       {
-        "singularName": "fixturesModels",
-        "pluralName": "fixturesModels",
-        "displayName": "Fixtures Models",
+        "singularName": "fixtureModel",
+        "pluralName": "fixtureModels",
+        "displayName": "Fixture Models",
         "description": "This is used to maintain the fixtures data for the different models for a particular scenario",
         "dataSource": "default",
         "dataSourceType": "postgres",
@@ -5241,7 +5256,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-one",
-            "relationCoModelSingularName": "fixtures",
+            "relationCoModelSingularName": "fixture",
             "relationCreateInverse": true,
             "relationCascade": "restrict",
             "relationModelModuleName": "solid-core",

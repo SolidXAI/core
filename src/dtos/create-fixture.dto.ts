@@ -7,7 +7,7 @@ export enum FixtureStatus {
     APPLIED = 'applied',
     FAILED = 'failed',
 }
-export class CreateFixturesDto {
+export class CreateFixtureDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty()

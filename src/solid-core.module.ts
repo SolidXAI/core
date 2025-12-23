@@ -328,19 +328,19 @@ import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
 import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
 import { McpCommand } from './commands/mcp.command';
-import { FixturesHelperService } from './services/fixtures-helper.service';
+import { FixtureHelperService } from './services/fixture-helper.service';
 import { FixturesSetupCommand } from './commands/fixtures/fixtures-setup.command';
 import { FixturesTearDownCommand } from './commands/fixtures/fixtures-tear-down.command';
 import { DatabaseBootstrapService } from './services/database/database-bootstrap.service';
 import { SHA256HashComputationProvider } from './services/computed-fields/entity/sha256hash-computed-field-provider.service';
-import { FixturesModels } from './entities/fixtures-models.entity';
-import { FixturesModelsService } from './services/fixtures-models.service';
+import { FixtureModel } from './entities/fixture-model.entity';
+import { FixtureModelService } from './services/fixture-model.service';
 import { FixturesModelsController } from './controllers/fixtures-models.controller';
-import { FixturesModelsRepository } from './repositories/fixtures-models.repository';
-import { Fixtures } from './entities/fixtures.entity';
-import { FixturesService } from './services/fixtures.service';
+import { FixtureModelRepository } from './repositories/fixture-model.repository';
+import { Fixture } from './entities/fixture.entity';
+import { FixtureService } from './services/fixture.service';
 import { FixturesController } from './controllers/fixtures.controller';
-import { FixturesRepository } from './repositories/fixtures.repository';
+import { FixtureRepository } from './repositories/fixture.repository';
 import { SHA256HashService } from './services/sha-256-hash.service';
 
 
@@ -415,8 +415,8 @@ import { SHA256HashService } from './services/sha-256-hash.service';
     HttpModule,
     ConfigModule,
     ClsModule,
-    TypeOrmModule.forFeature([FixturesModels]),
-    TypeOrmModule.forFeature([Fixtures]),
+    TypeOrmModule.forFeature([FixtureModel]),
+    TypeOrmModule.forFeature([Fixture]),
   ],
   controllers: [
     ActionMetadataController,
@@ -720,16 +720,16 @@ import { SHA256HashService } from './services/sha-256-hash.service';
     ModuleMetadataRepository,
     ActionMetadataRepository,
     MediaStorageProviderMetadataRepository,
-    FixturesHelperService,
+    FixtureHelperService,
     FixturesSetupCommand,
     FixturesTearDownCommand,
     DatabaseBootstrapService,
     SHA256HashComputationProvider,
     SHA256HashService,
-    FixturesModelsService,
-    FixturesModelsRepository,
-    FixturesService,
-    FixturesRepository,
+    FixtureModelService,
+    FixtureModelRepository,
+    FixtureService,
+    FixtureRepository,
   ],
   exports: [
     AiInteractionService,

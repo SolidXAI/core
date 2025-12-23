@@ -10,11 +10,11 @@ import { ConfigService } from '@nestjs/config';
 import { FileService } from 'src/services/file.service';
 import { CrudHelperService } from 'src/services/crud-helper.service';
 
-import { Fixtures } from '../entities/fixtures.entity';
-import { FixturesRepository } from '../repositories/fixtures.repository';
+import { FixtureModel } from '../entities/fixture-model.entity';
+import { FixtureModelRepository } from '../repositories/fixture-model.repository';
 
 @Injectable()
-export class FixturesService extends CRUDService<Fixtures>{
+export class FixtureModelService extends CRUDService<FixtureModel>{
   constructor(
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
@@ -24,10 +24,10 @@ export class FixturesService extends CRUDService<Fixtures>{
     readonly crudHelperService: CrudHelperService,
     @InjectEntityManager("default")
     readonly entityManager: EntityManager,
-    readonly repo: FixturesRepository,
+    readonly repo: FixtureModelRepository,
     readonly moduleRef: ModuleRef
 
  ) {
-   super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'fixtures', 'solid-core', moduleRef);
+   super(modelMetadataService, moduleMetadataService,  configService, fileService,  discoveryService, crudHelperService,entityManager, repo, 'fixturesModels', 'solid-core', moduleRef);
  }
 }

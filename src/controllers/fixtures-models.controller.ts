@@ -1,9 +1,9 @@
 import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { FixturesModelsService } from '../services/fixtures-models.service';
-import { CreateFixturesModelsDto } from '../dtos/create-fixtures-models.dto';
-import { UpdateFixturesModelsDto } from '../dtos/update-fixtures-models.dto';
+import { FixtureModelService } from '../services/fixture-model.service';
+import { CreateFixtureModelDto } from '../dtos/create-fixture-model.dto';
+import { UpdateFixtureModelDto } from '../dtos/update-fixture-model.dto';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -13,19 +13,19 @@ enum ShowSoftDeleted {
 @ApiTags('Solid Core')
 @Controller('fixtures-models')
 export class FixturesModelsController {
-  constructor(private readonly service: FixturesModelsService) {}
+  constructor(private readonly service: FixtureModelService) {}
 
   @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateFixturesModelsDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  create(@Body() createDto: CreateFixtureModelDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.create(createDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateFixturesModelsDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+  insertMany(@Body() createDtos: CreateFixtureModelDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
     return this.service.insertMany(createDtos, filesArray);
   }
 
@@ -33,14 +33,14 @@ export class FixturesModelsController {
   @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateFixturesModelsDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  update(@Param('id') id: number, @Body() updateDto: UpdateFixtureModelDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Patch(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateFixturesModelsDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateFixtureModelDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files, true);
   }
 

@@ -1,13 +1,14 @@
 import { Injectable, InternalServerErrorException, Logger, NotFoundException } from "@nestjs/common";
-import { CreateFixturesDto, FixtureStatus } from "src/dtos/create-fixtures.dto";
+import { CreateFixtureDto, FixtureStatus } from "src/dtos/create-fixture.dto";
 import { ModelMetadataHelperService } from "src/helpers/model-metadata-helper.service";
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
-import { FixturesService } from "./fixtures.service";
+import { FixtureService } from "./fixture.service";
 import { SHA256HashService } from "./sha-256-hash.service";
-import { CreateFixturesModelsDto } from "src/dtos/create-fixtures-models.dto";
-import { FixturesModelsService } from "./fixtures-models.service";
+import { CreateFixtureModelDto } from "src/dtos/create-fixture-model.dto";
+import { FixtureModelService } from "./fixture-model.service";
+import { Fixture } from "src/entities/fixture.entity";
 
-interface Fixture {
+interface IFixture {
     scenarioName: string;
     scenarioDescription: string;
     models: {
@@ -18,20 +19,20 @@ interface Fixture {
 
 // This service can contain common logic for fixtures setup and tear down
 @Injectable()
-export class FixturesHelperService {
+export class FixtureHelperService {
     private readonly logger = new Logger(this.constructor.name);
 
     constructor(
         private readonly moduleMetadataHelper: ModuleMetadataHelperService,
         private readonly modelMetadataHelper: ModelMetadataHelperService,
-        private readonly fixturesService: FixturesService,
-        private readonly fixturesModelsService: FixturesModelsService, // Placeholder for actual FixturesModelsService
+        private readonly fixturesService: FixtureService,
+        private readonly fixturesModelsService: FixtureModelService, // Placeholder for actual FixturesModelsService
         private readonly sha256HashService: SHA256HashService,
     ) { }
 
     async setupFixtures(moduleName: string, scenarioName: string) {
         // Load the scenario fixture from module metadata
-        const scenarioFixture = await this.loadFixture(moduleName, scenarioName);
+        const scenarioFixture = await this.loadFixtureFromJson(moduleName, scenarioName);
 
         // Calculate checksum/hash of the fixture json config
         const alreadySetup = await this.isAlreadySetup(scenarioFixture);
@@ -63,31 +64,48 @@ export class FixturesHelperService {
     }
 
     async tearDownFixtures(moduleName: string, scenarioName: string) {
-        // Call delete on the modelService to remove the created fixtures, in reverse order
-        const scenarioFixture = await this.loadFixture(moduleName, scenarioName);
-        if (!scenarioFixture?.models || scenarioFixture.models.length === 0) {
-            this.logger.warn(`No models found to tear down for scenario: ${scenarioName} in module: ${moduleName}`);
-            return;
-        }
+        const appliedFixtures = await this.loadFixtureFromDb(moduleName, scenarioName);
 
         // For each model in reverse order
-        for (const modelFixture of scenarioFixture.models.reverse()) {
+        /*
+        for (const modelFixture of appliedFixtures.models.reverse()) {
             const modelServiceInstance = await this.modelMetadataHelper.loadModelService(modelFixture.singularName);
 
             // Get the user key field for the model to identify the created instances
             try {
                 // Assuming we have some way to identify the created instances, e.g., by a unique field in data
-                const deleteCriteria = modelFixture.data; // This should be adjusted based on actual criteria
-                await modelServiceInstance.delete(deleteCriteria);
+                await modelServiceInstance.delete();
                 this.logger.log(`Successfully deleted fixture for model: ${modelFixture.singularName}`);
             } catch (error) {
                 this.logger.error(`Error deleting fixture for model: ${modelFixture.singularName} - ${error.message}`);
             }
-        }
-
+        }*/
     }
 
-    private async loadFixture(moduleName: string, scenarioName: string): Promise<Fixture> {
+    private async loadFixtureFromDb(moduleName: string, scenarioName: string): Promise<Fixture> {
+        // Fetch the fixture entry from the fixtures table using FixturesService - TODO
+        const filterDto = {
+            filters: {
+                moduleName: {
+                    $eq: moduleName,
+                },
+                scenarioName: {
+                    $eq: scenarioName,
+                },
+                status: {
+                    $eq: FixtureStatus.APPLIED,
+                }
+            }
+        };
+        const fixtureEntries = await this.fixturesService.find(filterDto);
+        if (!fixtureEntries || fixtureEntries.records.length === 0) {
+            throw new NotFoundException(`Fixture not found for module: ${moduleName} and scenario: ${scenarioName}`);
+        }
+        this.logger.debug(`Fixture entry found in DB for module: ${moduleName} and scenario: ${scenarioName}`);
+        return fixtureEntries.records[0];
+    }
+
+    private async loadFixtureFromJson(moduleName: string, scenarioName: string): Promise<IFixture> {
         // Read the module metadata file based on module name
         const moduleMetadataConfiguration = await this.moduleMetadataHelper.getModuleMetadataConfiguration(
             await this.moduleMetadataHelper.getModuleMetadataFilePath(moduleName)
@@ -106,7 +124,7 @@ export class FixturesHelperService {
         }
 
         // Find the fixtures for the given scenario
-        const scenarioFixture = allFixtures.find((fixture: Fixture) => fixture.scenarioName === scenarioName);
+        const scenarioFixture = allFixtures.find((fixture: IFixture) => fixture.scenarioName === scenarioName);
         if (!scenarioFixture) {
             throw new NotFoundException("Fixture scenario not found: " + scenarioName + " in module: " + moduleName);
         }
@@ -119,9 +137,9 @@ export class FixturesHelperService {
         return scenarioFixture;
     }
 
-    private async initiateFixtureSetup(moduleName: string, scenarioFixture: Fixture): Promise<number> {
+    private async initiateFixtureSetup(moduleName: string, scenarioFixture: IFixture): Promise<number> {
         // Create the fixture entry in the fixtures table using the FixturesRepository - TODO
-        const fixturesDto: CreateFixturesDto = {
+        const fixturesDto: CreateFixtureDto = {
             moduleName: moduleName,
             scenarioName: scenarioFixture.scenarioName,
             scenarioDescription: scenarioFixture.scenarioDescription,
@@ -140,11 +158,11 @@ export class FixturesHelperService {
         await this.fixturesService.update(fixtureId, patchDto, [], true);
     }
 
-    private async trackFixtureModelSetup (fixtureId: number, modelSingularName: string, createdInstanceId: number, scenarioFixture: Fixture) {
+    private async trackFixtureModelSetup (fixtureId: number, modelSingularName: string, createdInstanceId: number, scenarioFixture: IFixture) {
         const modelFixture = scenarioFixture.models.find(m => m.singularName === modelSingularName);
 
         // Create entry in the fixtures_models tracking table - TODO
-        const fixtureModelDto: CreateFixturesModelsDto = {
+        const fixtureModelDto: CreateFixtureModelDto = {
             fixtureId: fixtureId,
             fixtureUserKey: null,
             modelSingularName: modelSingularName,
@@ -156,7 +174,7 @@ export class FixturesHelperService {
         this.logger.debug(`Tracked fixture model setup in fixtures_models with ID: ${newFixturesModelsEntity.id}`);
     }
 
-    private async isAlreadySetup (fixture: Fixture): Promise<boolean> {
+    private async isAlreadySetup (fixture: IFixture): Promise<boolean> {
         // Calculate the checksum/hash of the fixture json - TODO
         const checksum = this.sha256HashService.compute(fixture, {
             normalization: 'canonical',
