@@ -68,11 +68,11 @@ export class ManyToManyRelationFieldCrudManager implements FieldCrudManager {
     }
 
     async transformForCreate(dto: any): Promise<any> {
-        const currentEntityTarget = this.getEntityTarget(classify(this.options.modelSingularName));
-        const currentEntityRepository = this.options.entityManager.getRepository(currentEntityTarget);
+        const currentEntityName = classify(this.options.modelSingularName);
+        const currentEntityRepository = this.options.entityManager.getRepository(currentEntityName);
 
-        const relatedEntityTarget = this.getEntityTarget(classify(this.options.relationCoModelSingularName));
-        const relatedEntityRepository = this.options.entityManager.getRepository(relatedEntityTarget)
+        const relatedEntityName = classify(this.options.relationCoModelSingularName);
+        const relatedEntityRepository = this.options.entityManager.getRepository(relatedEntityName)
 
         dto[this.valueFieldName] = await this.transformByCommand(dto, relatedEntityRepository, currentEntityRepository);
         return dto;
@@ -192,9 +192,9 @@ export class ManyToManyRelationFieldCrudManager implements FieldCrudManager {
 
     // TODO: We have moved this to SolidRegistry service, refactor to use that service.
     // Returns the entity target class from the entity name
-    private getEntityTarget(entityName: string): any { //TODO Can be refactored to use this function from crud helper service
-        const entityMetadatas = this.options.entityManager.connection.entityMetadatas;
-        const entityMetadata = entityMetadatas.find(em => em.name === entityName);
-        return entityMetadata.target;
-    }
+    // private getEntityTarget(entityName: string): any { //TODO Can be refactored to use this function from crud helper service
+    //     const entityMetadatas = this.options.entityManager.connection.entityMetadatas;
+    //     const entityMetadata = entityMetadatas.find(em => em.name === entityName);
+    //     return entityMetadata.target;
+    // }
 }
