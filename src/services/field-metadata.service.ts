@@ -1354,17 +1354,29 @@ export class FieldMetadataService implements OnApplicationBootstrap {
 
     async resolveS3Url(resolveS3UrlDto: ResolveS3UrlDto) {
         let url = "";
+        const normalizedKey = this.normalizeS3Key(resolveS3UrlDto.s3Key);
+
         // TODO  - get 
         if (resolveS3UrlDto.isPrivate == "true") {
             const expiryInSeconds = 60 * 60;
-            url = await this.fileService.getSignedUrl(resolveS3UrlDto.s3Key, expiryInSeconds, resolveS3UrlDto.bucketName);
+            url = await this.fileService.getSignedUrl(normalizedKey, expiryInSeconds, resolveS3UrlDto.bucketName);
         } else {
-            url = `https://${resolveS3UrlDto.bucketName}.s3.${this.configService.get('S3_AWS_REGION_NAME')}.amazonaws.com/${resolveS3UrlDto.s3Key}`;
+            url = `https://${resolveS3UrlDto.bucketName}.s3.${this.configService.get('S3_AWS_REGION_NAME')}.amazonaws.com/${normalizedKey}`;
         }
         return { url: url }
     }
 
+    private normalizeS3Key(input: string): string {
+        try {
+            const url = new URL(input);
 
+            // remove leading slash from pathname
+            return decodeURIComponent(url.pathname.replace(/^\/+/, ""));
+        } catch {
+            // not a valid URL → treat as raw S3 key
+            return input;
+        }
+    }   
 }
 
 
