@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, Inject, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
@@ -55,6 +55,8 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         readonly modelName: string,
         readonly moduleName: string,
         readonly moduleRef: ModuleRef,
+        readonly defaultEntityManager? : EntityManager
+        
         //We can just have the Model Entity here
     ) { }
 
@@ -579,7 +581,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     }
 
     private async handlePopulateMedia(populateMedia: string[], entities: T[]) {
-        const model = await this.entityManager.getRepository(ModelMetadata).findOne({
+        const model = await this.getdefaultEntityManager().getRepository(ModelMetadata).findOne({
             where: {
                 singularName: this.modelName,
             },
@@ -918,7 +920,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             throw new BadRequestException(`Field ${field.name} does not define a relationCoModelSingularName`);
         }
 
-        const relationCoModel = await this.entityManager.getRepository(ModelMetadata).findOne({
+        const relationCoModel = await this.getdefaultEntityManager().getRepository(ModelMetadata).findOne({
             where: { singularName: field.relationCoModelSingularName },
             relations: ['fields', 'fields.mediaStorageProvider', 'fields.model'],
         });
@@ -1020,6 +1022,10 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         const updatedEntity = await this.repo.save({ ...entity, publishedAt: null });
 
         return updatedEntity
+    }
+
+    private getdefaultEntityManager(){
+        return this.defaultEntityManager ?? this.entityManager;
     }
 }
 
