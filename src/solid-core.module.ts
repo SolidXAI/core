@@ -709,7 +709,7 @@ import { DatabaseBootstrapService } from './services/database/database-bootstrap
     FixturesService,
     FixturesSetupCommand,
     FixturesTearDownCommand,
-    //DatabaseBootstrapService,
+    DatabaseBootstrapService,
   ],
   exports: [
     AiInteractionService,
