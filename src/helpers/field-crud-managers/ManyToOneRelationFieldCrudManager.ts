@@ -1,4 +1,5 @@
 import { classify } from "@angular-devkit/core/src/utils/strings";
+import { BadRequestException } from "@nestjs/common";
 import { isEmpty, isNotEmpty, isString } from "class-validator";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
 import { IsParsableInt } from "src/validators/is-parsable-int";
@@ -64,16 +65,23 @@ export class ManyToOneRelationFieldCrudManager implements FieldCrudManager {
         // Avoid transforming if both fieldId and fieldUserKey  is empty
         if ((isEmpty(fieldId)) && isEmpty(fieldUserKeyValue)) return dto;
 
+         if (!this.options.relationCoModelSingularName) {
+            throw new BadRequestException(`ManyToOneRelationFieldCrudManager: relationCoModelSingularName is not defined in the field: ${this.options.fieldName}`);
+        }
         // // Load the related entity from the database, using the repository of the related entity
-        const entityTarget = this.getRelatedEntityTarget(classify(this.options.relationCoModelSingularName));
+        //const entityTarget = this.getRelatedEntityTarget(classify(this.options.relationCoModelSingularName));
+        const coModelEntityName = classify(this.options.relationCoModelSingularName);
+
+        //Load the related entity from the database, using the repository of the related entity
+        //const entityTarget = this.getRelatedEntityTarget(classify(this.options.relationCoModelSingularName));
         if (isNotEmpty(fieldId)) {
-            dto[this.options.fieldName] = await this.options.entityManager.getRepository(entityTarget).findOneBy({ id: fieldId });
+            dto[this.options.fieldName] = await this.options.entityManager.getRepository(coModelEntityName).findOneBy({ id: fieldId });
             if (this.options.required && isEmpty(dto[this.options.fieldName])) {
                 throw new Error(`ManyToOneRelationFieldCrudManager: Record with id: ${fieldId} not found in ${this.options.relationCoModelSingularName}`);
             }
         }
         else {
-            dto[this.options.fieldName] = await this.options.entityManager.getRepository(entityTarget).findOneBy({ [this.options.relationCoModelUserKeyFieldName]: fieldUserKeyValue });
+            dto[this.options.fieldName] = await this.options.entityManager.getRepository(coModelEntityName).findOneBy({ [this.options.relationCoModelUserKeyFieldName]: fieldUserKeyValue });
             if (this.options.required && isEmpty(dto[this.options.fieldName])) {
                 throw new Error(`ManyToOneRelationFieldCrudManager: Record with userKey: ${this.options.relationCoModelUserKeyFieldName}: ${fieldUserKeyValue} not found in ${this.options.relationCoModelSingularName}`);
             }
@@ -88,10 +96,10 @@ export class ManyToOneRelationFieldCrudManager implements FieldCrudManager {
     }
 
     // Returns the entity target class from the entity name
-    private getRelatedEntityTarget(relatedEntityName: string): any {
-        const entityMetadatas = this.options.entityManager.connection.entityMetadatas;
-        const relatedEntityMetadata = entityMetadatas.find(em => em.name === relatedEntityName);
-        return relatedEntityMetadata.target;
-    }
+    // private getRelatedEntityTarget(relatedEntityName: string): any {
+    //     const entityMetadatas = this.options.entityManager.connection.entityMetadatas;
+    //     const relatedEntityMetadata = entityMetadatas.find(em => em.name === relatedEntityName);
+    //     return relatedEntityMetadata.target;
+    // }
 
 }
