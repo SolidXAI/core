@@ -11,7 +11,7 @@ export class DatabaseBootstrapService implements OnModuleInit {
   constructor(
     @InjectDataSource()
     private readonly dataSource: DataSource,
-  ) {}
+  ) { }
 
   async onModuleInit() {
     if (!this.dataSource.isInitialized) {
