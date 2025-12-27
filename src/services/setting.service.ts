@@ -47,6 +47,7 @@ export class SettingService extends CRUDService<Setting> {
 
   async seedDefaultSettings(): Promise<void> {
     const settingsSeederData = {
+      passwordlessRegistrationValidateWhat: this.iamConfiguration.passwordlessRegistrationValidateWhat,
       allowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
       passwordBasedAuth: this.iamConfiguration.passwordBasedAuth,
       passwordLessAuth: this.iamConfiguration.passwordLessAuth,
@@ -166,6 +167,7 @@ export class SettingService extends CRUDService<Setting> {
 
   private getDefaultSettings(): Record<string, any> {
     return {
+      passwordlessRegistrationValidateWhat: this.iamConfiguration.passwordlessRegistrationValidateWhat,
       allowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
       passwordBasedAuth: this.iamConfiguration.passwordBasedAuth,
       passwordLessAuth: this.iamConfiguration.passwordLessAuth,
