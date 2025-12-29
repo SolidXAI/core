@@ -1,4 +1,4 @@
-import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
@@ -378,6 +378,10 @@ export class SettingService extends CRUDService<Setting> {
   async getMcpUrl(getMcpUrlDto: GetMcpUrlDto, solidRequestContext: any = {}): Promise<any> {
 
     const { showHeader, inListView } = getMcpUrlDto;
+
+    if(process.env.MCP_ENABLED === 'false') {
+        throw new ForbiddenException(ERROR_MESSAGES.FORBIDDEN);
+    }
 
     if (solidRequestContext.activeUser) {
       const permissionNames = ["SettingController.getMcpUrl"];

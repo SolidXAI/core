@@ -43,13 +43,13 @@ export class UserViewMetadataService extends CRUDService<UserViewMetadata> {
     });
 
     if (existing) {
-      existing.layout = JSON.parse(query.layout);
+      existing.layout = query.layout;
       return await this.repo.save(existing);
     } else {
       const newEntry = this.repo.create({
         user: { id: activeUser?.sub },
         viewMetadata: { id: query.viewMetadataId },
-        layout: JSON.parse(query.layout)
+        layout: query.layout
       });
       return await this.repo.save(newEntry);
     }
