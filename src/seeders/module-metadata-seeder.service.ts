@@ -41,6 +41,8 @@ import { PermissionMetadataRepository } from 'src/repository/permission-metadata
 import { SavedFiltersRepository } from 'src/repository/saved-filters.repository';
 import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
 import { SettingRepository } from 'src/repository/setting.repository';
+import { CreateModelSequenceDto } from 'src/dtos/create-model-sequence.dto';
+import { ModelSequenceRepository } from 'src/repository/model-sequence.repository';
 
 
 @Injectable()
@@ -77,6 +79,7 @@ export class ModuleMetadataSeederService {
         readonly scheduledJobRepository: ScheduledJobRepository,
         readonly savedFiltersRepo: SavedFiltersRepository,
         readonly dataSource: DataSource,
+        readonly modelSequenceRepo: ModelSequenceRepository,
     ) { }
 
     async seed(conf?: any) {
@@ -181,6 +184,10 @@ export class ModuleMetadataSeederService {
             // Saved Filters
             this.logger.log(`Seeding Saved Filters`);
             await this.seedSavedFilters(moduleMetadata, overallMetadata);
+
+            // Model Sequences
+            this.logger.log(`Seeding Model Sequences`);
+            await this.seedModelSequences(overallMetadata);
 
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
         }
@@ -412,6 +419,13 @@ export class ModuleMetadataSeederService {
             await this.mediaStorageProviderMetadataService.upsert(mediaStorageProvider);
         }
         this.logger.debug(`[End] Processing Media Storage Provider`);
+    }
+
+    private async seedModelSequences(overallMetadata: any) {
+        this.logger.debug(`[Start] Processing model sequences`);
+        const modelSequences: CreateModelSequenceDto[] = overallMetadata.modelSequences;
+        await this.handleSeedModelSequences(modelSequences);
+        this.logger.debug(`[End] Processing model sequences`);
     }
 
     // OK
@@ -830,6 +844,15 @@ export class ModuleMetadataSeederService {
         }
         for (const dto of createSavedFilterDto) {
             await this.savedFiltersRepo.upsertWithDto({ ...dto, filterQueryJson: JSON.stringify(dto.filterQueryJson) });
+        }
+    }
+    private async handleSeedModelSequences(modelSequencesDto: CreateModelSequenceDto[]) {
+        if (!modelSequencesDto || modelSequencesDto.length === 0) {
+            this.logger.debug(`No Model Sequences found to seed`);
+            return;
+        }
+        for (const dto of modelSequencesDto) {
+            await this.modelSequenceRepo.upsertWithDto(dto);
         }
     }
 

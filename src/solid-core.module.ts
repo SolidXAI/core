@@ -332,6 +332,11 @@ import { FixturesService } from './services/fixtures.service';
 import { FixturesSetupCommand } from './commands/fixtures/fixtures-setup.command';
 import { FixturesTearDownCommand } from './commands/fixtures/fixtures-tear-down.command';
 import { DatabaseBootstrapService } from './services/database/database-bootstrap.service';
+import { SequenceNumComputedFieldProvider } from './services/computed-fields/entity/sequence-num-computed-field-provider';
+import { ModelSequence } from './entities/model-sequence.entity';
+import { ModelSequenceService } from './services/model-sequence.service';
+import { ModelSequenceController } from './controllers/model-sequence.controller';
+import { ModelSequenceRepository } from './repository/model-sequence.repository';
 
 
 @Global()
@@ -373,6 +378,7 @@ import { DatabaseBootstrapService } from './services/database/database-bootstrap
       UserActivityHistory,
       UserViewMetadata,
       ViewMetadata,
+      ModelSequence,
     ]),
     ConfigModule.forFeature(appBuilderConfig),
     ConfigModule.forFeature(commonConfig),
@@ -447,6 +453,7 @@ import { DatabaseBootstrapService } from './services/database/database-bootstrap
     UserController,
     UserViewMetadataController,
     ViewMetadataController,
+    ModelSequenceController,
   ],
   providers: [
     {
@@ -710,6 +717,9 @@ import { DatabaseBootstrapService } from './services/database/database-bootstrap
     FixturesSetupCommand,
     FixturesTearDownCommand,
     DatabaseBootstrapService,
+    SequenceNumComputedFieldProvider,
+    ModelSequenceService,
+    ModelSequenceRepository,
   ],
   exports: [
     AiInteractionService,
