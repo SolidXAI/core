@@ -1081,7 +1081,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "isUserKey"
+                    "isUserKey",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.uuid:
