@@ -7,15 +7,15 @@ import { FieldMetadata } from 'src/entities/field-metadata.entity'
 @Entity('ss_model_sequence')
 export class ModelSequence extends CommonEntity {
     @Index()
-    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ModuleMetadata, { nullable: false })
     @JoinColumn()
     module: ModuleMetadata;
     @Index()
-    @ManyToOne(() => ModelMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ModelMetadata, { nullable: false })
     @JoinColumn()
     model: ModelMetadata;
     @Index()
-    @ManyToOne(() => FieldMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => FieldMetadata, { nullable: false })
     @JoinColumn()
     field: FieldMetadata;
     @Index({ unique: true })
