@@ -9324,29 +9324,6 @@
               "name": "name",
               "isSearchable": true
             }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "permissions",
-              "isSearchable": true,
-              "widget": "checkbox",
-              "inlineCreate": "true"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "users",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "menuItems",
-              "isSearchable": true
-            }
           }
         ]
       }
