@@ -544,7 +544,11 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             });
 
             if (coModel) {
-                const relatedEntityRepository = this.entityManager.getRepository(classify(coModelName));
+                //const relatedEntityRepository = this.entityManager.getRepository(classify(coModelName));
+                const dsName = coModel.dataSource || 'default';
+                const em = dsName === 'default' ? this.entityManager : this.moduleRef.get(`${dsName}EntityManager`, { strict: false });
+
+                const relatedEntityRepository = em.getRepository(classify(coModelName));
 
                 const relatedEntities = await relatedEntityRepository.find({
                     where: { [coModelFieldName]: { id: entityId } }
