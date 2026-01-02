@@ -94,7 +94,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 async (rawMessage) => {
                     if (rawMessage) {
                         const messageContentString = rawMessage.content.toString();
-                        this.logger.debug(`RabbitMqSubscriber Received raw message: ${messageContentString}`);
+                        // this.logger.debug(`RabbitMqSubscriber Received raw message: ${messageContentString}`);
 
                         let message: QueueMessage<T> = null;
 
