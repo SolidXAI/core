@@ -123,4 +123,10 @@ export const ERROR_MESSAGES = {
     UNABLE_TO_RESOLVE_MCP_HANDLER: 'Unable to resolve a mcp tool handler.',
 
     DEFAULT_REGEX_PATTERN_NOT_MATCHING_ERROR_MSG: 'Invalid regex pattern.',
+
+    PERMISSION_MESSAGES: {
+    insertMany: (model?: string) =>
+      `You do not have permission to import ${model ?? 'these'} records.`,
+    } as Record<string, (model?: string) => string>,
+
 };

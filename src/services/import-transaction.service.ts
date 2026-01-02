@@ -306,9 +306,12 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       : userPermissions[permissionKey] === true;
 
     if (!hasPermission) {
-      throw new ForbiddenException(
-        `Missing permission: ${permissionKey}`
-      );
+      const action = permissionKey.split('.').pop()!;
+      const message = ERROR_MESSAGES.PERMISSION_MESSAGES[action]?.(modelName) ?? 'You are not allowed to perform this action.';
+      throw new ForbiddenException({
+        message,
+        errorCode: 'permission-denied',
+      });
     }
 
     // Get the import file media object from the import transaction
