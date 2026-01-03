@@ -1,5 +1,5 @@
 import { Exclude, Expose, Type } from "class-transformer";
-import { Column, CreateDateColumn, DeleteDateColumn, JoinColumn, ManyToOne, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Index, JoinColumn, ManyToOne, UpdateDateColumn } from "typeorm";
 import type { User } from "./user.entity";
 
 export const LEGACY_TABLE_FIELDS_PREFIX = 'ss';
@@ -18,6 +18,7 @@ export abstract class LegacyCommonEntity {
     updatedAt: Date;
 
     @DeleteDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_deleted_at` })
+    @Index()
     deletedAt: Date;
 
     @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_deleted_tracker`, default: "not-deleted" })
