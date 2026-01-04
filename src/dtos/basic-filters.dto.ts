@@ -23,6 +23,10 @@ export class BasicFilterDto extends PaginationQueryDto {
     @ApiProperty({ description: "groupBy" })
     readonly groupBy?: string[];
 
+    @IsOptional()
+    @ApiProperty({ description: "aggregates" })
+    readonly aggregates?: string[];
+
 
     @IsOptional()
     @ApiProperty({ description: "populate" })

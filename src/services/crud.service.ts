@@ -33,7 +33,7 @@ import { SelectionStaticFieldCrudManager } from "../helpers/field-crud-managers/
 import { ShortTextFieldCrudManager } from "../helpers/field-crud-managers/ShortTextFieldCrudManager";
 import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCrudManager";
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
-import { CrudHelperService, UserIdFields } from "./crud-helper.service";
+import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper.service";
 import { FileService } from "./file.service";
 import { HashingService } from "./hashing.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
@@ -462,19 +462,34 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = await this.repo.createSecurityRuleAwareQueryBuilder(alias)
-        // qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-        if (internationalisation && draftPublishWorkflow) {
-            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef);
-        }
-        else {
-            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-        }
 
         if (basicFilterDto.groupBy) {
-            // Get the records and the count
-            const { groupMeta, groupRecords } = await this.handleGroupFind(qb, groupFilter, populateGroup, alias, populateUserIdFields, populateMedia);
-            const totalGroups = await this.crudHelperService.countGroupedRecords(qb, basicFilterDto, alias);
-            // qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
+            const groupFilterQb = (internationalisation && draftPublishWorkflow)
+                ? this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef, FilterCombinator.AND, false, false)
+                : this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, undefined, undefined, undefined, FilterCombinator.AND, false, false);
+
+            const groupByFields = this.crudHelperService.normalize(basicFilterDto.groupBy);
+            if (!groupByFields.length) {
+                throw new BadRequestException(ERROR_MESSAGES.INVALID_GROUP_BY_COUNT);
+            }
+
+            if (basicFilterDto.populateGroup) {
+                const hasRelationGroup = groupByFields.some(field => field.includes('.'));
+                if (hasRelationGroup) {
+                    throw new BadRequestException('populateGroup is not supported when grouping on relation fields. Fetch group metadata first and retrieve records in a separate call.');
+                }
+            }
+
+            const { aliasMap: groupAliasMap, formatMap: groupFormatMap, expressionMap: groupExpressionMap } = this.crudHelperService.applyGroupBySelections(groupFilterQb, groupByFields, alias);
+            const aggregateAliasMap = this.crudHelperService.applyAggregates(groupFilterQb, basicFilterDto.aggregates, alias);
+            const sortAliasMap = { ...groupAliasMap, ...aggregateAliasMap };
+            this.crudHelperService.applyGroupSortingAndPagination(groupFilterQb, basicFilterDto.sort, sortAliasMap, limit, offset);
+
+            const groupByResult = await groupFilterQb.getRawMany();
+            const totalGroups = await this.crudHelperService.countGroups(groupFilterQb);
+
+            const groupByFieldsOrdered = this.crudHelperService.normalize(basicFilterDto.groupBy || []);
+            const { groupMeta, groupRecords } = await this.handleGroupFind(groupByResult, groupFilter, populateGroup, alias, populateUserIdFields, populateMedia, basicFilterDto, groupAliasMap, aggregateAliasMap, groupByFieldsOrdered, groupFormatMap, groupExpressionMap);
 
             return {
                 meta: {
@@ -485,7 +500,9 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             }
         }
         else {
-            // Get the records and the count
+            qb = (internationalisation && draftPublishWorkflow)
+                ? this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef)
+                : this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
             const { meta, records } = await this.handleNonGroupFind(qb, populateUserIdFields, populateMedia, offset, limit, alias);
             return {
                 meta,
@@ -510,17 +527,36 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(qb: SelectQueryBuilder<T>, groupFilter: BasicFilterDto, populateGroup: boolean, alias: string, populateUserIdFields: UserIdFields[], populateMedia: string[]) {
-        const groupByResult = await qb.getRawMany();
-
+    private async handleGroupFind(
+        groupByResult: any[],
+        groupFilter: BasicFilterDto | undefined,
+        populateGroup: boolean,
+        alias: string,
+        populateUserIdFields: UserIdFields[],
+        populateMedia: string[],
+        baseFilterDto: BasicFilterDto,
+        groupAliasMap: Record<string, string>,
+        aggregateAliasMap: Record<string, string>,
+        groupByFieldsOrdered: string[],
+        groupFormatMap: Record<string, string | undefined>,
+        groupExpressionMap: Record<string, string>
+    ) {
         const groupMeta = [];
         const groupRecords = [];
+        const aggregateAliasSet = new Set(Object.values(aggregateAliasMap));
         // For each group, get the records and the count
         for (const group of groupByResult) {
             if (populateGroup) {
                 let groupByQb: SelectQueryBuilder<T> = await this.repo.createSecurityRuleAwareQueryBuilder(alias);
-                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilter, alias);
-                groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias);
+                const groupFilterDto: BasicFilterDto = {
+                    ...baseFilterDto,
+                    ...groupFilter,
+                    groupBy: undefined,
+                    aggregates: undefined,
+                    sort: groupFilter?.sort ?? baseFilterDto.sort,
+                };
+                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilterDto, alias);
+                groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias, groupAliasMap, aggregateAliasMap, groupExpressionMap);
                 const [entities, count] = await groupByQb.getManyAndCount();
 
                 // Populate the entity with the userId fields
@@ -532,20 +568,22 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 if (populateMedia && populateMedia.length > 0) {
                     await this.handlePopulateMedia(populateMedia, entities);
                 }
-                const groupData = this.wrapFindResponse(groupFilter.offset, groupFilter.limit, count, entities);
-                groupRecords.push(this.crudHelperService.createGroupRecords(group, alias, groupData));
+                const groupData = this.wrapFindResponse(groupFilter?.offset, groupFilter?.limit, count, entities);
+                groupRecords.push(this.crudHelperService.createGroupRecords(group, aggregateAliasSet, groupData, groupByFieldsOrdered, groupAliasMap, groupFormatMap));
             }
-            groupMeta.push(this.crudHelperService.createGroupMeta(group, alias));
+            groupMeta.push(this.crudHelperService.createGroupMeta(group, aggregateAliasSet, groupByFieldsOrdered, groupAliasMap, groupFormatMap));
         }
         return { groupMeta, groupRecords };
     }
 
-    private wrapFindResponse(offset: number, limit: number, count: number, entities: T[]) {
-        const currentPage = Math.floor(offset / limit) + 1;
-        const totalPages = Math.ceil(count / limit);
+    private wrapFindResponse(offset: number | undefined, limit: number | undefined, count: number, entities: T[]) {
+        const safeLimit = limit ?? count ?? 0;
+        const safeOffset = offset ?? 0;
+        const currentPage = safeLimit ? Math.floor(safeOffset / safeLimit) + 1 : 1;
+        const totalPages = safeLimit ? Math.ceil(count / safeLimit) : 1;
 
-        const nextPage = currentPage < totalPages ? currentPage + 1 : null;
-        const prevPage = currentPage > 1 ? currentPage - 1 : null;
+        const nextPage = safeLimit && currentPage < totalPages ? currentPage + 1 : null;
+        const prevPage = safeLimit && currentPage > 1 ? currentPage - 1 : null;
 
         const r = {
             meta: {
@@ -554,7 +592,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 nextPage: nextPage,
                 prevPage: prevPage,
                 totalPages: totalPages,
-                perPage: +limit,
+                perPage: safeLimit ? +safeLimit : 0,
             },
             records: entities
         };
@@ -1028,4 +1066,3 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return this.defaultEntityManager ?? this.entityManager;
     }
 }
-
