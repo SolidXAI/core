@@ -7,6 +7,9 @@ import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
 import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule } from "../interfaces";
 import { DatasourceType } from 'src/dtos/create-model-metadata.dto';
+import { ObjectLiteral } from 'typeorm';
+import { ColumnMetadata } from 'typeorm/metadata/ColumnMetadata';
+import { RelationMetadata } from 'typeorm/metadata/RelationMetadata';
 
 type ControllerMetadata = {
   name: string;
@@ -39,6 +42,16 @@ export enum RESERVED_SOLID_KEYWORDS {
   locale = "locale"
 }
 
+export interface TypeOrmEventContext {
+  eventType?: string;
+  entity?: ObjectLiteral | undefined;
+  databaseEntity?: any;
+  entityId?: any;
+  metadataName?: string;
+  updatedColumns?: string[];
+  updatedRelations?: string[];
+}
+
 export interface ComputedFieldMetadata<TContext = any> {
   moduleName: string; // Name of the module where the computed field is defined
   modelName: string; // Name of the model where the computed field is defined
@@ -49,6 +62,7 @@ export interface ComputedFieldMetadata<TContext = any> {
   computedFieldValueProviderName: string; // Name of the provider that computes the field value
   // Example: '{"contextKey": "contextValue"}'
   computedFieldValueProviderCtxt: TContext; // Context for the computed field value
+  eventContext: TypeOrmEventContext;
 }
 
 @Injectable()
