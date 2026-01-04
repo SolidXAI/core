@@ -3,6 +3,7 @@ import * as fs from 'fs'; // Use the Promise-based version of fs for async/await
 import * as path from 'path'; // To handle file paths
 
 const logger = new Logger('module.helper');
+
 export const getDynamicModuleNames = (): string[] => {
   const dynamicModulesToExclude = process.env.SOLID_DYNAMIC_MODULES_TO_EXCLUDE?.split(',') || [];
 
@@ -30,7 +31,7 @@ export const getDynamicModuleNames = (): string[] => {
     })
     .map(dirent => dirent.name);
 
-  logger.log(`Enabled dynamic modules:`, enabledModules);
+  // logger.debug(`Enabled dynamic modules:`, enabledModules);
   return enabledModules;
 }
 
@@ -63,7 +64,7 @@ export const getDynamicModuleNamesBasedOnMetadata = (): string[] => {
     })
     .map(dirent => dirent.name);
 
-  logger.log(`Enabled dynamic modules basis src:`, enabledModules);
+  // logger.debug(`Enabled dynamic modules basis src:`, enabledModules);
   return enabledModules;
 }
 

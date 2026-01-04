@@ -40,7 +40,7 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
 
   private readonly logger = new Logger(SolidIntrospectService.name);
   async onApplicationBootstrap() {
-    this.logger.log('Introspecting the application for Solid metadata');
+    this.logger.debug('Introspecting the application for Solid metadata');
 
     // Register all seeders
     const seeders = this.discoveryService
