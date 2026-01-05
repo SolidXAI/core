@@ -59,7 +59,7 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterUpdate, modelName, eventContext);
     }
 
-    afterRemove(event: any) {
+    afterRemove(event: RemoveEvent<any>) {
         const modelName = camelize(event.metadata?.name ?? event.entity?.constructor?.name ?? event.databaseEntity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'afterRemove');
         this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterRemove, modelName, eventContext);
