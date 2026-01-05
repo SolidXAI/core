@@ -33,6 +33,11 @@ export class ComputedFieldEvaluationSubscriberRabbitmq extends RabbitMqSubscribe
         const provider = this.solidRegistry.getComputedFieldProvider(computedFieldMetadata.computedFieldValueProviderName);
         // Get the instance of the provider and assert it is of type IEntityComputedFieldProvider
         const providerInstance = provider.instance as IEntityPostComputeFieldProvider<any, any>; // IEntityComputedFieldProvider
-        await providerInstance.postComputeAndSaveValue(databaseEntity, computedFieldMetadata); //FIXME There should some way to check/assert if the provider actually has a postComputeAndSaveValue
+        await providerInstance.postComputeAndSaveValue(databaseEntity, {
+            ...computedFieldMetadata,
+            computedFieldValueProviderCtxt: {
+                ...(computedFieldMetadata.computedFieldValueProviderCtxt || {}),
+            },
+        }); //FIXME There should some way to check/assert if the provider actually has a postComputeAndSaveValue
     }
 }

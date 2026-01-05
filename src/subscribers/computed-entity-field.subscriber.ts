@@ -1,17 +1,18 @@
 import { camelize } from "@angular-devkit/core/src/utils/strings";
 import { forwardRef, Inject, Injectable, InternalServerErrorException, Logger, Scope } from "@nestjs/common";
+import { model } from "mongoose";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
-import { ComputedFieldMetadata, SolidRegistry } from "src/helpers/solid-registry";
+import { ComputedFieldMetadata, SolidRegistry, TypeOrmEventContext } from "src/helpers/solid-registry";
 import { IEntityPreComputeFieldProvider } from "src/interfaces";
 import { PublisherFactory } from "src/services/queues/publisher-factory.service";
-import { DataSource, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
+import { DataSource, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from "typeorm";
 
 // Create an interface i.e ComputedFieldEvaluationPayload which has same fields as the ComputedFieldMetadata and an additional field for the database entity
 export interface ComputedFieldEvaluationPayload extends ComputedFieldMetadata {
     databaseEntity: any;
 }
 
-@Injectable({scope: Scope.TRANSIENT})
+@Injectable({ scope: Scope.TRANSIENT })
 // @EventSubscriber()
 export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface {
     private readonly logger = new Logger(this.constructor.name);
@@ -33,54 +34,66 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
     }
 
     async beforeInsert(event: InsertEvent<any>): Promise<any> {
-        await this.handleComputedFieldEvaluation(event.entity, ComputedFieldTriggerOperation.beforeInsert);
+        const modelName = camelize(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
+        const eventContext = this.sanitizeEventContext(event, 'beforeInsert');
+        await this.handleComputedFieldEvaluation(event.entity, ComputedFieldTriggerOperation.beforeInsert, modelName, eventContext);
     }
 
     async beforeUpdate(event: UpdateEvent<any>): Promise<any> {
-        await this.handleComputedFieldEvaluation(event.databaseEntity, ComputedFieldTriggerOperation.beforeUpdate);
+        const modelName = camelize(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
+        const eventContext = this.sanitizeEventContext(event, 'beforeUpdate');
+        // await this.handleComputedFieldEvaluation(event.databaseEntity, ComputedFieldTriggerOperation.beforeUpdate, modelName, eventContext);
+        await this.handleComputedFieldEvaluation(event.entity, ComputedFieldTriggerOperation.beforeUpdate, modelName, eventContext);
     }
 
     afterInsert(event: InsertEvent<any>) {
-        this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterInsert);
+        const modelName = camelize(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
+        const eventContext = this.sanitizeEventContext(event, 'afterInsert');
+        this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterInsert, modelName, eventContext);
     }
 
     afterUpdate(event: UpdateEvent<any>) {
-        this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterUpdate);
+        const modelName = camelize(event.metadata?.name ?? event.entity?.constructor?.name ?? event.databaseEntity?.constructor?.name ?? '');
+        const eventContext = this.sanitizeEventContext(event, 'afterUpdate');
+        // this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterUpdate, modelName, eventContext);
+        this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterUpdate, modelName, eventContext);
     }
 
     afterRemove(event: any) {
-        this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterRemove);
+        const modelName = camelize(event.metadata?.name ?? event.entity?.constructor?.name ?? event.databaseEntity?.constructor?.name ?? '');
+        const eventContext = this.sanitizeEventContext(event, 'afterRemove');
+        this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterRemove, modelName, eventContext);
     }
 
     //FIXME: Need to add support for beforeRemove, beforeSoftRemove, afterSoftRemove, beforeRecover, afterRecover
 
-    private async handleComputedFieldEvaluation(entity: any, currentOperation: ComputedFieldTriggerOperation): Promise<void> {
+    private async handleComputedFieldEvaluation(entity: any, currentOperation: ComputedFieldTriggerOperation, modelName: string, eventContext?: TypeOrmEventContext): Promise<void> {
         if (!entity) {
             return;
         }
         const computedFieldsTobeEvaluated = this.getComputedFieldsForEvaluation(
             this.solidRegistry.getComputedFieldMetadata(),
             currentOperation,
-            camelize(entity.constructor.name)
+            modelName
         );
         //TODO: We can add a feature i.e dependsOn, where we can check if the computed field depends on other computed fields and evaluate them first
         await Promise.all(
-            computedFieldsTobeEvaluated.map(c => this.evaluateComputedField(c, entity))
+            computedFieldsTobeEvaluated.map(c => this.evaluateComputedField(this.attachContext(c, eventContext), entity))
         )
     }
 
-    private handleComputedFieldEvaluationJob(entity: any, currentOperation: ComputedFieldTriggerOperation) {
+    private handleComputedFieldEvaluationJob(entity: any, currentOperation: ComputedFieldTriggerOperation, modelName: string, eventContext?: TypeOrmEventContext) {
         if (!entity) {
             return;
         }
         const computedFieldsTobeEvaluated = this.getComputedFieldsForEvaluation(
             this.solidRegistry.getComputedFieldMetadata(),
             currentOperation,
-            camelize(entity.constructor.name)
+            modelName
         );
         //TODO: We can add a feature i.e dependsOn, where we can check if the computed field depends on other computed fields and evaluate them first
         for (const computedField of computedFieldsTobeEvaluated) {
-            this.enqueueComputedFieldEvaluationJob(computedField, entity);
+            this.enqueueComputedFieldEvaluationJob(this.attachContext(computedField, eventContext), entity, eventContext);
         }
     }
 
@@ -114,15 +127,45 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         }
     }
 
-    private enqueueComputedFieldEvaluationJob(computedField: ComputedFieldMetadata<any>, databaseEntity: any) {
+    private enqueueComputedFieldEvaluationJob(computedField: ComputedFieldMetadata<any>, databaseEntity: any, eventContext?: any) {
         const payload = {
             ...computedField,
             databaseEntity,
+            // eventContext,
         };
-        this.publisherFactory.publish({payload}, 'ComputedFieldEvaluationPublisher')
+        this.publisherFactory.publish({ payload }, 'ComputedFieldEvaluationPublisher')
         // this.computedFieldPublisher.publish({
         //     payload
         // });
+    }
+
+    private attachContext<T extends ComputedFieldMetadata<any>>(computedField: T, eventContext?: any): T {
+        if (!eventContext) return computedField;
+        return {
+            ...computedField,
+            computedFieldValueProviderCtxt: {
+                ...(computedField.computedFieldValueProviderCtxt || {}),
+            },
+            eventContext,
+        };
+    }
+
+    private sanitizeEventContext(event: any, eventType: string): TypeOrmEventContext {
+        if (!event) return undefined;
+        const base: TypeOrmEventContext = {
+            metadataName: event.metadata?.name,
+            entityId: event.entityId ?? event.entity?.id ?? event.databaseEntity?.id,
+            eventType: eventType,
+        };
+        if (event.updatedColumns) {
+            base.updatedColumns = event.updatedColumns.map((c: any) => c.propertyName);
+        }
+        if (event.updatedRelations) {
+            base.updatedRelations = event.updatedRelations.map((r: any) => r.propertyName);
+        }
+        if (event.entity) base.entity = event.entity;
+        if (event.databaseEntity) base.databaseEntity = event.databaseEntity;
+        return base;
     }
 
 }
