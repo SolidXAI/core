@@ -12,13 +12,14 @@ import { SelectionDynamicQueryDto } from '../dtos/selection-dynamic-query.dto';
 import { UpdateFieldMetaDataDto } from '../dtos/update-field-metadata.dto';
 import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
-import { ISelectionProviderValues } from '../interfaces';
+import { ISelectionProviderValues, MediaStorageProvider } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import qs from 'qs';
 import { ResolveS3UrlDto } from 'src/dtos/resolve-s3-url.dto';
 import { ConfigService } from '@nestjs/config';
 import { FileService } from './file.service';
+import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
 
 
 @Injectable()
@@ -1353,15 +1354,21 @@ export class FieldMetadataService implements OnApplicationBootstrap {
     //     return { url: url }
     // }
 
-
     async resolveS3Url(resolveS3UrlDto: ResolveS3UrlDto) {
         let url = "";
         const normalizedKey = this.normalizeS3Key(resolveS3UrlDto.s3Key);
 
+        let resolvedBucketName = resolveS3UrlDto.bucketName;
+        // TODO: if the dto contains the mediaStorageProviderUserKey then resolve this record from our mediaStorageProvider model 
+        if (resolveS3UrlDto.mediaStorageProviderUserKey) {
+            const mediaStorageProvider: MediaStorageProviderMetadata = null;
+            resolvedBucketName = mediaStorageProvider.bucketName;
+        }
+
         // TODO  - get 
         if (resolveS3UrlDto.isPrivate == "true") {
             const expiryInSeconds = 60 * 60;
-            url = await this.fileService.getSignedUrl(normalizedKey, expiryInSeconds, resolveS3UrlDto.bucketName);
+            url = await this.fileService.getSignedUrl(normalizedKey, expiryInSeconds, resolvedBucketName);
         } else {
             url = `https://${resolveS3UrlDto.bucketName}.s3.${this.configService.get('S3_AWS_REGION_NAME')}.amazonaws.com/${normalizedKey}`;
         }
@@ -1378,7 +1385,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
             // not a valid URL → treat as raw S3 key
             return input;
         }
-    }   
+    }
 }
 
 

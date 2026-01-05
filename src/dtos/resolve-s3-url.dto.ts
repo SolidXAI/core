@@ -14,8 +14,11 @@ export class ResolveS3UrlDto {
     @IsNotEmpty()
     s3Key?: string;
 
-    @IsNotEmpty()
+    @IsOptional()
     bucketName?: string;
+
+    @IsOptional()
+    mediaStorageProviderUserKey?: string;
 
     @IsNotEmpty()
     isPrivate?: string;
