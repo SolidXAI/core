@@ -17,6 +17,7 @@ import { CrudHelperService } from './crud-helper.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import qs from 'qs';
 import { ResolveS3UrlDto } from 'src/dtos/resolve-s3-url.dto';
+import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
 import { ConfigService } from '@nestjs/config';
 import { FileService } from './file.service';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
@@ -28,6 +29,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         private readonly fieldMetadataRepo: FieldMetadataRepository,
         private readonly configService: ConfigService,
         private readonly fileService: FileService,
+        private readonly mediaStorageProviderMetadataRepository: MediaStorageProviderMetadataRepository,
 
         @InjectDataSource()
         private readonly dataSource: DataSource,
@@ -1359,18 +1361,26 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         const normalizedKey = this.normalizeS3Key(resolveS3UrlDto.s3Key);
 
         let resolvedBucketName = resolveS3UrlDto.bucketName;
-        // TODO: if the dto contains the mediaStorageProviderUserKey then resolve this record from our mediaStorageProvider model 
         if (resolveS3UrlDto.mediaStorageProviderUserKey) {
-            const mediaStorageProvider: MediaStorageProviderMetadata = null;
+            const mediaStorageProvider = await this.mediaStorageProviderMetadataRepository.findOne({
+                where: {
+                    name: resolveS3UrlDto.mediaStorageProviderUserKey
+                }
+            });
+            if (!mediaStorageProvider) {
+                throw new NotFoundException(`MediaStorageProviderMetadata with user key ${resolveS3UrlDto.mediaStorageProviderUserKey} not found`);
+            }
             resolvedBucketName = mediaStorageProvider.bucketName;
         }
-
-        // TODO  - get 
+        this.logger.debug(`INSIDE::resolveS3Url:: resolvedBucketName: ${resolvedBucketName}`)
+ 
         if (resolveS3UrlDto.isPrivate == "true") {
             const expiryInSeconds = 60 * 60;
             url = await this.fileService.getSignedUrl(normalizedKey, expiryInSeconds, resolvedBucketName);
         } else {
-            url = `https://${resolveS3UrlDto.bucketName}.s3.${this.configService.get('S3_AWS_REGION_NAME')}.amazonaws.com/${normalizedKey}`;
+            url = `https://${resolvedBucketName}.s3.${this.configService.get(
+                'S3_AWS_REGION_NAME',
+            )}.amazonaws.com/${normalizedKey}`;
         }
         return { url: url }
     }
