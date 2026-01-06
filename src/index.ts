@@ -300,6 +300,8 @@ export * from './subscribers/audit.subscriber'
 export * from './transformers/array-transformer'
 export * from './transformers/boolean-transformer'
 export * from './transformers/integer-transformer'
+export { default as datetimeTransformer } from './transformers/datetime-transformer'
+export * from './transformers/typeorm/local-date-time-transformer'
 
 export * from './validators/is-parsable-int'
 
@@ -308,6 +310,5 @@ export * from './interfaces'
 export * from './solid-core.module'
 
 export * from './winston.logger'
-export { default as datetimeTransformer } from './transformers/datetime-transformer'
 
 export { ERROR_MESSAGES } from './constants/error-messages'
