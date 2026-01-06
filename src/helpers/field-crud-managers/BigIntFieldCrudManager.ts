@@ -14,7 +14,16 @@ export class BigIntFieldCrudManager implements FieldCrudManager {
     }
 
     validate(createDto: any): ValidationError[] {
-        const fieldValue: any = createDto[this.options.fieldName];
+        let fieldValue: any = createDto[this.options.fieldName];
+        if (fieldValue !== undefined && fieldValue !== null) {
+            try {
+                if (typeof fieldValue === 'string' || typeof fieldValue === 'number') {
+                    fieldValue = BigInt(fieldValue);
+                }
+            } catch (err) {
+                return [{ field: this.options.fieldName, error: 'Invalid numeric value' }];
+            }
+        }
         return this.applyValidations(fieldValue);
     }
 
