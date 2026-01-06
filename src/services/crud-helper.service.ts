@@ -464,11 +464,21 @@ export class CrudHelperService {
             orderOptionKeys.forEach((key) => {
                 const resolvedKey = aliasMap[key] || key as string;
                 const value = orderOptions[key] as 'ASC' | 'DESC';
-                qb.addOrderBy(resolvedKey, value);
+                qb.addOrderBy(`"${resolvedKey}"`, value);
             });
         }
-        if (limit) this.hasJoins(qb) ? qb.take(limit) : qb.limit(limit);
-        if (offset) this.hasJoins(qb) ? qb.skip(offset) : qb.offset(offset);
+        const hasLimit = limit !== undefined && limit !== null;
+        const hasOffset = offset !== undefined && offset !== null;
+
+        // Use both take/skip and limit/offset to ensure pagination is applied even when joins are present.
+        if (hasLimit) {
+            qb.take(limit);
+            qb.limit(limit);
+        }
+        if (hasOffset) {
+            qb.skip(offset);
+            qb.offset(offset);
+        }
     }
 
     async countGroups(qb: SelectQueryBuilder<any>) {

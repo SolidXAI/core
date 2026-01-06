@@ -40,6 +40,7 @@ import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { ModuleMetadataService } from "./module-metadata.service";
 import { RequestContextService } from "./request-context.service";
+import { BasicGroupFilterDto } from "src/dtos/basic-group-filters.dto";
 
 export class CRUDService<T extends CommonEntity> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
@@ -529,7 +530,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
     private async handleGroupFind(
         groupByResult: any[],
-        groupFilter: BasicFilterDto | undefined,
+        groupFilter: BasicGroupFilterDto | undefined,
         populateGroup: boolean,
         alias: string,
         populateUserIdFields: UserIdFields[],
@@ -553,7 +554,9 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                     ...groupFilter,
                     groupBy: undefined,
                     aggregates: undefined,
-                    sort: groupFilter?.sort ?? baseFilterDto.sort,
+                    // Only use explicit groupFilter.sort for record ordering; group-level sorts can contain
+                    // group expressions (e.g. createdAt:day) that are invalid on record queries.
+                    sort: groupFilter?.sort,
                 };
                 groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilterDto, alias);
                 groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias, groupAliasMap, aggregateAliasMap, groupExpressionMap);
