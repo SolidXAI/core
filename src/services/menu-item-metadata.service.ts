@@ -166,6 +166,9 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
           if (!i.parentMenuItem) {
             return true
           } else {
+            if(i.action.type === 'custom'){
+              return true;
+            }
             return this.crudHelperService.hasReadPermissionOnModel(activeUser, i.action.model.singularName)
           }
         });
