@@ -27,32 +27,29 @@ function dateToUtcComponentString(d: Date): string {
 
 export const LocalDateTimeTransformer = {
     // DB → Entity
-    from(value: Date | string | null): Date | null {
-        if (!value) return null;
+    from(value: Date | string | null | undefined): Date | null | undefined {
+         // critical... super important to return undefined here 
+        if (value === undefined) return undefined;
+        if (value === null) return null;
 
         if (!SOLIDX_TIME_STORED_AS_WALL_TIME) {
             return dayjs(value).toDate();
         }
 
-        // Wall-time mode:
-        // - If we got a Date (likely from MSSQL), rebuild its UTC components to a naive string
-        // - Interpret that naive string as SOLIDX_WALL_TIME_TZ wall time
         const naive = value instanceof Date ? dateToUtcComponentString(value) : String(value);
-
         return dayjs.tz(naive, SOLIDX_WALL_TIME_TZ).utc().toDate();
     },
 
     // Entity → DB
-    to(value: Date | null): Date | null {
-        if (!value) return null;
+    to(value: Date | null | undefined): Date | null | undefined {
+         // critical... super important to return undefined here 
+        if (value === undefined) return undefined;
+        if (value === null) return null;
 
         if (!SOLIDX_TIME_STORED_AS_WALL_TIME) {
             return dayjs(value).toDate();
         }
 
-        // Convert instant -> wall time in SOLIDX_WALL_TIME_TZ.
-        // Returning Date is okay; MSSQL driver will serialize it.
-        // (You could also return a formatted string if you want stricter control.)
         return dayjs(value).tz(SOLIDX_WALL_TIME_TZ).toDate();
     },
 };
