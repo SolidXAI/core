@@ -1,4 +1,4 @@
-import { Injectable } from "@nestjs/common";
+import { Injectable, Logger } from "@nestjs/common";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { IEntityPostComputeFieldProvider, QueuesModuleOptions } from "src/interfaces";
 import { QueueMessage } from "src/interfaces/mq";
@@ -11,6 +11,7 @@ import computedFieldEvaluationQueueOptions from "./computed-field-evaluation-que
 
 @Injectable()
 export class ComputedFieldEvaluationSubscriberRabbitmq extends RabbitMqSubscriber<ComputedFieldEvaluationPayload> {
+    private readonly _logger = new Logger(ComputedFieldEvaluationSubscriberRabbitmq.name);
     constructor(
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
@@ -30,9 +31,14 @@ export class ComputedFieldEvaluationSubscriberRabbitmq extends RabbitMqSubscribe
     // It will then call the corresponding provider computeAndSave method to perform the evaluation
     async subscribe(message: QueueMessage<ComputedFieldEvaluationPayload>) {
         const { databaseEntity, ...computedFieldMetadata } = message.payload;
-        const provider = this.solidRegistry.getComputedFieldProvider(computedFieldMetadata.computedFieldValueProviderName);
+        const { computedFieldValueProviderName } = computedFieldMetadata;
+        const provider = this.solidRegistry.getComputedFieldProvider(computedFieldValueProviderName);
         // Get the instance of the provider and assert it is of type IEntityComputedFieldProvider
         const providerInstance = provider.instance as IEntityPostComputeFieldProvider<any, any>; // IEntityComputedFieldProvider
+        if (typeof providerInstance.postComputeAndSaveValue !== 'function') {
+            this._logger.warn(`Provider "${computedFieldValueProviderName}" does not implement postComputeAndSaveValue; skipping post-compute.`);
+            return;
+        }
         await providerInstance.postComputeAndSaveValue(databaseEntity, {
             ...computedFieldMetadata,
             computedFieldValueProviderCtxt: {
