@@ -1,4 +1,4 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { forwardRef, Inject, Injectable, Scope } from '@nestjs/common';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { lowerFirst } from 'src/helpers/string.helper';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
@@ -21,6 +21,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         private readonly chatterMessageService: ChatterMessageService,
         // @InjectRepository(ModelMetadata)
         // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        @Inject(forwardRef(() => ModelMetadataRepository))
         private readonly modelMetadataRepo: ModelMetadataRepository,
         private readonly modelMetadataHelperService: ModelMetadataHelperService,
     ) {
@@ -61,7 +62,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
         const auditFields = modelFields.filter(field =>
             field.enableAuditTracking &&
-            !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
+            !['mediaSingle', 'mediaMultiple', 'richText', 'json'].includes(field.type) &&
             !(field.type === 'relation' && field.relationType === 'one-to-many')
         );
 

@@ -1,7 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { EntityManager, Repository } from 'typeorm';
+import { EntityManager, In, Repository } from 'typeorm';
 
 import { CRUDService } from 'src/services/crud.service';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
@@ -19,6 +19,7 @@ import { UserActivityHistoryRepository } from 'src/repository/user-activity-hist
 @Injectable()
 export class UserActivityHistoryService extends CRUDService<UserActivityHistory> {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,

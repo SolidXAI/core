@@ -20,6 +20,11 @@ export class SchedulerServiceImpl implements ISchedulerService {
 
     @Cron(CronExpression.EVERY_MINUTE)
     async runScheduledJobs(): Promise<void> {
+        const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
+        if (solidCliRunning === "true") {
+            return;
+        }
+
         const now = new Date();
 
         // this.logger.log(`[${now.getTime()}]: scheduler service started run...`);

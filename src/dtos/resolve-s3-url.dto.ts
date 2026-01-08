@@ -7,24 +7,22 @@ export class ResolveS3UrlDto {
     @IsNotEmpty()
     fieldName: string;
 
-    @IsNotEmpty()
-    s3KeyFieldName: string;
 
     @IsNotEmpty()
-    fieldValue: string;
+    fileType?: string;
 
     @IsNotEmpty()
-    fileType: string;
-    
-    @IsNotEmpty()
-    bucketName: string;
+    s3Key?: string;
+
+    @IsOptional()
+    bucketName?: string;
+
+    @IsOptional()
+    mediaStorageProviderUserKey?: string;
 
     @IsNotEmpty()
-    isPrivate: string;
+    isPrivate?: string;
 }
-
-
-
 
 
 

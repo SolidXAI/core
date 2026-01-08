@@ -175,6 +175,15 @@ export class FileService {
     }
   }
 
+  public async pathExists(targetPath: string): Promise<boolean> {
+    try {
+      await fs.promises.access(targetPath, fs.constants.F_OK);
+      return true;
+    } catch {
+      return false;
+    }
+  }
+
   public async getSignedUrl(key: string, expiresIn: number, bucketName: string): Promise<string> {
     const command = new GetObjectCommand({
       Bucket: bucketName,

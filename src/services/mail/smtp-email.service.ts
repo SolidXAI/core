@@ -153,7 +153,7 @@ export class SMTPEMailService implements IMail {
             attachments: attachmentsList,
         });
         // this.logger.debug(`Sending email to ${to} with subject ${subject} and body ${body}`);
-        this.logger.debug(`Sending email to ${to} with subject ${subject}`);
+        // this.logger.debug(`Sending email to ${to} with subject ${subject}`);
 
         return r;
     }

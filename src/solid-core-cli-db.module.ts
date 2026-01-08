@@ -4,7 +4,8 @@ import { join } from 'path';
 import { SnakeNamingStrategy } from 'typeorm-naming-strategies';
 import { WinstonTypeORMLogger } from './winston.logger';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
-
+import { parseBooleanEnv } from './helpers/environment.helper';
+import { Logger } from 'winston';
 @Module({
     imports: [
         TypeOrmModule.forRootAsync({
@@ -47,9 +48,9 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
                     // autoLoadEntities: true,
                     entities: entities,
                     // your entities will be synced with the database (recommended: disable in prod)
-                    synchronize: Boolean(process.env.DEFAULT_DATABASE_SYNCHRONIZE),
-                    logging: Boolean(process.env.DEFAULT_DATABASE_LOGGING),
-                    // logger: new WinstonTypeORMLogger(logger),  // Pass in the custom WinstonLogger
+                    synchronize: parseBooleanEnv('DEFAULT_DATABASE_SYNCHRONIZE'),
+                    logging: parseBooleanEnv('DEFAULT_DATABASE_LOGGING'),
+                    logger: parseBooleanEnv('DEFAULT_DATABASE_LOGGING') ? new WinstonTypeORMLogger(logger) : undefined,  // Pass in the custom WinstonLogger
                     namingStrategy: new SnakeNamingStrategy(),
                     // subscribers: subscribers
                 }

@@ -2287,6 +2287,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-many",
+            "relationCoModelFieldName": "roles",
             "relationCoModelSingularName": "user",
             "relationCreateInverse": false,
             "relationCascade": "set null",
@@ -2304,6 +2305,7 @@
             "private": false,
             "encrypt": false,
             "relationType": "many-to-many",
+            "relationCoModelFieldName": "roles",
             "relationCoModelSingularName": "menuItemMetadata",
             "relationCreateInverse": false,
             "relationCascade": "set null",
@@ -5121,6 +5123,136 @@
             "encrypt": false
           }
         ]
+      },
+      {
+        "singularName": "modelSequence",
+        "tableName": "ss_model_sequence",
+        "pluralName": "modelSequences",
+        "displayName": "Model Sequence",
+        "description": "This is used to maintain model field sequence",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "isSystem": true,
+        "userKeyFieldUserKey": "sequenceName",
+        "fields": [
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "isSystem": true
+          },
+          {
+            "name": "model",
+            "displayName": "Model",
+            "type": "relation",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "modelMetadata",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "isSystem": true
+          },
+          {
+            "name": "field",
+            "displayName": "Field",
+            "type": "relation",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "fieldMetadata",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "isSystem": true
+          },
+          {
+            "name": "sequenceName",
+            "displayName": "Sequence Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false,
+            "isUserKey": true
+          },
+          {
+            "name": "currentValue",
+            "displayName": "Current Value",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false,
+            "defaultValue": "1"
+          },
+          {
+            "name": "prefix",
+            "displayName": "Prefix",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
+            "name": "padding",
+            "displayName": "Padding",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false,
+            "defaultValue": "5"
+          },
+          {
+            "name": "separator",
+            "displayName": "Separator",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          }
+        ]
       }
     ]
   },
@@ -5654,6 +5786,19 @@
       "viewUserKey": "importTransactionErrorLog-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "importTransactionErrorLog"
+    },
+    {
+      "displayName": "Model Sequence List Action",
+      "name": "modelSequence-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "modelSequence-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelSequence"
     }
   ],
   "menus": [
@@ -5992,6 +6137,14 @@
       "actionUserKey": "miscSettings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
+    },
+    {
+      "displayName": "Model Sequence",
+      "name": "modelSequence-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "modelSequence-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "other-menu-item"
     }
   ],
   "views": [
@@ -6014,8 +6167,19 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true,
+          "delete": false,
           "rowButtons": [
+            {
+              "attrs": {
+                "className": "p-button-danger p-button-text",
+                "icon": "pi pi-trash",
+                "label": "Delete",
+                "action": "DeleteModuleRowAction",
+                "openInPopup": true,
+                "actionInContextMenu": true,
+                "customComponentIsSystem": true
+              }
+            },
             {
               "attrs": {
                 "className": "p-button-text",
@@ -9162,29 +9326,6 @@
               "name": "name",
               "isSearchable": true
             }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "permissions",
-              "isSearchable": true,
-              "widget": "checkbox",
-              "inlineCreate": "true"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "users",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "menuItems",
-              "isSearchable": true
-            }
           }
         ]
       }
@@ -9281,13 +9422,14 @@
                         "attrs": {
                           "name": "group-1",
                           "label": "",
-                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12"
                         },
                         "children": [
                           {
                             "type": "field",
                             "attrs": {
                               "name": "users",
+                              "editWidget": "DefaultRelationManyToManyCheckBoxFormEditWidget",
                               "showLabel": false
                             }
                           }
@@ -9307,13 +9449,14 @@
                         "attrs": {
                           "name": "group-1",
                           "label": "",
-                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12"
                         },
                         "children": [
                           {
                             "type": "field",
                             "attrs": {
                               "name": "menuItems",
+                              "editWidget": "DefaultRelationManyToManyCheckBoxFormEditWidget",
                               "showLabel": false
                             }
                           }
@@ -12095,6 +12238,178 @@
           }
         ]
       }
+    },
+    {
+      "name": "modelSequence-list-view",
+      "displayName": "Model Sequence",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelSequence",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequenceName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "currentValue"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "prefix"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "padding"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "separator"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "field"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "modelSequence-form-view",
+      "displayName": "Model Sequence",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelSequence",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Model Sequence",
+          "className": "grid"
+        },
+        "onFieldChange": "",
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sequenceName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "prefix"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "separator"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "module"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "model"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "field"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "currentValue"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "padding"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "emailTemplates": [
@@ -12209,5 +12524,6 @@
         }
       }
     }
-  ]
+  ],
+  "modelSequences": []
 }

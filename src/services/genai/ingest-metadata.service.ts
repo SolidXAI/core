@@ -3,10 +3,10 @@ import * as crypto from 'crypto';
 import * as fs from 'fs';
 import * as path from 'path';
 
-import { getDynamicModuleNames } from 'src/helpers/module.helper';
+import { getDynamicModuleNames, getDynamicModuleNamesBasedOnMetadata } from 'src/helpers/module.helper';
 import { CreateModuleMetadataDto } from 'src/dtos/create-module-metadata.dto';
 import { R2RHelperService } from './r2r-helper.service';
-import { CollectionResponse, r2rClient } from 'r2r-js';
+import { r2rClient } from 'r2r-js';
 import { CreateModelMetadataDto } from 'src/dtos/create-model-metadata.dto';
 import { CreateFieldMetadataDto } from 'src/dtos/create-field-metadata.dto';
 
@@ -90,7 +90,8 @@ export class IngestMetadataService {
 
         // const allModuleMetadataJson = [];
         this.logger.debug(`getting dynamics modules`);
-        const enabledModules = getDynamicModuleNames();
+        // const enabledModules = getDynamicModuleNames();
+        const enabledModules = getDynamicModuleNamesBasedOnMetadata();
         this.logger.log(`ingesting metadata`);
 
         for (let i = 0; i < enabledModules.length; i++) {

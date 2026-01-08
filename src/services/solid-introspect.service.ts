@@ -1,5 +1,5 @@
 import { classify } from '@angular-devkit/core/src/utils/strings';
-import { forwardRef, Inject, Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
+import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, ModuleRef, Reflector } from '@nestjs/core';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { getDataSourceToken } from '@nestjs/typeorm';
@@ -14,16 +14,12 @@ import { IS_SELECTION_PROVIDER } from 'src/decorators/selection-provider.decorat
 import { IS_SOLID_DATABASE_MODULE } from 'src/decorators/solid-database-module.decorator';
 import { IS_WA_PROVIDER } from 'src/decorators/whatsapp-provider.decorator';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { AuditSubscriber } from 'src/subscribers/audit.subscriber';
+import { ComputedEntityFieldSubscriber } from 'src/subscribers/computed-entity-field.subscriber';
+import { CreatedByUpdatedBySubscriber } from 'src/subscribers/created-by-updated-by.subscriber';
+import { SoftDeleteAwareEventSubscriber } from 'src/subscribers/soft-delete-aware-event.subscriber';
 import { DataSource } from 'typeorm';
 import { CRUDService } from './crud.service';
-import { RequestContextService } from './request-context.service';
-import { CreatedByUpdatedBySubscriber } from 'src/subscribers/created-by-updated-by.subscriber';
-import { AuditSubscriber } from 'src/subscribers/audit.subscriber';
-import { ComputedEntityFieldSubscriber, ComputedFieldEvaluationPayload } from 'src/subscribers/computed-entity-field.subscriber';
-import { SoftDeleteAwareEventSubscriber } from 'src/subscribers/soft-delete-aware-event.subscriber';
-import { ChatterMessageService } from './chatter-message.service';
-import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
-import { ModelMetadataHelperService, PublisherFactory } from 'src';
 
 export const coreSubscriberClasses = [
   AuditSubscriber,
@@ -40,20 +36,11 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     private readonly metadataScanner: MetadataScanner,
     private readonly solidRegistry: SolidRegistry,
     private readonly moduleRef: ModuleRef,
-    private readonly requestContextService: RequestContextService,
-    // AuditSubscribe related dependencies
-    private readonly chatterMessageService: ChatterMessageService,
-    private readonly modelMetadataHelperService: ModelMetadataHelperService,
-    private readonly modelMetadataRepo: ModelMetadataRepository,
-    // ComputedEntityFieldSubscriber related dependencies
-   @Inject(forwardRef(() => PublisherFactory))
-    private readonly publisherFactory: PublisherFactory<any>,
-    
   ) { }
 
   private readonly logger = new Logger(SolidIntrospectService.name);
   async onApplicationBootstrap() {
-    this.logger.log('Introspecting the application for Solid metadata');
+    this.logger.debug('Introspecting the application for Solid metadata');
 
     // Register all seeders
     const seeders = this.discoveryService

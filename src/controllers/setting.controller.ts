@@ -8,83 +8,93 @@ import { CreateSettingDto } from '../dtos/create-setting.dto';
 import { UpdateSettingDto } from '../dtos/update-setting.dto';
 import { SettingService } from '../services/setting.service';
 
-@ApiTags('Solid Core') 
+@ApiTags('Solid Core')
 @Controller('setting') //FIXME: Change this to the model plural name 
 export class SettingController {
-  constructor(private readonly service: SettingService) {}
+  constructor(private readonly service: SettingService) { }
 
   @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateSettingDto, @UploadedFiles() files: Array<Express.Multer.File>,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
-    return this.service.create(createDto, files,solidRequestContext);
+  create(@Body() createDto: CreateSettingDto, @UploadedFiles() files: Array<Express.Multer.File>, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
+    return this.service.create(createDto, files, solidRequestContext);
   }
 
   @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateSettingDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = [],@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
-    return this.service.insertMany(createDtos, filesArray,solidRequestContext);
+  insertMany(@Body() createDtos: CreateSettingDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = [], @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
+    return this.service.insertMany(createDtos, filesArray, solidRequestContext);
   }
 
 
   @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateSettingDto, @UploadedFiles() files: Array<Express.Multer.File>,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
-    return this.service.update(id, updateDto, files,false,solidRequestContext);
+  update(@Param('id') id: number, @Body() updateDto: UpdateSettingDto, @UploadedFiles() files: Array<Express.Multer.File>, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
+    return this.service.update(id, updateDto, files, false, solidRequestContext);
   }
 
   @ApiBearerAuth("jwt")
   @Patch(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateSettingDto, @UploadedFiles() files: Array<Express.Multer.File>,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
-    return this.service.update(id, updateDto, files, true,solidRequestContext);
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateSettingDto, @UploadedFiles() files: Array<Express.Multer.File>, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
+    return this.service.update(id, updateDto, files, true, solidRequestContext);
   }
 
   @ApiBearerAuth("jwt")
   @Get('/wrapped')
   @Public()
   async wrapSettings() {
-      return this.service.wrapSettings();
+    return this.service.wrapSettings();
   }
 
   @Get()
   async getAllSettings() {
     return this.service.getAllSettings();
   }
-    
+
+
+  @ApiBearerAuth("jwt")
+  @ApiQuery({ name: 'showHeader', required: false, type: String })
+  @ApiQuery({ name: 'inListView', required: false, type: String })
+  @Get('/get-mcp-url')
+  getMcpUrl(@Query() query: any, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
+    return this.service.getMcpUrl(query, solidRequestContext);
+
+  }
+
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, type: Boolean })
   @ApiQuery({ name: 'showOnlySoftDeleted', required: false, type: Boolean })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({ name: 'fields', required: false, type: Array })
-  @ApiQuery({ name: 'sort', required: false, type: Array }) 
+  @ApiQuery({ name: 'sort', required: false, type: Array })
   @ApiQuery({ name: 'groupBy', required: false, type: Array })
   @ApiQuery({ name: 'populate', required: false, type: Array })
   @ApiQuery({ name: 'populateMedia', required: false, type: Array })
   @ApiQuery({ name: 'filters', required: false, type: Array })
   @Get()
-  async findMany(@Query() query: any,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) { 
-    return this.service.find(query,solidRequestContext);  
+  async findMany(@Query() query: any, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
+    return this.service.find(query, solidRequestContext);
   }
 
   @ApiBearerAuth("jwt")
   @Get(':id')
-  async findOne(@Param('id') id: string, @Query() query: any,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
-    return this.service.findOne(+id, query,solidRequestContext);
+  async findOne(@Param('id') id: string, @Query() query: any, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
+    return this.service.findOne(+id, query, solidRequestContext);
   }
 
   @Delete('/bulk')
-  async deleteMany(@Body() ids: number[],@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
-    return this.service.deleteMany(ids,solidRequestContext);
+  async deleteMany(@Body() ids: number[], @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
+    return this.service.deleteMany(ids, solidRequestContext);
   }
 
   @ApiBearerAuth("jwt")
   @Delete(':id')
-  async delete(@Param('id') id: number,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
-    return this.service.delete(id,solidRequestContext);
+  async delete(@Param('id') id: number, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
+    return this.service.delete(id, solidRequestContext);
   }
 
   @ApiBearerAuth("jwt")
@@ -121,4 +131,6 @@ export class SettingController {
     }
     return this.service.updateSettings(settings, files);
   }
+
+
 }

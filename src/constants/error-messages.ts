@@ -84,7 +84,7 @@ export const ERROR_MESSAGES = {
     FIELD_NOT_FOUND: (id: number | string) => `No field with id #${id} exists`,
     PROVIDER_NOT_FOUND: (provider: string) => `Field incorrectly configured. No provider with name ${provider} registered in backend.`,
     FILE_WRITE_FAILED: 'File creation failed, rolling back transaction',
-
+    FILE_DELETE_FAILED: 'File deletion failed, rolling back transaction',
     // file service errors
     FILE_NOT_FOUND: 'File not found',
     FILE_COPY_ERROR: 'Error copying file',
@@ -123,4 +123,10 @@ export const ERROR_MESSAGES = {
     UNABLE_TO_RESOLVE_MCP_HANDLER: 'Unable to resolve a mcp tool handler.',
 
     DEFAULT_REGEX_PATTERN_NOT_MATCHING_ERROR_MSG: 'Invalid regex pattern.',
+
+    PERMISSION_MESSAGES: {
+    insertMany: (model?: string) =>
+      `You do not have permission to import ${model ?? 'these'} records.`,
+    } as Record<string, (model?: string) => string>,
+
 };

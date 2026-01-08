@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { Brackets, EntityManager, EntityMetadata } from 'typeorm';
@@ -26,6 +26,7 @@ import { RequestContextService } from './request-context.service';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
     constructor(
+        @Inject(forwardRef(() => ModelMetadataService))
         readonly modelMetadataService: ModelMetadataService,
         readonly moduleMetadataService: ModuleMetadataService,
         readonly configService: ConfigService,
@@ -44,6 +45,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         readonly moduleRef: ModuleRef,
         // @InjectRepository(ModelMetadata)
         // private readonly modelMetadataRepo: Repository<ModelMetadata>,
+        @Inject(forwardRef(() => ModelMetadataRepository))
         private readonly modelMetadataRepo: ModelMetadataRepository,
         readonly requestContextService: RequestContextService,
         private readonly modelMetadataHelperService: ModelMetadataHelperService,
@@ -116,7 +118,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const auditFields = model.fields.filter(field =>
             field.enableAuditTracking &&
-            !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
+            !['mediaSingle', 'mediaMultiple', 'richText', 'json'].includes(field.type) &&
             !(field.type === 'relation' && field.relationType === 'one-to-many')
         );
 
@@ -179,7 +181,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const auditFields = modelFields.filter(field =>
             field.enableAuditTracking &&
-            !['mediaSingle', 'mediaMultiple', 'computed', 'richText', 'json'].includes(field.type) &&
+            !['mediaSingle', 'mediaMultiple', 'richText', 'json'].includes(field.type) &&
             !(field.type === 'relation' && field.relationType === 'one-to-many')
         );
 
@@ -542,7 +544,11 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             });
 
             if (coModel) {
-                const relatedEntityRepository = this.entityManager.getRepository(classify(coModelName));
+                //const relatedEntityRepository = this.entityManager.getRepository(classify(coModelName));
+                const dsName = coModel.dataSource || 'default';
+                const em = dsName === 'default' ? this.entityManager : this.moduleRef.get(`${dsName}EntityManager`, { strict: false });
+
+                const relatedEntityRepository = em.getRepository(classify(coModelName));
 
                 const relatedEntities = await relatedEntityRepository.find({
                     where: { [coModelFieldName]: { id: entityId } }

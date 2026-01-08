@@ -1,22 +1,22 @@
-import { Injectable } from '@nestjs/common';
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { EntityManager, Repository } from 'typeorm';
-import { ScheduledJob } from 'src/entities/scheduled-job.entity';
-import { ModelMetadataService } from './model-metadata.service';
-import { ModuleMetadataService } from './module-metadata.service';
+import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { FileService } from './file.service';
+import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { ScheduledJob } from 'src/entities/scheduled-job.entity';
+import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
+import { EntityManager } from 'typeorm';
 import { CrudHelperService } from './crud-helper.service';
 import { CRUDService } from './crud.service';
-import { Logger } from '@nestjs/common';
-import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
+import { FileService } from './file.service';
+import { ModelMetadataService } from './model-metadata.service';
+import { ModuleMetadataService } from './module-metadata.service';
 
 @Injectable()
 export class ScheduledJobService extends CRUDService<ScheduledJob> {
   private readonly logger = new Logger(ScheduledJobService.name);
 
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,

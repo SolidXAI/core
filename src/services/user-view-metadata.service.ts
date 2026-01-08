@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { EntityManager, Repository } from 'typeorm';
@@ -19,6 +19,7 @@ import { UserViewMetadataRepository } from 'src/repository/user-view-metadata.re
 @Injectable()
 export class UserViewMetadataService extends CRUDService<UserViewMetadata> {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,
@@ -42,13 +43,13 @@ export class UserViewMetadataService extends CRUDService<UserViewMetadata> {
     });
 
     if (existing) {
-      existing.layout = JSON.parse(query.layout);
+      existing.layout = query.layout;
       return await this.repo.save(existing);
     } else {
       const newEntry = this.repo.create({
         user: { id: activeUser?.sub },
         viewMetadata: { id: query.viewMetadataId },
-        layout: JSON.parse(query.layout)
+        layout: query.layout
       });
       return await this.repo.save(newEntry);
     }

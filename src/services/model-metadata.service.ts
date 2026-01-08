@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
@@ -39,6 +39,7 @@ export class ModelMetadataService {
     // private readonly modelMetadataRepo: Repository<ModelMetadata>,
     // @InjectRepository(FieldMetadata)
     // private readonly fieldMetadataRepo: Repository<FieldMetadata>,
+    @Inject(forwardRef(() => ModelMetadataRepository))
     private readonly modelMetadataRepo: ModelMetadataRepository,
     private readonly fieldMetadataRepo: FieldMetadataRepository,
     private readonly schematicService: SchematicService,
@@ -610,57 +611,62 @@ export class ModelMetadataService {
       }
     }
 
+    await this.dataSource.query(
+      `CALL cleanup_model_metadata($1, $2)`,
+      [modelEntity.singularName, true],
+    );
+
     // Delete the permissions, menu, actions & views related to this model.
-    const controllerName = `${classify(modelEntity.singularName)}Controller`;
-    const permissionNames = [
-      `${controllerName}.delete`,
-      `${controllerName}.deleteMany`,
-      `${controllerName}.findOne`,
-      `${controllerName}.findMany`,
-      `${controllerName}.recover`,
-      `${controllerName}.recoverMany`,
-      `${controllerName}.partialUpdate`,
-      `${controllerName}.update`,
-      `${controllerName}.insertMany`,
-      `${controllerName}.create`,
-    ];
-    const permissionsRepo = this.dataSource.getRepository(PermissionMetadata);
-    const permissionsToDelete = await permissionsRepo.find({
-      where: { name: In(permissionNames) },
-      relations: ['roles'],
-    });
+    // const controllerName = `${classify(modelEntity.singularName)}Controller`;
+    // const permissionNames = [
+    //   `${controllerName}.delete`,
+    //   `${controllerName}.deleteMany`,
+    //   `${controllerName}.findOne`,
+    //   `${controllerName}.findMany`,
+    //   `${controllerName}.recover`,
+    //   `${controllerName}.recoverMany`,
+    //   `${controllerName}.partialUpdate`,
+    //   `${controllerName}.update`,
+    //   `${controllerName}.insertMany`,
+    //   `${controllerName}.create`,
+    // ];
+    // const permissionsRepo = this.dataSource.getRepository(PermissionMetadata);
+    // const permissionsToDelete = await permissionsRepo.find({
+    //   where: { name: In(permissionNames) },
+    //   relations: ['roles'],
+    // });
 
     // Remove role associations first
-    for (const permission of permissionsToDelete) {
-      if (permission.roles?.length) {
-        await this.dataSource
-          .createQueryBuilder()
-          .relation(PermissionMetadata, 'roles')
-          .of(permission) // permission instance or its ID
-          .remove(permission.roles); // remove all linked roles
-      }
-    }
+    // for (const permission of permissionsToDelete) {
+    //   if (permission.roles?.length) {
+    //     await this.dataSource
+    //       .createQueryBuilder()
+    //       .relation(PermissionMetadata, 'roles')
+    //       .of(permission) // permission instance or its ID
+    //       .remove(permission.roles); // remove all linked roles
+    //   }
+    // }
 
-    await permissionsRepo.remove(permissionsToDelete);
+    // await permissionsRepo.remove(permissionsToDelete);
 
     // Delete actions
-    const actionRepo = this.dataSource.getRepository(ActionMetadata);
-    const action = await actionRepo.findOne({ where: { model: { id: modelEntity.id } } });
-    await actionRepo.delete({ model: { id: modelEntity.id } });
+    // const actionRepo = this.dataSource.getRepository(ActionMetadata);
+    // const action = await actionRepo.findOne({ where: { model: { id: modelEntity.id } } });
+    // await actionRepo.delete({ model: { id: modelEntity.id } });
 
-    // Delete menu items
-    const menuItemRepo = this.dataSource.getRepository(MenuItemMetadata);
-    if (action) {
-      const menuItems = await menuItemRepo.find({ where: { action: { id: action.id } } });
-      for (let i = 0; i < menuItems.length; i++) {
-        const menuItem = menuItems[i];
-        await menuItemRepo.remove(menuItem);
-      }
-    }
+    // // Delete menu items
+    // const menuItemRepo = this.dataSource.getRepository(MenuItemMetadata);
+    // if (action) {
+    //   const menuItems = await menuItemRepo.find({ where: { action: { id: action.id } } });
+    //   for (let i = 0; i < menuItems.length; i++) {
+    //     const menuItem = menuItems[i];
+    //     await menuItemRepo.remove(menuItem);
+    //   }
+    // }
 
     // Delete view 
-    const viewRepo = this.dataSource.getRepository(ViewMetadata);
-    await viewRepo.delete({ model: { id: modelEntity.id } })
+    // const viewRepo = this.dataSource.getRepository(ViewMetadata);
+    // await viewRepo.delete({ model: { id: modelEntity.id } })
 
     // <moduleName>-metadata.json | Remove references to this model in the model metadata, menu, action & view sections. | Automatic
     const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.module?.name);

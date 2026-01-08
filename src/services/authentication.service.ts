@@ -571,11 +571,18 @@ export class AuthenticationService {
 
         // Validate & generate otp token for the user based on the identifier type.
         if (signInDto.type === RegistrationValidationSource.EMAIL) {
+            // const user = await this.userRepository.findOne({
+            //     where: {
+            //         email: signInDto.identifier,
+            //     }
+            // });
             const user = await this.userRepository.findOne({
-                where: {
-                    email: signInDto.identifier,
-                }
+                where: [
+                    { username: signInDto.identifier },
+                    { email: signInDto.identifier },
+                ]
             });
+
             if (!user) {
                 throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
             }
@@ -588,11 +595,18 @@ export class AuthenticationService {
             await this.userRepository.save(user);
             this.notifyUserOnOtpInititateLogin(user, RegistrationValidationSource.EMAIL);
         } else if (signInDto.type === RegistrationValidationSource.MOBILE) {
+            // const user = await this.userRepository.findOne({
+            //     where: {
+            //         mobile: signInDto.identifier,
+            //     }
+            // });
             const user = await this.userRepository.findOne({
-                where: {
-                    mobile: signInDto.identifier,
-                }
+                where: [
+                    { username: signInDto.identifier },
+                    { mobile: signInDto.identifier },
+                ]
             });
+
             if (!user) {
                 throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
             }
@@ -655,11 +669,20 @@ export class AuthenticationService {
             throw new BadRequestException(ERROR_MESSAGES.PASSWORDLESS_REGISTRATION_DISABLED);
         }
         if (confirmSignInDto.type === RegistrationValidationSource.EMAIL) {
+            // const user = await this.userRepository.findOne({
+            //     where: {
+            //         email: confirmSignInDto.identifier,
+            //     },
+            //     relations: ['roles']
+            // });
             const user = await this.userRepository.findOne({
-                where: {
-                    email: confirmSignInDto.identifier,
-                },
-                relations: ['roles']
+                where: [
+                    { username: confirmSignInDto.identifier },
+                    { email: confirmSignInDto.identifier },
+                ],
+                relations: {
+                    roles: true
+                }
             });
             if (!user) {
                 throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
@@ -682,11 +705,20 @@ export class AuthenticationService {
             const roles = user.roles.map((role) => role.name);
             return { accessToken, refreshToken, user: { id, username, email, mobile, lastLoginProvider, roles } };
         } else if (confirmSignInDto.type === RegistrationValidationSource.MOBILE) {
+            // const user = await this.userRepository.findOne({
+            //     where: {
+            //         mobile: confirmSignInDto.identifier,
+            //     },
+            //     relations: ['roles']
+            // });
             const user = await this.userRepository.findOne({
-                where: {
-                    mobile: confirmSignInDto.identifier,
-                },
-                relations: ['roles']
+                where: [
+                    { username: confirmSignInDto.identifier },
+                    { mobile: confirmSignInDto.identifier },
+                ],
+                relations: {
+                    roles: true
+                }
             });
             if (!user) {
                 throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_ACTIVE);

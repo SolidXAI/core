@@ -24,11 +24,20 @@ export class CrudHelperService {
     private orderOptions(sort: any[] = []) {
         const orderOptions = {};
         sort.forEach((s: string) => {
-            const [field, order] = s.split(':');
-            orderOptions[field] = order?.toUpperCase() ?? 'ASC';
-            if (!['ASC', 'DESC'].includes(orderOptions[field])) {
+            const parts = s.split(':');
+            let order: string | undefined;
+            let field: string;
+            if (parts.length > 1) {
+                order = parts.pop();
+                field = parts.join(':');
+            } else {
+                field = parts[0];
+            }
+            const normalizedOrder = order ? order.toUpperCase() : 'ASC';
+            if (!['ASC', 'DESC'].includes(normalizedOrder)) {
                 throw new Error(`Invalid sort order provided:  ${order}`);
             }
+            orderOptions[field] = normalizedOrder;
         });
         return orderOptions;
     }
@@ -185,10 +194,12 @@ export class CrudHelperService {
         internationalisation?: boolean,
         draftPublishWorkflow?: boolean,
         moduleRef?: any,
-        filterCombinator: FilterCombinator = FilterCombinator.AND
+        filterCombinator: FilterCombinator = FilterCombinator.AND,
+        applyPagination: boolean = true,
+        applySorting: boolean = true
     ): SelectQueryBuilder<any> { // TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
-        const { fields, sort, groupBy, populate = [], populateMedia = [], locale, status } = basicFilterDto;
+        const { fields, sort, populate = [], populateMedia = [], locale, status } = basicFilterDto;
 
         // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
         const normalizedFields = this.normalize(fields);
@@ -201,10 +212,6 @@ export class CrudHelperService {
         normalizedAndFilteredPopulateAttributes.push(...additionalPopulate.filter((relation) => !normalizedAndFilteredPopulateAttributes.includes(relation)));
 
         const normalizedSort = this.normalize(sort);
-        const normalizedGroupBy = this.normalize(groupBy);
-        if (normalizedGroupBy.length > 1) {
-            throw new Error(ERROR_MESSAGES.GROUP_BY_LIMIT);
-        }
 
         // Depending upon the populate option, apply the join clause
         if (normalizedAndFilteredPopulateAttributes && normalizedAndFilteredPopulateAttributes.length) {
@@ -255,7 +262,7 @@ export class CrudHelperService {
         }
 
         // Depending upon the order option, apply the order by clause
-        if (normalizedSort && normalizedSort.length) {
+        if (applySorting && normalizedSort && normalizedSort.length) {
             const orderOptions = this.orderOptions(normalizedSort);
             if (orderOptions) {
                 const orderOptionKeys = Object.keys(orderOptions) as Array<keyof typeof orderOptions>;
@@ -276,16 +283,11 @@ export class CrudHelperService {
             qb.where(`${entityAlias}.deletedAt IS NOT NULL`);
         }
 
-        // Apply the group by options
-        if (normalizedGroupBy && normalizedGroupBy.length) {
-            normalizedGroupBy.forEach((field: string) => {
-                qb.addGroupBy(`${entityAlias}.${field}`);
-            });
-        }
-
         // Apply the pagination options & handle the case when the query has joins
-        if (limit) this.hasJoins(qb) ? qb.take(limit) : qb.limit(limit);
-        if (offset) this.hasJoins(qb) ? qb.skip(offset) : qb.offset(offset);
+        if (applyPagination) {
+            if (limit) this.hasJoins(qb) ? qb.take(limit) : qb.limit(limit);
+            if (offset) this.hasJoins(qb) ? qb.skip(offset) : qb.offset(offset);
+        }
         return qb;
     }
 
@@ -305,6 +307,185 @@ export class CrudHelperService {
             this.buildJoinQueryForRelation(qb, entityAlias, relation);
         });
         return qb;
+    }
+
+    private sanitizeAlias(alias: string) {
+        return alias.replace(/[^a-zA-Z0-9_]/g, '_');
+    }
+
+    private isAliasJoined(queryBuilder: SelectQueryBuilder<any>, alias: string): boolean {
+        return queryBuilder.expressionMap.joinAttributes.some(join => join.alias?.name === alias);
+    }
+
+    private getExistingJoinAlias(qb: SelectQueryBuilder<any>, joinProperty: string): string | undefined {
+        const existingJoin = qb.expressionMap.joinAttributes.find(join => join.entityOrProperty === joinProperty);
+        return existingJoin?.alias?.name;
+    }
+
+    private ensureRelationPathJoined(qb: SelectQueryBuilder<any>, rootAlias: string, pathParts: string[]) {
+        const mainAlias =
+            qb.expressionMap?.mainAlias?.name ||
+            qb.expressionMap?.aliases?.find(a => a.metadata)?.name ||
+            qb.expressionMap?.aliases?.[0]?.name;
+        let parentAlias = mainAlias || rootAlias;
+        for (let i = 0; i < pathParts.length - 1; i++) {
+            const part = pathParts[i];
+            const joinProperty = `${parentAlias}.${part}`;
+            const existingAlias = this.getExistingJoinAlias(qb, joinProperty);
+            const joinAlias = existingAlias ?? this.sanitizeAlias(`${parentAlias}_${part}`);
+            if (!existingAlias && !this.isRelationJoined(qb, joinProperty) && !this.isAliasJoined(qb, joinAlias)) {
+                qb.leftJoin(joinProperty, joinAlias);
+            }
+            parentAlias = joinAlias;
+        }
+        return { alias: parentAlias, property: pathParts[pathParts.length - 1] };
+    }
+
+    private getDriver(qb: SelectQueryBuilder<any>) {
+        return qb.connection.options.type as string;
+    }
+
+    private buildDateGranularityExpression(driver: string, columnExpr: string, granularity: string) {
+        switch (driver) {
+            case 'postgres':
+            case 'cockroachdb':
+                return `DATE_TRUNC('${granularity}', ${columnExpr})`;
+            case 'mysql':
+            case 'mariadb':
+                switch (granularity) {
+                    case 'day': return `DATE(${columnExpr})`;
+                    case 'week': return `STR_TO_DATE(DATE_FORMAT(${columnExpr}, '%x-%v-1'), '%x-%v-%w')`;
+                    case 'month': return `DATE_FORMAT(${columnExpr}, '%Y-%m-01')`;
+                    case 'year': return `DATE_FORMAT(${columnExpr}, '%Y-01-01')`;
+                    default: throw new Error(`Unsupported granularity ${granularity} for driver ${driver}`);
+                }
+            case 'mssql':
+            case 'sqlserver':
+                switch (granularity) {
+                    case 'day': return `CONVERT(date, ${columnExpr})`;
+                    case 'week': return `DATEADD(week, DATEDIFF(week, 0, ${columnExpr}), 0)`;
+                    case 'month': return `DATEFROMPARTS(YEAR(${columnExpr}), MONTH(${columnExpr}), 1)`;
+                    case 'year': return `DATEFROMPARTS(YEAR(${columnExpr}), 1, 1)`;
+                    default: throw new Error(`Unsupported granularity ${granularity} for driver ${driver}`);
+                }
+            default:
+                throw new Error(`Granularity not supported for driver ${driver}`);
+        }
+    }
+
+    private buildGroupByExpression(qb: SelectQueryBuilder<any>, rootAlias: string, field: string) {
+        const parts = field.split(':');
+        const rawField = parts[0];
+        const granularity = parts[1];
+        const format = parts[2];
+        const pathParts = rawField.split('.');
+        const { alias, property } = this.ensureRelationPathJoined(qb, rootAlias, pathParts);
+        const columnExpr = `${alias}.${property}`;
+        const groupExpr = granularity ? this.buildDateGranularityExpression(this.getDriver(qb), columnExpr, granularity) : columnExpr;
+        const selectAlias = this.sanitizeAlias(`${rawField.replace(/\./g, '_')}${granularity ? '_' + granularity : ''}`);
+        return { groupExpr, selectAlias, sourceKey: field, format };
+    }
+
+    applyGroupBySelections(
+        qb: SelectQueryBuilder<any>,
+        groupBy: string[],
+        entityAlias: string
+    ) {
+        const aliasMap: Record<string, string> = {};
+        const formatMap: Record<string, string | undefined> = {};
+        const expressionMap: Record<string, string> = {};
+        qb.select([]);
+        groupBy.forEach((field) => {
+            const { groupExpr, selectAlias, sourceKey, format } = this.buildGroupByExpression(qb, entityAlias, field);
+            qb.addSelect(groupExpr, selectAlias);
+            qb.addGroupBy(groupExpr);
+            aliasMap[sourceKey] = selectAlias;
+            formatMap[selectAlias] = format;
+            expressionMap[selectAlias] = groupExpr;
+        });
+        return { aliasMap, formatMap, expressionMap };
+    }
+
+    private buildAggregateExpression(qb: SelectQueryBuilder<any>, rootAlias: string, aggregate: string) {
+        const [rawField, rawFn] = aggregate.split(':');
+        const fn = (rawFn || 'count').toLowerCase();
+        if ((!rawField || rawField.toLowerCase() === 'count') && fn === 'count') {
+            return { expression: 'COUNT(*)', selectAlias: 'count' };
+        }
+        if (!rawField) throw new Error(`Invalid aggregate specification: ${aggregate}`);
+        const pathParts = rawField.split('.');
+        const { alias, property } = this.ensureRelationPathJoined(qb, rootAlias, pathParts);
+        const columnExpr = `${alias}.${property}`;
+        const selectAlias = this.sanitizeAlias(`${rawField.replace(/\./g, '_')}_${fn}`);
+        let expression = '';
+        switch (fn) {
+            case 'count': expression = `COUNT(${columnExpr})`; break;
+            case 'count_distinct': expression = `COUNT(DISTINCT ${columnExpr})`; break;
+            case 'sum': expression = `SUM(${columnExpr})`; break;
+            case 'avg': expression = `AVG(${columnExpr})`; break;
+            case 'min': expression = `MIN(${columnExpr})`; break;
+            case 'max': expression = `MAX(${columnExpr})`; break;
+            default: throw new Error(`Unsupported aggregate function ${fn}`);
+        }
+        return { expression, selectAlias, sourceKey: aggregate };
+    }
+
+    applyAggregates(
+        qb: SelectQueryBuilder<any>,
+        aggregates: string[] | undefined,
+        entityAlias: string
+    ) {
+        const aggregateList = this.normalize(aggregates);
+        const aggregateAliasMap: Record<string, string> = {};
+        if (!aggregateList.length) {
+            qb.addSelect('COUNT(*)', 'count');
+            aggregateAliasMap['count'] = 'count';
+            return aggregateAliasMap;
+        }
+        aggregateList.forEach((agg) => {
+            const { expression, selectAlias, sourceKey } = this.buildAggregateExpression(qb, entityAlias, agg);
+            qb.addSelect(expression, selectAlias);
+            aggregateAliasMap[sourceKey] = selectAlias;
+        });
+        return aggregateAliasMap;
+    }
+
+    applyGroupSortingAndPagination(
+        qb: SelectQueryBuilder<any>,
+        sort: string[] | undefined,
+        aliasMap: Record<string, string>,
+        limit?: number,
+        offset?: number
+    ) {
+        const normalizedSort = this.normalize(sort);
+        if (normalizedSort.length) {
+            const orderOptions = this.orderOptions(normalizedSort);
+            const orderOptionKeys = Object.keys(orderOptions) as Array<keyof typeof orderOptions>;
+            orderOptionKeys.forEach((key) => {
+                const resolvedKey = aliasMap[key] || key as string;
+                const value = orderOptions[key] as 'ASC' | 'DESC';
+                qb.addOrderBy(`"${resolvedKey}"`, value);
+            });
+        }
+        const hasLimit = limit !== undefined && limit !== null;
+        const hasOffset = offset !== undefined && offset !== null;
+
+        // Use both take/skip and limit/offset to ensure pagination is applied even when joins are present.
+        if (hasLimit) {
+            qb.take(limit);
+            qb.limit(limit);
+        }
+        if (hasOffset) {
+            qb.skip(offset);
+            qb.offset(offset);
+        }
+    }
+
+    async countGroups(qb: SelectQueryBuilder<any>) {
+        const clone = qb.clone();
+        clone.limit(undefined).offset(undefined).take(undefined).skip(undefined);
+        const rows = await clone.getRawMany();
+        return rows.length;
     }
 
     private buildJoinQueryForRelation(qb: SelectQueryBuilder<any>, entityAlias: string, relation: string) {
@@ -341,46 +522,109 @@ export class CrudHelperService {
         return field.includes('(');
     }
 
-    isAggregateFieldKey(key: string, alias: string): boolean {
-        return !key.startsWith(`${alias}_`)
+    isAggregateFieldKey(key: string, aggregateAliases: Set<string>): boolean {
+        return aggregateAliases.has(key);
     }
 
     getFieldFromQueryFieldKey(queryFieldKey: string, alias: string): string {
         return queryFieldKey.replace(`${alias}_`, '');
     }
 
-    buildGroupByRecordsQuery(qb: SelectQueryBuilder<any>, group: any, alias: string): SelectQueryBuilder<any> {
+    buildGroupByRecordsQuery(
+        qb: SelectQueryBuilder<any>,
+        group: any,
+        alias: string,
+        groupAliasMap: Record<string, string> = {},
+        aggregateAliasMap: Record<string, string> = {},
+        groupExpressionMap: Record<string, string> = {}
+    ): SelectQueryBuilder<any> {
+        const rootAlias = qb.expressionMap?.mainAlias?.name
+            ?? qb.expressionMap?.aliases?.find(a => a.metadata)?.name
+            ?? qb.expressionMap?.aliases?.[0]?.name
+            ?? (qb as any).alias
+            ?? alias;
         qb.andWhere(new Brackets(qb => {
+            const aggregateAliasSet = new Set(Object.values(aggregateAliasMap));
+            const reverseGroupAliasMap = Object.entries(groupAliasMap).reduce((acc, [sourceKey, aliasKey]) => {
+                acc[aliasKey] = sourceKey;
+                return acc;
+            }, {} as Record<string, string>);
             for (const key in group) {
-                if (group.hasOwnProperty(key) && !this.isAggregateFieldKey(key, alias)) {
+                if (group.hasOwnProperty(key) && !this.isAggregateFieldKey(key, aggregateAliasSet)) {
                     const value = group[key];
-                    const field = this.getFieldFromQueryFieldKey(key, alias);
-                    qb.andWhere(`${alias}.${field} = :${field}`, { [field]: value });
+                    const sourceField = reverseGroupAliasMap[key] || key;
+                    const cleanedField = sourceField.split(':')[0];
+                    const pathParts = cleanedField.split('.');
+                    const { alias: resolvedAlias, property } = this.ensureRelationPathJoined(qb as any, rootAlias, pathParts);
+                    const paramKey = this.sanitizeAlias(`${resolvedAlias}_${property}_${key}`);
+                    const expr = (sourceField.includes(':') && groupExpressionMap[key])
+                        ? groupExpressionMap[key]
+                        : `${resolvedAlias}.${property}`;
+                    qb.andWhere(`${expr} = :${paramKey}`, { [paramKey]: value });
                 }
             }
         }));
         return qb;
     }
 
-    getGroupName(group: any, alias: string): string {
-        return Object.keys(group)
-            .filter(key => !this.isAggregateFieldKey(key, alias))
-            .map(key => group[key])
-            .join('_');
+    private formatGroupValue(value: any, format?: string) {
+        if (!format) return value;
+        if (value === null || value === undefined) return value;
+        const dateVal = value instanceof Date ? value : new Date(value);
+        if (isNaN(dateVal.getTime())) return value;
+        switch (format) {
+            case 'MMM':
+                return dateVal.toLocaleString('en', { month: 'short' });
+            case 'MMMM':
+                return dateVal.toLocaleString('en', { month: 'long' });
+            case 'YYYY':
+                return dateVal.getFullYear();
+            case 'YYYY-MM':
+                return `${dateVal.getFullYear()}-${String(dateVal.getMonth() + 1).padStart(2, '0')}`;
+            case 'YYYY-MM-DD':
+                return `${dateVal.getFullYear()}-${String(dateVal.getMonth() + 1).padStart(2, '0')}-${String(dateVal.getDate()).padStart(2, '0')}`;
+            default:
+                return value;
+        }
     }
 
-    createGroupRecords(group: any, alias: string, groupData: any) {
-        const groupName = this.getGroupName(group, alias);
+    getGroupName(
+        group: any,
+        aggregateAliases: Set<string>,
+        groupByFields: string[],
+        groupAliasMap: Record<string, string>,
+        groupFormatMap: Record<string, string | undefined>
+    ): string {
+        const orderedValues = groupByFields
+            .map(field => {
+                const alias = groupAliasMap[field] ?? this.sanitizeAlias(field.replace(/\./g, '_'));
+                const rawVal = group[alias] ?? group[field] ?? group[field.replace(/\./g, '_')];
+                return this.formatGroupValue(rawVal, groupFormatMap[alias]);
+            })
+            .filter(v => v !== undefined && v !== null);
+
+        if (orderedValues.length === 0) {
+            return Object.keys(group)
+                .filter(key => !this.isAggregateFieldKey(key, aggregateAliases))
+                .map(key => group[key])
+                .join('_');
+        }
+
+        return orderedValues.join('_');
+    }
+
+    createGroupRecords(group: any, aggregateAliases: Set<string>, groupData: any, groupByFields: string[], groupAliasMap: Record<string, string>, groupFormatMap: Record<string, string | undefined>) {
+        const groupName = this.getGroupName(group, aggregateAliases, groupByFields, groupAliasMap, groupFormatMap);
         return {
             groupName,
             groupData
         }
     }
-    createGroupMeta(group: any, alias: string) {
-        const groupName = this.getGroupName(group, alias);
+    createGroupMeta(group: any, aggregateAliases: Set<string>, groupByFields: string[], groupAliasMap: Record<string, string>, groupFormatMap: Record<string, string | undefined>) {
+        const groupName = this.getGroupName(group, aggregateAliases, groupByFields, groupAliasMap, groupFormatMap);
         const groupAggregateValues = {}
         for (const key in group) {
-            if (group.hasOwnProperty(key) && this.isAggregateFieldKey(key, alias)) {
+            if (group.hasOwnProperty(key) && this.isAggregateFieldKey(key, aggregateAliases)) {
                 const value = group[key];
                 groupAggregateValues[key] = value;
             }
@@ -393,27 +637,21 @@ export class CrudHelperService {
 
     async countGroupedRecords(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string) { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
         const { limit, offset, ...rest } = basicFilterDto;
-
         const filteredDto = { ...rest, limit: undefined, offset: undefined };
 
-        const filteredQB = this.buildFilterQuery(qb, filteredDto as BasicFilterDto, entityAlias);
+        const filteredQB = this.buildFilterQuery(qb, filteredDto as BasicFilterDto, entityAlias, undefined, undefined, undefined, FilterCombinator.AND, false, false);
 
-        // Select only the group field and count distinct rows
-        const groupByField = filteredDto.groupBy;
+        const groupByFields = this.normalize(filteredDto.groupBy);
 
-        if (!groupByField || (Array.isArray(groupByField) && groupByField.length !== 1)) {
+        if (!groupByFields || groupByFields.length === 0) {
             throw new Error(ERROR_MESSAGES.INVALID_GROUP_BY_COUNT);
         }
 
-         const field = Array.isArray(groupByField) ? groupByField[0] : groupByField;
-          const rawResults = await filteredQB
-        .select([]) // Remove prior select fields
-        .addSelect(`${entityAlias}.${field}`, 'groupField')
-        .groupBy(`${entityAlias}.${field}`)
-        .limit(undefined) // Important: prevent LIMIT 1 from propagating
-        .offset(undefined)
-        .getRawMany();
+        this.applyGroupBySelections(filteredQB, groupByFields, entityAlias);
+        this.applyAggregates(filteredQB, ['count'], entityAlias);
+        filteredQB.limit(undefined).offset(undefined).take(undefined).skip(undefined);
 
+        const rawResults = await filteredQB.getRawMany();
         return rawResults.length;
     }
 

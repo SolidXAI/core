@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
@@ -94,6 +94,7 @@ interface ImportRecordsResult {
 @Injectable()
 export class ImportTransactionService extends CRUDService<ImportTransaction> {
   constructor(
+    @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,
@@ -305,9 +306,12 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       : userPermissions[permissionKey] === true;
 
     if (!hasPermission) {
-      throw new ForbiddenException(
-        `Missing permission: ${permissionKey}`
-      );
+      const action = permissionKey.split('.').pop()!;
+      const message = ERROR_MESSAGES.PERMISSION_MESSAGES[action]?.(modelName) ?? 'You are not allowed to perform this action.';
+      throw new ForbiddenException({
+        message,
+        errorCode: 'permission-denied',
+      });
     }
 
     // Get the import file media object from the import transaction

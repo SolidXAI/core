@@ -1,4 +1,4 @@
-import { Column, CreateDateColumn, DeleteDateColumn, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Column, CreateDateColumn, DeleteDateColumn, Index, ManyToOne, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import type { User } from "./user.entity";
 import { Exclude, Expose, Type } from "class-transformer";
 
@@ -15,6 +15,7 @@ export abstract class CommonEntity {
     updatedAt: Date;
 
     @DeleteDateColumn({ name: "deleted_at" })
+    @Index()
     deletedAt: Date;
 
     @Column({ name: "deletedTracker", default: "not-deleted" })
@@ -49,5 +50,4 @@ export abstract class CommonEntity {
     @Expose()
     @Column({ name: `updated_by_id`, nullable: true })
     updatedBy: number;
-    
 }

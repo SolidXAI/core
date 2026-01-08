@@ -2,6 +2,8 @@ import { Inject, Injectable, Logger } from "@nestjs/common";
 import { ConfigService, ConfigType } from "@nestjs/config";
 import { CommonEntity } from "src/entities/common.entity";
 import { FieldMetadata } from "src/entities/field-metadata.entity";
+import { LegacyCommonEntity } from "src/entities/legacy-common.entity";
+import { LegacyCommonWithIdEntity } from "src/entities/legacy-common-with-id.entity";
 import { Media } from "src/entities/media.entity";
 import { MediaStorageProvider } from "src/interfaces";
 import { FileService } from "src/services/file.service";
@@ -28,9 +30,13 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
     }
 
     async retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
-        if (!(entity instanceof CommonEntity)) {
-            throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
+        const isSupportedEntity = entity instanceof CommonEntity
+            || entity instanceof LegacyCommonEntity
+            || entity instanceof LegacyCommonWithIdEntity;
+        if (!isSupportedEntity) {
+            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntity or LegacyCommonWithIdEntity"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
+        // @ts-ignore
         const media = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
 
         // TODO: Check if the mediaStorageProvider (s3 in this case) is configured with a public bucket or not. 
@@ -56,8 +62,11 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
     }
 
     async store(files: Express.Multer.File[], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
-        if (!(entity instanceof CommonEntity)) {
-            throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
+        const isSupportedEntity = entity instanceof CommonEntity
+            || entity instanceof LegacyCommonEntity
+            || entity instanceof LegacyCommonWithIdEntity;
+        if (!isSupportedEntity) {
+            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntity or LegacyCommonWithIdEntity"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
         const result: Media[] = [];
         for (const file of files) {
@@ -73,6 +82,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
 
             // Create an entry in the media table
             const mediaEntity = await this.mediaRepository.createMedia({
+                // @ts-ignore
                 entityId: entity.id,
                 modelMetadataId: mediaFieldMetadata.model.id,
                 relativeUri: awsFileUrl,
@@ -89,10 +99,15 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
     }
 
     async delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void> {
-        if (!(entity instanceof CommonEntity)) {
-            throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
+        const isSupportedEntity = entity instanceof CommonEntity
+            || entity instanceof LegacyCommonEntity
+            || entity instanceof LegacyCommonWithIdEntity;
+        if (!isSupportedEntity) {
+            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntity or LegacyCommonWithIdEntity"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
+        // @ts-ignore
         const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
+        // @ts-ignore
         this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
         existingMedia.forEach(media => {
             this.fileService.deleteFromS3(media.relativeUri, mediaFieldMetadata.mediaStorageProvider.bucketName); //TODO

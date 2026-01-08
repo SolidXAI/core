@@ -3,6 +3,7 @@ import { ApiProperty } from "@nestjs/swagger";
 import { IsEnum, IsOptional } from "class-validator";
 import { PaginationQueryDto } from "./pagination-query.dto";
 import { Timestamp } from "typeorm";
+import { BasicGroupFilterDto } from "./basic-group-filters.dto";
 
 export enum SoftDeleteFilter {
     INCLUSIVE = "inclusive",
@@ -22,6 +23,10 @@ export class BasicFilterDto extends PaginationQueryDto {
     @IsOptional()
     @ApiProperty({ description: "groupBy" })
     readonly groupBy?: string[];
+
+    @IsOptional()
+    @ApiProperty({ description: "aggregates" })
+    readonly aggregates?: string[];
 
 
     @IsOptional()
@@ -51,7 +56,7 @@ export class BasicFilterDto extends PaginationQueryDto {
 
     @IsOptional()
     @ApiProperty({ description: "groupFilter" })
-    groupFilter?: BasicFilterDto
+    groupFilter?: BasicGroupFilterDto
 
     @IsOptional()
     @ApiProperty({ description: "locale" })

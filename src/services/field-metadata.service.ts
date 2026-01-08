@@ -12,13 +12,15 @@ import { SelectionDynamicQueryDto } from '../dtos/selection-dynamic-query.dto';
 import { UpdateFieldMetaDataDto } from '../dtos/update-field-metadata.dto';
 import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
-import { ISelectionProviderValues } from '../interfaces';
+import { ISelectionProviderValues, MediaStorageProvider } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import qs from 'qs';
 import { ResolveS3UrlDto } from 'src/dtos/resolve-s3-url.dto';
+import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
 import { ConfigService } from '@nestjs/config';
 import { FileService } from './file.service';
+import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
 
 
 @Injectable()
@@ -27,6 +29,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         private readonly fieldMetadataRepo: FieldMetadataRepository,
         private readonly configService: ConfigService,
         private readonly fileService: FileService,
+        private readonly mediaStorageProviderMetadataRepository: MediaStorageProviderMetadataRepository,
 
         @InjectDataSource()
         private readonly dataSource: DataSource,
@@ -60,6 +63,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                 computedFieldTriggerConfig: field.computedFieldTriggerConfig ?? [], // Ensure it's an array, default to empty if not provided
                 computedFieldValueProviderName: field.computedFieldValueProvider,
                 computedFieldValueProviderCtxt: field.computedFieldValueProviderCtxt ? JSON.parse(field.computedFieldValueProviderCtxt) : {}, // Parse the context if it exists, default to empty object
+                eventContext: {}
             };
         });
 
@@ -776,7 +780,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "encrypt",
                     "encryptionType",
                     "decryptWhen",
-                    "columnName"
+                    "columnName",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.richText:
@@ -1081,7 +1086,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "encryptionType",
                     "decryptWhen",
                     "columnName",
-                    "isUserKey"
+                    "isUserKey",
+                    "enableAuditTracking"
                 ];
 
             case SolidFieldType.uuid:
@@ -1280,75 +1286,116 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         return fieldObject;
     }
 
+    // async resolveS3Url(resolveS3UrlDto: ResolveS3UrlDto) {
+
+    //     const { modelName, fieldName, fieldValue, s3KeyFieldName } = resolveS3UrlDto;
+
+    //     // ------------------------------------------------
+    //     // 1. Load model metadata
+    //     // ------------------------------------------------
+    //     const modelRepo = this.dataSource.getRepository(ModelMetadata);
+    //     const model = await modelRepo.findOne({
+    //         where: { singularName: modelName },
+    //         relations: ['fields']
+    //     });
+
+    //     if (!model) {
+    //         throw new NotFoundException(`Model ${modelName} not found`);
+    //     }
+
+    //     // ------------------------------------------------
+    //     // 2. Validate the field we are filtering by
+    //     // ------------------------------------------------
+    //     const filterFieldMeta = model.fields.find(f => f.name === fieldName);
+    //     if (!filterFieldMeta) {
+    //         throw new NotFoundException(
+    //             `Field ${fieldName} not found in model ${modelName}`
+    //         );
+    //     }
+
+    //     // ------------------------------------------------
+    //     // 3. Load the actual entity repository
+    //     // ------------------------------------------------
+    //     const entityRepo = this.dataSource.getRepository(model.singularName);
+
+    //     // ------------------------------------------------
+    //     // 4. Query using fieldName = fieldValue
+    //     // ------------------------------------------------
+    //     const record = await entityRepo.findOne({
+    //         where: { [fieldName]: fieldValue }
+    //     });
+
+    //     if (!record) {
+    //         throw new NotFoundException(
+    //             `${modelName} record not found for ${fieldName}="${fieldValue}"`
+    //         );
+    //     }
+
+    //     // ------------------------------------------------
+    //     // 5. Extract S3 key from s3KeyFieldName
+    //     // ------------------------------------------------
+    //     const s3Key = record[s3KeyFieldName];
+
+    //     if (!s3Key) {
+    //         throw new NotFoundException(
+    //             `Field "${s3KeyFieldName}" has no value in ${modelName}.${fieldName}="${fieldValue}"`
+    //         );
+    //     }
+
+    //     // ------------------------------------------------
+    //     // 6. Generate signed or public URL
+    //     // ------------------------------------------------
+    //     let url = "";
+
+    //     // TODO  - get 
+    //     if (resolveS3UrlDto.isPrivate == "true") {
+    //         const expiryInSeconds = 60 * 60;
+    //         url = await this.fileService.getSignedUrl(s3Key, expiryInSeconds, resolveS3UrlDto.bucketName);
+    //     } else {
+    //         url = `https://${resolveS3UrlDto.bucketName}.s3.${this.configService.get('S3_AWS_REGION_NAME')}.amazonaws.com/${s3Key}`;
+    //     }
+    //     return { url: url }
+    // }
+
     async resolveS3Url(resolveS3UrlDto: ResolveS3UrlDto) {
-
-        const { modelName, fieldName, fieldValue, s3KeyFieldName } = resolveS3UrlDto;
-
-        // ------------------------------------------------
-        // 1. Load model metadata
-        // ------------------------------------------------
-        const modelRepo = this.dataSource.getRepository(ModelMetadata);
-        const model = await modelRepo.findOne({
-            where: { singularName: modelName },
-            relations: ['fields']
-        });
-
-        if (!model) {
-            throw new NotFoundException(`Model ${modelName} not found`);
-        }
-
-        // ------------------------------------------------
-        // 2. Validate the field we are filtering by
-        // ------------------------------------------------
-        const filterFieldMeta = model.fields.find(f => f.name === fieldName);
-        if (!filterFieldMeta) {
-            throw new NotFoundException(
-                `Field ${fieldName} not found in model ${modelName}`
-            );
-        }
-
-        // ------------------------------------------------
-        // 3. Load the actual entity repository
-        // ------------------------------------------------
-        const entityRepo = this.dataSource.getRepository(model.singularName);
-
-        // ------------------------------------------------
-        // 4. Query using fieldName = fieldValue
-        // ------------------------------------------------
-        const record = await entityRepo.findOne({
-            where: { [fieldName]: fieldValue }
-        });
-
-        if (!record) {
-            throw new NotFoundException(
-                `${modelName} record not found for ${fieldName}="${fieldValue}"`
-            );
-        }
-
-        // ------------------------------------------------
-        // 5. Extract S3 key from s3KeyFieldName
-        // ------------------------------------------------
-        const s3Key = record[s3KeyFieldName];
-
-        if (!s3Key) {
-            throw new NotFoundException(
-                `Field "${s3KeyFieldName}" has no value in ${modelName}.${fieldName}="${fieldValue}"`
-            );
-        }
-
-        // ------------------------------------------------
-        // 6. Generate signed or public URL
-        // ------------------------------------------------
         let url = "";
+        const normalizedKey = this.normalizeS3Key(resolveS3UrlDto.s3Key);
 
-        // TODO  - get 
+        let resolvedBucketName = resolveS3UrlDto.bucketName;
+        if (resolveS3UrlDto.mediaStorageProviderUserKey) {
+            const mediaStorageProvider = await this.mediaStorageProviderMetadataRepository.findOne({
+                where: {
+                    name: resolveS3UrlDto.mediaStorageProviderUserKey
+                }
+            });
+            if (!mediaStorageProvider) {
+                throw new NotFoundException(`MediaStorageProviderMetadata with user key ${resolveS3UrlDto.mediaStorageProviderUserKey} not found`);
+            }
+            resolvedBucketName = mediaStorageProvider.bucketName;
+        }
+        this.logger.debug(`INSIDE::resolveS3Url:: resolvedBucketName: ${resolvedBucketName}`)
+ 
         if (resolveS3UrlDto.isPrivate == "true") {
             const expiryInSeconds = 60 * 60;
-            url = await this.fileService.getSignedUrl(s3Key, expiryInSeconds, resolveS3UrlDto.bucketName);
+            url = await this.fileService.getSignedUrl(normalizedKey, expiryInSeconds, resolvedBucketName);
         } else {
-            url = `https://${resolveS3UrlDto.bucketName}.s3.${this.configService.get('S3_AWS_REGION_NAME')}.amazonaws.com/${s3Key}`;
+            url = `https://${resolvedBucketName}.s3.${this.configService.get(
+                'S3_AWS_REGION_NAME',
+            )}.amazonaws.com/${normalizedKey}`;
         }
         return { url: url }
+    }
+
+    private normalizeS3Key(input: string): string {
+        try {
+            const url = new URL(input);
+
+            // remove leading slash from pathname
+            return decodeURIComponent(url.pathname.replace(/^\/+/, ""));
+        } catch {
+            // not a valid URL → treat as raw S3 key
+            return input;
+        }
     }
 }
 

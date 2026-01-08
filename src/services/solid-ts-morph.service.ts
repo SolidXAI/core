@@ -47,8 +47,8 @@ export class SolidTsMorphService {
             },
         });
 
-        this.logger.log(`SolidTsMorphService repoRoot = ${this.repoRoot}`);
-        Object.entries(this.workspaceMap).forEach(([k, v]) => this.logger.log(`workspace '${k}' => ${v}`));
+        this.logger.debug(`SolidTsMorphService repoRoot = ${this.repoRoot}`);
+        Object.entries(this.workspaceMap).forEach(([k, v]) => this.logger.debug(`workspace '${k}' => ${v}`));
     }
 
     // ---- repo-root discovery ----

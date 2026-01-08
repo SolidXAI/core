@@ -52,8 +52,10 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
     }
 
     async onModuleInit(): Promise<void> {
+        const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
+
         // we will start subscriber only if the current service role is subscriber. 
-        if (this.url && ['both', 'subscriber'].includes(this.serviceRole)) {
+        if (this.url && ['both', 'subscriber'].includes(this.serviceRole) && solidCliRunning === "false") {
 
             // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
             // const connection = await amqp.connect(this.url);
@@ -92,7 +94,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 async (rawMessage) => {
                     if (rawMessage) {
                         const messageContentString = rawMessage.content.toString();
-                        this.logger.debug(`RabbitMqSubscriber Received raw message: ${messageContentString}`);
+                        // this.logger.debug(`RabbitMqSubscriber Received raw message: ${messageContentString}`);
 
                         let message: QueueMessage<T> = null;
 
