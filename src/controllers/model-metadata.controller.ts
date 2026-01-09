@@ -5,6 +5,7 @@ import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { UpdateModelMetaDataDto } from '../dtos/update-model-metadata.dto';
 import { ModelMetadataService } from '../services/model-metadata.service';
+import { NavigationDto } from 'src/dtos/navigation.dto';
 
 @Controller('model-metadata')
 @ApiTags("Solid Core")
@@ -43,11 +44,29 @@ export class ModelMetadataController {
             offset: 0,
             filters: [],
             groupBy: [],
-            populate: [],   
+            populate: [],
             populateMedia: [],
             sort: []
         }
         return this.modelMetadataService.findMany(basicFilterDto);
+    }
+
+    @ApiBearerAuth("jwt")
+    @ApiQuery({ name: 'modelName', required: true, type: String })
+    @ApiQuery({ name: 'recordId', required: true, type: Number })
+    @ApiQuery({ name: 'limit', required: false, type: Number })
+    @ApiQuery({ name: 'offset', required: false, type: Number })
+    @ApiQuery({ name: 'fields', required: false, type: Array })
+    @ApiQuery({ name: 'sort', required: false, type: Array })
+    @ApiQuery({ name: 'groupBy', required: false, type: Array })
+    @ApiQuery({ name: 'populate', required: false, type: Array })
+    @ApiQuery({ name: 'populateMedia', required: false, type: Array })
+    @ApiQuery({ name: 'filters', required: false, type: Array })
+    @Get("/navigation")
+    async navigation(
+        @Query() navigationDto: NavigationDto
+    ) {
+        return this.modelMetadataService.navigation(navigationDto);
     }
 
     @ApiBearerAuth("jwt")
@@ -93,5 +112,6 @@ export class ModelMetadataController {
     async delete(@Param('id') id: number) {
         return this.modelMetadataService.remove(id);
     }
+
 
 }
