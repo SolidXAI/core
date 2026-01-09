@@ -327,11 +327,11 @@ export class AuthenticationService {
     }
 
     private isWelcomeEmailEnabled(): boolean {
-        return (process.env.SEND_WELCOME_EMAIL_ON_SIGNUP || '').toString().toLowerCase() === 'true';
+        return this.iamConfiguration.sendWelcomeEmailOnSignup;
     }
 
     private isWelcomeSmsEnabled(): boolean {
-        return (process.env.SEND_WELCOME_SMS_ON_SIGNUP || '').toString().toLowerCase() === 'true';
+        return this.iamConfiguration.sendWelcomeSmsOnSignup;
     }
 
     private async notifyUserOnSignup(user: User) {
