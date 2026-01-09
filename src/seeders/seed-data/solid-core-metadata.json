@@ -5269,9 +5269,9 @@
   ],
   "users": [
     {
-      "username": "admin@example.service.com",
-      "email": "admin@example.service.com",
-      "password": "Admin@3214$",
+      "username": "sa",
+      "email": "no-reply@solidxai.com",
+      "password": "",
       "forcePasswordChange": true,
       "fullName": "Default Admin",
       "roles": [
@@ -12457,6 +12457,15 @@
       "description": "This template notifies users that their account password was successfully changed.",
       "active": true,
       "type": "text"
+    },
+    {
+      "name": "email-on-signup",
+      "displayName": "Default: Email On Signup",
+      "body": "email-on-signup.handlebars.html",
+      "subject": "Welcome to {{solidAppName}}",
+      "description": "Welcome email sent to users after signup.",
+      "active": true,
+      "type": "text"
     }
   ],
   "smsTemplates": [
@@ -12483,6 +12492,15 @@
       "displayName": "Default: Forgot Password",
       "body": "forgot-password.handlebars.txt",
       "description": "This template is used to send the verification token required by users to reset their password.",
+      "smsProviderTemplateId": "666bd246d6fc051047560595",
+      "active": true,
+      "type": "text"
+    },
+    {
+      "name": "text-on-signup",
+      "displayName": "Default: Text On Signup",
+      "body": "text-on-signup.handlebars.txt",
+      "description": "Welcome SMS sent to users after signup.",
       "smsProviderTemplateId": "666bd246d6fc051047560595",
       "active": true,
       "type": "text"

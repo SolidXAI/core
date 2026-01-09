@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { AuthenticationService } from '../services/authentication.service';
 import { UserService } from '../services/user.service';
+import { v4 as uuidv4 } from 'uuid';
 
 @Injectable()
 export class UserSeederService {
@@ -13,13 +14,13 @@ export class UserSeederService {
 
     async seed() {
         // see if the user already exists, 
-        let user = await this.userService.findOneByUsername("admin@example.service.com");
+        let user = await this.userService.findOneByUsername("sa");
 
         if (!user) {
             user = await this.authenticationService.signUp({
-                username: 'admin@example.service.com',
-                email: 'admin@example.service.com',
-                password: 'Admin@3214$',
+                username: 'sa',
+                email: 'no-reply@solidxai.com',
+                password: uuidv4(),
             });    
 
             this.logger.log(`Newly created user is ${user}`);

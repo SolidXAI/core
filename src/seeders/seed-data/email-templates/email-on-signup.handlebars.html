@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>Welcome to {{ solidAppName }}</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+        @import url("https://fonts.googleapis.com/css?family=Nunito+Sans:400,700&display=swap");
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f7;
+            font-family: "Nunito Sans", Helvetica, Arial, sans-serif;
+            color: #333;
+        }
+
+        .email-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo img {
+            height: 50px;
+        }
+
+        .content-box {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+        }
+
+        .title {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .intro {
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0 0 12px 0;
+        }
+
+        .credentials {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            margin: 18px 0;
+            font-size: 16px;
+        }
+
+        .button-container {
+            text-align: center;
+            margin: 24px 0 30px 0;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #722ED1;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 4px;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #6b6e76;
+            margin-top: 40px;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .email-wrapper {
+                width: 100% !important;
+                padding: 20px 0 !important;
+                margin: 0;
+            }
+
+            .content-box {
+                padding: 20px !important;
+                border-radius: 0;
+            }
+
+            .title {
+                font-size: 18px !important;
+            }
+
+            .button {
+                padding: 10px !important;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-wrapper">
+        {{#if companyLogoUrl}}
+        <div class="logo">
+            <img src="{{companyLogoUrl}}" alt="Company Logo" />
+        </div>
+        {{/if}}
+
+        <div class="content-box">
+            <h2 class="title">Welcome, {{ fullName }}!</h2>
+            <p class="intro">
+                We’re excited to have you on <strong>{{ solidAppName }}</strong>. Your account has been created and is
+                ready to use.
+            </p>
+            <div class="credentials">
+                <p><strong>Username:</strong> {{ userName }}</p>
+                <p><strong>Email:</strong> {{ email }}</p>
+            </div>
+            {{#if frontendLoginPageUrl}}
+            <div class="button-container">
+                <a class="button" href="{{ frontendLoginPageUrl }}" target="_blank" rel="noopener">Go to Login</a>
+            </div>
+            {{/if}}
+            <div class="credentials">
+                <p style="margin:0 0 8px 0;"><strong>How to sign in</strong></p>
+                <p class="intro" style="margin:0 0 8px 0;">
+                    Please check with your system administrator for the login method configured for your account.
+                </p>
+                <ul style="padding-left:20px; margin:0;">
+                    <li class="intro" style="margin-bottom:6px;">If password-based sign-in is enabled, your administrator will share or manage your password separately.</li>
+                    <li class="intro" style="margin-bottom:6px;">If OTP-based sign-in is enabled, you can log in with your email or mobile number and retrieve a one-time code.</li>
+                    <li class="intro" style="margin-bottom:0;">If Google OAuth is enabled, sign in with your Google Workspace credentials.</li>
+                </ul>
+            </div>
+            <p class="intro">
+                If you didn’t request this account, you can safely ignore this email or contact support.
+            </p>
+            <p class="intro">
+                Cheers,<br />
+                The {{ solidAppName }} Team
+            </p>
+        </div>
+
+        <div class="footer">
+            © 2025 <a href="{{ solidAppWebsiteUrl }}" target="_blank">{{ solidAppName }}</a>. All rights reserved.
+        </div>
+    </div>
+</body>
+
+</html>
