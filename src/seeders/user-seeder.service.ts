@@ -19,7 +19,7 @@ export class UserSeederService {
         if (!user) {
             user = await this.authenticationService.signUp({
                 username: 'sa',
-                email: 'no-reply@solidxai.com',
+                email: 'sa@solidxai.com',
                 password: uuidv4(),
             });    
 
