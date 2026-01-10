@@ -1,8 +1,8 @@
-import { BadRequestException, Inject, NotFoundException } from "@nestjs/common";
+import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
-import { CommonEntity, SolidBaseRepository, User } from "src";
+import { CommonEntity, FileService, SolidBaseRepository, User } from "src";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
@@ -34,7 +34,6 @@ import { ShortTextFieldCrudManager } from "../helpers/field-crud-managers/ShortT
 import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCrudManager";
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
 import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper.service";
-import { FileService } from "./file.service";
 import { HashingService } from "./hashing.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
@@ -45,19 +44,19 @@ import { BasicGroupFilterDto } from "src/dtos/basic-group-filters.dto";
 export class CRUDService<T extends CommonEntity> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
     constructor(
-        readonly modelMetadataService: ModelMetadataService,
-        readonly moduleMetadataService: ModuleMetadataService,
-        readonly configService: ConfigService,
-        readonly fileService: FileService,
-        readonly discoveryService: DiscoveryService,
-        readonly crudHelperService: CrudHelperService,
+        readonly modelMetadataService: ModelMetadataService, // go away
+        readonly moduleMetadataService: ModuleMetadataService, // go away
+        readonly configService: ConfigService, // we don't use it - go away
+        readonly fileService: FileService, // we don't use it - go away
+        readonly discoveryService: DiscoveryService, // go away
+        readonly crudHelperService: CrudHelperService, // go away
         readonly entityManager: EntityManager,
         readonly repo: SolidBaseRepository<T>,
         readonly modelName: string,
         readonly moduleName: string,
         readonly moduleRef: ModuleRef,
-        readonly defaultEntityManager? : EntityManager
-        
+        readonly defaultEntityManager?: EntityManager
+
         //We can just have the Model Entity here
     ) { }
 
@@ -435,11 +434,11 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     }
 
     private isSkipComputation(isPartialUpdate: boolean, computedFieldMetadata: FieldMetadata) {
-       if (isPartialUpdate) return true; // If it is a partial update, then skip computation
-       if (computedFieldMetadata.computedFieldTriggerConfig && computedFieldMetadata.computedFieldTriggerConfig.length > 0) {
-           return true; // computedFieldTriggerConfig is a new field introduced as part of the IEntityComputedFieldProvider new interface, so this computation will be skiipped in crud service & will be called in the subscriber instead
-       }
-       return false; // If it is not a partial update, then do not skip computation
+        if (isPartialUpdate) return true; // If it is a partial update, then skip computation
+        if (computedFieldMetadata.computedFieldTriggerConfig && computedFieldMetadata.computedFieldTriggerConfig.length > 0) {
+            return true; // computedFieldTriggerConfig is a new field introduced as part of the IEntityComputedFieldProvider new interface, so this computation will be skiipped in crud service & will be called in the subscriber instead
+        }
+        return false; // If it is not a partial update, then do not skip computation
     }
 
     async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}) {
@@ -705,7 +704,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return mediaDetails as MediaWithFullUrl[];
     }
 
-    async findOne(id: number, query: any={}, solidRequestContext: any = {}) {
+    async findOne(id: number, query: any = {}, solidRequestContext: any = {}) {
         const { populate = [], fields = [], populateMedia = [] } = query;
 
         // const normalizedFields = this.crudHelperService.normalize(fields);
@@ -1065,7 +1064,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return updatedEntity
     }
 
-    private getDefaultEntityManager(){
+    private getDefaultEntityManager() {
         return this.defaultEntityManager ?? this.entityManager;
     }
 }
