@@ -337,6 +337,8 @@ import { ModelSequence } from './entities/model-sequence.entity';
 import { ModelSequenceService } from './services/model-sequence.service';
 import { ModelSequenceController } from './controllers/model-sequence.controller';
 import { ModelSequenceRepository } from './repository/model-sequence.repository';
+import { CacheModule } from '@nestjs/cache-manager';
+import { CacheManagerOptions } from './config/cache.options';
 
 
 @Global()
@@ -380,6 +382,8 @@ import { ModelSequenceRepository } from './repository/model-sequence.repository'
       ViewMetadata,
       ModelSequence,
     ]),
+
+    CacheModule.registerAsync(CacheManagerOptions),
     ConfigModule.forFeature(appBuilderConfig),
     ConfigModule.forFeature(commonConfig),
     ConfigModule.forFeature(iamConfig),
