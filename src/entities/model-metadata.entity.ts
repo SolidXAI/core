@@ -33,8 +33,8 @@ export class ModelMetadata extends CommonEntity {
     @Column({ name: "enable_soft_delete", default: false })
     enableSoftDelete: boolean;
 
-    @Column({ name: "enable_audit_tracking", default: true })
-    enableAuditTracking: boolean = true;
+    @Column({ name: "enable_audit_tracking", default: false })
+    enableAuditTracking: boolean = false;
 
     @Column({ name: "internationalisation", default: false })
     internationalisation: boolean;

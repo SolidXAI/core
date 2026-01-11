@@ -2564,7 +2564,6 @@
         "tableName": "ss_scheduled_jobs",
         "userKeyFieldUserKey": "scheduleName",
         "isChild": false,
-        "enableAuditTracking": true,
         "enableSoftDelete": false,
         "draftPublishWorkflow": false,
         "internationalisation": false,
@@ -2586,8 +2585,7 @@
             "encryptionType": null,
             "decryptWhen": null,
             "columnName": null,
-            "isUserKey": true,
-            "enableAuditTracking": false
+            "isUserKey": true
           },
           {
             "name": "isActive",
@@ -2601,8 +2599,7 @@
             "encrypt": false,
             "encryptionType": null,
             "decryptWhen": null,
-            "columnName": null,
-            "enableAuditTracking": false
+            "columnName": null
           },
           {
             "name": "frequency",
@@ -2627,7 +2624,6 @@
             "encryptionType": null,
             "decryptWhen": null,
             "columnName": null,
-            "enableAuditTracking": false,
             "isMultiSelect": false
           },
           {
@@ -2644,8 +2640,7 @@
             "encrypt": false,
             "encryptionType": null,
             "decryptWhen": null,
-            "columnName": null,
-            "enableAuditTracking": false
+            "columnName": null
           },
           {
             "name": "endTime",
@@ -2661,8 +2656,7 @@
             "encrypt": false,
             "encryptionType": null,
             "decryptWhen": null,
-            "columnName": null,
-            "enableAuditTracking": false
+            "columnName": null
           },
           {
             "name": "startDate",
@@ -2678,8 +2672,7 @@
             "encrypt": false,
             "encryptionType": null,
             "decryptWhen": null,
-            "columnName": null,
-            "enableAuditTracking": false
+            "columnName": null
           },
           {
             "name": "endDate",
@@ -2695,8 +2688,7 @@
             "encrypt": false,
             "encryptionType": null,
             "decryptWhen": null,
-            "columnName": null,
-            "enableAuditTracking": false
+            "columnName": null
           },
           {
             "name": "dayOfMonth",
@@ -2714,8 +2706,7 @@
             "encrypt": false,
             "encryptionType": null,
             "decryptWhen": null,
-            "columnName": null,
-            "enableAuditTracking": false
+            "columnName": null
           },
           {
             "name": "lastRunAt",
@@ -2730,8 +2721,7 @@
             "encrypt": false,
             "encryptionType": null,
             "decryptWhen": null,
-            "columnName": null,
-            "enableAuditTracking": false
+            "columnName": null
           },
           {
             "name": "nextRunAt",
@@ -2746,8 +2736,7 @@
             "encrypt": false,
             "encryptionType": null,
             "decryptWhen": null,
-            "columnName": null,
-            "enableAuditTracking": false
+            "columnName": null
           },
           {
             "name": "dayOfWeek",
@@ -2774,7 +2763,6 @@
             "encryptionType": null,
             "decryptWhen": null,
             "columnName": null,
-            "enableAuditTracking": false,
             "isMultiSelect": true
           },
           {
@@ -2795,7 +2783,6 @@
             "decryptWhen": null,
             "columnName": null,
             "isUserKey": false,
-            "enableAuditTracking": false,
             "selectionValueType": "string",
             "selectionDynamicProvider": "ListOfScheduledJobsSelectionProvider",
             "selectionDynamicProviderCtxt": "{}"
