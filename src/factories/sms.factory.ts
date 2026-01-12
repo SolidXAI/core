@@ -3,7 +3,7 @@ import { ConfigType } from "@nestjs/config";
 import { ModuleRef } from "@nestjs/core";
 import commonConfig from "src/config/common.config";
 import { SolidRegistry } from "src/helpers/solid-registry";
-import { IMail } from "src/interfaces";
+import { ISMS } from "src/interfaces";
 
 function norm(s?: string) {
     return s?.trim().toLowerCase();
@@ -11,27 +11,33 @@ function norm(s?: string) {
 
 // This factory will be use to return a mail service instance, using the configured environment variables
 @Injectable()
-export class MailFactory {
+export class SmsFactory {
     private readonly logger = new Logger(this.constructor.name);
+
     constructor(
-        private readonly moduleRef: ModuleRef, // Use the module ref to dynamically resolve the mail service
+        private readonly moduleRef: ModuleRef,
         private readonly solidRegistry: SolidRegistry,
         @Inject(commonConfig.KEY)
         private readonly commonConfiguration: ConfigType<typeof commonConfig>,
     ) { }
 
-    getMailService(): IMail {
-        const mailServiceName = this.commonConfiguration.emailProvider;
-        const mailProviders = this.solidRegistry.getMailProviders();
-        // Return the instance which matches the mailServiceName
-        if (!mailProviders.length) {
+    getSmsService(name: string = null): ISMS {
+        // This is the default provider
+        const smsServiceName = name || this.commonConfiguration.smsProvider;
+        if (!smsServiceName) {
+            throw new Error("Unable to resolve sms provider")
+        }
+        const smsProviders = this.solidRegistry.getSmsProviders();
+
+        // Return the instance which matches the smsServicename
+        if (!smsProviders.length) {
             // throw new Error("No mail providers are registered.");
-            this.logger.error("No mail providers are registered.");
+            this.logger.error("No sms providers are registered.");
         }
 
-        const mailServiceProvider = mailProviders.find(provider => provider.name === mailServiceName);
+        const smsServiceProvider = smsProviders.find(provider => provider.name === smsServiceName);
 
-        return mailServiceProvider.instance as IMail;
+        return smsServiceProvider.instance as ISMS;
     }
 
 }

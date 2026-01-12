@@ -8,11 +8,13 @@ import { PollerService } from 'src/services/poller.service';
 import { TwilioSMSService } from 'src/services/sms/TwilioSMSService';
 import smsQueueOptions from './twilio-sms-queue-options';
 import { RabbitMqSubscriber } from 'src/services/queues/rabbitmq-subscriber.service';
+import { SmsFactory } from 'src/factories/sms.factory';
 
 @Injectable()
 export class TwilioSmsQueueSubscriberRabbitmq extends RabbitMqSubscriber<any> {
     constructor(
-        private readonly smsService: TwilioSMSService,
+        // private readonly smsService: TwilioSMSService,
+        private readonly smsFactory: SmsFactory,
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
         readonly poller: PollerService,
@@ -27,6 +29,8 @@ export class TwilioSmsQueueSubscriberRabbitmq extends RabbitMqSubscriber<any> {
     }
 
     subscribe(message: QueueMessage<any>) {
-        return this.smsService.sendSMSSynchronously(message);
+        const smsService: TwilioSMSService = this.smsFactory.getSmsService(TwilioSMSService.name) as TwilioSMSService;
+        return smsService.sendSMSSynchronously(message);
+        // return this.smsService.sendSMSSynchronously(message);
     }
 }

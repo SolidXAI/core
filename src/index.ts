@@ -24,6 +24,7 @@ export * from './decorators/solid-database-module.decorator'
 export * from './decorators/solid-service.decorator'
 export * from './decorators/mail-provider.decorator'
 export * from './decorators/security-rule-config-provider.decorator'
+export * from './decorators/sms-provider.decorator'
 
 export * from './dtos/post-chatter-message.dto'
 export * from './dtos/security-rule-config.dto'
@@ -194,12 +195,12 @@ export * from './jobs/api-email-subscriber.service'
 export { SmtpEmailQueuePublisherRabbitmq, SmtpEmailQueuePublisherRabbitmq as EmailQueuePublisher } from './jobs/smtp-email-publisher.service' // alias for backward compatibility
 export * from './jobs/smtp-email-queue-options'
 export { SmtpEmailQueueSubscriberRabbitmq, SmtpEmailQueueSubscriberRabbitmq as EmailQueueSubscriber } from './jobs/smtp-email-subscriber.service' // alias for backward compatibility
-export * from './jobs/otp-publisher.service'
-export * from './jobs/otp-queue-options'
-export * from './jobs/otp-subscriber.service'
-export * from './jobs/sms-publisher.service'
-export * from './jobs/sms-queue-options'
-export * from './jobs/sms-subscriber.service'
+export * from './jobs/msg91-otp-publisher.service'
+export * from './jobs/msg91-otp-queue-options'
+export * from './jobs/msg91-otp-subscriber.service'
+export * from './jobs/msg91-sms-publisher.service'
+export * from './jobs/msg91-sms-queue-options'
+export * from './jobs/msg91-sms-subscriber.service'
 export * from './jobs/msg91-whatsapp-publisher.service'
 export * from './jobs/msg91-whatsapp-queue-options'
 export * from './jobs/msg91-whatsapp-subscriber.service'
@@ -281,6 +282,8 @@ export * from './services/ai-interaction.service'
 
 // Factories
 export * from './factories/mail.factory'
+export * from './factories/sms.factory'
+export * from './factories/whatsapp.factory'
 
 // Repositories
 export * from './repository/solid-base.repository'

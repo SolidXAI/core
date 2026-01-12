@@ -20,6 +20,7 @@ import { CreatedByUpdatedBySubscriber } from 'src/subscribers/created-by-updated
 import { SoftDeleteAwareEventSubscriber } from 'src/subscribers/soft-delete-aware-event.subscriber';
 import { DataSource } from 'typeorm';
 import { CRUDService } from './crud.service';
+import { IS_SMS_PROVIDER } from 'src/decorators/sms-provider.decorator';
 
 export const coreSubscriberClasses = [
   AuditSubscriber,
@@ -151,6 +152,15 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
 
     whatsappProviders.forEach((whatsappProvider) => {
       this.solidRegistry.registerWhatsappProvider(whatsappProvider);
+    });
+
+    // Register all IWhatsappTransport implementations
+    const smsProviders = this.discoveryService
+      .getProviders()
+      .filter((provider) => this.isSmsProvider(provider));
+
+    smsProviders.forEach((smsProvider) => {
+      this.solidRegistry.registerSmsProvider(smsProvider);
     });
 
     // Register all ISecurityRuleConfigProvider implementations
@@ -350,6 +360,18 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     );
 
     return !!isWhatsappProvider;
+  }
+
+  private isSmsProvider(provider: InstanceWrapper) {
+    const { instance } = provider;
+    if (!instance) return false;
+
+    const isSmsProvider = this.reflector.get<boolean>(
+      IS_SMS_PROVIDER,
+      instance.constructor,
+    );
+
+    return !!isSmsProvider;
   }
 
   private isSecurityRuleConfigProvider(provider: InstanceWrapper) {

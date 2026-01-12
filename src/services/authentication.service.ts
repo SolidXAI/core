@@ -49,6 +49,7 @@ import { RoleMetadataService } from './role-metadata.service';
 import { SettingService } from './setting.service';
 import { UserActivityHistoryService } from './user-activity-history.service';
 import { UserService } from './user.service';
+import { SmsFactory } from 'src/factories/sms.factory';
 
 enum LoginProvider {
     LOCAL = 'local',
@@ -79,7 +80,8 @@ export class AuthenticationService {
         private readonly httpService: HttpService,
         // private readonly mailService: SMTPEMailService,
         private readonly mailServiceFactory: MailFactory,
-        private readonly smsService: Msg91OTPService,
+        // private readonly smsService: Msg91OTPService,
+        private readonly smsFactory: SmsFactory,
         private readonly eventEmitter: EventEmitter2,
         private readonly settingService: SettingService,
         private readonly roleMetadataService: RoleMetadataService,
@@ -361,7 +363,8 @@ export class AuthenticationService {
 
         // SMS welcome
         if (this.isWelcomeSmsEnabled() && user.mobile) {
-            this.smsService.sendSMSUsingTemplate(
+            const smsService = this.smsFactory.getSmsService();
+            smsService.sendSMSUsingTemplate(
                 user.mobile,
                 'text-on-signup',
                 {
@@ -496,7 +499,8 @@ export class AuthenticationService {
             );
         }
         if (registrationValidationSources.includes(RegistrationValidationSource.MOBILE)) {
-            this.smsService.sendSMSUsingTemplate(
+            const smsService = this.smsFactory.getSmsService();
+            smsService.sendSMSUsingTemplate(
                 user.mobile,
                 'otp-on-register',
                 {
@@ -702,7 +706,8 @@ export class AuthenticationService {
             );
         }
         if (loginType === RegistrationValidationSource.MOBILE) {
-            this.smsService.sendSMSUsingTemplate(
+            const smsService = this.smsFactory.getSmsService();
+            smsService.sendSMSUsingTemplate(
                 user.mobile,
                 'otp-on-login',
                 {
@@ -942,7 +947,8 @@ export class AuthenticationService {
         }
         // Assuming all users do not have mobile as mandatory.
         if (forgotPasswordSendVerificationTokenOn == ForgotPasswordSendVerificationTokenOn.MOBILE && user.mobile) {
-            this.smsService.sendSMSUsingTemplate(
+            const smsService = this.smsFactory.getSmsService();
+            smsService.sendSMSUsingTemplate(
                 user.mobile,
                 'forgot-password',
                 {
@@ -1032,7 +1038,8 @@ export class AuthenticationService {
         }
         // Assuming all users do not have mobile as mandatory.
         if (forgotPasswordSendVerificationTokenOn == ForgotPasswordSendVerificationTokenOn.MOBILE && user.mobile) {
-            this.smsService.sendSMSUsingTemplate(
+            const smsService = this.smsFactory.getSmsService();
+            smsService.sendSMSUsingTemplate(
                 user.mobile,
                 'forgot-password',
                 {

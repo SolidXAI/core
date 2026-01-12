@@ -7,6 +7,7 @@ import { SmsTemplateService } from "../sms-template.service";
 import { Msg91BaseSMSService } from "./Msg91BaseSMSService";
 import { ISMS } from "../../interfaces";
 import { PublisherFactory } from "../queues/publisher-factory.service";
+import { SmsProvider } from "src/decorators/sms-provider.decorator";
 
 interface OtpParams {
     otp: string,
@@ -16,16 +17,16 @@ interface OtpParams {
 }
 
 @Injectable()
+@SmsProvider()
 export class Msg91OTPService extends Msg91BaseSMSService implements ISMS {
     constructor(
         @Inject(commonConfig.KEY)
         commonConfiguration: ConfigType<typeof commonConfig>,
-        // smsPublisher: OTPQueuePublisher,
         publisherFactory: PublisherFactory<any>,
         smsTemplateService: SmsTemplateService,
         private readonly httpService: HttpService,
     ) {
-        super(commonConfiguration, 'OTPQueuePublisher', publisherFactory, smsTemplateService);
+        super(commonConfiguration, 'Msg91OTPQueuePublisher', publisherFactory, smsTemplateService);
     }
 
     async sendSMSSynchronously(message: QueueMessage<any>): Promise<any> {
