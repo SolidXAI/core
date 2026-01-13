@@ -8983,6 +8983,13 @@
           {
             "type": "field",
             "attrs": {
+              "name": "fullName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "email",
               "isSearchable": true
             }
