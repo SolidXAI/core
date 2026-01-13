@@ -11020,6 +11020,22 @@
               "sortable": true,
               "filterable": true
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "event",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "ipAddress",
+              "sortable": true,
+              "filterable": true
+            }
           }
         ]
       }
@@ -11063,6 +11079,24 @@
                         "type": "field",
                         "attrs": {
                           "name": "user"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "event"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "ipAddress"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "userAgent"
                         }
                       }
                     ]
