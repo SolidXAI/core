@@ -5,7 +5,6 @@ import {
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigType } from '@nestjs/config';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
@@ -13,14 +12,14 @@ import { jwtConfig } from 'src/config/jwt.config';
 import { REQUEST_USER_KEY } from "../constants";
 import { PermissionMetadataService } from '../services/permission-metadata.service';
 import { ClsService } from 'nestjs-cls';
+import { SettingService } from '../services/setting.service';
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
-    @Inject(jwtConfig.KEY)
-    private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
     private readonly permissionsService: PermissionMetadataService,
+    private readonly settingService: SettingService,
     private readonly cls: ClsService
   ) { }
 
@@ -32,9 +31,17 @@ export class AccessTokenGuard implements CanActivate {
       throw new UnauthorizedException();
     }
     try {
+
+      const jwtConfiguration = {
+        secret: await this.settingService.getConfigValue("secret"),
+        audience: await this.settingService.getConfigValue("audience"),
+        issuer: await this.settingService.getConfigValue("issuer"),
+        accessTokenTtl: await this.settingService.getConfigValue("accessTokenTtl"),
+        refreshTokenTtl: await this.settingService.getConfigValue("refreshTokenTtl")
+      }
       const payload: ActiveUserData = await this.jwtService.verifyAsync(
         token,
-        this.jwtConfiguration,
+        jwtConfiguration
       );
 
       // Load permissions given the user. 

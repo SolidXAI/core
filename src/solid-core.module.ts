@@ -55,11 +55,9 @@ import { ActionMetadata } from './entities/action-metadata.entity';
 import { ActionMetadataService } from './services/action-metadata.service';
 
 import { HttpModule } from '@nestjs/axios';
-import { JwtModule } from '@nestjs/jwt';
 import { SeedCommand } from './commands/seed.command';
 import commonConfig from './config/common.config';
 import { iamConfig } from './config/iam.config';
-import { jwtConfig } from './config/jwt.config';
 import { AuthenticationController } from './controllers/authentication.controller';
 import { EmailTemplateController } from './controllers/email-template.controller';
 import { GoogleAuthenticationController } from './controllers/google-authentication.controller';
@@ -387,8 +385,6 @@ import { CacheManagerOptions } from './config/cache.options';
     ConfigModule.forFeature(appBuilderConfig),
     ConfigModule.forFeature(commonConfig),
     ConfigModule.forFeature(iamConfig),
-    ConfigModule.forFeature(jwtConfig),
-    JwtModule.registerAsync(jwtConfig.asProvider()),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'media-files-storage'),
@@ -774,7 +770,7 @@ import { CacheManagerOptions } from './config/cache.options';
     TwilioSMSService,
     TypeOrmModule,
     UserActivityHistoryService,
-    UserSeederService,
+    UserSeederService
   ],
 })
 export class SolidCoreModule { }

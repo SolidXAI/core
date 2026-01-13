@@ -58,6 +58,24 @@ export interface ModuleMetadataConfiguration {
   dashboards?: CreateDashboardDto[],
 }
 
+
+export enum SettingLevel {
+  System = 'system',
+  SystemAdmin='system-admin',
+  User = "user"
+}
+export interface SettingDefinition<T = any> {
+  key: string;
+  value: T;
+  level?: SettingLevel;
+}
+
+// solid-core/settings/settings-provider.interface.ts
+export interface ISettingsProvider {
+  getSettings(): SettingDefinition[];
+}
+
+
 export interface CodeGenerationOptions {
   moduleId?: number;
   moduleUserKey?: string;
@@ -355,3 +373,4 @@ export interface McpComputedProviderResponse {
 export interface ISecurityRuleConfigProvider {
   securityRuleConfig(activeUser: ActiveUserData, securityRule: SecurityRule): Promise<SecurityRuleConfig>;
 }
+

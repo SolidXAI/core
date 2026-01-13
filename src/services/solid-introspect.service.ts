@@ -20,6 +20,7 @@ import { CreatedByUpdatedBySubscriber } from 'src/subscribers/created-by-updated
 import { SoftDeleteAwareEventSubscriber } from 'src/subscribers/soft-delete-aware-event.subscriber';
 import { DataSource } from 'typeorm';
 import { CRUDService } from './crud.service';
+import { IS_SEtTTINGS_PROVIDER } from 'src/decorators/settings-provider.decorator';
 
 export const coreSubscriberClasses = [
   AuditSubscriber,
@@ -68,6 +69,15 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
 
     selectionProviders.forEach((selectionProvider) => {
       this.solidRegistry.registerSelectionProvider(selectionProvider);
+    });
+
+    // Register all ISettingsProvider implementations
+    const settingsProviders = this.discoveryService
+      .getProviders()
+      .filter((provider) => this.isSettingsProvider(provider));
+    
+    settingsProviders.forEach((settingsProvider) => {
+      this.solidRegistry.registerSettingsProvider(settingsProvider);
     });
 
     // Register all IDashboardSelectionProvider implementations
@@ -280,6 +290,18 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     );
 
     return !!isSelectionProvider;
+  }
+
+  private isSettingsProvider(provider: InstanceWrapper) {
+    const { instance } = provider;
+    if (!instance) return false;
+
+    const isSettingsProvider = this.reflector.get<boolean>(
+      IS_SEtTTINGS_PROVIDER,
+      instance.constructor,
+    );
+
+    return !!isSettingsProvider;
   }
 
   private isDashboardVariableSelectionProvider(provider: InstanceWrapper) {

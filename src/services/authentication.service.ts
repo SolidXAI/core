@@ -16,7 +16,6 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import { isEmpty, isNotEmpty } from 'class-validator';
 import { randomInt, randomUUID } from 'crypto';
 import commonConfig from 'src/config/common.config';
-import { jwtConfig } from 'src/config/jwt.config';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { SUCCESS_MESSAGES } from 'src/constants/success-messages';
 import { CreateUserDto } from 'src/dtos/create-user.dto';
@@ -71,8 +70,6 @@ export class AuthenticationService {
         private readonly userRepository: UserRepository,
         private readonly hashingService: HashingService,
         private readonly jwtService: JwtService,
-        @Inject(jwtConfig.KEY)
-        private readonly jwtConfiguration: ConfigType<typeof jwtConfig>,
         @Inject(iamConfig.KEY)
         private readonly iamConfiguration: ConfigType<typeof iamConfig>,
         private readonly refreshTokenIdsStorage: RefreshTokenIdsStorageService,
@@ -1065,9 +1062,10 @@ export class AuthenticationService {
         // const userRoleNames = user.roles.map((role) => role.name).join(';')
         const userRoleNames = user.roles.map((role) => role.name);
 
+        const accessTokenTtl = await this.settingService.getConfigValue("accessTokenTtl");
         const accessToken = await this.signToken<Partial<ActiveUserData>>(
             user.id,
-            this.jwtConfiguration.accessTokenTtl,
+            accessTokenTtl,
             { username: user.username, email: user.email, roles: userRoleNames },
         );
 
@@ -1076,8 +1074,8 @@ export class AuthenticationService {
 
     async generateRefreshToken(user: User, previousRefreshToken?: string) {
         const refreshTokenId = randomUUID();
-
-        const refreshToken = await this.signToken(user.id, this.jwtConfiguration.refreshTokenTtl, {
+        const refreshTokenTtl = await this.settingService.getConfigValue("refreshTokenTtl");
+        const refreshToken = await this.signToken(user.id, refreshTokenTtl, {
             refreshTokenId,
         })
 
@@ -1089,10 +1087,14 @@ export class AuthenticationService {
 
     async refreshTokens(refreshTokenDto: RefreshTokenDto) {
         try {
+            const secret = await this.settingService.getConfigValue("secret");
+            const audience = await this.settingService.getConfigValue("audience");
+            const issuer = await this.settingService.getConfigValue("issuer");
+
             const { sub } = await this.jwtService.verifyAsync<Pick<ActiveUserData, 'sub'> & { refreshTokenId: string }>(refreshTokenDto.refreshToken, {
-                secret: this.jwtConfiguration.secret,
-                audience: this.jwtConfiguration.audience,
-                issuer: this.jwtConfiguration.issuer,
+                secret,
+                audience,
+                issuer,
             });
             // const user = await this.userRepository.findOneByOrFail({ id: sub });
             const user = await this.userRepository.findOne({
@@ -1135,15 +1137,20 @@ export class AuthenticationService {
     }
 
     private async signToken<T>(userId: number, expiresIn: number, payload?: T) {
+        const audience = await this.settingService.getConfigValue("audience");
+        const issuer = await this.settingService.getConfigValue("issuer");
+        const secret = await this.settingService.getConfigValue("secret");
+
+
         return await this.jwtService.signAsync(
             {
                 sub: userId,
                 ...payload,
             },
             {
-                audience: this.jwtConfiguration.audience,
-                issuer: this.jwtConfiguration.issuer,
-                secret: this.jwtConfiguration.secret,
+                audience,
+                issuer,
+                secret,
                 expiresIn,
             },
         );

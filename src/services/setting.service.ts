@@ -175,7 +175,7 @@ export class SettingService extends CRUDService<Setting> {
   //   const cachedSettings = await this.cacheManager.get('cached-system-settings');
   // }
 
-  async getConfigValue(settingKey: string) {
+  async getConfigValue(settingKey: string | ) {
     try {
       const settingsArray: Setting[] = await this.repo.find();
       const settingEntry = settingsArray.find(setting => setting.key === settingKey);

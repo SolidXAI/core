@@ -5,7 +5,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule } from "../interfaces";
+import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule, ISettingsProvider, SettingDefinition } from "../interfaces";
 import { DatasourceType } from 'src/dtos/create-model-metadata.dto';
 import { ObjectLiteral } from 'typeorm';
 import { ColumnMetadata } from 'typeorm/metadata/ColumnMetadata';
@@ -83,6 +83,7 @@ export class SolidRegistry {
   private whatsappProviders: Set<InstanceWrapper> = new Set();
   private securityRuleConfigProviders: Set<InstanceWrapper> = new Set();
   private errorCodeProviders: Set<InstanceWrapper> = new Set();
+  private settingsProviders: Set<InstanceWrapper> = new Set();
 
   registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
     this.errorCodeProviders.add(errorCodeProvider);
@@ -138,6 +139,14 @@ export class SolidRegistry {
 
   registerModules(modules: InstanceWrapper[]): void {
     this.modules = new Set(modules);
+  }
+
+  registerSettingsProvider(provider: InstanceWrapper) {
+    this.settingsProviders.add(provider);
+  }
+
+  getSettingsProviders(): InstanceWrapper[] {
+    return Array.from(this.settingsProviders);
   }
 
   getMailProviders(): Array<InstanceWrapper> {
@@ -318,5 +327,21 @@ export class SolidRegistry {
     return ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt'];
     // return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
   }
+
+  getAllSettings(): SettingDefinition[] {
+    const result: SettingDefinition[] = [];
+
+    for (const wrapper of this.settingsProviders) {
+      const instance = wrapper.instance as ISettingsProvider;
+      if (!instance?.getSettings) continue;
+      result.push(...instance.getSettings());
+    }
+    return result;
+  }
+
+  getSettingDefinition(key: string): SettingDefinition | undefined {
+    return this.getAllSettings().find(s => s.key === key);
+  }
+
 
 }
