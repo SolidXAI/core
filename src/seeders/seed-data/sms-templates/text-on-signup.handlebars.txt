@@ -1,0 +1,10 @@
+Welcome to {{ solidAppName }}!
+Your account ({{ userName }} / {{ email }}) is ready.
+
+To sign in, use the login page {{ frontendLoginPageUrl }} (if provided).
+Check with your administrator for your login method:
+- Password sign-in: admin will share/manage your password.
+- OTP sign-in: use your email or mobile to receive a code.
+- Google OAuth: sign in with your Google Workspace account.
+
+If you didn’t request this, ignore this message.

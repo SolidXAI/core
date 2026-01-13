@@ -87,10 +87,10 @@ import { TestQueuePublisherDatabase } from './jobs/database/test-queue-publisher
 import { TestQueueSubscriberDatabase } from './jobs/database/test-queue-subscriber-database.service';
 import { Msg91WhatsappQueuePublisher } from './jobs/msg91-whatsapp-publisher.service';
 import { Msg91WhatsappQueueSubscriber } from './jobs/msg91-whatsapp-subscriber.service';
-import { OTPQueuePublisher } from './jobs/otp-publisher.service';
-import { OTPQueueSubscriber } from './jobs/otp-subscriber.service';
-import { SmsQueuePublisher } from './jobs/sms-publisher.service';
-import { SmsQueueSubscriber } from './jobs/sms-subscriber.service';
+import { Msg91OTPQueuePublisher } from './jobs/msg91-otp-publisher.service';
+import { Msg91OTPQueueSubscriber } from './jobs/msg91-otp-subscriber.service';
+import { Msg91SmsQueuePublisher } from './jobs/msg91-sms-publisher.service';
+import { Msg91SmsQueueSubscriber } from './jobs/msg91-sms-subscriber.service';
 import { SmtpEmailQueuePublisherRabbitmq } from './jobs/smtp-email-publisher.service';
 import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/smtp-email-subscriber.service';
 import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
@@ -182,8 +182,8 @@ import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-pub
 import { GenerateCodeSubscriberDatabase } from './jobs/database/generate-code-subscriber-database.service';
 import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-database.service';
 import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
-import { SmsQueuePublisherDatabase } from './jobs/database/sms-publisher-database.service';
-import { SmsQueueSubscriberDatabase } from './jobs/database/sms-subscriber-database.service';
+import { Msg91SmsQueuePublisherDatabase } from './jobs/database/msg91-sms-publisher-database.service';
+import { Msg91SmsQueueSubscriberDatabase } from './jobs/database/msg91-sms-subscriber-database.service';
 import { SmtpEmailQueuePublisherDatabase } from './jobs/database/smtp-email-publisher-database.service';
 import { SmtpEmailQueueSubscriberDatabase } from './jobs/database/smtp-email-subscriber-database.service';
 
@@ -337,6 +337,11 @@ import { ModelSequence } from './entities/model-sequence.entity';
 import { ModelSequenceService } from './services/model-sequence.service';
 import { ModelSequenceController } from './controllers/model-sequence.controller';
 import { ModelSequenceRepository } from './repository/model-sequence.repository';
+import { CacheModule } from '@nestjs/cache-manager';
+import { CacheManagerOptions } from './config/cache.options';
+import { SmsFactory } from './factories/sms.factory';
+import { WhatsAppFactory } from './factories/whatsapp.factory';
+import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
 
 
 @Global()
@@ -380,6 +385,8 @@ import { ModelSequenceRepository } from './repository/model-sequence.repository'
       ViewMetadata,
       ModelSequence,
     ]),
+
+    CacheModule.registerAsync(CacheManagerOptions),
     ConfigModule.forFeature(appBuilderConfig),
     ConfigModule.forFeature(commonConfig),
     ConfigModule.forFeature(iamConfig),
@@ -540,16 +547,16 @@ import { ModelSequenceRepository } from './repository/model-sequence.repository'
     ApiEmailQueueSubscriber,
     ApiEmailQueuePublisherDatabase,
     ApiEmailQueueSubscriberDatabase,
-    SmsQueuePublisher,
-    SmsQueueSubscriber,
-    SmsQueuePublisherDatabase,
-    SmsQueueSubscriberDatabase,
+    Msg91SmsQueuePublisher,
+    Msg91SmsQueueSubscriber,
+    Msg91SmsQueuePublisherDatabase,
+    Msg91SmsQueueSubscriberDatabase,
     TwilioSmsQueuePublisherDatabase,
     TwilioSmsQueueSubscriberDatabase,
     TwilioSmsQueuePublisherRabbitmq,
     TwilioSmsQueueSubscriberRabbitmq,
-    OTPQueuePublisher,
-    OTPQueueSubscriber,
+    Msg91OTPQueuePublisher,
+    Msg91OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
     OTPQueueSubscriberDatabase,
     Msg91WhatsappQueuePublisher,
@@ -593,7 +600,7 @@ import { ModelSequenceRepository } from './repository/model-sequence.repository'
     GenerateCodeSubscriberDatabase,
     GenerateCodePublisherRabbitmq,
     GenerateCodeSubscriberRabbitmq,
-    OTPQueuePublisher,
+    Msg91OTPQueuePublisher,
     MqMessageQueueService,
     MqMessageService,
     ScheduledJobService,
@@ -686,6 +693,8 @@ import { ModelSequenceRepository } from './repository/model-sequence.repository'
     ListOfValuesSubscriber,
     ListOfValuesMapper,
     MailFactory,
+    WhatsAppFactory, 
+    SmsFactory,
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,
     AiInteractionRepository,
@@ -742,6 +751,8 @@ import { ModelSequenceRepository } from './repository/model-sequence.repository'
     ImportTransactionService,
     ListOfValuesService,
     MailFactory,
+    WhatsAppFactory,
+    SmsFactory,
     MediaService,
     MediaStorageProviderMetadataService,
     ModelMetadataHelperService,

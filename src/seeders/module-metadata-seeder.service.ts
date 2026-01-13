@@ -1,6 +1,7 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import { v4 as uuidv4 } from 'uuid';
 
 import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
@@ -33,7 +34,7 @@ import { ViewMetadataService } from '../services/view-metadata.service';
 import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
-import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata } from 'src';
+import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata, SignUpDto } from 'src';
 import { ADMIN_ROLE_NAME, INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS, PUBLIC_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
@@ -718,12 +719,36 @@ export class ModuleMetadataSeederService {
         }
 
         for (let l = 0; l < users.length; l++) {
-            const user = users[l];
+            const user: SignUpDto = users[l];
             let exisitingUser = await this.userService.findOneByUsername(user.username);
             if (!exisitingUser) {
-                exisitingUser = await this.authenticationService.signUp(user);
+                let generatedAdminPassword: string | null = null;
+                if (user.username === 'sa') {
+                    generatedAdminPassword = uuidv4();
+                    user.password = generatedAdminPassword;
+                }
 
-                this.logger.log(`Newly created user is ${user}`);
+                exisitingUser = await this.authenticationService.signUp(user);
+                this.logger.log(`Newly created user ${user.username}`);
+
+                // Surface the generated SA password clearly to the operator.
+                if (generatedAdminPassword) {
+                    const banner = [
+                        '',
+                        '============================================================',
+                        '  SYSTEM ADMIN USER CREATED',
+                        '------------------------------------------------------------',
+                        '  Username : sa',
+                        `  Password : ${generatedAdminPassword}`,
+                        '',
+                        '  Copy and store this password securely now.',
+                        '  It is shown only once during seeding.',
+                        '============================================================',
+                        ''
+                    ].join('\n');
+                    // Use console.log to ensure visibility even if logger formatting changes.
+                    console.log(banner);
+                }
             }
             //FIXME: Create the user roles assignment logic here.
             // now add Roles to user.

@@ -28,8 +28,7 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
     return 'Provider used to compute external ID for a CommonEntity with support for static or dynamic prefix.';
   }
 
-  async preComputeValue(triggerEntity: T, computedFieldMetadata: ComputedFieldMetadata<AlphaNumExternalIdContext>
-  ) {
+  async preComputeValue(triggerEntity: T, computedFieldMetadata: ComputedFieldMetadata<AlphaNumExternalIdContext>) {
     const { prefix, length, dynamicFieldPrefix } = computedFieldMetadata.computedFieldValueProviderCtxt;
     const eventContext = computedFieldMetadata.eventContext;
     const entityName = eventContext?.metadataName ?? eventContext.databaseEntity?.constructor?.name ?? '';

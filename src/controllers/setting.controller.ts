@@ -27,6 +27,26 @@ export class SettingController {
     return this.service.insertMany(createDtos, filesArray, solidRequestContext);
   }
 
+  /**
+   * Important to keep this method just above the @Put(':id') definition that follows as otherwise it will conflict. 
+   * 
+   * @param body 
+   * @param files 
+   * @returns 
+   */
+  @ApiBearerAuth("jwt")
+  @Put('/bulk')
+  @UseInterceptors(AnyFilesInterceptor())
+  async updateSettings(@Body() body: any, @UploadedFiles() files: Array<Express.Multer.File>) {
+    let settings: CreateSettingDto[] = [];
+
+    try {
+      settings = typeof body.settings === 'string' ? JSON.parse(body.settings) : body.settings;
+    } catch (e) {
+      throw new BadRequestException('Invalid settings payload');
+    }
+    return this.service.updateSettings(settings, files);
+  }
 
   @ApiBearerAuth("jwt")
   @Put(':id')
@@ -53,7 +73,6 @@ export class SettingController {
   async getAllSettings() {
     return this.service.getAllSettings();
   }
-
 
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showHeader', required: false, type: String })
@@ -97,40 +116,17 @@ export class SettingController {
     return this.service.delete(id, solidRequestContext);
   }
 
-  @ApiBearerAuth("jwt")
-  @Post('/bulk-update')
-  @UseInterceptors(AnyFilesInterceptor())
-  async updateSettings(
-    @Body() body: any,
-    @UploadedFiles() files: Array<Express.Multer.File>
-  ) {
-    let settings: CreateSettingDto[] = [];
-
-    try {
-      settings = typeof body.settings === 'string' ? JSON.parse(body.settings) : body.settings;
-    } catch (e) {
-      throw new BadRequestException('Invalid settings payload');
-    }
-    return this.service.updateSettings(settings, files);
-  }
-
-
-  @ApiBearerAuth("jwt")
-  @Post('/bulk/user')
-  @UseInterceptors(AnyFilesInterceptor())
-  async updateUserSettings(
-    @Body() body: any,
-    @UploadedFiles() files: Array<Express.Multer.File>
-  ) {
-    let settings: CreateSettingDto[] = [];
-
-    try {
-      settings = typeof body.settings === 'string' ? JSON.parse(body.settings) : body.settings;
-    } catch (e) {
-      throw new BadRequestException('Invalid settings payload');
-    }
-    return this.service.updateSettings(settings, files);
-  }
-
+  // @ApiBearerAuth("jwt")
+  // @Post('/bulk/user')
+  // @UseInterceptors(AnyFilesInterceptor())
+  // async updateUserSettings(@Body() body: any, @UploadedFiles() files: Array<Express.Multer.File>) {
+  //   let settings: CreateSettingDto[] = [];
+  //   try {
+  //     settings = typeof body.settings === 'string' ? JSON.parse(body.settings) : body.settings;
+  //   } catch (e) {
+  //     throw new BadRequestException('Invalid settings payload');
+  //   }
+  //   return this.service.updateSettings(settings, files);
+  // }
 
 }

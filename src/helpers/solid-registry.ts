@@ -81,6 +81,7 @@ export class SolidRegistry {
   private dashboardQuestionDataProviders: Set<InstanceWrapper> = new Set();
   private mailProviders: Set<InstanceWrapper> = new Set();
   private whatsappProviders: Set<InstanceWrapper> = new Set();
+  private smsProviders: Set<InstanceWrapper> = new Set();
   private securityRuleConfigProviders: Set<InstanceWrapper> = new Set();
   private errorCodeProviders: Set<InstanceWrapper> = new Set();
 
@@ -90,6 +91,10 @@ export class SolidRegistry {
 
   registerWhatsappProvider(whatsappProvider: InstanceWrapper): void {
     this.whatsappProviders.add(whatsappProvider);
+  }
+
+  registerSmsProvider(smsProvider: InstanceWrapper): void {
+    this.smsProviders.add(smsProvider);
   }
 
   registerSecurityRuleConfigProvider(securityRuleConfigProvider: InstanceWrapper): void {
@@ -146,6 +151,10 @@ export class SolidRegistry {
 
   getWhatsappProviders(): Array<InstanceWrapper> {
     return Array.from(this.whatsappProviders);
+  }
+
+  getSmsProviders(): Array<InstanceWrapper> {
+    return Array.from(this.smsProviders);
   }
 
   getSecurityRuleConfigProviders(): Array<InstanceWrapper> {

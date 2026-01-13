@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import * as ExcelJS from 'exceljs';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { parseFlexibleDate } from 'src/helpers/date.helper';
 import { PassThrough, Readable } from 'stream';
 
 export interface ExcelReadOptions {
@@ -302,4 +303,9 @@ export class ExcelService {
 
     return { headers, rows };
   }
+
+  public parseAndValidateDate(value: string): Date | null {
+    return parseFlexibleDate(value);
+  }
+
 }

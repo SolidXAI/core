@@ -3,19 +3,19 @@ import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-vali
 
 export class SignInDto {
 
-    @ApiProperty({ default: 'admin@example.service.com' })
+    @ApiProperty({ default: 'sa@solidxai.com' })
     @IsEmail()
     // @IsNotEmpty()
     @IsOptional()
     email: string;
     
-    @ApiProperty({ default: 'admin@example.service.com' })
+    @ApiProperty({ default: 'sa' })
     @IsString()
     // @IsNotEmpty()
     @IsOptional()
     username: string;
 
-    @ApiProperty({ default: 'Admin@3214$' })
+    @ApiProperty({ default: '' })
     @IsOptional()
     password: string;
 }

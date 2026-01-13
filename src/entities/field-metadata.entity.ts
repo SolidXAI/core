@@ -159,7 +159,7 @@ export class FieldMetadata extends CommonEntity {
     relationJoinTableName: string;
 
     @Column({ name: 'enable_audit_tracking', default: false })
-    enableAuditTracking: boolean;
+    enableAuditTracking: boolean = false;
 
     @Column({ name: "is_multiSelect", default: false })
     isMultiSelect: boolean;

@@ -3,15 +3,19 @@ import { ConfigModule, ConfigService } from '@nestjs/config';
 import { redisStore } from 'cache-manager-redis-store';
 import { isRedisConfigured } from 'src/helpers/environment.helper';
 
-export const RedisOptions: CacheModuleAsyncOptions = {
+export const CacheManagerOptions: CacheModuleAsyncOptions = {
     isGlobal: true,
     imports: [ConfigModule],
     useFactory: async (configService: ConfigService) => {
+
+        // This defaults to in-memory cache
         if (!isRedisConfigured(configService)) {
             return {
                 ttl: 0
-            } // This defaults to in-memory cache
+            }
         }
+
+        // If redis is configured we use that...
         const store = await createRedisStore(configService);
         return {
             store: () => store,
@@ -28,4 +32,3 @@ async function createRedisStore(configService: ConfigService<Record<string, unkn
         },
     });
 }
-

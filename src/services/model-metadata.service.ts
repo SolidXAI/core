@@ -30,6 +30,9 @@ import { CrudHelperService } from './crud-helper.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
 import { RoleMetadataService } from './role-metadata.service';
+import { NavigationDto } from 'src/dtos/navigation.dto';
+import { SolidIntrospectService } from './solid-introspect.service';
+import { CRUDService } from './crud.service';
 
 @Injectable()
 export class ModelMetadataService {
@@ -50,6 +53,8 @@ export class ModelMetadataService {
     private readonly fieldMetadataService: FieldMetadataService,
     private readonly roleService: RoleMetadataService,
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
+    readonly introspectService: SolidIntrospectService,
+
     // No longer used. 
     // private readonly generateCodePublihser: GenerateCodePublisherDatabase,
   ) { }
@@ -1290,5 +1295,151 @@ export class ModelMetadataService {
       }
     });
   }
+
+  async navigation(navigationDto: NavigationDto) {
+    const { recordId, modelName, ...basicFilterDto } = navigationDto;
+
+    const modelServiceInstanceWrapper =
+      this.introspectService.getProvider(`${classify(modelName)}Service`);
+
+    if (!modelServiceInstanceWrapper) {
+      throw new BadRequestException(
+        `Invalid model name (${modelName}) specified in Navigation.`,
+      );
+    }
+
+    const modelService: CRUDService<any> = modelServiceInstanceWrapper.instance;
+
+    const recs = await modelService.find(basicFilterDto);
+
+    // navigation only works for paginated results
+    if (!('records' in recs) || !('currentPage' in recs.meta)) {
+      return {
+        prev: null,
+        next: null,
+        meta: null,
+      };
+    }
+
+    const { records, meta } = recs;
+
+    // --------------------
+    // Find record index in page
+    // --------------------
+    const index = records.findIndex(r => String(r.id) === String(recordId));
+
+    if (index === -1) {
+      throw new BadRequestException(`Record not found in current page`);
+    }
+
+    // --------------------
+    // Pagination calculations
+    // --------------------
+    const limit = meta.perPage;
+    const currentOffset = (meta.currentPage - 1) * meta.perPage;
+    const currentIndexGlobal = currentOffset + index + 1;
+
+
+    let prev: { record: any; offset: number; limit: number } | null = null;
+    let next: { record: any; offset: number; limit: number } | null = null;
+
+    // --------------------
+    // PREV
+    // --------------------
+    if (index > 0) {
+      prev = {
+        record: records[index - 1],
+        offset: currentOffset,
+        limit,
+      };
+    } else if (meta.prevPage !== null) {
+      const prevOffset = (meta.prevPage - 1) * meta.perPage;
+
+      const prevPage = await modelService.find({
+        ...basicFilterDto,
+        offset: prevOffset,
+        limit,
+      });
+
+      if ('records' in prevPage) {
+        const record = prevPage.records.at(-1) ?? null;
+        if (record) {
+          prev = {
+            record,
+            offset: prevOffset,
+            limit,
+          };
+        }
+      }
+    }
+
+    // --------------------
+    // NEXT
+    // --------------------
+    if (index < records.length - 1) {
+      next = {
+        record: records[index + 1],
+        offset: currentOffset,
+        limit,
+      };
+    } else if (meta.nextPage !== null) {
+      const nextOffset = (meta.nextPage - 1) * meta.perPage;
+
+      const nextPage = await modelService.find({
+        ...basicFilterDto,
+        offset: nextOffset,
+        limit,
+      });
+
+      if ('records' in nextPage) {
+        const record = nextPage.records[0] ?? null;
+        if (record) {
+          next = {
+            record,
+            offset: nextOffset,
+            limit,
+          };
+        }
+      }
+    }
+
+    // --------------------
+    // RESPONSE
+    // --------------------
+    return {
+      prev: prev
+        ? {
+          recordId: prev.record.id,
+          offset: prev.offset,
+          limit: prev.limit,
+        }
+        : null,
+
+      next: next
+        ? {
+          recordId: next.record.id,
+          offset: next.offset,
+          limit: next.limit,
+        }
+        : null,
+      meta: {
+        totalRecords: meta.totalRecords,
+        perPage: meta.perPage,
+        currentPage: meta.currentPage,
+        totalPages: meta.totalPages,
+
+        currentIndexInPage: index,
+        currentIndexGlobal,
+
+        hasPrev: !!prev,
+        hasNext: !!next,
+
+        prevPage: meta.prevPage,
+        nextPage: meta.nextPage,
+      },
+
+    };
+  }
+
 
 }

@@ -7,9 +7,11 @@ import { ISMS } from "../../interfaces";
 import { PublisherFactory } from "../queues/publisher-factory.service";
 import twilio from 'twilio';
 import { QueueMessage } from "src/interfaces/mq";
+import { SmsProvider } from "src/decorators/sms-provider.decorator";
 
 
 @Injectable()
+@SmsProvider()
 export class TwilioSMSService implements ISMS {
     private readonly logger = new Logger(TwilioSMSService.name);
 
@@ -18,9 +20,7 @@ export class TwilioSMSService implements ISMS {
         private commonConfiguration: ConfigType<typeof commonConfig>,
         private publisherFactory: PublisherFactory<any>,
         private smsTemplateService: SmsTemplateService,
-    ) {
-        // super(commonConfiguration, 'OTPQueuePublisher', publisherFactory, smsTemplateService);
-    }
+    ) { }
 
     async sendSMS(to: string, body: string, shouldQueueSms: boolean): Promise<any> {
         const accountSid = this.commonConfiguration.twilio.accountSid;

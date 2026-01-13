@@ -46,49 +46,7 @@ export class SettingService extends CRUDService<Setting> {
   }
 
   async seedDefaultSettings(): Promise<void> {
-    const settingsSeederData = {
-      passwordlessRegistrationValidateWhat: this.iamConfiguration.passwordlessRegistrationValidateWhat,
-      allowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
-      passwordBasedAuth: this.iamConfiguration.passwordBasedAuth,
-      passwordLessAuth: this.iamConfiguration.passwordLessAuth,
-      activateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
-      iamGoogleOAuthEnabled: false,
-      authPagesLayout: "center",
-      authPagesTheme: "light",
-      appLogo: null,
-      companylogo: null,
-      favicon: null,
-      appLogoPosition: "in_form_view",
-      showAuthContent: false,
-      appTitle: process.env.SOLID_APP_NAME || "Solid App",
-      appSubtitle: process.env.SOLID_APP_SUBTITLE || "Lorem Ipsum",
-      appDescription: process.env.SOLID_APP_DESCRIPTION || "lorem ipsum",
-      showLegalLinks: false,
-      appTnc: null,
-      appPrivacyPolicy: null,
-      defaultRole: this.iamConfiguration.defaultRole,
-      shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
-      shouldQueueSms: this.commonConfiguration.shouldQueueSms,
-      enableDarkMode: true,
-      copyright: null,
-      enableUsername: true,
-      enabledNotification: true,
-      contactSupportEmail: null,
-      contactSupportDisplayName: null,
-      contactSupportIcon: null,
-      authScreenRightBackgroundImage: null,
-      authScreenLeftBackgroundImage: null,
-      authScreenCenterBackgroundImage: null,
-      authenticationPasswordRegex: this.iamConfiguration.PASSWORD_REGEX,
-      authenticationPasswordRegexErrorMessage: this.iamConfiguration.PASSWORD_REGEX_ERROR_MESSAGE,
-      authenticationPasswordComplexityDescription: this.iamConfiguration.PASSWORD_COMPLEXITY_DESC,
-      solidXGenAiCodeBuilderConfig: JSON.stringify({
-        defaultProvider: "",
-        availableProviders: []
-      }),
-      showNameFieldsForRegistration: this.iamConfiguration.showNameFieldsForRegistration,
-      forceChangePasswordOnFirstLogin: this.iamConfiguration.forceChangePasswordOnFirstLogin
-    };
+    const settingsSeederData = this.getDefaultSettings();
 
     const existingSettings = await this.repo.find();
     const existingKeys = new Set(existingSettings.map(s => s.key));
@@ -178,11 +136,12 @@ export class SettingService extends CRUDService<Setting> {
       appLogo: null,
       companylogo: null,
       favicon: null,
-      appLogoPosition: "in_form_view", //in_form_view | in_image_view
+      // in_form_view | in_image_view
+      appLogoPosition: "in_form_view",
       showAuthContent: false,
       appTitle: process.env.SOLID_APP_NAME || "Solid App",
-      appSubtitle: null,
-      appDescription: null,
+      appSubtitle: process.env.SOLID_APP_SUBTITLE || "",
+      appDescription: process.env.SOLID_APP_DESCRIPTION || "",
       showLegalLinks: false,
       appTnc: null,
       appPrivacyPolicy: null,
@@ -211,6 +170,10 @@ export class SettingService extends CRUDService<Setting> {
       showNameFieldsForRegistration: this.iamConfiguration.showNameFieldsForRegistration
     };
   }
+
+  // private async getSettingsFromRepo(): Promise<Setting[]> {
+  //   const cachedSettings = await this.cacheManager.get('cached-system-settings');
+  // }
 
   async getConfigValue(settingKey: string) {
     try {
@@ -242,10 +205,7 @@ export class SettingService extends CRUDService<Setting> {
     }
   }
 
-  async updateSettings(
-    settings: CreateSettingDto[] = [],
-    uploadedFiles: Array<Express.Multer.File> = []
-  ): Promise<Setting[]> {
+  async updateSettings(settings: CreateSettingDto[] = [], uploadedFiles: Array<Express.Multer.File> = []): Promise<Setting[]> {
     const activeUser = this.requestContextService.getActiveUser();
     const userId = activeUser?.sub;
 
@@ -381,8 +341,8 @@ export class SettingService extends CRUDService<Setting> {
 
     const { showHeader, inListView } = getMcpUrlDto;
 
-    if(process.env.MCP_ENABLED === 'false') {
-        throw new ForbiddenException(ERROR_MESSAGES.FORBIDDEN);
+    if (process.env.MCP_ENABLED === 'false') {
+      throw new ForbiddenException(ERROR_MESSAGES.FORBIDDEN);
     }
 
     if (solidRequestContext.activeUser) {

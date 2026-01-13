@@ -1,6 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import * as fs from "fs/promises";
+import { CreateScheduledJobDto } from "src/dtos/create-scheduled-job.dto";
 import { ModuleMetadata } from "src/entities/module-metadata.entity";
 import { ScheduledJob } from "src/entities/scheduled-job.entity";
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
@@ -159,8 +160,14 @@ export class ScheduledJobSubscriber
       (job) => job.scheduleName === jobName
     );
     // Insert or update job in metadata
-    const jobDto = await this.scheduledJobRepo.toDto(populatedScheduleJob as ScheduledJob);
-    const {moduleId, ...dtoToWrite} = jobDto
+    const jobDto: CreateScheduledJobDto = await this.scheduledJobRepo.toDto(populatedScheduleJob as ScheduledJob);
+    // Strip out bookkeeping/runtime fields before persisting to metadata JSON.
+    const {
+      moduleId,
+      lastRunAt,
+      nextRunAt,
+      ...dtoToWrite
+    } = jobDto;
     if (existingIndex !== -1) {
       metaData.scheduledJobs[existingIndex] = dtoToWrite;
       this.logger.log(`Updated scheduled job ${jobName} in metadata`);
