@@ -55,6 +55,7 @@ import { ActionMetadata } from './entities/action-metadata.entity';
 import { ActionMetadataService } from './services/action-metadata.service';
 
 import { HttpModule } from '@nestjs/axios';
+import { JwtModule } from '@nestjs/jwt';
 import { SeedCommand } from './commands/seed.command';
 import commonConfig from './config/common.config';
 import { iamConfig } from './config/iam.config';
@@ -411,6 +412,9 @@ import { CacheManagerOptions } from './config/cache.options';
     HttpModule,
     ConfigModule,
     ClsModule,
+    JwtModule.register({
+      global: true,
+    }),
   ],
   controllers: [
     ActionMetadataController,

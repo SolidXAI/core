@@ -8,7 +8,6 @@ import {
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
-import { jwtConfig } from 'src/config/jwt.config';
 import { REQUEST_USER_KEY } from "../constants";
 import { PermissionMetadataService } from '../services/permission-metadata.service';
 import { ClsService } from 'nestjs-cls';
