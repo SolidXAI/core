@@ -104,7 +104,7 @@ export class SecurityRuleRepository extends SolidBaseRepository<SecurityRule> {
             modelMetadataId: populatedSecurityRule.modelMetadata.id,
             modelMetadataUserKey: populatedSecurityRule.modelMetadata.singularName,
             securityRuleConfig: populatedSecurityRule.securityRuleConfig,
-            securityRuleConfigProvider: ""
+            securityRuleConfigProvider: populatedSecurityRule.securityRuleConfigProvider,
         };
     }
 
