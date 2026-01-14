@@ -43,6 +43,9 @@ export class SecurityRuleRepository extends SolidBaseRepository<SecurityRule> {
                 if (rule.securityRuleConfigProvider) {
                     // TODO: Evaluation of the securityRuleConfig Provider should happen outside first...
                     const securityRuleConfigProviderInstance = this.solidRegistry.getSecurityRuleConfigProviderInstance(rule.securityRuleConfigProvider);
+                    if (!securityRuleConfigProviderInstance) {
+                        throw new Error(`Unable to resolve instance for security rule config provider: ${rule.securityRuleConfigProvider}`);
+                    }
                     evaluatedRule = await securityRuleConfigProviderInstance.securityRuleConfig(activeUser, rule);
                 }
                 else {
@@ -54,7 +57,9 @@ export class SecurityRuleRepository extends SolidBaseRepository<SecurityRule> {
                 evaluatedRules.push(evaluatedRule);
 
             } catch (error) {
-                this.logger.warn(`Error parsing security rule: ${rule.securityRuleConfig}`, error);
+                this.logger.error(`Error parsing security rule: ${rule.securityRuleConfig}`, error);
+                this.logger.error(error.stack);
+                throw error;
             }
         }
 
