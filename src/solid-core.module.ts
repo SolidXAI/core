@@ -342,6 +342,8 @@ import { CacheManagerOptions } from './config/cache.options';
 import { SmsFactory } from './factories/sms.factory';
 import { WhatsAppFactory } from './factories/whatsapp.factory';
 import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
+import { ImageEncodingService } from './helpers/image-encoding.helper';
+import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.service';
 
 
 @Global()
@@ -693,7 +695,7 @@ import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
     ListOfValuesSubscriber,
     ListOfValuesMapper,
     MailFactory,
-    WhatsAppFactory, 
+    WhatsAppFactory,
     SmsFactory,
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,
@@ -729,6 +731,9 @@ import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
     SequenceNumComputedFieldProvider,
     ModelSequenceService,
     ModelSequenceRepository,
+
+    ImageEncodingService,
+    SolidMicroserviceAdapter,
   ],
   exports: [
     AiInteractionService,
@@ -782,6 +787,9 @@ import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
     TypeOrmModule,
     UserActivityHistoryService,
     UserSeederService,
+
+    ImageEncodingService,
+    SolidMicroserviceAdapter,
   ],
 })
 export class SolidCoreModule { }
