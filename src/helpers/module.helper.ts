@@ -32,6 +32,8 @@ export const getDynamicModuleNames = (): string[] => {
     .map(dirent => dirent.name);
 
   // logger.debug(`Enabled dynamic modules:`, enabledModules);
+  console.log(`Dynamic Modules Are:`, enabledModules);
+
   return enabledModules;
 }
 
@@ -65,6 +67,7 @@ export const getDynamicModuleNamesBasedOnMetadata = (): string[] => {
     .map(dirent => dirent.name);
 
   // logger.debug(`Enabled dynamic modules basis src:`, enabledModules);
+  console.log(`Src Based Dynamic Modules Are:`, enabledModules);
   return enabledModules;
 }
 
