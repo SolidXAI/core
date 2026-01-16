@@ -339,7 +339,12 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 //    Use the EntityController to extract uploaded content & pass to the entity service.
                 //    If embedded media, then the media uri will saved in the entity table, else the uri will be saved in the media table
                 //    Plan the media table schema e.g id, uri, storageProvider, entity_id, entity_name, createdAt, updatedAt
-                const options = { ...commonOptions, type: fieldMetadata.type as unknown as SolidMediaType };
+                const options = { 
+                    ...commonOptions, 
+                    mediaMaxSizeKb: fieldMetadata.mediaMaxSizeKb,
+                    mediaTypes: fieldMetadata.mediaTypes,
+                    type: fieldMetadata.type as unknown as SolidMediaType 
+                };
                 return new MediaFieldCrudManager(options);
             }
             case SolidFieldType.relation: {
