@@ -790,6 +790,7 @@ import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.s
 
     ImageEncodingService,
     SolidMicroserviceAdapter,
+    UserService,
   ],
 })
 export class SolidCoreModule { }

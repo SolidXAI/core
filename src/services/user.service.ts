@@ -18,6 +18,7 @@ import { iamConfig } from 'src/config/iam.config';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { UserRepository } from 'src/repository/user.repository';
 import { RoleMetadataRepository } from 'src/repository/role-metadata.repository';
+import { HashingService } from './hashing.service';
 
 @Injectable()
 export class UserService extends CRUDService<User> {
@@ -29,6 +30,8 @@ export class UserService extends CRUDService<User> {
     readonly fileService: FileService,
     readonly discoveryService: DiscoveryService,
     readonly crudHelperService: CrudHelperService,
+    readonly hashingService: HashingService,
+    
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(User, 'default')
@@ -283,4 +286,20 @@ export class UserService extends CRUDService<User> {
     }
   }
 
+  async hashPassword(password: string): Promise<{
+    password: string;
+    passwordScheme: string;
+    passwordSchemeVersion: number;
+  }> {
+    const hashedPassword = await this.hashingService.hash(password);
+  
+    return {
+      password: hashedPassword,
+      passwordScheme: this.hashingService.name(),
+      passwordSchemeVersion: this.hashingService.currentVersion(),
+    };
+  }
+  
+
 }
+

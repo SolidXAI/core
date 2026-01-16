@@ -842,14 +842,16 @@ export class AuthenticationService {
         }
 
         // Update Password
-        const newPwd = await this.hashingService.hash(changePasswordDto.newPassword);
+        const pwdData = await this.userService.hashPassword(
+            changePasswordDto.newPassword,
+        );
         user.password = changePasswordDto.newPassword;
-        user.passwordScheme = this.hashingService.name(); // e.g. bcrypt
-        user.passwordSchemeVersion = this.hashingService.currentVersion(); // e.g. 1, 2, 3 ...
 
+        user.password = pwdData.password;
+        user.passwordScheme = pwdData.passwordScheme;
+        user.passwordSchemeVersion = pwdData.passwordSchemeVersion;
         // Everytime the user changes the password we reset the forcePasswordChange flag back to false. 
         user.forcePasswordChange = false;
-        user.password = newPwd;
 
         await this.userRepository.save(user);
 
