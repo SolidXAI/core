@@ -47,7 +47,6 @@ export class InfoCommand extends CommandRunner {
             selectionProviders: this.getWrapperNames(this.solidRegistry.getSelectionProviders()),
             computedFieldProviders: this.getWrapperNames(this.solidRegistry.getComputedFieldProviders()),
             solidDatabaseModules: this.getWrapperNames(this.solidRegistry.getSolidDatabaseModules()),
-            modules: this.getWrapperNames(this.solidRegistry.getModules()),
             dashboardVariableSelectionProviders: this.getWrapperNames(this.solidRegistry.getDashboardVariableSelectionProviders()),
             dashboardQuestionDataProviders: this.getWrapperNames(this.solidRegistry.getDashboardQuestionDataProviders()),
             mailProviders: this.getWrapperNames(this.solidRegistry.getMailProviders()),
@@ -56,10 +55,11 @@ export class InfoCommand extends CommandRunner {
             securityRuleConfigProviders: this.getWrapperNames(this.solidRegistry.getSecurityRuleConfigProviders()),
             errorCodeProviders: this.getWrapperNames(this.solidRegistry.getErrorCodeProviders()),
             controllers: this.solidRegistry.getControllers().map((controller) => controller.name),
-            computedFieldMetadata: {
-                count: this.solidRegistry.getComputedFieldMetadata().length,
-            },
-            defaultLocale: this.solidRegistry.getDefaultLocale()?.locale ?? null,
+            // modules: this.getWrapperNames(this.solidRegistry.getModules()),
+            // computedFieldMetadata: {
+            //     count: this.solidRegistry.getComputedFieldMetadata().length,
+            // },
+            // defaultLocale: this.solidRegistry.getDefaultLocale()?.locale ?? null,
         };
 
         return info;
