@@ -22,7 +22,7 @@ export class InfoCommand extends CommandRunner {
         const enabledModules = getDynamicModuleNames();
         const dataSources = this.getDataSources();
 
-        const output = {
+        const output: Record<string, any> = {
             modules: {
                 count: enabledModules.length,
                 names: enabledModules,
@@ -33,7 +33,42 @@ export class InfoCommand extends CommandRunner {
             },
         };
 
+        if (options?.detailed) {
+            output.registry = this.getRegistryDetails();
+        }
+
         console.log(JSON.stringify(output, null, 2));
+    }
+
+    private getRegistryDetails(): Record<string, unknown> {
+        const info = {
+            seeders: this.getWrapperNames(this.solidRegistry.getSeeders()),
+            scheduledJobProviders: this.getWrapperNames(this.solidRegistry.getScheduledJobProviders()),
+            selectionProviders: this.getWrapperNames(this.solidRegistry.getSelectionProviders()),
+            computedFieldProviders: this.getWrapperNames(this.solidRegistry.getComputedFieldProviders()),
+            solidDatabaseModules: this.getWrapperNames(this.solidRegistry.getSolidDatabaseModules()),
+            modules: this.getWrapperNames(this.solidRegistry.getModules()),
+            dashboardVariableSelectionProviders: this.getWrapperNames(this.solidRegistry.getDashboardVariableSelectionProviders()),
+            dashboardQuestionDataProviders: this.getWrapperNames(this.solidRegistry.getDashboardQuestionDataProviders()),
+            mailProviders: this.getWrapperNames(this.solidRegistry.getMailProviders()),
+            whatsappProviders: this.getWrapperNames(this.solidRegistry.getWhatsappProviders()),
+            smsProviders: this.getWrapperNames(this.solidRegistry.getSmsProviders()),
+            securityRuleConfigProviders: this.getWrapperNames(this.solidRegistry.getSecurityRuleConfigProviders()),
+            errorCodeProviders: this.getWrapperNames(this.solidRegistry.getErrorCodeProviders()),
+            controllers: this.solidRegistry.getControllers().map((controller) => controller.name),
+            computedFieldMetadata: {
+                count: this.solidRegistry.getComputedFieldMetadata().length,
+            },
+            defaultLocale: this.solidRegistry.getDefaultLocale()?.locale ?? null,
+        };
+
+        return info;
+    }
+
+    private getWrapperNames(wrappers: Array<{ name?: string; instance?: any }>): string[] {
+        return wrappers
+            .map((wrapper) => wrapper.name || wrapper.instance?.constructor?.name)
+            .filter((name): name is string => !!name);
     }
 
     private getDataSources(): Array<{ name: string; type: string | null }> {
