@@ -31,7 +31,7 @@ import { ModuleMetadataSeederService } from './seeders/module-metadata-seeder.se
 import { CrudHelperService } from './services/crud-helper.service';
 import { FieldMetadataService } from './services/field-metadata.service';
 import { ListOfValuesService } from './services/list-of-values.service';
-import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
+// import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from './services/media-storage-provider-metadata.service';
 import { MediaService } from './services/media.service';
 import { ModelMetadataService } from './services/model-metadata.service';
@@ -504,7 +504,7 @@ import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.s
     SchematicService,
     MediaStorageProviderMetadataService,
     MediaService,
-    MediaStorageProviderMetadataSeederService,
+    // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
     ListOfValuesService,
     ListOfValuesSelectionProvider,

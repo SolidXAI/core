@@ -33,8 +33,6 @@ export class SeedCommand extends CommandRunner {
       this.logger.log('No --conf flag provided. Running with default seeder behavior.');
     }
 
-
-
     const seeder = this.solidRegistry
       .getSeeders()
       .filter((seeder) => seeder.name === options.seeder)
