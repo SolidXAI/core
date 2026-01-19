@@ -344,6 +344,7 @@ import { WhatsAppFactory } from './factories/whatsapp.factory';
 import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
 import { ImageEncodingService } from './helpers/image-encoding.helper';
 import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.service';
+import { InfoCommand } from './commands/info.command';
 
 
 @Global()
@@ -493,6 +494,7 @@ import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.s
     RemoveFieldsCommand,
     RefreshModelCommand,
     RefreshModuleCommand,
+    InfoCommand,
     SolidIntrospectService,
     DiscoveryService,
     R2RHelperService,

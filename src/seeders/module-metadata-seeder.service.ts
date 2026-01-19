@@ -193,7 +193,7 @@ export class ModuleMetadataSeederService {
         // Setup default roles with permissions.
         await this.setupDefaultRolesWithPermissions();
 
-        console.log(`All Seeders finished`);
+        console.log(`All Seeders Finished`);
 
         //FIXME: Handle displaying the created users credentials in a better way.
         // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
