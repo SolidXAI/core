@@ -12538,6 +12538,10 @@
     {
       "name": "default-filesystem",
       "type": "filesystem"
+    },
+    {
+      "name": "default-aws-s3",
+      "type": "aws-s3"
     }
   ],
   "checksums": [],

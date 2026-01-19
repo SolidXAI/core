@@ -345,8 +345,8 @@ export class ModuleMetadataSeederService {
         this.logger.log(`Seeding Permissions`);
         await this.seedPermissions();
 
-        this.logger.log(`Seeding Default Media Storage Providers`);
-        await this.seedDefaultMediaStorageProviders();
+        // this.logger.log(`Seeding Default Media Storage Providers`);
+        // await this.seedDefaultMediaStorageProviders();
 
         this.logger.log(`Seeding System Fields Metadata`);
         await this.seedDefaultSystemFields();
@@ -407,9 +407,9 @@ export class ModuleMetadataSeederService {
     }
 
     // OK
-    private async seedDefaultMediaStorageProviders() {
-        await this.mediaStorageProviderSeederService.seed();
-    }
+    // private async seedDefaultMediaStorageProviders() {
+    //     await this.mediaStorageProviderSeederService.seed();
+    // }
 
     // OK
     private async seedMediaStorageProviders(mediaStorageProviders: any[]) {
