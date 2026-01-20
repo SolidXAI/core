@@ -11,6 +11,10 @@ export class Setting extends CommonEntity {
     value: string;
     @Column({ name: "type", type: "varchar", nullable: true })
     type: string;
+    @Column({ name: "level", type: "varchar", nullable: true })
+    level: string;
+    @Column({ name: "namespace", type: "varchar", nullable: true })
+    namespace: string;
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn()
     user: User;
