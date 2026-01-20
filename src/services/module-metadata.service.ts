@@ -82,6 +82,10 @@ export class ModuleMetadataService {
     return r
   }
 
+  async find(basicFilterDto: BasicFilterDto) {
+    return this.findMany(basicFilterDto);
+  }
+
   async findOneByUserKey(name: string, relations = {}) {
     if (!name) {
       throw new BadRequestException(ERROR_MESSAGES.ENTITY_NAME_REQUIRED);

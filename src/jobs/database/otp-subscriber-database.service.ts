@@ -8,11 +8,14 @@ import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.serv
 import { Msg91OTPService } from 'src/services/sms/Msg91OTPService';
 import { QueuesModuleOptions } from 'src/interfaces';
 import { PollerService } from 'src/services/poller.service';
+import { SmsFactory } from 'src/factories/sms.factory';
 
 @Injectable()
 export class OTPQueueSubscriberDatabase extends DatabaseSubscriber<any> {
     constructor(
-        private readonly otpService: Msg91OTPService,
+        // private readonly otpService: Msg91OTPService,
+        private readonly smsFactory: SmsFactory,
+
         readonly mqMessageService: MqMessageService,
         readonly poller: PollerService,
         readonly mqMessageQueueService: MqMessageQueueService,
@@ -27,6 +30,9 @@ export class OTPQueueSubscriberDatabase extends DatabaseSubscriber<any> {
     }
 
     subscribe(message: QueueMessage<any>) {
-        this.otpService.sendSMSSynchronously(message);
+        const otpService: Msg91OTPService = this.smsFactory.getSmsService(Msg91OTPService.name) as Msg91OTPService;
+        return otpService.sendSMSSynchronously(message);
+
+        // this.otpService.sendSMSSynchronously(message);
     }
 }

@@ -141,7 +141,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
             // 6. Save the media
             if (hasMediaFields) {
-                this.saveMedia(model, files, savedEntity);
+                await this.saveMedia(model, files, savedEntity);
             }
             return savedEntity;
         } catch (error) {
@@ -177,14 +177,13 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return { dto, hasMediaFields };
     }
 
-    //FIXME: Need to make this saving media async. Use queues approach
-    private saveMedia(model: ModelMetadata, files: Express.Multer.File[], savedEntity: T) {
+    private async saveMedia(model: ModelMetadata, files: Express.Multer.File[], savedEntity: T): Promise<void> {
         // Get all the media fields in the dto
-
         const mediaFields = model.fields.filter(field => field.type === 'mediaSingle' || field.type === 'mediaMultiple');
 
         // Depending upon media storage provider configured, get the appropriate storage provider
-        mediaFields.forEach(async (mediaField) => {
+        // Using Promise.all to save all media fields in parallel
+        await Promise.all(mediaFields.map(async (mediaField) => {
             const media = files.filter(multerFile => multerFile.fieldname === mediaField.name);
 
             // If media is present, then save the media
@@ -197,11 +196,9 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 // Get the storage provider implementation
                 const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
 
-                //Commented the below code since we will be direclty images from server on call from ui 
-                // await storageProvider.delete(savedEntity, mediaField);
                 await storageProvider.store(media, savedEntity, mediaField);
             }
-        });
+        }));
     }
 
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
@@ -261,7 +258,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
         // 6. Save the media
         if (hasMediaFields) {
-            this.saveMedia(model, files, savedEntity);
+            await this.saveMedia(model, files, savedEntity);
         }
         return savedEntity;
     }
@@ -386,7 +383,12 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 //    Use the EntityController to extract uploaded content & pass to the entity service.
                 //    If embedded media, then the media uri will saved in the entity table, else the uri will be saved in the media table
                 //    Plan the media table schema e.g id, uri, storageProvider, entity_id, entity_name, createdAt, updatedAt
-                const options = { ...commonOptions, type: fieldMetadata.type as unknown as SolidMediaType };
+                const options = { 
+                    ...commonOptions, 
+                    mediaMaxSizeKb: fieldMetadata.mediaMaxSizeKb,
+                    mediaTypes: fieldMetadata.mediaTypes,
+                    type: fieldMetadata.type as unknown as SolidMediaType 
+                };
                 return new MediaFieldCrudManager(options);
             }
             case SolidFieldType.relation: {

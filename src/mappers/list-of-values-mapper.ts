@@ -11,7 +11,8 @@ export class ListOfValuesMapper {
             description: listOfValue.description,
             default: listOfValue.default,
             sequence: listOfValue.sequence,
-            module: listOfValue.module ? listOfValue.module.id : null
+            // module: listOfValue.module ? listOfValue.module.id : null
+            moduleUserKey: listOfValue.module ? listOfValue.module.name : null
         };
     }
 }

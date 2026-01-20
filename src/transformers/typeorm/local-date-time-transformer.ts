@@ -5,9 +5,6 @@ import timezone from "dayjs/plugin/timezone";
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
-const SOLIDX_WALL_TIME_TZ = process.env.SOLIDX_WALL_TIME_TIMEZONE || process.env.SOLIDX_TIMEZONE || "UTC";
-const SOLIDX_TIME_STORED_AS_WALL_TIME = (process.env.SOLIDX_TIME_STORED_AS_WALL_TIME || "").toLowerCase() === "true";
-
 function dateToUtcComponentString(d: Date): string {
     // Requires MSSQL driver option: useUTC: true
     // so that DB "2026-01-08 10:00:00" -> Date with UTC parts 2026-01-08 10:00:00
@@ -28,7 +25,11 @@ function dateToUtcComponentString(d: Date): string {
 export const LocalDateTimeTransformer = {
     // DB → Entity
     from(value: Date | string | null | undefined): Date | null | undefined {
-         // critical... super important to return undefined here 
+
+        const SOLIDX_WALL_TIME_TZ = process.env.SOLIDX_WALL_TIME_TIMEZONE || process.env.SOLIDX_TIMEZONE || "UTC";
+        const SOLIDX_TIME_STORED_AS_WALL_TIME = (process.env.SOLIDX_TIME_STORED_AS_WALL_TIME || "").toLowerCase() === "true";
+
+        // critical... super important to return undefined here 
         if (value === undefined) return undefined;
         if (value === null) return null;
 
@@ -42,7 +43,11 @@ export const LocalDateTimeTransformer = {
 
     // Entity → DB
     to(value: Date | null | undefined): Date | null | undefined {
-         // critical... super important to return undefined here 
+
+        const SOLIDX_WALL_TIME_TZ = process.env.SOLIDX_WALL_TIME_TIMEZONE || process.env.SOLIDX_TIMEZONE || "UTC";
+        const SOLIDX_TIME_STORED_AS_WALL_TIME = (process.env.SOLIDX_TIME_STORED_AS_WALL_TIME || "").toLowerCase() === "true";
+
+        // critical... super important to return undefined here 
         if (value === undefined) return undefined;
         if (value === null) return null;
 

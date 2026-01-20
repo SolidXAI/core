@@ -59,6 +59,10 @@ export class ModelMetadataService {
     // private readonly generateCodePublihser: GenerateCodePublisherDatabase,
   ) { }
 
+  async find(basicFilterDto: BasicFilterDto) {
+    return this.findMany(basicFilterDto);
+  }
+
   async findMany(basicFilterDto: BasicFilterDto) {
     const alias = 'modelMetadata';
     // Extract the required keys from the input query

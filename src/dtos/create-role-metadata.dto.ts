@@ -92,6 +92,9 @@ export const INTERNAL_ROLE_PERMISSIONS = [
     'AuthenticationController.me',
 
     // Field Metadata permissions
+    'ModelMetadataController.navigation',
+
+    // Field Metadata permissions
     'FieldMetadataController.getSelectionDynamicValues',
     'FieldMetadataController.getSelectionDynamicValue',
     'FieldMetadataController.findFieldDefaultMetaData',

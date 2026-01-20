@@ -17,7 +17,6 @@ export class MailFactory {
         private readonly solidRegistry: SolidRegistry,
     ) { }
 
-
     getMailService(): IMail {
         const mailServiceName = process.env.COMMON_EMAIL_PROVIDER ?? "SMTPEMailService";
         const mailProviders = this.solidRegistry.getMailProviders();

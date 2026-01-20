@@ -6,9 +6,11 @@ import { PublisherFactory } from "../queues/publisher-factory.service";
 import twilio from 'twilio';
 import { QueueMessage } from "src/interfaces/mq";
 import { SettingService } from "../setting.service";
+import { SmsProvider } from "src/decorators/sms-provider.decorator";
 
 
 @Injectable()
+@SmsProvider()
 export class TwilioSMSService implements ISMS {
     private readonly logger = new Logger(TwilioSMSService.name);
 

@@ -31,7 +31,7 @@ import { ModuleMetadataSeederService } from './seeders/module-metadata-seeder.se
 import { CrudHelperService } from './services/crud-helper.service';
 import { FieldMetadataService } from './services/field-metadata.service';
 import { ListOfValuesService } from './services/list-of-values.service';
-import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
+// import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from './services/media-storage-provider-metadata.service';
 import { MediaService } from './services/media.service';
 import { ModelMetadataService } from './services/model-metadata.service';
@@ -85,10 +85,10 @@ import { TestQueuePublisherDatabase } from './jobs/database/test-queue-publisher
 import { TestQueueSubscriberDatabase } from './jobs/database/test-queue-subscriber-database.service';
 import { Msg91WhatsappQueuePublisher } from './jobs/msg91-whatsapp-publisher.service';
 import { Msg91WhatsappQueueSubscriber } from './jobs/msg91-whatsapp-subscriber.service';
-import { OTPQueuePublisher } from './jobs/otp-publisher.service';
-import { OTPQueueSubscriber } from './jobs/otp-subscriber.service';
-import { SmsQueuePublisher } from './jobs/sms-publisher.service';
-import { SmsQueueSubscriber } from './jobs/sms-subscriber.service';
+import { Msg91OTPQueuePublisher } from './jobs/msg91-otp-publisher.service';
+import { Msg91OTPQueueSubscriber } from './jobs/msg91-otp-subscriber.service';
+import { Msg91SmsQueuePublisher } from './jobs/msg91-sms-publisher.service';
+import { Msg91SmsQueueSubscriber } from './jobs/msg91-sms-subscriber.service';
 import { SmtpEmailQueuePublisherRabbitmq } from './jobs/smtp-email-publisher.service';
 import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/smtp-email-subscriber.service';
 import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
@@ -180,8 +180,8 @@ import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-pub
 import { GenerateCodeSubscriberDatabase } from './jobs/database/generate-code-subscriber-database.service';
 import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-database.service';
 import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
-import { SmsQueuePublisherDatabase } from './jobs/database/sms-publisher-database.service';
-import { SmsQueueSubscriberDatabase } from './jobs/database/sms-subscriber-database.service';
+import { Msg91SmsQueuePublisherDatabase } from './jobs/database/msg91-sms-publisher-database.service';
+import { Msg91SmsQueueSubscriberDatabase } from './jobs/database/msg91-sms-subscriber-database.service';
 import { SmtpEmailQueuePublisherDatabase } from './jobs/database/smtp-email-publisher-database.service';
 import { SmtpEmailQueueSubscriberDatabase } from './jobs/database/smtp-email-subscriber-database.service';
 
@@ -347,6 +347,12 @@ import { SolidCoreTinyUrlSettingsProvider } from './services/settings/tiny-url-s
 import { SolidCoreWhatsappSettingsProvider } from './services/settings/whatsapp-settings-provider.service';
 import { SolidCoreAwsS3SettingsProvider } from './services/settings/aws-s3-settings-provider.service';
 import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-builder-settings-provider.service';
+import { SmsFactory } from './factories/sms.factory';
+import { WhatsAppFactory } from './factories/whatsapp.factory';
+import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
+import { ImageEncodingService } from './helpers/image-encoding.helper';
+import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.service';
+import { InfoCommand } from './commands/info.command';
 
 
 @Global()
@@ -496,6 +502,7 @@ import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-bui
     RemoveFieldsCommand,
     RefreshModelCommand,
     RefreshModuleCommand,
+    InfoCommand,
     SolidIntrospectService,
     DiscoveryService,
     R2RHelperService,
@@ -507,7 +514,7 @@ import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-bui
     SchematicService,
     MediaStorageProviderMetadataService,
     MediaService,
-    MediaStorageProviderMetadataSeederService,
+    // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
     ListOfValuesService,
     ListOfValuesSelectionProvider,
@@ -552,16 +559,16 @@ import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-bui
     ApiEmailQueueSubscriber,
     ApiEmailQueuePublisherDatabase,
     ApiEmailQueueSubscriberDatabase,
-    SmsQueuePublisher,
-    SmsQueueSubscriber,
-    SmsQueuePublisherDatabase,
-    SmsQueueSubscriberDatabase,
+    Msg91SmsQueuePublisher,
+    Msg91SmsQueueSubscriber,
+    Msg91SmsQueuePublisherDatabase,
+    Msg91SmsQueueSubscriberDatabase,
     TwilioSmsQueuePublisherDatabase,
     TwilioSmsQueueSubscriberDatabase,
     TwilioSmsQueuePublisherRabbitmq,
     TwilioSmsQueueSubscriberRabbitmq,
-    OTPQueuePublisher,
-    OTPQueueSubscriber,
+    Msg91OTPQueuePublisher,
+    Msg91OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
     OTPQueueSubscriberDatabase,
     Msg91WhatsappQueuePublisher,
@@ -605,7 +612,7 @@ import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-bui
     GenerateCodeSubscriberDatabase,
     GenerateCodePublisherRabbitmq,
     GenerateCodeSubscriberRabbitmq,
-    OTPQueuePublisher,
+    Msg91OTPQueuePublisher,
     MqMessageQueueService,
     MqMessageService,
     ScheduledJobService,
@@ -698,6 +705,8 @@ import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-bui
     ListOfValuesSubscriber,
     ListOfValuesMapper,
     MailFactory,
+    WhatsAppFactory,
+    SmsFactory,
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,
     AiInteractionRepository,
@@ -741,7 +750,9 @@ import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-bui
     SolidCoreTinyUrlSettingsProvider,
     SolidCoreWhatsappSettingsProvider,
     SolidCoreAwsS3SettingsProvider,
-    SolidCoreAppBuilderSettingsProvider
+    SolidCoreAppBuilderSettingsProvider,
+    ImageEncodingService,
+    SolidMicroserviceAdapter,
   ],
   exports: [
     AiInteractionService,
@@ -764,6 +775,8 @@ import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-bui
     ImportTransactionService,
     ListOfValuesService,
     MailFactory,
+    WhatsAppFactory,
+    SmsFactory,
     MediaService,
     MediaStorageProviderMetadataService,
     ModelMetadataHelperService,
@@ -792,7 +805,10 @@ import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-bui
     TwilioSMSService,
     TypeOrmModule,
     UserActivityHistoryService,
-    UserSeederService
+    UserSeederService,
+    ImageEncodingService,
+    SolidMicroserviceAdapter,
+    UserService,
   ],
 })
 export class SolidCoreModule { }

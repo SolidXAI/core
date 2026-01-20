@@ -16,8 +16,8 @@ export class SeedCommand extends CommandRunner {
   }
 
   async run(passedParam: string[], options?: SeedCommandOptions): Promise<void> {
-    // TODO: check if options.conf is non empty and a valid json string only is -c flag is passed.
-    // TODO: convert to json object JSON.parse
+    // check if options.conf is non empty and a valid json string only is -c flag is passed.
+    // convert to json object JSON.parse
     let parsedConf: any = null;
 
     // Parse conf only if provided
@@ -33,8 +33,6 @@ export class SeedCommand extends CommandRunner {
       this.logger.log('No --conf flag provided. Running with default seeder behavior.');
     }
 
-
-
     const seeder = this.solidRegistry
       .getSeeders()
       .filter((seeder) => seeder.name === options.seeder)
@@ -48,26 +46,16 @@ export class SeedCommand extends CommandRunner {
     await seeder.seed(parsedConf);
   }
 
-  @Option({
-    flags: '-c, --conf [configuration json]',
-    description: 'A configuration json, pass a valid json string.',
-    required: false
-  })
   /**
-   * TODO
    * This parameter will be useful, to support seeders with the same name in different modules
    * Currently the seeder service won't support seeder with same classname within a module
    **/
+  @Option({ flags: '-c, --conf [configuration json]', description: 'A configuration json, pass a valid json string.', required: false })
   parseConf(val: string): string {
     return val;
   }
 
-  @Option({
-    flags: '-s, --seeder [seeder name]',
-    description: 'The seeder to run.',
-    required: true,
-    defaultValue: 'ModuleMetadataSeederService'
-  })
+  @Option({ flags: '-s, --seeder [seeder name]', description: 'The seeder to run.', required: true, defaultValue: 'ModuleMetadataSeederService' })
   parseString(val: string): string {
     return val;
   }

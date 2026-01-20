@@ -16,6 +16,10 @@ export class MediaStorageProviderMetadataService {
         private readonly crudHelperService: CrudHelperService
     ) { }
 
+    async find(basicFilterDto: BasicFilterDto) {
+        return this.findMany(basicFilterDto);
+    }
+
     async findMany(basicFilterDto: BasicFilterDto) {
         const alias = 'mediaStorageProviderMetadata';
         // Extract the required keys from the input query

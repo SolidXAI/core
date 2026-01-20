@@ -167,12 +167,7 @@ export class McpCommand extends CommandRunner {
         return path.resolve(inputPath);
     }
 
-    private runDockerCommand(
-        cmd: string,
-        args: string[],
-        cwd: string,
-        env: NodeJS.ProcessEnv,
-    ): Promise<void> {
+    private runDockerCommand(cmd: string, args: string[], cwd: string, env: NodeJS.ProcessEnv): Promise<void> {
         return new Promise((resolve, reject) => {
             const child = spawn(cmd, args, {
                 cwd,
@@ -193,22 +188,13 @@ export class McpCommand extends CommandRunner {
     }
 
     // Flags
-
-    @Option({
-        flags: '-d, --detached [boolean]',
-        description: 'Run containers in detached mode (only for start, default: false)',
-        required: false,
-    })
+    @Option({ flags: '-d, --detached [boolean]', description: 'Run containers in detached mode (only for start, default: false)', required: false, })
     parseDetached(val: string): boolean {
         if (val === undefined) return false;
         return val === 'true' || val === '1';
     }
 
-    @Option({
-        flags: '-p, --repo-path [path]',
-        description: 'Path to the SolidX MCP Server repo containing docker-compose.yml',
-        required: false,
-    })
+    @Option({ flags: '-p, --repo-path [path]', description: 'Path to the SolidX MCP Server repo containing docker-compose.yml', required: false, })
     parseRepoPath(val: string): string {
         return val;
     }

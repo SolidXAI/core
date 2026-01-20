@@ -7,8 +7,10 @@ import { Msg91BaseSMSService } from "./Msg91BaseSMSService";
 import { ISMS } from "../../interfaces";
 import { PublisherFactory } from "../queues/publisher-factory.service";
 import { SettingService } from "../setting.service";
+import { SmsProvider } from "src/decorators/sms-provider.decorator";
 
 @Injectable()
+@SmsProvider()
 export class Msg91SMSService extends Msg91BaseSMSService implements ISMS {
     constructor(
         settingService: SettingService,
@@ -18,7 +20,7 @@ export class Msg91SMSService extends Msg91BaseSMSService implements ISMS {
         smsTemplateService: SmsTemplateService,
         private readonly httpService: HttpService,
     ) {
-        super(settingService, 'SmsQueuePublisher', publisherFactory, smsTemplateService)
+        super(settingService, 'Msg91SmsQueuePublisher', publisherFactory, smsTemplateService)
     }
 
     async sendSMSSynchronously(message: QueueMessage<any>): Promise<any> {

@@ -23,8 +23,8 @@ export abstract class Msg91BaseSMSService implements ISMS {
 
     async sendSMSUsingTemplate(to: string, templateName: string, templateParams: any, shouldQueueSms = false): Promise<any> {
         // Load template and evaluate it. 
-        const emailTemplate = await this.smsTemplateService.findOneByName(templateName);
-        if (!emailTemplate) {
+        const smsTemplate = await this.smsTemplateService.findOneByName(templateName);
+        if (!smsTemplate) {
             throw new Error(`Invalid template name ${templateName}`);
         }
 
@@ -34,12 +34,12 @@ export abstract class Msg91BaseSMSService implements ISMS {
 
         // The below code is only for reference, msh91 maintains the SMS templates in their database, and we need to only specify the templateId. 
         // The below was designed assuming that there are certain sms gateways who do not work this way.
-        if (emailTemplate.body) {
-            const bodyTemplate = Handlebars.compile(emailTemplate.body);
+        if (smsTemplate.body) {
+            const bodyTemplate = Handlebars.compile(smsTemplate.body);
             body = bodyTemplate(templateParams);
         }
-        if (emailTemplate.smsProviderTemplateId) {
-            templateId = emailTemplate.smsProviderTemplateId;
+        if (smsTemplate.smsProviderTemplateId) {
+            templateId = smsTemplate.smsProviderTemplateId;
         }
         if (!body && !templateId) {
             throw new Error(`Invalid template, neither body nor templateId specified on template with name ${templateName}`);

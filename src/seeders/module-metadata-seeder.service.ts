@@ -18,14 +18,13 @@ import { ListOfValuesService } from 'src/services/list-of-values.service';
 import { SettingService } from 'src/services/setting.service';
 import { SmsTemplateService } from 'src/services/sms-template.service';
 import { UserService } from 'src/services/user.service';
-import { DataSource, In, Repository } from 'typeorm';
+import { DataSource, In } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
-import { getDynamicModuleNames, getDynamicModuleNamesBasedOnMetadata } from '../helpers/module.helper';
+import { getDynamicModuleNamesBasedOnMetadata } from '../helpers/module.helper';
 import { SolidRegistry } from '../helpers/solid-registry';
 import { ActionMetadataService } from '../services/action-metadata.service';
 import { FieldMetadataService } from '../services/field-metadata.service';
-import { MediaStorageProviderMetadataSeederService } from '../services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from '../services/media-storage-provider-metadata.service';
 import { ModelMetadataService } from '../services/model-metadata.service';
 import { ModuleMetadataService } from '../services/module-metadata.service';
@@ -62,7 +61,6 @@ export class ModuleMetadataSeederService {
         private readonly authenticationService: AuthenticationService,
         private readonly solidActionService: ActionMetadataService,
         private readonly solidViewService: ViewMetadataService,
-        private readonly mediaStorageProviderSeederService: MediaStorageProviderMetadataSeederService,
         private readonly emailTemplateService: EmailTemplateService,
         private readonly smsTemplateService: SmsTemplateService,
         private readonly listOfValuesService: ListOfValuesService,
@@ -196,7 +194,7 @@ export class ModuleMetadataSeederService {
         // Setup default roles with permissions.
         await this.setupDefaultRolesWithPermissions();
 
-        this.logger.log(`All Seeders finished`);
+        console.log(`All Seeders Finished`);
 
         //FIXME: Handle displaying the created users credentials in a better way.
         // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
@@ -345,8 +343,8 @@ export class ModuleMetadataSeederService {
         this.logger.log(`Seeding Permissions`);
         await this.seedPermissions();
 
-        this.logger.log(`Seeding Default Media Storage Providers`);
-        await this.seedDefaultMediaStorageProviders();
+        // this.logger.log(`Seeding Default Media Storage Providers`);
+        // await this.seedDefaultMediaStorageProviders();
 
         this.logger.log(`Seeding System Fields Metadata`);
         await this.seedDefaultSystemFields();
@@ -407,9 +405,9 @@ export class ModuleMetadataSeederService {
     }
 
     // OK
-    private async seedDefaultMediaStorageProviders() {
-        await this.mediaStorageProviderSeederService.seed();
-    }
+    // private async seedDefaultMediaStorageProviders() {
+    //     await this.mediaStorageProviderSeederService.seed();
+    // }
 
     // OK
     private async seedMediaStorageProviders(mediaStorageProviders: any[]) {

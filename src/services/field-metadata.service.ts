@@ -225,6 +225,10 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         return { moduleName, modelName };
     }
 
+    async find(basicFilterDto: BasicFilterDto) {
+        return this.findMany(basicFilterDto);
+    }
+
     async findMany(basicFilterDto: BasicFilterDto) {
         const alias = 'fieldMetadata';
         // Extract the required keys from the input query
@@ -1374,7 +1378,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
             resolvedBucketName = mediaStorageProvider.bucketName;
         }
         this.logger.debug(`INSIDE::resolveS3Url:: resolvedBucketName: ${resolvedBucketName}`)
- 
+
         if (resolveS3UrlDto.isPrivate == "true") {
             const expiryInSeconds = 60 * 60;
             url = await this.fileService.getSignedUrl(normalizedKey, expiryInSeconds, resolvedBucketName);
