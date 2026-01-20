@@ -1,5 +1,5 @@
-import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable } from '@nestjs/common';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 
@@ -11,24 +11,16 @@ import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
 import { User } from 'src/entities/user.entity';
 import { SettingRepository } from 'src/repository/setting.repository';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
 import { FileService } from 'src/services/file.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
 
 @Injectable()
 export class SettingService extends CRUDService<Setting> {
   constructor(
-    @Inject(forwardRef(() => ModelMetadataService))
-    readonly modelMetadataService: ModelMetadataService,
-    readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,
     readonly fileService: FileService,
-    readonly discoveryService: DiscoveryService,
-    readonly crudHelperService: CrudHelperService,
     @Inject(iamConfig.KEY) private readonly iamConfiguration: ConfigType<typeof iamConfig>,
     @Inject(commonConfig.KEY)
     private readonly commonConfiguration: ConfigType<typeof commonConfig>,
@@ -41,8 +33,7 @@ export class SettingService extends CRUDService<Setting> {
     private readonly requestContextService: RequestContextService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'setting', 'solid-core', moduleRef
-    );
+    super(entityManager, repo, 'setting', 'solid-core', moduleRef);
   }
 
   async seedDefaultSettings(): Promise<void> {

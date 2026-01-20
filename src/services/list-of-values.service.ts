@@ -1,14 +1,9 @@
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { Injectable } from '@nestjs/common';
+import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 
-import { ConfigService } from '@nestjs/config';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
-import { FileService } from 'src/services/file.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
@@ -24,14 +19,6 @@ export class ListOfValuesService extends CRUDService<ListOfValues> {
   // moduleMetadataHelperService: any;
   // listOfValuesMapper: any;
   constructor(
-    @Inject(forwardRef(() => ModelMetadataService))
-    readonly modelMetadataService: ModelMetadataService,
-    readonly moduleMetadataService: ModuleMetadataService,
-    readonly configService: ConfigService,
-    readonly fileService: FileService,
-    readonly discoveryService: DiscoveryService,
-    readonly crudHelperService: CrudHelperService,
-    
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(ListOfValues, 'default')
@@ -42,7 +29,7 @@ export class ListOfValuesService extends CRUDService<ListOfValues> {
     readonly listOfValuesMapper: ListOfValuesMapper,
 
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'listOfValues', 'solid-core', moduleRef);
+    super(entityManager, repo, 'listOfValues', 'solid-core', moduleRef);
   }
   async findOneByValueAndType(lovValue: string, lovType: string) {
     return await this.repo.findOne({

@@ -1,16 +1,9 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { ModuleRef } from "@nestjs/core";
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
-import { ConfigService } from '@nestjs/config';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
-import { FileService } from 'src/services/file.service';
-import { MediaStorageProviderMetadataService } from 'src/services/media-storage-provider-metadata.service';
-import { MediaService } from 'src/services/media.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
 import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
@@ -26,12 +19,10 @@ import { CsvService } from './csv.service';
 import { ExcelService } from './excel.service';
 import { getMediaStorageProvider } from './mediaStorageProviders';
 import { SolidIntrospectService } from './solid-introspect.service';
-import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { UpdateExportTemplateDto } from 'src/dtos/update-export-template.dto';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { ExportTransactionRepository } from 'src/repository/export-transaction.repository';
-import { Field } from 'mysql2/typings/mysql/lib/parsers/typeCast';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
 
@@ -59,12 +50,6 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
   private logger = new Logger(ExportTransactionService.name);
 
   constructor(
-    readonly modelMetadataService: ModelMetadataService,
-    readonly moduleMetadataService: ModuleMetadataService,
-    readonly configService: ConfigService,
-    readonly fileService: FileService,
-    readonly discoveryService: DiscoveryService,
-    readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(ExportTransaction, 'default')
@@ -84,7 +69,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
     private readonly modelMetadataHelperService: ModelMetadataHelperService,
 
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'exportTransaction', 'solid-core', moduleRef);
+    super(entityManager, repo, 'exportTransaction', 'solid-core', moduleRef);
   }
 
   // Return the export stream

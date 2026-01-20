@@ -1,14 +1,11 @@
 import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager, In } from 'typeorm';
 
 import { ConfigService } from '@nestjs/config';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
 import { FileService } from 'src/services/file.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
@@ -25,13 +22,8 @@ import { getMediaStorageProvider } from "./mediaStorageProviders";
 @Injectable()
 export class MediaService extends CRUDService<Media> {
   constructor(
-    @Inject(forwardRef(() => ModelMetadataService))
-    readonly modelMetadataService: ModelMetadataService,
-    readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,
     readonly fileService: FileService,
-    readonly discoveryService: DiscoveryService,
-    readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(Media, 'default')
@@ -49,7 +41,7 @@ export class MediaService extends CRUDService<Media> {
     private readonly fieldMetadataRepo: FieldMetadataRepository,
     readonly moduleRef: ModuleRef,
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'media', 'solid-core', moduleRef);
+    super(entityManager, repo, 'media', 'solid-core', moduleRef);
   }
 
   async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}) {

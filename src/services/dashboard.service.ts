@@ -1,14 +1,9 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 
-import { ConfigService } from '@nestjs/config';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
-import { FileService } from 'src/services/file.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
@@ -27,12 +22,6 @@ export const SQL_DYNAMIC_PROVIDER_NAME = 'DashboardVariableSQLDynamicProvider';
 export class DashboardService extends CRUDService<Dashboard> {
   private readonly logger = new Logger(this.constructor.name);
   constructor(
-    readonly modelMetadataService: ModelMetadataService,
-    readonly moduleMetadataService: ModuleMetadataService,
-    readonly configService: ConfigService,
-    readonly fileService: FileService,
-    readonly discoveryService: DiscoveryService,
-    readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     readonly repo: DashboardRepository, // Assuming you have a DashboardRepository for custom queries
@@ -41,7 +30,7 @@ export class DashboardService extends CRUDService<Dashboard> {
     readonly moduleMetadataHelperService: ModuleMetadataHelperService,
     readonly dashboardMapper: DashboardMapper,
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'dashboard', 'solid-core', moduleRef);
+    super(entityManager, repo, 'dashboard', 'solid-core', moduleRef);
   }
 
   async getSelectionDynamicValues(query: DashboardVariableSelectionDynamicQueryDto) {
