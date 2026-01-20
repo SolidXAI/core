@@ -5,7 +5,7 @@ export * from './commands/remove-fields.command'
 export * from './commands/seed.command'
 
 export * from './config/app-builder.config'
-export {default as commonConfig} from './config/common.config'
+export { default as commonConfig } from './config/common.config'
 export * from './config/iam.config'
 export * from './config/cache.options'
 

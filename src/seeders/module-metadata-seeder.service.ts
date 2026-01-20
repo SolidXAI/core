@@ -1,3 +1,4 @@
+
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -18,7 +19,6 @@ import { SettingService } from 'src/services/setting.service';
 import { SmsTemplateService } from 'src/services/sms-template.service';
 import { UserService } from 'src/services/user.service';
 import { DataSource, In, Repository } from 'typeorm';
-import appBuilderConfig from '../config/app-builder.config';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
 import { getDynamicModuleNames, getDynamicModuleNamesBasedOnMetadata } from '../helpers/module.helper';

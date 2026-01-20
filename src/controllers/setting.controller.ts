@@ -62,13 +62,15 @@ export class SettingController {
     return this.service.update(id, updateDto, files, true, solidRequestContext);
   }
 
-  @ApiBearerAuth("jwt")
   @Get('/wrapped')
   @Public()
   async wrapSettings() {
-    return this.service.wrapSettings();
+
+    return this.service.getAllSettings();
+    
   }
 
+  @ApiBearerAuth("jwt")
   @Get()
   async getAllSettings() {
     return this.service.getAllSettings();

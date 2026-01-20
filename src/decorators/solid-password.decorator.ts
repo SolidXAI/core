@@ -7,7 +7,6 @@ import {
     ValidatorConstraintInterface,
 } from 'class-validator';
 import { Injectable } from '@nestjs/common';
-import { iamConfig } from '../config/iam.config';
 import { SettingService } from 'src/services/setting.service';
 
 interface SolidPasswordOptions extends ValidationOptions {
@@ -30,12 +29,12 @@ export class SolidPasswordConstraint implements ValidatorConstraintInterface {
       // Regex source
       let regex = opts?.regex;
       if (!regex) {
-        regex = await this.settingService.getConfigValue('authenticationPasswordRegex');
+        regex = await this.settingService.getConfigValue("iam",'authenticationPasswordRegex');
       }
   
       // Message source
       this.lastMessage =
-        opts?.message || await this.settingService.getConfigValue('authenticationPasswordRegexErrorMessage');
+        opts?.message || await this.settingService.getConfigValue("iam",'authenticationPasswordRegexErrorMessage');
   
       return new RegExp(regex).test(value);
     }

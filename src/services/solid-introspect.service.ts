@@ -20,7 +20,7 @@ import { CreatedByUpdatedBySubscriber } from 'src/subscribers/created-by-updated
 import { SoftDeleteAwareEventSubscriber } from 'src/subscribers/soft-delete-aware-event.subscriber';
 import { DataSource } from 'typeorm';
 import { CRUDService } from './crud.service';
-import { IS_SEtTTINGS_PROVIDER } from 'src/decorators/settings-provider.decorator';
+import { IS_SETTINGS_PROVIDER } from 'src/decorators/settings-provider.decorator';
 
 export const coreSubscriberClasses = [
   AuditSubscriber,
@@ -297,7 +297,7 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     if (!instance) return false;
 
     const isSettingsProvider = this.reflector.get<boolean>(
-      IS_SEtTTINGS_PROVIDER,
+      IS_SETTINGS_PROVIDER,
       instance.constructor,
     );
 

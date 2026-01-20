@@ -4,8 +4,6 @@ import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
 
 import { ConfigService, ConfigType } from '@nestjs/config';
-import commonConfig from 'src/config/common.config';
-import { iamConfig } from 'src/config/iam.config';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
@@ -18,22 +16,30 @@ import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
+import { SolidRegistry } from 'src/helpers/solid-registry';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
+import { Cache } from 'cache-manager';
+import { SettingDefinition } from 'src/interfaces';
+
+
 
 @Injectable()
 export class SettingService extends CRUDService<Setting> {
+
   constructor(
     @Inject(forwardRef(() => ModelMetadataService))
     readonly modelMetadataService: ModelMetadataService,
+    @Inject(forwardRef(() => ModuleMetadataService))
     readonly moduleMetadataService: ModuleMetadataService,
     readonly configService: ConfigService,
     readonly fileService: FileService,
+    readonly solidRegistry: SolidRegistry,
     readonly discoveryService: DiscoveryService,
     readonly crudHelperService: CrudHelperService,
-    @Inject(iamConfig.KEY) private readonly iamConfiguration: ConfigType<typeof iamConfig>,
-    @Inject(commonConfig.KEY)
-    private readonly commonConfiguration: ConfigType<typeof commonConfig>,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
+    @Inject(CACHE_MANAGER) private cacheManager: Cache,
+
     // @InjectRepository(Setting, 'default')
     // readonly repo: Repository<Setting>,
     readonly repo: SettingRepository,
@@ -45,139 +51,136 @@ export class SettingService extends CRUDService<Setting> {
     );
   }
 
-  async seedDefaultSettings(): Promise<void> {
-    const settingsSeederData = this.getDefaultSettings();
+  private readonly SYSTEM_SETTINGS_CACHE_KEY = 'cached-system-settings';
 
-    const existingSettings = await this.repo.find();
+  private async getSettingsFromRepo(): Promise<Setting[]> {
+    const cachedSettings = await this.cacheManager.get<Setting[]>(
+      this.SYSTEM_SETTINGS_CACHE_KEY,
+    );
+
+    if (cachedSettings) {
+      return cachedSettings;
+    }
+
+    const settings = await this.repo.find({ relations: ['user'] });
+    // TTL in seconds
+    await this.cacheManager.set(this.SYSTEM_SETTINGS_CACHE_KEY, settings, 60 * 5);
+
+    return settings;
+  }
+
+
+  async seedDefaultSettings(): Promise<void> {
+    // ToDo only settings which are not of level system , system-readOnly 
+    const settingsSeederData = this.getDefaultSettings().filter(i => i.level !== "system-env" && i.level !== "system-admin-readonly");
+
+
+    const existingSettings: Setting[] = await this.getSettingsFromRepo();
+
     const existingKeys = new Set(existingSettings.map(s => s.key));
 
     const settingsToInsert: Setting[] = [];
-    for (const [key, value] of Object.entries(settingsSeederData)) {
+    // for (const [key, value] of Object.entries(settingsSeederData)) {
+    //   if (!existingKeys.has(key)) {
+    //     const setting = new Setting();
+    //     setting.key = key;
+    //     setting.value = typeof value === 'boolean' ? value.toString() :
+    //       Array.isArray(value) ? value.join(',') :
+    //         value === null || value === undefined ? null : String(value);
+    //     settingsToInsert.push(setting);
+    //   }
+    // }
+
+    for (const { key, value } of settingsSeederData) {
       if (!existingKeys.has(key)) {
         const setting = new Setting();
         setting.key = key;
-        setting.value = typeof value === 'boolean' ? value.toString() :
-          Array.isArray(value) ? value.join(',') :
-            value === null || value === undefined ? null : String(value);
+
+        setting.value =
+          typeof value === 'boolean'
+            ? value.toString()
+            : Array.isArray(value)
+              ? value.join(',')
+              : value === null || value === undefined
+                ? null
+                : String(value);
+
         settingsToInsert.push(setting);
       }
     }
+
 
     if (settingsToInsert.length > 0) {
       await this.repo.save(settingsToInsert);
     }
   }
 
-  async wrapSettings(): Promise<Record<string, any>> {
-    const settingsArray: Setting[] = await this.repo.find();
+  private getDefaultSettings(): Array<any> {
 
-    if (!settingsArray || settingsArray.length === 0) {
-      return this.getDefaultSettings();
+    // TODO  get all settings from registry 
+    const allSettingsProviders = this.solidRegistry.getSettingsProviders();
+    const settings = [];
+    for (const wrapper of allSettingsProviders) {
+      const instance = wrapper.instance;
+      if (!instance?.getSettings) continue;
+      settings.push(...instance.getSettings());
     }
 
-    const settingsMap: Record<string, any> = {};
-    const arrayKeysToSkip = [
-      'authenticationPasswordRegex',
-      'authenticationPasswordRegexErrorMessage',
-      'authenticationPasswordComplexityDescription',
-    ];
-    for (const setting of settingsArray) {
-      if (setting.key && setting.value !== undefined && setting.value !== null) {
-        let value = setting.value;
-        try {
-          settingsMap[setting.key] = JSON.parse(value);
-        } catch {
-          if (value === 'true' || value === 'false') {
-            settingsMap[setting.key] = value === 'true';
-          } else if (!isNaN(Number(value)) && value.trim() !== '') {
-            settingsMap[setting.key] = Number(value);
-          } else if (!arrayKeysToSkip.includes(setting.key) && value.includes(',')) {
-            settingsMap[setting.key] = value.split(',').map(item => item.trim());
-          } else {
-            settingsMap[setting.key] = value;
-          }
-        }
+    return settings
 
-        // if (value === 'true' || value === 'false') {
-        //   settingsMap[setting.key] = value === 'true';
-        // }
-        // else if (!isNaN(Number(value)) && value.trim() !== '') {
-        //   settingsMap[setting.key] = Number(value);
-        // }
-        // else if (value.includes(',')) {
-        //   settingsMap[setting.key] = value.split(',').map(item => item.trim());
-        // }
-        // else {
-        //   settingsMap[setting.key] = value;
-        // }
-      }
-    }
+    // return {
+    //   passwordlessRegistrationValidateWhat: this.iamConfiguration.passwordlessRegistrationValidateWhat,
+    //   allowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
+    //   passwordBasedAuth: this.iamConfiguration.passwordBasedAuth,
+    //   passwordLessAuth: this.iamConfiguration.passwordLessAuth,
+    //   activateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
+    //   defaultRole: this.iamConfiguration.defaultRole,
+    //   shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
+    //   shouldQueueSms: this.commonConfiguration.shouldQueueSms,
+    //   forceChangePasswordOnFirstLogin: this.iamConfiguration.forceChangePasswordOnFirstLogin,
+    //   authenticationPasswordRegex: this.iamConfiguration.PASSWORD_REGEX,
+    //   authenticationPasswordRegexErrorMessage: this.iamConfiguration.PASSWORD_REGEX_ERROR_MESSAGE,
+    //   authenticationPasswordComplexityDescription: this.iamConfiguration.PASSWORD_COMPLEXITY_DESC,
+    //   iamAutoGeneratedPassword: this.iamConfiguration.iamAutoGeneratedPassword,
+    //   showNameFieldsForRegistration: this.iamConfiguration.showNameFieldsForRegistration
 
-    const defaultSettings = this.getDefaultSettings();
+    //   iamGoogleOAuthEnabled: false,
+    //   authPagesLayout: "center",
+    //   authPagesTheme: "light",
+    //   appLogo: null,
+    //   companylogo: null,
+    //   favicon: null,
+    //   appLogoPosition: "in_form_view",
+    //   showAuthContent: false,
+    //   appTitle: process.env.SOLID_APP_NAME || "Solid App",
+    //   appSubtitle: process.env.SOLID_APP_SUBTITLE || "",
+    //   appDescription: process.env.SOLID_APP_DESCRIPTION || "",
+    //   showLegalLinks: false,
+    //   appTnc: null,
+    //   appPrivacyPolicy: null,
+    //   enableDarkMode: true,
+    //   copyright: null,
+    //   enableUsername: true,
+    //   enabledNotification: true,
+    //   contactSupportEmail: null,
+    //   contactSupportDisplayName: null,
+    //   contactSupportIcon: null,
+    //   authScreenRightBackgroundImage: null,
+    //   authScreenLeftBackgroundImage: null,
+    //   authScreenCenterBackgroundImage: null,
+    //   solidXGenAiCodeBuilderConfig: JSON.stringify({
+    //     defaultProvider: "",
+    //     availableProviders: []
+    //   }),
+    // };
 
-    const mergedSettings = Object.keys(defaultSettings).reduce((acc, key) => {
-      acc[key] = settingsMap[key] !== undefined ? settingsMap[key] : defaultSettings[key];
-      return acc;
-    }, {} as Record<string, any>);
-
-    return mergedSettings;
   }
 
-  private getDefaultSettings(): Record<string, any> {
-    return {
-      passwordlessRegistrationValidateWhat: this.iamConfiguration.passwordlessRegistrationValidateWhat,
-      allowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
-      passwordBasedAuth: this.iamConfiguration.passwordBasedAuth,
-      passwordLessAuth: this.iamConfiguration.passwordLessAuth,
-      activateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
-      iamGoogleOAuthEnabled: false,
-      authPagesLayout: "center",
-      authPagesTheme: "light",
-      appLogo: null,
-      companylogo: null,
-      favicon: null,
-      // in_form_view | in_image_view
-      appLogoPosition: "in_form_view",
-      showAuthContent: false,
-      appTitle: process.env.SOLID_APP_NAME || "Solid App",
-      appSubtitle: process.env.SOLID_APP_SUBTITLE || "",
-      appDescription: process.env.SOLID_APP_DESCRIPTION || "",
-      showLegalLinks: false,
-      appTnc: null,
-      appPrivacyPolicy: null,
-      defaultRole: this.iamConfiguration.defaultRole,
-      shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
-      shouldQueueSms: this.commonConfiguration.shouldQueueSms,
-      enableDarkMode: true,
-      copyright: null,
-      forceChangePasswordOnFirstLogin: this.iamConfiguration.forceChangePasswordOnFirstLogin,
-      enableUsername: true,
-      enabledNotification: true,
-      contactSupportEmail: null,
-      contactSupportDisplayName: null,
-      contactSupportIcon: null,
-      authScreenRightBackgroundImage: null,
-      authScreenLeftBackgroundImage: null,
-      authScreenCenterBackgroundImage: null,
-      authenticationPasswordRegex: this.iamConfiguration.PASSWORD_REGEX,
-      authenticationPasswordRegexErrorMessage: this.iamConfiguration.PASSWORD_REGEX_ERROR_MESSAGE,
-      authenticationPasswordComplexityDescription: this.iamConfiguration.PASSWORD_COMPLEXITY_DESC,
-      solidXGenAiCodeBuilderConfig: JSON.stringify({
-        defaultProvider: "",
-        availableProviders: []
-      }),
-      iamAutoGeneratedPassword: this.iamConfiguration.iamAutoGeneratedPassword,
-      showNameFieldsForRegistration: this.iamConfiguration.showNameFieldsForRegistration
-    };
-  }
 
-  // private async getSettingsFromRepo(): Promise<Setting[]> {
-  //   const cachedSettings = await this.cacheManager.get('cached-system-settings');
-  // }
-
-  async getConfigValue(settingKey: string) {
+  async getConfigValue(namespace: String, settingKey: string) {
     try {
-      const settingsArray: Setting[] = await this.repo.find();
+      const settingsArray: Setting[] = await this.getSettingsFromRepo();
+
       const settingEntry = settingsArray.find(setting => setting.key === settingKey);
 
       if (settingEntry && settingEntry.value !== null && settingEntry.value !== undefined) {
@@ -197,11 +200,19 @@ export class SettingService extends CRUDService<Setting> {
         }
       }
 
-      const defaultSettings = this.getDefaultSettings();
-      return defaultSettings[settingKey];
+      const getAllSettings = this.getDefaultSettings();
+      const settingValue = getAllSettings.find(i => (i.key == settingKey && i.namespace == namespace))
+      if (settingValue) {
+        return settingValue.value;
+      }
     } catch (error) {
-      const defaultSettings = this.getDefaultSettings();
-      return defaultSettings[settingKey];
+
+      // in case somethings wrong with repo call 
+      const getAllSettings = this.getDefaultSettings();
+      const settingValue = getAllSettings.find(i => (i.key == settingKey && i.namespace == namespace))
+      if (settingValue) {
+        return settingValue.value;
+      }
     }
   }
 
@@ -209,7 +220,9 @@ export class SettingService extends CRUDService<Setting> {
     const activeUser = this.requestContextService.getActiveUser();
     const userId = activeUser?.sub;
 
-    const existingSettings = await this.repo.find();
+    // const existingSettings = await this.repo.find();
+    const existingSettings: Setting[] = await this.getSettingsFromRepo();
+
 
     const settingsToUpdate: Setting[] = [];
     const settingsToCreate: Setting[] = [];
@@ -225,7 +238,8 @@ export class SettingService extends CRUDService<Setting> {
       for (const file of uploadedFiles) {
         const settingKey = file.fieldname;
         const relativeFileName = `${file.filename}-${file.originalname}`;
-        const storagePath = `${this.configService.get('app-builder.fileStorageDir')}/${relativeFileName}`;
+        const fileStorageDir = await this.getConfigValue("app-builder", "fileStorageDir")
+        const storagePath = `${fileStorageDir}/${relativeFileName}`;
         const baseUrl = process.env.BASE_URL || '';
         const fileUrl = `${baseUrl}/${storagePath}`;
 
@@ -294,15 +308,16 @@ export class SettingService extends CRUDService<Setting> {
     if (settingsToCreate.length > 0) {
       await this.repo.save(settingsToCreate);
     }
+    await this.cacheManager.del(this.SYSTEM_SETTINGS_CACHE_KEY);
 
     return [...settingsToUpdate, ...settingsToCreate];
   }
 
-  async getAllSettings(): Promise<{ system: Record<string, any>, user: Record<string, any> }> {
-    const settingsArray = await this.repo.find({ relations: ['user'] });
-
-    const system: Record<string, any> = {};
-    const user: Record<string, any> = {};
+  // TODO remove all refrence of user from the below method and ui 
+  async getAllSettings(): Promise<Record<any, any>> {
+    // TODO remove system level from settings array - since we dont seed system-env & system-read-only settings - no need to remove them 
+    const settingsArray: Setting[] = await this.getSettingsFromRepo();
+    const finalSettings = {}
     const arrayKeysToSkip = [
       'authenticationPasswordRegex',
       'authenticationPasswordRegexErrorMessage',
@@ -326,15 +341,11 @@ export class SettingService extends CRUDService<Setting> {
             parsedValue = value;
           }
         }
-        if (setting.type === 'user') {
-          user[setting.key] = parsedValue;
-        } else {
-          system[setting.key] = parsedValue;
-        }
+        finalSettings[setting.key] = parsedValue
       }
     }
 
-    return { system, user };
+    return finalSettings;
   }
 
   async getMcpUrl(getMcpUrlDto: GetMcpUrlDto, solidRequestContext: any = {}): Promise<any> {

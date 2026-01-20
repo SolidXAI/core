@@ -58,7 +58,6 @@ import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { SeedCommand } from './commands/seed.command';
 import commonConfig from './config/common.config';
-import { iamConfig } from './config/iam.config';
 import { AuthenticationController } from './controllers/authentication.controller';
 import { EmailTemplateController } from './controllers/email-template.controller';
 import { GoogleAuthenticationController } from './controllers/google-authentication.controller';
@@ -338,6 +337,16 @@ import { ModelSequenceController } from './controllers/model-sequence.controller
 import { ModelSequenceRepository } from './repository/model-sequence.repository';
 import { CacheModule } from '@nestjs/cache-manager';
 import { CacheManagerOptions } from './config/cache.options';
+import { SolidCoreJwtSettingsProvider } from './services/settings/jwt-settings-provider.service';
+import { SolidCoreGoogleOAuthSettingsProvider } from './services/settings/google-oauth-settings-provider.service';
+import { SolidCoreIamSettingsProvider } from './services/settings/iam-settings-provider.service';
+import { SolidCoreDefaultSettingsProvider } from './services/settings/default-settings-provider.service';
+import { SolidCoreEmailSettingsProvider } from './services/settings/email-settings-provider.service';
+import { SolidCoreSmsSettingsProvider } from './services/settings/sms-settings-provider.service';
+import { SolidCoreTinyUrlSettingsProvider } from './services/settings/tiny-url-settings-provider.service';
+import { SolidCoreWhatsappSettingsProvider } from './services/settings/whatsapp-settings-provider.service';
+import { SolidCoreAwsS3SettingsProvider } from './services/settings/aws-s3-settings-provider.service';
+import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-builder-settings-provider.service';
 
 
 @Global()
@@ -385,7 +394,6 @@ import { CacheManagerOptions } from './config/cache.options';
     CacheModule.registerAsync(CacheManagerOptions),
     ConfigModule.forFeature(appBuilderConfig),
     ConfigModule.forFeature(commonConfig),
-    ConfigModule.forFeature(iamConfig),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'media-files-storage'),
@@ -405,7 +413,7 @@ import { CacheManagerOptions } from './config/cache.options';
     MulterModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        dest: configService.get<string>('app-builder.uploadDir'),
+        dest: process.env.AB_MEDIA_UPLOAD_DIR ?? "media-uploads",
       }),
       inject: [ConfigService],
     }),
@@ -724,6 +732,16 @@ import { CacheManagerOptions } from './config/cache.options';
     SequenceNumComputedFieldProvider,
     ModelSequenceService,
     ModelSequenceRepository,
+    SolidCoreJwtSettingsProvider,
+    SolidCoreGoogleOAuthSettingsProvider,
+    SolidCoreIamSettingsProvider,
+    SolidCoreDefaultSettingsProvider,
+    SolidCoreEmailSettingsProvider,
+    SolidCoreSmsSettingsProvider,
+    SolidCoreTinyUrlSettingsProvider,
+    SolidCoreWhatsappSettingsProvider,
+    SolidCoreAwsS3SettingsProvider,
+    SolidCoreAppBuilderSettingsProvider
   ],
   exports: [
     AiInteractionService,

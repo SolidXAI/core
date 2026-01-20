@@ -32,11 +32,11 @@ export class AccessTokenGuard implements CanActivate {
     try {
 
       const jwtConfiguration = {
-        secret: await this.settingService.getConfigValue("secret"),
-        audience: await this.settingService.getConfigValue("audience"),
-        issuer: await this.settingService.getConfigValue("issuer"),
-        accessTokenTtl: await this.settingService.getConfigValue("accessTokenTtl"),
-        refreshTokenTtl: await this.settingService.getConfigValue("refreshTokenTtl")
+        secret: await this.settingService.getConfigValue("jwt", "secret"),
+        audience: await this.settingService.getConfigValue("jwt","audience"),
+        issuer: await this.settingService.getConfigValue("jwt","issuer"),
+        accessTokenTtl: await this.settingService.getConfigValue("jwt","accessTokenTtl"),
+        refreshTokenTtl: await this.settingService.getConfigValue("jwt","refreshTokenTtl")
       }
       const payload: ActiveUserData = await this.jwtService.verifyAsync(
         token,

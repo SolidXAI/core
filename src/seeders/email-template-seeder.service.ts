@@ -4,8 +4,8 @@ import * as path from 'path';
 
 import { ConfigType } from '@nestjs/config';
 import { EmailTemplateService } from '../services/email-template.service';
-import commonConfig from '../config/common.config';
 import { CreateEmailTemplateDto } from '../dtos/create-email-template.dto';
+import { SettingService } from 'src/services/setting.service';
 
 @Injectable()
 export class EmailTemplateSeederService {
@@ -13,13 +13,14 @@ export class EmailTemplateSeederService {
 
     constructor(
         private readonly emailTemplateService: EmailTemplateService,
-        @Inject(commonConfig.KEY)
-        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
+        private readonly settingService: SettingService
     ) { }
 
     async seed() {
         // Read the module metadata from a file specified in the .env 
-        const seedDataFiles = this.commonConfiguration.emailTemplateSeederFiles.split(',');
+        const seedDataFileVariable = await this.settingService.getConfigValue("email", "emailTemplateSeederFiles");
+        const seedDataFiles = seedDataFileVariable.split(',');
+
         for (let i = 0; i < seedDataFiles.length; i++) {
             const seedDataFile = seedDataFiles[i];
             const fullPath = path.join(process.cwd(), seedDataFile);

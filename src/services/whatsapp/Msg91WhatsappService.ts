@@ -1,11 +1,11 @@
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import commonConfig from 'src/config/common.config';
 import { QueueMessage } from 'src/interfaces/mq';
 import { IWhatsAppTransport } from "../../interfaces";
 import { PublisherFactory } from '../queues/publisher-factory.service';
 import { WhatsAppProvider } from 'src/decorators/whatsapp-provider.decorator';
+import { SettingService } from '../setting.service';
 
 enum Msg91WhatsappParameterHeaderType {
   image,
@@ -55,12 +55,11 @@ export class Msg91WhatsappService implements IWhatsAppTransport {
   readonly logger = new Logger(Msg91WhatsappService.name);
 
   constructor(
-    @Inject(commonConfig.KEY)
-    private readonly commonConfiguration: ConfigType<typeof commonConfig>,
     // whatsappPublisher: WhatsappQueuePublisher,
     private readonly publisherFactory: PublisherFactory<any>,
     private readonly httpService: HttpService,
-  ) {}
+    private readonly settingService: SettingService
+  ) { }
 
   async sendWhatsAppMessage(
     to: string,
@@ -90,19 +89,19 @@ export class Msg91WhatsappService implements IWhatsAppTransport {
   }
 
   async sendWhatsAppMessageSynchronously(message: QueueMessage<any>): Promise<void> {
-    const body = this.createWhatsappRequest(message);
-    const headers = { authkey: this.commonConfiguration.msg91Whatsapp.apiKey };
+    const body = await this.createWhatsappRequest(message);
+    const headers = { authkey: await this.settingService.getConfigValue("whatsapp", "msg91WhatsappApiKey") };
     await this.httpService.axiosRef.post(
-      `${this.commonConfiguration.msg91Whatsapp.url}`,
+      `${await this.settingService.getConfigValue("whatsapp", "msg91WhatsappUrl")}`,
       body,
       { headers },
     );
     this.logger.debug(
-      `Sending Whatsapp message for CP registration with body ${JSON.stringify(body)} and url ${this.commonConfiguration.msg91Whatsapp.url}`,
+      `Sending Whatsapp message for CP registration with body ${JSON.stringify(body)} and url ${await this.settingService.getConfigValue("whatsapp", "msg91WhatsappUrl")}`,
     );
   }
 
-  private createWhatsappRequest(message: QueueMessage<any>): WhatsappRequest {
+  private async createWhatsappRequest(message: QueueMessage<any>): Promise<WhatsappRequest> {
     const { to, templateId, ...parameters } = message.payload;
     const whatsappToAndComponents = this.createWhatsappToAndComponents(
       to,
@@ -123,8 +122,7 @@ export class Msg91WhatsappService implements IWhatsAppTransport {
       template: whatsappTemplate,
     };
     return {
-      integrated_number:
-        this.commonConfiguration.msg91Whatsapp.integratedNumber,
+      integrated_number: await this.settingService.getConfigValue("whatsapp", "msg91WhatsappIntegratedNumber"),
       content_type: 'template',
       payload: whatsappPayload,
     };

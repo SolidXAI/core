@@ -1,7 +1,7 @@
-export const IS_SEtTTINGS_PROVIDER = 'IS_SEtTTINGS_PROVIDER';
+import { SetMetadata } from "@nestjs/common";
 
-export const SettingsProvider = () => {
-    return (target: Function) => {
-        Reflect.defineMetadata(IS_SEtTTINGS_PROVIDER, true, target);
-    };
-};
+export const IS_SETTINGS_PROVIDER = 'IS_SETTINGS_PROVIDER';
+
+
+export const SettingsProvider = () => SetMetadata(IS_SETTINGS_PROVIDER, true);
+

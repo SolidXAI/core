@@ -25,6 +25,7 @@ import { DisallowInProduction } from 'src/decorators/disallow-in-production.deco
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import Module from 'module';
 import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
+import { SettingService } from './setting.service';
 
 @Injectable()
 export class ModuleMetadataService {
@@ -40,6 +41,8 @@ export class ModuleMetadataService {
     private readonly schematicService: SchematicService,
     private readonly configService: ConfigService,
     private readonly fileService: FileService,
+    private readonly settingService: SettingService,
+
     private readonly permissionsSeederService: PermissionMetadataSeederService,
     @Inject(forwardRef(() => ModelMetadataService))
     private readonly modelMetadataService: ModelMetadataService,
@@ -125,7 +128,7 @@ export class ModuleMetadataService {
 
   async createInDB(manager: EntityManager, createDto: CreateModuleMetadataDto, files: Express.Multer.File[] = []) {
     if (files.length > 0) {
-      const fileStoragePath = this.getFileSysytemFullFilePath(this.getFileName(files[0]));
+      const fileStoragePath = await this.getFileSysytemFullFilePath(this.getFileName(files[0]));
       this.fileService.copyFile(files[0].path, fileStoragePath);
       this.fileService.deleteFile(files[0].path);
       createDto.menuIconUrl = fileStoragePath;
@@ -230,7 +233,7 @@ export class ModuleMetadataService {
     }
     if (files.length > 0) {
 
-      const fileStoragePath = this.getFileSysytemFullFilePath(this.getFileName(files[0]));
+      const fileStoragePath = await this.getFileSysytemFullFilePath(this.getFileName(files[0]));
       this.fileService.copyFile(files[0].path, fileStoragePath);
       this.fileService.deleteFile(files[0].path);
       module.menuIconUrl = fileStoragePath;
@@ -455,8 +458,9 @@ export class ModuleMetadataService {
     return outputLines.join('\n');
   }
 
-  private getFileSysytemFullFilePath(fileName: string): string {
-    return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
+  private async getFileSysytemFullFilePath(fileName: string): Promise<string> {
+    const fileStorageDir = await this.settingService.getConfigValue("app-builder", "fileStorageDir")
+    return `${fileStorageDir}/${fileName}`;
   }
 
   private getFileName(file: Express.Multer.File): string {

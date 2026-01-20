@@ -149,6 +149,17 @@ export class SolidRegistry {
     return Array.from(this.settingsProviders);
   }
 
+  getSettingsProviderInstance<T extends ISelectionProviderContext>(name: string): ISelectionProvider<T> {
+    const settingsProviders = this.getSettingsProviders();
+
+    for (let i = 0; i < settingsProviders.length; i++) {
+      const settingsProvider = settingsProviders[i];
+      if (settingsProvider.instance.name() === name) {
+        return settingsProvider.instance;
+      }
+    }
+  }
+
   getMailProviders(): Array<InstanceWrapper> {
     return Array.from(this.mailProviders);
   }
@@ -328,20 +339,14 @@ export class SolidRegistry {
     // return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
   }
 
-  getAllSettings(): SettingDefinition[] {
-    const result: SettingDefinition[] = [];
 
-    for (const wrapper of this.settingsProviders) {
-      const instance = wrapper.instance as ISettingsProvider;
-      if (!instance?.getSettings) continue;
-      result.push(...instance.getSettings());
+  getAllSettingsProviderInstance<T extends ISelectionProviderContext>(): ISelectionProvider<T> {
+    const settingsProviders = this.getSettingsProviders();
+
+    for (let i = 0; i < settingsProviders.length; i++) {
+      const settingsProvider = settingsProviders[i];
+      return settingsProvider.instance;
     }
-    return result;
   }
-
-  getSettingDefinition(key: string): SettingDefinition | undefined {
-    return this.getAllSettings().find(s => s.key === key);
-  }
-
-
 }
+

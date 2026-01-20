@@ -2,14 +2,14 @@ import { Controller, Get, Inject, InternalServerErrorException, Query, Req, Res,
 import { ConfigType } from '@nestjs/config';
 import { ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Request, Response } from 'express';
-import { isGoogleOAuthConfigured } from 'src/helpers/google-oauth.helper';
-import { iamConfig } from '../config/iam.config';
+import { GoogleAuthConfiguration, isGoogleOAuthConfigured } from 'src/helpers/google-oauth.helper';
 import { Auth } from '../decorators/auth.decorator';
 import { Public } from '../decorators/public.decorator';
 import { AuthType } from '../enums/auth-type.enum';
 import { GoogleOauthGuard } from '../passport-strategies/google-oauth.strategy';
 import { AuthenticationService } from '../services/authentication.service';
 import { UserService } from '../services/user.service';
+import { SettingService } from 'src/services/setting.service';
 
 
 
@@ -20,8 +20,8 @@ import { UserService } from '../services/user.service';
 // @SkipThrottle({ login: false, short: false, burst: true, sustained: true }) //Enable the login throttle only 
 export class GoogleAuthenticationController {
     constructor(
-        @Inject(iamConfig.KEY) private iamConfiguration: ConfigType<typeof iamConfig>,
         private readonly userService: UserService,
+        private readonly settingService: SettingService,
         private readonly authService: AuthenticationService,
     ) { }
 
@@ -32,8 +32,14 @@ export class GoogleAuthenticationController {
         this.validateConfiguration();
     }
 
-    private validateConfiguration() {
-        if (!isGoogleOAuthConfigured(this.iamConfiguration)) {
+    private async validateConfiguration() {
+        const googleOauth: GoogleAuthConfiguration = {
+            clientID: await this.settingService.getConfigValue("google-oauth", "clientID"),
+            clientSecret: await this.settingService.getConfigValue("google-oauth", "clientSecret"),
+            callbackURL: await this.settingService.getConfigValue("google-oauth", "callbackURL"),
+            redirectURL: await this.settingService.getConfigValue("google-oauth", "redirectURL"),
+        }
+        if (!isGoogleOAuthConfigured(googleOauth)) {
             throw new InternalServerErrorException('Google OAuth is not configured');
         }
     }
@@ -41,10 +47,10 @@ export class GoogleAuthenticationController {
     @Public()
     @Get('connect/callback')
     @UseGuards(GoogleOauthGuard)
-    googleAuthCallback(@Req() req: Request, @Res() res: Response) {
-        this.validateConfiguration();
+    async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
+        await this.validateConfiguration();
         const user = req.user;
-
+        const googleOauthRedirectURL = await this.settingService.getConfigValue("google-oauth", "redirectURL");
         // console.log(`Found user: ${JSON.stringify(user)}`);
         // const token = await this.authService.signIn(req.user);
         //   res.cookie('access_token', token, {
@@ -55,7 +61,7 @@ export class GoogleAuthenticationController {
         // return req.user;
         // return res;
 
-        return res.redirect(`${this.iamConfiguration.googleOauth.redirectURL}?accessCode=${user['accessCode']}`);
+        return res.redirect(`${googleOauthRedirectURL}?accessCode=${user['accessCode']}`);
     }
 
     /**

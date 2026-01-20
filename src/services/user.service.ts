@@ -14,10 +14,10 @@ import { OauthUserDto } from '../dtos/oauth-user-dto';
 import { RoleMetadata } from '../entities/role-metadata.entity';
 import { User } from '../entities/user.entity';
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
-import { iamConfig } from 'src/config/iam.config';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { UserRepository } from 'src/repository/user.repository';
 import { RoleMetadataRepository } from 'src/repository/role-metadata.repository';
+import { SettingService } from './setting.service';
 
 @Injectable()
 export class UserService extends CRUDService<User> {
@@ -29,18 +29,17 @@ export class UserService extends CRUDService<User> {
     readonly fileService: FileService,
     readonly discoveryService: DiscoveryService,
     readonly crudHelperService: CrudHelperService,
+    readonly settingService: SettingService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(User, 'default')
     readonly repo: UserRepository,
     @InjectRepository(User, 'default')
-    readonly nonSecurityRuleAwareRepo : Repository<User>,
+    readonly nonSecurityRuleAwareRepo: Repository<User>,
     // @InjectRepository(RoleMetadata)
     // private readonly roleRepository: Repository<RoleMetadata>,
     private readonly roleRepository: RoleMetadataRepository,
     readonly moduleRef: ModuleRef,
-    @Inject(iamConfig.KEY)
-    private readonly iamConfiguration: ConfigType<typeof iamConfig>,
 
   ) {
     super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'user', 'solid-core', moduleRef);
@@ -231,7 +230,7 @@ export class UserService extends CRUDService<User> {
       const savedUser = await this.repo.save(user);
 
       // Initialize the user roles
-      this.initializeRolesForNewUser([this.iamConfiguration.defaultRole], savedUser);
+      this.initializeRolesForNewUser([await this.settingService.getConfigValue('iam', 'defaultRole')], savedUser);
     }
     // else we update the user and store the generated code & access token. 
     else {
