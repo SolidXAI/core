@@ -51,7 +51,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         readonly modelName: string,
         readonly moduleName: string,
         readonly moduleRef: ModuleRef,
-        readonly defaultEntityManager?: EntityManager
+        readonly defaultDatasourceEntityManager?: EntityManager
     ) { }
 
     protected get modelMetadataService(): ModelMetadataService {
@@ -629,7 +629,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     }
 
     private async handlePopulateMedia(populateMedia: string[], entities: T[]) {
-        const model = await this.getDefaultEntityManager().getRepository(ModelMetadata).findOne({
+        const model = await this.getDatasourceDefaultEntityManager().getRepository(ModelMetadata).findOne({
             where: {
                 singularName: this.modelName,
             },
@@ -968,7 +968,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             throw new BadRequestException(`Field ${field.name} does not define a relationCoModelSingularName`);
         }
 
-        const relationCoModel = await this.getDefaultEntityManager().getRepository(ModelMetadata).findOne({
+        const relationCoModel = await this.getDatasourceDefaultEntityManager().getRepository(ModelMetadata).findOne({
             where: { singularName: field.relationCoModelSingularName },
             relations: ['fields', 'fields.mediaStorageProvider', 'fields.model'],
         });
@@ -1072,7 +1072,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return updatedEntity
     }
 
-    private getDefaultEntityManager() {
-        return this.defaultEntityManager ?? this.entityManager;
+    private getDatasourceDefaultEntityManager() {
+        return this.defaultDatasourceEntityManager ?? this.entityManager;
     }
 }
