@@ -61,16 +61,15 @@ export interface ModuleMetadataConfiguration {
 
 export enum SettingLevel {
   SystemEnv = 'system-env',
-  SystemAdminReadonly='system-admin-readonly',
-  SystemAdminEditable='system-admin-editable',
+  SystemAdminReadonly = 'system-admin-readonly',
+  SystemAdminEditable = 'system-admin-editable',
   InternalUser = "internal-user"
 }
 export interface SettingDefinition<T = any> {
-  namespace:string;
+  namespace: string;
   key: string;
   value: T;
   level?: SettingLevel;
-
 }
 
 // solid-core/settings/settings-provider.interface.ts
@@ -379,7 +378,7 @@ export interface ISecurityRuleConfigProvider {
 
 
 export interface AwsS3Config {
-    S3_AWS_ACCESS_KEY: string;
-    S3_AWS_SECRET_KEY: string;
-    S3_AWS_REGION_NAME: string;
+  S3_AWS_ACCESS_KEY: string;
+  S3_AWS_SECRET_KEY: string;
+  S3_AWS_REGION_NAME: string;
 }

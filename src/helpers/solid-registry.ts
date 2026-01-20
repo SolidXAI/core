@@ -10,6 +10,7 @@ import { DatasourceType } from 'src/dtos/create-model-metadata.dto';
 import { ObjectLiteral } from 'typeorm';
 import { ColumnMetadata } from 'typeorm/metadata/ColumnMetadata';
 import { RelationMetadata } from 'typeorm/metadata/RelationMetadata';
+import { Setting } from 'src/entities/setting.entity';
 
 type ControllerMetadata = {
   name: string;
@@ -150,6 +151,18 @@ export class SolidRegistry {
     this.settingsProviders.add(provider);
   }
 
+  registerSecurityRules(securityRules: SecurityRule[]) {
+    this.securityRules = securityRules;
+  }
+
+  registerlocales(locales: Locale[]) {
+    this.locales = locales;
+  }
+
+  registerComputedFieldMetadata(computedFieldMetadata: ComputedFieldMetadata[]) {
+    this.computedFieldMetadata = computedFieldMetadata;
+  }
+
   getSettingsProviders(): InstanceWrapper[] {
     return Array.from(this.settingsProviders);
   }
@@ -256,9 +269,7 @@ export class SolidRegistry {
         return dasbhoardQuestionDataProvider.instance;
       }
     }
-
   }
-
 
   getComputedFieldProviders(): Array<InstanceWrapper> {
     return Array.from(this.computedFieldProviders);
@@ -309,18 +320,6 @@ export class SolidRegistry {
   getModule(name: string): InstanceWrapper {
     const module = this.getModules().filter((module) => module.name === name).pop();
     return module
-  }
-
-  registerSecurityRules(securityRules: SecurityRule[]) {
-    this.securityRules = securityRules;
-  }
-
-  registerlocales(locales: Locale[]) {
-    this.locales = locales;
-  }
-
-  registerComputedFieldMetadata(computedFieldMetadata: ComputedFieldMetadata[]) {
-    this.computedFieldMetadata = computedFieldMetadata;
   }
 
   getComputedFieldMetadata(): ComputedFieldMetadata[] {
