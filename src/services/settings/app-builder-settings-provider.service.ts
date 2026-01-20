@@ -16,6 +16,5 @@ export class SolidCoreAppBuilderSettingsProvider implements ISettingsProvider {
       { namespace: "app-builder", key: "uploadDir", value: process.env.AB_MEDIA_UPLOAD_DIR ?? DEFAULT_MEDIA_UPLOAD_DIR, level: SettingLevel.SystemAdminReadonly },
       { namespace: "app-builder", key: "fileStorageDir", value: process.env.AB_MEDIA_FILE_STORAGE_DIR ?? DEFAULT_MEDIA_FILE_STORAGE_DIR, level: SettingLevel.SystemAdminReadonly },
     ];
-
   }
 }

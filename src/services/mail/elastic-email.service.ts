@@ -87,7 +87,7 @@ export class ElasticEmailService implements IMail {
         }
     }
 
-    async sendEmailAsynchronously(message: QueueMessage<any>) {
+    sendEmailAsynchronously(message: QueueMessage<any>) {
         const { to, subject, body } = message.payload;
         // this.notificationPublisherService.publish(message);
         // this.emailPublisher.publish(message);

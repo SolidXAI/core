@@ -20,7 +20,6 @@ export class SolidCoreEmailSettingsProvider implements ISettingsProvider {
       { namespace: "email", key: "smtpMailUsername", value: process.env.COMMON_SMTP_EMAIL_USERNAME, level: SettingLevel.SystemAdminReadonly },
       { namespace: "email", key: "smtpMailPassword", value: process.env.COMMON_SMTP_EMAIL_PASSWORD, level: SettingLevel.SystemAdminReadonly },
       { namespace: "email", key: "smtpMailFrom", value: process.env.COMMON_SMTP_EMAIL_FROM ?? process.env.COMMON_EMAIL_FROM, level: SettingLevel.SystemAdminReadonly },
-
       { namespace: "email", key: "apiMailKey", value: process.env.COMMON_API_EMAIL_KEY, level: SettingLevel.SystemAdminReadonly },
       { namespace: "email", key: "apiMailFrom", value: process.env.COMMON_EMAIL_FROM, level: SettingLevel.SystemAdminReadonly },
 

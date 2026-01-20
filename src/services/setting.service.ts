@@ -33,19 +33,18 @@ export class SettingService {
 
   private readonly SYSTEM_SETTINGS_CACHE_KEY = 'cached-system-settings';
 
-  private async getSettingsFromRepo(): Promise<Setting[]> {
-    const cachedSettings = await this.cacheManager.get<Setting[]>(
-      this.SYSTEM_SETTINGS_CACHE_KEY,
-    );
 
-    if (cachedSettings) {
-      return cachedSettings;
-    }
+  private async getSettingsFromRepo(): Promise<Setting[]> {
+    // const cachedSettings = await this.cacheManager.get<Setting[]>(
+    //   this.SYSTEM_SETTINGS_CACHE_KEY,
+    // );
+    // if (cachedSettings) {
+    //   return cachedSettings;
+    // }
 
     const settings = await this.repo.find({ relations: ['user'] });
     // TTL in seconds
-    await this.cacheManager.set(this.SYSTEM_SETTINGS_CACHE_KEY, settings, 60 * 5);
-
+    // await this.cacheManager.set(this.SYSTEM_SETTINGS_CACHE_KEY, settings, 60 * 5);
     return settings;
   }
 

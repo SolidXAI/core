@@ -1,5 +1,4 @@
 import { Injectable } from "@nestjs/common";
-import { Environment } from "src/decorators/disallow-in-production.decorator";
 import { SettingsProvider } from "src/decorators/settings-provider.decorator";
 import { ISettingsProvider, SettingLevel } from "src/interfaces";
 
@@ -9,7 +8,6 @@ import { ISettingsProvider, SettingLevel } from "src/interfaces";
 export class SolidCoreDefaultSettingsProvider implements ISettingsProvider {
 
   getSettings() {
-
     return [
       { namespace: "default", key: "iamGoogleOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
       { namespace: "default", key: "authPagesLayout", value: "center", level: SettingLevel.SystemAdminEditable },
@@ -41,10 +39,13 @@ export class SolidCoreDefaultSettingsProvider implements ISettingsProvider {
           availableProviders: []
         }), level: SettingLevel.SystemAdminEditable
       },
+      { namespace: "default", key: "mcpEnabled", value: process.env.MCP_ENABLED, level: SettingLevel.SystemAdminReadonly },
+      { namespace: "default", key: "mcpServerUrl", value: process.env.MCP_SERVER_URL, level: SettingLevel.SystemAdminReadonly },
+      { namespace: "default", key: "mcpApiKey", value: process.env.MCP_API_KEY, level: SettingLevel.SystemAdminReadonly },
 
+      { namespace: "default", key: "dateTimeFormat", value: process.env.DATE_TIME_FORMAT || "YYYY-MM-DD HH:mm:ss", level: SettingLevel.SystemAdminEditable },
+      { namespace: "default", key: "dateFormat", value: process.env.DATE_FORMAT || "YYYY-MM-DD", level: SettingLevel.SystemAdminEditable }
     ];
-
-
   }
 }
 
