@@ -416,7 +416,7 @@ export class AuthenticationService {
             }
 
             // Send OTP to the user through email or SMS, depending on the configuration.
-            this.notifyUserOnOtpInitiateRegistration(user, finalRegistrationVerificationSources);
+            await this.notifyUserOnOtpInitiateRegistration(user, finalRegistrationVerificationSources);
             return { message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_REGISTRATION }
         } catch (err) {
             const pgUniqueViolationErrorCode = '23505';
@@ -914,7 +914,7 @@ export class AuthenticationService {
             user.verificationTokenOnForgotPassword = token;
             user.verificationTokenOnForgotPasswordExpiresAt = expiresAt;
             await this.userRepository.save(user);
-            this.notifyUserOnForgotPassword(user);
+            await this.notifyUserOnForgotPassword(user);
         }
 
         // 5. Return. 
@@ -1011,7 +1011,7 @@ export class AuthenticationService {
 
             // Check reuse with your existing method (ensure it looks at hashes).
             await m.getRepository(User).update({ id: user.id }, { password: pwdHash, passwordScheme: pwdScheme, passwordSchemeVersion: pwdSchemeVersion });
-            this.notifyUserOnPasswordChanged(user);
+            await this.notifyUserOnPasswordChanged(user);
 
             return {
                 status: 'success',
@@ -1070,8 +1070,8 @@ export class AuthenticationService {
     async generateTokens(user: User) {
 
         const [accessToken, refreshToken] = await Promise.all([
-            this.generateAccessToken(user),
-            this.generateRefreshToken(user),
+            await this.generateAccessToken(user),
+            await this.generateRefreshToken(user),
         ]);
 
         return {

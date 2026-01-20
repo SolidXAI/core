@@ -7,7 +7,7 @@ import { MediaStorageProvider } from "src/interfaces";
 import { MediaRepository } from "src/repository/media.repository";
 import { FileService } from "src/services/file.service";
 import { Readable } from "stream";
-// import { SettingService } from "../setting.service";
+import { SettingService } from "../setting.service";
 
 @Injectable()
 export class FileStorageProvider<T> implements MediaStorageProvider<T> {
@@ -19,7 +19,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         private readonly configService: ConfigService,
         readonly fileService: FileService,
         readonly mediaRepository: MediaRepository,
-        // private readonly settingService: SettingService
+        private readonly settingService: SettingService
 
     ) { }
 
@@ -108,9 +108,9 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
     }
 
     private async getFullFilePath(fileName: string): Promise<string> {
-        // const fileStorageDir = await this.settingService.getConfigValue("app-builder", "fileStorageDir")
-        // return `${fileStorageDir}/${fileName}`;
-        return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
+        const fileStorageDir = await this.settingService.getConfigValue("app-builder", "fileStorageDir")
+        return `${fileStorageDir}/${fileName}`;
+        // return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
     }
 
     private getFileName(file: Express.Multer.File): string {

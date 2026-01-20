@@ -124,6 +124,7 @@ export class ModuleMetadataSeederService {
             const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
             this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
 
+
             // Process module metadata first. 
             this.logger.log(`Seeding Module / Model / Fields`);
             await this.seedModuleModelFields(moduleMetadata);
@@ -159,10 +160,6 @@ export class ModuleMetadataSeederService {
             // Sms templates
             this.logger.log(`Seeding Sms Templates`);
             await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
-
-            // Settings
-            this.logger.log(`Seeding Default Settings`);
-            await this.seedDefaultSettings();
 
             // Security rules
             this.logger.log(`Seeding Security Rules`);
@@ -348,6 +345,11 @@ export class ModuleMetadataSeederService {
 
         this.logger.log(`Seeding System Fields Metadata`);
         await this.seedDefaultSystemFields();
+
+        // Settings
+        this.logger.log(`Seeding Default Settings`);
+        await this.seedDefaultSettings();
+
 
         this.logger.debug(`Global metadata seeding completed`);
     }
@@ -811,12 +813,6 @@ export class ModuleMetadataSeederService {
         this.logger.debug(`[End] Processing module metadata`);
     }
 
-    private async seedSettings(createDto: CreateSettingDto) {
-        const settingsArray: any[] = await this.settingsRepo.find();
-        if (!settingsArray || settingsArray.length === 0) {
-            this.settingService.create(createDto);
-        }
-    }
 
     private async handleSeedSecurityRules(rulesDto: CreateSecurityRuleDto[]) {
         if (!rulesDto || rulesDto.length === 0) {

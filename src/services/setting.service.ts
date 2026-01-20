@@ -18,20 +18,17 @@ import { Cache } from 'cache-manager';
 
 
 @Injectable()
-export class SettingService extends CRUDService<Setting> {
+export class SettingService {
 
   constructor(
     readonly fileService: FileService,
     readonly solidRegistry: SolidRegistry,
-    @InjectEntityManager()
-    readonly entityManager: EntityManager,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
     readonly repo: SettingRepository,
-    readonly moduleRef: ModuleRef,
     private readonly requestContextService: RequestContextService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {
-    super(entityManager, repo, 'setting', 'solid-core', moduleRef);
+    // super(entityManager, repo, 'setting', 'solid-core', moduleRef);
   }
 
   private readonly SYSTEM_SETTINGS_CACHE_KEY = 'cached-system-settings';

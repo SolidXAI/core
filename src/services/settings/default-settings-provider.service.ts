@@ -11,7 +11,6 @@ export class SolidCoreDefaultSettingsProvider implements ISettingsProvider {
   getSettings() {
 
     return [
-      { namespace: "default", key: "companylogo", value: null, level: SettingLevel.SystemAdminEditable },
       { namespace: "default", key: "iamGoogleOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
       { namespace: "default", key: "authPagesLayout", value: "center", level: SettingLevel.SystemAdminEditable },
       { namespace: "default", key: "authPagesTheme", value: "light", level: SettingLevel.SystemAdminEditable },

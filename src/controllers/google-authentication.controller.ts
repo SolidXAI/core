@@ -29,7 +29,7 @@ export class GoogleAuthenticationController {
     @UseGuards(GoogleOauthGuard)
     @Get('connect')
     async connect() {
-        this.validateConfiguration();
+        await this.validateConfiguration();
     }
 
     private async validateConfiguration() {
@@ -74,7 +74,7 @@ export class GoogleAuthenticationController {
     @Public()
     @Get('dummy-redirect')
     async dummyGoogleAuthRedirect(@Query('accessCode') accessCode) {
-        this.validateConfiguration();
+        await this.validateConfiguration();
         const user = await this.userService.findOneByAccessCode(accessCode);
 
         delete user['password'];
@@ -92,7 +92,7 @@ export class GoogleAuthenticationController {
     @Get('authenticate')
     @ApiQuery({ name: 'accessCode', required: true, type: String })
     async googleAuth(@Query('accessCode') accessCode) {
-        this.validateConfiguration();
+        await this.validateConfiguration();
         return this.authService.signInUsingGoogle(accessCode);
     }
 }
