@@ -88,7 +88,7 @@ export class SMTPEMailService implements IMail {
     ) {
         const message = {
             payload: {
-                from: from || await this.settingService.getConfigValue("email", "smtpMailFrom"),
+                from: from || this.settingService.getConfigValue("smtpMailFrom"),
                 to: to,
                 subject: subject,
                 body: body,
@@ -105,7 +105,7 @@ export class SMTPEMailService implements IMail {
             return this.sendEmailAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
-        else if (shouldQueueEmails == false && await this.settingService.getConfigValue("email", "shouldQueueEmails") === true) {
+        else if (shouldQueueEmails == false && this.settingService.getConfigValue("shouldQueueEmails") === true) {
             return this.sendEmailAsynchronously(message);
         }
         // Else we send synchronously
@@ -124,7 +124,7 @@ export class SMTPEMailService implements IMail {
         let from;
         const { to, subject, body, attachments = [], cc, bcc } = message.payload;
 
-        const envFrom = await this.settingService.getConfigValue("email", "smtpMailFrom");
+        const envFrom = this.settingService.getConfigValue("smtpMailFrom");
         if (envFrom) {
             from = envFrom;
         }

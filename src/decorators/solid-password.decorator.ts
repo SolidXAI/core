@@ -29,12 +29,12 @@ export class SolidPasswordConstraint implements ValidatorConstraintInterface {
     // Regex source
     let regex = opts?.regex;
     if (!regex) {
-      regex = await this.settingService.getConfigValue("iam", 'authenticationPasswordRegex');
+      regex = this.settingService.getConfigValue('authenticationPasswordRegex');
     }
 
     // Message source
     this.lastMessage =
-      opts?.message || await this.settingService.getConfigValue("iam", 'authenticationPasswordRegexErrorMessage');
+      opts?.message || this.settingService.getConfigValue('authenticationPasswordRegexErrorMessage');
 
     return new RegExp(regex).test(value);
   }

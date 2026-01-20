@@ -249,7 +249,7 @@ export class ModuleMetadataSeederService {
     // Ok
     private async seedDefaultSettings() {
         this.logger.debug(`[Start] Processing settings`);
-        await this.settingService.seedDefaultSettings();
+        await this.settingService.seedSystemAdminEditableAndAboveSettings();
         this.logger.debug(`[End] Processing settings`);
     }
 

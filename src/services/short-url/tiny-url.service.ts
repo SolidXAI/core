@@ -1,6 +1,5 @@
 import { HttpService } from "@nestjs/axios";
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import { ConfigType } from "@nestjs/config";
+import { Injectable, Logger } from "@nestjs/common";
 import { CreateShortUrlDto } from "src/dtos/create-short-url.dto";
 import { SettingService } from "../setting.service";
 
@@ -41,9 +40,9 @@ export class TinyUrlService {
     ) { }
     protected readonly logger = new Logger(TinyUrlService.name);
     async shortenUrl(shortUrlDto: CreateShortUrlDto): Promise<string> {
-        const shotyUrlEnable = await this.settingService.getConfigValue("tinyUrl", "tinyUrlEnabled")
-        const shotyUrlapiUrl = await this.settingService.getConfigValue("tinyUrl", "tinyUrlApiUrl")
-        const shotyUrlApiKey = await this.settingService.getConfigValue("tinyUrl", "tinyUrlApiKey")
+        const shotyUrlEnable = this.settingService.getConfigValue("tinyUrlEnabled")
+        const shotyUrlapiUrl = this.settingService.getConfigValue("tinyUrlApiUrl")
+        const shotyUrlApiKey = this.settingService.getConfigValue("tinyUrlApiKey")
         if (!shotyUrlEnable) {
             return shortUrlDto.url;
         }

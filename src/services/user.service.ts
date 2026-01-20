@@ -218,7 +218,7 @@ export class UserService extends CRUDService<User> {
       const savedUser = await this.repo.save(user);
 
       // Initialize the user roles
-      await this.initializeRolesForNewUser([await this.settingService.getConfigValue('iam', 'defaultRole')], savedUser);
+      await this.initializeRolesForNewUser([this.settingService.getConfigValue('defaultRole')], savedUser);
     }
     // else we update the user and store the generated code & access token. 
     else {

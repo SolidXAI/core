@@ -2856,19 +2856,6 @@
             "isSystem": true
           },
           {
-            "name": "namespace",
-            "displayName": "Namespace",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 128,
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
             "name": "type",
             "displayName": "Type",
             "type": "selectionStatic",

@@ -13,11 +13,11 @@ export class SolidCoreGoogleOAuthSettingsProvider implements ISettingsProvider {
 
     return [
 
-      { namespace: "google-oauth", key: "clientID", value: process.env.IAM_GOOGLE_OAUTH_CLIENT_ID, level: SettingLevel.SystemEnv },
-      { namespace: "google-oauth", key: "clientSecret", value: process.env.IAM_GOOGLE_OAUTH_CLIENT_SECRET, level: SettingLevel.SystemEnv },
-      { namespace: "google-oauth", key: "callbackURL", value: process.env.IAM_GOOGLE_OAUTH_CALLBACK_URL, level: SettingLevel.SystemEnv },
-      { namespace: "google-oauth", key: "redirectURL", value: process.env.IAM_GOOGLE_OAUTH_REDIRECT_URL, level: SettingLevel.SystemEnv },
-      { namespace: "google-oauth", key: "iamGoogleOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
+      { key: "clientID", value: process.env.IAM_GOOGLE_OAUTH_CLIENT_ID, level: SettingLevel.SystemEnv },
+      { key: "clientSecret", value: process.env.IAM_GOOGLE_OAUTH_CLIENT_SECRET, level: SettingLevel.SystemEnv },
+      { key: "callbackURL", value: process.env.IAM_GOOGLE_OAUTH_CALLBACK_URL, level: SettingLevel.SystemEnv },
+      { key: "redirectURL", value: process.env.IAM_GOOGLE_OAUTH_REDIRECT_URL, level: SettingLevel.SystemEnv },
+      { key: "iamGoogleOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
 
     ];
 

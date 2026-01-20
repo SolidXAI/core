@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
@@ -10,19 +10,21 @@ import { FileService } from 'src/services/file.service';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
-import { CACHE_MANAGER } from '@nestjs/cache-manager';
-import { Cache } from 'cache-manager';
-import { ISettingsProvider, SettingDefinition } from 'src/interfaces';
-
+import { ISettingsProvider, SettingDefinition, SettingLevel } from 'src/interfaces';
 
 @Injectable()
 export class SettingService {
   private settings: SettingDefinition[] = [];
 
+  private readonly arrayKeysToSkip = new Set([
+    'authenticationPasswordRegex',
+    'authenticationPasswordRegexErrorMessage',
+    'authenticationPasswordComplexityDescription',
+  ]);
+
   constructor(
     readonly fileService: FileService,
     readonly solidRegistry: SolidRegistry,
-    @Inject(CACHE_MANAGER) private cacheManager: Cache,
     readonly repo: SettingRepository,
     private readonly requestContextService: RequestContextService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
@@ -30,77 +32,42 @@ export class SettingService {
     // super(entityManager, repo, 'setting', 'solid-core', moduleRef);
   }
 
-  // async onApplicationBootstrap() {
-  //   const settingsFromDb = await this.getSettingsFromDb();
-  //   const settingsFromProvider = this.getAllSettingsFromProviders();
-  // }
-
-  private readonly SYSTEM_SETTINGS_CACHE_KEY = 'cached-system-settings';
-
-  async getSettingsFromDb(): Promise<Setting[]> {
-    // const cachedSettings = await this.cacheManager.get<Setting[]>(
-    //   this.SYSTEM_SETTINGS_CACHE_KEY,
-    // );
-    // if (cachedSettings) {
-    //   return cachedSettings;
-    // }
-
+  private async getSettingsFromDb(): Promise<Setting[]> {
     const settings = await this.repo.find({ relations: ['user'] });
-    // TTL in seconds
-    // await this.cacheManager.set(this.SYSTEM_SETTINGS_CACHE_KEY, settings, 60 * 5);
     return settings;
   }
 
-  async mergeDbSettingsIntoProviderSettings(dbSettings: Setting[], providerSettings: SettingDefinition[]): Promise<SettingDefinition[]> {
-    // TODO: deep copy of providerSettings array such that each providerSetting.value is set to the corresponding dbSetting.value as long as key & namespace matches.
-    return [];
+  private parseSettingValue(value: string, key: string): any {
+    try {
+      return JSON.parse(value);
+    } catch {
+      if (value === 'true' || value === 'false') {
+        return value === 'true';
+      }
+      if (!isNaN(Number(value)) && value.trim() !== '') {
+        return Number(value);
+      }
+      if (!this.arrayKeysToSkip.has(key) && value.includes(',')) {
+        return value.split(',').map(item => item.trim());
+      }
+      return value;
+    }
   }
 
-  /**
-   * This method will seed (insert only) settings that are introduced in code but do not already exist in the database. 
-   * Also this method only deals with settings with level system-admin-editable & internal-user.
-   */
-  async seedDefaultSettings(): Promise<void> {
-    // Seed only settings with level system-admin-editable & internal-user
-    const settingsSeederData = this.getAllSettingsFromProviders().filter(i => i.level !== "system-env" && i.level !== "system-admin-readonly");
+  async updateSettingsCache(): Promise<void> {
+    const settingsFromDb = await this.getSettingsFromDb();
+    const settingsFromProviders = this.getAllSettingsFromProviders();
+    const settingsFromDbByKey = new Map(settingsFromDb.map(setting => [setting.key, setting]));
 
-    // Get hold of the current values from the database.
-    const existingSettings: Setting[] = await this.getSettingsFromDb();
-
-    const existingKeys = new Set(existingSettings.map(s => s.key));
-    const settingsToInsert: Setting[] = [];
-    // for (const [key, value] of Object.entries(settingsSeederData)) {
-    //   if (!existingKeys.has(key)) {
-    //     const setting = new Setting();
-    //     setting.key = key;
-    //     setting.value = typeof value === 'boolean' ? value.toString() :
-    //       Array.isArray(value) ? value.join(',') :
-    //         value === null || value === undefined ? null : String(value);
-    //     settingsToInsert.push(setting);
-    //   }
-    // }
-
-    for (const { key, value } of settingsSeederData) {
-      if (!existingKeys.has(key)) {
-        const setting = new Setting();
-        setting.key = key;
-
-        setting.value =
-          typeof value === 'boolean'
-            ? value.toString()
-            : Array.isArray(value)
-              ? value.join(',')
-              : value === null || value === undefined
-                ? null
-                : String(value);
-
-        settingsToInsert.push(setting);
+    this.settings = settingsFromProviders.map(setting => {
+      const settingFromDb = settingsFromDbByKey.get(setting.key);
+      const valueFromDb = settingFromDb?.value;
+      if (settingFromDb?.key && valueFromDb !== undefined && valueFromDb !== null) {
+        const parsedValue = typeof valueFromDb === 'string' ? this.parseSettingValue(valueFromDb, settingFromDb.key) : valueFromDb;
+        return { ...setting, value: parsedValue };
       }
-    }
-
-    if (settingsToInsert.length > 0) {
-      await this.repo.save(settingsToInsert);
-    }
+      return setting;
+    });
   }
 
   /**
@@ -108,7 +75,7 @@ export class SettingService {
    * This is the superset of all possible settings. 
    * @returns 
    */
-  private getAllSettingsFromProviders(): Array<any> {
+  private getAllSettingsFromProviders(): SettingDefinition[] {
     // get all settings from registry 
     const allSettingsProviders = this.solidRegistry.getSettingsProviders();
     const settings: SettingDefinition[] = [];
@@ -122,6 +89,64 @@ export class SettingService {
   }
 
   /**
+   * 1. 
+   * This method will seed (insert only) settings that are introduced in code but do not already exist in the database. 
+   * Also this method only deals with settings with level system-admin-editable & internal-user.
+   */
+  async seedSystemAdminEditableAndAboveSettings(): Promise<void> {
+    // Seed only settings with level system-admin-editable & internal-user, 
+    // so basically settings which are either system-admin-editable and above.
+    const saEditableAndAbove = this.getAllSettingsFromProviders().filter(i => [SettingLevel.SystemAdminEditable, SettingLevel.InternalUser].includes(i.level));
+
+    // Get hold of the current values from the database.
+    const existingSettings: Setting[] = await this.getSettingsFromDb();
+
+    const existingKeys = new Set(existingSettings.map(s => s.key));
+    const settingsToInsert: Setting[] = [];
+
+    for (const { key, value, level } of saEditableAndAbove) {
+      if (!existingKeys.has(key)) {
+        const setting = new Setting();
+        setting.key = key;
+        setting.level = level;
+
+        if (typeof value === 'boolean') {
+          setting.value = value.toString();
+        } else if (Array.isArray(value)) {
+          setting.value = value.join(',');
+        } else if (value === null || value === undefined) {
+          setting.value = null;
+        } else {
+          setting.value = String(value);
+        }
+
+        settingsToInsert.push(setting);
+      }
+    }
+
+    if (settingsToInsert.length > 0) {
+      await this.repo.save(settingsToInsert);
+    }
+  }
+
+  /**
+   * 2. 
+   * Method used from the solid-core-ui to fetch available settings. 
+   * Here we are returning settings other than system-env.
+   * 
+   * @returns 
+   */
+  async getSystemAdminReadonlyAndAboveSettings(): Promise<Record<any, any>> {
+    const finalSettings: Record<any, any> = {};
+    const systemAdminReadonlyAndAboveSettings = this.settings.filter(i => i.level !== "system-env");
+    for (const setting of systemAdminReadonlyAndAboveSettings) {
+      finalSettings[setting.key] = setting.value;
+    }
+    return finalSettings;
+  }
+
+  /**
+   * 3. 
    * This method updates settings from the admin user interface. 
    * Most likely settings with level system-admin-editable & internal-user are the ones that will get modified here. 
    * 
@@ -135,7 +160,6 @@ export class SettingService {
 
     // const existingSettings = await this.repo.find();
     const existingSettings: Setting[] = await this.getSettingsFromDb();
-
 
     const settingsToUpdate: Setting[] = [];
     const settingsToCreate: Setting[] = [];
@@ -151,7 +175,7 @@ export class SettingService {
       for (const file of uploadedFiles) {
         const settingKey = file.fieldname;
         const relativeFileName = `${file.filename}-${file.originalname}`;
-        const fileStorageDir = await this.getConfigValue("app-builder", "fileStorageDir")
+        const fileStorageDir = this.getConfigValue("fileStorageDir")
         const storagePath = `${fileStorageDir}/${relativeFileName}`;
         const baseUrl = process.env.BASE_URL || '';
         const fileUrl = `${baseUrl}/${storagePath}`;
@@ -221,92 +245,27 @@ export class SettingService {
     if (settingsToCreate.length > 0) {
       await this.repo.save(settingsToCreate);
     }
-    await this.cacheManager.del(this.SYSTEM_SETTINGS_CACHE_KEY);
+    await this.updateSettingsCache();
 
     return [...settingsToUpdate, ...settingsToCreate];
   }
 
-  async getConfigValue(namespace: String, settingKey: string) {
-    try {
-      const settingsArray: Setting[] = await this.getSettingsFromDb();
-
-      const settingEntry = settingsArray.find(setting => setting.key === settingKey);
-
-      if (settingEntry && settingEntry.value !== null && settingEntry.value !== undefined) {
-        const value = settingEntry.value;
-
-        if (value === 'true' || value === 'false') {
-          return value === 'true';
-        }
-        else if (!isNaN(Number(value)) && value.trim() !== '') {
-          return Number(value);
-        }
-        else if (value.includes(',')) {
-          return value.split(',').map(item => item.trim());
-        }
-        else {
-          return value;
-        }
-      }
-
-      const getAllSettings = this.getAllSettingsFromProviders();
-      const settingValue = getAllSettings.find(i => (i.key == settingKey && i.namespace == namespace))
-      if (settingValue) {
-        return settingValue.value;
-      }
-    } catch (error) {
-
-      // in case somethings wrong with repo call 
-      const getAllSettings = this.getAllSettingsFromProviders();
-      const settingValue = getAllSettings.find(i => (i.key == settingKey && i.namespace == namespace))
-      if (settingValue) {
-        return settingValue.value;
-      }
-    }
-  }
-
   /**
-   * Method used from the solid-core-ui to fetch available settings. 
-   * Here we are returning settings other than system-env.
-   * 
+   * 4. 
+   * @param settingKey 
    * @returns 
    */
-  async getNonSystemSettings(): Promise<Record<any, any>> {
-    // TODO remove system level from settings array
-    const settingsArray: Setting[] = await this.getSettingsFromDb();
-    const nonSystemEnvSettings = this.getAllSettingsFromProviders().filter(i => i.level !== "system-env");
-
-    // TODO: merge based on what is there in the DB and what is there in our providers...
-
-    const finalSettings = {}
-    const arrayKeysToSkip = [
-      'authenticationPasswordRegex',
-      'authenticationPasswordRegexErrorMessage',
-      'authenticationPasswordComplexityDescription',
-    ];
-    for (const setting of settingsArray) {
-      if (setting.key && setting.value !== undefined && setting.value !== null) {
-        const value = setting.value;
-        let parsedValue: any;
-
-        try {
-          parsedValue = JSON.parse(value);
-        } catch {
-          if (value === 'true' || value === 'false') {
-            parsedValue = value === 'true';
-          } else if (!isNaN(Number(value)) && value.trim() !== '') {
-            parsedValue = Number(value);
-          } else if (!arrayKeysToSkip.includes(setting.key) && value.includes(',')) {
-            parsedValue = value.split(',').map(item => item.trim());
-          } else {
-            parsedValue = value;
-          }
-        }
-        finalSettings[setting.key] = parsedValue
-      }
+  getConfigValue(settingKey: string) {
+    const cachedSetting = this.settings.find(setting => setting.key === settingKey);
+    if (cachedSetting) {
+      return cachedSetting.value;
     }
 
-    return finalSettings;
+    // This is probably not needed at all, but leaving it here as a backup for scenarios like 
+    // if getConfigValue() is called before onApplicationBootstrap() runs or if the cache refresh fails. 
+    const getAllSettings = this.getAllSettingsFromProviders();
+    const settingValue = getAllSettings.find(i => (i.key == settingKey))
+    return settingValue?.value;
   }
 
   async getMcpUrl(getMcpUrlDto: GetMcpUrlDto, solidRequestContext: any = {}): Promise<any> {

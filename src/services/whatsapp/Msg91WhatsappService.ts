@@ -90,14 +90,14 @@ export class Msg91WhatsappService implements IWhatsAppTransport {
 
   async sendWhatsAppMessageSynchronously(message: QueueMessage<any>): Promise<void> {
     const body = await this.createWhatsappRequest(message);
-    const headers = { authkey: await this.settingService.getConfigValue("whatsapp", "msg91WhatsappApiKey") };
+    const headers = { authkey: this.settingService.getConfigValue("msg91WhatsappApiKey") };
     await this.httpService.axiosRef.post(
-      `${await this.settingService.getConfigValue("whatsapp", "msg91WhatsappUrl")}`,
+      `${this.settingService.getConfigValue("msg91WhatsappUrl")}`,
       body,
       { headers },
     );
     this.logger.debug(
-      `Sending Whatsapp message for CP registration with body ${JSON.stringify(body)} and url ${await this.settingService.getConfigValue("whatsapp", "msg91WhatsappUrl")}`,
+      `Sending Whatsapp message for CP registration with body ${JSON.stringify(body)} and url ${this.settingService.getConfigValue("msg91WhatsappUrl")}`,
     );
   }
 
@@ -122,7 +122,7 @@ export class Msg91WhatsappService implements IWhatsAppTransport {
       template: whatsappTemplate,
     };
     return {
-      integrated_number: await this.settingService.getConfigValue("whatsapp", "msg91WhatsappIntegratedNumber"),
+      integrated_number: this.settingService.getConfigValue("msg91WhatsappIntegratedNumber"),
       content_type: 'template',
       payload: whatsappPayload,
     };

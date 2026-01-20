@@ -43,7 +43,7 @@ export class BcryptService implements HashingService {
 
     /** Normalize input based on version & pepper policy */
     private async normalize(data: string | Buffer, version: number): Promise<string> {
-        const pepper = await this.settingService.getConfigValue('iam', 'passwordPepper')
+        const pepper = this.settingService.getConfigValue('passwordPepper')
         const plain = typeof data === 'string' ? data : data.toString('utf8');
         const usePepper = version >= 2 && pepper.length > 0;
         return usePepper ? plain + pepper : plain;

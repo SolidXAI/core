@@ -26,8 +26,8 @@ export class Msg91SMSService extends Msg91BaseSMSService implements ISMS {
     async sendSMSSynchronously(message: QueueMessage<any>): Promise<any> {
         const { to, templateId, ...templateParams } = message.payload;
         const body = { template_id: templateId, short_url: "0", recipients: [{ mobiles: to, ...templateParams }] };
-        const headers = { "authkey": await this.settingService.getConfigValue("sms", "msg91SmsApiKey") };
-        await this.httpService.axiosRef.post(`${await this.settingService.getConfigValue("sms", "msg91SmsUrl")}/flow`, body, { headers });
+        const headers = { "authkey": this.settingService.getConfigValue("msg91SmsApiKey") };
+        await this.httpService.axiosRef.post(`${this.settingService.getConfigValue("msg91SmsUrl")}/flow`, body, { headers });
         this.logger.debug(`Sending SMS to ${to} with body ${JSON.stringify(body)} and headers ${JSON.stringify(headers)}`);
     }
 }

@@ -108,7 +108,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
     }
 
     private async getFullFilePath(fileName: string): Promise<string> {
-        const fileStorageDir = await this.settingService.getConfigValue("app-builder", "fileStorageDir")
+        const fileStorageDir = this.settingService.getConfigValue("fileStorageDir")
         return `${fileStorageDir}/${fileName}`;
         // return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
     }

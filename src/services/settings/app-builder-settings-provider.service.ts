@@ -12,9 +12,9 @@ export class SolidCoreAppBuilderSettingsProvider implements ISettingsProvider {
     const DEFAULT_MEDIA_FILE_STORAGE_DIR = 'media-files-storage';
 
     return [
-      { namespace: "app-builder", key: "moduleMetadataSeederFiles", value: process.env.AB_MODULE_METADATA_SEEDER_FILES ?? '', level: SettingLevel.SystemAdminReadonly },
-      { namespace: "app-builder", key: "uploadDir", value: process.env.AB_MEDIA_UPLOAD_DIR ?? DEFAULT_MEDIA_UPLOAD_DIR, level: SettingLevel.SystemAdminReadonly },
-      { namespace: "app-builder", key: "fileStorageDir", value: process.env.AB_MEDIA_FILE_STORAGE_DIR ?? DEFAULT_MEDIA_FILE_STORAGE_DIR, level: SettingLevel.SystemAdminReadonly },
+      { key: "moduleMetadataSeederFiles", value: process.env.AB_MODULE_METADATA_SEEDER_FILES ?? '', level: SettingLevel.SystemAdminReadonly },
+      { key: "uploadDir", value: process.env.AB_MEDIA_UPLOAD_DIR ?? DEFAULT_MEDIA_UPLOAD_DIR, level: SettingLevel.SystemAdminReadonly },
+      { key: "fileStorageDir", value: process.env.AB_MEDIA_FILE_STORAGE_DIR ?? DEFAULT_MEDIA_FILE_STORAGE_DIR, level: SettingLevel.SystemAdminReadonly },
     ];
   }
 }

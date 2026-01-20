@@ -188,10 +188,9 @@ export class MediaService extends CRUDService<Media> {
   //TODO: Move this to a app builder config
 
   private async getFileSysytemFullFilePath(fileName: string): Promise<string> {
-    const fileStorageDir = await this.settingService.getConfigValue("app-builder", "fileStorageDir")
+    const fileStorageDir = this.settingService.getConfigValue("fileStorageDir");
     return `${fileStorageDir}/${fileName}`;
   }
-
 
   private getAwsS3FullFilePath(awsMediaurl: string, bucketName: string, regionName: string): string {
     // https://lunarismedia.s3.ap-south-1.amazonaws.com/LUNARIS_CP_REGISTRATION_CREATIVE.jpg

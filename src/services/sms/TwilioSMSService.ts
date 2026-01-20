@@ -26,9 +26,9 @@ export class TwilioSMSService implements ISMS {
 
 
 
-        const accountSid = await this.settingService.getConfigValue('sms', 'twilioAccountSid');
-        const authToken = await this.settingService.getConfigValue('sms', 'twilioAuthToken');
-        const twilioNumber = await this.settingService.getConfigValue('sms', 'twilioNumber');
+        const accountSid = this.settingService.getConfigValue('twilioAccountSid');
+        const authToken = this.settingService.getConfigValue('twilioAuthToken');
+        const twilioNumber = this.settingService.getConfigValue('twilioNumber');
         if (!accountSid || !authToken || !twilioNumber) {
             throw new Error("Missing COMMON_TWILIO_ACCOUNT_SID or COMMON_TWILIO_AUTH_TOKEN or COMMON_TWILIO_NUMBER in env.");
         }
@@ -45,7 +45,7 @@ export class TwilioSMSService implements ISMS {
             await this.sendSMSAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
-        else if (shouldQueueSms === false && await this.settingService.getConfigValue('sms', 'shouldQueueSms') === true) {
+        else if (shouldQueueSms === false && this.settingService.getConfigValue('shouldQueueSms') === true) {
             await this.sendSMSAsynchronously(message);
         }
         // Else we send synch
@@ -83,9 +83,9 @@ export class TwilioSMSService implements ISMS {
     }
 
     async sendSMSSynchronously(message: QueueMessage<any>): Promise<any> {
-        const accountSid = await this.settingService.getConfigValue('sms', 'twilioAccountSid');
-        const authToken = await this.settingService.getConfigValue('sms', 'twilioAuthToken');
-        const twilioNumber = await this.settingService.getConfigValue('sms', 'twilioNumber');
+        const accountSid = this.settingService.getConfigValue('twilioAccountSid');
+        const authToken = this.settingService.getConfigValue('twilioAuthToken');
+        const twilioNumber = this.settingService.getConfigValue('twilioNumber');
 
         if (!accountSid || !authToken || !twilioNumber) {
             throw new Error("Missing COMMON_TWILIO_ACCOUNT_SID or COMMON_TWILIO_AUTH_TOKEN or COMMON_TWILIO_NUMBER in env.");

@@ -20,10 +20,6 @@ export class CreateSettingDto {
     @ApiProperty()
     level: string;
     @IsOptional()
-    @IsString()
-    @ApiProperty()
-    namespace: string;
-    @IsOptional()
     @IsInt()
     @ApiProperty({ description: "This is the user id field" })
     userId: number;

@@ -34,10 +34,10 @@ export class GoogleAuthenticationController {
 
     private async validateConfiguration() {
         const googleOauth: GoogleAuthConfiguration = {
-            clientID: await this.settingService.getConfigValue("google-oauth", "clientID"),
-            clientSecret: await this.settingService.getConfigValue("google-oauth", "clientSecret"),
-            callbackURL: await this.settingService.getConfigValue("google-oauth", "callbackURL"),
-            redirectURL: await this.settingService.getConfigValue("google-oauth", "redirectURL"),
+            clientID: this.settingService.getConfigValue("clientID"),
+            clientSecret: this.settingService.getConfigValue("clientSecret"),
+            callbackURL: this.settingService.getConfigValue("callbackURL"),
+            redirectURL: this.settingService.getConfigValue("redirectURL"),
         }
         if (!isGoogleOAuthConfigured(googleOauth)) {
             throw new InternalServerErrorException('Google OAuth is not configured');
@@ -50,7 +50,7 @@ export class GoogleAuthenticationController {
     async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
         await this.validateConfiguration();
         const user = req.user;
-        const googleOauthRedirectURL = await this.settingService.getConfigValue("google-oauth", "redirectURL");
+        const googleOauthRedirectURL = await this.settingService.getConfigValue("redirectURL");
         // console.log(`Found user: ${JSON.stringify(user)}`);
         // const token = await this.authService.signIn(req.user);
         //   res.cookie('access_token', token, {

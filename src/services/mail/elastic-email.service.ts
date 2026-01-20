@@ -63,7 +63,7 @@ export class ElasticEmailService implements IMail {
     async sendEmail(to: string, subject: string, body: string, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, wrapperAttachments: MailAttachmentWrapper[] = []): Promise<void> {
         const message = {
             payload: {
-                from: await this.settingService.getConfigValue("email", "smtpMailFrom"),
+                from: this.settingService.getConfigValue("smtpMailFrom"),
                 to: to,
                 subject: subject,
                 body: body,
@@ -78,7 +78,7 @@ export class ElasticEmailService implements IMail {
             this.sendEmailAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
-        else if (shouldQueueEmails == false && await this.settingService.getConfigValue("email", "shouldQueueEmails") === true) {
+        else if (shouldQueueEmails == false && this.settingService.getConfigValue("shouldQueueEmails") === true) {
             this.sendEmailAsynchronously(message);
         }
         // Else we send synch

@@ -18,7 +18,7 @@ export class EmailTemplateSeederService {
 
     async seed() {
         // Read the module metadata from a file specified in the .env 
-        const seedDataFileVariable = await this.settingService.getConfigValue("email", "emailTemplateSeederFiles");
+        const seedDataFileVariable = this.settingService.getConfigValue("emailTemplateSeederFiles");
         const seedDataFiles = seedDataFileVariable.split(',');
 
         for (let i = 0; i < seedDataFiles.length; i++) {

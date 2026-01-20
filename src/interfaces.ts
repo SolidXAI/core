@@ -65,11 +65,11 @@ export enum SettingLevel {
   SystemAdminEditable = 'system-admin-editable',
   InternalUser = "internal-user"
 }
+
 export interface SettingDefinition<T = any> {
-  namespace: string;
   key: string;
   value: T;
-  level?: SettingLevel;
+  level: SettingLevel;
 }
 
 // solid-core/settings/settings-provider.interface.ts

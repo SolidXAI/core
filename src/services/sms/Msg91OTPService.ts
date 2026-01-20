@@ -30,8 +30,8 @@ export class Msg91OTPService extends Msg91BaseSMSService implements ISMS {
 
     async sendSMSSynchronously(message: QueueMessage<any>): Promise<any> {
         const { to, templateId, otp } = message.payload;
-        const params = { otp, template_id: templateId, mobile: to, authkey: await this.settingService.getConfigValue("sms", "msg91SmsApiKey") }
-        const otpUrl = `${await this.settingService.getConfigValue("sms", "msg91SmsUrl")}/otp?${this.paramsToQueryString(params)}`;
+        const params = { otp, template_id: templateId, mobile: to, authkey: this.settingService.getConfigValue("msg91SmsApiKey") }
+        const otpUrl = `${this.settingService.getConfigValue("msg91SmsUrl")}/otp?${this.paramsToQueryString(params)}`;
         await this.httpService.axiosRef.post(otpUrl, {});
         this.logger.debug(`Sending OTP to ${to} with url ${otpUrl}`);
     }

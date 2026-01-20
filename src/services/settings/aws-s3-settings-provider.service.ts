@@ -10,9 +10,9 @@ export class SolidCoreAwsS3SettingsProvider implements ISettingsProvider {
   getSettings() {
 
     return [
-      { namespace: "aws-s3", key: "S3_AWS_ACCESS_KEY", value: process.env.S3_AWS_ACCESS_KEY, level: SettingLevel.SystemAdminReadonly },
-      { namespace: "aws-s3", key: "S3_AWS_SECRET_KEY", value: process.env.S3_AWS_SECRET_KEY, level: SettingLevel.SystemAdminReadonly },
-      { namespace: "aws-s3", key: "S3_AWS_REGION_NAME", value: process.env.S3_AWS_REGION_NAME, level: SettingLevel.SystemAdminReadonly },
+      { key: "S3_AWS_ACCESS_KEY", value: process.env.S3_AWS_ACCESS_KEY, level: SettingLevel.SystemAdminReadonly },
+      { key: "S3_AWS_SECRET_KEY", value: process.env.S3_AWS_SECRET_KEY, level: SettingLevel.SystemAdminReadonly },
+      { key: "S3_AWS_REGION_NAME", value: process.env.S3_AWS_REGION_NAME, level: SettingLevel.SystemAdminReadonly },
     ];
 
   }

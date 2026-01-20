@@ -60,7 +60,7 @@ export abstract class Msg91BaseSMSService implements ISMS {
             await this.sendSMSAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
-        else if (shouldQueueSms === false && await this.settingService.getConfigValue("sms", "shouldQueueSms") === true) {
+        else if (shouldQueueSms === false && this.settingService.getConfigValue("shouldQueueSms") === true) {
             await this.sendSMSAsynchronously(message);
         }
         // Else we send synch

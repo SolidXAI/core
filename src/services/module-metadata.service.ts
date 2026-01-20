@@ -463,7 +463,7 @@ export class ModuleMetadataService {
   }
 
   private async getFileSysytemFullFilePath(fileName: string): Promise<string> {
-    const fileStorageDir = await this.settingService.getConfigValue("app-builder", "fileStorageDir")
+    const fileStorageDir = this.settingService.getConfigValue("fileStorageDir")
     return `${fileStorageDir}/${fileName}`;
   }
 
