@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
-import { CommonEntity, SolidBaseRepository, User } from "src";
+import { CommonEntity, SettingService, SolidBaseRepository, User } from "src";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
@@ -45,6 +45,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     private _modelMetadataService: ModelMetadataService;
     private _crudHelperService: CrudHelperService;
     private _discoveryService: DiscoveryService;
+    private _settingService: SettingService;
 
     constructor(
         readonly entityManager: EntityManager,
@@ -65,6 +66,9 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
     protected get discoveryService(): DiscoveryService {
         return this._discoveryService ??= this.moduleRef.get(DiscoveryService, { strict: false });
+    }
+    protected get settingService(): SettingService {
+        return this._settingService ??= this.moduleRef.get(SettingService, { strict: false });
     }
 
     async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
