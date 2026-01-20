@@ -1,10 +1,9 @@
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { Brackets, EntityManager, EntityMetadata } from 'typeorm';
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
-import { ConfigService } from '@nestjs/config';
 import { CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE } from 'src/constants/chatter-message.constants';
 import { PostChatterMessageDto } from 'src/dtos/post-chatter-message.dto';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
@@ -13,11 +12,7 @@ import { ChatterMessageDetailsRepository } from 'src/repository/chatter-message-
 import { ChatterMessageRepository } from 'src/repository/chatter-message.repository';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
-import { FileService } from 'src/services/file.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { MediaStorageProviderType } from '../dtos/create-media-storage-provider-metadata.dto';
 import { ChatterMessageDetails } from '../entities/chatter-message-details.entity';
 import { ChatterMessage } from '../entities/chatter-message.entity';
@@ -26,13 +21,6 @@ import { RequestContextService } from './request-context.service';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
     constructor(
-        @Inject(forwardRef(() => ModelMetadataService))
-        readonly modelMetadataService: ModelMetadataService,
-        readonly moduleMetadataService: ModuleMetadataService,
-        readonly configService: ConfigService,
-        readonly fileService: FileService,
-        readonly discoveryService: DiscoveryService,
-        readonly crudHelperService: CrudHelperService,
         @InjectEntityManager()
         readonly entityManager: EntityManager,
         // @InjectRepository(ChatterMessage, 'default')
@@ -50,7 +38,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         readonly requestContextService: RequestContextService,
         private readonly modelMetadataHelperService: ModelMetadataHelperService,
     ) {
-        super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
+        super(entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
     }
 
     async postMessage(postDto: PostChatterMessageDto, files: Express.Multer.File[] = []) {

@@ -1,8 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
-import { CommonEntity, FileService, SolidBaseRepository, User } from "src";
+import { CommonEntity, SolidBaseRepository, User } from "src";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
@@ -37,28 +36,35 @@ import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper
 import { HashingService } from "./hashing.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
-import { ModuleMetadataService } from "./module-metadata.service";
 import { RequestContextService } from "./request-context.service";
 import { BasicGroupFilterDto } from "src/dtos/basic-group-filters.dto";
 
 export class CRUDService<T extends CommonEntity> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
+    private _modelMetadataService: ModelMetadataService;
+    private _crudHelperService: CrudHelperService;
+    private _discoveryService: DiscoveryService;
+
     constructor(
-        readonly modelMetadataService: ModelMetadataService, // go away
-        readonly moduleMetadataService: ModuleMetadataService, // go away
-        readonly configService: ConfigService, // we don't use it - go away
-        readonly fileService: FileService, // we don't use it - go away
-        readonly discoveryService: DiscoveryService, // go away
-        readonly crudHelperService: CrudHelperService, // go away
         readonly entityManager: EntityManager,
         readonly repo: SolidBaseRepository<T>,
         readonly modelName: string,
         readonly moduleName: string,
         readonly moduleRef: ModuleRef,
         readonly defaultEntityManager?: EntityManager
-
-        //We can just have the Model Entity here
     ) { }
+
+    protected get modelMetadataService(): ModelMetadataService {
+        return this._modelMetadataService ??= this.moduleRef.get(ModelMetadataService, { strict: false });
+    }
+
+    protected get crudHelperService(): CrudHelperService {
+        return this._crudHelperService ??= this.moduleRef.get(CrudHelperService, { strict: false });
+    }
+
+    protected get discoveryService(): DiscoveryService {
+        return this._discoveryService ??= this.moduleRef.get(DiscoveryService, { strict: false });
+    }
 
     async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
         // This class will be extended by the generated service class i.e PersonService

@@ -1,12 +1,8 @@
 import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
-import { ConfigService, ConfigType } from '@nestjs/config';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { ConfigType } from '@nestjs/config';
+import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { CrudHelperService } from "src/services/crud-helper.service";
 import { CRUDService } from 'src/services/crud.service';
-import { FileService } from "src/services/file.service";
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { EntityManager, Repository } from 'typeorm';
 
 
@@ -23,15 +19,8 @@ import { HashingService } from './hashing.service';
 @Injectable()
 export class UserService extends CRUDService<User> {
   constructor(
-    @Inject(forwardRef(() => ModelMetadataService))
-    readonly modelMetadataService: ModelMetadataService,
-    readonly moduleMetadataService: ModuleMetadataService,
-    readonly configService: ConfigService,
-    readonly fileService: FileService,
-    readonly discoveryService: DiscoveryService,
-    readonly crudHelperService: CrudHelperService,
     readonly hashingService: HashingService,
-    
+
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(User, 'default')
@@ -46,7 +35,7 @@ export class UserService extends CRUDService<User> {
     private readonly iamConfiguration: ConfigType<typeof iamConfig>,
 
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'user', 'solid-core', moduleRef);
+    super(entityManager, repo, 'user', 'solid-core', moduleRef);
   }
 
   override async delete(id: number, solidRequestContext: any = {}) {
