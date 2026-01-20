@@ -66,14 +66,14 @@ export class SettingController {
   @Public()
   async wrapSettings() {
 
-    return this.service.getAllSettings();
+    return this.service.getNonSystemSettings();
 
   }
 
   @ApiBearerAuth("jwt")
   @Get()
   async getAllSettings() {
-    return this.service.getAllSettings();
+    return this.service.getNonSystemSettings();
   }
 
   @ApiBearerAuth("jwt")

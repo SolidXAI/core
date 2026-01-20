@@ -1,24 +1,23 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
-import { ModuleRef } from "@nestjs/core";
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { BadRequestException, ForbiddenException, Inject, Injectable, OnApplicationBootstrap } from '@nestjs/common';
+import { InjectRepository } from '@nestjs/typeorm';
+import { Repository } from 'typeorm';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
 import { User } from 'src/entities/user.entity';
 import { SettingRepository } from 'src/repository/setting.repository';
-import { CRUDService } from 'src/services/crud.service';
 import { FileService } from 'src/services/file.service';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-
+import { ISettingsProvider, SettingDefinition } from 'src/interfaces';
 
 
 @Injectable()
 export class SettingService {
+  private settings: SettingDefinition[] = [];
 
   constructor(
     readonly fileService: FileService,
@@ -31,10 +30,14 @@ export class SettingService {
     // super(entityManager, repo, 'setting', 'solid-core', moduleRef);
   }
 
+  // async onApplicationBootstrap() {
+  //   const settingsFromDb = await this.getSettingsFromDb();
+  //   const settingsFromProvider = this.getAllSettingsFromProviders();
+  // }
+
   private readonly SYSTEM_SETTINGS_CACHE_KEY = 'cached-system-settings';
 
-
-  private async getSettingsFromRepo(): Promise<Setting[]> {
+  async getSettingsFromDb(): Promise<Setting[]> {
     // const cachedSettings = await this.cacheManager.get<Setting[]>(
     //   this.SYSTEM_SETTINGS_CACHE_KEY,
     // );
@@ -48,16 +51,23 @@ export class SettingService {
     return settings;
   }
 
+  async mergeDbSettingsIntoProviderSettings(dbSettings: Setting[], providerSettings: SettingDefinition[]): Promise<SettingDefinition[]> {
+    // TODO: deep copy of providerSettings array such that each providerSetting.value is set to the corresponding dbSetting.value as long as key & namespace matches.
+    return [];
+  }
 
+  /**
+   * This method will seed (insert only) settings that are introduced in code but do not already exist in the database. 
+   * Also this method only deals with settings with level system-admin-editable & internal-user.
+   */
   async seedDefaultSettings(): Promise<void> {
-    // ToDo only settings which are not of level system , system-readOnly 
-    const settingsSeederData = this.getDefaultSettings().filter(i => i.level !== "system-env" && i.level !== "system-admin-readonly");
+    // Seed only settings with level system-admin-editable & internal-user
+    const settingsSeederData = this.getAllSettingsFromProviders().filter(i => i.level !== "system-env" && i.level !== "system-admin-readonly");
 
-
-    const existingSettings: Setting[] = await this.getSettingsFromRepo();
+    // Get hold of the current values from the database.
+    const existingSettings: Setting[] = await this.getSettingsFromDb();
 
     const existingKeys = new Set(existingSettings.map(s => s.key));
-
     const settingsToInsert: Setting[] = [];
     // for (const [key, value] of Object.entries(settingsSeederData)) {
     //   if (!existingKeys.has(key)) {
@@ -88,119 +98,43 @@ export class SettingService {
       }
     }
 
-
     if (settingsToInsert.length > 0) {
       await this.repo.save(settingsToInsert);
     }
   }
 
-  private getDefaultSettings(): Array<any> {
-
-    // TODO  get all settings from registry 
+  /**
+   * Reads all registered providers and gathers settings from across the running platform.
+   * This is the superset of all possible settings. 
+   * @returns 
+   */
+  private getAllSettingsFromProviders(): Array<any> {
+    // get all settings from registry 
     const allSettingsProviders = this.solidRegistry.getSettingsProviders();
-    const settings = [];
+    const settings: SettingDefinition[] = [];
     for (const wrapper of allSettingsProviders) {
-      const instance = wrapper.instance;
-      if (!instance?.getSettings) continue;
+      const instance = wrapper.instance as ISettingsProvider;
+      // if (!instance?.getSettings) continue;
       settings.push(...instance.getSettings());
     }
 
     return settings
-
-    // return {
-    //   passwordlessRegistrationValidateWhat: this.iamConfiguration.passwordlessRegistrationValidateWhat,
-    //   allowPublicRegistration: this.iamConfiguration.allowPublicRegistration,
-    //   passwordBasedAuth: this.iamConfiguration.passwordBasedAuth,
-    //   passwordLessAuth: this.iamConfiguration.passwordLessAuth,
-    //   activateUserOnRegistration: this.iamConfiguration.activateUserOnRegistration,
-    //   defaultRole: this.iamConfiguration.defaultRole,
-    //   shouldQueueEmails: this.commonConfiguration.shouldQueueEmails,
-    //   shouldQueueSms: this.commonConfiguration.shouldQueueSms,
-    //   forceChangePasswordOnFirstLogin: this.iamConfiguration.forceChangePasswordOnFirstLogin,
-    //   authenticationPasswordRegex: this.iamConfiguration.PASSWORD_REGEX,
-    //   authenticationPasswordRegexErrorMessage: this.iamConfiguration.PASSWORD_REGEX_ERROR_MESSAGE,
-    //   authenticationPasswordComplexityDescription: this.iamConfiguration.PASSWORD_COMPLEXITY_DESC,
-    //   iamAutoGeneratedPassword: this.iamConfiguration.iamAutoGeneratedPassword,
-    //   showNameFieldsForRegistration: this.iamConfiguration.showNameFieldsForRegistration
-
-    //   iamGoogleOAuthEnabled: false,
-    //   authPagesLayout: "center",
-    //   authPagesTheme: "light",
-    //   appLogo: null,
-    //   companylogo: null,
-    //   favicon: null,
-    //   appLogoPosition: "in_form_view",
-    //   showAuthContent: false,
-    //   appTitle: process.env.SOLID_APP_NAME || "Solid App",
-    //   appSubtitle: process.env.SOLID_APP_SUBTITLE || "",
-    //   appDescription: process.env.SOLID_APP_DESCRIPTION || "",
-    //   showLegalLinks: false,
-    //   appTnc: null,
-    //   appPrivacyPolicy: null,
-    //   enableDarkMode: true,
-    //   copyright: null,
-    //   enableUsername: true,
-    //   enabledNotification: true,
-    //   contactSupportEmail: null,
-    //   contactSupportDisplayName: null,
-    //   contactSupportIcon: null,
-    //   authScreenRightBackgroundImage: null,
-    //   authScreenLeftBackgroundImage: null,
-    //   authScreenCenterBackgroundImage: null,
-    //   solidXGenAiCodeBuilderConfig: JSON.stringify({
-    //     defaultProvider: "",
-    //     availableProviders: []
-    //   }),
-    // };
-
   }
 
-
-  async getConfigValue(namespace: String, settingKey: string) {
-    try {
-      const settingsArray: Setting[] = await this.getSettingsFromRepo();
-
-      const settingEntry = settingsArray.find(setting => setting.key === settingKey);
-
-      if (settingEntry && settingEntry.value !== null && settingEntry.value !== undefined) {
-        const value = settingEntry.value;
-
-        if (value === 'true' || value === 'false') {
-          return value === 'true';
-        }
-        else if (!isNaN(Number(value)) && value.trim() !== '') {
-          return Number(value);
-        }
-        else if (value.includes(',')) {
-          return value.split(',').map(item => item.trim());
-        }
-        else {
-          return value;
-        }
-      }
-
-      const getAllSettings = this.getDefaultSettings();
-      const settingValue = getAllSettings.find(i => (i.key == settingKey && i.namespace == namespace))
-      if (settingValue) {
-        return settingValue.value;
-      }
-    } catch (error) {
-
-      // in case somethings wrong with repo call 
-      const getAllSettings = this.getDefaultSettings();
-      const settingValue = getAllSettings.find(i => (i.key == settingKey && i.namespace == namespace))
-      if (settingValue) {
-        return settingValue.value;
-      }
-    }
-  }
-
+  /**
+   * This method updates settings from the admin user interface. 
+   * Most likely settings with level system-admin-editable & internal-user are the ones that will get modified here. 
+   * 
+   * @param settings 
+   * @param uploadedFiles 
+   * @returns 
+   */
   async updateSettings(settings: CreateSettingDto[] = [], uploadedFiles: Array<Express.Multer.File> = []): Promise<Setting[]> {
     const activeUser = this.requestContextService.getActiveUser();
     const userId = activeUser?.sub;
 
     // const existingSettings = await this.repo.find();
-    const existingSettings: Setting[] = await this.getSettingsFromRepo();
+    const existingSettings: Setting[] = await this.getSettingsFromDb();
 
 
     const settingsToUpdate: Setting[] = [];
@@ -292,10 +226,58 @@ export class SettingService {
     return [...settingsToUpdate, ...settingsToCreate];
   }
 
-  // TODO remove all refrence of user from the below method and ui 
-  async getAllSettings(): Promise<Record<any, any>> {
-    // TODO remove system level from settings array - since we dont seed system-env & system-read-only settings - no need to remove them 
-    const settingsArray: Setting[] = await this.getSettingsFromRepo();
+  async getConfigValue(namespace: String, settingKey: string) {
+    try {
+      const settingsArray: Setting[] = await this.getSettingsFromDb();
+
+      const settingEntry = settingsArray.find(setting => setting.key === settingKey);
+
+      if (settingEntry && settingEntry.value !== null && settingEntry.value !== undefined) {
+        const value = settingEntry.value;
+
+        if (value === 'true' || value === 'false') {
+          return value === 'true';
+        }
+        else if (!isNaN(Number(value)) && value.trim() !== '') {
+          return Number(value);
+        }
+        else if (value.includes(',')) {
+          return value.split(',').map(item => item.trim());
+        }
+        else {
+          return value;
+        }
+      }
+
+      const getAllSettings = this.getAllSettingsFromProviders();
+      const settingValue = getAllSettings.find(i => (i.key == settingKey && i.namespace == namespace))
+      if (settingValue) {
+        return settingValue.value;
+      }
+    } catch (error) {
+
+      // in case somethings wrong with repo call 
+      const getAllSettings = this.getAllSettingsFromProviders();
+      const settingValue = getAllSettings.find(i => (i.key == settingKey && i.namespace == namespace))
+      if (settingValue) {
+        return settingValue.value;
+      }
+    }
+  }
+
+  /**
+   * Method used from the solid-core-ui to fetch available settings. 
+   * Here we are returning settings other than system-env.
+   * 
+   * @returns 
+   */
+  async getNonSystemSettings(): Promise<Record<any, any>> {
+    // TODO remove system level from settings array
+    const settingsArray: Setting[] = await this.getSettingsFromDb();
+    const nonSystemEnvSettings = this.getAllSettingsFromProviders().filter(i => i.level !== "system-env");
+
+    // TODO: merge based on what is there in the DB and what is there in our providers...
+
     const finalSettings = {}
     const arrayKeysToSkip = [
       'authenticationPasswordRegex',

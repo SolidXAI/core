@@ -183,7 +183,7 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     });
 
     // Register the core subscribers against all the configured database modules / datasources
-    await this.bootstrapCoreTypeOrmSubscribers(solidDatabaseModules)
+    await this.bootstrapCoreTypeOrmSubscribers(solidDatabaseModules);
   }
 
   async bootstrapCoreTypeOrmSubscribers(dbModules: Array<InstanceWrapper<any>>): Promise<void> {
