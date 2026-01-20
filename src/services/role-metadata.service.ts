@@ -1,12 +1,7 @@
-import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { CrudHelperService } from "src/services/crud-helper.service";
 import { CRUDService } from 'src/services/crud.service';
-import { FileService } from "src/services/file.service";
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { EntityManager, In } from 'typeorm';
 
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
@@ -21,14 +16,6 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
   private readonly logger = new Logger(RoleMetadataService.name);
 
   constructor(
-    @Inject(forwardRef(() => ModelMetadataService))
-    readonly modelMetadataService: ModelMetadataService,
-    @Inject(forwardRef(() => ModuleMetadataService))
-    readonly moduleMetadataService: ModuleMetadataService,
-    readonly configService: ConfigService,
-    readonly fileService: FileService,
-    readonly discoveryService: DiscoveryService,
-    readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(RoleMetadata, 'default')
@@ -40,7 +27,7 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     readonly moduleRef: ModuleRef
 
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'roleMetadata', 'solid-core', moduleRef);
+    super(entityManager, repo, 'roleMetadata', 'solid-core', moduleRef);
   }
 
   async findRoleByName(roleName: string) {

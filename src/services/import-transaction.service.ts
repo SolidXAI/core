@@ -1,14 +1,9 @@
-import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { BadRequestException, ForbiddenException, Injectable, Logger } from '@nestjs/common';
+import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 
-import { ConfigService } from '@nestjs/config';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
-import { FileService } from 'src/services/file.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
@@ -94,13 +89,6 @@ interface ImportRecordsResult {
 @Injectable()
 export class ImportTransactionService extends CRUDService<ImportTransaction> {
   constructor(
-    @Inject(forwardRef(() => ModelMetadataService))
-    readonly modelMetadataService: ModelMetadataService,
-    readonly moduleMetadataService: ModuleMetadataService,
-    readonly configService: ConfigService,
-    readonly fileService: FileService,
-    readonly discoveryService: DiscoveryService,
-    readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(ImportTransaction, 'default')
@@ -114,7 +102,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     private readonly modelMetadataHelperService: ModelMetadataHelperService,
     // readonly fieldMetadataService: FieldMetadataService,
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'importTransaction', 'solid-core', moduleRef);
+    super(entityManager, repo, 'importTransaction', 'solid-core', moduleRef);
   }
 
   private readonly logger = new Logger(ImportTransactionService.name);

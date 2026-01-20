@@ -1,25 +1,19 @@
-import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable } from '@nestjs/common';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { EntityManager, Repository } from 'typeorm';
-
-import { ConfigService, ConfigType } from '@nestjs/config';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
 import { User } from 'src/entities/user.entity';
 import { SettingRepository } from 'src/repository/setting.repository';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
 import { FileService } from 'src/services/file.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Cache } from 'cache-manager';
-import { SettingDefinition } from 'src/interfaces';
 
 
 
@@ -27,28 +21,17 @@ import { SettingDefinition } from 'src/interfaces';
 export class SettingService extends CRUDService<Setting> {
 
   constructor(
-    @Inject(forwardRef(() => ModelMetadataService))
-    readonly modelMetadataService: ModelMetadataService,
-    @Inject(forwardRef(() => ModuleMetadataService))
-    readonly moduleMetadataService: ModuleMetadataService,
-    readonly configService: ConfigService,
     readonly fileService: FileService,
     readonly solidRegistry: SolidRegistry,
-    readonly discoveryService: DiscoveryService,
-    readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     @Inject(CACHE_MANAGER) private cacheManager: Cache,
-
-    // @InjectRepository(Setting, 'default')
-    // readonly repo: Repository<Setting>,
     readonly repo: SettingRepository,
     readonly moduleRef: ModuleRef,
     private readonly requestContextService: RequestContextService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'setting', 'solid-core', moduleRef
-    );
+    super(entityManager, repo, 'setting', 'solid-core', moduleRef);
   }
 
   private readonly SYSTEM_SETTINGS_CACHE_KEY = 'cached-system-settings';

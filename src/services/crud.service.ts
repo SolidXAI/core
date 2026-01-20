@@ -1,111 +1,71 @@
-console.log('[LOAD] crud.service.js');
-
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
-
-console.log('[LOAD] 1');
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
-console.log('[LOAD] 2');
 import { isArray } from "class-validator";
-console.log('[LOAD] 3');
-import { CommonEntity, FileService, SolidBaseRepository, User } from "src";
-console.log('[LOAD] 4');
+import { CommonEntity, SolidBaseRepository, User } from "src";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
-console.log('[LOAD] 5');
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
-console.log('[LOAD] 6');
 import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
-console.log('[LOAD] 7');
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
-console.log('[LOAD] 8');
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
-console.log('[LOAD] 9');
 import { ComputedFieldValueType, RelationType, SelectionValueType, SolidFieldType } from "../dtos/create-field-metadata.dto";
-console.log('[LOAD] 10');
 import { MediaStorageProviderType } from "../dtos/create-media-storage-provider-metadata.dto";
-console.log('[LOAD] 11');
 import { FieldMetadata } from "../entities/field-metadata.entity";
-console.log('[LOAD] 12');
 import { ModelMetadata } from "../entities/model-metadata.entity";
-console.log('[LOAD] 13');
 import { BigIntFieldCrudManager } from "../helpers/field-crud-managers/BigIntFieldCrudManager";
-console.log('[LOAD] 14');
 import { BooleanFieldCrudManager } from "../helpers/field-crud-managers/BooleanFieldCrudManager";
-console.log('[LOAD] 15');
 import { ComputedFieldCrudManager } from "../helpers/field-crud-managers/ComputedFieldCrudManager";
-console.log('[LOAD] 16');
 import { DateFieldCrudManager } from "../helpers/field-crud-managers/DateFieldCrudManager";
-console.log('[LOAD] 17');
 import { DecimalFieldCrudManager } from "../helpers/field-crud-managers/DecimalFieldCrudManager";
-console.log('[LOAD] 18');
 import { EmailFieldCrudManager, MAX_EMAIL_LENGTH } from "../helpers/field-crud-managers/EmailFieldCrudManager";
-console.log('[LOAD] 19');
 import { IntFieldCrudManager } from "../helpers/field-crud-managers/IntFieldCrudManager";
-console.log('[LOAD] 20');
 import { JsonFieldCrudManager } from "../helpers/field-crud-managers/JsonFieldCrudManager";
-console.log('[LOAD] 21');
 import { LongTextFieldCrudManager } from "../helpers/field-crud-managers/LongTextFieldCrudManager";
-console.log('[LOAD] 22');
 import { ManyToManyRelationFieldCrudManager, ManyToManyRelationFieldOptions } from "../helpers/field-crud-managers/ManyToManyRelationFieldCrudManager";
-console.log('[LOAD] 23');
 import { ManyToOneRelationFieldCrudManager, ManyToOneRelationFieldOptions } from "../helpers/field-crud-managers/ManyToOneRelationFieldCrudManager";
-console.log('[LOAD] 24');
 import { MediaFieldCrudManager, SolidMediaType } from "../helpers/field-crud-managers/MediaFieldCrudManager";
-console.log('[LOAD] 25');
 import { NoOpsFieldCrudManager } from "../helpers/field-crud-managers/NoOpsFieldCrudManager";
-console.log('[LOAD] 26');
 import { OneToManyRelationFieldCrudManager, OneToManyRelationFieldOptions } from "../helpers/field-crud-managers/OneToManyRelationFieldCrudManager";
-console.log('[LOAD] 27');
 import { PasswordFieldCrudManager } from "../helpers/field-crud-managers/PasswordFieldCrudManager";
-console.log('[LOAD] 28');
 import { RichTextFieldCrudManager } from "../helpers/field-crud-managers/RichTextFieldCrudManager";
-console.log('[LOAD] 29');
 import { SelectionDynamicFieldCrudManager } from "../helpers/field-crud-managers/SelectionDynamicFieldCrudManager";
-console.log('[LOAD] 30');
 import { SelectionStaticFieldCrudManager } from "../helpers/field-crud-managers/SelectionStaticFieldCrudManager";
-console.log('[LOAD] 31');
 import { ShortTextFieldCrudManager } from "../helpers/field-crud-managers/ShortTextFieldCrudManager";
-console.log('[LOAD] 32');
 import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCrudManager";
-console.log('[LOAD] 33');
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
-console.log('[LOAD] 34');
 import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper.service";
-console.log('[LOAD] 35');
 import { HashingService } from "./hashing.service";
-console.log('[LOAD] 36');
 import { getMediaStorageProvider } from "./mediaStorageProviders";
-console.log('[LOAD] 37');
 import { ModelMetadataService } from "./model-metadata.service";
-console.log('[LOAD] 38');
-import { ModuleMetadataService } from "./module-metadata.service";
-console.log('[LOAD] 39');
 import { RequestContextService } from "./request-context.service";
-console.log('[LOAD] 40');
 import { BasicGroupFilterDto } from "src/dtos/basic-group-filters.dto";
-console.log('[LOAD] 40');
 
-console.log('EntityManager:', EntityManager);
-console.log('SolidBaseRepository:', SolidBaseRepository);
 
 export class CRUDService<T extends CommonEntity> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
+    private _modelMetadataService: ModelMetadataService;
+    private _crudHelperService: CrudHelperService;
+    private _discoveryService: DiscoveryService;
+
     constructor(
-        readonly modelMetadataService: ModelMetadataService, // go away
-        readonly moduleMetadataService: ModuleMetadataService, // go away
-        readonly configService: ConfigService, // we don't use it - go away
-        readonly fileService: FileService, // we don't use it - go away
-        readonly discoveryService: DiscoveryService, // go away
-        readonly crudHelperService: CrudHelperService, // go away
         readonly entityManager: EntityManager,
         readonly repo: SolidBaseRepository<T>,
         readonly modelName: string,
         readonly moduleName: string,
         readonly moduleRef: ModuleRef,
-        readonly defaultEntityManager?: EntityManager
-
-        //We can just have the Model Entity here
+        readonly defaultDatasourceEntityManager?: EntityManager
     ) { }
+
+    protected get modelMetadataService(): ModelMetadataService {
+        return this._modelMetadataService ??= this.moduleRef.get(ModelMetadataService, { strict: false });
+    }
+
+    protected get crudHelperService(): CrudHelperService {
+        return this._crudHelperService ??= this.moduleRef.get(CrudHelperService, { strict: false });
+    }
+
+    protected get discoveryService(): DiscoveryService {
+        return this._discoveryService ??= this.moduleRef.get(DiscoveryService, { strict: false });
+    }
 
     async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
         // This class will be extended by the generated service class i.e PersonService
@@ -383,11 +343,11 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 //    Use the EntityController to extract uploaded content & pass to the entity service.
                 //    If embedded media, then the media uri will saved in the entity table, else the uri will be saved in the media table
                 //    Plan the media table schema e.g id, uri, storageProvider, entity_id, entity_name, createdAt, updatedAt
-                const options = { 
-                    ...commonOptions, 
+                const options = {
+                    ...commonOptions,
                     mediaMaxSizeKb: fieldMetadata.mediaMaxSizeKb,
                     mediaTypes: fieldMetadata.mediaTypes,
-                    type: fieldMetadata.type as unknown as SolidMediaType 
+                    type: fieldMetadata.type as unknown as SolidMediaType
                 };
                 return new MediaFieldCrudManager(options);
             }
@@ -670,7 +630,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     }
 
     private async handlePopulateMedia(populateMedia: string[], entities: T[]) {
-        const model = await this.getDefaultEntityManager().getRepository(ModelMetadata).findOne({
+        const model = await this.getDatasourceDefaultEntityManager().getRepository(ModelMetadata).findOne({
             where: {
                 singularName: this.modelName,
             },
@@ -1009,7 +969,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             throw new BadRequestException(`Field ${field.name} does not define a relationCoModelSingularName`);
         }
 
-        const relationCoModel = await this.getDefaultEntityManager().getRepository(ModelMetadata).findOne({
+        const relationCoModel = await this.getDatasourceDefaultEntityManager().getRepository(ModelMetadata).findOne({
             where: { singularName: field.relationCoModelSingularName },
             relations: ['fields', 'fields.mediaStorageProvider', 'fields.model'],
         });
@@ -1113,7 +1073,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return updatedEntity
     }
 
-    private getDefaultEntityManager() {
-        return this.defaultEntityManager ?? this.entityManager;
+    private getDatasourceDefaultEntityManager() {
+        return this.defaultDatasourceEntityManager ?? this.entityManager;
     }
 }
