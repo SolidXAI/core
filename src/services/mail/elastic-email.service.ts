@@ -10,6 +10,7 @@ import { IMail, MailAttachment, MailAttachmentWrapper } from "../../interfaces";
 import { PublisherFactory } from '../queues/publisher-factory.service';
 import { MailProvider } from 'src/decorators/mail-provider.decorator';
 import { SettingService } from '../setting.service';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 const ElasticEmail = require('@elasticemail/elasticemail-client');
 
@@ -63,7 +64,7 @@ export class ElasticEmailService implements IMail {
     async sendEmail(to: string, subject: string, body: string, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, wrapperAttachments: MailAttachmentWrapper[] = []): Promise<void> {
         const message = {
             payload: {
-                from: this.settingService.getConfigValue("smtpMailFrom"),
+                from: this.settingService.getConfigValue<SolidCoreSetting>("smtpMailFrom"),
                 to: to,
                 subject: subject,
                 body: body,
@@ -78,7 +79,7 @@ export class ElasticEmailService implements IMail {
             this.sendEmailAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
-        else if (shouldQueueEmails == false && this.settingService.getConfigValue("shouldQueueEmails") === true) {
+        else if (shouldQueueEmails == false && this.settingService.getConfigValue<SolidCoreSetting>("shouldQueueEmails") === true) {
             this.sendEmailAsynchronously(message);
         }
         // Else we send synch

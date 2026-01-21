@@ -6,6 +6,7 @@ import { SmsTemplateService } from "../sms-template.service";
 import { ISMS } from "../../interfaces";
 import { PublisherFactory } from "../queues/publisher-factory.service";
 import { SettingService } from "../setting.service";
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 export abstract class Msg91BaseSMSService implements ISMS {
     protected readonly logger = new Logger(Msg91BaseSMSService.name);
@@ -60,7 +61,7 @@ export abstract class Msg91BaseSMSService implements ISMS {
             await this.sendSMSAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
-        else if (shouldQueueSms === false && this.settingService.getConfigValue("shouldQueueSms") === true) {
+        else if (shouldQueueSms === false && this.settingService.getConfigValue<SolidCoreSetting>("shouldQueueSms") === true) {
             await this.sendSMSAsynchronously(message);
         }
         // Else we send synch

@@ -10,7 +10,9 @@ import { FileService } from 'src/services/file.service';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
-import { ISettingsProvider, SettingDefinition, SettingLevel } from 'src/interfaces';
+import { ISettingsProvider, NoInfer, SettingDefinition, SettingLevel } from 'src/interfaces';
+import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
+import type { SolidCoreSetting } from './settings/default-settings-provider.service';
 
 @Injectable()
 export class SettingService {
@@ -26,6 +28,7 @@ export class SettingService {
     readonly fileService: FileService,
     readonly solidRegistry: SolidRegistry,
     readonly repo: SettingRepository,
+    readonly moduleMetadataRepo: ModuleMetadataRepository,
     private readonly requestContextService: RequestContextService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
   ) {
@@ -54,22 +57,6 @@ export class SettingService {
     }
   }
 
-  async updateSettingsCache(): Promise<void> {
-    const settingsFromDb = await this.getSettingsFromDb();
-    const settingsFromProviders = this.getAllSettingsFromProviders();
-    const settingsFromDbByKey = new Map(settingsFromDb.map(setting => [setting.key, setting]));
-
-    this.settings = settingsFromProviders.map(setting => {
-      const settingFromDb = settingsFromDbByKey.get(setting.key);
-      const valueFromDb = settingFromDb?.value;
-      if (settingFromDb?.key && valueFromDb !== undefined && valueFromDb !== null) {
-        const parsedValue = typeof valueFromDb === 'string' ? this.parseSettingValue(valueFromDb, settingFromDb.key) : valueFromDb;
-        return { ...setting, value: parsedValue };
-      }
-      return setting;
-    });
-  }
-
   /**
    * Reads all registered providers and gathers settings from across the running platform.
    * This is the superset of all possible settings. 
@@ -89,6 +76,32 @@ export class SettingService {
   }
 
   /**
+   * public method that gets all settings in the system, this includes settings from solid-core and any consuming projects.
+   * this means that the settings returned are the ones provided by ISettingsProvider, merged with values if any from the database. 
+   * 
+   * @returns 
+   */
+  getAllSettings(): SettingDefinition[] {
+    return this.settings;
+  }
+
+  async updateSettingsCache(): Promise<void> {
+    const settingsFromDb = await this.getSettingsFromDb();
+    const settingsFromProviders = this.getAllSettingsFromProviders();
+    const settingsFromDbByKey = new Map(settingsFromDb.map(setting => [setting.key, setting]));
+
+    this.settings = settingsFromProviders.map(setting => {
+      const settingFromDb = settingsFromDbByKey.get(setting.key);
+      const valueFromDb = settingFromDb?.value;
+      if (settingFromDb?.key && valueFromDb !== undefined && valueFromDb !== null) {
+        const parsedValue = typeof valueFromDb === 'string' ? this.parseSettingValue(valueFromDb, settingFromDb.key) : valueFromDb;
+        return { ...setting, value: parsedValue };
+      }
+      return setting;
+    });
+  }
+
+  /**
    * 1. 
    * This method will seed (insert only) settings that are introduced in code but do not already exist in the database. 
    * Also this method only deals with settings with level system-admin-editable & internal-user.
@@ -99,16 +112,21 @@ export class SettingService {
     const saEditableAndAbove = this.getAllSettingsFromProviders().filter(i => [SettingLevel.SystemAdminEditable, SettingLevel.InternalUser].includes(i.level));
 
     // Get hold of the current values from the database.
-    const existingSettings: Setting[] = await this.getSettingsFromDb();
+    const existingSettingsFromDb: Setting[] = await this.getSettingsFromDb();
 
-    const existingKeys = new Set(existingSettings.map(s => s.key));
-    const settingsToInsert: Setting[] = [];
+    // const existingKeysFromDb = new Set(existingSettingsFromDb.map(s => s.key));
+    const existingSettingsFromDbByKey = new Map(existingSettingsFromDb.map(setting => [setting.key, setting]));
+    const settingsToMutate: Setting[] = [];
+    // const settingsToUpdate: Setting[] = [];
 
-    for (const { key, value, level } of saEditableAndAbove) {
-      if (!existingKeys.has(key)) {
+    for (const { key, value, level, moduleName } of saEditableAndAbove) {
+      const moduleMetadata = await this.moduleMetadataRepo.findOneBy({ name: moduleName });
+      if (!existingSettingsFromDbByKey.has(key)) {
         const setting = new Setting();
         setting.key = key;
         setting.level = level;
+        if (moduleMetadata)
+          setting.moduleMetadata = moduleMetadata;
 
         if (typeof value === 'boolean') {
           setting.value = value.toString();
@@ -120,13 +138,23 @@ export class SettingService {
           setting.value = String(value);
         }
 
-        settingsToInsert.push(setting);
+        settingsToMutate.push(setting);
+      }
+      else {
+        const setting = existingSettingsFromDbByKey.get(key);
+        setting.level = level;
+        if (moduleMetadata)
+          setting.moduleMetadata = moduleMetadata;
+        settingsToMutate.push(setting);
       }
     }
 
-    if (settingsToInsert.length > 0) {
-      await this.repo.save(settingsToInsert);
+    if (settingsToMutate.length > 0) {
+      await this.repo.save(settingsToMutate);
     }
+    // if (settingsToUpdate.length > 0) {
+    //   await this.repo.save(settingsToUpdate);
+    // }
   }
 
   /**
@@ -175,9 +203,9 @@ export class SettingService {
       for (const file of uploadedFiles) {
         const settingKey = file.fieldname;
         const relativeFileName = `${file.filename}-${file.originalname}`;
-        const fileStorageDir = this.getConfigValue("fileStorageDir")
+        const fileStorageDir = this.getConfigValue<SolidCoreSetting>("fileStorageDir")
         const storagePath = `${fileStorageDir}/${relativeFileName}`;
-        const baseUrl = this.getConfigValue("baseUrl") || '';
+        const baseUrl = this.getConfigValue<SolidCoreSetting>("baseUrl") || '';
         const fileUrl = `${baseUrl}/${storagePath}`;
 
         await this.fileService.copyFile(file.path, storagePath);
@@ -255,14 +283,14 @@ export class SettingService {
    * @param settingKey 
    * @returns 
    */
-  getConfigValue(settingKey: string) {
+  getConfigValue<T = never>(settingKey: NoInfer<T>) {
     const cachedSetting = this.settings.find(setting => setting.key === settingKey);
     if (cachedSetting) {
       return cachedSetting.value;
     }
 
     // This is probably not needed at all, but leaving it here as a backup for scenarios like 
-    // if getConfigValue() is called before onApplicationBootstrap() runs or if the cache refresh fails. 
+    // if getConfigValue<SolidCoreSetting>() is called before onApplicationBootstrap() runs or if the cache refresh fails. 
     const getAllSettings = this.getAllSettingsFromProviders();
     const settingValue = getAllSettings.find(i => (i.key == settingKey))
     return settingValue?.value;
@@ -272,7 +300,7 @@ export class SettingService {
 
     const { showHeader, inListView } = getMcpUrlDto;
 
-    const mcpEnabled = this.getConfigValue('mcpEnabled');
+    const mcpEnabled = this.getConfigValue<SolidCoreSetting>('mcpEnabled');
     if (mcpEnabled === 'false' || mcpEnabled === false) {
       throw new ForbiddenException(ERROR_MESSAGES.FORBIDDEN);
     }
@@ -285,9 +313,9 @@ export class SettingService {
         throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
       }
     }
-    const apiKey = this.getConfigValue('mcpApiKey');
+    const apiKey = this.getConfigValue<SolidCoreSetting>('mcpApiKey');
     const userId = solidRequestContext.activeUser.sub;
-    const mcpServerUrl = this.getConfigValue('mcpServerUrl');
+    const mcpServerUrl = this.getConfigValue<SolidCoreSetting>('mcpServerUrl');
     return { mcpUrl: `${mcpServerUrl}/static/frontend.html?solidx-mcp-api-key=${apiKey}&solidx-user-id=${userId}&solidx-show-header=${showHeader}&solidx-in-list-view=${inListView}` };
   }
 

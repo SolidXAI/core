@@ -2,6 +2,7 @@ import { BadRequestException, Injectable, Logger } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 import { spawn } from 'child_process';
 import * as fs from 'fs/promises';
@@ -71,8 +72,8 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
    * @returns The parsed object inside the 'response' field of the JSON output.
    */
   async runMcpPrompt(prompt: string): Promise<McpResponse> {
-    const pythonExecutable = this.settingService.getConfigValue('mcpPythonExecutable');
-    const mcpClient = this.settingService.getConfigValue('mcpClient');
+    const pythonExecutable = this.settingService.getConfigValue<SolidCoreSetting>('mcpPythonExecutable');
+    const mcpClient = this.settingService.getConfigValue<SolidCoreSetting>('mcpClient');
 
     // TODO: We can return an error if the above env variables are not properly setup...
     if (!pythonExecutable || !mcpClient) {

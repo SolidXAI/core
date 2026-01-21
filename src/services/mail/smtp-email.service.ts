@@ -7,6 +7,7 @@ import { IMail, MailAttachment, MailAttachmentWrapper } from "../../interfaces";
 import { EmailTemplateService } from '../email-template.service';
 import { PublisherFactory } from '../queues/publisher-factory.service';
 import { SettingService } from '../setting.service';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 const nodemailer = require("nodemailer");
 
@@ -88,7 +89,7 @@ export class SMTPEMailService implements IMail {
     ) {
         const message = {
             payload: {
-                from: from || this.settingService.getConfigValue("smtpMailFrom"),
+                from: from || this.settingService.getConfigValue<SolidCoreSetting>("smtpMailFrom"),
                 to: to,
                 subject: subject,
                 body: body,
@@ -105,7 +106,7 @@ export class SMTPEMailService implements IMail {
             return this.sendEmailAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
-        else if (shouldQueueEmails == false && this.settingService.getConfigValue("shouldQueueEmails") === true) {
+        else if (shouldQueueEmails == false && this.settingService.getConfigValue<SolidCoreSetting>("shouldQueueEmails") === true) {
             return this.sendEmailAsynchronously(message);
         }
         // Else we send synchronously
@@ -124,7 +125,7 @@ export class SMTPEMailService implements IMail {
         let from;
         const { to, subject, body, attachments = [], cc, bcc } = message.payload;
 
-        const envFrom = this.settingService.getConfigValue("smtpMailFrom");
+        const envFrom = this.settingService.getConfigValue<SolidCoreSetting>("smtpMailFrom");
         if (envFrom) {
             from = envFrom;
         }

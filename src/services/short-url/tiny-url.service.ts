@@ -2,6 +2,7 @@ import { HttpService } from "@nestjs/axios";
 import { Injectable, Logger } from "@nestjs/common";
 import { CreateShortUrlDto } from "src/dtos/create-short-url.dto";
 import { SettingService } from "../setting.service";
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 interface TinyUrlRequest {
     url: string;
@@ -40,9 +41,9 @@ export class TinyUrlService {
     ) { }
     protected readonly logger = new Logger(TinyUrlService.name);
     async shortenUrl(shortUrlDto: CreateShortUrlDto): Promise<string> {
-        const shotyUrlEnable = this.settingService.getConfigValue("tinyUrlEnabled")
-        const shotyUrlapiUrl = this.settingService.getConfigValue("tinyUrlApiUrl")
-        const shotyUrlApiKey = this.settingService.getConfigValue("tinyUrlApiKey")
+        const shotyUrlEnable = this.settingService.getConfigValue<SolidCoreSetting>("tinyUrlEnabled")
+        const shotyUrlapiUrl = this.settingService.getConfigValue<SolidCoreSetting>("tinyUrlApiUrl")
+        const shotyUrlApiKey = this.settingService.getConfigValue<SolidCoreSetting>("tinyUrlApiKey")
         if (!shotyUrlEnable) {
             return shortUrlDto.url;
         }

@@ -58,7 +58,6 @@ export interface ModuleMetadataConfiguration {
   dashboards?: CreateDashboardDto[],
 }
 
-
 export enum SettingLevel {
   SystemEnv = 'system-env',
   SystemAdminReadonly = 'system-admin-readonly',
@@ -67,6 +66,7 @@ export enum SettingLevel {
 }
 
 export interface SettingDefinition<T = any> {
+  moduleName: string;
   key: string;
   value: T;
   level: SettingLevel;
@@ -76,7 +76,6 @@ export interface SettingDefinition<T = any> {
 export interface ISettingsProvider {
   getSettings(): SettingDefinition[];
 }
-
 
 export interface CodeGenerationOptions {
   moduleId?: number;
@@ -382,3 +381,6 @@ export interface AwsS3Config {
   S3_AWS_SECRET_KEY: string;
   S3_AWS_REGION_NAME: string;
 }
+
+// Prevents inference so callers must provide explicit type arguments; reusable for other APIs.
+export type NoInfer<T> = [T][T extends any ? 0 : never];

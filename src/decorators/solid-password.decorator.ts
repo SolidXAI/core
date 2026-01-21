@@ -1,4 +1,5 @@
 // solid-password.decorator.ts
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 import {
   registerDecorator,
   ValidationArguments,
@@ -29,12 +30,12 @@ export class SolidPasswordConstraint implements ValidatorConstraintInterface {
     // Regex source
     let regex = opts?.regex;
     if (!regex) {
-      regex = this.settingService.getConfigValue('authenticationPasswordRegex');
+      regex = this.settingService.getConfigValue<SolidCoreSetting>('authenticationPasswordRegex');
     }
 
     // Message source
     this.lastMessage =
-      opts?.message || this.settingService.getConfigValue('authenticationPasswordRegexErrorMessage');
+      opts?.message || this.settingService.getConfigValue<SolidCoreSetting>('authenticationPasswordRegexErrorMessage');
 
     return new RegExp(regex).test(value);
   }

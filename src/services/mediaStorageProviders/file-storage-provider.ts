@@ -8,6 +8,7 @@ import { MediaRepository } from "src/repository/media.repository";
 import { FileService } from "src/services/file.service";
 import { Readable } from "stream";
 import { SettingService } from "../setting.service";
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 @Injectable()
 export class FileStorageProvider<T> implements MediaStorageProvider<T> {
@@ -33,7 +34,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // media.forEach(m => {
         // });
         for (const m of media) {
-            m['_full_url'] = `${this.settingService.getConfigValue("baseUrl")}/${this.getFullFilePath(m.relativeUri)}`;
+            m['_full_url'] = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${this.getFullFilePath(m.relativeUri)}`;
         }
 
 
@@ -108,7 +109,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
     }
 
     private async getFullFilePath(fileName: string): Promise<string> {
-        const fileStorageDir = this.settingService.getConfigValue("fileStorageDir")
+        const fileStorageDir = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
         return `${fileStorageDir}/${fileName}`;
         // return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
     }

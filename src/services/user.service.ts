@@ -3,6 +3,7 @@ import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
 import { CRUDService } from 'src/services/crud.service';
 import { EntityManager, Repository } from 'typeorm';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 
 import { OauthUserDto } from '../dtos/oauth-user-dto';
@@ -218,7 +219,7 @@ export class UserService extends CRUDService<User> {
       const savedUser = await this.repo.save(user);
 
       // Initialize the user roles
-      await this.initializeRolesForNewUser([this.settingService.getConfigValue('defaultRole')], savedUser);
+      await this.initializeRolesForNewUser([this.settingService.getConfigValue<SolidCoreSetting>('defaultRole')], savedUser);
     }
     // else we update the user and store the generated code & access token. 
     else {

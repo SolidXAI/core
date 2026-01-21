@@ -5,6 +5,7 @@ import * as path from 'path';
 import { ISolidDatabaseModule } from 'src/interfaces';
 import { getDynamicModuleNames } from 'src/helpers/module.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { SettingService } from 'src/services/setting.service';
 
 interface InfoCommandOptions {
     detailed?: boolean;
@@ -14,7 +15,10 @@ interface InfoCommandOptions {
 export class InfoCommand extends CommandRunner {
     private readonly logger = new Logger(InfoCommand.name);
 
-    constructor(private readonly solidRegistry: SolidRegistry) {
+    constructor(
+        private readonly solidRegistry: SolidRegistry,
+        private readonly settingService: SettingService,
+    ) {
         super();
     }
 
@@ -42,6 +46,7 @@ export class InfoCommand extends CommandRunner {
 
     private getRegistryDetails(): Record<string, unknown> {
         const info = {
+            settings: this.settingService.getAllSettings(),
             seeders: this.getWrapperNames(this.solidRegistry.getSeeders()),
             scheduledJobProviders: this.getWrapperNames(this.solidRegistry.getScheduledJobProviders()),
             selectionProviders: this.getWrapperNames(this.solidRegistry.getSelectionProviders()),

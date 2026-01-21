@@ -1,6 +1,7 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 import { ConfigType } from '@nestjs/config';
 import { EmailTemplateService } from '../services/email-template.service';
@@ -18,7 +19,7 @@ export class EmailTemplateSeederService {
 
     async seed() {
         // Read the module metadata from a file specified in the .env 
-        const seedDataFileVariable = this.settingService.getConfigValue("emailTemplateSeederFiles");
+        const seedDataFileVariable = this.settingService.getConfigValue<SolidCoreSetting>("emailTemplateSeederFiles");
         const seedDataFiles = seedDataFileVariable.split(',');
 
         for (let i = 0; i < seedDataFiles.length; i++) {

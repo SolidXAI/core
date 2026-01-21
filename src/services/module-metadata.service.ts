@@ -3,6 +3,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
 import { ConfigService } from '@nestjs/config';
@@ -463,7 +464,7 @@ export class ModuleMetadataService {
   }
 
   private async getFileSysytemFullFilePath(fileName: string): Promise<string> {
-    const fileStorageDir = this.settingService.getConfigValue("fileStorageDir")
+    const fileStorageDir = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
     return `${fileStorageDir}/${fileName}`;
   }
 

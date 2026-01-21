@@ -10,6 +10,7 @@ import { GoogleOauthGuard } from '../passport-strategies/google-oauth.strategy';
 import { AuthenticationService } from '../services/authentication.service';
 import { UserService } from '../services/user.service';
 import { SettingService } from 'src/services/setting.service';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 
 
@@ -34,10 +35,10 @@ export class GoogleAuthenticationController {
 
     private async validateConfiguration() {
         const googleOauth: GoogleAuthConfiguration = {
-            clientID: this.settingService.getConfigValue("clientID"),
-            clientSecret: this.settingService.getConfigValue("clientSecret"),
-            callbackURL: this.settingService.getConfigValue("callbackURL"),
-            redirectURL: this.settingService.getConfigValue("redirectURL"),
+            clientID: this.settingService.getConfigValue<SolidCoreSetting>("clientID"),
+            clientSecret: this.settingService.getConfigValue<SolidCoreSetting>("clientSecret"),
+            callbackURL: this.settingService.getConfigValue<SolidCoreSetting>("callbackURL"),
+            redirectURL: this.settingService.getConfigValue<SolidCoreSetting>("redirectURL"),
         }
         if (!isGoogleOAuthConfigured(googleOauth)) {
             throw new InternalServerErrorException('Google OAuth is not configured');
@@ -50,7 +51,7 @@ export class GoogleAuthenticationController {
     async googleAuthCallback(@Req() req: Request, @Res() res: Response) {
         await this.validateConfiguration();
         const user = req.user;
-        const googleOauthRedirectURL = await this.settingService.getConfigValue("redirectURL");
+        const googleOauthRedirectURL = await this.settingService.getConfigValue<SolidCoreSetting>("redirectURL");
         // console.log(`Found user: ${JSON.stringify(user)}`);
         // const token = await this.authService.signIn(req.user);
         //   res.cookie('access_token', token, {

@@ -11,7 +11,6 @@ import {
 import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RemoveFieldsCommand } from './commands/remove-fields.command';
-import appBuilderConfig from './config/app-builder.config';
 import { FieldMetadataController } from './controllers/field-metadata.controller';
 import { MediaStorageProviderMetadataController } from './controllers/media-storage-provider-metadata.controller';
 import { ModelMetadataController } from './controllers/model-metadata.controller';
@@ -57,7 +56,6 @@ import { ActionMetadataService } from './services/action-metadata.service';
 import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { SeedCommand } from './commands/seed.command';
-import commonConfig from './config/common.config';
 import { AuthenticationController } from './controllers/authentication.controller';
 import { EmailTemplateController } from './controllers/email-template.controller';
 import { GoogleAuthenticationController } from './controllers/google-authentication.controller';
@@ -337,21 +335,9 @@ import { ModelSequenceController } from './controllers/model-sequence.controller
 import { ModelSequenceRepository } from './repository/model-sequence.repository';
 import { CacheModule } from '@nestjs/cache-manager';
 import { CacheManagerOptions } from './config/cache.options';
-import { SolidCoreJwtSettingsProvider } from './services/settings/jwt-settings-provider.service';
-import { SolidCoreGoogleOAuthSettingsProvider } from './services/settings/google-oauth-settings-provider.service';
-import { SolidCoreIamSettingsProvider } from './services/settings/iam-settings-provider.service';
 import { SolidCoreDefaultSettingsProvider } from './services/settings/default-settings-provider.service';
-import { SolidCoreEmailSettingsProvider } from './services/settings/email-settings-provider.service';
-import { SolidCoreSmsSettingsProvider } from './services/settings/sms-settings-provider.service';
-import { SolidCoreTinyUrlSettingsProvider } from './services/settings/tiny-url-settings-provider.service';
-import { SolidCoreWhatsappSettingsProvider } from './services/settings/whatsapp-settings-provider.service';
-import { SolidCoreAwsS3SettingsProvider } from './services/settings/aws-s3-settings-provider.service';
-import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-builder-settings-provider.service';
-import { SolidCoreGenaiSettingsProvider } from './services/settings/genai-settings-provider.service';
-import { SolidCoreQueuesSettingsProvider } from './services/settings/queues-settings-provider.service';
 import { SmsFactory } from './factories/sms.factory';
 import { WhatsAppFactory } from './factories/whatsapp.factory';
-import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
 import { ImageEncodingService } from './helpers/image-encoding.helper';
 import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.service';
 import { InfoCommand } from './commands/info.command';
@@ -401,8 +387,6 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     ]),
 
     CacheModule.registerAsync(CacheManagerOptions),
-    ConfigModule.forFeature(appBuilderConfig),
-    ConfigModule.forFeature(commonConfig),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'media-files-storage'),
@@ -744,18 +728,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     SequenceNumComputedFieldProvider,
     ModelSequenceService,
     ModelSequenceRepository,
-    SolidCoreJwtSettingsProvider,
-    SolidCoreGoogleOAuthSettingsProvider,
-    SolidCoreIamSettingsProvider,
     SolidCoreDefaultSettingsProvider,
-    SolidCoreEmailSettingsProvider,
-    SolidCoreSmsSettingsProvider,
-    SolidCoreTinyUrlSettingsProvider,
-    SolidCoreWhatsappSettingsProvider,
-    SolidCoreAwsS3SettingsProvider,
-    SolidCoreAppBuilderSettingsProvider,
-    SolidCoreGenaiSettingsProvider,
-    SolidCoreQueuesSettingsProvider,
     ImageEncodingService,
     SolidMicroserviceAdapter,
     ListOfRolesSelectionProvider,
@@ -815,6 +788,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     ImageEncodingService,
     SolidMicroserviceAdapter,
     UserService,
+    SettingService,
   ],
 })
 export class SolidCoreModule { }

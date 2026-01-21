@@ -5,6 +5,7 @@ import { CreateEmailTemplateDto } from '../dtos/create-email-template.dto';
 import { UpdateEmailTemplateDto } from '../dtos/update-email-template.dto';
 import { EmailTemplateService } from '../services/email-template.service';
 import { SettingService } from '../services/setting.service';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 // TODO: esInterop not working somehow, defaulted to using the require syntax to import Mailgen. Figure a better way to do this.
 import Mailgen = require('mailgen');
@@ -77,8 +78,8 @@ export class EmailTemplateController {
   @Get('mailgen-template/:templateType')
   @Header('content-type', 'text/html')
   generateMailgenTemplate(@Param('templateType') templateType: string) {
-    const appName = this.settingService.getConfigValue('appTitle');
-    const appUrl = this.settingService.getConfigValue('solidAppWebsiteUrl');
+    const appName = this.settingService.getConfigValue<SolidCoreSetting>('appTitle');
+    const appUrl = this.settingService.getConfigValue<SolidCoreSetting>('solidAppWebsiteUrl');
 
     // Configure mailgen by setting a theme and your product info
     var mailGenerator = new Mailgen({

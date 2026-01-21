@@ -7,6 +7,7 @@ import twilio from 'twilio';
 import { QueueMessage } from "src/interfaces/mq";
 import { SettingService } from "../setting.service";
 import { SmsProvider } from "src/decorators/sms-provider.decorator";
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 
 @Injectable()
@@ -26,9 +27,9 @@ export class TwilioSMSService implements ISMS {
 
 
 
-        const accountSid = this.settingService.getConfigValue('twilioAccountSid');
-        const authToken = this.settingService.getConfigValue('twilioAuthToken');
-        const twilioNumber = this.settingService.getConfigValue('twilioNumber');
+        const accountSid = this.settingService.getConfigValue<SolidCoreSetting>('twilioAccountSid');
+        const authToken = this.settingService.getConfigValue<SolidCoreSetting>('twilioAuthToken');
+        const twilioNumber = this.settingService.getConfigValue<SolidCoreSetting>('twilioNumber');
         if (!accountSid || !authToken || !twilioNumber) {
             throw new Error("Missing COMMON_TWILIO_ACCOUNT_SID or COMMON_TWILIO_AUTH_TOKEN or COMMON_TWILIO_NUMBER in env.");
         }
@@ -45,7 +46,7 @@ export class TwilioSMSService implements ISMS {
             await this.sendSMSAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
-        else if (shouldQueueSms === false && this.settingService.getConfigValue('shouldQueueSms') === true) {
+        else if (shouldQueueSms === false && this.settingService.getConfigValue<SolidCoreSetting>('shouldQueueSms') === true) {
             await this.sendSMSAsynchronously(message);
         }
         // Else we send synch
@@ -83,9 +84,9 @@ export class TwilioSMSService implements ISMS {
     }
 
     async sendSMSSynchronously(message: QueueMessage<any>): Promise<any> {
-        const accountSid = this.settingService.getConfigValue('twilioAccountSid');
-        const authToken = this.settingService.getConfigValue('twilioAuthToken');
-        const twilioNumber = this.settingService.getConfigValue('twilioNumber');
+        const accountSid = this.settingService.getConfigValue<SolidCoreSetting>('twilioAccountSid');
+        const authToken = this.settingService.getConfigValue<SolidCoreSetting>('twilioAuthToken');
+        const twilioNumber = this.settingService.getConfigValue<SolidCoreSetting>('twilioNumber');
 
         if (!accountSid || !authToken || !twilioNumber) {
             throw new Error("Missing COMMON_TWILIO_ACCOUNT_SID or COMMON_TWILIO_AUTH_TOKEN or COMMON_TWILIO_NUMBER in env.");

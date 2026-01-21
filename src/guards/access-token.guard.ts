@@ -1,3 +1,4 @@
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 import {
   CanActivate,
   ExecutionContext,
@@ -32,11 +33,11 @@ export class AccessTokenGuard implements CanActivate {
     try {
 
       const jwtConfiguration = {
-        secret: this.settingService.getConfigValue("secret"),
-        audience: this.settingService.getConfigValue("audience"),
-        issuer: this.settingService.getConfigValue("issuer"),
-        accessTokenTtl: this.settingService.getConfigValue("accessTokenTtl"),
-        refreshTokenTtl: this.settingService.getConfigValue("refreshTokenTtl")
+        secret: this.settingService.getConfigValue<SolidCoreSetting>("secret"),
+        audience: this.settingService.getConfigValue<SolidCoreSetting>("audience"),
+        issuer: this.settingService.getConfigValue<SolidCoreSetting>("issuer"),
+        accessTokenTtl: this.settingService.getConfigValue<SolidCoreSetting>("accessTokenTtl"),
+        refreshTokenTtl: this.settingService.getConfigValue<SolidCoreSetting>("refreshTokenTtl")
       }
       const payload: ActiveUserData = await this.jwtService.verifyAsync(
         token,

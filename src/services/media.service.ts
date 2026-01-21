@@ -2,6 +2,7 @@ import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/commo
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager, In } from 'typeorm';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 import { ConfigService } from '@nestjs/config';
 import { CRUDService } from 'src/services/crud.service';
@@ -50,7 +51,7 @@ export class MediaService extends CRUDService<Media> {
 
       for (const media of data.records) {
         if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-          media.relativeUri = `${this.settingService.getConfigValue("baseUrl")}/${await this.getFileSysytemFullFilePath(media.relativeUri)}`;
+          media.relativeUri = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${await this.getFileSysytemFullFilePath(media.relativeUri)}`;
         } else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
           media.relativeUri = this.getAwsS3FullFilePath(
             media.relativeUri,
@@ -76,7 +77,7 @@ export class MediaService extends CRUDService<Media> {
       for (const group of data.groupRecords) {
         for (const media of group.groupData.records) {
           if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-            media.relativeUri = `${this.settingService.getConfigValue("baseUrl")}/${await this.getFileSysytemFullFilePath(media.relativeUri)}`;
+            media.relativeUri = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${await this.getFileSysytemFullFilePath(media.relativeUri)}`;
           }
           else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
             media.relativeUri = this.getAwsS3FullFilePath(media.relativeUri, media.mediaStorageProviderMetadata.bucketName, media.mediaStorageProviderMetadata.region);
@@ -188,7 +189,7 @@ export class MediaService extends CRUDService<Media> {
   //TODO: Move this to a app builder config
 
   private async getFileSysytemFullFilePath(fileName: string): Promise<string> {
-    const fileStorageDir = this.settingService.getConfigValue("fileStorageDir");
+    const fileStorageDir = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir");
     return `${fileStorageDir}/${fileName}`;
   }
 
