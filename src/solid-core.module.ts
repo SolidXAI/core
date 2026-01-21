@@ -345,6 +345,7 @@ import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
 import { ImageEncodingService } from './helpers/image-encoding.helper';
 import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.service';
 import { InfoCommand } from './commands/info.command';
+import { ListOfRolesSelectionProvider } from './services/selection-providers/list-of-roles-selectionproviders.service';
 
 
 @Global()
@@ -736,6 +737,7 @@ import { InfoCommand } from './commands/info.command';
 
     ImageEncodingService,
     SolidMicroserviceAdapter,
+    ListOfRolesSelectionProvider,
   ],
   exports: [
     AiInteractionService,
