@@ -41,7 +41,7 @@ export class SolidCoreDefaultSettingsProvider implements ISettingsProvider {
       },
       { key: "mcpEnabled", value: process.env.MCP_ENABLED, level: SettingLevel.SystemAdminReadonly },
       { key: "mcpServerUrl", value: process.env.MCP_SERVER_URL, level: SettingLevel.SystemAdminReadonly },
-      { key: "mcpApiKey", value: process.env.MCP_API_KEY, level: SettingLevel.SystemAdminReadonly },
+      { key: "mcpApiKey", value: process.env.MCP_API_KEY, level: SettingLevel.SystemEnv },
 
       { key: "dateTimeFormat", value: process.env.DATE_TIME_FORMAT || "YYYY-MM-DD HH:mm:ss", level: SettingLevel.SystemAdminEditable },
       { key: "dateFormat", value: process.env.DATE_FORMAT || "YYYY-MM-DD", level: SettingLevel.SystemAdminEditable }

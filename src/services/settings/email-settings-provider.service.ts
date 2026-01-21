@@ -18,9 +18,9 @@ export class SolidCoreEmailSettingsProvider implements ISettingsProvider {
       { key: "smtpMailHost", value: process.env.COMMON_SMTP_EMAIL_SMTP_HOST, level: SettingLevel.SystemAdminReadonly },
       { key: "smtpMailPort", value: +(process.env.COMMON_SMTP_EMAIL_SMTP_PORT ?? 587), level: SettingLevel.SystemAdminReadonly },
       { key: "smtpMailUsername", value: process.env.COMMON_SMTP_EMAIL_USERNAME, level: SettingLevel.SystemAdminReadonly },
-      { key: "smtpMailPassword", value: process.env.COMMON_SMTP_EMAIL_PASSWORD, level: SettingLevel.SystemAdminReadonly },
+      { key: "smtpMailPassword", value: process.env.COMMON_SMTP_EMAIL_PASSWORD, level: SettingLevel.SystemEnv },
       { key: "smtpMailFrom", value: process.env.COMMON_SMTP_EMAIL_FROM ?? process.env.COMMON_EMAIL_FROM, level: SettingLevel.SystemAdminReadonly },
-      { key: "apiMailKey", value: process.env.COMMON_API_EMAIL_KEY, level: SettingLevel.SystemAdminReadonly },
+      { key: "apiMailKey", value: process.env.COMMON_API_EMAIL_KEY, level: SettingLevel.SystemEnv },
       { key: "apiMailFrom", value: process.env.COMMON_EMAIL_FROM, level: SettingLevel.SystemAdminReadonly },
 
     ];

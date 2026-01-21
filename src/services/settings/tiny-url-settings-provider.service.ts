@@ -13,7 +13,7 @@ export class SolidCoreTinyUrlSettingsProvider implements ISettingsProvider {
     return [
 
       { key: "tinyUrlApiUrl", value: process.env.COMMON_SHORT_URL_API_URL, level: SettingLevel.SystemAdminReadonly },
-      { key: "tinyUrlApiKey", value: process.env.COMMON_SHORT_URL_API_KEY, level: SettingLevel.SystemAdminReadonly },
+      { key: "tinyUrlApiKey", value: process.env.COMMON_SHORT_URL_API_KEY, level: SettingLevel.SystemEnv },
       { key: "tinyUrlDomain", value: process.env.COMMON_SHORT_URL_DOMAIN, level: SettingLevel.SystemAdminReadonly },
       { key: "tinyUrlEnabled", value: (process.env.COMMON_SHORT_URL_ENABLED ?? 'false') === 'true', level: SettingLevel.SystemAdminReadonly },
 
