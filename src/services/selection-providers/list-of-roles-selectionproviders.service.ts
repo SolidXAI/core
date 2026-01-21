@@ -11,14 +11,8 @@ import { RoleMetadataService } from "../role-metadata.service";
 const DEFAULT_LIMIT = 100;
 
 interface ListOfRolesProviderContext extends ISelectionProviderContext {
-    filter?: {
-        name?: {
-            $eq?: string;
-            $containsi?: string;
-            $in?: string[];
-            $notIn?: string[];
-        };
-    };
+    filters?: Record<string, any>;
+
 }
 
 @SelectionProvider()
@@ -51,7 +45,7 @@ export class ListOfRolesSelectionProvider implements ISelectionProvider<ListOfRo
                 `Invalid role name: ${optionValue}`
             );
         }
-
+        
         const role = roles.records[0];
 
         return {
@@ -63,8 +57,7 @@ export class ListOfRolesSelectionProvider implements ISelectionProvider<ListOfRo
     async values( query: string, ctxt: ListOfRolesProviderContext ): Promise<readonly ISelectionProviderValues[]> {
 
         const basicFilterQuery = new BasicFilterDto(DEFAULT_LIMIT, 0);
-        
-        basicFilterQuery.filters = ctxt.filter || {};
+        basicFilterQuery.filters = ctxt.filters || {};
 
         const roles = await this.roleMetadataService.find(basicFilterQuery);
 
