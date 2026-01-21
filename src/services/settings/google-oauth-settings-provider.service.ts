@@ -17,8 +17,6 @@ export class SolidCoreGoogleOAuthSettingsProvider implements ISettingsProvider {
       { key: "clientSecret", value: process.env.IAM_GOOGLE_OAUTH_CLIENT_SECRET, level: SettingLevel.SystemEnv },
       { key: "callbackURL", value: process.env.IAM_GOOGLE_OAUTH_CALLBACK_URL, level: SettingLevel.SystemEnv },
       { key: "redirectURL", value: process.env.IAM_GOOGLE_OAUTH_REDIRECT_URL, level: SettingLevel.SystemEnv },
-      { key: "iamGoogleOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
-
     ];
 
   }
