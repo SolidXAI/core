@@ -344,6 +344,7 @@ import { WhatsAppFactory } from './factories/whatsapp.factory';
 import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
 import { ImageEncodingService } from './helpers/image-encoding.helper';
 import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.service';
+import { ListOfRolesSelectionProvider } from './services/selection-providers/list-of-roles-selectionproviders.service';
 
 
 @Global()
@@ -734,6 +735,7 @@ import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.s
 
     ImageEncodingService,
     SolidMicroserviceAdapter,
+    ListOfRolesSelectionProvider,
   ],
   exports: [
     AiInteractionService,
