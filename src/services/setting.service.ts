@@ -177,7 +177,7 @@ export class SettingService {
         const relativeFileName = `${file.filename}-${file.originalname}`;
         const fileStorageDir = this.getConfigValue("fileStorageDir")
         const storagePath = `${fileStorageDir}/${relativeFileName}`;
-        const baseUrl = process.env.BASE_URL || '';
+        const baseUrl = this.getConfigValue("baseUrl") || '';
         const fileUrl = `${baseUrl}/${storagePath}`;
 
         await this.fileService.copyFile(file.path, storagePath);
@@ -272,7 +272,8 @@ export class SettingService {
 
     const { showHeader, inListView } = getMcpUrlDto;
 
-    if (process.env.MCP_ENABLED === 'false') {
+    const mcpEnabled = this.getConfigValue('mcpEnabled');
+    if (mcpEnabled === 'false' || mcpEnabled === false) {
       throw new ForbiddenException(ERROR_MESSAGES.FORBIDDEN);
     }
 
@@ -284,9 +285,9 @@ export class SettingService {
         throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
       }
     }
-    const apiKey = process.env.MCP_API_KEY;
+    const apiKey = this.getConfigValue('mcpApiKey');
     const userId = solidRequestContext.activeUser.sub;
-    const mcpServerUrl = process.env.MCP_SERVER_URL;
+    const mcpServerUrl = this.getConfigValue('mcpServerUrl');
     return { mcpUrl: `${mcpServerUrl}/static/frontend.html?solidx-mcp-api-key=${apiKey}&solidx-user-id=${userId}&solidx-show-header=${showHeader}&solidx-in-list-view=${inListView}` };
   }
 

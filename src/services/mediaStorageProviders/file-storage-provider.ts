@@ -33,7 +33,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // media.forEach(m => {
         // });
         for (const m of media) {
-            m['_full_url'] = `${process.env.BASE_URL}/${this.getFullFilePath(m.relativeUri)}`;
+            m['_full_url'] = `${this.settingService.getConfigValue("baseUrl")}/${this.getFullFilePath(m.relativeUri)}`;
         }
 
 

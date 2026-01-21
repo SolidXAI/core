@@ -32,6 +32,8 @@ export class SolidCoreIamSettingsProvider implements ISettingsProvider {
       { key: "showNameFieldsForRegistration", value: process.env.IAM_SHOW_NAME_FIELDS_FOR_REGISTRATION === 'true' ? true : false, level: SettingLevel.SystemAdminEditable },
       { key: "sendWelcomeEmailOnSignup", value: (process.env.IAM_SEND_WELCOME_EMAIL_ON_SIGNUP ?? 'false').toLowerCase() === 'true', level: SettingLevel.SystemEnv },
       { key: "sendWelcomeSmsOnSignup", value: (process.env.IAM_SEND_WELCOME_SMS_ON_SIGNUP ?? 'false').toLowerCase() === 'true', level: SettingLevel.SystemEnv },
+      { key: "frontendLoginPageUrl", value: process.env.IAM_FRONTEND_APP_LOGIN_PAGE_URL, level: SettingLevel.SystemAdminReadonly },
+      { key: "frontendForgotPasswordPageUrl", value: process.env.IAM_FRONTEND_APP_FORGOT_PASSWORD_PAGE_URL, level: SettingLevel.SystemAdminReadonly },
     ];
 
   }

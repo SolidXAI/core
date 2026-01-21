@@ -44,7 +44,10 @@ export class SolidCoreDefaultSettingsProvider implements ISettingsProvider {
       { key: "mcpApiKey", value: process.env.MCP_API_KEY, level: SettingLevel.SystemEnv },
 
       { key: "dateTimeFormat", value: process.env.DATE_TIME_FORMAT || "YYYY-MM-DD HH:mm:ss", level: SettingLevel.SystemAdminEditable },
-      { key: "dateFormat", value: process.env.DATE_FORMAT || "YYYY-MM-DD", level: SettingLevel.SystemAdminEditable }
+      { key: "dateFormat", value: process.env.DATE_FORMAT || "YYYY-MM-DD", level: SettingLevel.SystemAdminEditable },
+
+      { key: "baseUrl", value: process.env.BASE_URL, level: SettingLevel.SystemAdminReadonly },
+      { key: "solidAppWebsiteUrl", value: process.env.SOLID_APP_WEBSITE_URL, level: SettingLevel.SystemAdminEditable }
     ];
   }
 }

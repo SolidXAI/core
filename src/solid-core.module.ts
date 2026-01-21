@@ -347,6 +347,8 @@ import { SolidCoreTinyUrlSettingsProvider } from './services/settings/tiny-url-s
 import { SolidCoreWhatsappSettingsProvider } from './services/settings/whatsapp-settings-provider.service';
 import { SolidCoreAwsS3SettingsProvider } from './services/settings/aws-s3-settings-provider.service';
 import { SolidCoreAppBuilderSettingsProvider } from './services/settings/app-builder-settings-provider.service';
+import { SolidCoreGenaiSettingsProvider } from './services/settings/genai-settings-provider.service';
+import { SolidCoreQueuesSettingsProvider } from './services/settings/queues-settings-provider.service';
 import { SmsFactory } from './factories/sms.factory';
 import { WhatsAppFactory } from './factories/whatsapp.factory';
 import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
@@ -752,6 +754,8 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     SolidCoreWhatsappSettingsProvider,
     SolidCoreAwsS3SettingsProvider,
     SolidCoreAppBuilderSettingsProvider,
+    SolidCoreGenaiSettingsProvider,
+    SolidCoreQueuesSettingsProvider,
     ImageEncodingService,
     SolidMicroserviceAdapter,
     ListOfRolesSelectionProvider,

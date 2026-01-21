@@ -71,8 +71,8 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
    * @returns The parsed object inside the 'response' field of the JSON output.
    */
   async runMcpPrompt(prompt: string): Promise<McpResponse> {
-    const pythonExecutable = process.env.MCP_PYTHON_EXECUTABLE;
-    const mcpClient = process.env.MCP_CLIENT;
+    const pythonExecutable = this.settingService.getConfigValue('mcpPythonExecutable');
+    const mcpClient = this.settingService.getConfigValue('mcpClient');
 
     // TODO: We can return an error if the above env variables are not properly setup...
     if (!pythonExecutable || !mcpClient) {

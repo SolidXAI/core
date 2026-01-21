@@ -3,6 +3,7 @@ import { ConfigType } from "@nestjs/config";
 import { ModuleRef } from "@nestjs/core";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { IWhatsAppTransport } from "src/interfaces";
+import { SettingService } from "src/services/setting.service";
 
 function norm(s?: string) {
     return s?.trim().toLowerCase();
@@ -15,11 +16,12 @@ export class WhatsAppFactory {
     constructor(
         private readonly moduleRef: ModuleRef, // Use the module ref to dynamically resolve the mail service
         private readonly solidRegistry: SolidRegistry,
+        private readonly settingService: SettingService,
     ) { }
 
     getWhatsappService(name: string = null): IWhatsAppTransport {
         // This is the default provider
-        const whatsappServiceName = name || process.env.COMMON_WHATSAPP_PROVIDER;
+        const whatsappServiceName = name || this.settingService.getConfigValue("whatsappProvider");
         if (!whatsappServiceName) {
             throw new Error("Unable to resolve whatsapp provider")
         }

@@ -3,6 +3,7 @@ import { ConfigType } from "@nestjs/config";
 import { ModuleRef } from "@nestjs/core";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { IMail } from "src/interfaces";
+import { SettingService } from "src/services/setting.service";
 
 function norm(s?: string) {
     return s?.trim().toLowerCase();
@@ -15,10 +16,11 @@ export class MailFactory {
     constructor(
         private readonly moduleRef: ModuleRef, // Use the module ref to dynamically resolve the mail service
         private readonly solidRegistry: SolidRegistry,
+        private readonly settingService: SettingService,
     ) { }
 
     getMailService(): IMail {
-        const mailServiceName = process.env.COMMON_EMAIL_PROVIDER ?? "SMTPEMailService";
+        const mailServiceName = this.settingService.getConfigValue("emailProvider") ?? "SMTPEMailService";
         const mailProviders = this.solidRegistry.getMailProviders();
         // Return the instance which matches the mailServiceName
         if (!mailProviders.length) {

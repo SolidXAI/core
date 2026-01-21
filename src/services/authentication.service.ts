@@ -301,9 +301,9 @@ export class AuthenticationService {
             user.email,
             'on-force-password-change',
             {
-                solidAppName: process.env.SOLID_APP_NAME,
-                solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
-                frontendLoginPageUrl: process.env.IAM_FRONTEND_APP_LOGIN_PAGE_URL,
+                solidAppName: this.settingService.getConfigValue('appTitle'),
+                solidAppWebsiteUrl: this.settingService.getConfigValue('solidAppWebsiteUrl'),
+                frontendLoginPageUrl: this.settingService.getConfigValue('frontendLoginPageUrl'),
                 email: user.email,
                 fullName: user.fullName,
                 userName: user.username,
@@ -338,9 +338,9 @@ export class AuthenticationService {
                 user.email,
                 'email-on-signup',
                 {
-                    solidAppName: process.env.SOLID_APP_NAME,
-                    solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
-                    frontendLoginPageUrl: process.env.IAM_FRONTEND_APP_LOGIN_PAGE_URL,
+                    solidAppName: this.settingService.getConfigValue('appTitle'),
+                    solidAppWebsiteUrl: this.settingService.getConfigValue('solidAppWebsiteUrl'),
+                    frontendLoginPageUrl: this.settingService.getConfigValue('frontendLoginPageUrl'),
                     email: user.email,
                     fullName: user.fullName,
                     userName: user.username,
@@ -362,8 +362,8 @@ export class AuthenticationService {
                 user.mobile,
                 'text-on-signup',
                 {
-                    solidAppName: process.env.SOLID_APP_NAME,
-                    frontendLoginPageUrl: process.env.IAM_FRONTEND_APP_LOGIN_PAGE_URL,
+                    solidAppName: this.settingService.getConfigValue('appTitle'),
+                    frontendLoginPageUrl: this.settingService.getConfigValue('frontendLoginPageUrl'),
                     firstName: user.username,
                     fullName: user.fullName ? user.fullName : user.username
                 },
@@ -488,8 +488,8 @@ export class AuthenticationService {
                 user.email,
                 'otp-on-register',
                 {
-                    solidAppName: process.env.SOLID_APP_NAME,
-                    solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
+                    solidAppName: this.settingService.getConfigValue('appTitle'),
+                    solidAppWebsiteUrl: this.settingService.getConfigValue('solidAppWebsiteUrl'),
                     firstName: user.username,
                     fullName: user.fullName ? user.fullName : user.username,
                     emailVerificationTokenOnRegistration: user.emailVerificationTokenOnRegistration,
@@ -508,7 +508,7 @@ export class AuthenticationService {
                 user.mobile,
                 'otp-on-register',
                 {
-                    solidAppName: process.env.SOLID_APP_NAME,
+                    solidAppName: this.settingService.getConfigValue('appTitle'),
                     otp: user.mobileVerificationTokenOnRegistration,
                     mobileVerificationTokenOnRegistration: user.mobileVerificationTokenOnRegistration,
                     firstName: user.username,
@@ -704,8 +704,8 @@ export class AuthenticationService {
                 user.email,
                 'otp-on-login',
                 {
-                    solidAppName: process.env.SOLID_APP_NAME,
-                    solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
+                    solidAppName: this.settingService.getConfigValue('appTitle'),
+                    solidAppWebsiteUrl: this.settingService.getConfigValue('solidAppWebsiteUrl'),
                     firstName: user.username,
                     emailVerificationTokenOnLogin: user.emailVerificationTokenOnLogin,
                     fullName: user.fullName ? user.fullName : user.username,
@@ -724,7 +724,7 @@ export class AuthenticationService {
                 user.mobile,
                 'otp-on-login',
                 {
-                    solidAppName: process.env.SOLID_APP_NAME,
+                    solidAppName: this.settingService.getConfigValue('appTitle'),
                     otp: user.mobileVerificationTokenOnLogin,
                     mobileVerificationTokenOnLogin: user.mobileVerificationTokenOnLogin,
                     firstName: user.username,
@@ -949,12 +949,12 @@ export class AuthenticationService {
                 user.email,
                 'forgot-password',
                 {
-                    solidAppName: process.env.SOLID_APP_NAME,
-                    solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
+                    solidAppName: this.settingService.getConfigValue('appTitle'),
+                    solidAppWebsiteUrl: this.settingService.getConfigValue('solidAppWebsiteUrl'),
                     firstName: user.username,
                     fullName: user.fullName,
                     // TODO: Need to prefix this with the page url where the forgot password page will open up.
-                    passwordResetLink: `${process.env.IAM_FRONTEND_APP_FORGOT_PASSWORD_PAGE_URL}?token=${user.verificationTokenOnForgotPassword}`,
+                    passwordResetLink: `${this.settingService.getConfigValue('frontendForgotPasswordPageUrl')}?token=${user.verificationTokenOnForgotPassword}`,
                     companyLogoUrl: companyLogo
                 },
                 this.settingService.getConfigValue('shouldQueueEmails'),
@@ -971,7 +971,7 @@ export class AuthenticationService {
                 user.mobile,
                 'forgot-password',
                 {
-                    solidAppName: process.env.SOLID_APP_NAME,
+                    solidAppName: this.settingService.getConfigValue('appTitle'),
                     otp: user.verificationTokenOnForgotPassword,
                     verificationTokenOnForgotPassword: user.verificationTokenOnForgotPassword,
                     firstName: user.username,
@@ -1038,13 +1038,13 @@ export class AuthenticationService {
                 user.email,
                 'password-changed',
                 {
-                    solidAppName: process.env.SOLID_APP_NAME,
-                    solidAppWebsiteUrl: process.env.SOLID_APP_WEBSITE_URL,
+                    solidAppName: this.settingService.getConfigValue('appTitle'),
+                    solidAppWebsiteUrl: this.settingService.getConfigValue('solidAppWebsiteUrl'),
                     email: user.email,
                     firstName: user.username,
                     fullName: user.fullName,
                     // TODO: Need to prefix this with the page url where the forgot password page will open up.
-                    passwordResetLink: `${process.env.IAM_FRONTEND_APP_FORGOT_PASSWORD_PAGE_URL}?token=${user.verificationTokenOnForgotPassword}`,
+                    passwordResetLink: `${this.settingService.getConfigValue('frontendForgotPasswordPageUrl')}?token=${user.verificationTokenOnForgotPassword}`,
                     companyLogoUrl: companyLogo
                 },
                 this.settingService.getConfigValue('shouldQueueEmails'),
@@ -1061,7 +1061,7 @@ export class AuthenticationService {
                 user.mobile,
                 'forgot-password',
                 {
-                    solidAppName: process.env.SOLID_APP_NAME,
+                    solidAppName: this.settingService.getConfigValue('appTitle'),
                     otp: user.verificationTokenOnForgotPassword,
                     verificationTokenOnForgotPassword: user.verificationTokenOnForgotPassword,
                     firstName: user.username,
