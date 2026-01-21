@@ -191,7 +191,9 @@ export class ModuleMetadataSeederService {
         // Setup default roles with permissions.
         await this.setupDefaultRolesWithPermissions();
 
-        console.log(`All Seeders Finished`);
+        // Add a console log indicating seeding is finished. This needs to be console.log so that it looks proper when this code is run via CLI.
+        console.log(`Seeding completed.`);
+        //this.logger.log(`All Seeders finished`);
 
         //FIXME: Handle displaying the created users credentials in a better way.
         // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
