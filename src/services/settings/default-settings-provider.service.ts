@@ -6,6 +6,7 @@ import { ISettingsProvider, SettingDefinition, SettingLevel } from "src/interfac
 const DEFAULT_MEDIA_UPLOAD_DIR = 'media-uploads';
 const DEFAULT_MEDIA_FILE_STORAGE_DIR = 'media-files-storage';
 
+// 1. 
 const getSolidCoreSettings = (isProd: boolean) => ([
   { moduleName: "solid-core", key: "iamGoogleOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "authPagesLayout", value: "center", level: SettingLevel.SystemAdminEditable },
@@ -141,8 +142,10 @@ const getSolidCoreSettings = (isProd: boolean) => ([
   { moduleName: "solid-core", key: "msg91WhatsappIntegratedNumber", value: process.env.COMMON_WHATSAPP_INTEGRATED_NUMBER, level: SettingLevel.SystemAdminReadonly },
 ] as const satisfies SettingDefinition[]);
 
+// 2. 
 export type SolidCoreSetting = ReturnType<typeof getSolidCoreSettings>[number]["key"];
 
+// 3. 
 @SettingsProvider()
 @Injectable()
 export class SolidCoreDefaultSettingsProvider implements ISettingsProvider {

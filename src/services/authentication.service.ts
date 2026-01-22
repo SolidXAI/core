@@ -1231,7 +1231,6 @@ export class AuthenticationService {
             },
             ...tokens
         }
-
     }
 
     private async isPasswordlessRegistrationEnabled() {
