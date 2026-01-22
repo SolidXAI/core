@@ -17,6 +17,7 @@ import type { SolidCoreSetting } from './settings/default-settings-provider.serv
 @Injectable()
 export class SettingService {
   private settings: SettingDefinition[] = [];
+  private settingsByKey = new Map<string, SettingDefinition>();
 
   private readonly arrayKeysToSkip = new Set([
     'authenticationPasswordRegex',
@@ -99,6 +100,18 @@ export class SettingService {
       }
       return setting;
     });
+
+    // Also keep a key vs SettingDefinition map...
+    this.settingsByKey = new Map(this.settings.map(setting => [setting.key, setting]));
+  }
+
+  private isDisallowedSettingKey(key: string, settingLevelsToDisallow: SettingLevel[]): boolean {
+    if (!key) {
+      return false;
+    }
+    const setting = this.settingsByKey.get(key);
+    // return setting ? [SettingLevel.SystemEnv, SettingLevel.SystemAdminReadonly].includes(setting.level) : false;
+    return setting ? settingLevelsToDisallow.includes(setting.level) : false;
   }
 
   /**
@@ -185,6 +198,23 @@ export class SettingService {
   async updateSettings(settings: CreateSettingDto[] = [], uploadedFiles: Array<Express.Multer.File> = []): Promise<Setting[]> {
     const activeUser = this.requestContextService.getActiveUser();
     const userId = activeUser?.sub;
+
+    const restrictedKeys = new Set<string>();
+
+    settings.forEach(setting => {
+      if (this.isDisallowedSettingKey(setting.key, [SettingLevel.SystemEnv, SettingLevel.SystemAdminReadonly])) {
+        restrictedKeys.add(setting.key);
+      }
+    });
+    uploadedFiles.forEach(file => {
+      if (this.isDisallowedSettingKey(file.fieldname, [SettingLevel.SystemEnv, SettingLevel.SystemAdminReadonly])) {
+        restrictedKeys.add(file.fieldname);
+      }
+    });
+
+    if (restrictedKeys.size > 0) {
+      throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
+    }
 
     // const existingSettings = await this.repo.find();
     const existingSettings: Setting[] = await this.getSettingsFromDb();
