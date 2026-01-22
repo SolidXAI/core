@@ -5,12 +5,12 @@ import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
 import { User } from 'src/entities/user.entity';
-import { SettingRepository } from 'src/repository/setting.repository';
-import { FileService } from 'src/services/file.service';
+import { SettingRepository } from '../repository/setting.repository';
+import { FileService } from '../services/file.service';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
-import { ISettingsProvider, NoInfer, SettingDefinition, SettingLevel } from 'src/interfaces';
+import { ISettingsProvider, NoInfer, SettingDefinition, SettingLevel } from '../interfaces';
 import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
 import type { SolidCoreSetting } from './settings/default-settings-provider.service';
 
