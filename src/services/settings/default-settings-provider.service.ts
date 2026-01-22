@@ -38,7 +38,7 @@ const getSolidCoreSettings = (isProd: boolean) => ([
       availableProviders: []
     }), level: SettingLevel.SystemAdminEditable
   },
-  { moduleName: "solid-core", key: "mcpEnabled", value: process.env.MCP_ENABLED, level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "mcpEnabled", value: process.env.MCP_ENABLED || false, level: SettingLevel.SystemAdminReadonly },
   { moduleName: "solid-core", key: "mcpServerUrl", value: process.env.MCP_SERVER_URL, level: SettingLevel.SystemAdminReadonly },
   { moduleName: "solid-core", key: "mcpApiKey", value: process.env.MCP_API_KEY, level: SettingLevel.SystemEnv },
   { moduleName: "solid-core", key: "dateTimeFormat", value: process.env.DATE_TIME_FORMAT || "YYYY-MM-DD HH:mm:ss", level: SettingLevel.SystemAdminEditable },
