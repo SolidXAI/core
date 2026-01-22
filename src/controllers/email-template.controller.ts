@@ -4,15 +4,20 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CreateEmailTemplateDto } from '../dtos/create-email-template.dto';
 import { UpdateEmailTemplateDto } from '../dtos/update-email-template.dto';
 import { EmailTemplateService } from '../services/email-template.service';
+import { SettingService } from '../services/setting.service';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
-// TODO: esInterop not working somehow, defaulted to using the require syntax to import Mailgen. Figure a better way to do this. 
+// TODO: esInterop not working somehow, defaulted to using the require syntax to import Mailgen. Figure a better way to do this.
 import Mailgen = require('mailgen');
 
 
 @Controller('email-template')
 @ApiTags("Solid Core")
 export class EmailTemplateController {
-  constructor(private readonly service: EmailTemplateService) { }
+  constructor(
+    private readonly service: EmailTemplateService,
+    private readonly settingService: SettingService,
+  ) { }
 
   @ApiBearerAuth("jwt")
   @Post()
@@ -73,8 +78,8 @@ export class EmailTemplateController {
   @Get('mailgen-template/:templateType')
   @Header('content-type', 'text/html')
   generateMailgenTemplate(@Param('templateType') templateType: string) {
-    const appName = process.env.SOLID_APP_NAME;
-    const appUrl = process.env.SOLID_APP_WEBSITE_URL;
+    const appName = this.settingService.getConfigValue<SolidCoreSetting>('appTitle');
+    const appUrl = this.settingService.getConfigValue<SolidCoreSetting>('solidAppWebsiteUrl');
 
     // Configure mailgen by setting a theme and your product info
     var mailGenerator = new Mailgen({

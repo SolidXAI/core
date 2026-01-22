@@ -16,11 +16,24 @@ export class CreateSettingDto {
     @ApiProperty()
     type: string;
     @IsOptional()
+    @IsString()
+    @ApiProperty()
+    level: string;
+    @IsOptional()
     @IsInt()
     @ApiProperty({ description: "This is the user id field" })
     userId: number;
     @IsString()
     @IsOptional()
-    @ApiProperty({ description: "This is the user id field" })
+    @ApiProperty({ description: "This is the user userkey field" })
     userUserKey: string;
+
+    @IsOptional()
+    @IsInt()
+    @ApiProperty({ description: "This is the moduleMetadata id field" })
+    moduleMetadataId: number;
+    @IsString()
+    @IsOptional()
+    @ApiProperty({ description: "This is the moduleMetadata userkey field" })
+    moduleMetadataUserKey: string;
 }

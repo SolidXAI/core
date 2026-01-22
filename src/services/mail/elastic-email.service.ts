@@ -1,7 +1,6 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import Handlebars from "handlebars";
-import commonConfig from 'src/config/common.config';
 import { EmailAttachment } from 'src/entities/email-attachment.entity';
 import { QueueMessage } from 'src/interfaces/mq';
 import { EmailTemplateService } from '../email-template.service';
@@ -10,6 +9,8 @@ import { FileService } from '../file.service';
 import { IMail, MailAttachment, MailAttachmentWrapper } from "../../interfaces";
 import { PublisherFactory } from '../queues/publisher-factory.service';
 import { MailProvider } from 'src/decorators/mail-provider.decorator';
+import { SettingService } from '../setting.service';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 const ElasticEmail = require('@elasticemail/elasticemail-client');
 
@@ -20,17 +21,16 @@ export class ElasticEmailService implements IMail {
     private readonly emailsApi;
 
     constructor(
-        @Inject(commonConfig.KEY)
-        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         // private readonly emailPublisher: ApiEmailQueuePublisher,
         private readonly publisherFactory: PublisherFactory<any>,
         private readonly emailTemplateService: EmailTemplateService,
         private readonly pdfService: PdfService,
         private readonly fileService: FileService,
+        private readonly settingService: SettingService
     ) {
         const client = ElasticEmail.ApiClient.instance;
         const apikey = client.authentications['apikey'];
-        apikey.apiKey = commonConfiguration.apiMail.key;
+        apikey.apiKey = process.env.COMMON_API_EMAIL_KEY;
         this.emailsApi = new ElasticEmail.EmailsApi();
     }
 
@@ -64,7 +64,7 @@ export class ElasticEmailService implements IMail {
     async sendEmail(to: string, subject: string, body: string, shouldQueueEmails = false, parentEntity = null, parentEntityId = null, wrapperAttachments: MailAttachmentWrapper[] = []): Promise<void> {
         const message = {
             payload: {
-                from: this.commonConfiguration.smtpMail.from,
+                from: this.settingService.getConfigValue<SolidCoreSetting>("smtpMailFrom"),
                 to: to,
                 subject: subject,
                 body: body,
@@ -79,7 +79,7 @@ export class ElasticEmailService implements IMail {
             this.sendEmailAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
-        else if (shouldQueueEmails == false && this.commonConfiguration.shouldQueueEmails === true) {
+        else if (shouldQueueEmails == false && this.settingService.getConfigValue<SolidCoreSetting>("shouldQueueEmails") === true) {
             this.sendEmailAsynchronously(message);
         }
         // Else we send synch
@@ -88,7 +88,7 @@ export class ElasticEmailService implements IMail {
         }
     }
 
-    async sendEmailAsynchronously(message: QueueMessage<any>) {
+    sendEmailAsynchronously(message: QueueMessage<any>) {
         const { to, subject, body } = message.payload;
         // this.notificationPublisherService.publish(message);
         // this.emailPublisher.publish(message);

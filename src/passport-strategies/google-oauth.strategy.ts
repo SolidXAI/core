@@ -2,9 +2,8 @@ import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import { AuthGuard, PassportStrategy } from '@nestjs/passport';
 import { Strategy, VerifyCallback } from 'passport-google-oauth2';
-import { isGoogleOAuthConfigured } from 'src/helpers/google-oauth.helper';
+import { GoogleAuthConfiguration, isGoogleOAuthConfigured } from 'src/helpers/google-oauth.helper';
 import { v4 as uuid } from 'uuid';
-import { iamConfig } from '../config/iam.config';
 import { UserService } from '../services/user.service';
 
 const DUMMY_CLIENT_ID = 'DUMMY_CLIENT_ID';
@@ -19,19 +18,23 @@ export class GoogleOauthGuard extends AuthGuard('google') { }
 export class GoogleOauthStrategy extends PassportStrategy(Strategy, 'google') {
   private readonly logger = new Logger(GoogleOauthStrategy.name);
   constructor(
-    @Inject(iamConfig.KEY) private iamConfiguration: ConfigType<typeof iamConfig>,
     private readonly userService: UserService
   ) {
     // TODO: Have added default dummy values for the configuration, since the configuration is not mandatory.
     // Perhaps a cleaner way needs to be figured out
     super({
-      clientID: iamConfiguration.googleOauth.clientID ?? DUMMY_CLIENT_ID,
-      clientSecret: iamConfiguration.googleOauth.clientSecret ?? DUMMY_CLIENT_SECRET,
-      callbackURL: iamConfiguration.googleOauth.callbackURL ?? DUMMY_CALLBACK_URL,
+      clientID: process.env.IAM_GOOGLE_OAUTH_CLIENT_ID ?? DUMMY_CLIENT_ID,
+      clientSecret: process.env.IAM_GOOGLE_OAUTH_CLIENT_SECRET ?? DUMMY_CLIENT_SECRET,
+      callbackURL: process.env.IAM_GOOGLE_OAUTH_CALLBACK_URL ?? DUMMY_CALLBACK_URL,
       scope: ['profile', 'email'],
     });
-
-    if (!isGoogleOAuthConfigured(iamConfiguration)) {
+    const googleOauth: GoogleAuthConfiguration = {
+      clientID: process.env.IAM_GOOGLE_OAUTH_CLIENT_ID,
+      clientSecret: process.env.IAM_GOOGLE_OAUTH_CLIENT_SECRET,
+      callbackURL: process.env.IAM_GOOGLE_OAUTH_CALLBACK_URL,
+      redirectURL: process.env.IAM_GOOGLE_OAUTH_REDIRECT_URL,
+    }
+    if (!isGoogleOAuthConfigured(googleOauth)) {
       this.logger.debug('Google OAuth strategy is not configured');
     }
   }

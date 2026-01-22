@@ -1,7 +1,6 @@
 // src/services/textract.service.ts
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import commonConfig, { AwsS3Config } from '../config/common.config';
 import {
     TextractClient,
     StartDocumentTextDetectionCommand,
@@ -12,6 +11,7 @@ import {
 } from '@aws-sdk/client-textract';
 import { S3Client, PutObjectCommand } from '@aws-sdk/client-s3';
 import * as fs from 'node:fs';
+import { AwsS3Config } from 'src/interfaces';
 
 @Injectable()
 export class TextractService {
@@ -20,23 +20,26 @@ export class TextractService {
     private readonly s3Client: S3Client;
 
     constructor(
-        @Inject(commonConfig.KEY)
-        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
     ) {
-        if (!this.isValidS3Config(this.commonConfiguration.awsS3Credentials)) { return }
+        const awsS3Credentials = {
+            S3_AWS_ACCESS_KEY: process.env.S3_AWS_ACCESS_KEY,
+            S3_AWS_SECRET_KEY: process.env.S3_AWS_SECRET_KEY,
+            S3_AWS_REGION_NAME: process.env.S3_AWS_REGION_NAME
+        }
+        if (!this.isValidS3Config(awsS3Credentials)) { return }
         this.s3Client = new S3Client({
-            region: this.commonConfiguration.awsS3Credentials.S3_AWS_REGION_NAME,
+            region: process.env.S3_AWS_REGION_NAME,
             credentials: {
-                accessKeyId: this.commonConfiguration.awsS3Credentials.S3_AWS_ACCESS_KEY,
-                secretAccessKey: this.commonConfiguration.awsS3Credentials.S3_AWS_SECRET_KEY,
+                accessKeyId: process.env.S3_AWS_ACCESS_KEY,
+                secretAccessKey: process.env.S3_AWS_SECRET_KEY,
             },
         });
 
         this.textractClient = new TextractClient({
-            region: this.commonConfiguration.awsS3Credentials.S3_AWS_REGION_NAME,
+            region: process.env.S3_AWS_REGION_NAME,
             credentials: {
-                accessKeyId: this.commonConfiguration.awsS3Credentials.S3_AWS_ACCESS_KEY,
-                secretAccessKey: this.commonConfiguration.awsS3Credentials.S3_AWS_SECRET_KEY,
+                accessKeyId: process.env.S3_AWS_ACCESS_KEY,
+                secretAccessKey: process.env.S3_AWS_SECRET_KEY,
             },
         });
     }

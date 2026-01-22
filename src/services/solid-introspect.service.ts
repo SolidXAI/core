@@ -20,7 +20,9 @@ import { CreatedByUpdatedBySubscriber } from 'src/subscribers/created-by-updated
 import { SoftDeleteAwareEventSubscriber } from 'src/subscribers/soft-delete-aware-event.subscriber';
 import { DataSource } from 'typeorm';
 import { CRUDService } from './crud.service';
+import { IS_SETTINGS_PROVIDER } from 'src/decorators/settings-provider.decorator';
 import { IS_SMS_PROVIDER } from 'src/decorators/sms-provider.decorator';
+import { SettingService } from 'src/services/setting.service';
 
 export const coreSubscriberClasses = [
   AuditSubscriber,
@@ -37,143 +39,110 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     private readonly metadataScanner: MetadataScanner,
     private readonly solidRegistry: SolidRegistry,
     private readonly moduleRef: ModuleRef,
+    private readonly settingService: SettingService,
   ) { }
 
   private readonly logger = new Logger(SolidIntrospectService.name);
+
   async onApplicationBootstrap() {
     this.logger.debug('Introspecting the application for Solid metadata');
 
     // Register all seeders
-    const seeders = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isSeeder(provider));
+    const seeders = this.discoveryService.getProviders().filter((provider) => this.isSeeder(provider));
     seeders.forEach((seeder) => {
       this.solidRegistry.registerSeeder(seeder);
     });
 
-    // TODO: Scan the filesystem and populate the solid metadata
-
     // Register all IErrorCodeProvider implementations
-    const errorCodeProviders = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isErrorCodeProvider(provider));
-
+    const errorCodeProviders = this.discoveryService.getProviders().filter((provider) => this.isErrorCodeProvider(provider));
     errorCodeProviders.forEach((errorCodeProvider) => {
       this.solidRegistry.registerErrorCodeProvider(errorCodeProvider);
     });
 
     // Register all ISelectionProvider implementations
-    const selectionProviders = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isSelectionProvider(provider));
-
+    const selectionProviders = this.discoveryService.getProviders().filter((provider) => this.isSelectionProvider(provider));
     selectionProviders.forEach((selectionProvider) => {
       this.solidRegistry.registerSelectionProvider(selectionProvider);
     });
 
-    // Register all IDashboardSelectionProvider implementations
-    const dashboardVariableSelectionProviders = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isDashboardVariableSelectionProvider(provider));
+    // Register all ISettingsProvider implementations
+    const settingsProviders = this.discoveryService.getProviders().filter((provider) => this.isSettingsProvider(provider));
+    settingsProviders.forEach((settingsProvider) => {
+      this.solidRegistry.registerSettingsProvider(settingsProvider);
+    });
 
+    // Register all IDashboardSelectionProvider implementations
+    const dashboardVariableSelectionProviders = this.discoveryService.getProviders().filter((provider) => this.isDashboardVariableSelectionProvider(provider));
     dashboardVariableSelectionProviders.forEach((dashboardSelectionProvider) => {
       this.solidRegistry.registerDashboardVariableSelectionProvider(dashboardSelectionProvider);
     });
 
     // Register all IDashboardSelectionProvider implementations
-    const dashboardQuestionDataProviders = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isDashboardQuestionDataProvider(provider));
-
+    const dashboardQuestionDataProviders = this.discoveryService.getProviders().filter((provider) => this.isDashboardQuestionDataProvider(provider));
     dashboardQuestionDataProviders.forEach((provider) => {
       this.solidRegistry.registerDashboardQuestionDataProvider(provider);
     });
 
     // Register all IComputedProvider implementations
-    const computedFieldProviders = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isComputedFieldProvider(provider));
-
+    const computedFieldProviders = this.discoveryService.getProviders().filter((provider) => this.isComputedFieldProvider(provider));
     computedFieldProviders.forEach((computedFieldProvider) => {
-      // @ts-ignore
       this.solidRegistry.registerComputedFieldProvider(computedFieldProvider);
     });
 
     // Register all ISolidDatabaseModules implementations
-    const solidDatabaseModules = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isSolidDatabaseModule(provider));
-
+    const solidDatabaseModules = this.discoveryService.getProviders().filter((provider) => this.isSolidDatabaseModule(provider));
     solidDatabaseModules.forEach((solidDatabaseModule) => {
       this.solidRegistry.registerSolidDatabaseModule(solidDatabaseModule);
     });
 
     // keep track of all the controllers & respective methods. 
-    const allControllers = this.discoveryService
-      .getControllers()
-      .map((controller) => {
-        const { instance } = controller;
-        return {
-          name: controller.name,
-          methods: this.metadataScanner.getAllMethodNames(Object.getPrototypeOf(instance))
-        };
-      });
+    const allControllers = this.discoveryService.getControllers().map((controller) => {
+      const { instance } = controller;
+      return {
+        name: controller.name,
+        methods: this.metadataScanner.getAllMethodNames(Object.getPrototypeOf(instance))
+      };
+    });
 
     this.solidRegistry.registerControllers(new Set(allControllers));
 
     // Register all modules
-    const allModules = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isModule(provider));
+    const allModules = this.discoveryService.getProviders().filter((provider) => this.isModule(provider));
     this.solidRegistry.registerModules(allModules);
 
     // Register all IScheduledJob implementations
-    const scheduledJobProviders = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isScheduledJobProvider(provider));
-
+    const scheduledJobProviders = this.discoveryService.getProviders().filter((provider) => this.isScheduledJobProvider(provider));
     scheduledJobProviders.forEach((scheduledJobProvider) => {
       this.solidRegistry.registerScheduledJobProvider(scheduledJobProvider);
     });
 
     // Register all IMail implementations
-    const mailProviders = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isMailProvider(provider));
-
+    const mailProviders = this.discoveryService.getProviders().filter((provider) => this.isMailProvider(provider));
     mailProviders.forEach((mailProvider) => {
       this.solidRegistry.registerMailProvider(mailProvider);
     });
 
     // Register all IWhatsappTransport implementations
-    const whatsappProviders = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isWhatsappProvider(provider));
-
+    const whatsappProviders = this.discoveryService.getProviders().filter((provider) => this.isWhatsappProvider(provider));
     whatsappProviders.forEach((whatsappProvider) => {
       this.solidRegistry.registerWhatsappProvider(whatsappProvider);
     });
 
     // Register all IWhatsappTransport implementations
-    const smsProviders = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isSmsProvider(provider));
-
+    const smsProviders = this.discoveryService.getProviders().filter((provider) => this.isSmsProvider(provider));
     smsProviders.forEach((smsProvider) => {
       this.solidRegistry.registerSmsProvider(smsProvider);
     });
 
     // Register all ISecurityRuleConfigProvider implementations
-    const securityRuleConfigProviders = this.discoveryService
-      .getProviders()
-      .filter((provider) => this.isSecurityRuleConfigProvider(provider));
-
+    const securityRuleConfigProviders = this.discoveryService.getProviders().filter((provider) => this.isSecurityRuleConfigProvider(provider));
     securityRuleConfigProviders.forEach((securityRuleConfigProvider) => {
       this.solidRegistry.registerSecurityRuleConfigProvider(securityRuleConfigProvider);
     });
 
     // Register the core subscribers against all the configured database modules / datasources
-    await this.bootstrapCoreTypeOrmSubscribers(solidDatabaseModules)
+    await this.bootstrapCoreTypeOrmSubscribers(solidDatabaseModules);
+    await this.settingService.updateSettingsCache();
   }
 
   async bootstrapCoreTypeOrmSubscribers(dbModules: Array<InstanceWrapper<any>>): Promise<void> {
@@ -261,9 +230,7 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     const { instance } = provider;
     if (!instance) return false;
 
-    const seedMethod = this.metadataScanner
-      .getAllMethodNames(Object.getPrototypeOf(instance))
-      .find((methodName) => methodName === 'seed');
+    const seedMethod = this.metadataScanner.getAllMethodNames(Object.getPrototypeOf(instance)).find((methodName) => methodName === 'seed');
     if (!seedMethod) return false;
     return true;
   }
@@ -290,6 +257,18 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     );
 
     return !!isSelectionProvider;
+  }
+
+  private isSettingsProvider(provider: InstanceWrapper) {
+    const { instance } = provider;
+    if (!instance) return false;
+
+    const isSettingsProvider = this.reflector.get<boolean>(
+      IS_SETTINGS_PROVIDER,
+      instance.constructor,
+    );
+
+    return !!isSettingsProvider;
   }
 
   private isDashboardVariableSelectionProvider(provider: InstanceWrapper) {

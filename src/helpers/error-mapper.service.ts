@@ -68,7 +68,6 @@ export class ErrorMapperService {
         for (const p of providers) {
             try {
                 const rules = p.rules() ?? [];
-                // Optional: namespace collision check can be added here if desired
                 all.push(...rules);
             } catch (e) {
                 this.logger.warn(`ErrorCodeProvider.rules() failed for ${p.name?.()}: ${e}`);

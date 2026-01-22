@@ -5,11 +5,12 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule } from "../interfaces";
+import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule, ISettingsProvider, SettingDefinition } from "../interfaces";
 import { DatasourceType } from 'src/dtos/create-model-metadata.dto';
 import { ObjectLiteral } from 'typeorm';
 import { ColumnMetadata } from 'typeorm/metadata/ColumnMetadata';
 import { RelationMetadata } from 'typeorm/metadata/RelationMetadata';
+import { Setting } from 'src/entities/setting.entity';
 
 type ControllerMetadata = {
   name: string;
@@ -84,6 +85,7 @@ export class SolidRegistry {
   private smsProviders: Set<InstanceWrapper> = new Set();
   private securityRuleConfigProviders: Set<InstanceWrapper> = new Set();
   private errorCodeProviders: Set<InstanceWrapper> = new Set();
+  private settingsProviders: Set<InstanceWrapper> = new Set();
 
   registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
     this.errorCodeProviders.add(errorCodeProvider);
@@ -143,6 +145,37 @@ export class SolidRegistry {
 
   registerModules(modules: InstanceWrapper[]): void {
     this.modules = new Set(modules);
+  }
+
+  registerSettingsProvider(provider: InstanceWrapper) {
+    this.settingsProviders.add(provider);
+  }
+
+  registerSecurityRules(securityRules: SecurityRule[]) {
+    this.securityRules = securityRules;
+  }
+
+  registerlocales(locales: Locale[]) {
+    this.locales = locales;
+  }
+
+  registerComputedFieldMetadata(computedFieldMetadata: ComputedFieldMetadata[]) {
+    this.computedFieldMetadata = computedFieldMetadata;
+  }
+
+  getSettingsProviders(): InstanceWrapper[] {
+    return Array.from(this.settingsProviders);
+  }
+
+  getSettingsProviderInstance<T extends ISelectionProviderContext>(name: string): ISelectionProvider<T> {
+    const settingsProviders = this.getSettingsProviders();
+
+    for (let i = 0; i < settingsProviders.length; i++) {
+      const settingsProvider = settingsProviders[i];
+      if (settingsProvider.instance.name() === name) {
+        return settingsProvider.instance;
+      }
+    }
   }
 
   getMailProviders(): Array<InstanceWrapper> {
@@ -236,9 +269,7 @@ export class SolidRegistry {
         return dasbhoardQuestionDataProvider.instance;
       }
     }
-
   }
-
 
   getComputedFieldProviders(): Array<InstanceWrapper> {
     return Array.from(this.computedFieldProviders);
@@ -291,18 +322,6 @@ export class SolidRegistry {
     return module
   }
 
-  registerSecurityRules(securityRules: SecurityRule[]) {
-    this.securityRules = securityRules;
-  }
-
-  registerlocales(locales: Locale[]) {
-    this.locales = locales;
-  }
-
-  registerComputedFieldMetadata(computedFieldMetadata: ComputedFieldMetadata[]) {
-    this.computedFieldMetadata = computedFieldMetadata;
-  }
-
   getComputedFieldMetadata(): ComputedFieldMetadata[] {
     return this.computedFieldMetadata;
   }
@@ -328,4 +347,14 @@ export class SolidRegistry {
     // return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
   }
 
+
+  getAllSettingsProviderInstance<T extends ISelectionProviderContext>(): ISelectionProvider<T> {
+    const settingsProviders = this.getSettingsProviders();
+
+    for (let i = 0; i < settingsProviders.length; i++) {
+      const settingsProvider = settingsProviders[i];
+      return settingsProvider.instance;
+    }
+  }
 }
+

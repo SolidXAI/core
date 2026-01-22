@@ -2,6 +2,7 @@ import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/commo
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager, In } from 'typeorm';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 import { ConfigService } from '@nestjs/config';
 import { CRUDService } from 'src/services/crud.service';
@@ -47,9 +48,10 @@ export class MediaService extends CRUDService<Media> {
   async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}) {
     const data = await super.find(basicFilterDto, solidRequestContext);
     if (data.records) {
-      data.records.forEach((media: Media) => {
+
+      for (const media of data.records) {
         if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-          media.relativeUri = `${process.env.BASE_URL}/${this.getFileSysytemFullFilePath(media.relativeUri)}`;
+          media.relativeUri = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${await this.getFileSysytemFullFilePath(media.relativeUri)}`;
         } else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
           media.relativeUri = this.getAwsS3FullFilePath(
             media.relativeUri,
@@ -57,19 +59,42 @@ export class MediaService extends CRUDService<Media> {
             media.mediaStorageProviderMetadata.region
           );
         }
-      });
+      }
+      // data.records.forEach((media: Media) => {
+      //       if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
+      //   media.relativeUri = `${process.env.BASE_URL}/${await this.getFileSysytemFullFilePath(media.relativeUri)}`;
+      // } else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
+      //   media.relativeUri = this.getAwsS3FullFilePath(
+      //     media.relativeUri,
+      //     media.mediaStorageProviderMetadata.bucketName,
+      //     media.mediaStorageProviderMetadata.region
+      //   );
+      // }
+      // });
     }
     if (data.groupRecords) {
-      data.groupRecords.forEach((group) => {
-        group.groupData.records.forEach((media) => {
+
+      for (const group of data.groupRecords) {
+        for (const media of group.groupData.records) {
           if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-            media.relativeUri = `${process.env.BASE_URL}/${this.getFileSysytemFullFilePath(media.relativeUri)}`;
+            media.relativeUri = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${await this.getFileSysytemFullFilePath(media.relativeUri)}`;
           }
           else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
             media.relativeUri = this.getAwsS3FullFilePath(media.relativeUri, media.mediaStorageProviderMetadata.bucketName, media.mediaStorageProviderMetadata.region);
           }
-        });
-      });
+        }
+      }
+
+      // data.groupRecords.forEach((group) => {
+      //   group.groupData.records.forEach((media) => {
+      //     if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
+      //       media.relativeUri = `${process.env.BASE_URL}/${this.getFileSysytemFullFilePath(media.relativeUri)}`;
+      //     }
+      //     else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
+      //       media.relativeUri = this.getAwsS3FullFilePath(media.relativeUri, media.mediaStorageProviderMetadata.bucketName, media.mediaStorageProviderMetadata.region);
+      //     }
+      //   });
+      // });
     }
     return data
   }
@@ -103,7 +128,7 @@ export class MediaService extends CRUDService<Media> {
 
       switch (createDto.mediaStorageProviderMetadata.type) {
         case MediaStorageProviderType.Filesystem:
-          const fileStoragePath = this.getFileSysytemFullFilePath(this.getFileName(file));
+          const fileStoragePath = await this.getFileSysytemFullFilePath(this.getFileName(file));
           await this.fileService.copyFile(file.path, fileStoragePath);
           createDto['relativeUri'] = this.getFileName(file);
           break;
@@ -163,10 +188,10 @@ export class MediaService extends CRUDService<Media> {
   }
   //TODO: Move this to a app builder config
 
-  private getFileSysytemFullFilePath(fileName: string): string {
-    return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
+  private async getFileSysytemFullFilePath(fileName: string): Promise<string> {
+    const fileStorageDir = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir");
+    return `${fileStorageDir}/${fileName}`;
   }
-
 
   private getAwsS3FullFilePath(awsMediaurl: string, bucketName: string, regionName: string): string {
     // https://lunarismedia.s3.ap-south-1.amazonaws.com/LUNARIS_CP_REGISTRATION_CREATIVE.jpg

@@ -1,9 +1,9 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import { ConfigType } from "@nestjs/config";
+import { Injectable, Logger } from "@nestjs/common";
 import { ModuleRef } from "@nestjs/core";
-import commonConfig from "src/config/common.config";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { ISMS } from "src/interfaces";
+import { SettingService } from "src/services/setting.service";
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 function norm(s?: string) {
     return s?.trim().toLowerCase();
@@ -17,13 +17,15 @@ export class SmsFactory {
     constructor(
         private readonly moduleRef: ModuleRef,
         private readonly solidRegistry: SolidRegistry,
-        @Inject(commonConfig.KEY)
-        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
+        private readonly settingService: SettingService,
+        // @Inject(commonConfig.KEY)
+        // private readonly commonConfiguration: ConfigType<typeof commonConfig>,
     ) { }
 
     getSmsService(name: string = null): ISMS {
         // This is the default provider
-        const smsServiceName = name || this.commonConfiguration.smsProvider;
+        // const smsServiceName = name || this.commonConfiguration.smsProvider;
+        const smsServiceName = this.settingService.getConfigValue<SolidCoreSetting>('smsProvider');
         if (!smsServiceName) {
             throw new Error("Unable to resolve sms provider")
         }

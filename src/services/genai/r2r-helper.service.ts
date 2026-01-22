@@ -1,6 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 import { r2rClient } from 'r2r-js';
+import { SettingService } from '../setting.service';
 
 
 
@@ -8,17 +10,19 @@ import { r2rClient } from 'r2r-js';
 export class R2RHelperService {
     private readonly logger = new Logger(R2RHelperService.name);
 
-    constructor() { }
+    constructor(private readonly settingService: SettingService) { }
 
     async getClient() {
-        this.logger.debug(`Attempting to create RAG client with url: ${process.env.GENAI_RAG_SERVER_URL}`);
-        const client = new r2rClient(process.env.GENAI_RAG_SERVER_URL);
+        const ragServerUrl = this.settingService.getConfigValue<SolidCoreSetting>('ragServerUrl');
+        this.logger.debug(`Attempting to create RAG client with url: ${ragServerUrl}`);
+        const client = new r2rClient(ragServerUrl);
 
+        const ragServerLogin = this.settingService.getConfigValue<SolidCoreSetting>('ragServerLogin');
         // @ts-ignore
-        this.logger.debug(`Attempting to login to our RAG server with user ${process.env.GENAI_RAG_SERVER_LOGIN}`)
+        this.logger.debug(`Attempting to login to our RAG server with user ${ragServerLogin}`)
         await client.users.login({
-            email: process.env.GENAI_RAG_SERVER_LOGIN,
-            password: process.env.GENAI_RAG_SERVER_PASSWORD
+            email: ragServerLogin,
+            password: this.settingService.getConfigValue<SolidCoreSetting>('ragServerPassword')
         });
 
         return client;

@@ -1,11 +1,12 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 import { ConfigType } from '@nestjs/config';
-import commonConfig from '../config/common.config';
 import { CreateSmsTemplateDto } from '../dtos/create-sms-template.dto';
 import { SmsTemplateService } from '../services/sms-template.service';
+import { SettingService } from 'src/services/setting.service';
 
 @Injectable()
 export class SmsTemplateSeederService {
@@ -13,13 +14,14 @@ export class SmsTemplateSeederService {
 
     constructor(
         private readonly smsTemplateService: SmsTemplateService,
-        @Inject(commonConfig.KEY)
-        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
+        private readonly settingService: SettingService
     ) { }
 
     async seed() {
         // Read the module metadata from a file specified in the .env 
-        const seedDataFiles = this.commonConfiguration.smsTemplateSeederFiles.split(',');
+        const seedDataFileVariable = this.settingService.getConfigValue<SolidCoreSetting>("smsTemplateSeederFiles");
+        const seedDataFiles = seedDataFileVariable.split(',');
+
         for (let i = 0; i < seedDataFiles.length; i++) {
             const seedDataFile = seedDataFiles[i];
             const fullPath = path.join(process.cwd(), seedDataFile);

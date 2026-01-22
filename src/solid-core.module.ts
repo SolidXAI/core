@@ -11,7 +11,6 @@ import {
 import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RemoveFieldsCommand } from './commands/remove-fields.command';
-import appBuilderConfig from './config/app-builder.config';
 import { FieldMetadataController } from './controllers/field-metadata.controller';
 import { MediaStorageProviderMetadataController } from './controllers/media-storage-provider-metadata.controller';
 import { ModelMetadataController } from './controllers/model-metadata.controller';
@@ -57,9 +56,6 @@ import { ActionMetadataService } from './services/action-metadata.service';
 import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { SeedCommand } from './commands/seed.command';
-import commonConfig from './config/common.config';
-import { iamConfig } from './config/iam.config';
-import { jwtConfig } from './config/jwt.config';
 import { AuthenticationController } from './controllers/authentication.controller';
 import { EmailTemplateController } from './controllers/email-template.controller';
 import { GoogleAuthenticationController } from './controllers/google-authentication.controller';
@@ -339,9 +335,9 @@ import { ModelSequenceController } from './controllers/model-sequence.controller
 import { ModelSequenceRepository } from './repository/model-sequence.repository';
 import { CacheModule } from '@nestjs/cache-manager';
 import { CacheManagerOptions } from './config/cache.options';
+import { SolidCoreDefaultSettingsProvider } from './services/settings/default-settings-provider.service';
 import { SmsFactory } from './factories/sms.factory';
 import { WhatsAppFactory } from './factories/whatsapp.factory';
-import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
 import { ImageEncodingService } from './helpers/image-encoding.helper';
 import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.service';
 import { InfoCommand } from './commands/info.command';
@@ -391,11 +387,6 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     ]),
 
     CacheModule.registerAsync(CacheManagerOptions),
-    ConfigModule.forFeature(appBuilderConfig),
-    ConfigModule.forFeature(commonConfig),
-    ConfigModule.forFeature(iamConfig),
-    ConfigModule.forFeature(jwtConfig),
-    JwtModule.registerAsync(jwtConfig.asProvider()),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'media-files-storage'),
@@ -415,13 +406,16 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     MulterModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        dest: configService.get<string>('app-builder.uploadDir'),
+        dest: process.env.AB_MEDIA_UPLOAD_DIR ?? "media-uploads",
       }),
       inject: [ConfigService],
     }),
     HttpModule,
     ConfigModule,
     ClsModule,
+    JwtModule.register({
+      global: true,
+    }),
   ],
   controllers: [
     ActionMetadataController,
@@ -734,7 +728,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     SequenceNumComputedFieldProvider,
     ModelSequenceService,
     ModelSequenceRepository,
-
+    SolidCoreDefaultSettingsProvider,
     ImageEncodingService,
     SolidMicroserviceAdapter,
     ListOfRolesSelectionProvider,
@@ -791,10 +785,10 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     TypeOrmModule,
     UserActivityHistoryService,
     UserSeederService,
-
     ImageEncodingService,
     SolidMicroserviceAdapter,
     UserService,
+    SettingService,
   ],
 })
 export class SolidCoreModule { }

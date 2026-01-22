@@ -1,7 +1,6 @@
 import { HttpService } from '@nestjs/axios';
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
-import commonConfig from 'src/config/common.config';
 import { QueueMessage } from 'src/interfaces/mq';
 import { IWhatsAppTransport } from "../../interfaces";
 import { PublisherFactory } from '../queues/publisher-factory.service';
@@ -13,8 +12,6 @@ export class Three60WhatsappService implements IWhatsAppTransport {
   readonly logger = new Logger(Three60WhatsappService.name);
 
   constructor(
-    @Inject(commonConfig.KEY)
-    private readonly commonConfiguration: ConfigType<typeof commonConfig>,
     private readonly publisherFactory: PublisherFactory<any>,
     private readonly httpService: HttpService,
   ) { }

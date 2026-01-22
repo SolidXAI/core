@@ -9,7 +9,6 @@ import { MediaStorageProvider } from "src/interfaces";
 import { FileService } from "src/services/file.service";
 import { Readable } from "stream";
 import { MediaRepository } from "src/repository/media.repository";
-import commonConfig from "src/config/common.config";
 
 @Injectable()
 export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
@@ -21,8 +20,6 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         private readonly configService: ConfigService,
         readonly fileService: FileService,
         readonly mediaRepository: MediaRepository,
-        @Inject(commonConfig.KEY)
-        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
     ) { }
 
     storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {

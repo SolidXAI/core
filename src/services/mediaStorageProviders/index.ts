@@ -1,7 +1,7 @@
 import { ModuleRef } from "@nestjs/core";
-import { MediaStorageProviderType } from "src/dtos/create-media-storage-provider-metadata.dto";
 import { FileS3StorageProvider } from "./file-s3-storage-provider";
 import { FileStorageProvider } from "./file-storage-provider";
+import { MediaStorageProviderType } from "../../dtos/create-media-storage-provider-metadata.dto";
 
 export async function getMediaStorageProvider<T>(
     moduleRef: ModuleRef,

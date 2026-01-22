@@ -1,7 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
-import { CommonEntity, SolidBaseRepository, User } from "src";
+import { CommonEntity, SettingService, SolidBaseRepository, User } from "src";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
@@ -39,11 +39,13 @@ import { ModelMetadataService } from "./model-metadata.service";
 import { RequestContextService } from "./request-context.service";
 import { BasicGroupFilterDto } from "src/dtos/basic-group-filters.dto";
 
+
 export class CRUDService<T extends CommonEntity> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
     private _modelMetadataService: ModelMetadataService;
     private _crudHelperService: CrudHelperService;
     private _discoveryService: DiscoveryService;
+    private _settingService: SettingService;
 
     constructor(
         readonly entityManager: EntityManager,
@@ -64,6 +66,9 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
     protected get discoveryService(): DiscoveryService {
         return this._discoveryService ??= this.moduleRef.get(DiscoveryService, { strict: false });
+    }
+    protected get settingService(): SettingService {
+        return this._settingService ??= this.moduleRef.get(SettingService, { strict: false });
     }
 
     async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
@@ -342,11 +347,11 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 //    Use the EntityController to extract uploaded content & pass to the entity service.
                 //    If embedded media, then the media uri will saved in the entity table, else the uri will be saved in the media table
                 //    Plan the media table schema e.g id, uri, storageProvider, entity_id, entity_name, createdAt, updatedAt
-                const options = { 
-                    ...commonOptions, 
+                const options = {
+                    ...commonOptions,
                     mediaMaxSizeKb: fieldMetadata.mediaMaxSizeKb,
                     mediaTypes: fieldMetadata.mediaTypes,
-                    type: fieldMetadata.type as unknown as SolidMediaType 
+                    type: fieldMetadata.type as unknown as SolidMediaType
                 };
                 return new MediaFieldCrudManager(options);
             }

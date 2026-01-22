@@ -4,9 +4,6 @@ export * from './commands/refresh-module.command'
 export * from './commands/remove-fields.command'
 export * from './commands/seed.command'
 
-export * from './config/app-builder.config'
-export {default as commonConfig} from './config/common.config'
-export * from './config/iam.config'
 export * from './config/cache.options'
 
 export * from './decorators/active-user.decorator'
@@ -266,6 +263,7 @@ export * from './services/user.service'
 export * from './services/view-metadata.service'
 export * from './services/whatsapp/Msg91WhatsappService' //rename
 export * from './services/setting.service'
+export * from './services/settings/default-settings-provider.service'
 export * from './services/security-rule.service'
 export * from './services/request-context.service'
 export * from './services/chatter-message.service'

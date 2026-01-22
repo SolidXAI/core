@@ -1,13 +1,13 @@
 import Handlebars from "handlebars";
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import { ConfigType } from "@nestjs/config";
-import commonConfig from "src/config/common.config";
+import { Injectable, Logger } from "@nestjs/common";
 import { SmsTemplateService } from "../sms-template.service";
 import { ISMS } from "../../interfaces";
 import { PublisherFactory } from "../queues/publisher-factory.service";
 import twilio from 'twilio';
 import { QueueMessage } from "src/interfaces/mq";
+import { SettingService } from "../setting.service";
 import { SmsProvider } from "src/decorators/sms-provider.decorator";
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 
 @Injectable()
@@ -16,16 +16,20 @@ export class TwilioSMSService implements ISMS {
     private readonly logger = new Logger(TwilioSMSService.name);
 
     constructor(
-        @Inject(commonConfig.KEY)
-        private commonConfiguration: ConfigType<typeof commonConfig>,
         private publisherFactory: PublisherFactory<any>,
         private smsTemplateService: SmsTemplateService,
-    ) { }
+        private settingService: SettingService
+    ) {
+        // super(commonConfiguration, 'OTPQueuePublisher', publisherFactory, smsTemplateService);
+    }
 
     async sendSMS(to: string, body: string, shouldQueueSms: boolean): Promise<any> {
-        const accountSid = this.commonConfiguration.twilio.accountSid;
-        const authToken = this.commonConfiguration.twilio.authToken;
-        const twilioNumber = this.commonConfiguration.twilio.number;
+
+
+
+        const accountSid = this.settingService.getConfigValue<SolidCoreSetting>('twilioAccountSid');
+        const authToken = this.settingService.getConfigValue<SolidCoreSetting>('twilioAuthToken');
+        const twilioNumber = this.settingService.getConfigValue<SolidCoreSetting>('twilioNumber');
         if (!accountSid || !authToken || !twilioNumber) {
             throw new Error("Missing COMMON_TWILIO_ACCOUNT_SID or COMMON_TWILIO_AUTH_TOKEN or COMMON_TWILIO_NUMBER in env.");
         }
@@ -42,7 +46,7 @@ export class TwilioSMSService implements ISMS {
             await this.sendSMSAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
-        else if (shouldQueueSms === false && this.commonConfiguration.shouldQueueSms === true) {
+        else if (shouldQueueSms === false && this.settingService.getConfigValue<SolidCoreSetting>('shouldQueueSms') === true) {
             await this.sendSMSAsynchronously(message);
         }
         // Else we send synch
@@ -80,21 +84,18 @@ export class TwilioSMSService implements ISMS {
     }
 
     async sendSMSSynchronously(message: QueueMessage<any>): Promise<any> {
-        const accountSid = this.commonConfiguration.twilio.accountSid;
-        const authToken = this.commonConfiguration.twilio.authToken;
-        const twilioNumber = this.commonConfiguration.twilio.number;
+        const accountSid = this.settingService.getConfigValue<SolidCoreSetting>('twilioAccountSid');
+        const authToken = this.settingService.getConfigValue<SolidCoreSetting>('twilioAuthToken');
+        const twilioNumber = this.settingService.getConfigValue<SolidCoreSetting>('twilioNumber');
+
         if (!accountSid || !authToken || !twilioNumber) {
             throw new Error("Missing COMMON_TWILIO_ACCOUNT_SID or COMMON_TWILIO_AUTH_TOKEN or COMMON_TWILIO_NUMBER in env.");
         }
-
         const { to, body } = message.payload;
-
         const client = twilio(accountSid, authToken);
         try {
             const toSplit = to.split(',');
-
             const r = [];
-
             for (let i = 0; i < toSplit.length; i++) {
                 const actualTo = toSplit[i];
                 const twilioResponseMsg = await client.messages.create({
@@ -102,11 +103,9 @@ export class TwilioSMSService implements ISMS {
                     from: twilioNumber,
                     to: actualTo,
                 });
-
                 this.logger.debug(`Sending SMS to ${actualTo} using Twilio`);
                 this.logger.debug(`Twilio response: `);
                 this.logger.debug(JSON.stringify(twilioResponseMsg))
-
                 r.push(twilioResponseMsg);
             }
 

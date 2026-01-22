@@ -1,8 +1,8 @@
 import { HttpService } from "@nestjs/axios";
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import { ConfigType } from "@nestjs/config";
-import commonConfig from "src/config/common.config";
+import { Injectable, Logger } from "@nestjs/common";
 import { CreateShortUrlDto } from "src/dtos/create-short-url.dto";
+import { SettingService } from "../setting.service";
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 interface TinyUrlRequest {
     url: string;
@@ -36,16 +36,18 @@ interface TinyUrlResponseData {
 @Injectable()
 export class TinyUrlService {
     constructor(
-        @Inject(commonConfig.KEY)
-        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         private readonly httpService: HttpService,
+        private readonly settingService: SettingService
     ) { }
     protected readonly logger = new Logger(TinyUrlService.name);
     async shortenUrl(shortUrlDto: CreateShortUrlDto): Promise<string> {
-        if (!this.commonConfiguration.shortUrl.enabled) {
+        const shotyUrlEnable = this.settingService.getConfigValue<SolidCoreSetting>("tinyUrlEnabled")
+        const shotyUrlapiUrl = this.settingService.getConfigValue<SolidCoreSetting>("tinyUrlApiUrl")
+        const shotyUrlApiKey = this.settingService.getConfigValue<SolidCoreSetting>("tinyUrlApiKey")
+        if (!shotyUrlEnable) {
             return shortUrlDto.url;
         }
-        const shortUrlApiUrl = `${this.commonConfiguration.shortUrl.apiUrl}/create?api_token=${this.commonConfiguration.shortUrl.apiKey}`;
+        const shortUrlApiUrl = `${shotyUrlapiUrl}/create?api_token=${shotyUrlApiKey}`;
         const body = this.createTinyUrlRequest(shortUrlDto)
         const response = await this.httpService.axiosRef.post(shortUrlApiUrl, body);
         const tinyUrlResponse = response.data as TinyUrlResponse;
