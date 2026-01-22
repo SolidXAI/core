@@ -13,9 +13,12 @@ import { SolidRegistry } from 'src/helpers/solid-registry';
 import { ISettingsProvider, NoInfer, SettingDefinition, SettingLevel } from '../interfaces';
 import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
 import type { SolidCoreSetting } from './settings/default-settings-provider.service';
+import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class SettingService {
+  private readonly _logger = new Logger(SettingService.name);
+
   private settings: SettingDefinition[] = [];
   private settingsByKey = new Map<string, SettingDefinition>();
 
@@ -32,9 +35,7 @@ export class SettingService {
     readonly moduleMetadataRepo: ModuleMetadataRepository,
     private readonly requestContextService: RequestContextService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-  ) {
-    // super(entityManager, repo, 'setting', 'solid-core', moduleRef);
-  }
+  ) { }
 
   private async getSettingsFromDb(): Promise<Setting[]> {
     const settings = await this.repo.find({ relations: ['user'] });
@@ -67,10 +68,22 @@ export class SettingService {
     // get all settings from registry 
     const allSettingsProviders = this.solidRegistry.getSettingsProviders();
     const settings: SettingDefinition[] = [];
+    const seenKeys = new Map<string, { setting: SettingDefinition; providerName?: string }>();
     for (const wrapper of allSettingsProviders) {
       const instance = wrapper.instance as ISettingsProvider;
       // if (!instance?.getSettings) continue;
-      settings.push(...instance.getSettings());
+      for (const setting of instance.getSettings()) {
+        const existing = seenKeys.get(setting.key);
+        if (existing) {
+          throw new Error(
+            `Duplicate setting key detected: ${setting.key}. ` +
+            `First: ${JSON.stringify(existing.setting)} from provider: ${existing.providerName ?? "unknown"}. ` +
+            `Second: ${JSON.stringify(setting)} from provider: ${wrapper.name ?? "unknown"}.`
+          );
+        }
+        seenKeys.set(setting.key, { setting, providerName: wrapper.name });
+        settings.push(setting);
+      }
     }
 
     return settings
@@ -87,6 +100,7 @@ export class SettingService {
   }
 
   async updateSettingsCache(): Promise<void> {
+    this._logger.debug(`updating settings cache...`);
     const settingsFromDb = await this.getSettingsFromDb();
     const settingsFromProviders = this.getAllSettingsFromProviders();
     const settingsFromDbByKey = new Map(settingsFromDb.map(setting => [setting.key, setting]));
@@ -314,16 +328,23 @@ export class SettingService {
    * @returns 
    */
   getConfigValue<T = never>(settingKey: NoInfer<T>) {
-    const cachedSetting = this.settings.find(setting => setting.key === settingKey);
+    const cachedSetting = this.settingsByKey.get(settingKey as string);
     if (cachedSetting) {
       return cachedSetting.value;
     }
 
-    // This is probably not needed at all, but leaving it here as a backup for scenarios like 
-    // if getConfigValue<SolidCoreSetting>() is called before onApplicationBootstrap() runs or if the cache refresh fails. 
-    const getAllSettings = this.getAllSettingsFromProviders();
-    const settingValue = getAllSettings.find(i => (i.key == settingKey))
-    return settingValue?.value;
+    return null;
+
+    // const cachedSetting = this.settings.find(setting => setting.key === settingKey);
+    // if (cachedSetting) {
+    //   return cachedSetting.value;
+    // }
+
+    // // This is probably not needed at all, but leaving it here as a backup for scenarios like 
+    // // if getConfigValue<SolidCoreSetting>() is called before onApplicationBootstrap() runs or if the cache refresh fails. 
+    // const getAllSettings = this.getAllSettingsFromProviders();
+    // const settingValue = getAllSettings.find(i => (i.key == settingKey))
+    // return settingValue?.value;
   }
 
   async getMcpUrl(getMcpUrlDto: GetMcpUrlDto, solidRequestContext: any = {}): Promise<any> {
