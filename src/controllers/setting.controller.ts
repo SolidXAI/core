@@ -1,15 +1,14 @@
-import { BadRequestException, Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public.decorator';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { CreateSettingDto } from '../dtos/create-setting.dto';
-import { UpdateSettingDto } from '../dtos/update-setting.dto';
 import { SettingService } from '../services/setting.service';
 
 @ApiTags('Solid Core')
-@Controller('setting') //FIXME: Change this to the model plural name 
+@Controller('setting')
 export class SettingController {
   constructor(private readonly service: SettingService) { }
 

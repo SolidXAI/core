@@ -5286,10 +5286,62 @@
       "name": "Admin"
     },
     {
-      "name": "Internal User"
+      "name": "Internal User",
+      "permissions": [
+        "UserController.findMany",
+        "UserController.checkIfPermissionExists",
+        "UserController.findOne",
+        "MenuItemMetadataController.findMany",
+        "MenuItemMetadataController.findUserMenus",
+        "MenuItemMetadataController.findOne",
+        "ViewMetadataController.getLayout",
+        "ViewMetadataController.findMany",
+        "ViewMetadataController.findOne",
+        "ActionMetadataController.findMany",
+        "ActionMetadataController.findOne",
+        "UserViewMetadataController.upsert",
+        "UserViewMetadataController.findMany",
+        "UserViewMetadataController.findOne",
+        "AuthenticationController.changePassword",
+        "AuthenticationController.logout",
+        "AuthenticationController.me",
+        "ModelMetadataController.navigation",
+        "FieldMetadataController.getSelectionDynamicValues",
+        "FieldMetadataController.getSelectionDynamicValue",
+        "FieldMetadataController.findFieldDefaultMetaData",
+        "SavedFiltersController.delete",
+        "SavedFiltersController.deleteMany",
+        "SavedFiltersController.findOne",
+        "SavedFiltersController.findMany",
+        "SavedFiltersController.recover",
+        "SavedFiltersController.recoverMany",
+        "SavedFiltersController.partialUpdate",
+        "SavedFiltersController.update",
+        "SavedFiltersController.insertMany",
+        "SavedFiltersController.create",
+        "ChatterMessageController.create",
+        "ChatterMessageController.getChatterMessages",
+        "ChatterMessageController.postMessage",
+        "ChatterMessageController.findMany",
+        "ImportTransactionController.getImportTemplate",
+        "ImportTransactionController.getImportInstructions",
+        "ImportTransactionController.getImportMappingInfo",
+        "ImportTransactionController.startImportSync",
+        "ImportTransactionController.startImportAsync",
+        "ImportTransactionController.exportFailedImportedImports",
+        "ExportTemplateController.startExportSync",
+        "ExportTemplateController.startExportAsync",
+        "ListOfValuesController.findMany",
+        "ListOfValuesController.findOne",
+        "SettingController.getAllSettings"
+      ]
     },
     {
-      "name": "Public"
+      "name": "Public",
+      "permissions": [
+        "SettingController.wrapSettings",
+        "AuthenticationController.logout"
+      ]
     }
   ],
   "users": [

@@ -8,7 +8,6 @@ import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
 import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
-import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
 import { DashboardRepository } from 'src/repository/dashboard.repository';
 import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
@@ -34,7 +33,7 @@ import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata, SignUpDto } from 'src';
-import { ADMIN_ROLE_NAME, INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS, PUBLIC_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
+import { ADMIN_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
@@ -234,11 +233,13 @@ export class ModuleMetadataSeederService {
     private async setupDefaultRolesWithPermissions() {
         this.logger.debug(`About to add all permissions to the Admin role`);
         await this.roleService.addAllPermissionsToRole(ADMIN_ROLE_NAME);
+
         // 2. Give  permissions to the Internal / Public role.
-        this.logger.debug(`About to add all permissions to the Internal role`);
-        await this.roleService.addPermissionToRole(INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS);
-        this.logger.debug(`About to add all permissions to the Public role`);
-        await this.roleService.addPermissionToRole(PUBLIC_ROLE_NAME, ['SettingController.wrapSettings', 'AuthenticationController.logout']);
+        // this.logger.debug(`About to add all permissions to the Internal role`);
+        // await this.roleService.addPermissionToRole(INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS);
+
+        // this.logger.debug(`About to add all permissions to the Public role`);
+        // await this.roleService.addPermissionToRole(PUBLIC_ROLE_NAME, ['SettingController.wrapSettings', 'AuthenticationController.logout']);
     }
 
     private async seedSecurityRules(overallMetadata: any) {
