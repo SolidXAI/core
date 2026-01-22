@@ -99,8 +99,10 @@ export class ModuleMetadataSeederService {
 
         if (conf && Array.isArray(conf.modulesToSeed)) {
             modulesToSeed = conf.modulesToSeed;
+            console.log(`▶ Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
             this.logger.log(`Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
         } else {
+            console.log(`▶ No modulesToSeed provided. Seeding ALL modules.`);
             this.logger.log(`No modulesToSeed provided. Seeding ALL modules.`);
         }
 
@@ -121,66 +123,81 @@ export class ModuleMetadataSeederService {
         for (let i = 0; i < filteredSeedDataFiles.length; i++) {
             const overallMetadata = filteredSeedDataFiles[i];
             const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
+            console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
             this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
 
-
             // Process module metadata first. 
+            console.log(`▶ [${moduleMetadata.name}] Seeding Module / Model / Fields`);
             this.logger.log(`Seeding Module / Model / Fields`);
             await this.seedModuleModelFields(moduleMetadata);
 
             // Media Storage provider templates
+            console.log(`▶ [${moduleMetadata.name}] Seeding Media Storage Providers`);
             this.logger.log(`Seeding Media Storage Providers`);
             await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
 
             // Custom role handling
+            console.log(`▶ [${moduleMetadata.name}] Seeding Roles`);
             this.logger.log(`Seeding Roles`);
             await this.seedRoles(overallMetadata);
 
             // Custom user handling
+            console.log(`▶ [${moduleMetadata.name}] Seeding Users`);
             this.logger.log(`Seeding Users`);
             await this.seedUsers(overallMetadata);
 
             // Application Module View handling 
+            console.log(`▶ [${moduleMetadata.name}] Seeding Views`);
             this.logger.log(`Seeding Views`);
             await this.seedViews(overallMetadata);
 
             // Application Module Action handling
+            console.log(`▶ [${moduleMetadata.name}] Seeding Actions`);
             this.logger.log(`Seeding Actions`);
             await this.seedActions(overallMetadata);
 
             // Application Module Menu handling 
+            console.log(`▶ [${moduleMetadata.name}] Seeding Menus`);
             this.logger.log(`Seeding Menus`);
             await this.seedMenus(overallMetadata);
 
             // Email templates 
+            console.log(`▶ [${moduleMetadata.name}] Seeding Email Templates`);
             this.logger.log(`Seeding Email Templates`);
             await this.seedEmailTemplates(overallMetadata, moduleMetadata.name);
 
             // Sms templates
+            console.log(`▶ [${moduleMetadata.name}] Seeding Sms Templates`);
             this.logger.log(`Seeding Sms Templates`);
             await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
 
             // Security rules
+            console.log(`▶ [${moduleMetadata.name}] Seeding Security Rules`);
             this.logger.log(`Seeding Security Rules`);
             await this.seedSecurityRules(overallMetadata);
 
             // List Of Values
+            console.log(`▶ [${moduleMetadata.name}] Seeding List Of Values`);
             this.logger.log(`Seeding List Of Values`);
             await this.seedListOfValues(moduleMetadata, overallMetadata);
 
             // Dashboards
+            console.log(`▶ [${moduleMetadata.name}] Seeding Dashboards`);
             this.logger.log(`Seeding Dashboards`);
             await this.seedDashboards(moduleMetadata, overallMetadata);
 
             // Scheduled Jobs
+            console.log(`▶ [${moduleMetadata.name}] Seeding Scheduled Jobs`);
             this.logger.log(`Seeding Scheduled Jobs`);
             await this.seedScheduledJobs(moduleMetadata, overallMetadata);
 
             // Saved Filters
+            console.log(`▶ [${moduleMetadata.name}] Seeding Saved Filters`);
             this.logger.log(`Seeding Saved Filters`);
             await this.seedSavedFilters(moduleMetadata, overallMetadata);
 
             // Model Sequences
+            console.log(`▶ [${moduleMetadata.name}] Seeding Model Sequences`);
             this.logger.log(`Seeding Model Sequences`);
             await this.seedModelSequences(overallMetadata);
 
@@ -191,7 +208,7 @@ export class ModuleMetadataSeederService {
         await this.setupDefaultRolesWithPermissions();
 
         // Add a console log indicating seeding is finished. This needs to be console.log so that it looks proper when this code is run via CLI.
-        console.log(`Seeding completed.`);
+        console.log(`✔ Seeding completed.`);
         //this.logger.log(`All Seeders finished`);
 
         //FIXME: Handle displaying the created users credentials in a better way.
