@@ -1,13 +1,12 @@
-import { Inject, Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 // import * as AWS from 'aws-sdk';
-import { S3Client, PutObjectCommand, DeleteObjectCommand, ObjectCannedACL, GetObjectCommand } from '@aws-sdk/client-s3';
-import { ConfigType } from '@nestjs/config';
-import path from 'path';
-import { Readable } from 'stream';
+import { DeleteObjectCommand, GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { getSignedUrl as awsGetSignedUrl } from '@aws-sdk/s3-request-presigner';
+import path from 'path';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { AwsS3Config } from 'src/interfaces';
+import { Readable } from 'stream';
 
 @Injectable()
 export class FileService {
