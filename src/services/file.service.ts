@@ -27,8 +27,8 @@ export class FileService {
     this.s3Client = new S3Client({
       region: process.env.S3_AWS_REGION_NAME,
       credentials: {
-        accessKeyId: process.env.S3_AWS_SECRET_KEY,
-        secretAccessKey: process.env.S3_AWS_ACCESS_KEY,
+        accessKeyId: process.env.S3_AWS_ACCESS_KEY,
+        secretAccessKey: process.env.S3_AWS_SECRET_KEY,
       },
     });
   }
