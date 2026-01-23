@@ -633,6 +633,30 @@ export class AuthenticationService {
         }
     }
 
+    private maskEmail(email: string): string {
+        if (!email) return null;
+
+        const [localPart, domain] = email.split('@');
+        if (localPart.length <= 2) {
+            return `${localPart[0]}***@${domain}`;
+        }
+
+        const visibleStart = localPart.slice(0, 2);
+        const visibleEnd = localPart.slice(-1);
+        return `${visibleStart}***${visibleEnd}@${domain}`;
+    }
+
+    private maskMobile(mobile: string): string {
+        if (!mobile) return null;
+
+        if (mobile.length <= 4) {
+            return mobile;
+        }
+
+        const visibleEnd = mobile.slice(-4);
+        return `***${visibleEnd}`;
+    }
+
     async otpInitiateLogin(signInDto: OTPSignInDto) {
         const isPasswordlessRegistrationEnabled = await this.isPasswordlessRegistrationEnabled();
         if (!isPasswordlessRegistrationEnabled) {
@@ -664,6 +688,12 @@ export class AuthenticationService {
             user.emailVerificationTokenOnLoginExpiresAt = expiresAt;
             await this.userRepository.save(user);
             this.notifyUserOnOtpInititateLogin(user, RegistrationValidationSource.EMAIL);
+            return {
+                message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_LOGIN,
+                user: {
+                    email: this.maskEmail(user.email)
+                }
+            };
         } else if (signInDto.type === RegistrationValidationSource.MOBILE) {
             // const user = await this.userRepository.findOne({
             //     where: {
@@ -686,11 +716,16 @@ export class AuthenticationService {
             user.mobileVerificationTokenOnLoginExpiresAt = expiresAt;
             await this.userRepository.save(user);
             this.notifyUserOnOtpInititateLogin(user, RegistrationValidationSource.MOBILE);
+            return {
+                message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_LOGIN,
+                user: {
+                    mobile: this.maskMobile(user.mobile)
+                }
+            };
         }
         else {
             throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
         }
-        return { message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_LOGIN };
     }
 
     private async notifyUserOnOtpInititateLogin(user: User, loginType: RegistrationValidationSource) {
