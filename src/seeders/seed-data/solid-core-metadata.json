@@ -2843,6 +2843,19 @@
             "isSystem": true
           },
           {
+            "name": "level",
+            "displayName": "Level",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
             "name": "type",
             "displayName": "Type",
             "type": "selectionStatic",
@@ -2864,7 +2877,7 @@
             "description": "This is the user id field",
             "type": "relation",
             "ormType": "integer",
-            "isSystem": false,
+            "isSystem": true,
             "relationType": "many-to-one",
             "relationCoModelFieldName": null,
             "relationCreateInverse": false,
@@ -2874,7 +2887,32 @@
             "relationCascade": "cascade",
             "required": false,
             "unique": false,
-            "index": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null
+          },
+          {
+            "name": "moduleMetadata",
+            "displayName": "Module",
+            "description": "This setting emanated from which module...",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": true,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": true,
             "private": false,
             "encrypt": false,
             "encryptionType": null,
@@ -5248,10 +5286,62 @@
       "name": "Admin"
     },
     {
-      "name": "Internal User"
+      "name": "Internal User",
+      "permissions": [
+        "UserController.findMany",
+        "UserController.checkIfPermissionExists",
+        "UserController.findOne",
+        "MenuItemMetadataController.findMany",
+        "MenuItemMetadataController.findUserMenus",
+        "MenuItemMetadataController.findOne",
+        "ViewMetadataController.getLayout",
+        "ViewMetadataController.findMany",
+        "ViewMetadataController.findOne",
+        "ActionMetadataController.findMany",
+        "ActionMetadataController.findOne",
+        "UserViewMetadataController.upsert",
+        "UserViewMetadataController.findMany",
+        "UserViewMetadataController.findOne",
+        "AuthenticationController.changePassword",
+        "AuthenticationController.logout",
+        "AuthenticationController.me",
+        "ModelMetadataController.navigation",
+        "FieldMetadataController.getSelectionDynamicValues",
+        "FieldMetadataController.getSelectionDynamicValue",
+        "FieldMetadataController.findFieldDefaultMetaData",
+        "SavedFiltersController.delete",
+        "SavedFiltersController.deleteMany",
+        "SavedFiltersController.findOne",
+        "SavedFiltersController.findMany",
+        "SavedFiltersController.recover",
+        "SavedFiltersController.recoverMany",
+        "SavedFiltersController.partialUpdate",
+        "SavedFiltersController.update",
+        "SavedFiltersController.insertMany",
+        "SavedFiltersController.create",
+        "ChatterMessageController.create",
+        "ChatterMessageController.getChatterMessages",
+        "ChatterMessageController.postMessage",
+        "ChatterMessageController.findMany",
+        "ImportTransactionController.getImportTemplate",
+        "ImportTransactionController.getImportInstructions",
+        "ImportTransactionController.getImportMappingInfo",
+        "ImportTransactionController.startImportSync",
+        "ImportTransactionController.startImportAsync",
+        "ImportTransactionController.exportFailedImportedImports",
+        "ExportTemplateController.startExportSync",
+        "ExportTemplateController.startExportAsync",
+        "ListOfValuesController.findMany",
+        "ListOfValuesController.findOne",
+        "SettingController.getAllSettings"
+      ]
     },
     {
-      "name": "Public"
+      "name": "Public",
+      "permissions": [
+        "SettingController.wrapSettings",
+        "AuthenticationController.logout"
+      ]
     }
   ],
   "users": [
@@ -12538,6 +12628,10 @@
     {
       "name": "default-filesystem",
       "type": "filesystem"
+    },
+    {
+      "name": "default-aws-s3",
+      "type": "aws-s3"
     }
   ],
   "checksums": [],

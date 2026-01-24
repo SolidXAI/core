@@ -1,8 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
-import { ConfigService } from "@nestjs/config";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
-import { CommonEntity, FileService, SolidBaseRepository, User } from "src";
+import { CommonEntity, SettingService, SolidBaseRepository, User } from "src";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
@@ -37,28 +36,40 @@ import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper
 import { HashingService } from "./hashing.service";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
-import { ModuleMetadataService } from "./module-metadata.service";
 import { RequestContextService } from "./request-context.service";
 import { BasicGroupFilterDto } from "src/dtos/basic-group-filters.dto";
 
+
 export class CRUDService<T extends CommonEntity> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
+    private _modelMetadataService: ModelMetadataService;
+    private _crudHelperService: CrudHelperService;
+    private _discoveryService: DiscoveryService;
+    private _settingService: SettingService;
+
     constructor(
-        readonly modelMetadataService: ModelMetadataService, // go away
-        readonly moduleMetadataService: ModuleMetadataService, // go away
-        readonly configService: ConfigService, // we don't use it - go away
-        readonly fileService: FileService, // we don't use it - go away
-        readonly discoveryService: DiscoveryService, // go away
-        readonly crudHelperService: CrudHelperService, // go away
         readonly entityManager: EntityManager,
         readonly repo: SolidBaseRepository<T>,
         readonly modelName: string,
         readonly moduleName: string,
         readonly moduleRef: ModuleRef,
-        readonly defaultEntityManager?: EntityManager
-
-        //We can just have the Model Entity here
+        readonly defaultDatasourceEntityManager?: EntityManager
     ) { }
+
+    protected get modelMetadataService(): ModelMetadataService {
+        return this._modelMetadataService ??= this.moduleRef.get(ModelMetadataService, { strict: false });
+    }
+
+    protected get crudHelperService(): CrudHelperService {
+        return this._crudHelperService ??= this.moduleRef.get(CrudHelperService, { strict: false });
+    }
+
+    protected get discoveryService(): DiscoveryService {
+        return this._discoveryService ??= this.moduleRef.get(DiscoveryService, { strict: false });
+    }
+    protected get settingService(): SettingService {
+        return this._settingService ??= this.moduleRef.get(SettingService, { strict: false });
+    }
 
     async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
         // This class will be extended by the generated service class i.e PersonService
@@ -94,7 +105,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
             // 6. Save the media
             if (hasMediaFields) {
-                this.saveMedia(model, files, savedEntity);
+                await this.saveMedia(model, files, savedEntity);
             }
             return savedEntity;
         } catch (error) {
@@ -130,14 +141,13 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return { dto, hasMediaFields };
     }
 
-    //FIXME: Need to make this saving media async. Use queues approach
-    private saveMedia(model: ModelMetadata, files: Express.Multer.File[], savedEntity: T) {
+    private async saveMedia(model: ModelMetadata, files: Express.Multer.File[], savedEntity: T): Promise<void> {
         // Get all the media fields in the dto
-
         const mediaFields = model.fields.filter(field => field.type === 'mediaSingle' || field.type === 'mediaMultiple');
 
         // Depending upon media storage provider configured, get the appropriate storage provider
-        mediaFields.forEach(async (mediaField) => {
+        // Using Promise.all to save all media fields in parallel
+        await Promise.all(mediaFields.map(async (mediaField) => {
             const media = files.filter(multerFile => multerFile.fieldname === mediaField.name);
 
             // If media is present, then save the media
@@ -150,11 +160,9 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 // Get the storage provider implementation
                 const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
 
-                //Commented the below code since we will be direclty images from server on call from ui 
-                // await storageProvider.delete(savedEntity, mediaField);
                 await storageProvider.store(media, savedEntity, mediaField);
             }
-        });
+        }));
     }
 
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
@@ -214,7 +222,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
         // 6. Save the media
         if (hasMediaFields) {
-            this.saveMedia(model, files, savedEntity);
+            await this.saveMedia(model, files, savedEntity);
         }
         return savedEntity;
     }
@@ -339,11 +347,11 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 //    Use the EntityController to extract uploaded content & pass to the entity service.
                 //    If embedded media, then the media uri will saved in the entity table, else the uri will be saved in the media table
                 //    Plan the media table schema e.g id, uri, storageProvider, entity_id, entity_name, createdAt, updatedAt
-                const options = { 
-                    ...commonOptions, 
+                const options = {
+                    ...commonOptions,
                     mediaMaxSizeKb: fieldMetadata.mediaMaxSizeKb,
                     mediaTypes: fieldMetadata.mediaTypes,
-                    type: fieldMetadata.type as unknown as SolidMediaType 
+                    type: fieldMetadata.type as unknown as SolidMediaType
                 };
                 return new MediaFieldCrudManager(options);
             }
@@ -626,7 +634,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     }
 
     private async handlePopulateMedia(populateMedia: string[], entities: T[]) {
-        const model = await this.getDefaultEntityManager().getRepository(ModelMetadata).findOne({
+        const model = await this.getDatasourceDefaultEntityManager().getRepository(ModelMetadata).findOne({
             where: {
                 singularName: this.modelName,
             },
@@ -965,7 +973,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             throw new BadRequestException(`Field ${field.name} does not define a relationCoModelSingularName`);
         }
 
-        const relationCoModel = await this.getDefaultEntityManager().getRepository(ModelMetadata).findOne({
+        const relationCoModel = await this.getDatasourceDefaultEntityManager().getRepository(ModelMetadata).findOne({
             where: { singularName: field.relationCoModelSingularName },
             relations: ['fields', 'fields.mediaStorageProvider', 'fields.model'],
         });
@@ -1069,7 +1077,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return updatedEntity
     }
 
-    private getDefaultEntityManager() {
-        return this.defaultEntityManager ?? this.entityManager;
+    private getDatasourceDefaultEntityManager() {
+        return this.defaultDatasourceEntityManager ?? this.entityManager;
     }
 }

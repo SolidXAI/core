@@ -11,7 +11,6 @@ import {
 import { MulterModule } from '@nestjs/platform-express';
 import { TypeOrmModule } from '@nestjs/typeorm';
 import { RemoveFieldsCommand } from './commands/remove-fields.command';
-import appBuilderConfig from './config/app-builder.config';
 import { FieldMetadataController } from './controllers/field-metadata.controller';
 import { MediaStorageProviderMetadataController } from './controllers/media-storage-provider-metadata.controller';
 import { ModelMetadataController } from './controllers/model-metadata.controller';
@@ -31,7 +30,7 @@ import { ModuleMetadataSeederService } from './seeders/module-metadata-seeder.se
 import { CrudHelperService } from './services/crud-helper.service';
 import { FieldMetadataService } from './services/field-metadata.service';
 import { ListOfValuesService } from './services/list-of-values.service';
-import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
+// import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from './services/media-storage-provider-metadata.service';
 import { MediaService } from './services/media.service';
 import { ModelMetadataService } from './services/model-metadata.service';
@@ -57,9 +56,6 @@ import { ActionMetadataService } from './services/action-metadata.service';
 import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { SeedCommand } from './commands/seed.command';
-import commonConfig from './config/common.config';
-import { iamConfig } from './config/iam.config';
-import { jwtConfig } from './config/jwt.config';
 import { AuthenticationController } from './controllers/authentication.controller';
 import { EmailTemplateController } from './controllers/email-template.controller';
 import { GoogleAuthenticationController } from './controllers/google-authentication.controller';
@@ -269,22 +265,6 @@ import { ExportTemplateService } from './services/export-template.service';
 import { ExportTransactionService } from './services/export-transaction.service';
 import { IngestMetadataService } from './services/genai/ingest-metadata.service';
 import { McpHandlerFactory } from './services/genai/mcp-handlers/mcp-handler-factory.service';
-import { SolidAddButtonToFormViewMcpHandler } from './services/genai/mcp-handlers/solid-add-button-to-form-view-mcp-handler.service';
-import { SolidAddControllerHandlerMcpHandler } from './services/genai/mcp-handlers/solid-add-controller-handler-method-mcp-handler.service';
-import { SolidAddCustomServiceMethodMcpHandler } from './services/genai/mcp-handlers/solid-add-custom-service-method-mcp-handler.service';
-import { SolidAddFieldsToModelMcpHandler } from './services/genai/mcp-handlers/solid-add-fields-to-model-mcp-handler.service';
-import { SolidAddHeaderButtonOrRowButtonToListViewMcpHandler } from './services/genai/mcp-handlers/solid-add-header-button-or-row-button-to-list-view-mcp-handler.service';
-import { SolidAddQuestionToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-question-to-dashboard-mcp-handler.service';
-import { SolidAddVariableToDashboardMcpHandler } from './services/genai/mcp-handlers/solid-add-variable-to-dashboard-mcp-handler.service';
-import { SolidCreateComputedProviderMcpHandler } from './services/genai/mcp-handlers/solid-create-computed-provider-mcp-handler.service';
-import { SolidCreateCustomFormViewWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-custom-form-view-widget-mcp-handler.service';
-import { SolidCreateDashboardWithWidgetsMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-mcp-handler.service';
-import { SolidCreateDashboardQuestionMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-mcp-handler.service';
-import { SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-question-sql-dataset-config-mcp-handler.service';
-import { SolidCreateDashboardWidgetMcpHandler } from './services/genai/mcp-handlers/solid-create-dashboard-widget-mcp-handler.service';
-import { SolidCreateModelWithFieldsMcpHandler } from './services/genai/mcp-handlers/solid-create-model-with-fields-mcp-handler.service';
-import { SolidCreateModuleMcpHandler } from './services/genai/mcp-handlers/solid-create-module-mcp-handler.service';
-import { SolidUpdateLayoutMcpHandler } from './services/genai/mcp-handlers/solid-update-layout-mcp-handler.service';
 import { R2RHelperService } from './services/genai/r2r-helper.service';
 import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
 import { ImportTransactionService } from './services/import-transaction.service';
@@ -339,11 +319,12 @@ import { ModelSequenceController } from './controllers/model-sequence.controller
 import { ModelSequenceRepository } from './repository/model-sequence.repository';
 import { CacheModule } from '@nestjs/cache-manager';
 import { CacheManagerOptions } from './config/cache.options';
+import { SolidCoreDefaultSettingsProvider } from './services/settings/default-settings-provider.service';
 import { SmsFactory } from './factories/sms.factory';
 import { WhatsAppFactory } from './factories/whatsapp.factory';
-import { WhatsApp } from 'twilio/lib/twiml/VoiceResponse';
 import { ImageEncodingService } from './helpers/image-encoding.helper';
 import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.service';
+import { InfoCommand } from './commands/info.command';
 import { ListOfRolesSelectionProvider } from './services/selection-providers/list-of-roles-selectionproviders.service';
 
 
@@ -390,11 +371,6 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     ]),
 
     CacheModule.registerAsync(CacheManagerOptions),
-    ConfigModule.forFeature(appBuilderConfig),
-    ConfigModule.forFeature(commonConfig),
-    ConfigModule.forFeature(iamConfig),
-    ConfigModule.forFeature(jwtConfig),
-    JwtModule.registerAsync(jwtConfig.asProvider()),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
       rootPath: join(process.cwd(), 'media-files-storage'),
@@ -414,13 +390,16 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     MulterModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        dest: configService.get<string>('app-builder.uploadDir'),
+        dest: process.env.AB_MEDIA_UPLOAD_DIR ?? "media-uploads",
       }),
       inject: [ConfigService],
     }),
     HttpModule,
     ConfigModule,
     ClsModule,
+    JwtModule.register({
+      global: true,
+    }),
   ],
   controllers: [
     ActionMetadataController,
@@ -494,6 +473,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     RemoveFieldsCommand,
     RefreshModelCommand,
     RefreshModuleCommand,
+    InfoCommand,
     SolidIntrospectService,
     DiscoveryService,
     R2RHelperService,
@@ -505,7 +485,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     SchematicService,
     MediaStorageProviderMetadataService,
     MediaService,
-    MediaStorageProviderMetadataSeederService,
+    // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
     ListOfValuesService,
     ListOfValuesSelectionProvider,
@@ -668,24 +648,12 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     NoopsEntityComputedFieldProviderService,
 
     McpHandlerFactory,
-    SolidCreateModuleMcpHandler,
-    SolidCreateModelWithFieldsMcpHandler,
-    SolidAddFieldsToModelMcpHandler,
-    SolidUpdateLayoutMcpHandler,
-
-    SolidCreateDashboardWithWidgetsMcpHandler,
-    SolidCreateDashboardQuestionMcpHandler,
-    SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler,
-    SolidCreateDashboardWidgetMcpHandler,
-    SolidCreateComputedProviderMcpHandler,
-    SolidAddVariableToDashboardMcpHandler,
-    SolidAddQuestionToDashboardMcpHandler,
-
-    SolidAddCustomServiceMethodMcpHandler,
-    SolidAddHeaderButtonOrRowButtonToListViewMcpHandler,
-    SolidAddControllerHandlerMcpHandler,
-    SolidAddButtonToFormViewMcpHandler,
-    SolidCreateCustomFormViewWidgetMcpHandler,
+    // SolidCreateDashboardWithWidgetsMcpHandler,
+    // SolidCreateDashboardQuestionMcpHandler,
+    // SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler,
+    // SolidCreateDashboardWidgetMcpHandler,
+    // SolidAddVariableToDashboardMcpHandler,
+    // SolidAddQuestionToDashboardMcpHandler,
 
     SolidTsMorphService,
 
@@ -732,7 +700,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     SequenceNumComputedFieldProvider,
     ModelSequenceService,
     ModelSequenceRepository,
-
+    SolidCoreDefaultSettingsProvider,
     ImageEncodingService,
     SolidMicroserviceAdapter,
     ListOfRolesSelectionProvider,
@@ -789,10 +757,10 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     TypeOrmModule,
     UserActivityHistoryService,
     UserSeederService,
-
     ImageEncodingService,
     SolidMicroserviceAdapter,
     UserService,
+    SettingService,
   ],
 })
 export class SolidCoreModule { }

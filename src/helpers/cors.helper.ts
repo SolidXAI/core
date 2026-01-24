@@ -1,9 +1,9 @@
 import { CorsOptions } from 'cors';
-import { ConfigService } from '@nestjs/config';
 
 /** Build CorsOptions from env; supports wildcards like https://*.example.com */
-export function buildDefaultCorsOptions(configService: ConfigService): CorsOptions {
-  const rawOrigins = configService.get<string>('SECURITY_CORS_ORIGINS') ?? '*';
+export function buildDefaultCorsOptions(): CorsOptions {
+  const rawOrigins = process.env.SECURITY_CORS_ORIGINS ?? '*';
+
   const allowed = rawOrigins.split(',').map(s => s.trim()).filter(Boolean);
 
   const escapeRx = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');

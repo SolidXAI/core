@@ -1,20 +1,16 @@
-import { BadRequestException, forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
-import { ConfigService } from '@nestjs/config';
 import { spawn } from 'child_process';
 import * as fs from 'fs/promises';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { InvokeAiPromptDto } from 'src/dtos/invoke-ai-prompt.dto';
 import { McpResponse, TriggerMcpClientOptions } from 'src/interfaces';
 import { AiInteractionRepository } from 'src/repository/ai-interaction.repository';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
-import { FileService } from 'src/services/file.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { AiInteraction } from '../entities/ai-interaction.entity';
 import { McpHandlerFactory } from './genai/mcp-handlers/mcp-handler-factory.service';
 import { PublisherFactory } from './queues/publisher-factory.service';
@@ -24,13 +20,6 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
   private readonly logger = new Logger(AiInteractionService.name);
 
   constructor(
-    @Inject(forwardRef(() => ModelMetadataService))
-    readonly modelMetadataService: ModelMetadataService,
-    readonly moduleMetadataService: ModuleMetadataService,
-    readonly configService: ConfigService,
-    readonly fileService: FileService,
-    readonly discoveryService: DiscoveryService,
-    readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(AiInteraction, 'default')
@@ -42,7 +31,7 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
     readonly mcpHandlerFactory: McpHandlerFactory,
 
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'aiInteraction', 'solid-core', moduleRef);
+    super(entityManager, repo, 'aiInteraction', 'solid-core', moduleRef);
   }
 
   async triggerMcpClientJob(dto: InvokeAiPromptDto, userId: number, isAutoApply: boolean = false, threadId: string = null): Promise<any> {
@@ -83,8 +72,8 @@ export class AiInteractionService extends CRUDService<AiInteraction> {
    * @returns The parsed object inside the 'response' field of the JSON output.
    */
   async runMcpPrompt(prompt: string): Promise<McpResponse> {
-    const pythonExecutable = process.env.MCP_PYTHON_EXECUTABLE;
-    const mcpClient = process.env.MCP_CLIENT;
+    const pythonExecutable = this.settingService.getConfigValue<SolidCoreSetting>('mcpPythonExecutable');
+    const mcpClient = this.settingService.getConfigValue<SolidCoreSetting>('mcpClient');
 
     // TODO: We can return an error if the above env variables are not properly setup...
     if (!pythonExecutable || !mcpClient) {

@@ -7,6 +7,8 @@ import { MediaStorageProvider } from "src/interfaces";
 import { MediaRepository } from "src/repository/media.repository";
 import { FileService } from "src/services/file.service";
 import { Readable } from "stream";
+import { SettingService } from "../setting.service";
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 @Injectable()
 export class FileStorageProvider<T> implements MediaStorageProvider<T> {
@@ -17,7 +19,8 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // private readonly appBuilderConfiguration: ConfigType<typeof appBuilderConfig>,
         private readonly configService: ConfigService,
         readonly fileService: FileService,
-        readonly mediaRepository: MediaRepository
+        readonly mediaRepository: MediaRepository,
+        private readonly settingService: SettingService
 
     ) { }
 
@@ -28,9 +31,13 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         //@ts-ignore
         const media = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         // Add the full URL to the media
-        media.forEach(m => {
-            m['_full_url'] = `${process.env.BASE_URL}/${this.getFullFilePath(m.relativeUri)}`;
-        });
+        // media.forEach(m => {
+        // });
+        for (const m of media) {
+            m['_full_url'] = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${this.getFullFilePath(m.relativeUri)}`;
+        }
+
+
         return media;
     }
 
@@ -41,14 +48,14 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         const result: Media[] = [];
         for (const file of files) {
             // Store the file in the configured file storage directory
-            const fileStoragePath = this.getFullFilePath(this.getFileName(file));
+            const fileStoragePath = await this.getFullFilePath(this.getFileName(file));
             await this.fileService.copyFile(file.path, fileStoragePath);
             await this.fileService.deleteFile(file.path);
 
             // Create an entry in the media table
             const mediaEntity = await this.mediaRepository.createMedia({
                 //@ts-ignore
-                entityId: entity.id, 
+                entityId: entity.id,
                 modelMetadataId: mediaFieldMetadata.model.id,
                 relativeUri: this.getFileName(file),
                 mimeType: file.mimetype,
@@ -71,7 +78,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         for (const pair of streamPairs) {
             const stream = pair[0];
             const fileName = pair[1];
-            this.fileService.writeStreamToFile(stream, this.getFullFilePath(fileName));
+            this.fileService.writeStreamToFile(stream, await this.getFullFilePath(fileName));
             const mediaEntity = await this.mediaRepository.createMedia({
                 //@ts-ignore
                 entityId: entity.id,
@@ -93,13 +100,18 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         //@ts-ignore
         this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
-        existingMedia.forEach(media => {
-            this.fileService.deleteFile(this.getFullFilePath(media.relativeUri));
-        });
+
+        for (const media of existingMedia) {
+            this.fileService.deleteFile(await this.getFullFilePath(media.relativeUri));
+        }
+        // existingMedia.forEach(media => {
+        // });
     }
 
-    private getFullFilePath(fileName: string): string {
-        return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
+    private async getFullFilePath(fileName: string): Promise<string> {
+        const fileStorageDir = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
+        return `${fileStorageDir}/${fileName}`;
+        // return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
     }
 
     private getFileName(file: Express.Multer.File): string {

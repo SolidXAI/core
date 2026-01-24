@@ -58,6 +58,25 @@ export interface ModuleMetadataConfiguration {
   dashboards?: CreateDashboardDto[],
 }
 
+export enum SettingLevel {
+  SystemEnv = 'system-env',
+  SystemAdminReadonly = 'system-admin-readonly',
+  SystemAdminEditable = 'system-admin-editable',
+  InternalUser = "internal-user"
+}
+
+export interface SettingDefinition<T = any> {
+  moduleName: string;
+  key: string;
+  value: T;
+  level: SettingLevel;
+}
+
+// solid-core/settings/settings-provider.interface.ts
+export interface ISettingsProvider {
+  getSettings(): SettingDefinition[];
+}
+
 export interface CodeGenerationOptions {
   moduleId?: number;
   moduleUserKey?: string;
@@ -355,3 +374,13 @@ export interface McpComputedProviderResponse {
 export interface ISecurityRuleConfigProvider {
   securityRuleConfig(activeUser: ActiveUserData, securityRule: SecurityRule): Promise<SecurityRuleConfig>;
 }
+
+
+export interface AwsS3Config {
+  S3_AWS_ACCESS_KEY: string;
+  S3_AWS_SECRET_KEY: string;
+  S3_AWS_REGION_NAME: string;
+}
+
+// Prevents inference so callers must provide explicit type arguments; reusable for other APIs.
+export type NoInfer<T> = [T][T extends any ? 0 : never];

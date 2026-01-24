@@ -1,22 +1,15 @@
 import { BadRequestException, Injectable, Logger, NotImplementedException } from '@nestjs/common';
-import { DiscoveryService, ModuleRef } from "@nestjs/core";
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { EntityManager, Repository } from 'typeorm';
+import { ModuleRef } from "@nestjs/core";
+import { InjectEntityManager } from '@nestjs/typeorm';
+import { EntityManager } from 'typeorm';
 
-import { ConfigService } from '@nestjs/config';
-import { CrudHelperService } from 'src/services/crud-helper.service';
 import { CRUDService } from 'src/services/crud.service';
-import { FileService } from 'src/services/file.service';
-import { ModelMetadataService } from 'src/services/model-metadata.service';
-import { ModuleMetadataService } from 'src/services/module-metadata.service';
 
 
 import { DashboardVariable } from 'src/entities/dashboard-variable.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { DashboardQuestion } from '../entities/dashboard-question.entity';
 import { SqlExpression, SqlExpressionOperator } from './question-data-providers/chartjs-sql-data-provider.service';
-import { DashboardService } from './dashboard.service';
-import { Dashboard } from 'src/entities/dashboard.entity';
 import { DashboardQuestionRepository } from 'src/repository/dashboard-question.repository';
 
 enum SOURCE_TYPE {
@@ -32,12 +25,6 @@ const PRIME_REACT_DATATABLE_SQL_DATA_PROVIDER_NAME = 'PrimeReactDatatableSqlData
 export class DashboardQuestionService extends CRUDService<DashboardQuestion> {
   private readonly logger = new Logger(this.constructor.name);
   constructor(
-    readonly modelMetadataService: ModelMetadataService,
-    readonly moduleMetadataService: ModuleMetadataService,
-    readonly configService: ConfigService,
-    readonly fileService: FileService,
-    readonly discoveryService: DiscoveryService,
-    readonly crudHelperService: CrudHelperService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(DashboardQuestion, 'default')
@@ -46,7 +33,7 @@ export class DashboardQuestionService extends CRUDService<DashboardQuestion> {
     readonly moduleRef: ModuleRef,
     readonly solidRegistry: SolidRegistry, // Assuming solidRegistry is injected for data providers
   ) {
-    super(modelMetadataService, moduleMetadataService, configService, fileService, discoveryService, crudHelperService, entityManager, repo, 'dashboardQuestion', 'solid-core', moduleRef);
+    super(entityManager, repo, 'dashboardQuestion', 'solid-core', moduleRef);
   }
 
   // Get the data for a specific question 

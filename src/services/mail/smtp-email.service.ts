@@ -1,12 +1,13 @@
 import { Inject, Injectable, Logger } from '@nestjs/common';
 import { ConfigType } from '@nestjs/config';
 import Handlebars from "handlebars";
-import commonConfig from 'src/config/common.config';
 import { MailProvider } from 'src/decorators/mail-provider.decorator';
 import { QueueMessage } from 'src/interfaces/mq';
 import { IMail, MailAttachment, MailAttachmentWrapper } from "../../interfaces";
 import { EmailTemplateService } from '../email-template.service';
 import { PublisherFactory } from '../queues/publisher-factory.service';
+import { SettingService } from '../setting.service';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 const nodemailer = require("nodemailer");
 
@@ -17,20 +18,27 @@ export class SMTPEMailService implements IMail {
     private readonly transporter: any;
 
     constructor(
-        @Inject(commonConfig.KEY)
-        private readonly commonConfiguration: ConfigType<typeof commonConfig>,
         // private readonly emailPublisher: EmailQueuePublisher,
         // private readonly emailDbPublisher: EmailQueueDbPublisher,
         private readonly publisherFactory: PublisherFactory<any>,
         private readonly emailTemplateService: EmailTemplateService,
+        private readonly settingService: SettingService
+
     ) {
+
+        const host = process.env.COMMON_SMTP_EMAIL_SMTP_HOST;
+        const port = +(process.env.COMMON_SMTP_EMAIL_SMTP_PORT ?? 587);
+        const username = process.env.COMMON_SMTP_EMAIL_USERNAME;
+        const password = process.env.COMMON_SMTP_EMAIL_PASSWORD;
+        const from = process.env.COMMON_SMTP_EMAIL_FROM ?? process.env.COMMON_EMAIL_FROM;
+
         this.transporter = nodemailer.createTransport({
-            host: this.commonConfiguration.smtpMail.host,
-            port: this.commonConfiguration.smtpMail.port,
-            secure: this.commonConfiguration.smtpMail.port === 465,
+            host: host,
+            port: port,
+            secure: port === 465,
             auth: {
-                user: this.commonConfiguration.smtpMail.username,
-                pass: this.commonConfiguration.smtpMail.password
+                user: username,
+                pass: password
             }
         });
     }
@@ -81,7 +89,7 @@ export class SMTPEMailService implements IMail {
     ) {
         const message = {
             payload: {
-                from: from || this.commonConfiguration.smtpMail.from,
+                from: from || this.settingService.getConfigValue<SolidCoreSetting>("smtpMailFrom"),
                 to: to,
                 subject: subject,
                 body: body,
@@ -98,7 +106,7 @@ export class SMTPEMailService implements IMail {
             return this.sendEmailAsynchronously(message);
         }
         // If developer has not, however system config mandates that we send using queue, still we send.
-        else if (shouldQueueEmails == false && this.commonConfiguration.shouldQueueEmails === true) {
+        else if (shouldQueueEmails == false && this.settingService.getConfigValue<SolidCoreSetting>("shouldQueueEmails") === true) {
             return this.sendEmailAsynchronously(message);
         }
         // Else we send synchronously
@@ -117,7 +125,7 @@ export class SMTPEMailService implements IMail {
         let from;
         const { to, subject, body, attachments = [], cc, bcc } = message.payload;
 
-        const envFrom = this.commonConfiguration.smtpMail.from;
+        const envFrom = this.settingService.getConfigValue<SolidCoreSetting>("smtpMailFrom");
         if (envFrom) {
             from = envFrom;
         }

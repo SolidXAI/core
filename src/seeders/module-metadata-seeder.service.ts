@@ -1,3 +1,4 @@
+
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -7,7 +8,6 @@ import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
 import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
-import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
 import { DashboardRepository } from 'src/repository/dashboard.repository';
 import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
@@ -17,15 +17,13 @@ import { ListOfValuesService } from 'src/services/list-of-values.service';
 import { SettingService } from 'src/services/setting.service';
 import { SmsTemplateService } from 'src/services/sms-template.service';
 import { UserService } from 'src/services/user.service';
-import { DataSource, In, Repository } from 'typeorm';
-import appBuilderConfig from '../config/app-builder.config';
+import { DataSource, In } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
-import { getDynamicModuleNames, getDynamicModuleNamesBasedOnMetadata } from '../helpers/module.helper';
+import { getDynamicModuleNamesBasedOnMetadata } from '../helpers/module.helper';
 import { SolidRegistry } from '../helpers/solid-registry';
 import { ActionMetadataService } from '../services/action-metadata.service';
 import { FieldMetadataService } from '../services/field-metadata.service';
-import { MediaStorageProviderMetadataSeederService } from '../services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from '../services/media-storage-provider-metadata.service';
 import { ModelMetadataService } from '../services/model-metadata.service';
 import { ModuleMetadataService } from '../services/module-metadata.service';
@@ -35,7 +33,7 @@ import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata, SignUpDto } from 'src';
-import { ADMIN_ROLE_NAME, INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS, PUBLIC_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
+import { ADMIN_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
@@ -62,7 +60,6 @@ export class ModuleMetadataSeederService {
         private readonly authenticationService: AuthenticationService,
         private readonly solidActionService: ActionMetadataService,
         private readonly solidViewService: ViewMetadataService,
-        private readonly mediaStorageProviderSeederService: MediaStorageProviderMetadataSeederService,
         private readonly emailTemplateService: EmailTemplateService,
         private readonly smsTemplateService: SmsTemplateService,
         private readonly listOfValuesService: ListOfValuesService,
@@ -102,8 +99,10 @@ export class ModuleMetadataSeederService {
 
         if (conf && Array.isArray(conf.modulesToSeed)) {
             modulesToSeed = conf.modulesToSeed;
+            console.log(`▶ Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
             this.logger.log(`Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
         } else {
+            console.log(`▶ No modulesToSeed provided. Seeding ALL modules.`);
             this.logger.log(`No modulesToSeed provided. Seeding ALL modules.`);
         }
 
@@ -124,69 +123,81 @@ export class ModuleMetadataSeederService {
         for (let i = 0; i < filteredSeedDataFiles.length; i++) {
             const overallMetadata = filteredSeedDataFiles[i];
             const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
+            console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
             this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
 
             // Process module metadata first. 
+            console.log(`▶ [${moduleMetadata.name}] Seeding Module / Model / Fields`);
             this.logger.log(`Seeding Module / Model / Fields`);
             await this.seedModuleModelFields(moduleMetadata);
 
             // Media Storage provider templates
+            console.log(`▶ [${moduleMetadata.name}] Seeding Media Storage Providers`);
             this.logger.log(`Seeding Media Storage Providers`);
             await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
 
             // Custom role handling
+            console.log(`▶ [${moduleMetadata.name}] Seeding Roles`);
             this.logger.log(`Seeding Roles`);
             await this.seedRoles(overallMetadata);
 
             // Custom user handling
+            console.log(`▶ [${moduleMetadata.name}] Seeding Users`);
             this.logger.log(`Seeding Users`);
             await this.seedUsers(overallMetadata);
 
             // Application Module View handling 
+            console.log(`▶ [${moduleMetadata.name}] Seeding Views`);
             this.logger.log(`Seeding Views`);
             await this.seedViews(overallMetadata);
 
             // Application Module Action handling
+            console.log(`▶ [${moduleMetadata.name}] Seeding Actions`);
             this.logger.log(`Seeding Actions`);
             await this.seedActions(overallMetadata);
 
             // Application Module Menu handling 
+            console.log(`▶ [${moduleMetadata.name}] Seeding Menus`);
             this.logger.log(`Seeding Menus`);
             await this.seedMenus(overallMetadata);
 
             // Email templates 
+            console.log(`▶ [${moduleMetadata.name}] Seeding Email Templates`);
             this.logger.log(`Seeding Email Templates`);
             await this.seedEmailTemplates(overallMetadata, moduleMetadata.name);
 
             // Sms templates
+            console.log(`▶ [${moduleMetadata.name}] Seeding Sms Templates`);
             this.logger.log(`Seeding Sms Templates`);
             await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
 
-            // Settings
-            this.logger.log(`Seeding Default Settings`);
-            await this.seedDefaultSettings();
-
             // Security rules
+            console.log(`▶ [${moduleMetadata.name}] Seeding Security Rules`);
             this.logger.log(`Seeding Security Rules`);
             await this.seedSecurityRules(overallMetadata);
 
             // List Of Values
+            console.log(`▶ [${moduleMetadata.name}] Seeding List Of Values`);
             this.logger.log(`Seeding List Of Values`);
             await this.seedListOfValues(moduleMetadata, overallMetadata);
 
             // Dashboards
+            console.log(`▶ [${moduleMetadata.name}] Seeding Dashboards`);
             this.logger.log(`Seeding Dashboards`);
             await this.seedDashboards(moduleMetadata, overallMetadata);
 
             // Scheduled Jobs
+            console.log(`▶ [${moduleMetadata.name}] Seeding Scheduled Jobs`);
             this.logger.log(`Seeding Scheduled Jobs`);
             await this.seedScheduledJobs(moduleMetadata, overallMetadata);
 
             // Saved Filters
+            console.log(`▶ [${moduleMetadata.name}] Seeding Saved Filters`);
             this.logger.log(`Seeding Saved Filters`);
             await this.seedSavedFilters(moduleMetadata, overallMetadata);
 
             // Model Sequences
+            console.log(`▶ [${moduleMetadata.name}] Seeding Model Sequences`);
             this.logger.log(`Seeding Model Sequences`);
             await this.seedModelSequences(overallMetadata);
 
@@ -197,7 +208,7 @@ export class ModuleMetadataSeederService {
         await this.setupDefaultRolesWithPermissions();
 
         // Add a console log indicating seeding is finished. This needs to be console.log so that it looks proper when this code is run via CLI.
-        console.log(`Seeding completed.`);
+        console.log(`✔ Seeding completed.`);
         //this.logger.log(`All Seeders finished`);
 
         //FIXME: Handle displaying the created users credentials in a better way.
@@ -239,11 +250,13 @@ export class ModuleMetadataSeederService {
     private async setupDefaultRolesWithPermissions() {
         this.logger.debug(`About to add all permissions to the Admin role`);
         await this.roleService.addAllPermissionsToRole(ADMIN_ROLE_NAME);
+
         // 2. Give  permissions to the Internal / Public role.
-        this.logger.debug(`About to add all permissions to the Internal role`);
-        await this.roleService.addPermissionToRole(INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS);
-        this.logger.debug(`About to add all permissions to the Public role`);
-        await this.roleService.addPermissionToRole(PUBLIC_ROLE_NAME, ['SettingController.wrapSettings', 'AuthenticationController.logout']);
+        // this.logger.debug(`About to add all permissions to the Internal role`);
+        // await this.roleService.addPermissionToRole(INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS);
+
+        // this.logger.debug(`About to add all permissions to the Public role`);
+        // await this.roleService.addPermissionToRole(PUBLIC_ROLE_NAME, ['SettingController.wrapSettings', 'AuthenticationController.logout']);
     }
 
     private async seedSecurityRules(overallMetadata: any) {
@@ -256,7 +269,7 @@ export class ModuleMetadataSeederService {
     // Ok
     private async seedDefaultSettings() {
         this.logger.debug(`[Start] Processing settings`);
-        await this.settingService.seedDefaultSettings();
+        await this.settingService.seedSystemAdminEditableAndAboveSettings();
         this.logger.debug(`[End] Processing settings`);
     }
 
@@ -347,11 +360,16 @@ export class ModuleMetadataSeederService {
         this.logger.log(`Seeding Permissions`);
         await this.seedPermissions();
 
-        this.logger.log(`Seeding Default Media Storage Providers`);
-        await this.seedDefaultMediaStorageProviders();
+        // this.logger.log(`Seeding Default Media Storage Providers`);
+        // await this.seedDefaultMediaStorageProviders();
 
         this.logger.log(`Seeding System Fields Metadata`);
         await this.seedDefaultSystemFields();
+
+        // Settings
+        this.logger.log(`Seeding Default Settings`);
+        await this.seedDefaultSettings();
+
 
         this.logger.debug(`Global metadata seeding completed`);
     }
@@ -409,9 +427,9 @@ export class ModuleMetadataSeederService {
     }
 
     // OK
-    private async seedDefaultMediaStorageProviders() {
-        await this.mediaStorageProviderSeederService.seed();
-    }
+    // private async seedDefaultMediaStorageProviders() {
+    //     await this.mediaStorageProviderSeederService.seed();
+    // }
 
     // OK
     private async seedMediaStorageProviders(mediaStorageProviders: any[]) {
@@ -815,12 +833,6 @@ export class ModuleMetadataSeederService {
         this.logger.debug(`[End] Processing module metadata`);
     }
 
-    private async seedSettings(createDto: CreateSettingDto) {
-        const settingsArray: any[] = await this.settingsRepo.find();
-        if (!settingsArray || settingsArray.length === 0) {
-            this.settingService.create(createDto);
-        }
-    }
 
     private async handleSeedSecurityRules(rulesDto: CreateSecurityRuleDto[]) {
         if (!rulesDto || rulesDto.length === 0) {

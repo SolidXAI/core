@@ -3,6 +3,7 @@ import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
 import { DataSource, EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
 import { ConfigService } from '@nestjs/config';
@@ -25,6 +26,7 @@ import { DisallowInProduction } from 'src/decorators/disallow-in-production.deco
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import Module from 'module';
 import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
+import { SettingService } from './setting.service';
 
 @Injectable()
 export class ModuleMetadataService {
@@ -40,6 +42,8 @@ export class ModuleMetadataService {
     private readonly schematicService: SchematicService,
     private readonly configService: ConfigService,
     private readonly fileService: FileService,
+    private readonly settingService: SettingService,
+
     private readonly permissionsSeederService: PermissionMetadataSeederService,
     @Inject(forwardRef(() => ModelMetadataService))
     private readonly modelMetadataService: ModelMetadataService,
@@ -77,6 +81,10 @@ export class ModuleMetadataService {
       records: entities
     };
     return r
+  }
+
+  async find(basicFilterDto: BasicFilterDto) {
+    return this.findMany(basicFilterDto);
   }
 
   async findOneByUserKey(name: string, relations = {}) {
@@ -125,7 +133,7 @@ export class ModuleMetadataService {
 
   async createInDB(manager: EntityManager, createDto: CreateModuleMetadataDto, files: Express.Multer.File[] = []) {
     if (files.length > 0) {
-      const fileStoragePath = this.getFileSysytemFullFilePath(this.getFileName(files[0]));
+      const fileStoragePath = await this.getFileSysytemFullFilePath(this.getFileName(files[0]));
       this.fileService.copyFile(files[0].path, fileStoragePath);
       this.fileService.deleteFile(files[0].path);
       createDto.menuIconUrl = fileStoragePath;
@@ -230,7 +238,7 @@ export class ModuleMetadataService {
     }
     if (files.length > 0) {
 
-      const fileStoragePath = this.getFileSysytemFullFilePath(this.getFileName(files[0]));
+      const fileStoragePath = await this.getFileSysytemFullFilePath(this.getFileName(files[0]));
       this.fileService.copyFile(files[0].path, fileStoragePath);
       this.fileService.deleteFile(files[0].path);
       module.menuIconUrl = fileStoragePath;
@@ -455,8 +463,9 @@ export class ModuleMetadataService {
     return outputLines.join('\n');
   }
 
-  private getFileSysytemFullFilePath(fileName: string): string {
-    return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
+  private async getFileSysytemFullFilePath(fileName: string): Promise<string> {
+    const fileStorageDir = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
+    return `${fileStorageDir}/${fileName}`;
   }
 
   private getFileName(file: Express.Multer.File): string {
