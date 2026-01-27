@@ -2613,7 +2613,8 @@
               "Hourly:Hourly",
               "Daily:Daily",
               "Weekly:Weekly",
-              "Monthly:Monthly"
+              "Monthly:Monthly",
+              "Custom:Custom"
             ],
             "selectionValueType": "string",
             "required": true,
@@ -2786,6 +2787,19 @@
             "selectionValueType": "string",
             "selectionDynamicProvider": "ListOfScheduledJobsSelectionProvider",
             "selectionDynamicProviderCtxt": "{}"
+          },
+          {
+            "name": "cronExpression",
+            "displayName": "Cron Expression",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
           },
           {
             "name": "module",
@@ -10304,6 +10318,12 @@
                                 "type": "field",
                                 "attrs": {
                                   "name": "frequency"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "cronExpression"
                                 }
                               },
                               {

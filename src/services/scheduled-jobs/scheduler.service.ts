@@ -6,6 +6,7 @@ import { ScheduledJob } from 'src/entities/scheduled-job.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
 import { ISchedulerService } from './scheduler.interface';
+import { CronExpressionParser } from 'cron-parser';
 
 @Injectable()
 export class SchedulerServiceImpl implements ISchedulerService {
@@ -93,6 +94,13 @@ export class SchedulerServiceImpl implements ISchedulerService {
             if (timeNow > jobEnd) return false;
         }
 
+        // 3. Check custom frequency
+        if (job.frequency.toLowerCase() === 'custom') {
+            // Custom cron expressions handle their own scheduling logic
+            // Just check if nextRunAt is due, which was already checked in the query
+            return true;
+        }
+
         // 3. Check dayOfWeek (for weekly)
         if (job.frequency.toLowerCase() === 'weekly' && job.dayOfWeek) {
             const todayName = now.toLocaleString('en-US', { weekday: 'long' }); // e.g., "Monday"
@@ -108,6 +116,30 @@ export class SchedulerServiceImpl implements ISchedulerService {
         }
 
         return true;
+    }
+
+    private computeNextRunForCustomCron(job: ScheduledJob, from: Date): Date {
+        const base = new Date(from);
+
+        if (!job.cronExpression) {
+            this.logger.error(`Custom frequency requires cronExpression for job ${job.scheduleName}`);
+            // Fallback to daily if cron expression is missing
+            return new Date(base.getTime() + 24 * 60 * 60 * 1000);
+        }
+
+        try {
+            const interval = CronExpressionParser.parse(job.cronExpression, {
+                currentDate: from,
+                tz: 'UTC'
+            });
+            const nextRun = interval.next().toDate();
+            this.logger.log(`Custom cron '${job.cronExpression}' next run: ${nextRun}`);
+            return nextRun;
+        } catch (error) {
+            this.logger.error(`Invalid cron expression for job ${job.scheduleName}: ${job.cronExpression}`, error);
+            // Fallback to daily if cron parsing fails
+            return new Date(base.getTime() + 24 * 60 * 60 * 1000);
+        }
     }
 
     private computeNextRunAt(job: ScheduledJob, from: Date): Date {
@@ -128,9 +160,8 @@ export class SchedulerServiceImpl implements ISchedulerService {
                 const next = new Date(base);
                 next.setMonth(base.getMonth() + 1);
                 return next;
-            // case 'custom':
-            //     // Optional: let job handler decide via metadata or registry
-            //     return new Date(base.getTime() + 24 * 60 * 60 * 1000);
+            case 'custom':
+                return this.computeNextRunForCustomCron(job, from);
             default:
                 return new Date(base.getTime() + 24 * 60 * 60 * 1000);
         }
