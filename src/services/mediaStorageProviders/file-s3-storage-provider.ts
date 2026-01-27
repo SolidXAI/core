@@ -1,12 +1,12 @@
-import { Inject, Injectable, Logger } from "@nestjs/common";
-import { ConfigService, ConfigType } from "@nestjs/config";
+import { Injectable, Logger } from "@nestjs/common";
+import { ConfigService } from "@nestjs/config";
 import { CommonEntity } from "src/entities/common.entity";
 import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { LegacyCommonEntity } from "src/entities/legacy-common.entity";
 import { LegacyCommonWithIdEntity } from "src/entities/legacy-common-with-id.entity";
 import { Media } from "src/entities/media.entity";
 import { MediaStorageProvider } from "src/interfaces";
-import { FileService } from "src/services/file.service";
+import { DiskFileService, S3FileService } from "src/services/file";
 import { Readable } from "stream";
 import { MediaRepository } from "src/repository/media.repository";
 
@@ -15,10 +15,9 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
     private logger = new Logger(FileS3StorageProvider.name);
 
     constructor(
-        // @Inject(appBuilderConfig.KEY)
-        // private readonly appBuilderConfiguration: ConfigType<typeof appBuilderConfig>,
         private readonly configService: ConfigService,
-        readonly fileService: FileService,
+        readonly diskFileService: DiskFileService,
+        readonly s3FileService: S3FileService,
         readonly mediaRepository: MediaRepository,
     ) { }
 
@@ -44,7 +43,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             if (storageMeta.isPublic === false) {
                 // Generate signed URL
                 const expiryInSeconds = (storageMeta.signedUrlExpiry ?? 60) * 60; // default 5 min
-                m['_full_url'] = await this.fileService.getSignedUrl(m.relativeUri, expiryInSeconds, storageMeta?.bucketName);
+                m['_full_url'] = await this.s3FileService.getUrl(`${storageMeta?.bucketName}:${m.relativeUri}`, { expiresIn: expiryInSeconds });
             } else {
                 // Public S3 or local filesystem: use normal URL
                 m['_full_url'] = this.getFullFilePath(m);
@@ -68,14 +67,16 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         const result: Media[] = [];
         for (const file of files) {
             const fileName = this.getFileName(file);
-            // Store the file in the configured S3 Bucket
-            let awsFileUrl;
-            if (mediaFieldMetadata.mediaStorageProvider.isPublic === true) {
-                awsFileUrl = await this.fileService.copyToS3WithPublic(file.path, file.mimetype, fileName, mediaFieldMetadata.mediaStorageProvider.bucketName,);
-            } else {
-                awsFileUrl = await this.fileService.copyToS3(file.path, file.mimetype, fileName, mediaFieldMetadata.mediaStorageProvider.bucketName,);
-            }
-            await this.fileService.deleteFile(file.path);
+            const bucketName = mediaFieldMetadata.mediaStorageProvider.bucketName;
+
+            // Read file from disk and upload to S3
+            const fileData = await this.diskFileService.read(file.path);
+            await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { contentType: file.mimetype });
+
+            // Delete temp file from disk
+            await this.diskFileService.delete(file.path);
+
+            const awsFileUrl = fileName;
 
             // Create an entry in the media table
             const mediaEntity = await this.mediaRepository.createMedia({
@@ -106,9 +107,10 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         // @ts-ignore
         this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
-        existingMedia.forEach(media => {
-            this.fileService.deleteFromS3(media.relativeUri, mediaFieldMetadata.mediaStorageProvider.bucketName); //TODO
-        });
+        for (const media of existingMedia) {
+            const bucketName = mediaFieldMetadata.mediaStorageProvider.bucketName;
+            await this.s3FileService.delete(`${bucketName}:${media.relativeUri}`);
+        }
     }
 
     //TODO: Move this to a app builder config

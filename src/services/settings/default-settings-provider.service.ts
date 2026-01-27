@@ -50,6 +50,7 @@ const getSolidCoreSettings = (isProd: boolean) => ([
   { moduleName: "solid-core", key: "moduleMetadataSeederFiles", value: process.env.AB_MODULE_METADATA_SEEDER_FILES ?? '', level: SettingLevel.SystemAdminReadonly },
   { moduleName: "solid-core", key: "uploadDir", value: process.env.AB_MEDIA_UPLOAD_DIR ?? DEFAULT_MEDIA_UPLOAD_DIR, level: SettingLevel.SystemAdminReadonly },
   { moduleName: "solid-core", key: "fileStorageDir", value: process.env.AB_MEDIA_FILE_STORAGE_DIR ?? DEFAULT_MEDIA_FILE_STORAGE_DIR, level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "defaultFileService", value: process.env.DEFAULT_FILE_SERVICE ?? 'disk', level: SettingLevel.SystemAdminReadonly },
 
   // aws-s3-settings-provider.service.ts
   { moduleName: "solid-core", key: "S3_AWS_ACCESS_KEY", value: process.env.S3_AWS_ACCESS_KEY, level: SettingLevel.SystemEnv },

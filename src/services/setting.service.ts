@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
@@ -6,7 +6,7 @@ import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
 import { User } from 'src/entities/user.entity';
 import { SettingRepository } from '../repository/setting.repository';
-import { FileService } from '../services/file.service';
+import { FILE_SERVICE, IFileService } from './file';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
@@ -29,7 +29,7 @@ export class SettingService {
   ]);
 
   constructor(
-    readonly fileService: FileService,
+    @Inject(FILE_SERVICE) readonly fileService: IFileService,
     readonly solidRegistry: SolidRegistry,
     readonly repo: SettingRepository,
     readonly moduleMetadataRepo: ModuleMetadataRepository,
@@ -252,8 +252,8 @@ export class SettingService {
         const baseUrl = this.getConfigValue<SolidCoreSetting>("baseUrl") || '';
         const fileUrl = `${baseUrl}/${storagePath}`;
 
-        await this.fileService.copyFile(file.path, storagePath);
-        await this.fileService.deleteFile(file.path);
+        await this.fileService.copy(file.path, storagePath);
+        await this.fileService.delete(file.path);
 
         const matchedDto = settings.find(dto => dto.key === settingKey);
         const settingType = matchedDto?.type ?? 'system';

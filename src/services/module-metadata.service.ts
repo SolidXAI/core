@@ -10,7 +10,7 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import * as path from 'path'; // To handle file paths
 import { PermissionMetadataSeederService } from 'src/seeders/permission-metadata-seeder.service';
-import { FileService } from 'src/services/file.service';
+import { DiskFileService } from 'src/services/file';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { UpdateModuleMetadataDto } from '../dtos/update-module-metadata.dto';
 import {
@@ -41,7 +41,7 @@ export class ModuleMetadataService {
     private readonly crudHelperService: CrudHelperService,
     private readonly schematicService: SchematicService,
     private readonly configService: ConfigService,
-    private readonly fileService: FileService,
+    private readonly fileService: DiskFileService,
     private readonly settingService: SettingService,
 
     private readonly permissionsSeederService: PermissionMetadataSeederService,
@@ -134,8 +134,8 @@ export class ModuleMetadataService {
   async createInDB(manager: EntityManager, createDto: CreateModuleMetadataDto, files: Express.Multer.File[] = []) {
     if (files.length > 0) {
       const fileStoragePath = await this.getFileSysytemFullFilePath(this.getFileName(files[0]));
-      this.fileService.copyFile(files[0].path, fileStoragePath);
-      this.fileService.deleteFile(files[0].path);
+      this.fileService.copy(files[0].path, fileStoragePath);
+      this.fileService.delete(files[0].path);
       createDto.menuIconUrl = fileStoragePath;
     }
     const moduleMetadata = this.moduleMetadataRepo.create(createDto);
@@ -239,8 +239,8 @@ export class ModuleMetadataService {
     if (files.length > 0) {
 
       const fileStoragePath = await this.getFileSysytemFullFilePath(this.getFileName(files[0]));
-      this.fileService.copyFile(files[0].path, fileStoragePath);
-      this.fileService.deleteFile(files[0].path);
+      this.fileService.copy(files[0].path, fileStoragePath);
+      this.fileService.delete(files[0].path);
       module.menuIconUrl = fileStoragePath;
     }
     return manager.save(ModuleMetadata, module);

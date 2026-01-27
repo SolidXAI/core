@@ -27,6 +27,12 @@ export interface IFileService {
   read(path: string): Promise<Buffer>;
 
   /**
+   * Read file contents as a stream
+   * @param path - File path (disk) or key (S3)
+   */
+  readStream(path: string): Promise<Readable>;
+
+  /**
    * Write data to a file
    * @param path - File path (disk) or key (S3)
    * @param data - Content to write
