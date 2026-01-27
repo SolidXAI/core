@@ -88,7 +88,7 @@ export class ModuleMetadataSeederService {
         // Module specific seeding steps.
         // Get all the module metadata files which needs to be seeded.
         const seedDataFiles = this.seedDataFiles;
-        this.logger.debug(`Seed data files are: ${seedDataFiles}`);
+        this.logger.debug(`Found seed data for modules: ${seedDataFiles.map(s => s.moduleMetadata?.name)}`);
 
         /** -------------------------------------------------------------
          * Selective module seeding via: 
@@ -274,10 +274,10 @@ export class ModuleMetadataSeederService {
     }
 
     private async seedSmsTemplates(overallMetadata: any, moduleName: string) {
-        this.logger.debug(`[Start] Processing sms templates`);
-        const smsTemplates: CreateSmsTemplateDto[] = overallMetadata.smsTemplates;
-        await this.handleSeedSmsTemplates(smsTemplates, moduleName);
-        this.logger.debug(`[End] Processing sms templates`);
+        // this.logger.debug(`[Start] Processing sms templates`);
+        // const smsTemplates: CreateSmsTemplateDto[] = overallMetadata.smsTemplates;
+        // await this.handleSeedSmsTemplates(smsTemplates, moduleName);
+        // this.logger.debug(`[End] Processing sms templates`);
     }
 
     // OK

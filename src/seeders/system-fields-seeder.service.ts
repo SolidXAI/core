@@ -53,5 +53,8 @@ export class SystemFieldsSeederService {
       }));
       await this.fieldMetadataRepository.save(newFields);
     }
+    else {
+      this.logger.debug(`No missing system fields for model: ${model.singularName}`);
+    }
   }
 }
