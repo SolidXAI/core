@@ -11,6 +11,21 @@ export class CommandService {
   private readonly logger = new Logger(CommandService.name);
 
   /**
+   * Escape an argument for Windows CMD shell
+   * Wraps in double quotes and escapes internal double quotes
+   */
+  private escapeArgForWindows(arg: string): string {
+    // If arg contains special characters, wrap in double quotes
+    // and escape internal double quotes with backslash
+    if (/[{}\s"^&|<>]/.test(arg)) {
+      // Escape internal double quotes with backslash for CMD
+      const escaped = arg.replace(/"/g, '\\"');
+      return `"${escaped}"`;
+    }
+    return arg;
+  }
+
+  /**
    * Execute a command with arguments array (cross-platform compatible)
    */
   async executeCommandWithArgs(commandWithArgs: CommandWithArgs): Promise<string> {
@@ -20,11 +35,12 @@ export class CommandService {
     return new Promise<string>((resolve, reject) => {
       const isWindows = process.platform === 'win32';
 
-      // On Windows, we need to use cmd /c for commands that might be .cmd files (like npm scripts)
-      const spawnCommand = isWindows ? command : command;
-      const spawnArgs = args;
+      // On Windows with shell: true, we need to escape args containing special characters
+      const spawnArgs = isWindows
+        ? args.map(arg => this.escapeArgForWindows(arg))
+        : args;
 
-      const child = spawn(spawnCommand, spawnArgs, {
+      const child = spawn(command, spawnArgs, {
         shell: isWindows, // Use shell on Windows to handle .cmd files
         stdio: ['pipe', 'pipe', 'pipe'],
       });
