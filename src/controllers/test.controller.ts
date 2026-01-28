@@ -44,22 +44,4 @@ export class TestController {
     await this.ingestMetadataService.ingest();
     return { ok: true };
   }
-
-  // @Public()
-  // @Post('seed')
-  // async seedData(@Body() seedData: any) {
-  //   const seeder = this.solidRegistry
-  //     .getSeeders()
-  //     .filter((seeder) => seeder.name === seedData.seeder)
-  //     .map((seeder) => seeder.instance)
-  //     .pop();
-  //   if (!seeder) {
-  //     this.logger.error(`Seeder service ${seedData.seeder} not found. Does your service have a seed() method?`);
-  //     return;
-  //   }
-  //   this.logger.log(`Running the seed() method for seeder :${seeder.constructor.name}`);
-  //   await seeder.seed();
-  //   return { message: `seed data for ${seedData.seeder}` };
-  // }
-
 }

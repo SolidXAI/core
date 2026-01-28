@@ -42,7 +42,7 @@ export class SeedCommand extends CommandRunner {
       this.logger.error(`Seeder service ${options.seeder} not found. Does your service have a seed() method?`);
       return;
     }
-    this.logger.log(`Running the seed() method for seeder :${seeder.constructor.name}`);
+    this.logger.log(`Running the seed() method for seeder: ${seeder.constructor.name}`);
     await seeder.seed(parsedConf);
   }
 

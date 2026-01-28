@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { snakeCase } from "lodash";
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
-import { CommandService } from './command.service';
+import { CommandService, CommandWithArgs } from './command.service';
 import { SolidRegistry } from './solid-registry';
 
 export const ADD_MODULE_COMMAND = 'add-module';
@@ -17,7 +17,7 @@ type ModelAndFieldGenerationOptions = {
   table?: string;
   dataSource: string;
   modelEnableSoftDelete?: boolean;
-  parentModel?: string; 
+  parentModel?: string;
   parentModule?: string;
   draftPublishWorkflowEnabled?: boolean;
   isLegacyTable?: boolean;
@@ -33,6 +33,8 @@ export const REFRESH_MODEL_COMMAND = 'refresh-model';
 export class SchematicService {
   private readonly logger = new Logger(SchematicService.name);
   private readonly SCHEMATIC_PROJECT = '@solidstarters/solid-code-builder';
+  private readonly SCHEMATICS_COMMAND = 'schematics';
+
   constructor(private readonly commandService: CommandService, private readonly solidRegistry: SolidRegistry) { }
 
   async executeSchematicCommand(
@@ -40,91 +42,95 @@ export class SchematicService {
     options: GenerateModuleOptions | ModelAndFieldGenerationOptions,
     debug = false,
   ): Promise<string> {
-    return await this.commandService.executeCommand(
-      this.generateSchematicCommand(command, options, debug),
-    );
+    const commandWithArgs = this.generateSchematicCommand(command, options, debug);
+    return await this.commandService.executeCommandWithArgs(commandWithArgs);
   }
 
   private generateSchematicCommand(
     command: string,
     options: GenerateModuleOptions | ModelAndFieldGenerationOptions,
     debug: boolean,
-  ): string {
-    const baseCommand = `schematics ${this.SCHEMATIC_PROJECT}:${command} --debug=${debug}`;
+  ): CommandWithArgs {
+    const schematicName = `${this.SCHEMATIC_PROJECT}:${command}`;
+    const baseArgs = [schematicName, `--debug=${debug}`];
+
     if (
       command === REMOVE_FIELDS_COMMAND ||
       command === REFRESH_MODEL_COMMAND
     ) {
-      const {fields, ...modelSpecificOptions} = options as ModelAndFieldGenerationOptions;
-      const modelCommand = this.buildModelGenerationCommand(baseCommand, modelSpecificOptions);
-      const fieldCommand = this.buildFieldGenerationCommand(fields);
-      const schematicCommand = modelCommand + ' ' + fieldCommand;
-      this.logger.debug('schematicCommand', schematicCommand);
-      return schematicCommand;
+      const { fields, ...modelSpecificOptions } = options as ModelAndFieldGenerationOptions;
+      const modelArgs = this.buildModelGenerationArgs(modelSpecificOptions);
+      const fieldArgs = this.buildFieldGenerationArgs(fields);
+      const args = [...baseArgs, ...modelArgs, ...fieldArgs];
+      this.logger.debug('schematicCommand args', args);
+      return { command: this.SCHEMATICS_COMMAND, args };
     } else if (command === ADD_MODULE_COMMAND) {
       const moduleOptions = options as GenerateModuleOptions;
-      const schematicCommand = ` ${baseCommand} --module=${moduleOptions.module}`;
-      this.logger.debug('schematicCommand', schematicCommand);
-      return schematicCommand;
+      const args = [...baseArgs, `--module=${moduleOptions.module}`];
+      this.logger.debug('schematicCommand args', args);
+      return { command: this.SCHEMATICS_COMMAND, args };
     } else {
       throw new Error('Schematic command not supported.');
     }
   }
 
-  private buildFieldGenerationCommand(fields: FieldMetadata[]) {
+  private buildFieldGenerationArgs(fields: FieldMetadata[]): string[] {
     return fields
       .filter((field) => {
         return !this.solidRegistry.getCommonEntityKeys().map(key => key.toString()).includes(field.name);
       })
       .map((field) => {
-        return `--fields='${JSON.stringify(field).replace(/'/g, "\\'")}'`;
-      })
-      .join(' ');
+        // Using argument array eliminates the need for shell-specific quoting
+        return `--fields=${JSON.stringify(field)}`;
+      });
   }
 
-  private buildModelGenerationCommand(baseCommand: string, modelSpecificOptions: ModelGenerationOptions): string {
-    let modelCommand = `${baseCommand} --module=${modelSpecificOptions.module} --model=${modelSpecificOptions.model}`;
+  private buildModelGenerationArgs(modelSpecificOptions: ModelGenerationOptions): string[] {
+    const args: string[] = [
+      `--module=${modelSpecificOptions.module}`,
+      `--model=${modelSpecificOptions.model}`,
+    ];
 
-    // Make below options code generate i.e if option exists then add to command with proper casing
     if (modelSpecificOptions.moduleDisplayName) {
-      modelCommand += ` --module-display-name=${snakeCase(modelSpecificOptions.moduleDisplayName)}`;
+      args.push(`--module-display-name=${snakeCase(modelSpecificOptions.moduleDisplayName)}`);
     }
 
     if (modelSpecificOptions.table) {
-      modelCommand += ` --table=${modelSpecificOptions.table}`;
+      args.push(`--table=${modelSpecificOptions.table}`);
     }
 
     if (modelSpecificOptions.dataSource) {
-      modelCommand += ` --data-source=${modelSpecificOptions.dataSource}`;
+      args.push(`--data-source=${modelSpecificOptions.dataSource}`);
     }
 
     if (modelSpecificOptions.modelEnableSoftDelete) {
-      modelCommand += ` --model-enable-soft-delete=${modelSpecificOptions.modelEnableSoftDelete}`;
+      args.push(`--model-enable-soft-delete=${modelSpecificOptions.modelEnableSoftDelete}`);
     }
 
     if (modelSpecificOptions.parentModel) {
-      modelCommand += ` --parent-model=${modelSpecificOptions.parentModel}`;
+      args.push(`--parent-model=${modelSpecificOptions.parentModel}`);
     }
+
     if (modelSpecificOptions.parentModule) {
-      modelCommand += ` --parent-module=${modelSpecificOptions.parentModule}`;
+      args.push(`--parent-module=${modelSpecificOptions.parentModule}`);
     }
 
     if (modelSpecificOptions.draftPublishWorkflowEnabled) {
-      modelCommand += ` --draft-publish-workflow-enabled=${modelSpecificOptions.draftPublishWorkflowEnabled}`;
+      args.push(`--draft-publish-workflow-enabled=${modelSpecificOptions.draftPublishWorkflowEnabled}`);
     }
 
     if (modelSpecificOptions.isLegacyTable) {
-      modelCommand += ` --is-legacy-table=${modelSpecificOptions.isLegacyTable}`;
+      args.push(`--is-legacy-table=${modelSpecificOptions.isLegacyTable}`);
     }
 
     if (modelSpecificOptions.isLegacyTableWithId) {
-      modelCommand += ` --is-legacy-table-with-id=${modelSpecificOptions.isLegacyTableWithId}`;
+      args.push(`--is-legacy-table-with-id=${modelSpecificOptions.isLegacyTableWithId}`);
     }
 
     if (modelSpecificOptions.dataSourceType) {
-      modelCommand += ` --data-source-type=${modelSpecificOptions.dataSourceType}`;
+      args.push(`--data-source-type=${modelSpecificOptions.dataSourceType}`);
     }
-    
-    return modelCommand;
+
+    return args;
   }
 }

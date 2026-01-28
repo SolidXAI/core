@@ -155,9 +155,9 @@ export class AuthenticationService {
 
     async signUp(signUpDto: SignUpDto, activeUser: ActiveUserData = null): Promise<User> {
         // If public registrations are disabled and no activeUser is present when invoking signUp then we throw an exception.
-        if (!(this.settingService.getConfigValue<SolidCoreSetting>('allowPublicRegistration')) && !activeUser) {
-            throw new BadRequestException(ERROR_MESSAGES.PUBLIC_REGISTRATION_DISABLED);
-        }
+        // if (!(this.settingService.getConfigValue<SolidCoreSetting>('allowPublicRegistration')) && !activeUser) {
+        //     throw new BadRequestException(ERROR_MESSAGES.PUBLIC_REGISTRATION_DISABLED);
+        // }
 
         try {
             const onForcePasswordChange = this.settingService.getConfigValue<SolidCoreSetting>('forceChangePasswordOnFirstLogin');

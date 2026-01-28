@@ -77,13 +77,13 @@ export class ManyToOneRelationFieldCrudManager implements FieldCrudManager {
         if (isNotEmpty(fieldId)) {
             dto[this.options.fieldName] = await this.options.entityManager.getRepository(coModelEntityName).findOneBy({ id: fieldId });
             if (this.options.required && isEmpty(dto[this.options.fieldName])) {
-                throw new Error(`ManyToOneRelationFieldCrudManager: Record with id: ${fieldId} not found in ${this.options.relationCoModelSingularName}`);
+                throw new Error(`Field ${this.options.fieldName} resolution failed. Record with id: ${fieldId} not found in ${this.options.relationCoModelSingularName}`);
             }
         }
         else {
             dto[this.options.fieldName] = await this.options.entityManager.getRepository(coModelEntityName).findOneBy({ [this.options.relationCoModelUserKeyFieldName]: fieldUserKeyValue });
             if (this.options.required && isEmpty(dto[this.options.fieldName])) {
-                throw new Error(`ManyToOneRelationFieldCrudManager: Record with userKey: ${this.options.relationCoModelUserKeyFieldName}: ${fieldUserKeyValue} not found in ${this.options.relationCoModelSingularName}`);
+                throw new Error(`Field ${this.options.fieldName} resolution failed. Record with userKey: ${this.options.relationCoModelUserKeyFieldName}: ${fieldUserKeyValue} not found in ${this.options.relationCoModelSingularName}`);
             }
         }
 

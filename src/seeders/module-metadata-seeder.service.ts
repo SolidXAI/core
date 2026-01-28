@@ -88,7 +88,7 @@ export class ModuleMetadataSeederService {
         // Module specific seeding steps.
         // Get all the module metadata files which needs to be seeded.
         const seedDataFiles = this.seedDataFiles;
-        this.logger.debug(`Seed data files are: ${seedDataFiles}`);
+        this.logger.debug(`Found seed data for modules: ${seedDataFiles.map(s => s.moduleMetadata?.name)}`);
 
         /** -------------------------------------------------------------
          * Selective module seeding via: 
