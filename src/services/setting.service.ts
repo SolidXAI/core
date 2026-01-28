@@ -1,6 +1,7 @@
 import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as fsPromises from 'fs/promises';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
@@ -252,8 +253,12 @@ export class SettingService {
         const baseUrl = this.getConfigValue<SolidCoreSetting>("baseUrl") || '';
         const fileUrl = `${baseUrl}/${storagePath}`;
 
-        await this.fileService.copy(file.path, storagePath);
-        await this.fileService.delete(file.path);
+        // Read file from local disk (where Multer stores uploads) and write to storage
+        // This works for both disk and S3 file services, since Multer always stores locally
+        const fileContent = await fsPromises.readFile(file.path);
+        await this.fileService.write(storagePath, fileContent, { contentType: file.mimetype });
+        // Delete the temp file from local disk
+        await fsPromises.unlink(file.path);
 
         const matchedDto = settings.find(dto => dto.key === settingKey);
         const settingType = matchedDto?.type ?? 'system';
