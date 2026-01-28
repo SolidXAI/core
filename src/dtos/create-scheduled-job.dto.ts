@@ -52,6 +52,10 @@ export class CreateScheduledJobDto {
     @ApiProperty()
     job: string;
     @IsOptional()
+    @IsString()
+    @ApiProperty()
+    cronExpression: string;
+    @IsOptional()
     @IsInt()
     @ApiProperty()
     moduleId: number;
