@@ -35,15 +35,16 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         // @ts-ignore
         const media = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
 
-        // TODO: Check if the mediaStorageProvider (s3 in this case) is configured with a public bucket or not. 
+        // TODO: Check if the mediaStorageProvider (s3 in this case) is configured with a public bucket or not.
         // If private bucket then we need to return a "signed-url", the timeout for the signed url can be configured in the media storage provider entity and modified using the CRUD interface.
         // Add the full URL to the media
         for (const m of media) {
             const storageMeta = m.mediaStorageProviderMetadata;
+            const region = this.getEffectiveRegion(storageMeta.region);
             if (storageMeta.isPublic === false) {
                 // Generate signed URL
                 const expiryInSeconds = (storageMeta.signedUrlExpiry ?? 60) * 60; // default 5 min
-                m['_full_url'] = await this.s3FileService.getUrl(`${storageMeta?.bucketName}:${m.relativeUri}`, { expiresIn: expiryInSeconds });
+                m['_full_url'] = await this.s3FileService.getUrl(`${storageMeta?.bucketName}:${m.relativeUri}`, { expiresIn: expiryInSeconds, region });
             } else {
                 // Public S3 or local filesystem: use normal URL
                 m['_full_url'] = this.getFullFilePath(m);
@@ -65,13 +66,16 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntity or LegacyCommonWithIdEntity"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
         const result: Media[] = [];
+        const storageProvider = mediaFieldMetadata.mediaStorageProvider;
+        const region = this.getEffectiveRegion(storageProvider.region);
+
         for (const file of files) {
             const fileName = this.getFileName(file);
-            const bucketName = mediaFieldMetadata.mediaStorageProvider.bucketName;
+            const bucketName = storageProvider.bucketName;
 
             // Read file from disk and upload to S3
             const fileData = await this.diskFileService.read(file.path);
-            await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { contentType: file.mimetype });
+            await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { contentType: file.mimetype, region });
 
             // Delete temp file from disk
             await this.diskFileService.delete(file.path);
@@ -103,20 +107,32 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         if (!isSupportedEntity) {
             throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntity or LegacyCommonWithIdEntity"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
+        const storageProvider = mediaFieldMetadata.mediaStorageProvider;
+        const region = this.getEffectiveRegion(storageProvider.region);
+
         // @ts-ignore
         const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         // @ts-ignore
         this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
         for (const media of existingMedia) {
-            const bucketName = mediaFieldMetadata.mediaStorageProvider.bucketName;
-            await this.s3FileService.delete(`${bucketName}:${media.relativeUri}`);
+            const bucketName = storageProvider.bucketName;
+            await this.s3FileService.delete(`${bucketName}:${media.relativeUri}`, { region });
         }
     }
 
-    //TODO: Move this to a app builder config
+    /**
+     * Get the effective region to use for S3 operations.
+     * Uses the provider-specific region if configured, otherwise falls back to env variable.
+     */
+    private getEffectiveRegion(providerRegion?: string): string | undefined {
+        return providerRegion || this.configService.get('S3_AWS_REGION_NAME');
+    }
+
     private getFullFilePath(media: Media): string {
+        // Use provider region if available, fallback to env variable
+        const region = this.getEffectiveRegion(media.mediaStorageProviderMetadata.region);
         // https://lunarismedia.s3.ap-south-1.amazonaws.com/LUNARIS_CP_REGISTRATION_CREATIVE.jpg
-        return `https://${media.mediaStorageProviderMetadata.bucketName}.s3.${this.configService.get('S3_AWS_REGION_NAME')}.amazonaws.com/${media.relativeUri}`;
+        return `https://${media.mediaStorageProviderMetadata.bucketName}.s3.${region}.amazonaws.com/${media.relativeUri}`;
     }
 
     private getFileName(file: Express.Multer.File): string {

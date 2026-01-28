@@ -9,7 +9,7 @@ import {
 } from '@aws-sdk/client-s3';
 import { getSignedUrl } from '@aws-sdk/s3-request-presigner';
 import { Readable } from 'stream';
-import { IFileService, WriteOptions, CopyOptions, UrlOptions } from './file-service.interface';
+import { IFileService, WriteOptions, CopyOptions, UrlOptions, ReadOptions, DeleteOptions, ExistsOptions } from './file-service.interface';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 
 /**
@@ -26,37 +26,60 @@ import { ERROR_MESSAGES } from 'src/constants/error-messages';
 @Injectable()
 export class S3FileService implements IFileService, OnModuleInit {
   private readonly logger = new Logger(S3FileService.name);
-  private s3Client: S3Client | null = null;
+  private readonly s3ClientCache = new Map<string, S3Client>();
+  private defaultRegion: string | null = null;
+  private accessKey: string | null = null;
+  private secretKey: string | null = null;
 
   onModuleInit() {
-    this.initializeS3Client();
+    this.initializeS3Credentials();
   }
 
-  private initializeS3Client(): void {
-    const accessKey = process.env.S3_AWS_ACCESS_KEY;
-    const secretKey = process.env.S3_AWS_SECRET_KEY;
-    const region = process.env.S3_AWS_REGION_NAME;
+  private initializeS3Credentials(): void {
+    this.accessKey = process.env.S3_AWS_ACCESS_KEY || null;
+    this.secretKey = process.env.S3_AWS_SECRET_KEY || null;
+    this.defaultRegion = process.env.S3_AWS_REGION_NAME || null;
 
-    if (!accessKey || !secretKey || !region) {
+    if (!this.accessKey || !this.secretKey) {
       this.logger.warn('S3 credentials not fully configured. S3FileService will not be available.');
       return;
     }
 
-    this.s3Client = new S3Client({
-      region,
-      credentials: {
-        accessKeyId: accessKey,
-        secretAccessKey: secretKey,
-      },
-    });
-
-    this.logger.log('S3FileService initialized successfully');
+    // Pre-initialize client for default region if available
+    if (this.defaultRegion) {
+      this.getOrCreateClient(this.defaultRegion);
+      this.logger.log(`S3FileService initialized successfully with default region: ${this.defaultRegion}`);
+    } else {
+      this.logger.log('S3FileService initialized successfully (no default region, will use per-request region)');
+    }
   }
 
-  private ensureS3Client(): void {
-    if (!this.s3Client) {
+  private getOrCreateClient(region: string): S3Client {
+    if (!this.accessKey || !this.secretKey) {
       throw new Error(ERROR_MESSAGES.S3_CLIENT_NOT_INITIALIZED);
     }
+
+    let client = this.s3ClientCache.get(region);
+    if (!client) {
+      client = new S3Client({
+        region,
+        credentials: {
+          accessKeyId: this.accessKey,
+          secretAccessKey: this.secretKey,
+        },
+      });
+      this.s3ClientCache.set(region, client);
+      this.logger.debug(`Created S3 client for region: ${region}`);
+    }
+    return client;
+  }
+
+  private getS3Client(region?: string): S3Client {
+    const effectiveRegion = region || this.defaultRegion;
+    if (!effectiveRegion) {
+      throw new Error('S3 region not specified and no default region configured. Please provide a region or set S3_AWS_REGION_NAME environment variable.');
+    }
+    return this.getOrCreateClient(effectiveRegion);
   }
 
   /**
@@ -81,12 +104,12 @@ export class S3FileService implements IFileService, OnModuleInit {
   /**
    * Read file contents as Buffer
    */
-  async read(path: string): Promise<Buffer> {
-    this.ensureS3Client();
+  async read(path: string, options?: ReadOptions): Promise<Buffer> {
+    const s3Client = this.getS3Client(options?.region);
     const { bucket, key } = this.parsePath(path);
 
     const command = new GetObjectCommand({ Bucket: bucket, Key: key });
-    const response = await this.s3Client.send(command);
+    const response = await s3Client.send(command);
 
     // Convert stream to buffer
     const stream = response.Body as Readable;
@@ -100,12 +123,12 @@ export class S3FileService implements IFileService, OnModuleInit {
   /**
    * Read file contents as a stream
    */
-  async readStream(path: string): Promise<Readable> {
-    this.ensureS3Client();
+  async readStream(path: string, options?: ReadOptions): Promise<Readable> {
+    const s3Client = this.getS3Client(options?.region);
     const { bucket, key } = this.parsePath(path);
 
     const command = new GetObjectCommand({ Bucket: bucket, Key: key });
-    const response = await this.s3Client.send(command);
+    const response = await s3Client.send(command);
 
     return response.Body as Readable;
   }
@@ -114,7 +137,7 @@ export class S3FileService implements IFileService, OnModuleInit {
    * Write data to S3
    */
   async write(path: string, data: Buffer | string, options?: WriteOptions): Promise<void> {
-    this.ensureS3Client();
+    const s3Client = this.getS3Client(options?.region);
     const { bucket, key } = this.parsePath(path);
 
     const command = new PutObjectCommand({
@@ -124,7 +147,7 @@ export class S3FileService implements IFileService, OnModuleInit {
       ContentType: options?.contentType,
     });
 
-    await this.s3Client.send(command);
+    await s3Client.send(command);
     this.logger.debug(`File uploaded to S3: ${bucket}/${key}`);
   }
 
@@ -132,7 +155,7 @@ export class S3FileService implements IFileService, OnModuleInit {
    * Write a stream to S3
    */
   async writeStream(path: string, stream: Readable, options?: WriteOptions): Promise<void> {
-    this.ensureS3Client();
+    const s3Client = this.getS3Client(options?.region);
     const { bucket, key } = this.parsePath(path);
 
     // For streaming uploads, we need to collect the stream into a buffer
@@ -150,32 +173,32 @@ export class S3FileService implements IFileService, OnModuleInit {
       ContentType: options?.contentType,
     });
 
-    await this.s3Client.send(command);
+    await s3Client.send(command);
     this.logger.debug(`File uploaded to S3 via stream: ${bucket}/${key}`);
   }
 
   /**
    * Delete a file from S3
    */
-  async delete(path: string): Promise<void> {
-    this.ensureS3Client();
+  async delete(path: string, options?: DeleteOptions): Promise<void> {
+    const s3Client = this.getS3Client(options?.region);
     const { bucket, key } = this.parsePath(path);
 
     const command = new DeleteObjectCommand({ Bucket: bucket, Key: key });
-    await this.s3Client.send(command);
+    await s3Client.send(command);
     this.logger.debug(`File deleted from S3: ${bucket}/${key}`);
   }
 
   /**
    * Check if file exists in S3
    */
-  async exists(path: string): Promise<boolean> {
-    this.ensureS3Client();
+  async exists(path: string, options?: ExistsOptions): Promise<boolean> {
+    const s3Client = this.getS3Client(options?.region);
     const { bucket, key } = this.parsePath(path);
 
     try {
       const command = new HeadObjectCommand({ Bucket: bucket, Key: key });
-      await this.s3Client.send(command);
+      await s3Client.send(command);
       return true;
     } catch (error: any) {
       if (error.name === 'NotFound' || error.$metadata?.httpStatusCode === 404) {
@@ -189,10 +212,10 @@ export class S3FileService implements IFileService, OnModuleInit {
    * Copy a file within S3 (same or different bucket)
    */
   async copy(sourcePath: string, destinationPath: string, options?: CopyOptions): Promise<void> {
-    this.ensureS3Client();
+    const s3Client = this.getS3Client(options?.region);
 
     if (options?.overwrite === false) {
-      const destinationExists = await this.exists(destinationPath);
+      const destinationExists = await this.exists(destinationPath, { region: options?.region });
       if (destinationExists) {
         throw new Error(`Destination file already exists: ${destinationPath}`);
       }
@@ -208,7 +231,7 @@ export class S3FileService implements IFileService, OnModuleInit {
       ContentType: options?.contentType,
     });
 
-    await this.s3Client.send(command);
+    await s3Client.send(command);
     this.logger.debug(`File copied in S3: ${source.bucket}/${source.key} -> ${destination.bucket}/${destination.key}`);
   }
 
@@ -216,12 +239,12 @@ export class S3FileService implements IFileService, OnModuleInit {
    * Get a signed URL for the file
    */
   async getUrl(path: string, options?: UrlOptions): Promise<string> {
-    this.ensureS3Client();
+    const s3Client = this.getS3Client(options?.region);
     const { bucket, key } = this.parsePath(path);
 
     const command = new GetObjectCommand({ Bucket: bucket, Key: key });
     const expiresIn = options?.expiresIn || 3600; // Default 1 hour
 
-    return getSignedUrl(this.s3Client, command, { expiresIn });
+    return getSignedUrl(s3Client, command, { expiresIn });
   }
 }
