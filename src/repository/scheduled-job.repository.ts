@@ -70,6 +70,7 @@ export class ScheduledJobRepository extends SolidBaseRepository<ScheduledJob> {
       job: populatedScheduledJob.job,
       moduleUserKey: populatedScheduledJob.module.name,
       moduleId: populatedScheduledJob.module.id,
+      cronExpression: populatedScheduledJob.cronExpression,
     };
   }
 

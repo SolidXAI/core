@@ -29,6 +29,8 @@ export class ScheduledJob extends CommonEntity {
     dayOfWeek: string;
     @Column({ type: "varchar" })
     job: string;
+    @Column({ type: "varchar", nullable: true })
+    cronExpression: string;
     @Index()
     @ManyToOne(() => ModuleMetadata, { nullable: false })
     @JoinColumn({ referencedColumnName: 'id' })
