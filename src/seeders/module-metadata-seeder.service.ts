@@ -274,10 +274,10 @@ export class ModuleMetadataSeederService {
     }
 
     private async seedSmsTemplates(overallMetadata: any, moduleName: string) {
-        // this.logger.debug(`[Start] Processing sms templates`);
-        // const smsTemplates: CreateSmsTemplateDto[] = overallMetadata.smsTemplates;
-        // await this.handleSeedSmsTemplates(smsTemplates, moduleName);
-        // this.logger.debug(`[End] Processing sms templates`);
+        this.logger.debug(`[Start] Processing sms templates`);
+        const smsTemplates: CreateSmsTemplateDto[] = overallMetadata.smsTemplates;
+        await this.handleSeedSmsTemplates(smsTemplates, moduleName);
+        this.logger.debug(`[End] Processing sms templates`);
     }
 
     // OK
