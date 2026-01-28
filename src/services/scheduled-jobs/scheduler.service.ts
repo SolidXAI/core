@@ -133,6 +133,12 @@ export class SchedulerServiceImpl implements ISchedulerService {
                 tz: 'UTC'
             });
             const nextRun = interval.next().toDate();
+
+            // Validate minimum 1 minute interval
+            if (nextRun.getTime() - from.getTime() < 60000) {
+                throw new Error('Cron expression interval must be at least 1 minute');
+            }
+            
             this.logger.log(`Custom cron '${job.cronExpression}' next run: ${nextRun}`);
             return nextRun;
         } catch (error) {
