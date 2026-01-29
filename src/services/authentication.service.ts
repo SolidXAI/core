@@ -402,8 +402,10 @@ export class AuthenticationService {
             if (isNotEmpty(existingUser) && existingUser.active) {
                 throw new ConflictException(ERROR_MESSAGES.USER_ALREADY_EXISTS);
             }
-            const passwordlessRegistrationValidateWhat = this.settingService.getConfigValue<SolidCoreSetting>('passwordlessRegistrationValidateWhat');
-
+            let passwordlessRegistrationValidateWhat = this.settingService.getConfigValue<SolidCoreSetting>('passwordlessRegistrationValidateWhat');
+            if (!Array.isArray(passwordlessRegistrationValidateWhat)) {
+                passwordlessRegistrationValidateWhat = [passwordlessRegistrationValidateWhat];
+            }
             const finalRegistrationVerificationSources = this.calculateVerificationSources(passwordlessRegistrationValidateWhat, signUpDto);
             let user = existingUser
             if (isEmpty(user)) {
