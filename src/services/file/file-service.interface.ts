@@ -61,7 +61,7 @@ export interface IFileService {
    * @param data - Content to write
    * @param options - Optional write options (e.g., contentType, region for S3)
    */
-  write(path: string, data: Buffer | string, options?: WriteOptions): Promise<void>;
+  write(path: string, data: Buffer | string, options?: WriteOptions): Promise<string>;
 
   /**
    * Write a stream to a file
@@ -69,7 +69,7 @@ export interface IFileService {
    * @param stream - Readable stream
    * @param options - Optional write options (e.g., contentType, region for S3)
    */
-  writeStream(path: string, stream: Readable, options?: WriteOptions): Promise<void>;
+  writeStream(path: string, stream: Readable, options?: WriteOptions): Promise<string>;
 
   /**
    * Delete a file

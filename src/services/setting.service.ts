@@ -15,7 +15,7 @@ import { ISettingsProvider, NoInfer, SettingDefinition, SettingLevel } from '../
 import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
 import type { SolidCoreSetting } from './settings/default-settings-provider.service';
 import { Logger } from '@nestjs/common';
-import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
+
 
 @Injectable()
 export class SettingService {
@@ -37,7 +37,6 @@ export class SettingService {
     readonly moduleMetadataRepo: ModuleMetadataRepository,
     private readonly requestContextService: RequestContextService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-    private readonly mediaStorageProviderMetadataService: MediaStorageProviderMetadataService,
   ) { }
 
   private async getSettingsFromDb(): Promise<Setting[]> {
@@ -250,31 +249,11 @@ export class SettingService {
       for (const file of uploadedFiles) {
         const settingKey = file.fieldname;
         const relativeFileName = `${file.filename}-${file.originalname}`;
-        const defaultFileService = this.getConfigValue<SolidCoreSetting>("defaultFileService") || 'disk';
-
-        let storagePath: string;
-        let fileUrl: string;
-
-        if (defaultFileService === 's3') {
-          // For S3: look up the default-aws-s3 provider to get bucket name and region
-          const s3Provider = await this.mediaStorageProviderMetadataService.findOneByUserKey('default-aws-s3');
-          if (!s3Provider?.bucketName) {
-            throw new BadRequestException('S3 storage provider "default-aws-s3" not configured or missing bucket name');
-          }
-          storagePath = `${s3Provider.bucketName}:${relativeFileName}`;
-          fileUrl = `https://${s3Provider.bucketName}.s3.${s3Provider.region}.amazonaws.com/${relativeFileName}`;
-        } else {
-          // For disk: use fileStorageDir path
-          const fileStorageDir = this.getConfigValue<SolidCoreSetting>("fileStorageDir");
-          storagePath = `${fileStorageDir}/${relativeFileName}`;
-          const baseUrl = this.getConfigValue<SolidCoreSetting>("baseUrl") || '';
-          fileUrl = `${baseUrl}/${storagePath}`;
-        }
 
         // Read file from local disk (where Multer stores uploads) and write to storage
-        // This works for both disk and S3 file services, since Multer always stores locally
+        // The file service resolves the storage path and returns the public URL
         const fileContent = await fsPromises.readFile(file.path);
-        await this.fileService.write(storagePath, fileContent, { contentType: file.mimetype });
+        const fileUrl = await this.fileService.write(relativeFileName, fileContent, { contentType: file.mimetype });
         // Delete the temp file from local disk
         await fsPromises.unlink(file.path);
 

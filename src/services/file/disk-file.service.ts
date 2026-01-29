@@ -13,6 +13,20 @@ import { IFileService, WriteOptions, CopyOptions, UrlOptions } from './file-serv
 @Injectable()
 export class DiskFileService implements IFileService {
   private readonly logger = new Logger(DiskFileService.name);
+  private readonly fileStorageDir: string;
+  private readonly baseUrl: string;
+
+  constructor() {
+    this.fileStorageDir = process.env.AB_MEDIA_FILE_STORAGE_DIR || 'uploads';
+    this.baseUrl = process.env.BASE_URL || '';
+  }
+
+  private resolvePath(filePath: string): string {
+    if (path.isAbsolute(filePath)) {
+      return filePath;
+    }
+    return `${this.fileStorageDir}/${filePath}`;
+  }
 
   /**
    * Read file contents as Buffer
@@ -33,21 +47,27 @@ export class DiskFileService implements IFileService {
   /**
    * Write data to a file
    * Automatically creates parent directories if they don't exist
+   * @returns Public URL of the written file
    */
-  async write(filePath: string, data: Buffer | string, options?: WriteOptions): Promise<void> {
-    await this.ensureDirectoryExists(filePath);
-    await fsPromises.writeFile(filePath, data);
+  async write(filePath: string, data: Buffer | string, options?: WriteOptions): Promise<string> {
+    const resolvedPath = this.resolvePath(filePath);
+    await this.ensureDirectoryExists(resolvedPath);
+    await fsPromises.writeFile(resolvedPath, data);
+    return `${this.baseUrl}/${resolvedPath}`;
   }
 
   /**
    * Write a stream to a file
    * Automatically creates parent directories if they don't exist
+   * @returns Public URL of the written file
    */
-  async writeStream(filePath: string, stream: Readable, options?: WriteOptions): Promise<void> {
-    await this.ensureDirectoryExists(filePath);
-    const writeStream = fs.createWriteStream(filePath);
+  async writeStream(filePath: string, stream: Readable, options?: WriteOptions): Promise<string> {
+    const resolvedPath = this.resolvePath(filePath);
+    await this.ensureDirectoryExists(resolvedPath);
+    const writeStream = fs.createWriteStream(resolvedPath);
     await pipeline(stream, writeStream);
-    this.logger.debug(`File saved via stream: ${filePath}`);
+    this.logger.debug(`File saved via stream: ${resolvedPath}`);
+    return `${this.baseUrl}/${resolvedPath}`;
   }
 
   /**

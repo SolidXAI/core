@@ -56,6 +56,7 @@ const getSolidCoreSettings = (isProd: boolean) => ([
   { moduleName: "solid-core", key: "S3_AWS_ACCESS_KEY", value: process.env.S3_AWS_ACCESS_KEY, level: SettingLevel.SystemEnv },
   { moduleName: "solid-core", key: "S3_AWS_SECRET_KEY", value: process.env.S3_AWS_SECRET_KEY, level: SettingLevel.SystemEnv },
   { moduleName: "solid-core", key: "S3_AWS_REGION_NAME", value: process.env.S3_AWS_REGION_NAME, level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "S3_DEFAULT_BUCKET", value: process.env.S3_DEFAULT_BUCKET, level: SettingLevel.SystemAdminReadonly },
 
   // email-settings-provider.service.ts
   { moduleName: "solid-core", key: "emailProvider", value: process.env.COMMON_EMAIL_PROVIDER ?? "SMTPEMailService", level: SettingLevel.SystemAdminReadonly },

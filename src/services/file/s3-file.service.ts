@@ -20,14 +20,16 @@ import { ERROR_MESSAGES } from 'src/constants/error-messages';
  * - S3_AWS_ACCESS_KEY: AWS access key ID
  * - S3_AWS_SECRET_KEY: AWS secret access key
  * - S3_AWS_REGION_NAME: AWS region
+ * - S3_DEFAULT_BUCKET: Default bucket used when path has no "bucket:" prefix
  *
- * Path format: "bucket:key" (bucket is required, sourced from MediaStorageProviderMetadata entity)
+ * Path format: "bucket:key" or just "key" (falls back to S3_DEFAULT_BUCKET)
  */
 @Injectable()
 export class S3FileService implements IFileService, OnModuleInit {
   private readonly logger = new Logger(S3FileService.name);
   private readonly s3ClientCache = new Map<string, S3Client>();
   private defaultRegion: string | null = null;
+  private defaultBucket: string | null = null;
   private accessKey: string | null = null;
   private secretKey: string | null = null;
 
@@ -39,6 +41,7 @@ export class S3FileService implements IFileService, OnModuleInit {
     this.accessKey = process.env.S3_AWS_ACCESS_KEY || null;
     this.secretKey = process.env.S3_AWS_SECRET_KEY || null;
     this.defaultRegion = process.env.S3_AWS_REGION_NAME || null;
+    this.defaultBucket = process.env.S3_DEFAULT_BUCKET || null;
 
     if (!this.accessKey || !this.secretKey) {
       this.logger.warn('S3 credentials not fully configured. S3FileService will not be available.');
@@ -84,11 +87,11 @@ export class S3FileService implements IFileService, OnModuleInit {
 
   /**
    * Parse path to extract bucket and key.
-   * Format: "bucket:key" (bucket is required)
+   * Format: "bucket:key" or just "key" (falls back to S3_DEFAULT_BUCKET)
    *
-   * @param path - Path in format "bucket:key"
+   * @param path - Path in format "bucket:key" or just "key"
    * @returns Object with bucket and key
-   * @throws Error if path format is invalid (missing bucket)
+   * @throws Error if no bucket can be resolved
    */
   private parsePath(path: string): { bucket: string; key: string } {
     const colonIndex = path.indexOf(':');
@@ -98,7 +101,10 @@ export class S3FileService implements IFileService, OnModuleInit {
         key: path.substring(colonIndex + 1),
       };
     }
-    throw new Error(`Invalid S3 path format: "${path}". Expected format: "bucket:key"`);
+    if (this.defaultBucket) {
+      return { bucket: this.defaultBucket, key: path };
+    }
+    throw new Error(`Invalid S3 path format: "${path}". Expected format: "bucket:key" or set S3_DEFAULT_BUCKET environment variable.`);
   }
 
   /**
@@ -135,9 +141,11 @@ export class S3FileService implements IFileService, OnModuleInit {
 
   /**
    * Write data to S3
+   * @returns Public URL of the uploaded file
    */
-  async write(path: string, data: Buffer | string, options?: WriteOptions): Promise<void> {
-    const s3Client = this.getS3Client(options?.region);
+  async write(path: string, data: Buffer | string, options?: WriteOptions): Promise<string> {
+    const region = options?.region || this.defaultRegion;
+    const s3Client = this.getS3Client(region);
     const { bucket, key } = this.parsePath(path);
 
     const command = new PutObjectCommand({
@@ -149,13 +157,16 @@ export class S3FileService implements IFileService, OnModuleInit {
 
     await s3Client.send(command);
     this.logger.debug(`File uploaded to S3: ${bucket}/${key}`);
+    return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
   }
 
   /**
    * Write a stream to S3
+   * @returns Public URL of the uploaded file
    */
-  async writeStream(path: string, stream: Readable, options?: WriteOptions): Promise<void> {
-    const s3Client = this.getS3Client(options?.region);
+  async writeStream(path: string, stream: Readable, options?: WriteOptions): Promise<string> {
+    const region = options?.region || this.defaultRegion;
+    const s3Client = this.getS3Client(region);
     const { bucket, key } = this.parsePath(path);
 
     // For streaming uploads, we need to collect the stream into a buffer
@@ -175,6 +186,7 @@ export class S3FileService implements IFileService, OnModuleInit {
 
     await s3Client.send(command);
     this.logger.debug(`File uploaded to S3 via stream: ${bucket}/${key}`);
+    return `https://${bucket}.s3.${region}.amazonaws.com/${key}`;
   }
 
   /**
