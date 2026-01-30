@@ -2,6 +2,7 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
+import * as readline from 'readline';
 import { v4 as uuidv4 } from 'uuid';
 
 import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
@@ -57,6 +58,7 @@ import { ViewMetadata } from 'src/entities/view-metadata.entity';
 @Injectable()
 export class ModuleMetadataSeederService {
     private readonly logger = new Logger(ModuleMetadataSeederService.name);
+    private enablePruning: boolean = false;
 
 
     constructor(
@@ -91,6 +93,8 @@ export class ModuleMetadataSeederService {
     ) { }
 
     async seed(conf?: any) {
+        this.enablePruning = await this.resolvePruningChoice(conf);
+
         // Global seeding steps i.e across all modules
         await this.seedGlobalMetadata();
 
@@ -228,7 +232,7 @@ export class ModuleMetadataSeederService {
     private async seedScheduledJobs(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing scheduled jobs for ${moduleMetadata.name}`);
         const scheduledJobs: CreateScheduledJobDto[] = overallMetadata.scheduledJobs;
-        const pruned = await this.pruneScheduledJobs(scheduledJobs, moduleMetadata.name);
+        const pruned = this.enablePruning ? await this.pruneScheduledJobs(scheduledJobs, moduleMetadata.name) : 0;
         if (scheduledJobs?.length > 0) {
             await this.handleSeedScheduledJobs(scheduledJobs);
         }
@@ -239,7 +243,7 @@ export class ModuleMetadataSeederService {
     private async seedSavedFilters(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing saved filters for ${moduleMetadata.name}`);
         const savedFilters: CreateSavedFiltersDto[] = overallMetadata.savedFilters;
-        const pruned = await this.pruneSavedFilters(savedFilters, moduleMetadata.name);
+        const pruned = this.enablePruning ? await this.pruneSavedFilters(savedFilters, moduleMetadata.name) : 0;
         if (savedFilters?.length > 0) {
             await this.handleSeedSavedFilters(savedFilters);
         }
@@ -250,7 +254,7 @@ export class ModuleMetadataSeederService {
     private async seedDashboards(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing dashboards for ${moduleMetadata.name}`);
         const dashboards: CreateDashboardDto[] = overallMetadata.dashboards;
-        const pruned = await this.pruneDashboards(dashboards, moduleMetadata.name);
+        const pruned = this.enablePruning ? await this.pruneDashboards(dashboards, moduleMetadata.name) : 0;
         await this.handleSeedDashboards(dashboards);
         this.logger.debug(`[End] Processing dashboards for ${moduleMetadata.name}`);
         return { pruned, upserted: dashboards?.length ?? 0 };
@@ -259,7 +263,7 @@ export class ModuleMetadataSeederService {
     private async seedListOfValues(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing List Of Values for ${moduleMetadata.name}`);
         const listOfValues: CreateListOfValuesDto[] = overallMetadata.listOfValues;
-        const pruned = await this.pruneListOfValues(listOfValues, moduleMetadata.name);
+        const pruned = this.enablePruning ? await this.pruneListOfValues(listOfValues, moduleMetadata.name) : 0;
         await this.handleSeedListOfValues(listOfValues);
         this.logger.debug(`[End] Processing List Of Values for ${moduleMetadata.name}`);
         return { pruned, upserted: listOfValues?.length ?? 0 };
@@ -280,7 +284,7 @@ export class ModuleMetadataSeederService {
     private async seedSecurityRules(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing security rules`);
         const securityRules: CreateSecurityRuleDto[] = overallMetadata.securityRules;
-        const pruned = await this.pruneSecurityRules(securityRules, overallMetadata?.moduleMetadata?.name);
+        const pruned = this.enablePruning ? await this.pruneSecurityRules(securityRules, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedSecurityRules(securityRules);
         this.logger.debug(`[End] Processing security rules`);
         return { pruned, upserted: securityRules?.length ?? 0 };
@@ -314,7 +318,7 @@ export class ModuleMetadataSeederService {
     private async seedMenus(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing menus`);
         const menus = overallMetadata.menus;
-        const pruned = await this.pruneMenus(menus, overallMetadata?.moduleMetadata?.name);
+        const pruned = this.enablePruning ? await this.pruneMenus(menus, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedMenus(menus);
         this.logger.debug(`[End] Processing menus`);
         return { pruned, upserted: menus?.length ?? 0 };
@@ -324,7 +328,7 @@ export class ModuleMetadataSeederService {
     private async seedActions(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing actions`);
         const actions = overallMetadata.actions;
-        const pruned = await this.pruneActions(actions, overallMetadata?.moduleMetadata?.name);
+        const pruned = this.enablePruning ? await this.pruneActions(actions, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedActions(actions);
         this.logger.debug(`[End] Processing actions`);
         return { pruned, upserted: actions?.length ?? 0 };
@@ -334,7 +338,7 @@ export class ModuleMetadataSeederService {
     private async seedViews(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing views`);
         const views = overallMetadata.views;
-        const pruned = await this.pruneViews(views, overallMetadata?.moduleMetadata?.name);
+        const pruned = this.enablePruning ? await this.pruneViews(views, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedViews(views);
         this.logger.debug(`[End] Processing views`);
         return { pruned, upserted: views?.length ?? 0 };
@@ -457,7 +461,9 @@ export class ModuleMetadataSeederService {
             }
         }
 
-        await this.prunePermissions(permissionNames);
+        if (this.enablePruning) {
+            await this.prunePermissions(permissionNames);
+        }
     }
 
     // OK
@@ -480,7 +486,7 @@ export class ModuleMetadataSeederService {
     private async seedModelSequences(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing model sequences`);
         const modelSequences: CreateModelSequenceDto[] = overallMetadata.modelSequences;
-        const pruned = await this.pruneModelSequences(modelSequences, overallMetadata?.moduleMetadata?.name);
+        const pruned = this.enablePruning ? await this.pruneModelSequences(modelSequences, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedModelSequences(modelSequences);
         this.logger.debug(`[End] Processing model sequences`);
         return { pruned, upserted: modelSequences?.length ?? 0 };
@@ -845,7 +851,9 @@ export class ModuleMetadataSeederService {
             const model = await this.modelMetadataService.findOneBySingularName(modelMetadata.singularName)
 
             // iterate over all fields and upsert. 
-            pruned += await this.pruneFieldsForModel(model, fieldsMetadata);
+            if (this.enablePruning) {
+                pruned += await this.pruneFieldsForModel(model, fieldsMetadata);
+            }
             let userKeyField = null;
             const userKeyFieldName = modelMetadata.userKeyFieldUserKey;
             upserted += fieldsMetadata?.length ?? 0;
@@ -872,7 +880,9 @@ export class ModuleMetadataSeederService {
                 await this.modelMetadataService.upsert(modelMetaDataWithoutFields);
             }
         }
-        pruned += await this.pruneModels(modelsMetadata, moduleMetadata.name);
+        if (this.enablePruning) {
+            pruned += await this.pruneModels(modelsMetadata, moduleMetadata.name);
+        }
         this.logger.debug(`[End] Processing module metadata`);
         return { pruned, upserted };
     }
@@ -1261,6 +1271,27 @@ export class ModuleMetadataSeederService {
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
         if (ids.length > 0) {
+            // Delete actions tied to these views before deleting the views themselves.
+            const actionRepo = this.dataSource.getRepository(ActionMetadata);
+            const actionRows = await actionRepo
+                .createQueryBuilder('action')
+                .select('action.id', 'id')
+                .innerJoin('action.view', 'view')
+                .where('view.id IN (:...viewIds)', { viewIds: ids })
+                .getRawMany();
+            const actionIds = actionRows.map((row) => row.id);
+            if (actionIds.length > 0) {
+                const result = await actionRepo
+                    .createQueryBuilder()
+                    .delete()
+                    .from(ActionMetadata)
+                    .whereInIds(actionIds)
+                    .execute();
+                if ((result.affected ?? 0) === 0) {
+                    this.logger.warn(`No actions deleted for pruned views in module ${moduleName}.`);
+                }
+            }
+
             const result = await repo
                 .createQueryBuilder()
                 .delete()
@@ -1468,6 +1499,28 @@ export class ModuleMetadataSeederService {
             return result.affected ?? 0;
         }
         return 0;
+    }
+
+    private async resolvePruningChoice(conf?: any): Promise<boolean> {
+        if (typeof conf?.pruneMetadata === 'boolean') {
+            return conf.pruneMetadata;
+        }
+        if (!process.stdin.isTTY) {
+            return false;
+        }
+
+        const rl = readline.createInterface({
+            input: process.stdin,
+            output: process.stdout,
+        });
+
+        const question = `Prune metadata entries not in JSON? (y/N) `;
+        const answer: string = await new Promise((resolve) => {
+            rl.question(question, (input) => resolve(input));
+        });
+        rl.close();
+
+        return answer.trim().toLowerCase().startsWith('y');
     }
 
 }
