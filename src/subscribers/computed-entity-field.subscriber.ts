@@ -1,4 +1,5 @@
 import { camelize } from "@angular-devkit/core/src/utils/strings";
+import { Delete } from "@aws-sdk/client-s3";
 import { forwardRef, Inject, Injectable, InternalServerErrorException, Logger, Scope } from "@nestjs/common";
 import { model } from "mongoose";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
@@ -150,21 +151,29 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         };
     }
 
-    private sanitizeEventContext(event: any, eventType: string): TypeOrmEventContext {
+    private sanitizeEventContext(event: InsertEvent<any> | UpdateEvent<any> | RemoveEvent<any>, eventType: string): TypeOrmEventContext {
         if (!event) return undefined;
         const base: TypeOrmEventContext = {
             metadataName: event.metadata?.name,
-            entityId: event.entityId ?? event.entity?.id ?? event.databaseEntity?.id,
             eventType: eventType,
         };
-        if (event.updatedColumns) {
+        if ("entityId" in event && event.entityId) {
+            base.entityId = event.entityId;
+        } else if (event.entity && (event.entity as any).id != null) {
+            base.entityId = (event.entity as any).id;
+        } else if ("databaseEntity" in event && (event.databaseEntity as any)?.id != null) {
+            base.entityId = (event.databaseEntity as any).id;
+        }
+        if ("updatedColumns" in event && event.updatedColumns) {
             base.updatedColumns = event.updatedColumns.map((c: any) => c.propertyName);
         }
-        if (event.updatedRelations) {
+        if ("updatedRelations" in event && event.updatedRelations) {
             base.updatedRelations = event.updatedRelations.map((r: any) => r.propertyName);
         }
         if (event.entity) base.entity = event.entity;
-        if (event.databaseEntity) base.databaseEntity = event.databaseEntity;
+        if ("databaseEntity" in event && event.databaseEntity) {
+            base.databaseEntity = event.databaseEntity;
+        }
         return base;
     }
 
