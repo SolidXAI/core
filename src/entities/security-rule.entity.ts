@@ -8,17 +8,20 @@ export class SecurityRule extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     name: string;
-    // @Index({ unique: true })
+
     @Column({ type: "varchar" })
     description: string;
+
     @Index()
     @ManyToOne(() => RoleMetadata, { nullable: false })
     @JoinColumn()
     role: RoleMetadata;
+
     @Index()
     @ManyToOne(() => ModelMetadata, { nullable: false })
     @JoinColumn()
     modelMetadata: ModelMetadata;
+
     @Column({ type: "text" })
     securityRuleConfig: any;
 

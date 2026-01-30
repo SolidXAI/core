@@ -48,7 +48,8 @@ export class ListOfValuesService extends CRUDService<ListOfValues> {
     // First check if module already exists using name
     const existingListOfValue = await this.repo.findOne({
       where: {
-        value: updateListOfValuesDto.value
+        value: updateListOfValuesDto.value,
+        type: updateListOfValuesDto.type,
       }
     })
 

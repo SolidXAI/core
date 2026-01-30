@@ -2945,7 +2945,7 @@
         "dataSource": "default",
         "dataSourceType": "postgres",
         "tableName": "ss_saved_fitlers",
-        "userKeyFieldUserKey": "filterQueryJson",
+        "userKeyFieldUserKey": "name",
         "fields": [
           {
             "name": "user",
@@ -3041,7 +3041,7 @@
             "ormType": "varchar",
             "length": 512,
             "required": true,
-            "unique": false,
+            "unique": true,
             "index": false,
             "private": false,
             "encrypt": false,
