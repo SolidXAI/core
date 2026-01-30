@@ -94,6 +94,9 @@ export class ModuleMetadataSeederService {
 
     async seed(conf?: any) {
         this.enablePruning = await this.resolvePruningChoice(conf);
+        console.log(this.enablePruning
+            ? '▶ Pruning enabled: metadata not present in JSON will be removed.'
+            : '▶ Pruning disabled: existing metadata will be kept.');
 
         // Global seeding steps i.e across all modules
         await this.seedGlobalMetadata();
@@ -143,77 +146,77 @@ export class ModuleMetadataSeederService {
             // Process module metadata first. 
             this.logger.log(`Seeding Module / Model / Fields`);
             const moduleModelFieldCounts = await this.seedModuleModelFields(moduleMetadata);
-            console.log(`✔ [${moduleMetadata.name}] Module/Model/Fields seeded (pruned ${moduleModelFieldCounts.pruned}, upserted ${moduleModelFieldCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
 
             // Media Storage provider templates
             this.logger.log(`Seeding Media Storage Providers`);
             const mediaStorageCounts = await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
-            console.log(`✔ [${moduleMetadata.name}] Media Storage Providers seeded (pruned ${mediaStorageCounts.pruned}, upserted ${mediaStorageCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Media Storage Providers', mediaStorageCounts)}`);
 
             // Custom role handling
             this.logger.log(`Seeding Roles`);
             const roleCounts = await this.seedRoles(overallMetadata);
-            console.log(`✔ [${moduleMetadata.name}] Roles seeded (pruned ${roleCounts.pruned}, upserted ${roleCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Roles', roleCounts)}`);
 
             // Custom user handling
             this.logger.log(`Seeding Users`);
             const userCounts = await this.seedUsers(overallMetadata);
-            console.log(`✔ [${moduleMetadata.name}] Users seeded (pruned ${userCounts.pruned}, upserted ${userCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Users', userCounts)}`);
 
             // Application Module View handling 
             this.logger.log(`Seeding Views`);
             const viewCounts = await this.seedViews(overallMetadata);
-            console.log(`✔ [${moduleMetadata.name}] Views seeded (pruned ${viewCounts.pruned}, upserted ${viewCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Views', viewCounts)}`);
 
             // Application Module Action handling
             this.logger.log(`Seeding Actions`);
             const actionCounts = await this.seedActions(overallMetadata);
-            console.log(`✔ [${moduleMetadata.name}] Actions seeded (pruned ${actionCounts.pruned}, upserted ${actionCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Actions', actionCounts)}`);
 
             // Application Module Menu handling 
             this.logger.log(`Seeding Menus`);
             const menuCounts = await this.seedMenus(overallMetadata);
-            console.log(`✔ [${moduleMetadata.name}] Menus seeded (pruned ${menuCounts.pruned}, upserted ${menuCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Menus', menuCounts)}`);
 
             // Email templates 
             this.logger.log(`Seeding Email Templates`);
             const emailTemplateCounts = await this.seedEmailTemplates(overallMetadata, moduleMetadata.name);
-            console.log(`✔ [${moduleMetadata.name}] Email Templates seeded (pruned ${emailTemplateCounts.pruned}, upserted ${emailTemplateCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Email Templates', emailTemplateCounts)}`);
 
             // Sms templates
             this.logger.log(`Seeding Sms Templates`);
             const smsTemplateCounts = await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
-            console.log(`✔ [${moduleMetadata.name}] Sms Templates seeded (pruned ${smsTemplateCounts.pruned}, upserted ${smsTemplateCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Sms Templates', smsTemplateCounts)}`);
 
             // Security rules
             this.logger.log(`Seeding Security Rules`);
             const securityRuleCounts = await this.seedSecurityRules(overallMetadata);
-            console.log(`✔ [${moduleMetadata.name}] Security Rules seeded (pruned ${securityRuleCounts.pruned}, upserted ${securityRuleCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Security Rules', securityRuleCounts)}`);
 
             // List Of Values
             this.logger.log(`Seeding List Of Values`);
             const lovCounts = await this.seedListOfValues(moduleMetadata, overallMetadata);
-            console.log(`✔ [${moduleMetadata.name}] List Of Values seeded (pruned ${lovCounts.pruned}, upserted ${lovCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'List Of Values', lovCounts)}`);
 
             // Dashboards
             this.logger.log(`Seeding Dashboards`);
             const dashboardCounts = await this.seedDashboards(moduleMetadata, overallMetadata);
-            console.log(`✔ [${moduleMetadata.name}] Dashboards seeded (pruned ${dashboardCounts.pruned}, upserted ${dashboardCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Dashboards', dashboardCounts)}`);
 
             // Scheduled Jobs
             this.logger.log(`Seeding Scheduled Jobs`);
             const scheduledJobCounts = await this.seedScheduledJobs(moduleMetadata, overallMetadata);
-            console.log(`✔ [${moduleMetadata.name}] Scheduled Jobs seeded (pruned ${scheduledJobCounts.pruned}, upserted ${scheduledJobCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Scheduled Jobs', scheduledJobCounts)}`);
 
             // Saved Filters
             this.logger.log(`Seeding Saved Filters`);
             const savedFilterCounts = await this.seedSavedFilters(moduleMetadata, overallMetadata);
-            console.log(`✔ [${moduleMetadata.name}] Saved Filters seeded (pruned ${savedFilterCounts.pruned}, upserted ${savedFilterCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Saved Filters', savedFilterCounts)}`);
 
             // Model Sequences
             this.logger.log(`Seeding Model Sequences`);
             const modelSequenceCounts = await this.seedModelSequences(overallMetadata);
-            console.log(`✔ [${moduleMetadata.name}] Model Sequences seeded (pruned ${modelSequenceCounts.pruned}, upserted ${modelSequenceCounts.upserted})`);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Model Sequences', modelSequenceCounts)}`);
 
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
         }
@@ -1521,6 +1524,13 @@ export class ModuleMetadataSeederService {
         rl.close();
 
         return answer.trim().toLowerCase().startsWith('y');
+    }
+
+    private formatSeedResult(moduleName: string, label: string, counts: { pruned: number; upserted: number }): string {
+        if (this.enablePruning) {
+            return `✔ [${moduleName}] ${label} seeded (pruned ${counts.pruned}, upserted ${counts.upserted})`;
+        }
+        return `✔ [${moduleName}] ${label} seeded (upserted ${counts.upserted})`;
     }
 
 }
