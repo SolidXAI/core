@@ -946,10 +946,7 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`Skipping model sequence prune: missing module name in metadata.`);
             return 0;
         }
-        if (!modelSequencesDto || modelSequencesDto.length === 0) {
-            this.logger.debug(`No modelSequences metadata provided; skipping prune for ${moduleName}.`);
-            return 0;
-        }
+        const sequences = modelSequencesDto ?? [];
 
         const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
         if (!module) {
@@ -957,12 +954,13 @@ export class ModuleMetadataSeederService {
             return 0;
         }
 
-        const sequenceNames = [...new Set(modelSequencesDto.map(dto => dto.sequenceName).filter(Boolean))];
+        const sequenceNames = [...new Set(sequences.map(dto => dto.sequenceName).filter(Boolean))];
         const repo = this.dataSource.getRepository(ModelSequence);
         const idsToDeleteQuery = repo
             .createQueryBuilder('ms')
             .select('ms.id', 'id')
-            .where('ms.moduleId = :moduleId', { moduleId: module.id });
+            .innerJoin('ms.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
 
         if (sequenceNames.length > 0) {
             idsToDeleteQuery.andWhere('ms.sequenceName NOT IN (:...sequenceNames)', { sequenceNames });
@@ -970,18 +968,16 @@ export class ModuleMetadataSeederService {
 
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
-        // Commented out to allow pruning when metadata is empty/missing.
-        // if (ids.length === 0) {
-        //     return;
-        // }
-
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(ModelSequence)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ModelSequence)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
     private async pruneSavedFilters(savedFiltersDto: CreateSavedFiltersDto[] | undefined, moduleName?: string): Promise<number> {
@@ -989,10 +985,7 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`Skipping saved filters prune: missing module name in metadata.`);
             return 0;
         }
-        if (!savedFiltersDto || savedFiltersDto.length === 0) {
-            this.logger.debug(`No saved filters metadata provided; skipping prune for ${moduleName}.`);
-            return 0;
-        }
+        const savedFilters = savedFiltersDto ?? [];
 
         const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
         if (!module) {
@@ -1000,7 +993,7 @@ export class ModuleMetadataSeederService {
             return 0;
         }
 
-        const filterNames = [...new Set(savedFiltersDto.map(dto => dto.name).filter(Boolean))];
+        const filterNames = [...new Set(savedFilters.map(dto => dto.name).filter(Boolean))];
         const repo = this.dataSource.getRepository(SavedFilters);
         const idsToDeleteQuery = repo
             .createQueryBuilder('sf')
@@ -1015,18 +1008,16 @@ export class ModuleMetadataSeederService {
 
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
-        // Commented out to allow pruning when metadata is empty/missing.
-        // if (ids.length === 0) {
-        //     return;
-        // }
-
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(SavedFilters)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(SavedFilters)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
     private async pruneScheduledJobs(scheduledJobsDto: CreateScheduledJobDto[] | undefined, moduleName?: string): Promise<number> {
@@ -1034,10 +1025,7 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`Skipping scheduled jobs prune: missing module name in metadata.`);
             return 0;
         }
-        if (!scheduledJobsDto || scheduledJobsDto.length === 0) {
-            this.logger.debug(`No scheduled jobs metadata provided; skipping prune for ${moduleName}.`);
-            return 0;
-        }
+        const scheduledJobs = scheduledJobsDto ?? [];
 
         const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
         if (!module) {
@@ -1045,12 +1033,13 @@ export class ModuleMetadataSeederService {
             return 0;
         }
 
-        const scheduleNames = [...new Set(scheduledJobsDto.map(dto => dto.scheduleName).filter(Boolean))];
+        const scheduleNames = [...new Set(scheduledJobs.map(dto => dto.scheduleName).filter(Boolean))];
         const repo = this.dataSource.getRepository(ScheduledJob);
         const idsToDeleteQuery = repo
             .createQueryBuilder('sj')
             .select('sj.id', 'id')
-            .where('sj.moduleId = :moduleId', { moduleId: module.id });
+            .innerJoin('sj.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
 
         if (scheduleNames.length > 0) {
             idsToDeleteQuery.andWhere('sj.scheduleName NOT IN (:...scheduleNames)', { scheduleNames });
@@ -1058,18 +1047,16 @@ export class ModuleMetadataSeederService {
 
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
-        // Commented out to allow pruning when metadata is empty/missing.
-        // if (ids.length === 0) {
-        //     return;
-        // }
-
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(ScheduledJob)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ScheduledJob)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
     private async pruneSecurityRules(securityRulesDto: CreateSecurityRuleDto[] | undefined, moduleName?: string): Promise<number> {
@@ -1077,10 +1064,7 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`Skipping security rules prune: missing module name in metadata.`);
             return 0;
         }
-        if (!securityRulesDto || securityRulesDto.length === 0) {
-            this.logger.debug(`No security rules metadata provided; skipping prune for ${moduleName}.`);
-            return 0;
-        }
+        const securityRules = securityRulesDto ?? [];
 
         const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
         if (!module) {
@@ -1088,7 +1072,7 @@ export class ModuleMetadataSeederService {
             return 0;
         }
 
-        const ruleNames = [...new Set(securityRulesDto.map(dto => dto.name).filter(Boolean))];
+        const ruleNames = [...new Set(securityRules.map(dto => dto.name).filter(Boolean))];
         const repo = this.dataSource.getRepository(SecurityRule);
         const idsToDeleteQuery = repo
             .createQueryBuilder('sr')
@@ -1103,18 +1087,16 @@ export class ModuleMetadataSeederService {
 
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
-        // Commented out to allow pruning when metadata is empty/missing.
-        // if (ids.length === 0) {
-        //     return;
-        // }
-
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(SecurityRule)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(SecurityRule)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
     private async pruneListOfValues(listOfValuesDto: CreateListOfValuesDto[] | undefined, moduleName?: string): Promise<number> {
@@ -1122,10 +1104,7 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`Skipping list of values prune: missing module name in metadata.`);
             return 0;
         }
-        if (!listOfValuesDto || listOfValuesDto.length === 0) {
-            this.logger.debug(`No list of values metadata provided; skipping prune for ${moduleName}.`);
-            return 0;
-        }
+        const listOfValues = listOfValuesDto ?? [];
 
         const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
         if (!module) {
@@ -1133,14 +1112,15 @@ export class ModuleMetadataSeederService {
             return 0;
         }
 
-        const pairs = listOfValuesDto
+        const pairs = listOfValues
             .filter(dto => dto.type && dto.value)
             .map(dto => ({ type: dto.type, value: dto.value }));
         const repo = this.dataSource.getRepository(ListOfValues);
         const idsToDeleteQuery = repo
             .createQueryBuilder('lov')
             .select('lov.id', 'id')
-            .where('lov.moduleId = :moduleId', { moduleId: module.id });
+            .innerJoin('lov.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
 
         if (pairs.length > 0) {
             const conditions = pairs.map((_, i) => `(lov.type = :t${i} AND lov.value = :v${i})`).join(' OR ');
@@ -1155,18 +1135,16 @@ export class ModuleMetadataSeederService {
 
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
-        // Commented out to allow pruning when metadata is empty/missing.
-        // if (ids.length === 0) {
-        //     return;
-        // }
-
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(ListOfValues)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ListOfValues)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
     private async pruneDashboards(dashboardsDto: CreateDashboardDto[] | undefined, moduleName?: string): Promise<number> {
@@ -1174,10 +1152,7 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`Skipping dashboards prune: missing module name in metadata.`);
             return 0;
         }
-        if (!dashboardsDto || dashboardsDto.length === 0) {
-            this.logger.debug(`No dashboards metadata provided; skipping prune for ${moduleName}.`);
-            return 0;
-        }
+        const dashboards = dashboardsDto ?? [];
 
         const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
         if (!module) {
@@ -1185,12 +1160,13 @@ export class ModuleMetadataSeederService {
             return 0;
         }
 
-        const dashboardNames = [...new Set(dashboardsDto.map(dto => dto.name).filter(Boolean))];
+        const dashboardNames = [...new Set(dashboards.map(dto => dto.name).filter(Boolean))];
         const repo = this.dataSource.getRepository(Dashboard);
         const idsToDeleteQuery = repo
             .createQueryBuilder('db')
             .select('db.id', 'id')
-            .where('db.moduleId = :moduleId', { moduleId: module.id });
+            .innerJoin('db.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
 
         if (dashboardNames.length > 0) {
             idsToDeleteQuery.andWhere('db.name NOT IN (:...dashboardNames)', { dashboardNames });
@@ -1198,18 +1174,16 @@ export class ModuleMetadataSeederService {
 
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
-        // Commented out to allow pruning when metadata is empty/missing.
-        // if (ids.length === 0) {
-        //     return;
-        // }
-
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(Dashboard)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(Dashboard)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
     private async pruneMenus(menusDto: any[] | undefined, moduleName?: string): Promise<number> {
@@ -1217,10 +1191,7 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`Skipping menus prune: missing module name in metadata.`);
             return 0;
         }
-        if (!menusDto || menusDto.length === 0) {
-            this.logger.debug(`No menus metadata provided; skipping prune for ${moduleName}.`);
-            return 0;
-        }
+        const menus = menusDto ?? [];
 
         const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
         if (!module) {
@@ -1228,12 +1199,13 @@ export class ModuleMetadataSeederService {
             return 0;
         }
 
-        const menuNames = [...new Set(menusDto.map(m => m.name).filter(Boolean))];
+        const menuNames = [...new Set(menus.map(m => m.name).filter(Boolean))];
         const repo = this.dataSource.getRepository(MenuItemMetadata);
         const idsToDeleteQuery = repo
             .createQueryBuilder('menu')
             .select('menu.id', 'id')
-            .where('menu.moduleId = :moduleId', { moduleId: module.id });
+            .innerJoin('menu.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
 
         if (menuNames.length > 0) {
             idsToDeleteQuery.andWhere('menu.name NOT IN (:...menuNames)', { menuNames });
@@ -1241,25 +1213,24 @@ export class ModuleMetadataSeederService {
 
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
-        // Commented out to allow pruning when metadata is empty/missing.
-        // if (ids.length === 0) {
-        //     return;
-        // }
-
-        await this.dataSource
-            .createQueryBuilder()
-            .delete()
-            .from(MENU_ROLE_JOIN_TABLE_NAME)
-            .where(`${MENU_ROLE_JOIN_TABLE_NAME_MENU_COL} IN (:...ids)`, { ids })
-            .execute();
-
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(MenuItemMetadata)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+        if (ids.length > 0) {
+            await this.dataSource
+                .createQueryBuilder()
+                .delete()
+                .from(MENU_ROLE_JOIN_TABLE_NAME)
+                .where(`${MENU_ROLE_JOIN_TABLE_NAME_MENU_COL} IN (:...ids)`, { ids })
+                .execute();
+        }
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(MenuItemMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
     private async pruneViews(viewsDto: any[] | undefined, moduleName?: string): Promise<number> {
@@ -1267,10 +1238,7 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`Skipping views prune: missing module name in metadata.`);
             return 0;
         }
-        if (!viewsDto || viewsDto.length === 0) {
-            this.logger.debug(`No views metadata provided; skipping prune for ${moduleName}.`);
-            return 0;
-        }
+        const views = viewsDto ?? [];
 
         const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
         if (!module) {
@@ -1278,12 +1246,13 @@ export class ModuleMetadataSeederService {
             return 0;
         }
 
-        const viewNames = [...new Set(viewsDto.map((v: any) => v.name).filter(Boolean))];
+        const viewNames = [...new Set(views.map((v: any) => v.name).filter(Boolean))];
         const repo = this.dataSource.getRepository(ViewMetadata);
         const idsToDeleteQuery = repo
             .createQueryBuilder('view')
             .select('view.id', 'id')
-            .where('view.moduleId = :moduleId', { moduleId: module.id });
+            .innerJoin('view.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
 
         if (viewNames.length > 0) {
             idsToDeleteQuery.andWhere('view.name NOT IN (:...viewNames)', { viewNames });
@@ -1291,18 +1260,16 @@ export class ModuleMetadataSeederService {
 
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
-        // Commented out to allow pruning when metadata is empty/missing.
-        // if (ids.length === 0) {
-        //     return;
-        // }
-
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(ViewMetadata)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ViewMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
     private async pruneActions(actionsDto: any[] | undefined, moduleName?: string): Promise<number> {
@@ -1310,10 +1277,7 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`Skipping actions prune: missing module name in metadata.`);
             return 0;
         }
-        if (!actionsDto || actionsDto.length === 0) {
-            this.logger.debug(`No actions metadata provided; skipping prune for ${moduleName}.`);
-            return 0;
-        }
+        const actions = actionsDto ?? [];
 
         const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
         if (!module) {
@@ -1321,12 +1285,13 @@ export class ModuleMetadataSeederService {
             return 0;
         }
 
-        const actionNames = [...new Set(actionsDto.map((a: any) => a.name).filter(Boolean))];
+        const actionNames = [...new Set(actions.map((a: any) => a.name).filter(Boolean))];
         const repo = this.dataSource.getRepository(ActionMetadata);
         const idsToDeleteQuery = repo
             .createQueryBuilder('action')
             .select('action.id', 'id')
-            .where('action.moduleId = :moduleId', { moduleId: module.id });
+            .innerJoin('action.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
 
         if (actionNames.length > 0) {
             idsToDeleteQuery.andWhere('action.name NOT IN (:...actionNames)', { actionNames });
@@ -1334,18 +1299,41 @@ export class ModuleMetadataSeederService {
 
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
-        // Commented out to allow pruning when metadata is empty/missing.
-        // if (ids.length === 0) {
-        //     return;
-        // }
+        if (ids.length > 0) {
+            const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
+            const menuRows = await menuRepo
+                .createQueryBuilder('menu')
+                .select('menu.id', 'id')
+                .innerJoin('menu.action', 'action')
+                .where('action.id IN (:...actionIds)', { actionIds: ids })
+                .getRawMany();
+            const menuIds = menuRows.map((row) => row.id);
 
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(ActionMetadata)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+            if (menuIds.length > 0) {
+                await this.dataSource
+                    .createQueryBuilder()
+                    .delete()
+                    .from(MENU_ROLE_JOIN_TABLE_NAME)
+                    .where(`${MENU_ROLE_JOIN_TABLE_NAME_MENU_COL} IN (:...ids)`, { ids: menuIds })
+                    .execute();
+
+                await menuRepo
+                    .createQueryBuilder()
+                    .delete()
+                    .from(MenuItemMetadata)
+                    .whereInIds(menuIds)
+                    .execute();
+            }
+
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ActionMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
     private async pruneFieldsForModel(model: any, fieldsMetadata: any[] | undefined): Promise<number> {
@@ -1353,17 +1341,15 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`Skipping fields prune: model not found.`);
             return 0;
         }
-        if (!fieldsMetadata || fieldsMetadata.length === 0) {
-            this.logger.debug(`No fields metadata provided; skipping prune for model ${model.singularName}.`);
-            return 0;
-        }
+        const fields = fieldsMetadata ?? [];
 
-        const fieldNames = [...new Set(fieldsMetadata.map(f => f.name).filter(Boolean))];
+        const fieldNames = [...new Set(fields.map(f => f.name).filter(Boolean))];
         const repo = this.dataSource.getRepository(FieldMetadata);
         const idsToDeleteQuery = repo
             .createQueryBuilder('field')
             .select('field.id', 'id')
-            .where('field.modelId = :modelId', { modelId: model.id })
+            .innerJoin('field.model', 'model')
+            .where('model.id = :modelId', { modelId: model.id })
             .andWhere('field.isSystem = :isSystem', { isSystem: false });
 
         if (fieldNames.length > 0) {
@@ -1372,18 +1358,16 @@ export class ModuleMetadataSeederService {
 
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
-        // Commented out to allow pruning when metadata is empty/missing.
-        // if (ids.length === 0) {
-        //     return;
-        // }
-
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(FieldMetadata)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(FieldMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
     private async pruneModels(modelsMetadata: CreateModelMetadataDto[] | undefined, moduleName?: string): Promise<number> {
@@ -1391,10 +1375,7 @@ export class ModuleMetadataSeederService {
             this.logger.warn(`Skipping models prune: missing module name in metadata.`);
             return 0;
         }
-        if (!modelsMetadata || modelsMetadata.length === 0) {
-            this.logger.debug(`No models metadata provided; skipping prune for ${moduleName}.`);
-            return 0;
-        }
+        const models = modelsMetadata ?? [];
 
         const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
         if (!module) {
@@ -1402,12 +1383,13 @@ export class ModuleMetadataSeederService {
             return 0;
         }
 
-        const modelNames = [...new Set(modelsMetadata.map(m => m.singularName).filter(Boolean))];
+        const modelNames = [...new Set(models.map(m => m.singularName).filter(Boolean))];
         const repo = this.dataSource.getRepository(ModelMetadata);
         const idsToDeleteQuery = repo
             .createQueryBuilder('model')
             .select('model.id', 'id')
-            .where('model.moduleId = :moduleId', { moduleId: module.id })
+            .innerJoin('model.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id })
             .andWhere('model.isSystem = :isSystem', { isSystem: false });
 
         if (modelNames.length > 0) {
@@ -1416,18 +1398,16 @@ export class ModuleMetadataSeederService {
 
         const rows = await idsToDeleteQuery.getRawMany();
         const ids = rows.map((row) => row.id);
-        // Commented out to allow pruning when metadata is empty/missing.
-        // if (ids.length === 0) {
-        //     return;
-        // }
-
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(ModelMetadata)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ModelMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
     private getRolePermissionJoinInfo(): { tableName: string; permissionIdColumn: string } | null {
@@ -1478,13 +1458,16 @@ export class ModuleMetadataSeederService {
                 .execute();
         }
 
-        await repo
-            .createQueryBuilder()
-            .delete()
-            .from(PermissionMetadata)
-            .whereInIds(ids)
-            .execute();
-        return ids.length;
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(PermissionMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
     }
 
 }
