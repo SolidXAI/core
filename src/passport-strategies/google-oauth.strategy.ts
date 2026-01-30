@@ -17,34 +17,23 @@ export class GoogleOauthGuard extends AuthGuard('google') { }
 @Injectable()
 export class GoogleOauthStrategy extends PassportStrategy(Strategy, 'google') {
   private readonly logger = new Logger(GoogleOauthStrategy.name);
-  constructor(
-    private readonly userService: UserService
-  ) {
+  constructor(private readonly userService: UserService) {
     // TODO: Have added default dummy values for the configuration, since the configuration is not mandatory.
     // Perhaps a cleaner way needs to be figured out
-    super({
-      clientID: process.env.IAM_GOOGLE_OAUTH_CLIENT_ID ?? DUMMY_CLIENT_ID,
-      clientSecret: process.env.IAM_GOOGLE_OAUTH_CLIENT_SECRET ?? DUMMY_CLIENT_SECRET,
-      callbackURL: process.env.IAM_GOOGLE_OAUTH_CALLBACK_URL ?? DUMMY_CALLBACK_URL,
-      scope: ['profile', 'email'],
-    });
-    const googleOauth: GoogleAuthConfiguration = {
-      clientID: process.env.IAM_GOOGLE_OAUTH_CLIENT_ID,
-      clientSecret: process.env.IAM_GOOGLE_OAUTH_CLIENT_SECRET,
-      callbackURL: process.env.IAM_GOOGLE_OAUTH_CALLBACK_URL,
-      redirectURL: process.env.IAM_GOOGLE_OAUTH_REDIRECT_URL,
-    }
+    const clientID = process.env.IAM_GOOGLE_OAUTH_CLIENT_ID ?? DUMMY_CLIENT_ID;
+    const clientSecret = process.env.IAM_GOOGLE_OAUTH_CLIENT_SECRET ?? DUMMY_CLIENT_SECRET;
+    const callbackURL = process.env.IAM_GOOGLE_OAUTH_CALLBACK_URL ?? DUMMY_CALLBACK_URL;
+    const redirectURL = process.env.IAM_GOOGLE_OAUTH_REDIRECT_URL;
+
+    super({ clientID, clientSecret, callbackURL, scope: ['profile', 'email'] });
+
+    const googleOauth: GoogleAuthConfiguration = { clientID, clientSecret, callbackURL, redirectURL }
     if (!isGoogleOAuthConfigured(googleOauth)) {
       this.logger.debug('Google OAuth strategy is not configured');
     }
   }
 
-  async validate(
-    _accessToken: string,
-    _refreshToken: string,
-    profile: any,
-    done: VerifyCallback,
-  ): Promise<any> {
+  async validate(_accessToken: string, _refreshToken: string, profile: any, done: VerifyCallback): Promise<any> {
     const { id, name, emails, photos } = profile;
 
     // generate a unique access code. 
