@@ -52,6 +52,7 @@ import { Dashboard } from 'src/entities/dashboard.entity';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
+import { classify } from '@angular-devkit/core/src/utils/strings';
 import { ViewMetadata } from 'src/entities/view-metadata.entity';
 
 
@@ -217,6 +218,11 @@ export class ModuleMetadataSeederService {
             this.logger.log(`Seeding Model Sequences`);
             const modelSequenceCounts = await this.seedModelSequences(overallMetadata);
             console.log(`${this.formatSeedResult(moduleMetadata.name, 'Model Sequences', modelSequenceCounts)}`);
+
+            // Seed Data
+            this.logger.log(`Seeding Seed Data`);
+            const seedDataCounts = await this.seedSeedData(moduleMetadata, overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Seed Data', seedDataCounts)}`);
 
             this.logger.debug(`[End] module seed data: ${overallMetadata}`);
         }
@@ -493,6 +499,82 @@ export class ModuleMetadataSeederService {
         await this.handleSeedModelSequences(modelSequences);
         this.logger.debug(`[End] Processing model sequences`);
         return { pruned, upserted: modelSequences?.length ?? 0 };
+    }
+
+    private async seedSeedData(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
+        this.logger.debug(`[Start] Processing seed data for ${moduleMetadata.name}`);
+        const seedData: Array<{ modelUserKey: string; data: Record<string, any> }> = overallMetadata.seedData ?? [];
+        if (seedData.length === 0) {
+            this.logger.debug(`No seed data found for ${moduleMetadata.name}`);
+            return { pruned: 0, upserted: 0 };
+        }
+
+        const modelsByName = new Map<string, CreateModelMetadataDto>(
+            (moduleMetadata.models ?? []).map((m) => [m.singularName, m]),
+        );
+
+        await this.dataSource.transaction(async (manager) => {
+            for (const entry of seedData) {
+                const modelUserKey = entry.modelUserKey;
+                const modelDef = modelsByName.get(modelUserKey);
+                if (!modelDef) {
+                    throw new Error(`Seed data modelUserKey not found in metadata: ${modelUserKey}`);
+                }
+
+                const entityRepo = manager.getRepository(classify(modelUserKey));
+                const payload: Record<string, any> = { ...(entry.data ?? {}) };
+
+                for (const field of modelDef.fields ?? []) {
+                    if (field.type === 'relation' && field.relationType === 'many-to-one') {
+                        const userKeyProp = `${field.name}UserKey`;
+                        if (!(userKeyProp in payload)) {
+                            continue;
+                        }
+
+                        const userKeyValue = payload[userKeyProp];
+                        if (userKeyValue === null || userKeyValue === undefined || userKeyValue === '') {
+                            delete payload[userKeyProp];
+                            continue;
+                        }
+
+                        const coModelName = field.relationCoModelSingularName;
+                        const coModelDef = coModelName ? modelsByName.get(coModelName) : null;
+                        if (!coModelDef) {
+                            throw new Error(`Seed data relation model ${coModelName} not found in metadata, when attempting to resolve field ${modelDef.singularName}.${field.name}`);
+                        }
+                        const coUserKeyField = coModelDef.userKeyFieldUserKey;
+                        if (!coUserKeyField) {
+                            throw new Error(`Seed data relation model ${coModelName} is missing userKeyFieldUserKey, when attempting to resolve field ${modelDef.singularName}.${field.name}`);
+                        }
+
+                        const coRepo = manager.getRepository(classify(coModelName)) as any;
+                        const related = typeof coRepo.findOneByUserKey === 'function' ? await coRepo.findOneByUserKey(userKeyValue) : await coRepo.findOne({ where: { [coUserKeyField]: userKeyValue } });
+                        if (!related) {
+                            throw new Error(`Seed data relation not found: ${coModelName}.${coUserKeyField}=${userKeyValue}`);
+                        }
+
+                        payload[field.name] = related;
+                        delete payload[userKeyProp];
+                    }
+                }
+
+                const userKeyField = modelDef.userKeyFieldUserKey;
+                if (userKeyField && payload[userKeyField] !== undefined) {
+                    const existing = await entityRepo.findOne({
+                        where: { [userKeyField]: payload[userKeyField] },
+                    });
+                    if (existing) {
+                        await entityRepo.save(entityRepo.merge(existing, payload));
+                        continue;
+                    }
+                }
+
+                await entityRepo.save(entityRepo.create(payload));
+            }
+        });
+
+        this.logger.debug(`[End] Processing seed data for ${moduleMetadata.name}`);
+        return { pruned: 0, upserted: seedData.length };
     }
 
     // OK
