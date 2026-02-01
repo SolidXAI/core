@@ -3,6 +3,7 @@ export * from './commands/refresh-model.command'
 export * from './commands/refresh-module.command'
 export * from './commands/remove-fields.command'
 export * from './commands/seed.command'
+export * from './commands/test-data.command'
 
 export * from './config/cache.options'
 
