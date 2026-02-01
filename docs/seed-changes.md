@@ -30,12 +30,9 @@ Pruning is now available for most metadata targets. When enabled, records presen
 - System fields (global)
 - Default settings (global)
 
-### Pruning Mode Prompt
-Default seeding prompts:
-```
-Prune metadata entries not in JSON? (y/N)
-```
-Pruning is skipped during test setup/teardown.
+### Pruning Mode
+Pruning runs **only** when `--prune` is provided. If omitted, pruning is skipped.
+Pruning is also skipped during test data setup/teardown.
 
 ## Test Data Workflow
 Test data is now isolated from normal seeding and lives under `testData` in module metadata JSON.
@@ -105,10 +102,14 @@ npx @solidstarters/solidctl seed --modules-to-seed venue --test-data-setup
 npx @solidstarters/solidctl seed --modules-to-seed venue --test-data-teardown
 ```
 
-### Pruning enabled (interactive prompt)
-Run and answer `y` to the pruning prompt:
+### Pruning enabled
 ```
 npx @solidstarters/solidctl seed --modules-to-seed venue
+```
+
+### Pruning enabled (all modules)
+```
+npx @solidstarters/solidctl seed --prune
 ```
 
 ## Files Touched (Key)
