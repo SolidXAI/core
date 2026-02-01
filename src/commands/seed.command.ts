@@ -5,8 +5,6 @@ import { SolidRegistry } from 'src/helpers/solid-registry';
 interface SeedCommandOptions {
   seeder?: string;
   modulesToSeed?: string;
-  testDataSetup?: boolean;
-  testDataTeardown?: boolean;
   prune?: boolean;
 }
 
@@ -31,11 +29,6 @@ export class SeedCommand extends CommandRunner {
       this.logger.log('No --modules-to-seed flag provided. Running with default seeder behavior.');
     }
 
-    if (options?.testDataSetup || options?.testDataTeardown) {
-      parsedConf = parsedConf ?? {};
-      if (options.testDataSetup) parsedConf.testDataSetup = true;
-      if (options.testDataTeardown) parsedConf.testDataTeardown = true;
-    }
     if (options?.prune) {
       parsedConf = parsedConf ?? {};
       parsedConf.pruneMetadata = true;
@@ -66,16 +59,6 @@ export class SeedCommand extends CommandRunner {
   @Option({ flags: '-s, --seeder [seeder name]', description: 'The seeder to run.', required: true, defaultValue: 'ModuleMetadataSeederService' })
   parseString(val: string): string {
     return val;
-  }
-
-  @Option({ flags: '--test-data-setup', description: 'Seed test data from testData sections.' })
-  parseTestSetup(): boolean {
-    return true;
-  }
-
-  @Option({ flags: '--test-data-teardown', description: 'Delete test data defined in testData sections.' })
-  parseTestTeardown(): boolean {
-    return true;
   }
 
   @Option({ flags: '--prune', description: 'Prune metadata not present in JSON.' })

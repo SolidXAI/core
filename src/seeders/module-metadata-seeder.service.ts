@@ -1,7 +1,6 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
-import * as readline from 'readline';
 import { v4 as uuidv4 } from 'uuid';
 
 import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
@@ -51,7 +50,6 @@ import { Dashboard } from 'src/entities/dashboard.entity';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
-import { classify } from '@angular-devkit/core/src/utils/strings';
 import { ViewMetadata } from 'src/entities/view-metadata.entity';
 
 
@@ -59,8 +57,6 @@ import { ViewMetadata } from 'src/entities/view-metadata.entity';
 export class ModuleMetadataSeederService {
     private readonly logger = new Logger(ModuleMetadataSeederService.name);
     private enablePruning: boolean = false;
-    private enableTestDataSetup: boolean = false;
-    private enableTestDataTeardown: boolean = false;
 
     constructor(
         private readonly moduleMetadataService: ModuleMetadataService,
@@ -94,24 +90,11 @@ export class ModuleMetadataSeederService {
     ) { }
 
     async seed(conf?: any) {
-        this.enableTestDataSetup = Boolean(conf?.testDataSetup);
-        this.enableTestDataTeardown = Boolean(conf?.testDataTeardown);
-        if (this.enableTestDataSetup && this.enableTestDataTeardown) {
-            throw new Error('Both testDataSetup and testDataTeardown are enabled; please choose only one.');
-        }
-
-        if (this.enableTestDataSetup || this.enableTestDataTeardown) {
-            this.enablePruning = false;
-            console.log(this.enableTestDataSetup ? '▶ Test setup mode: seeding test data only.' : '▶ Test teardown mode: deleting test data only.');
-        } else {
-            this.enablePruning = Boolean(conf?.pruneMetadata);
-            console.log(this.enablePruning ? '▶ Pruning enabled: metadata not present in JSON will be removed.' : '▶ Pruning disabled: existing metadata will be kept.');
-        }
+        this.enablePruning = Boolean(conf?.pruneMetadata);
+        console.log(this.enablePruning ? '▶ Pruning enabled: metadata not present in JSON will be removed.' : '▶ Pruning disabled: existing metadata will be kept.');
 
         // Global seeding steps i.e across all modules
-        if (!this.enableTestDataSetup && !this.enableTestDataTeardown) {
-            await this.seedGlobalMetadata();
-        }
+        await this.seedGlobalMetadata();
 
         // Module specific seeding steps.
         // Get all the module metadata files which needs to be seeded.
@@ -148,105 +131,87 @@ export class ModuleMetadataSeederService {
         for (let i = 0; i < filteredSeedDataFiles.length; i++) {
             const overallMetadata = filteredSeedDataFiles[i];
             const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
-            if (this.enableTestDataSetup || this.enableTestDataTeardown) {
-                console.log(`▶ Processing Test Data for Module: ${moduleMetadata.name}`);
-                this.logger.log(`Processing Test Data for Module: ${moduleMetadata.name}`);
-            } else {
-                console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
-                this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
-            }
+            console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
+            this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
 
-            if (this.enableTestDataSetup || this.enableTestDataTeardown) {
-                // Test Data only
-                this.logger.log(`Seeding Test Data`);
-                const testDataCounts = await this.seedTestData(moduleMetadata, overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Test Data', testDataCounts)}`);
-            } else {
-                // Process module metadata first. 
-                this.logger.log(`Seeding Module / Model / Fields`);
-                const moduleModelFieldCounts = await this.seedModuleModelFields(moduleMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
+            // Process module metadata first. 
+            this.logger.log(`Seeding Module / Model / Fields`);
+            const moduleModelFieldCounts = await this.seedModuleModelFields(moduleMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
 
-                // Media Storage provider templates
-                this.logger.log(`Seeding Media Storage Providers`);
-                const mediaStorageCounts = await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Media Storage Providers', mediaStorageCounts)}`);
+            // Media Storage provider templates
+            this.logger.log(`Seeding Media Storage Providers`);
+            const mediaStorageCounts = await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Media Storage Providers', mediaStorageCounts)}`);
 
-                // Custom role handling
-                this.logger.log(`Seeding Roles`);
-                const roleCounts = await this.seedRoles(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Roles', roleCounts)}`);
+            // Custom role handling
+            this.logger.log(`Seeding Roles`);
+            const roleCounts = await this.seedRoles(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Roles', roleCounts)}`);
 
-                // Custom user handling
-                this.logger.log(`Seeding Users`);
-                const userCounts = await this.seedUsers(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Users', userCounts)}`);
+            // Custom user handling
+            this.logger.log(`Seeding Users`);
+            const userCounts = await this.seedUsers(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Users', userCounts)}`);
 
-                // Application Module View handling 
-                this.logger.log(`Seeding Views`);
-                const viewCounts = await this.seedViews(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Views', viewCounts)}`);
+            // Application Module View handling 
+            this.logger.log(`Seeding Views`);
+            const viewCounts = await this.seedViews(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Views', viewCounts)}`);
 
-                // Application Module Action handling
-                this.logger.log(`Seeding Actions`);
-                const actionCounts = await this.seedActions(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Actions', actionCounts)}`);
+            // Application Module Action handling
+            this.logger.log(`Seeding Actions`);
+            const actionCounts = await this.seedActions(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Actions', actionCounts)}`);
 
-                // Application Module Menu handling 
-                this.logger.log(`Seeding Menus`);
-                const menuCounts = await this.seedMenus(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Menus', menuCounts)}`);
+            // Application Module Menu handling 
+            this.logger.log(`Seeding Menus`);
+            const menuCounts = await this.seedMenus(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Menus', menuCounts)}`);
 
-                // Email templates 
-                this.logger.log(`Seeding Email Templates`);
-                const emailTemplateCounts = await this.seedEmailTemplates(overallMetadata, moduleMetadata.name);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Email Templates', emailTemplateCounts)}`);
+            // Email templates 
+            this.logger.log(`Seeding Email Templates`);
+            const emailTemplateCounts = await this.seedEmailTemplates(overallMetadata, moduleMetadata.name);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Email Templates', emailTemplateCounts)}`);
 
-                // Sms templates
-                this.logger.log(`Seeding Sms Templates`);
-                const smsTemplateCounts = await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Sms Templates', smsTemplateCounts)}`);
+            // Sms templates
+            this.logger.log(`Seeding Sms Templates`);
+            const smsTemplateCounts = await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Sms Templates', smsTemplateCounts)}`);
 
-                // Security rules
-                this.logger.log(`Seeding Security Rules`);
-                const securityRuleCounts = await this.seedSecurityRules(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Security Rules', securityRuleCounts)}`);
+            // Security rules
+            this.logger.log(`Seeding Security Rules`);
+            const securityRuleCounts = await this.seedSecurityRules(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Security Rules', securityRuleCounts)}`);
 
-                // List Of Values
-                this.logger.log(`Seeding List Of Values`);
-                const lovCounts = await this.seedListOfValues(moduleMetadata, overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'List Of Values', lovCounts)}`);
+            // List Of Values
+            this.logger.log(`Seeding List Of Values`);
+            const lovCounts = await this.seedListOfValues(moduleMetadata, overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'List Of Values', lovCounts)}`);
 
-                // Dashboards
-                this.logger.log(`Seeding Dashboards`);
-                const dashboardCounts = await this.seedDashboards(moduleMetadata, overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Dashboards', dashboardCounts)}`);
+            // Dashboards
+            this.logger.log(`Seeding Dashboards`);
+            const dashboardCounts = await this.seedDashboards(moduleMetadata, overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Dashboards', dashboardCounts)}`);
 
-                // Scheduled Jobs
-                this.logger.log(`Seeding Scheduled Jobs`);
-                const scheduledJobCounts = await this.seedScheduledJobs(moduleMetadata, overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Scheduled Jobs', scheduledJobCounts)}`);
+            // Scheduled Jobs
+            this.logger.log(`Seeding Scheduled Jobs`);
+            const scheduledJobCounts = await this.seedScheduledJobs(moduleMetadata, overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Scheduled Jobs', scheduledJobCounts)}`);
 
-                // Saved Filters
-                this.logger.log(`Seeding Saved Filters`);
-                const savedFilterCounts = await this.seedSavedFilters(moduleMetadata, overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Saved Filters', savedFilterCounts)}`);
+            // Saved Filters
+            this.logger.log(`Seeding Saved Filters`);
+            const savedFilterCounts = await this.seedSavedFilters(moduleMetadata, overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Saved Filters', savedFilterCounts)}`);
 
-                // Model Sequences
-                this.logger.log(`Seeding Model Sequences`);
-                const modelSequenceCounts = await this.seedModelSequences(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Model Sequences', modelSequenceCounts)}`);
-
-                console.log(`✔ [${moduleMetadata.name}] Test Data skipped (use --test-data-setup or --test-data-teardown)`);
-            }
-
-            this.logger.debug(`[End] module test data: ${overallMetadata}`);
+            // Model Sequences
+            this.logger.log(`Seeding Model Sequences`);
+            const modelSequenceCounts = await this.seedModelSequences(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Model Sequences', modelSequenceCounts)}`);
         }
 
         // Setup default roles with permissions.
-        if (!this.enableTestDataSetup && !this.enableTestDataTeardown) {
-            await this.setupDefaultRolesWithPermissions();
-        }
+        await this.setupDefaultRolesWithPermissions();
 
         // Add a console log indicating seeding is finished. This needs to be console.log so that it looks proper when this code is run via CLI.
         console.log(`✔ Seeding completed.`);
@@ -517,187 +482,6 @@ export class ModuleMetadataSeederService {
         await this.handleSeedModelSequences(modelSequences);
         this.logger.debug(`[End] Processing model sequences`);
         return { pruned, upserted: modelSequences?.length ?? 0 };
-    }
-
-    private async seedTestData(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing test data for ${moduleMetadata.name}`);
-        const testData: Array<{ modelUserKey: string; data: Record<string, any> }> = overallMetadata.testData ?? [];
-        if (!this.enableTestDataSetup && !this.enableTestDataTeardown) {
-            this.logger.debug(`Test data skipped for ${moduleMetadata.name}; enable via --test-data-setup or --test-data-teardown.`);
-            return { pruned: 0, upserted: 0 };
-        }
-        if (testData.length === 0) {
-            this.logger.debug(`No test data found for ${moduleMetadata.name}`);
-            return { pruned: 0, upserted: 0 };
-        }
-
-        const modelsByName = new Map<string, CreateModelMetadataDto>(
-            (moduleMetadata.models ?? []).map((m) => [m.singularName, m]),
-        );
-
-        let deletedCount = 0;
-        await this.dataSource.transaction(async (manager) => {
-            if (this.enableTestDataTeardown) {
-                deletedCount = await this.handleTestDataTeardown(testData, modelsByName, manager, moduleMetadata.name);
-                return;
-            }
-
-            await this.handleTestDataSetup(testData, modelsByName, manager);
-        });
-
-        this.logger.debug(`[End] Processing test data for ${moduleMetadata.name}`);
-        if (this.enableTestDataTeardown) {
-            return { pruned: deletedCount, upserted: 0 };
-        }
-        return { pruned: 0, upserted: testData.length };
-    }
-
-    private async handleTestDataTeardown(
-        testData: Array<{ modelUserKey: string; data: Record<string, any> }>,
-        modelsByName: Map<string, CreateModelMetadataDto>,
-        manager: DataSource['manager'],
-        moduleName: string,
-    ): Promise<number> {
-        let deletedCount = 0;
-        const entriesByModel = new Map<string, Array<{ modelUserKey: string; data: Record<string, any> }>>();
-        for (const entry of testData) {
-            const list = entriesByModel.get(entry.modelUserKey) ?? [];
-            list.push(entry);
-            entriesByModel.set(entry.modelUserKey, list);
-        }
-
-        const depGraph = new Map<string, Set<string>>();
-        for (const [modelName, modelDef] of modelsByName.entries()) {
-            const deps = new Set<string>();
-            for (const field of modelDef.fields ?? []) {
-                if (field.type === 'relation' && field.relationType === 'many-to-one') {
-                    if (field.relationCoModelSingularName) {
-                        deps.add(field.relationCoModelSingularName);
-                    }
-                }
-            }
-            depGraph.set(modelName, deps);
-        }
-
-        const visited = new Set<string>();
-        const visiting = new Set<string>();
-        const sorted: string[] = [];
-
-        const visit = (node: string) => {
-            if (visited.has(node)) return;
-            if (visiting.has(node)) {
-                throw new Error(`Test data teardown graph has a cycle at ${node}`);
-            }
-            visiting.add(node);
-            for (const dep of depGraph.get(node) ?? []) {
-                if (modelsByName.has(dep)) {
-                    visit(dep);
-                }
-            }
-            visiting.delete(node);
-            visited.add(node);
-            sorted.push(node);
-        };
-
-        for (const modelName of modelsByName.keys()) {
-            visit(modelName);
-        }
-
-        const deleteOrder = [...sorted].reverse();
-        this.logger.log(`Test data teardown delete order (module ${moduleName}): ${deleteOrder.join(' -> ')}`);
-        console.log(`Test data teardown delete order (module ${moduleName}): ${deleteOrder.join(' -> ')}`);
-        for (const modelName of deleteOrder) {
-            const entries = entriesByModel.get(modelName);
-            if (!entries || entries.length === 0) {
-                continue;
-            }
-            const modelDef = modelsByName.get(modelName);
-            if (!modelDef) {
-                throw new Error(`Test data modelUserKey not found in metadata: ${modelName}`);
-            }
-            const userKeyField = modelDef.userKeyFieldUserKey;
-            if (!userKeyField) {
-                throw new Error(`Test data teardown requires userKeyFieldUserKey for model ${modelName}`);
-            }
-            const entityRepo = manager.getRepository(classify(modelName));
-            for (const entry of entries) {
-                const payload: Record<string, any> = { ...(entry.data ?? {}) };
-                const userKeyValue = payload[userKeyField];
-                if (userKeyValue === undefined) {
-                    throw new Error(`Test data teardown requires ${modelName}.${userKeyField} in data`);
-                }
-                const result = await entityRepo.delete({ [userKeyField]: userKeyValue });
-                deletedCount += result.affected ?? 0;
-            }
-        }
-
-        return deletedCount;
-    }
-
-    private async handleTestDataSetup(
-        testData: Array<{ modelUserKey: string; data: Record<string, any> }>,
-        modelsByName: Map<string, CreateModelMetadataDto>,
-        manager: DataSource['manager'],
-    ): Promise<void> {
-        for (const entry of testData) {
-            const modelUserKey = entry.modelUserKey;
-            const modelDef = modelsByName.get(modelUserKey);
-            if (!modelDef) {
-                throw new Error(`Test data modelUserKey not found in metadata: ${modelUserKey}`);
-            }
-
-            const entityRepo = manager.getRepository(classify(modelUserKey));
-            const payload: Record<string, any> = { ...(entry.data ?? {}) };
-
-            for (const field of modelDef.fields ?? []) {
-                if (field.type === 'relation' && field.relationType === 'many-to-one') {
-                    const userKeyProp = `${field.name}UserKey`;
-                    if (!(userKeyProp in payload)) {
-                        continue;
-                    }
-
-                    const userKeyValue = payload[userKeyProp];
-                    if (userKeyValue === null || userKeyValue === undefined || userKeyValue === '') {
-                        delete payload[userKeyProp];
-                        continue;
-                    }
-
-                    const coModelName = field.relationCoModelSingularName;
-                    const coModelDef = coModelName ? modelsByName.get(coModelName) : null;
-                    if (!coModelDef) {
-                        throw new Error(`Test data relation model ${coModelName} not found in metadata, when attempting to resolve field ${modelDef.singularName}.${field.name}`);
-                    }
-                    const coUserKeyField = coModelDef.userKeyFieldUserKey;
-                    if (!coUserKeyField) {
-                        throw new Error(`Test data relation model ${coModelName} is missing userKeyFieldUserKey, when attempting to resolve field ${modelDef.singularName}.${field.name}`);
-                    }
-
-                    const coRepo = manager.getRepository(classify(coModelName)) as any;
-                    const related = typeof coRepo.findOneByUserKey === 'function'
-                        ? await coRepo.findOneByUserKey(userKeyValue)
-                        : await coRepo.findOne({ where: { [coUserKeyField]: userKeyValue } });
-                    if (!related) {
-                        throw new Error(`Test data relation not found: ${coModelName}.${coUserKeyField}=${userKeyValue}`);
-                    }
-
-                    payload[field.name] = related;
-                    delete payload[userKeyProp];
-                }
-            }
-
-            const userKeyField = modelDef.userKeyFieldUserKey;
-            if (userKeyField && payload[userKeyField] !== undefined) {
-                const existing = await entityRepo.findOne({
-                    where: { [userKeyField]: payload[userKeyField] },
-                });
-                if (existing) {
-                    await entityRepo.save(entityRepo.merge(existing, payload));
-                    continue;
-                }
-            }
-
-            await entityRepo.save(entityRepo.create(payload));
-        }
     }
 
     // OK
