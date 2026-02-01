@@ -1,6 +1,7 @@
 import { camelize } from '@angular-devkit/core/src/utils/strings';
 import { Logger } from '@nestjs/common';
 import { CommonEntity } from 'src/entities/common.entity';
+import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { RequestContextService } from 'src/services/request-context.service';
 import {
@@ -31,6 +32,21 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
 
     modelSingularName(): string {
         return camelize(this.metadata.name);
+    }
+
+    async findOneByUserKey(userKeyValue: string | number): Promise<T | null> {
+        const modelSingularName = this.modelSingularName();
+        const modelMetaRepo = this.manager.getRepository(ModelMetadata);
+        const modelMeta = await modelMetaRepo.findOne({
+            where: { singularName: modelSingularName },
+            relations: { userKeyField: true },
+        });
+
+        if (!modelMeta?.userKeyField?.name) {
+            throw new Error(`User key field not found for model ${modelSingularName}`);
+        }
+
+        return this.findOneBy({ [modelMeta.userKeyField.name]: userKeyValue } as FindOptionsWhere<T>);
     }
 
     override createQueryBuilder(alias?: string, queryRunner?: QueryRunner): SelectQueryBuilder<T> {
