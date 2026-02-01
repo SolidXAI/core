@@ -79,7 +79,7 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         );
         //TODO: We can add a feature i.e dependsOn, where we can check if the computed field depends on other computed fields and evaluate them first
         await Promise.all(
-            computedFieldsTobeEvaluated.map(c => this.evaluateComputedField(this.attachContext(c, eventContext), entity))
+            computedFieldsTobeEvaluated.map(c => this.evaluateComputedField(this.attachContext(c, eventContext), entity, currentOperation))
         )
     }
 
@@ -109,11 +109,30 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         );
     }
 
-    private async evaluateComputedField(computedFieldMetadata: ComputedFieldMetadata<any>, entity: any) {
+    private async evaluateComputedField(computedFieldMetadata: ComputedFieldMetadata<any>, entity: any, currentOperation: ComputedFieldTriggerOperation) {
+        // Skip pre-compute on insert when the payload already supplies the target field value.
+        if (this.shouldSkipPreComputeOnInsert(computedFieldMetadata, entity, currentOperation)) {
+            return;
+        }
         const computedValue = await this.preComputeValue(computedFieldMetadata, entity);
         if (computedValue) {
             entity[computedFieldMetadata.fieldName] = computedValue; //TODO: This line here is just for backward compatibility, once the pre compute interface is change to return void, we will get rid of it.
         }
+    }
+
+    private shouldSkipPreComputeOnInsert(computedFieldMetadata: ComputedFieldMetadata<any>, entity: any, currentOperation: ComputedFieldTriggerOperation): boolean {
+        if (currentOperation !== ComputedFieldTriggerOperation.beforeInsert) {
+            return false;
+        }
+        if (!entity) {
+            return false;
+        }
+        const fieldName = computedFieldMetadata.fieldName;
+        if (!fieldName) {
+            return false;
+        }
+        const hasValue = Object.prototype.hasOwnProperty.call(entity, fieldName) && entity[fieldName] !== undefined && entity[fieldName] !== null;
+        return hasValue;
     }
 
     private async preComputeValue(computedFieldMetadata: ComputedFieldMetadata<any>, entity: any) {
