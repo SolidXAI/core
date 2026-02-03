@@ -34,7 +34,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // media.forEach(m => {
         // });
         for (const m of media) {
-            m['_full_url'] = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${this.getFullFilePath(m.relativeUri)}`;
+            m['_full_url'] = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${await this.getFullFilePath(m.relativeUri)}`;
         }
 
 
