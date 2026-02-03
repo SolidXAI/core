@@ -10,23 +10,30 @@ export class ModelSequence extends CommonEntity {
     @ManyToOne(() => ModuleMetadata, { nullable: false })
     @JoinColumn()
     module: ModuleMetadata;
+
     @Index()
     @ManyToOne(() => ModelMetadata, { nullable: false })
     @JoinColumn()
     model: ModelMetadata;
+
     @Index()
     @ManyToOne(() => FieldMetadata, { nullable: false })
     @JoinColumn()
     field: FieldMetadata;
+
     @Index({ unique: true })
     @Column({ type: "varchar" })
     sequenceName: string;
+
     @Column({ type: "integer", default: 1 })
     currentValue: number;
+
     @Column({ type: "varchar", nullable: true })
     prefix: string;
+
     @Column({ type: "integer", default: 5 })
     padding: number;
+
     @Column({ type: "varchar", default: "" })
     separator: string;
 }

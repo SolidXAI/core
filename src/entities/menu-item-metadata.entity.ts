@@ -9,23 +9,29 @@ export class MenuItemMetadata extends CommonEntity {
     @Index({ unique: true })
     @Column({ name: "name", type: "varchar" })
     name: string;
+
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;
+
     @Index()
     @ManyToOne(() => ModuleMetadata, { nullable: false })
     @JoinColumn({ referencedColumnName: 'id' })
     module: ModuleMetadata;
+
     @Index()
     @ManyToOne(() => MenuItemMetadata, { nullable: true })
     @JoinColumn({ referencedColumnName: 'id' })
     parentMenuItem: MenuItemMetadata;
+
     @Index()
     @ManyToOne(() => ActionMetadata, { nullable: true })
     @JoinColumn({ referencedColumnName: 'id' })
     action: ActionMetadata;
+
     @ManyToMany(() => RoleMetadata, roleMetadata => roleMetadata.menuItems, { cascade: true })
     @JoinTable()
     roles: RoleMetadata[];
+
     @Column({ name: "sequence_number", type: "int", nullable: true })
     sequenceNumber: number;
 

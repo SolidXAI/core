@@ -1,4 +1,3 @@
-
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
 import * as path from 'path';
@@ -42,12 +41,22 @@ import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository'
 import { SettingRepository } from 'src/repository/setting.repository';
 import { CreateModelSequenceDto } from 'src/dtos/create-model-sequence.dto';
 import { ModelSequenceRepository } from 'src/repository/model-sequence.repository';
+import { ModelSequence } from 'src/entities/model-sequence.entity';
+import { SavedFilters } from 'src/entities/saved-filters.entity';
+import { ScheduledJob } from 'src/entities/scheduled-job.entity';
+import { SecurityRule } from 'src/entities/security-rule.entity';
+import { ListOfValues } from 'src/entities/list-of-values.entity';
+import { Dashboard } from 'src/entities/dashboard.entity';
+import { FieldMetadata } from 'src/entities/field-metadata.entity';
+import { ModelMetadata } from 'src/entities/model-metadata.entity';
+import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
+import { ViewMetadata } from 'src/entities/view-metadata.entity';
 
 
 @Injectable()
 export class ModuleMetadataSeederService {
     private readonly logger = new Logger(ModuleMetadataSeederService.name);
-
+    private enablePruning: boolean = false;
 
     constructor(
         private readonly moduleMetadataService: ModuleMetadataService,
@@ -81,18 +90,21 @@ export class ModuleMetadataSeederService {
     ) { }
 
     async seed(conf?: any) {
+        this.enablePruning = Boolean(conf?.pruneMetadata);
+        console.log(this.enablePruning ? '▶ Pruning enabled: metadata not present in JSON will be removed.' : '▶ Pruning disabled: existing metadata will be kept.');
+
         // Global seeding steps i.e across all modules
         await this.seedGlobalMetadata();
-
 
         // Module specific seeding steps.
         // Get all the module metadata files which needs to be seeded.
         const seedDataFiles = this.seedDataFiles;
         this.logger.debug(`Found seed data for modules: ${seedDataFiles.map(s => s.moduleMetadata?.name)}`);
 
-        /** -------------------------------------------------------------
+        /** 
+         * -------------------------------------------------------------
          * Selective module seeding via: 
-         *   solid seed -c "{\"modulesToSeed\": [\"onboarding\", \"reports\"]}"
+         *   solid seed --modules-to-seed onboarding,reports 
          * -------------------------------------------------------------
          */
         let modulesToSeed: string[] | null = null;
@@ -107,11 +119,7 @@ export class ModuleMetadataSeederService {
         }
 
         // Filter modules if needed
-        const filteredSeedDataFiles = modulesToSeed
-            ? seedDataFiles.filter((file) =>
-                modulesToSeed.includes(file.moduleMetadata?.name)
-            )
-            : seedDataFiles;
+        const filteredSeedDataFiles = modulesToSeed ? seedDataFiles.filter((file) => modulesToSeed.includes(file.moduleMetadata?.name)) : seedDataFiles;
 
         if (filteredSeedDataFiles.length === 0) {
             this.logger.warn(`No modules matched the provided modulesToSeed list.`);
@@ -127,81 +135,79 @@ export class ModuleMetadataSeederService {
             this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
 
             // Process module metadata first. 
-            console.log(`▶ [${moduleMetadata.name}] Seeding Module / Model / Fields`);
             this.logger.log(`Seeding Module / Model / Fields`);
-            await this.seedModuleModelFields(moduleMetadata);
+            const moduleModelFieldCounts = await this.seedModuleModelFields(moduleMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
 
             // Media Storage provider templates
-            console.log(`▶ [${moduleMetadata.name}] Seeding Media Storage Providers`);
             this.logger.log(`Seeding Media Storage Providers`);
-            await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
+            const mediaStorageCounts = await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Media Storage Providers', mediaStorageCounts)}`);
 
             // Custom role handling
-            console.log(`▶ [${moduleMetadata.name}] Seeding Roles`);
             this.logger.log(`Seeding Roles`);
-            await this.seedRoles(overallMetadata);
+            const roleCounts = await this.seedRoles(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Roles', roleCounts)}`);
 
             // Custom user handling
-            console.log(`▶ [${moduleMetadata.name}] Seeding Users`);
             this.logger.log(`Seeding Users`);
-            await this.seedUsers(overallMetadata);
+            const userCounts = await this.seedUsers(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Users', userCounts)}`);
 
             // Application Module View handling 
-            console.log(`▶ [${moduleMetadata.name}] Seeding Views`);
             this.logger.log(`Seeding Views`);
-            await this.seedViews(overallMetadata);
+            const viewCounts = await this.seedViews(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Views', viewCounts)}`);
 
             // Application Module Action handling
-            console.log(`▶ [${moduleMetadata.name}] Seeding Actions`);
             this.logger.log(`Seeding Actions`);
-            await this.seedActions(overallMetadata);
+            const actionCounts = await this.seedActions(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Actions', actionCounts)}`);
 
             // Application Module Menu handling 
-            console.log(`▶ [${moduleMetadata.name}] Seeding Menus`);
             this.logger.log(`Seeding Menus`);
-            await this.seedMenus(overallMetadata);
+            const menuCounts = await this.seedMenus(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Menus', menuCounts)}`);
 
             // Email templates 
-            console.log(`▶ [${moduleMetadata.name}] Seeding Email Templates`);
             this.logger.log(`Seeding Email Templates`);
-            await this.seedEmailTemplates(overallMetadata, moduleMetadata.name);
+            const emailTemplateCounts = await this.seedEmailTemplates(overallMetadata, moduleMetadata.name);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Email Templates', emailTemplateCounts)}`);
 
             // Sms templates
-            console.log(`▶ [${moduleMetadata.name}] Seeding Sms Templates`);
             this.logger.log(`Seeding Sms Templates`);
-            await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
+            const smsTemplateCounts = await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Sms Templates', smsTemplateCounts)}`);
 
             // Security rules
-            console.log(`▶ [${moduleMetadata.name}] Seeding Security Rules`);
             this.logger.log(`Seeding Security Rules`);
-            await this.seedSecurityRules(overallMetadata);
+            const securityRuleCounts = await this.seedSecurityRules(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Security Rules', securityRuleCounts)}`);
 
             // List Of Values
-            console.log(`▶ [${moduleMetadata.name}] Seeding List Of Values`);
             this.logger.log(`Seeding List Of Values`);
-            await this.seedListOfValues(moduleMetadata, overallMetadata);
+            const lovCounts = await this.seedListOfValues(moduleMetadata, overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'List Of Values', lovCounts)}`);
 
             // Dashboards
-            console.log(`▶ [${moduleMetadata.name}] Seeding Dashboards`);
             this.logger.log(`Seeding Dashboards`);
-            await this.seedDashboards(moduleMetadata, overallMetadata);
+            const dashboardCounts = await this.seedDashboards(moduleMetadata, overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Dashboards', dashboardCounts)}`);
 
             // Scheduled Jobs
-            console.log(`▶ [${moduleMetadata.name}] Seeding Scheduled Jobs`);
             this.logger.log(`Seeding Scheduled Jobs`);
-            await this.seedScheduledJobs(moduleMetadata, overallMetadata);
+            const scheduledJobCounts = await this.seedScheduledJobs(moduleMetadata, overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Scheduled Jobs', scheduledJobCounts)}`);
 
             // Saved Filters
-            console.log(`▶ [${moduleMetadata.name}] Seeding Saved Filters`);
             this.logger.log(`Seeding Saved Filters`);
-            await this.seedSavedFilters(moduleMetadata, overallMetadata);
+            const savedFilterCounts = await this.seedSavedFilters(moduleMetadata, overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Saved Filters', savedFilterCounts)}`);
 
             // Model Sequences
-            console.log(`▶ [${moduleMetadata.name}] Seeding Model Sequences`);
             this.logger.log(`Seeding Model Sequences`);
-            await this.seedModelSequences(overallMetadata);
-
-            this.logger.debug(`[End] module seed data: ${overallMetadata}`);
+            const modelSequenceCounts = await this.seedModelSequences(overallMetadata);
+            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Model Sequences', modelSequenceCounts)}`);
         }
 
         // Setup default roles with permissions.
@@ -215,36 +221,44 @@ export class ModuleMetadataSeederService {
         // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
     }
 
-    private async seedScheduledJobs(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any) {
+    private async seedScheduledJobs(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing scheduled jobs for ${moduleMetadata.name}`);
         const scheduledJobs: CreateScheduledJobDto[] = overallMetadata.scheduledJobs;
+        const pruned = this.enablePruning ? await this.pruneScheduledJobs(scheduledJobs, moduleMetadata.name) : 0;
         if (scheduledJobs?.length > 0) {
             await this.handleSeedScheduledJobs(scheduledJobs);
         }
         this.logger.debug(`[End] Processing scheduled jobs for ${moduleMetadata.name}`);
+        return { pruned, upserted: scheduledJobs?.length ?? 0 };
     }
 
-    private async seedSavedFilters(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any) {
+    private async seedSavedFilters(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing saved filters for ${moduleMetadata.name}`);
         const savedFilters: CreateSavedFiltersDto[] = overallMetadata.savedFilters;
+        const pruned = this.enablePruning ? await this.pruneSavedFilters(savedFilters, moduleMetadata.name) : 0;
         if (savedFilters?.length > 0) {
             await this.handleSeedSavedFilters(savedFilters);
         }
         this.logger.debug(`[End] Processing saved filters for ${moduleMetadata.name}`);
+        return { pruned, upserted: savedFilters?.length ?? 0 };
     }
 
-    private async seedDashboards(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any) {
+    private async seedDashboards(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing dashboards for ${moduleMetadata.name}`);
         const dashboards: CreateDashboardDto[] = overallMetadata.dashboards;
+        const pruned = this.enablePruning ? await this.pruneDashboards(dashboards, moduleMetadata.name) : 0;
         await this.handleSeedDashboards(dashboards);
         this.logger.debug(`[End] Processing dashboards for ${moduleMetadata.name}`);
+        return { pruned, upserted: dashboards?.length ?? 0 };
     }
 
-    private async seedListOfValues(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any) {
+    private async seedListOfValues(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing List Of Values for ${moduleMetadata.name}`);
         const listOfValues: CreateListOfValuesDto[] = overallMetadata.listOfValues;
+        const pruned = this.enablePruning ? await this.pruneListOfValues(listOfValues, moduleMetadata.name) : 0;
         await this.handleSeedListOfValues(listOfValues);
         this.logger.debug(`[End] Processing List Of Values for ${moduleMetadata.name}`);
+        return { pruned, upserted: listOfValues?.length ?? 0 };
     }
 
     private async setupDefaultRolesWithPermissions() {
@@ -259,11 +273,13 @@ export class ModuleMetadataSeederService {
         // await this.roleService.addPermissionToRole(PUBLIC_ROLE_NAME, ['SettingController.wrapSettings', 'AuthenticationController.logout']);
     }
 
-    private async seedSecurityRules(overallMetadata: any) {
+    private async seedSecurityRules(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing security rules`);
         const securityRules: CreateSecurityRuleDto[] = overallMetadata.securityRules;
+        const pruned = this.enablePruning ? await this.pruneSecurityRules(securityRules, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedSecurityRules(securityRules);
         this.logger.debug(`[End] Processing security rules`);
+        return { pruned, upserted: securityRules?.length ?? 0 };
     }
 
     // Ok
@@ -273,56 +289,65 @@ export class ModuleMetadataSeederService {
         this.logger.debug(`[End] Processing settings`);
     }
 
-    private async seedSmsTemplates(overallMetadata: any, moduleName: string) {
+    private async seedSmsTemplates(overallMetadata: any, moduleName: string): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing sms templates`);
         const smsTemplates: CreateSmsTemplateDto[] = overallMetadata.smsTemplates;
         await this.handleSeedSmsTemplates(smsTemplates, moduleName);
         this.logger.debug(`[End] Processing sms templates`);
+        return { pruned: 0, upserted: smsTemplates?.length ?? 0 };
     }
 
     // OK
-    private async seedEmailTemplates(overallMetadata: any, moduleName: string) {
+    private async seedEmailTemplates(overallMetadata: any, moduleName: string): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing email templates`);
         const emailTemplates: CreateEmailTemplateDto[] = overallMetadata.emailTemplates;
         await this.handleSeedEmailTemplates(emailTemplates, moduleName);
         this.logger.debug(`[End] Processing email templates`);
+        return { pruned: 0, upserted: emailTemplates?.length ?? 0 };
     }
 
     // Ok
-    private async seedMenus(overallMetadata: any) {
+    private async seedMenus(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing menus`);
         const menus = overallMetadata.menus;
+        const pruned = this.enablePruning ? await this.pruneMenus(menus, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedMenus(menus);
         this.logger.debug(`[End] Processing menus`);
+        return { pruned, upserted: menus?.length ?? 0 };
     }
 
     // Ok
-    private async seedActions(overallMetadata: any) {
+    private async seedActions(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing actions`);
         const actions = overallMetadata.actions;
+        const pruned = this.enablePruning ? await this.pruneActions(actions, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedActions(actions);
         this.logger.debug(`[End] Processing actions`);
+        return { pruned, upserted: actions?.length ?? 0 };
     }
 
     // Ok
-    private async seedViews(overallMetadata: any) {
+    private async seedViews(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing views`);
         const views = overallMetadata.views;
+        const pruned = this.enablePruning ? await this.pruneViews(views, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedViews(views);
         this.logger.debug(`[End] Processing views`);
+        return { pruned, upserted: views?.length ?? 0 };
     }
 
     // Ok
-    private async seedUsers(overallMetadata: any) {
+    private async seedUsers(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing users`);
         const users = overallMetadata.users;
         // usersDetail = users;
         await this.handleSeedUsers(users);
         this.logger.debug(`[End] Processing users`);
+        return { pruned: 0, upserted: users?.length ?? 0 };
     }
 
     // OK
-    private async seedRoles(overallMetadata: any) {
+    private async seedRoles(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing roles`);
         // While creating roles we are only passing the role name to be used. 
         await this.roleService.createRolesIfNotExists(overallMetadata.roles.map(role => { return { name: role.name }; }));
@@ -334,6 +359,7 @@ export class ModuleMetadataSeederService {
             }
         }
         this.logger.debug(`[End] Processing roles`);
+        return { pruned: 0, upserted: overallMetadata.roles?.length ?? 0 };
     }
 
     // OK
@@ -383,6 +409,7 @@ export class ModuleMetadataSeederService {
     private async seedPermissions() {
 
         const controllers = this.solidRegistry.getControllers();
+        const permissionNames: string[] = [];
 
         // Loop over the countries and create them.
         for (let id = 0; id < controllers.length; id++) {
@@ -395,6 +422,7 @@ export class ModuleMetadataSeederService {
 
                     const methodName = methods[mId];
                     const permissionName = `${controller.name}.${methodName}`;
+                    permissionNames.push(permissionName);
 
                     const existingPermission = await this.permissionRepo.findOne({
                         where: {
@@ -424,6 +452,10 @@ export class ModuleMetadataSeederService {
                 this.logger.error(error);
             }
         }
+
+        if (this.enablePruning) {
+            await this.prunePermissions(permissionNames);
+        }
     }
 
     // OK
@@ -432,7 +464,7 @@ export class ModuleMetadataSeederService {
     // }
 
     // OK
-    private async seedMediaStorageProviders(mediaStorageProviders: any[]) {
+    private async seedMediaStorageProviders(mediaStorageProviders: any[]): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing Media Storage Provider`);
 
         for (let i = 0; i < mediaStorageProviders.length; i++) {
@@ -440,13 +472,16 @@ export class ModuleMetadataSeederService {
             await this.mediaStorageProviderMetadataService.upsert(mediaStorageProvider);
         }
         this.logger.debug(`[End] Processing Media Storage Provider`);
+        return { pruned: 0, upserted: mediaStorageProviders?.length ?? 0 };
     }
 
-    private async seedModelSequences(overallMetadata: any) {
+    private async seedModelSequences(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing model sequences`);
         const modelSequences: CreateModelSequenceDto[] = overallMetadata.modelSequences;
+        const pruned = this.enablePruning ? await this.pruneModelSequences(modelSequences, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedModelSequences(modelSequences);
         this.logger.debug(`[End] Processing model sequences`);
+        return { pruned, upserted: modelSequences?.length ?? 0 };
     }
 
     // OK
@@ -780,14 +815,17 @@ export class ModuleMetadataSeederService {
     }
 
     // OK
-    private async seedModuleModelFields(moduleMetadata: CreateModuleMetadataDto) {
+    private async seedModuleModelFields(moduleMetadata: CreateModuleMetadataDto): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing module metadata`);
 
         // First we create the module. 
         const module = await this.moduleMetadataService.upsert(moduleMetadata);
+        let pruned = 0;
+        let upserted = 1;
 
         // Next create all the models. 
         const modelsMetadata: CreateModelMetadataDto[] = moduleMetadata.models;
+        upserted += modelsMetadata?.length ?? 0;
         for (let j = 0; j < modelsMetadata.length; j++) {
             const modelMetadata = modelsMetadata[j];
 
@@ -805,8 +843,12 @@ export class ModuleMetadataSeederService {
             const model = await this.modelMetadataService.findOneBySingularName(modelMetadata.singularName)
 
             // iterate over all fields and upsert. 
+            if (this.enablePruning) {
+                pruned += await this.pruneFieldsForModel(model, fieldsMetadata);
+            }
             let userKeyField = null;
             const userKeyFieldName = modelMetadata.userKeyFieldUserKey;
+            upserted += fieldsMetadata?.length ?? 0;
             for (let k = 0; k < fieldsMetadata.length; k++) {
                 const fieldMetadata = fieldsMetadata[k];
 
@@ -830,7 +872,11 @@ export class ModuleMetadataSeederService {
                 await this.modelMetadataService.upsert(modelMetaDataWithoutFields);
             }
         }
+        if (this.enablePruning) {
+            pruned += await this.pruneModels(modelsMetadata, moduleMetadata.name);
+        }
         this.logger.debug(`[End] Processing module metadata`);
+        return { pruned, upserted };
     }
 
 
@@ -886,6 +932,7 @@ export class ModuleMetadataSeederService {
             await this.savedFiltersRepo.upsertWithDto({ ...dto, filterQueryJson: JSON.stringify(dto.filterQueryJson) });
         }
     }
+
     private async handleSeedModelSequences(modelSequencesDto: CreateModelSequenceDto[]) {
         if (!modelSequencesDto || modelSequencesDto.length === 0) {
             this.logger.debug(`No Model Sequences found to seed`);
@@ -894,6 +941,585 @@ export class ModuleMetadataSeederService {
         for (const dto of modelSequencesDto) {
             await this.modelSequenceRepo.upsertWithDto(dto);
         }
+    }
+
+    private async pruneModelSequences(modelSequencesDto: CreateModelSequenceDto[] | undefined, moduleName?: string): Promise<number> {
+        if (!moduleName) {
+            this.logger.warn(`Skipping model sequence prune: missing module name in metadata.`);
+            return 0;
+        }
+        const sequences = modelSequencesDto ?? [];
+
+        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        if (!module) {
+            this.logger.warn(`Skipping model sequence prune: module not found for ${moduleName}.`);
+            return 0;
+        }
+
+        const sequenceNames = [...new Set(sequences.map(dto => dto.sequenceName).filter(Boolean))];
+        const repo = this.dataSource.getRepository(ModelSequence);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('ms')
+            .select('ms.id', 'id')
+            .innerJoin('ms.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
+
+        if (sequenceNames.length > 0) {
+            idsToDeleteQuery.andWhere('ms.sequenceName NOT IN (:...sequenceNames)', { sequenceNames });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ModelSequence)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private async pruneSavedFilters(savedFiltersDto: CreateSavedFiltersDto[] | undefined, moduleName?: string): Promise<number> {
+        if (!moduleName) {
+            this.logger.warn(`Skipping saved filters prune: missing module name in metadata.`);
+            return 0;
+        }
+        const savedFilters = savedFiltersDto ?? [];
+
+        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        if (!module) {
+            this.logger.warn(`Skipping saved filters prune: module not found for ${moduleName}.`);
+            return 0;
+        }
+
+        const filterNames = [...new Set(savedFilters.map(dto => dto.name).filter(Boolean))];
+        const repo = this.dataSource.getRepository(SavedFilters);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('sf')
+            .select('sf.id', 'id')
+            .innerJoin('sf.view', 'view')
+            .innerJoin('view.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
+
+        if (filterNames.length > 0) {
+            idsToDeleteQuery.andWhere('sf.name NOT IN (:...filterNames)', { filterNames });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(SavedFilters)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private async pruneScheduledJobs(scheduledJobsDto: CreateScheduledJobDto[] | undefined, moduleName?: string): Promise<number> {
+        if (!moduleName) {
+            this.logger.warn(`Skipping scheduled jobs prune: missing module name in metadata.`);
+            return 0;
+        }
+        const scheduledJobs = scheduledJobsDto ?? [];
+
+        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        if (!module) {
+            this.logger.warn(`Skipping scheduled jobs prune: module not found for ${moduleName}.`);
+            return 0;
+        }
+
+        const scheduleNames = [...new Set(scheduledJobs.map(dto => dto.scheduleName).filter(Boolean))];
+        const repo = this.dataSource.getRepository(ScheduledJob);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('sj')
+            .select('sj.id', 'id')
+            .innerJoin('sj.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
+
+        if (scheduleNames.length > 0) {
+            idsToDeleteQuery.andWhere('sj.scheduleName NOT IN (:...scheduleNames)', { scheduleNames });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ScheduledJob)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private async pruneSecurityRules(securityRulesDto: CreateSecurityRuleDto[] | undefined, moduleName?: string): Promise<number> {
+        if (!moduleName) {
+            this.logger.warn(`Skipping security rules prune: missing module name in metadata.`);
+            return 0;
+        }
+        const securityRules = securityRulesDto ?? [];
+
+        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        if (!module) {
+            this.logger.warn(`Skipping security rules prune: module not found for ${moduleName}.`);
+            return 0;
+        }
+
+        const ruleNames = [...new Set(securityRules.map(dto => dto.name).filter(Boolean))];
+        const repo = this.dataSource.getRepository(SecurityRule);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('sr')
+            .select('sr.id', 'id')
+            .innerJoin('sr.modelMetadata', 'model')
+            .innerJoin('model.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
+
+        if (ruleNames.length > 0) {
+            idsToDeleteQuery.andWhere('sr.name NOT IN (:...ruleNames)', { ruleNames });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(SecurityRule)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private async pruneListOfValues(listOfValuesDto: CreateListOfValuesDto[] | undefined, moduleName?: string): Promise<number> {
+        if (!moduleName) {
+            this.logger.warn(`Skipping list of values prune: missing module name in metadata.`);
+            return 0;
+        }
+        const listOfValues = listOfValuesDto ?? [];
+
+        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        if (!module) {
+            this.logger.warn(`Skipping list of values prune: module not found for ${moduleName}.`);
+            return 0;
+        }
+
+        const pairs = listOfValues
+            .filter(dto => dto.type && dto.value)
+            .map(dto => ({ type: dto.type, value: dto.value }));
+        const repo = this.dataSource.getRepository(ListOfValues);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('lov')
+            .select('lov.id', 'id')
+            .innerJoin('lov.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
+
+        if (pairs.length > 0) {
+            const conditions = pairs.map((_, i) => `(lov.type = :t${i} AND lov.value = :v${i})`).join(' OR ');
+            const params = pairs.reduce((acc, pair, i) => {
+                acc[`t${i}`] = pair.type;
+                acc[`v${i}`] = pair.value;
+                return acc;
+            }, {} as Record<string, string>);
+
+            idsToDeleteQuery.andWhere(`NOT (${conditions})`, params);
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ListOfValues)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private async pruneDashboards(dashboardsDto: CreateDashboardDto[] | undefined, moduleName?: string): Promise<number> {
+        if (!moduleName) {
+            this.logger.warn(`Skipping dashboards prune: missing module name in metadata.`);
+            return 0;
+        }
+        const dashboards = dashboardsDto ?? [];
+
+        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        if (!module) {
+            this.logger.warn(`Skipping dashboards prune: module not found for ${moduleName}.`);
+            return 0;
+        }
+
+        const dashboardNames = [...new Set(dashboards.map(dto => dto.name).filter(Boolean))];
+        const repo = this.dataSource.getRepository(Dashboard);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('db')
+            .select('db.id', 'id')
+            .innerJoin('db.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
+
+        if (dashboardNames.length > 0) {
+            idsToDeleteQuery.andWhere('db.name NOT IN (:...dashboardNames)', { dashboardNames });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(Dashboard)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private async pruneMenus(menusDto: any[] | undefined, moduleName?: string): Promise<number> {
+        if (!moduleName) {
+            this.logger.warn(`Skipping menus prune: missing module name in metadata.`);
+            return 0;
+        }
+        const menus = menusDto ?? [];
+
+        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        if (!module) {
+            this.logger.warn(`Skipping menus prune: module not found for ${moduleName}.`);
+            return 0;
+        }
+
+        const menuNames = [...new Set(menus.map(m => m.name).filter(Boolean))];
+        const repo = this.dataSource.getRepository(MenuItemMetadata);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('menu')
+            .select('menu.id', 'id')
+            .innerJoin('menu.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
+
+        if (menuNames.length > 0) {
+            idsToDeleteQuery.andWhere('menu.name NOT IN (:...menuNames)', { menuNames });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            await this.dataSource
+                .createQueryBuilder()
+                .delete()
+                .from(MENU_ROLE_JOIN_TABLE_NAME)
+                .where(`${MENU_ROLE_JOIN_TABLE_NAME_MENU_COL} IN (:...ids)`, { ids })
+                .execute();
+        }
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(MenuItemMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private async pruneViews(viewsDto: any[] | undefined, moduleName?: string): Promise<number> {
+        if (!moduleName) {
+            this.logger.warn(`Skipping views prune: missing module name in metadata.`);
+            return 0;
+        }
+        const views = viewsDto ?? [];
+
+        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        if (!module) {
+            this.logger.warn(`Skipping views prune: module not found for ${moduleName}.`);
+            return 0;
+        }
+
+        const viewNames = [...new Set(views.map((v: any) => v.name).filter(Boolean))];
+        const repo = this.dataSource.getRepository(ViewMetadata);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('view')
+            .select('view.id', 'id')
+            .innerJoin('view.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
+
+        if (viewNames.length > 0) {
+            idsToDeleteQuery.andWhere('view.name NOT IN (:...viewNames)', { viewNames });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            // Delete actions tied to these views before deleting the views themselves.
+            const actionRepo = this.dataSource.getRepository(ActionMetadata);
+            const actionRows = await actionRepo
+                .createQueryBuilder('action')
+                .select('action.id', 'id')
+                .innerJoin('action.view', 'view')
+                .where('view.id IN (:...viewIds)', { viewIds: ids })
+                .getRawMany();
+            const actionIds = actionRows.map((row) => row.id);
+            if (actionIds.length > 0) {
+                const result = await actionRepo
+                    .createQueryBuilder()
+                    .delete()
+                    .from(ActionMetadata)
+                    .whereInIds(actionIds)
+                    .execute();
+                if ((result.affected ?? 0) === 0) {
+                    this.logger.warn(`No actions deleted for pruned views in module ${moduleName}.`);
+                }
+            }
+
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ViewMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private async pruneActions(actionsDto: any[] | undefined, moduleName?: string): Promise<number> {
+        if (!moduleName) {
+            this.logger.warn(`Skipping actions prune: missing module name in metadata.`);
+            return 0;
+        }
+        const actions = actionsDto ?? [];
+
+        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        if (!module) {
+            this.logger.warn(`Skipping actions prune: module not found for ${moduleName}.`);
+            return 0;
+        }
+
+        const actionNames = [...new Set(actions.map((a: any) => a.name).filter(Boolean))];
+        const repo = this.dataSource.getRepository(ActionMetadata);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('action')
+            .select('action.id', 'id')
+            .innerJoin('action.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id });
+
+        if (actionNames.length > 0) {
+            idsToDeleteQuery.andWhere('action.name NOT IN (:...actionNames)', { actionNames });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
+            const menuRows = await menuRepo
+                .createQueryBuilder('menu')
+                .select('menu.id', 'id')
+                .innerJoin('menu.action', 'action')
+                .where('action.id IN (:...actionIds)', { actionIds: ids })
+                .getRawMany();
+            const menuIds = menuRows.map((row) => row.id);
+
+            if (menuIds.length > 0) {
+                await this.dataSource
+                    .createQueryBuilder()
+                    .delete()
+                    .from(MENU_ROLE_JOIN_TABLE_NAME)
+                    .where(`${MENU_ROLE_JOIN_TABLE_NAME_MENU_COL} IN (:...ids)`, { ids: menuIds })
+                    .execute();
+
+                await menuRepo
+                    .createQueryBuilder()
+                    .delete()
+                    .from(MenuItemMetadata)
+                    .whereInIds(menuIds)
+                    .execute();
+            }
+
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ActionMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private async pruneFieldsForModel(model: any, fieldsMetadata: any[] | undefined): Promise<number> {
+        if (!model) {
+            this.logger.warn(`Skipping fields prune: model not found.`);
+            return 0;
+        }
+        const fields = fieldsMetadata ?? [];
+
+        const fieldNames = [...new Set(fields.map(f => f.name).filter(Boolean))];
+        const repo = this.dataSource.getRepository(FieldMetadata);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('field')
+            .select('field.id', 'id')
+            .innerJoin('field.model', 'model')
+            .where('model.id = :modelId', { modelId: model.id })
+            .andWhere('field.isSystem = :isSystem', { isSystem: false });
+
+        if (fieldNames.length > 0) {
+            idsToDeleteQuery.andWhere('field.name NOT IN (:...fieldNames)', { fieldNames });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(FieldMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private async pruneModels(modelsMetadata: CreateModelMetadataDto[] | undefined, moduleName?: string): Promise<number> {
+        if (!moduleName) {
+            this.logger.warn(`Skipping models prune: missing module name in metadata.`);
+            return 0;
+        }
+        const models = modelsMetadata ?? [];
+
+        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        if (!module) {
+            this.logger.warn(`Skipping models prune: module not found for ${moduleName}.`);
+            return 0;
+        }
+
+        const modelNames = [...new Set(models.map(m => m.singularName).filter(Boolean))];
+        const repo = this.dataSource.getRepository(ModelMetadata);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('model')
+            .select('model.id', 'id')
+            .innerJoin('model.module', 'module')
+            .where('module.id = :moduleId', { moduleId: module.id })
+            .andWhere('model.isSystem = :isSystem', { isSystem: false });
+
+        if (modelNames.length > 0) {
+            idsToDeleteQuery.andWhere('model.singularName NOT IN (:...modelNames)', { modelNames });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(ModelMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private getRolePermissionJoinInfo(): { tableName: string; permissionIdColumn: string } | null {
+        const roleMetadata = this.dataSource.getMetadata(RoleMetadata);
+        const relation = roleMetadata.relations.find((r) => r.propertyName === 'permissions');
+        if (!relation || !relation.junctionEntityMetadata) {
+            this.logger.warn(`Role-permission join table metadata not found; skipping join cleanup.`);
+            return null;
+        }
+
+        const permissionIdColumn = relation.inverseJoinColumns[0]?.databaseName;
+        if (!permissionIdColumn) {
+            this.logger.warn(`Role-permission join column not found; skipping join cleanup.`);
+            return null;
+        }
+
+        return {
+            tableName: relation.junctionEntityMetadata.tableName,
+            permissionIdColumn,
+        };
+    }
+
+    private async prunePermissions(permissionNames: string[]): Promise<number> {
+        const uniqueNames = [...new Set(permissionNames.filter(Boolean))];
+        const repo = this.dataSource.getRepository(PermissionMetadata);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('perm')
+            .select('perm.id', 'id');
+
+        if (uniqueNames.length > 0) {
+            idsToDeleteQuery.andWhere('perm.name NOT IN (:...names)', { names: uniqueNames });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        // Commented out to allow pruning when metadata is empty/missing.
+        // if (ids.length === 0) {
+        //     return;
+        // }
+
+        const joinInfo = this.getRolePermissionJoinInfo();
+        if (joinInfo && ids.length > 0) {
+            await this.dataSource
+                .createQueryBuilder()
+                .delete()
+                .from(joinInfo.tableName)
+                .where(`${joinInfo.permissionIdColumn} IN (:...ids)`, { ids })
+                .execute();
+        }
+
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(PermissionMetadata)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    // private async resolvePruningChoice(conf?: any): Promise<boolean> {
+    //     if (typeof conf?.pruneMetadata === 'boolean') {
+    //         return conf.pruneMetadata;
+    //     }
+    //     if (!process.stdin.isTTY) {
+    //         return false;
+    //     }
+
+    //     const rl = readline.createInterface({
+    //         input: process.stdin,
+    //         output: process.stdout,
+    //     });
+
+    //     const question = `Prune metadata entries not in JSON? (y/N) `;
+    //     const answer: string = await new Promise((resolve) => {
+    //         rl.question(question, (input) => resolve(input));
+    //     });
+    //     rl.close();
+
+    //     return answer.trim().toLowerCase().startsWith('y');
+    // }
+
+    private formatSeedResult(moduleName: string, label: string, counts: { pruned: number; upserted: number }): string {
+        if (this.enablePruning) {
+            return `✔ [${moduleName}] ${label} seeded (pruned ${counts.pruned}, upserted ${counts.upserted})`;
+        }
+        return `✔ [${moduleName}] ${label} seeded (upserted ${counts.upserted})`;
     }
 
 }

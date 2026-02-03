@@ -27,6 +27,7 @@ import { SchematicService } from './helpers/schematic.service';
 import { ListOfValuesSelectionProvider } from './services/selection-providers/list-of-values-selection-providers.service';
 import { PseudoForeignKeySelectionProvider } from './services/selection-providers/pseudo-foreign-key-selection-provider.service'
 import { ModuleMetadataSeederService } from './seeders/module-metadata-seeder.service';
+import { ModuleTestDataService } from './seeders/module-test-data.service';
 import { CrudHelperService } from './services/crud-helper.service';
 import { FieldMetadataService } from './services/field-metadata.service';
 import { ListOfValuesService } from './services/list-of-values.service';
@@ -56,6 +57,7 @@ import { ActionMetadataService } from './services/action-metadata.service';
 import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { SeedCommand } from './commands/seed.command';
+import { TestDataCommand } from './commands/test-data.command';
 import { AuthenticationController } from './controllers/authentication.controller';
 import { EmailTemplateController } from './controllers/email-template.controller';
 import { GoogleAuthenticationController } from './controllers/google-authentication.controller';
@@ -487,6 +489,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     MediaService,
     // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
+    ModuleTestDataService,
     ListOfValuesService,
     ListOfValuesSelectionProvider,
     PseudoForeignKeySelectionProvider,
@@ -501,6 +504,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     TextractService,
     SolidRegistry,
     SeedCommand,
+    TestDataCommand,
     McpCommand,
     IngestCommand,
     IngestMetadataService,

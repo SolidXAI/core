@@ -227,7 +227,7 @@ export class SettingService {
     });
 
     if (restrictedKeys.size > 0) {
-      throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
+      throw new BadRequestException(`${ERROR_MESSAGES.FORBIDDEN}: Settings ${Array.from(restrictedKeys).join(', ')} cannot be modified.`);
     }
 
     // const existingSettings = await this.repo.find();

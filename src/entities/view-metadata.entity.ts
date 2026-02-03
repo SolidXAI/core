@@ -9,22 +9,29 @@ export class ViewMetadata extends CommonEntity {
     @Index({ unique: true })
     @Column({ name: "name", type: "varchar"})
     name: string;
+
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;
+
     @Column({ name: "type", type: "varchar" })
     type: string;
+
     @Column({ name: "context", type: "text" })
     context: any = "{}";
+
     @Column({ name: "layout", type: "text" })
     layout: any;
+
     @Index()
     @ManyToOne(() => ModuleMetadata, { nullable: false })
     @JoinColumn({ referencedColumnName: 'id' })
     module: ModuleMetadata;
+
     @Index()
     @ManyToOne(() => ModelMetadata, { nullable: false })
     @JoinColumn({ referencedColumnName: 'id' })
     model: ModelMetadata;
+
     @OneToMany(() => UserViewMetadata, userViewMetadata => userViewMetadata.viewMetadata, { cascade: true })
     userViewMetadata: UserViewMetadata[];
 }

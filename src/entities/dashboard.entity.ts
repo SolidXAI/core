@@ -9,17 +9,23 @@ export class Dashboard extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     name: string;
+
     @Column({ type: "text" })
     layoutJson: any;
+
     @OneToMany(() => DashboardVariable, dashboardVariable => dashboardVariable.dashboard, { cascade: true })
     dashboardVariables: DashboardVariable[];
+
     @OneToMany(() => DashboardQuestion, dashboardQuestion => dashboardQuestion.dashboard, { cascade: true })
     questions: DashboardQuestion[];
+
     @ManyToOne(() => ModuleMetadata, { nullable: false })
     @JoinColumn()
     module: ModuleMetadata;
+
     @Column({ type: "varchar", nullable: true })
     displayName: string;
+
     @Column({ type: "text", nullable: true })
     description: string;
 }

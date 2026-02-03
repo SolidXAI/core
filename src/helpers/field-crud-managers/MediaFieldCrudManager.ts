@@ -13,7 +13,7 @@ export interface MediaFieldOptions {
     mediaTypes: string[];
 }
 
-type MediaType = 'image' | 'audio' | 'video' | 'file';
+type MediaType = 'image' | 'audio' | 'video' | 'file' | 'pdf';
 
 const MIME_TO_MEDIA_TYPE: Record<string, MediaType> = {
     // Images
@@ -52,7 +52,7 @@ const MIME_TO_MEDIA_TYPE: Record<string, MediaType> = {
     'video/3gpp2': 'video',
 
     // Documents / files (treat as "file")
-    'application/pdf': 'file',
+    'application/pdf': 'pdf',
     'text/plain': 'file',
     'text/markdown': 'file',
     'application/json': 'file',

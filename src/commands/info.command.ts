@@ -1,7 +1,5 @@
 import { Logger } from '@nestjs/common';
 import { Command, CommandRunner, Option } from 'nest-commander';
-import * as fs from 'fs';
-import * as path from 'path';
 import { ISolidDatabaseModule } from 'src/interfaces';
 import { getDynamicModuleNames } from 'src/helpers/module.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
@@ -93,9 +91,8 @@ export class InfoCommand extends CommandRunner {
     }
 
     // Flags
-    @Option({ flags: '-d, --detailed [boolean]', description: 'Print more details about the consuming project', required: false, defaultValue: false })
-    parseDetached(val: string): boolean {
-        if (val === undefined) return false;
-        return val === 'true' || val === '1';
+    @Option({ flags: '-d, --detailed', description: 'Print more details about the consuming project' })
+    parseDetailed(): boolean {
+        return true;
     }
 }

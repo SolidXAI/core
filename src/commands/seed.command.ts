@@ -3,8 +3,9 @@ import { Command, CommandRunner, Option } from 'nest-commander';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 
 interface SeedCommandOptions {
-  conf?: string;
   seeder?: string;
+  modulesToSeed?: string;
+  prune?: boolean;
 }
 
 @Command({ name: 'seed', description: 'Install seed data for a given module' })
@@ -16,21 +17,21 @@ export class SeedCommand extends CommandRunner {
   }
 
   async run(passedParam: string[], options?: SeedCommandOptions): Promise<void> {
-    // check if options.conf is non empty and a valid json string only is -c flag is passed.
-    // convert to json object JSON.parse
     let parsedConf: any = null;
-
-    // Parse conf only if provided
-    if (options?.conf !== undefined) {
-      try {
-        parsedConf = JSON.parse(options.conf);
-        this.logger.log(`Parsed conf: ${JSON.stringify(parsedConf, null, 2)}`);
-      } catch (err) {
-        this.logger.error('Failed to parse --conf. Please provide valid JSON.');
-        return;
-      }
+    if (options?.modulesToSeed) {
+      const modulesToSeed = options.modulesToSeed
+        .split(',')
+        .map((m) => m.trim())
+        .filter(Boolean);
+      parsedConf = { modulesToSeed };
+      this.logger.log(`Modules to seed: ${modulesToSeed.join(', ')}`);
     } else {
-      this.logger.log('No --conf flag provided. Running with default seeder behavior.');
+      this.logger.log('No --modules-to-seed flag provided. Running with default seeder behavior.');
+    }
+
+    if (options?.prune) {
+      parsedConf = parsedConf ?? {};
+      parsedConf.pruneMetadata = true;
     }
 
     const seeder = this.solidRegistry
@@ -50,13 +51,18 @@ export class SeedCommand extends CommandRunner {
    * This parameter will be useful, to support seeders with the same name in different modules
    * Currently the seeder service won't support seeder with same classname within a module
    **/
-  @Option({ flags: '-c, --conf [configuration json]', description: 'A configuration json, pass a valid json string.', required: false })
-  parseConf(val: string): string {
+  @Option({ flags: '-m, --modules-to-seed [module names]', description: 'Comma-separated list of module names to seed.', required: false })
+  parseModulesToSeed(val: string): string {
     return val;
   }
 
   @Option({ flags: '-s, --seeder [seeder name]', description: 'The seeder to run.', required: true, defaultValue: 'ModuleMetadataSeederService' })
   parseString(val: string): string {
     return val;
+  }
+
+  @Option({ flags: '--prune', description: 'Prune metadata not present in JSON.' })
+  parsePrune(): boolean {
+    return true;
   }
 }
