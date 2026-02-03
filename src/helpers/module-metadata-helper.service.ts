@@ -3,12 +3,12 @@ import { Injectable, Logger } from "@nestjs/common";
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import * as path from 'path'; // To handle file paths
 import { SOLID_CORE_MODULE_NAME } from "src/constants";
-import { FileService } from "src/services/file.service";
+import { DiskFileService } from "src/services/file";
 
 @Injectable()
 export class ModuleMetadataHelperService {
     private readonly logger = new Logger(ModuleMetadataHelperService.name);
-    constructor(private readonly fileService: FileService) { }
+    constructor(private readonly fileService: DiskFileService) { }
     // async getModuleMetadataConfig(moduleName: string): Promise<ModuleMetadata> {
     //     const filePath = this.getModuleMetadataFilePath(moduleName);
     //     const metadata = await this.getModuleMetadata(filePath);
@@ -45,7 +45,7 @@ export class ModuleMetadataHelperService {
         const folderPath = path.resolve(process.cwd(), 'module-metadata', dashModuleName);
         const filePath = path.join(folderPath, `${dashModuleName}-metadata.json`);
         // Check if filePath exists
-        const fileExists = await this.fileService.fileExists(filePath);
+        const fileExists = await this.fileService.exists(filePath);
         // this.logger.debug(`File exists: ${fileExists} at ${filePath}`);
         if (!fileExists) {
             // If the module is solid-core, try the fallback path, in case the current root directory is the solid core project
@@ -70,7 +70,7 @@ export class ModuleMetadataHelperService {
             dashModuleName,
         );
 
-        const exists = await this.fileService.pathExists(folderPath);
+        const exists = await this.fileService.exists(folderPath);
         return exists ? folderPath : '';
     }
 

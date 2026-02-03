@@ -19,7 +19,7 @@ import qs from 'qs';
 import { ResolveS3UrlDto } from 'src/dtos/resolve-s3-url.dto';
 import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
 import { ConfigService } from '@nestjs/config';
-import { FileService } from './file.service';
+import { S3FileService } from './file';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
 
 
@@ -28,7 +28,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
     constructor(
         private readonly fieldMetadataRepo: FieldMetadataRepository,
         private readonly configService: ConfigService,
-        private readonly fileService: FileService,
+        private readonly fileService: S3FileService,
         private readonly mediaStorageProviderMetadataRepository: MediaStorageProviderMetadataRepository,
 
         @InjectDataSource()
@@ -1381,7 +1381,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
 
         if (resolveS3UrlDto.isPrivate == "true") {
             const expiryInSeconds = 60 * 60;
-            url = await this.fileService.getSignedUrl(normalizedKey, expiryInSeconds, resolvedBucketName);
+            url = await this.fileService.getUrl(`${resolvedBucketName}:${normalizedKey}`, { expiresIn: expiryInSeconds });
         } else {
             url = `https://${resolvedBucketName}.s3.${this.configService.get(
                 'S3_AWS_REGION_NAME',

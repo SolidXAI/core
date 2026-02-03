@@ -6,7 +6,7 @@ import type { SolidCoreSetting } from "src/services/settings/default-settings-pr
 
 import { ConfigService } from '@nestjs/config';
 import { CRUDService } from 'src/services/crud.service';
-import { FileService } from 'src/services/file.service';
+import { DiskFileService, S3FileService } from 'src/services/file';
 
 
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
@@ -24,7 +24,8 @@ import { getMediaStorageProvider } from "./mediaStorageProviders";
 export class MediaService extends CRUDService<Media> {
   constructor(
     readonly configService: ConfigService,
-    readonly fileService: FileService,
+    readonly diskFileService: DiskFileService,
+    readonly s3FileService: S3FileService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(Media, 'default')
@@ -129,24 +130,24 @@ export class MediaService extends CRUDService<Media> {
       switch (createDto.mediaStorageProviderMetadata.type) {
         case MediaStorageProviderType.Filesystem:
           const fileStoragePath = await this.getFileSysytemFullFilePath(this.getFileName(file));
-          await this.fileService.copyFile(file.path, fileStoragePath);
+          await this.diskFileService.copy(file.path, fileStoragePath);
           createDto['relativeUri'] = this.getFileName(file);
           break;
         case MediaStorageProviderType.AwsS3:
           const fileName = this.getFileName(file);
-          let awsFileUrl;
-          if (createDto.mediaStorageProviderMetadata.isPublic === true) {
-            awsFileUrl = await this.fileService.copyToS3WithPublic(file.path, file.mimetype, fileName, createDto.mediaStorageProviderMetadata.bucketName,);
-          } else {
-            awsFileUrl = await this.fileService.copyToS3(file.path, file.mimetype, fileName, createDto.mediaStorageProviderMetadata.bucketName,);
-          }
-          // createDto['relativeUri'] = this.getAwsS3FullFilePath(awsFileUrl, createDto.mediaStorageProviderMetadata.bucketName, createDto.mediaStorageProviderMetadata.region);
-          createDto['relativeUri'] = awsFileUrl
+          const bucketName = createDto.mediaStorageProviderMetadata.bucketName;
+
+          // Read file from disk and upload to S3
+          const fileData = await this.diskFileService.read(file.path);
+          await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { contentType: file.mimetype });
+
+          createDto['relativeUri'] = fileName;
           break;
         default:
           break;
       }
-      await this.fileService.deleteFile(file.path);
+      // Delete temp file from disk
+      await this.diskFileService.delete(file.path);
 
       const media = this.repo.create(createDto);
       const savedMedia = await this.repo.save(media);
