@@ -19,8 +19,6 @@ export interface UrlOptions {
   expiresIn?: number;
   /** AWS region override (S3 only) - uses default region from env if not specified */
   region?: string;
-  /** whether the bucket is a private bucket or not */
-  isPrivateBucket?: boolean;
 }
 
 export interface ReadOptions {

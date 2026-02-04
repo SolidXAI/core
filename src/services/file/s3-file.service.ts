@@ -257,6 +257,6 @@ export class S3FileService implements IFileService, OnModuleInit {
     const command = new GetObjectCommand({ Bucket: bucket, Key: key });
     const expiresIn = options?.expiresIn || 3600; // Default 1 hour
 
-    return options.isPrivateBucket ? getSignedUrl(s3Client, command, { expiresIn }) : `https://${bucket}.s3.${options?.region || this.defaultRegion}.amazonaws.com/${key}`;
+    return options.expiresIn > 0? getSignedUrl(s3Client, command, { expiresIn }) : `https://${bucket}.s3.${options?.region || this.defaultRegion}.amazonaws.com/${key}`;
   }
 }
