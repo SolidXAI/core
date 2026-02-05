@@ -1,6 +1,6 @@
 import { BrokerType } from "../interfaces";
 
-const QUEUE_NAME = 'generate_code_queue_rabbitmq';
+const QUEUE_NAME = 'solid_generate_code_queue_rabbitmq';
 
 export default {
     name: 'generateCodeQueueRabbitmq',

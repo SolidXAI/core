@@ -1,6 +1,6 @@
 import { BrokerType } from "../interfaces";
 
-const _WHATSAPP_QUEUE_NAME = 'three60_whatsapp_queue';
+const _WHATSAPP_QUEUE_NAME = 'solid_three60_whatsapp_queue';
 export default {
     name: 'whatsappInstance',
     type: BrokerType.RabbitMQ,

@@ -1,7 +1,7 @@
 import { QueueMessage } from 'src/interfaces/mq';
 import { BrokerType } from "../interfaces";
 
-const API_MAIL_QUEUE_NAME = 'api_mail_queue';
+const API_MAIL_QUEUE_NAME = 'solid_api_mail_queue';
 
 export default {
     name: 'apiMailInstance',

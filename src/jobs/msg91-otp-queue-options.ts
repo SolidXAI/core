@@ -2,7 +2,7 @@ import { QueueMessage } from 'src/interfaces/mq';
 
 import { BrokerType } from "../interfaces";
 
-const OTP_QUEUE_NAME = 'otp_queue';
+const OTP_QUEUE_NAME = 'solid_otp_queue';
 export default {
     name: 'otpInstance',
     type: BrokerType.RabbitMQ,

@@ -2,7 +2,7 @@ import { QueueMessage } from 'src/interfaces/mq';
 
 import { BrokerType } from "../interfaces";
 
-const SMS_QUEUE_NAME = 'sms_queue';
+const SMS_QUEUE_NAME = 'solid_sms_queue';
 export default {
     name: 'smsInstance',
     type: BrokerType.RabbitMQ,

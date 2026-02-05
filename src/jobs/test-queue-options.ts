@@ -1,6 +1,6 @@
 import { BrokerType } from "../interfaces";
 
-const QUEUE_NAME = 'test_queue';
+const QUEUE_NAME = 'solid_test_queue';
 
 export default {
     name: 'queueTest',

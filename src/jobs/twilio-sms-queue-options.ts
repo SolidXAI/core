@@ -1,6 +1,6 @@
 import { BrokerType } from "src/interfaces";
 
-const SMS_QUEUE_NAME = 'twilio_sms_queue_rabbitmq';
+const SMS_QUEUE_NAME = 'solid_twilio_sms_queue_rabbitmq';
 
 export default {
     name: 'twilioSmsInstanceRabbitmq',

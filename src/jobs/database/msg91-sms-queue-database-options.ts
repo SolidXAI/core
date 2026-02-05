@@ -1,6 +1,6 @@
 import { BrokerType } from "src/interfaces";
 
-const SMS_QUEUE_NAME = 'sms_queue_database';
+const SMS_QUEUE_NAME = 'solid_sms_queue_database';
 export default {
     name: 'smsInstance',
     type: BrokerType.Database,
