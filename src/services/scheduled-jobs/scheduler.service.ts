@@ -11,6 +11,7 @@ import { CronExpressionParser } from 'cron-parser';
 @Injectable()
 export class SchedulerServiceImpl implements ISchedulerService {
     private readonly logger = new Logger(SchedulerServiceImpl.name);
+    private readonly runningJobs = new Set<string>();
 
     constructor(
         // @InjectRepository(ScheduledJob)
@@ -51,32 +52,43 @@ export class SchedulerServiceImpl implements ISchedulerService {
         // this.logger.log(`[${now.getTime()}]: scheduler service identified ${dueJobs.length} jobs to run...`);
 
         for (const job of dueJobs) {
+            const jobKey = String(job.id ?? job.scheduleName ?? job.job);
+
+            if (this.runningJobs.has(jobKey)) {
+                this.logger.log(`[${now.getTime()}]: scheduler service skipping job ${job.job} because a run is already in progress`);
+                continue;
+            }
+
+            if (!this.shouldRunNow(job, now)) {
+                this.logger.log(`[${now.getTime()}]: scheduler service skipping job ${job.job}`);
+                continue;
+            }
+
+            const handler = this.solidRegistry.getScheduledJobProviderInstance(job.job);
+            if (!handler) {
+                this.logger.warn(`[${now.getTime()}]: scheduler service skipping because job handler not found: ${job.job}`);
+                continue;
+            }
+
+            this.runningJobs.add(jobKey);
             this.logger.log(`[${now.getTime()}]: scheduler service attempting to run job ${job.job}`);
             try {
-                if (!this.shouldRunNow(job, now)) {
-                    this.logger.log(`[${now.getTime()}]: scheduler service skipping job ${job.job}`);
-                    continue;
-                }
-
-                const handler = this.solidRegistry.getScheduledJobProviderInstance(job.job);
-                if (!handler) {
-                    // this.logger.warn(`[${now.getTime()}]: scheduler service skipping because job handler not found: ${job.job}`);
-                    continue;
-                }
-
                 // this.logger.log(`[${now.getTime()}]: scheduler service about to run job ${job.job}`);
                 await handler.execute(job);
                 // this.logger.log(`[${now.getTime()}]: scheduler service finished running job ${job.job}`);
 
                 job.isActive = true;
-                job.lastRunAt = now;
-                job.nextRunAt = this.computeNextRunAt(job, now);
+                const finishedAt = new Date();
+                job.lastRunAt = finishedAt;
+                job.nextRunAt = this.computeNextRunAt(job, finishedAt);
                 this.logger.log(`[${now.getTime()}]: scheduler service coomputed next run for ${job.job} as ${job.nextRunAt}`);
 
                 await this.scheduledJobRepo.save(job);
                 this.logger.log(`[${now.getTime()}]: scheduler service finished running job: ${job.job}`);
             } catch (err) {
                 this.logger.error(`[${now.getTime()}]: scheduler service failed to run job ${job.job}`, err.stack);
+            } finally {
+                this.runningJobs.delete(jobKey);
             }
         }
     }
