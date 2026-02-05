@@ -18,7 +18,7 @@ The commands below are the canonical flow.
 
 Command:
 ```
-npx @solidstarters/solidctl test-data --create-datasources
+npx @solidxai/solidctl test-data --create-datasources
 ```
 
 What this does:
@@ -68,7 +68,7 @@ Rationale:
 
 Command:
 ```
-npx @solidstarters/solidctl seed
+npx @solidxai/solidctl seed
 ```
 
 What this does:
@@ -97,7 +97,7 @@ Rationale:
 
 Command:
 ```
-npx @solidstarters/solidctl test-data --load-data
+npx @solidxai/solidctl test-data --load-data
 ```
 
 What this does:
@@ -127,7 +127,7 @@ Rationale:
 
 Command:
 ```
-npx @solidstarters/solidctl test-data --delete-datasources
+npx @solidxai/solidctl test-data --delete-datasources
 ```
 
 What this does:
@@ -154,7 +154,7 @@ Rationale:
 
 You can restrict test data loading to a subset of modules:
 ```
-npx @solidstarters/solidctl test-data --load-data --modules-to-test venue,reports
+npx @solidxai/solidctl test-data --load-data --modules-to-test venue,reports
 ```
 
 Only the listed modules are processed.

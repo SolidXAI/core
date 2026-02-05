@@ -20,7 +20,7 @@ export const REFRESH_MODEL_COMMAND = 'refresh-model';
 @Injectable()
 export class SchematicService {
   private readonly logger = new Logger(SchematicService.name);
-  private readonly SCHEMATIC_PROJECT = '@solidstarters/solid-code-builder';
+  private readonly SCHEMATIC_PROJECT = '@solidxai/code-builder';
   private readonly SCHEMATICS_COMMAND = 'schematics';
 
   constructor(private readonly commandService: CommandService, private readonly solidRegistry: SolidRegistry) { }
