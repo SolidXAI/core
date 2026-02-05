@@ -1,5 +1,5 @@
 {
-  "name": "@solidstarters/solid-core",
+  "name": "@solidx/solid-core",
   "version": "1.2.209",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
@@ -120,7 +120,7 @@
     "@nestjs/swagger": "^7.2.0",
     "@nestjs/testing": "^10.0.0",
     "@nestjs/typeorm": "^10.0.1",
-    "@solidstarters/solid-code-builder": "^1.0.2",
+    "@solidx/solid-code-builder": "^1.0.2",
     "@types/express": "^4.17.17",
     "@types/hapi__joi": "^17.1.12",
     "@types/jest": "^29.5.2",
