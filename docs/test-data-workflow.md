@@ -18,7 +18,7 @@ The commands below are the canonical flow.
 
 Command:
 ```
-npx @solidstarters/solidctl test-data --create-datasources
+npx @solidxai/solidctl test-data --create-datasources
 ```
 
 What this does:
@@ -50,7 +50,9 @@ Creating test database/schema "default_20260201234402_steady_wolf" on datasource
   Next steps:
   1) Using updated .env with test datasource names
   2) Run solid seed as usual
-  3) Proceed with the next steps in the workflow
+  3) Proceed with loading the test data for each module
+  4) Run the test cases 
+  5) Tear down
 ============================================================
 
 ✔ solid test-data completed
@@ -66,7 +68,7 @@ Rationale:
 
 Command:
 ```
-npx @solidstarters/solidctl seed
+npx @solidxai/solidctl seed
 ```
 
 What this does:
@@ -95,7 +97,7 @@ Rationale:
 
 Command:
 ```
-npx @solidstarters/solidctl test-data --load-data
+npx @solidxai/solidctl test-data --load-data
 ```
 
 What this does:
@@ -125,7 +127,7 @@ Rationale:
 
 Command:
 ```
-npx @solidstarters/solidctl test-data --delete-datasources
+npx @solidxai/solidctl test-data --delete-datasources
 ```
 
 What this does:
@@ -152,7 +154,7 @@ Rationale:
 
 You can restrict test data loading to a subset of modules:
 ```
-npx @solidstarters/solidctl test-data --load-data --modules-to-test venue,reports
+npx @solidxai/solidctl test-data --load-data --modules-to-test venue,reports
 ```
 
 Only the listed modules are processed.
