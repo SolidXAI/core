@@ -72,32 +72,9 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
         // this.logger.debug(`#### DatabaseSubscriber finished processing message from queue: ${queueName}`);
     }
 
-    // async onModuleInit(): Promise<void> {
-    //     // we will start subscriber only if the current service role is subscriber. 
-    //     if (['both', 'subscriber'].includes(this.serviceRole)) {
-
-    //         const options = this.options();
-
-    //         const queueName = options.queueName;
-    //         // setInterval(() => this.processNext(queueName), 1000);
-    //         const poll = async () => {
-    //             try {
-    //                 await this.processNext(queueName);
-    //             } catch (err) {
-    //                 this.logger.error(`Polling error: ${err.message}`);
-    //             } finally {
-    //                 setTimeout(poll, 1000); // Wait 1s *after* processing finishes
-    //             }
-    //         };
-
-    //         // start the loop
-    //         poll();
-
-    //         this.logger.log(`DatabaseSubscriber ready to consume messages: ${JSON.stringify(this.options())}`);
-    //     }
-    // }
-
     async onModuleInit(): Promise<void> {
+        // Not using SettingService here as that will necessitate all implementors of DatabaseSubscriber to also inject SettingService which is not ideal. 
+        // Instead we directly read the environment variables here.
         const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'database';
         const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
         const queueNameRegex = (process.env.QUEUES_QUEUE_NAME_REGEX_TO_ENABLE || '').trim();

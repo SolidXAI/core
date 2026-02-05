@@ -52,6 +52,8 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
     }
 
     async onModuleInit(): Promise<void> {
+        // Not using SettingService here as that will necessitate all implementors of RabbitMqSubscriber to also inject SettingService which is not ideal. 
+        // Instead we directly read the environment variables here.
         const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'rabbitmq';
         const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
         const queueNameRegex = (process.env.QUEUES_QUEUE_NAME_REGEX_TO_ENABLE || '').trim();
