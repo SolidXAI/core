@@ -50,7 +50,9 @@ Creating test database/schema "default_20260201234402_steady_wolf" on datasource
   Next steps:
   1) Using updated .env with test datasource names
   2) Run solid seed as usual
-  3) Proceed with the next steps in the workflow
+  3) Proceed with loading the test data for each module
+  4) Run the test cases 
+  5) Tear down
 ============================================================
 
 ✔ solid test-data completed
