@@ -539,7 +539,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 const relatedEntityRepository = em.getRepository(classify(coModelName));
 
                 const relatedEntities = await relatedEntityRepository.find({
-                    where: { [coModelFieldName]: { id: entityId } }
+                    where: { [coModelFieldName]: { id: entityId } },
+                    take: 5,
                 });
 
                 const relatedIds = relatedEntities.map((entity: any) => entity.id);
