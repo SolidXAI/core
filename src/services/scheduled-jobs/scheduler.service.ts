@@ -21,6 +21,11 @@ export class SchedulerServiceImpl implements ISchedulerService {
 
     @Cron(CronExpression.EVERY_MINUTE)
     async runScheduledJobs(): Promise<void> {
+        const solidSchedulerEnabled = process.env.SOLID_SCHEDULER_ENABLED || "true";
+        if (solidSchedulerEnabled.toLowerCase() !== "true") {
+            this.logger.debug('Solid scheduler is disabled via environment variable');
+            return;
+        }
         const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
         if (solidCliRunning === "true") {
             return;
