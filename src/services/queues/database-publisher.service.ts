@@ -18,7 +18,7 @@ export abstract class DatabasePublisher<T> implements QueuePublisher<T> {
         if (!this.serviceRole) {
             this.logger.debug('Queue service Role is not defined in the environment variables');
         }
-        this.logger.debug(`DatabasePublisher instance created with options: ${JSON.stringify(this.options())}`);
+        // this.logger.debug(`DatabasePublisher instance created with options: ${JSON.stringify(this.options())}`);
     }
 
     abstract options(): QueuesModuleOptions;
