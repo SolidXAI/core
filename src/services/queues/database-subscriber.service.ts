@@ -20,7 +20,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
         if (!this.serviceRole) {
             this.logger.debug('Queue service Role is not defined in the environment variables');
         }
-        this.logger.debug(`DatabaseSubscriber instance created with options: ${JSON.stringify(this.options())}`);
+        // this.logger.debug(`DatabaseSubscriber instance created with options: ${JSON.stringify(this.options())}`);
     }
 
     abstract subscribe(message: QueueMessage<T>);
@@ -100,13 +100,25 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
     async onModuleInit(): Promise<void> {
         const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'database';
         const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
+        const queueNameRegex = (process.env.QUEUES_QUEUE_NAME_REGEX_TO_ENABLE || '').trim();
 
         // we will start subscriber only if the current service role is subscriber. 
         if (['both', 'subscriber'].includes(this.serviceRole) && defaultBroker === 'database' && solidCliRunning === "false") {
-
             const options = this.options();
-
             const queueName = options.queueName;
+
+            if (queueNameRegex && queueNameRegex !== "all") {
+                try {
+                    const regex = new RegExp(queueNameRegex);
+                    if (!regex.test(queueName)) {
+                        this.logger.log(`DatabaseSubscriber for queue ${queueName} is disabled because it does not match QUEUES_QUEUE_NAME_REGEX_TO_ENABLE=${queueNameRegex}`);
+                        return;
+                    }
+                } catch (error) {
+                    this.logger.error(`Invalid QUEUES_QUEUE_NAME_REGEX_TO_ENABLE regex "${queueNameRegex}". Subscriber for queue ${queueName} will not start.`);
+                    return;
+                }
+            }
 
             this.poller.start(queueName, (q) => this.processNext(q), {
                 baseDelayMs: 1000,
