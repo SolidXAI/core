@@ -500,11 +500,11 @@ export class ModuleMetadataSeederService {
                 try {
                     // Always resolve package.json, never the module entry
                     moduleRoot = path.dirname(
-                        require.resolve('@solidx/solid-core/package.json'),
+                        require.resolve('@solidstarters/solid-core/package.json'),
                     );
                 } catch (err) {
                     this.logger.debug(
-                        'Could not resolve @solidx/solid-core from node_modules, assuming local execution',
+                        'Could not resolve @solidstarters/solid-core from node_modules, assuming local execution',
                     );
                 }
 
@@ -566,11 +566,11 @@ export class ModuleMetadataSeederService {
                 try {
                     // Always resolve package.json, never the module entry
                     moduleRoot = path.dirname(
-                        require.resolve('@solidx/solid-core/package.json'),
+                        require.resolve('@solidstarters/solid-core/package.json'),
                     );
                 } catch (err) {
                     this.logger.debug(
-                        'Could not resolve @solidx/solid-core from node_modules, assuming local execution',
+                        'Could not resolve @solidstarters/solid-core from node_modules, assuming local execution',
                     );
                 }
 

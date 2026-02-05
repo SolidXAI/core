@@ -41,22 +41,22 @@ This passes `modulesToSeed` to the seeder as an array.
 ## Sample Commands
 ### Default seeding
 ```
-npx @solidx/solidctl seed
+npx @solidstarters/solidctl seed
 ```
 
 ### Select modules only
 ```
-npx @solidx/solidctl seed --modules-to-seed venue,reports
+npx @solidstarters/solidctl seed --modules-to-seed venue,reports
 ```
 
 ### Pruning enabled
 ```
-npx @solidx/solidctl seed --modules-to-seed venue --prune
+npx @solidstarters/solidctl seed --modules-to-seed venue --prune
 ```
 
 ### Pruning enabled (all modules)
 ```
-npx @solidx/solidctl seed --prune
+npx @solidstarters/solidctl seed --prune
 ```
 
 ## Files Touched (Key)
