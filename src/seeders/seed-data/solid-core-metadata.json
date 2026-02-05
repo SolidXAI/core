@@ -11788,7 +11788,7 @@
                             "attrs": {
                               "name": "chart-settings",
                               "label": "Chart Settings",
-                              "className": "col-3"
+                              "className": "col-12 xl:col-3"
                             },
                             "children": [
                               {
@@ -11804,7 +11804,7 @@
                             "attrs": {
                               "name": "chart-preview",
                               "label": "Chart Preview",
-                              "className": "col-9"
+                              "className": "col-12 xl:col-9"
                             },
                             "children": [
                               {

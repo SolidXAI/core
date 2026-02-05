@@ -5,7 +5,7 @@ import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { Media } from "src/entities/media.entity";
 import { MediaStorageProvider } from "src/interfaces";
 import { MediaRepository } from "src/repository/media.repository";
-import { FileService } from "src/services/file.service";
+import { DiskFileService } from "src/services/file";
 import { Readable } from "stream";
 import { SettingService } from "../setting.service";
 import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
@@ -18,7 +18,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // @Inject(appBuilderConfig.KEY)
         // private readonly appBuilderConfiguration: ConfigType<typeof appBuilderConfig>,
         private readonly configService: ConfigService,
-        readonly fileService: FileService,
+        readonly fileService: DiskFileService,
         readonly mediaRepository: MediaRepository,
         private readonly settingService: SettingService
 
@@ -49,8 +49,8 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         for (const file of files) {
             // Store the file in the configured file storage directory
             const fileStoragePath = await this.getFullFilePath(this.getFileName(file));
-            await this.fileService.copyFile(file.path, fileStoragePath);
-            await this.fileService.deleteFile(file.path);
+            await this.fileService.copy(file.path, fileStoragePath);
+            await this.fileService.delete(file.path);
 
             // Create an entry in the media table
             const mediaEntity = await this.mediaRepository.createMedia({
@@ -78,7 +78,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         for (const pair of streamPairs) {
             const stream = pair[0];
             const fileName = pair[1];
-            this.fileService.writeStreamToFile(stream, await this.getFullFilePath(fileName));
+            await this.fileService.writeStream(await this.getFullFilePath(fileName), stream);
             const mediaEntity = await this.mediaRepository.createMedia({
                 //@ts-ignore
                 entityId: entity.id,
@@ -102,7 +102,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
 
         for (const media of existingMedia) {
-            this.fileService.deleteFile(await this.getFullFilePath(media.relativeUri));
+            await this.fileService.delete(await this.getFullFilePath(media.relativeUri));
         }
         // existingMedia.forEach(media => {
         // });

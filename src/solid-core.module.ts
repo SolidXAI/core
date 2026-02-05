@@ -104,7 +104,7 @@ import { BcryptService } from './services/bcrypt.service';
 import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
 import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/uuid-external-id-computed-field-provider.service';
 import { EmailTemplateService } from './services/email-template.service';
-import { FileService } from './services/file.service';
+import { DiskFileService, S3FileService, FileServiceFactory } from './services/file';
 import { HashingService } from './services/hashing.service';
 import { ElasticEmailService } from './services/mail/elastic-email.service';
 import { SMTPEMailService } from './services/mail/smtp-email.service';
@@ -500,7 +500,9 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     DiscoveryService,
     Reflector,
     MetadataScanner,
-    FileService,
+    DiskFileService,
+    S3FileService,
+    FileServiceFactory,
     TextractService,
     SolidRegistry,
     SeedCommand,
@@ -725,7 +727,9 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     ElasticEmailService,
     ExcelService,
     FieldMetadataService,
-    FileService,
+    DiskFileService,
+    S3FileService,
+    FileServiceFactory,
     HttpModule,
     ImportTransactionService,
     ListOfValuesService,

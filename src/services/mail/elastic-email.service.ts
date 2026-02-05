@@ -5,7 +5,7 @@ import { EmailAttachment } from 'src/entities/email-attachment.entity';
 import { QueueMessage } from 'src/interfaces/mq';
 import { EmailTemplateService } from '../email-template.service';
 import { PdfService } from '../pdf.service';
-import { FileService } from '../file.service';
+import { DiskFileService } from '../file';
 import { IMail, MailAttachment, MailAttachmentWrapper } from "../../interfaces";
 import { PublisherFactory } from '../queues/publisher-factory.service';
 import { MailProvider } from 'src/decorators/mail-provider.decorator';
@@ -25,7 +25,7 @@ export class ElasticEmailService implements IMail {
         private readonly publisherFactory: PublisherFactory<any>,
         private readonly emailTemplateService: EmailTemplateService,
         private readonly pdfService: PdfService,
-        private readonly fileService: FileService,
+        private readonly fileService: DiskFileService,
         private readonly settingService: SettingService
     ) {
         const client = ElasticEmail.ApiClient.instance;
@@ -171,8 +171,8 @@ export class ElasticEmailService implements IMail {
     }
 
     private async getAttachmentAsPDF(attachmentTemplatePath: string, templateParams: any): Promise<Buffer> {
-        const template = await this.fileService.readFile(attachmentTemplatePath)
-        const bodyTemplate = Handlebars.compile(template);
+        const templateBuffer = await this.fileService.read(attachmentTemplatePath);
+        const bodyTemplate = Handlebars.compile(templateBuffer.toString('utf-8'));
         const html = bodyTemplate(templateParams);
         const pdfBuffer = await this.pdfService.generatePdf(html);
         const buffer = Buffer.from(pdfBuffer);

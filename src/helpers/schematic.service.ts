@@ -1,6 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { snakeCase } from "lodash";
-import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { CommandService, CommandWithArgs } from './command.service';
 import { SolidRegistry } from './solid-registry';
 
@@ -8,22 +6,12 @@ export const ADD_MODULE_COMMAND = 'add-module';
 export type GenerateModuleOptions = {
   module: string;
 };
-type ModelGenerationOptions = Omit<ModelAndFieldGenerationOptions, 'fields'>;
+type ModelGenerationOptions = Omit<ModelAndFieldGenerationOptions, 'fieldNamesForRemoval'>;
 
 type ModelAndFieldGenerationOptions = {
   module: string;
   model: string;
-  moduleDisplayName: string;
-  table?: string;
-  dataSource: string;
-  modelEnableSoftDelete?: boolean;
-  parentModel?: string;
-  parentModule?: string;
-  draftPublishWorkflowEnabled?: boolean;
-  isLegacyTable?: boolean;
-  isLegacyTableWithId?: boolean;
-  dataSourceType?: string;
-  fields: FieldMetadata[]; //FIXME This type can be improved
+  fieldNamesForRemoval: string[];
 };
 export const REMOVE_FIELDS_COMMAND = 'remove-fields';
 export const REFRESH_MODEL_COMMAND = 'refresh-model';
@@ -58,9 +46,9 @@ export class SchematicService {
       command === REMOVE_FIELDS_COMMAND ||
       command === REFRESH_MODEL_COMMAND
     ) {
-      const { fields, ...modelSpecificOptions } = options as ModelAndFieldGenerationOptions;
+      const { fieldNamesForRemoval, ...modelSpecificOptions } = options as ModelAndFieldGenerationOptions;
       const modelArgs = this.buildModelGenerationArgs(modelSpecificOptions);
-      const fieldArgs = this.buildFieldGenerationArgs(fields);
+      const fieldArgs = this.buildFieldGenerationArgs(fieldNamesForRemoval);
       const args = [...baseArgs, ...modelArgs, ...fieldArgs];
       this.logger.debug('schematicCommand args', args);
       return { command: this.SCHEMATICS_COMMAND, args };
@@ -74,14 +62,14 @@ export class SchematicService {
     }
   }
 
-  private buildFieldGenerationArgs(fields: FieldMetadata[]): string[] {
-    return fields
-      .filter((field) => {
-        return !this.solidRegistry.getCommonEntityKeys().map(key => key.toString()).includes(field.name);
+  private buildFieldGenerationArgs(fieldNamesForRemoval: string[]): string[] {
+    return fieldNamesForRemoval
+      .filter((fieldName) => {
+        return !this.solidRegistry.getCommonEntityKeys().map(key => key.toString()).includes(fieldName);
       })
-      .map((field) => {
+      .map((fieldName) => {
         // Using argument array eliminates the need for shell-specific quoting
-        return `--fields=${JSON.stringify(field)}`;
+        return `--fieldNamesForRemoval=${fieldName}`;
       });
   }
 
@@ -90,47 +78,6 @@ export class SchematicService {
       `--module=${modelSpecificOptions.module}`,
       `--model=${modelSpecificOptions.model}`,
     ];
-
-    if (modelSpecificOptions.moduleDisplayName) {
-      args.push(`--module-display-name=${snakeCase(modelSpecificOptions.moduleDisplayName)}`);
-    }
-
-    if (modelSpecificOptions.table) {
-      args.push(`--table=${modelSpecificOptions.table}`);
-    }
-
-    if (modelSpecificOptions.dataSource) {
-      args.push(`--data-source=${modelSpecificOptions.dataSource}`);
-    }
-
-    if (modelSpecificOptions.modelEnableSoftDelete) {
-      args.push(`--model-enable-soft-delete=${modelSpecificOptions.modelEnableSoftDelete}`);
-    }
-
-    if (modelSpecificOptions.parentModel) {
-      args.push(`--parent-model=${modelSpecificOptions.parentModel}`);
-    }
-
-    if (modelSpecificOptions.parentModule) {
-      args.push(`--parent-module=${modelSpecificOptions.parentModule}`);
-    }
-
-    if (modelSpecificOptions.draftPublishWorkflowEnabled) {
-      args.push(`--draft-publish-workflow-enabled=${modelSpecificOptions.draftPublishWorkflowEnabled}`);
-    }
-
-    if (modelSpecificOptions.isLegacyTable) {
-      args.push(`--is-legacy-table=${modelSpecificOptions.isLegacyTable}`);
-    }
-
-    if (modelSpecificOptions.isLegacyTableWithId) {
-      args.push(`--is-legacy-table-with-id=${modelSpecificOptions.isLegacyTableWithId}`);
-    }
-
-    if (modelSpecificOptions.dataSourceType) {
-      args.push(`--data-source-type=${modelSpecificOptions.dataSourceType}`);
-    }
-
     return args;
   }
 }

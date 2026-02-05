@@ -1214,17 +1214,6 @@ export class ModelMetadataService {
       {
         module: model.module.name,
         model: model.singularName,
-        moduleDisplayName: model.module.displayName,
-        dataSource: model.dataSource,
-        table: model.tableName,
-        fields: fieldsForRefresh,
-        modelEnableSoftDelete: model.enableSoftDelete,
-        parentModel: model.parentModel?.singularName,
-        parentModule: model.parentModel?.module?.name,
-        draftPublishWorkflowEnabled: model.draftPublishWorkflow,
-        isLegacyTable: model.isLegacyTable,
-        isLegacyTableWithId: model.isLegacyTableWithId,
-        dataSourceType: model.dataSourceType,
       },
       dryRun
     );
@@ -1241,7 +1230,7 @@ export class ModelMetadataService {
       {
         module: model.module.name,
         model: model.singularName,
-        fields: fieldsForRemoval,
+        fieldNamesForRemoval: fieldsForRemoval.map(field => field.name),
       },
       dryRun
     );

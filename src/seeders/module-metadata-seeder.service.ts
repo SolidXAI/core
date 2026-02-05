@@ -103,8 +103,7 @@ export class ModuleMetadataSeederService {
 
         /** 
          * -------------------------------------------------------------
-         * Selective module seeding via: 
-         *   solid seed --modules-to-seed onboarding,reports 
+         * Selective module seeding via: solid seed --modules-to-seed onboarding,reports 
          * -------------------------------------------------------------
          */
         let modulesToSeed: string[] | null = null;

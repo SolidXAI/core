@@ -1,12 +1,13 @@
-import { BadRequestException, ForbiddenException, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
+import * as fsPromises from 'fs/promises';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
 import { User } from 'src/entities/user.entity';
 import { SettingRepository } from '../repository/setting.repository';
-import { FileService } from '../services/file.service';
+import { FILE_SERVICE, IFileService } from './file';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
@@ -14,6 +15,7 @@ import { ISettingsProvider, NoInfer, SettingDefinition, SettingLevel } from '../
 import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
 import type { SolidCoreSetting } from './settings/default-settings-provider.service';
 import { Logger } from '@nestjs/common';
+
 
 @Injectable()
 export class SettingService {
@@ -29,7 +31,7 @@ export class SettingService {
   ]);
 
   constructor(
-    readonly fileService: FileService,
+    @Inject(FILE_SERVICE) readonly fileService: IFileService,
     readonly solidRegistry: SolidRegistry,
     readonly repo: SettingRepository,
     readonly moduleMetadataRepo: ModuleMetadataRepository,
@@ -247,13 +249,13 @@ export class SettingService {
       for (const file of uploadedFiles) {
         const settingKey = file.fieldname;
         const relativeFileName = `${file.filename}-${file.originalname}`;
-        const fileStorageDir = this.getConfigValue<SolidCoreSetting>("fileStorageDir")
-        const storagePath = `${fileStorageDir}/${relativeFileName}`;
-        const baseUrl = this.getConfigValue<SolidCoreSetting>("baseUrl") || '';
-        const fileUrl = `${baseUrl}/${storagePath}`;
 
-        await this.fileService.copyFile(file.path, storagePath);
-        await this.fileService.deleteFile(file.path);
+        // Read file from local disk (where Multer stores uploads) and write to storage
+        // The file service resolves the storage path and returns the public URL
+        const fileContent = await fsPromises.readFile(file.path);
+        const fileUrl = await this.fileService.write(relativeFileName, fileContent, { contentType: file.mimetype });
+        // Delete the temp file from local disk
+        await fsPromises.unlink(file.path);
 
         const matchedDto = settings.find(dto => dto.key === settingKey);
         const settingType = matchedDto?.type ?? 'system';
