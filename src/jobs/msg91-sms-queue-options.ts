@@ -2,13 +2,10 @@ import { QueueMessage } from 'src/interfaces/mq';
 
 import { BrokerType } from "../interfaces";
 
-const SMS_QUEUE_NAME = 'solid_sms_queue';
+const SMS_QUEUE_NAME = 'solid_msg91_sms_queue';
+
 export default {
-    name: 'smsInstance',
+    name: SMS_QUEUE_NAME,
     type: BrokerType.RabbitMQ,
     queueName: SMS_QUEUE_NAME,
-    // receive: async (message: QueueMessage<any>) => { // Default receive handler
-    //     console.log(`Received message: ${JSON.stringify(message)} from queue ${SMS_QUEUE_NAME}`);
-    //     return 'Received';
-    // },
 };

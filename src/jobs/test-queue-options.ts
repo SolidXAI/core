@@ -3,11 +3,7 @@ import { BrokerType } from "../interfaces";
 const QUEUE_NAME = 'solid_test_queue';
 
 export default {
-    name: 'queueTest',
+    name: QUEUE_NAME,
     type: BrokerType.RabbitMQ,
     queueName: QUEUE_NAME,
-    // receive: async (message: QueueMessage<any>) => { // Default receive handler
-    //     console.log(`Received message: ${JSON.stringify(message)} from queue ${MAIL_QUEUE_NAME}`);
-    //     return 'Received';
-    // },
 };
