@@ -52,10 +52,29 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
     }
 
     async onModuleInit(): Promise<void> {
+        // Not using SettingService here as that will necessitate all implementors of RabbitMqSubscriber to also inject SettingService which is not ideal. 
+        // Instead we directly read the environment variables here.
+        const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'rabbitmq';
         const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
+        const queueNameRegex = (process.env.QUEUES_QUEUE_NAME_REGEX_TO_ENABLE || '').trim();
 
         // we will start subscriber only if the current service role is subscriber. 
-        if (this.url && ['both', 'subscriber'].includes(this.serviceRole) && solidCliRunning === "false") {
+        if (this.url && ['both', 'subscriber'].includes(this.serviceRole) && solidCliRunning === "false" && defaultBroker === 'rabbitmq') {
+            const options = this.options();
+            const queueName = options.queueName;
+
+            if (queueNameRegex && queueNameRegex !== "all") {
+                try {
+                    const regex = new RegExp(queueNameRegex);
+                    if (!regex.test(queueName)) {
+                        this.logger.log(`RabbitMqSubscriber for queue ${queueName} is disabled because it does not match QUEUES_QUEUE_NAME_REGEX_TO_ENABLE=${queueNameRegex}`);
+                        return;
+                    }
+                } catch (error) {
+                    this.logger.error(`Invalid QUEUES_QUEUE_NAME_REGEX_TO_ENABLE regex "${queueNameRegex}". Subscriber for queue ${queueName} will not start.`);
+                    return;
+                }
+            }
 
             // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
             // const connection = await amqp.connect(this.url);
@@ -73,9 +92,6 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             const channel = await connection.createChannel();
             // this.logger.debug(`RabbitMqSubscriber channel created: ${JSON.stringify(this.options())} and url: ${url}`);
 
-            const options = this.options();
-
-            const queueName = options.queueName;
             const exchangeName = `${queueName}.exchange`;
             const routingKey = `${queueName}.routing-key`;
 

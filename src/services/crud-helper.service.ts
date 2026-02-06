@@ -164,7 +164,7 @@ export class CrudHelperService {
     }
 
     normalize(value: string | string[]): string[] {
-        if (!value) return [];// if the value is nullish, then return an empty array
+        if (!value) return []; // if the value is nullish, then return an empty array
         return Array.isArray(value) ? value : [value];        // if the value is an array, return it as is, otherwise return it as an array
     }
 
