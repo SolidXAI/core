@@ -18,6 +18,7 @@ import { ChatterMessageDetails } from '../entities/chatter-message-details.entit
 import { ChatterMessage } from '../entities/chatter-message.entity';
 import { getMediaStorageProvider } from './mediaStorageProviders';
 import { RequestContextService } from './request-context.service';
+import { take } from 'rxjs';
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
     constructor(
@@ -331,28 +332,28 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         if (field.type === 'relation') {
             if (field.relationType === "many-to-one") {
-            if (value.name) {
-                return value.name;
-            }
-            
-            try {
-                const relatedModel = await this.modelMetadataRepo.findOne({
-                where: { singularName: field.relationCoModelSingularName || field.relation },
-                relations: { userKeyField: true }
-                });
-                
-                if (relatedModel && relatedModel.userKeyField) {
-                const userKeyFieldName = relatedModel.userKeyField.name;
-                return value[userKeyFieldName] ? value[userKeyFieldName].toString() : '';
+                if (value.name) {
+                    return value.name;
                 }
-                
-                if (value.id) {
-                return value.id.toString();
+
+                try {
+                    const relatedModel = await this.modelMetadataRepo.findOne({
+                        where: { singularName: field.relationCoModelSingularName || field.relation },
+                        relations: { userKeyField: true }
+                    });
+
+                    if (relatedModel && relatedModel.userKeyField) {
+                        const userKeyFieldName = relatedModel.userKeyField.name;
+                        return value[userKeyFieldName] ? value[userKeyFieldName].toString() : '';
+                    }
+
+                    if (value.id) {
+                        return value.id.toString();
+                    }
+                } catch (error) {
+                    console.error('Error fetching related model metadata:', error);
+                    return value.id ? value.id.toString() : '';
                 }
-            } catch (error) {
-                console.error('Error fetching related model metadata:', error);
-                return value.id ? value.id.toString() : '';
-            }
             }
 
             if (field.relationType === 'many-to-many') {
@@ -501,11 +502,9 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         return populatedEntity;
     }
 
-    async getChatterMessages(
-        entityId: number,
-        entityName: string,
-        query: any
-    ) {
+    // [2026-02-05T23:31:21.025Z] INFO: [200 OK] 
+    // GET /api/chatter-message/getChatterMessages/216/mswipeBoomboxBulkUpload?populateMedia[0]=messageAttachments&populate[0]=user&populate[1]=chatterMessageDetails&limit=25 22747ms
+    async getChatterMessages(entityId: number, entityName: string, query: any) {
         const { limit = 25, offset = 0, populate = [], populateMedia = [], filters } = query;
 
         const model = await this.modelMetadataRepo.findOne({
@@ -524,6 +523,9 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         const relatedEntitiesMap = new Map<string, number[]>();
 
         for (const field of oneToManyFields) {
+            if (field.enableAuditTracking === false) {
+                continue
+            }
             const coModelName = field.relationCoModelSingularName;
             const coModelFieldName = field.relationCoModelFieldName;
 
@@ -539,6 +541,9 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 const relatedEntityRepository = em.getRepository(classify(coModelName));
 
                 const relatedEntities = await relatedEntityRepository.find({
+                    select: {
+                        id: true,
+                    },
                     where: { [coModelFieldName]: { id: entityId } },
                     take: 5,
                 });
