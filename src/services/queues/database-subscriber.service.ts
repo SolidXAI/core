@@ -20,7 +20,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
         if (!this.serviceRole) {
             this.logger.debug('Queue service Role is not defined in the environment variables');
         }
-        this.logger.debug(`DatabaseSubscriber instance created with options: ${JSON.stringify(this.options())}`);
+        // this.logger.debug(`DatabaseSubscriber instance created with options: ${JSON.stringify(this.options())}`);
     }
 
     abstract subscribe(message: QueueMessage<T>);
@@ -72,41 +72,30 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
         // this.logger.debug(`#### DatabaseSubscriber finished processing message from queue: ${queueName}`);
     }
 
-    // async onModuleInit(): Promise<void> {
-    //     // we will start subscriber only if the current service role is subscriber. 
-    //     if (['both', 'subscriber'].includes(this.serviceRole)) {
-
-    //         const options = this.options();
-
-    //         const queueName = options.queueName;
-    //         // setInterval(() => this.processNext(queueName), 1000);
-    //         const poll = async () => {
-    //             try {
-    //                 await this.processNext(queueName);
-    //             } catch (err) {
-    //                 this.logger.error(`Polling error: ${err.message}`);
-    //             } finally {
-    //                 setTimeout(poll, 1000); // Wait 1s *after* processing finishes
-    //             }
-    //         };
-
-    //         // start the loop
-    //         poll();
-
-    //         this.logger.log(`DatabaseSubscriber ready to consume messages: ${JSON.stringify(this.options())}`);
-    //     }
-    // }
-
     async onModuleInit(): Promise<void> {
+        // Not using SettingService here as that will necessitate all implementors of DatabaseSubscriber to also inject SettingService which is not ideal. 
+        // Instead we directly read the environment variables here.
         const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'database';
         const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
+        const queueNameRegex = (process.env.QUEUES_QUEUE_NAME_REGEX_TO_ENABLE || '').trim();
 
         // we will start subscriber only if the current service role is subscriber. 
         if (['both', 'subscriber'].includes(this.serviceRole) && defaultBroker === 'database' && solidCliRunning === "false") {
-
             const options = this.options();
-
             const queueName = options.queueName;
+
+            if (queueNameRegex && queueNameRegex !== "all") {
+                try {
+                    const regex = new RegExp(queueNameRegex);
+                    if (!regex.test(queueName)) {
+                        this.logger.log(`DatabaseSubscriber for queue ${queueName} is disabled because it does not match QUEUES_QUEUE_NAME_REGEX_TO_ENABLE=${queueNameRegex}`);
+                        return;
+                    }
+                } catch (error) {
+                    this.logger.error(`Invalid QUEUES_QUEUE_NAME_REGEX_TO_ENABLE regex "${queueNameRegex}". Subscriber for queue ${queueName} will not start.`);
+                    return;
+                }
+            }
 
             this.poller.start(queueName, (q) => this.processNext(q), {
                 baseDelayMs: 1000,
