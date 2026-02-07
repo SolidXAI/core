@@ -48,7 +48,11 @@ export class SchematicService {
     ) {
       const { fieldNamesForRemoval, ...modelSpecificOptions } = options as ModelAndFieldGenerationOptions;
       const modelArgs = this.buildModelGenerationArgs(modelSpecificOptions);
-      const fieldArgs = this.buildFieldGenerationArgs(fieldNamesForRemoval);
+      const fieldArgs: string[] = [];
+      if (fieldNamesForRemoval && fieldNamesForRemoval.length > 0) {
+        const _fieldArgs = this.buildFieldGenerationArgs(fieldNamesForRemoval);
+        fieldArgs.push(..._fieldArgs);
+      }
       const args = [...baseArgs, ...modelArgs, ...fieldArgs];
       this.logger.debug('schematicCommand args', args);
       return { command: this.SCHEMATICS_COMMAND, args };
