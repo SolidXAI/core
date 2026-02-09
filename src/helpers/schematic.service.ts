@@ -73,7 +73,7 @@ export class SchematicService {
       })
       .map((fieldName) => {
         // Using argument array eliminates the need for shell-specific quoting
-        return `--fieldNamesForRemoval=${fieldName}`;
+        return `--field-names-for-removal=${fieldName}`;
       });
   }
 
