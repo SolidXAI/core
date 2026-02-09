@@ -22,7 +22,7 @@ import { Logger } from '@nestjs/common';
 
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
-    private readonly logger = new Logger(ChatterMessageService.name);
+    private readonly _logger = new Logger(ChatterMessageService.name);
 
     constructor(
         @InjectEntityManager()
@@ -505,16 +505,23 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         return populatedEntity;
     }
 
+    private logHeapUsed(label: string) {
+        const mb = () => Math.round(process.memoryUsage().heapUsed / 1024 / 1024);
+        this._logger.log(`heapUsedMB(${label}): ${mb()}`);
+    }
+
     // [2026-02-05T23:31:21.025Z] INFO: [200 OK] 
     // GET /api/chatter-message/getChatterMessages/216/mswipeBoomboxBulkUpload?populateMedia[0]=messageAttachments&populate[0]=user&populate[1]=chatterMessageDetails&limit=25 22747ms
     async getChatterMessages(entityId: number, entityName: string, query: any) {
         const { limit = 25, offset = 0, populate = [], populateMedia = [], filters } = query;
+        this.logHeapUsed('getChatterMessages-start');
 
         const model = await this.modelMetadataRepo.findOne({
             where: {
                 singularName: entityName
             },
         });
+        this.logHeapUsed('getChatterMessages-modelLoaded');
         const oneToManyFields = await this.fieldMetadataRepo.find({
             where: {
                 model: { id: model.id },
@@ -522,12 +529,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 relationType: 'one-to-many'
             }
         });
+        this.logHeapUsed('getChatterMessages-oneToManyFieldsLoaded');
 
         const relatedEntitiesMap = new Map<string, number[]>();
 
         for (const field of oneToManyFields) {
             if (field.enableAuditTracking === false) {
-                this.logger.log(`Skipping field ${field.name} for chatter message retrieval because audit tracking is disabled`);
+                this._logger.log(`Skipping field ${field.name} for chatter message retrieval because audit tracking is disabled`);
                 continue
             }
             const coModelName = field.relationCoModelSingularName;
@@ -556,8 +564,10 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 relatedEntitiesMap.set(field.name, relatedIds);
             }
         }
+        this.logHeapUsed('getChatterMessages-relatedEntitiesLoaded');
 
         const qb = await this.repo.createSecurityRuleAwareQueryBuilder('entity');
+        this.logHeapUsed('getChatterMessages-queryBuilderReady');
 
         const orConditions: string[] = [];
         const parameters: any = {};
@@ -606,10 +616,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         qb.skip(offset).take(limit);
 
         const [entities, count] = await qb.getManyAndCount();
+        this.logHeapUsed('getChatterMessages-entitiesLoaded');
 
         if (populateMedia && populateMedia.length > 0) {
             const normalizedPopulateMedia = this.crudHelperService.normalize(populateMedia);
+            this.logHeapUsed('getChatterMessages-beforePopulateMedia');
             await this['handlePopulateMedia'](normalizedPopulateMedia, entities);
+            this.logHeapUsed('getChatterMessages-afterPopulateMedia');
         }
 
         const currentPage = Math.floor(offset / limit) + 1;
