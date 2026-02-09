@@ -18,9 +18,12 @@ import { ChatterMessageDetails } from '../entities/chatter-message-details.entit
 import { ChatterMessage } from '../entities/chatter-message.entity';
 import { getMediaStorageProvider } from './mediaStorageProviders';
 import { RequestContextService } from './request-context.service';
-import { take } from 'rxjs';
+import { Logger } from '@nestjs/common';
+
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
+    private readonly logger = new Logger(ChatterMessageService.name);
+
     constructor(
         @InjectEntityManager()
         readonly entityManager: EntityManager,
@@ -524,6 +527,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         for (const field of oneToManyFields) {
             if (field.enableAuditTracking === false) {
+                this.logger.log(`Skipping field ${field.name} for chatter message retrieval because audit tracking is disabled`);
                 continue
             }
             const coModelName = field.relationCoModelSingularName;
