@@ -10,11 +10,14 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
     private readonly logger = new Logger(RabbitMqSubscriber.name);
     private readonly url: string;
     private readonly serviceRole: string;
+    private connection: amqp.Connection | null = null;
+    private channel: amqp.Channel | null = null;
+    private consumerTag: string | null = null;
+    private reconnectPromise: Promise<void> | null = null;
+    private reconnectAttempt = 0;
+    private stopping = false;
 
-    constructor(
-        protected readonly mqMessageService: MqMessageService,
-        protected readonly mqMessageQueueService: MqMessageQueueService,
-    ) {
+    constructor(protected readonly mqMessageService: MqMessageService, protected readonly mqMessageQueueService: MqMessageQueueService) {
         this.url = process.env.QUEUES_RABBIT_MQ_URL;
         this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
         if (!this.url) {
@@ -46,6 +49,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             username: url.username,
             password: decodeURIComponent(url.password),
             frameMax: 131072,
+            heartbeat: 30,
         });
 
         return connection
@@ -76,84 +80,233 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 }
             }
 
-            // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
-            // const connection = await amqp.connect(this.url);
-
-            let connection;
             try {
-                connection = await this.establishConnection();
-                // this.logger.debug(`RabbitMqSubscriber connection established: ${JSON.stringify(this.options())} and url: ${this.url}`);
+                await this.connectAndConsume(queueName);
+            } catch (err) {
+                this.logger.error(`Failed to connect to RabbitMQ for queue ${queueName}: ${(err as Error).message}`, (err as Error).stack);
+                this.triggerReconnect(queueName, 'initial connection failure');
             }
-            catch (err) {
-                this.logger.error(`Failed to connect to RabbitMQ: ${(err as Error).message}`, (err as Error).stack);
-                throw err;
-            }
-
-            const channel = await connection.createChannel();
-            // this.logger.debug(`RabbitMqSubscriber channel created: ${JSON.stringify(this.options())} and url: ${url}`);
-
-            const exchangeName = `${queueName}.exchange`;
-            const routingKey = `${queueName}.routing-key`;
-
-            await channel.assertExchange(exchangeName, 'direct', {});
-            // this.logger.debug(`RabbitMqSubscriber channel asserted: ${JSON.stringify(this.options())} and url: ${url}`);
-
-            const queue = await channel.assertQueue(queueName, {});
-            // this.logger.debug(`RabbitMqSubscriber queue asserted: ${JSON.stringify(this.options())} and url: ${url}`);
-
-            await channel.bindQueue(queue.queue, exchangeName, routingKey);
-            // this.logger.debug(`RabbitMqSubscriber queue bound: ${JSON.stringify(this.options())} and url: ${url}`);
-
-            // Consume messages from the queue
-            channel.consume(
-                queue.queue,
-                async (rawMessage) => {
-                    if (rawMessage) {
-                        const messageContentString = rawMessage.content.toString();
-                        // this.logger.debug(`RabbitMqSubscriber Received raw message: ${messageContentString}`);
-
-                        let message: QueueMessage<T> = null;
-
-                        try {
-                            message = JSON.parse(messageContentString) as QueueMessage<T>;
-
-                            // this is the first time we are receiving the message so we set the currentRetry to 0
-                            if (!message.retryCount) message.retryCount = 0;
-                            if (!message.retryInterval) message.retryInterval = 1000;
-                            if (!message.currentRetry) message.currentRetry = 0;
-
-                            await this.processMessage(message, rawMessage, channel);
-                        }
-                        catch (error) {
-                            this.logger.error(`Error processing message: ${error.message}`);
-
-                            // if an error occurs then if retryCount is set we start retrying. 
-                            if (message) {
-                                if (message.currentRetry < message.retryCount) {
-                                    await this.updateStatusInDatabase('retrying', message);
-
-                                    message.currentRetry++;
-                                    this.logger.warn(`Retrying message (${message.currentRetry}/${message.retryCount}) after ${message.retryInterval}ms`);
-                                    setTimeout(() => {
-                                        this.retryMessage(message, rawMessage, channel);
-                                    }, message.retryInterval);
-                                } else {
-                                    await this.updateStatusInDatabase('failed', message, error.message, '');
-
-                                    this.logger.error(`Message failed after ${message.retryCount} attempts: ${error.message}`);
-                                    channel.ack(rawMessage); // Discard the message after max retries
-                                }
-                            }
-
-                        }
-                    }
-                },
-                // { noAck: true },
-                {},
-            );
 
             this.logger.log(`RabbitMqSubscriber ready to consume messages: ${JSON.stringify(this.options())} and url: ${this.url}`);
         }
+    }
+
+    private async connectAndConsume(queueName: string): Promise<void> {
+        await this.cleanup();
+
+        let connection: amqp.Connection;
+        try {
+            connection = await this.establishConnection();
+        } catch (err) {
+            this.logger.error(`Failed to connect to RabbitMQ for queue ${queueName}: ${(err as Error).message}`, (err as Error).stack);
+            throw err;
+        }
+
+        this.connection = connection;
+
+        connection.on('error', (err) => {
+            if (connection !== this.connection) return;
+            this.logger.error(`RabbitMqSubscriber connection error for queue ${queueName}: ${(err as Error).message}`);
+        });
+
+        connection.on('close', () => {
+            if (connection !== this.connection) return;
+            this.logger.warn(`RabbitMqSubscriber connection closed for queue ${queueName}`);
+            this.triggerReconnect(queueName, 'connection closed');
+        });
+
+        const channel = await connection.createChannel();
+        this.channel = channel;
+
+        channel.on('error', (err) => {
+            if (channel !== this.channel) return;
+            this.logger.error(`RabbitMqSubscriber channel error for queue ${queueName}: ${(err as Error).message}`);
+        });
+
+        channel.on('close', () => {
+            if (channel !== this.channel) return;
+            this.logger.warn(`RabbitMqSubscriber channel closed for queue ${queueName}`);
+            this.triggerReconnect(queueName, 'channel closed');
+        });
+
+        // Process one message at a time per consumer to avoid parallel work on the same subscriber instance.
+        await channel.prefetch(1);
+
+        // Use a direct exchange with a stable routing key so retry DLX can route back to the main queue.
+        const exchangeName = `${queueName}.exchange`;
+        const routingKey = `${queueName}.routing-key`;
+        const retryQueue = `${queueName}.retry`;
+        const failedQueue = `${queueName}.failed`;
+
+        await channel.assertExchange(exchangeName, 'direct', {});
+        await channel.assertQueue(queueName, {});
+        await channel.bindQueue(queueName, exchangeName, routingKey);
+
+        // Retry queue uses DLX to route expired messages back to the main exchange/routing key.
+        await channel.assertQueue(retryQueue, {
+            arguments: {
+                'x-dead-letter-exchange': exchangeName,
+                'x-dead-letter-routing-key': routingKey,
+            }
+        });
+
+        await channel.assertQueue(failedQueue, {});
+
+        const consumeResult = await channel.consume(
+            queueName,
+            async (rawMessage) => {
+                if (!rawMessage) {
+                    return;
+                }
+
+                const messageContentString = rawMessage.content.toString();
+                let message: QueueMessage<T> = null;
+
+                try {
+                    message = JSON.parse(messageContentString) as QueueMessage<T>;
+                } catch (error) {
+                    this.logger.error(`Invalid JSON message on queue ${queueName}: ${(error as Error).message}`);
+                    await this.publishToFailedQueue(queueName, rawMessage.content, channel, error);
+                    channel.ack(rawMessage);
+                    return;
+                }
+
+                if (!message.retryCount) message.retryCount = 0;
+                if (!message.retryInterval) message.retryInterval = 1000;
+                if (!message.currentRetry) message.currentRetry = 0;
+
+                try {
+                    await this.processMessage(message, rawMessage, channel);
+                } catch (error) {
+                    await this.handleProcessingError(message, rawMessage, channel, error, queueName);
+                }
+            },
+            // Explicit ack enables reliable processing and retry routing.
+            { noAck: false },
+        );
+
+        this.consumerTag = consumeResult.consumerTag;
+    }
+
+    // Retry flow: update DB -> increment retry -> send to retry queue with per-message expiration -> ack original.
+    private async handleProcessingError(message: QueueMessage<T>, rawMessage: amqp.ConsumeMessage, channel: amqp.Channel, error: any, queueName: string): Promise<void> {
+        const errorMessage = (error as Error)?.message || String(error);
+        this.logger.error(`Error processing message on queue ${queueName}: ${errorMessage}`);
+
+        if (message.currentRetry < message.retryCount) {
+            await this.updateStatusInDatabase('retrying', message);
+
+            message.currentRetry++;
+            const retryQueue = `${queueName}.retry`;
+            const payload = Buffer.from(JSON.stringify(message));
+
+            // Per-message expiration keeps the message in the retry queue until TTL, then DLX routes it back.
+            channel.sendToQueue(retryQueue, payload, {
+                expiration: String(message.retryInterval || 1000),
+                headers: {
+                    'x-error': errorMessage,
+                }
+            });
+
+            channel.ack(rawMessage);
+            this.logger.warn(`Retrying message (${message.currentRetry}/${message.retryCount}) after ${message.retryInterval}ms on queue ${queueName}`);
+            return;
+        }
+
+        await this.updateStatusInDatabase('failed', message, errorMessage, '');
+        channel.ack(rawMessage);
+        await this.publishToFailedQueue(queueName, Buffer.from(JSON.stringify(message)), channel, error);
+        this.logger.error(`Message failed after ${message.retryCount} attempts on queue ${queueName}: ${errorMessage}`);
+    }
+
+    private async publishToFailedQueue(queueName: string, payload: Buffer | string, channel: amqp.Channel, error?: any): Promise<void> {
+        const failedQueue = `${queueName}.failed`;
+        const body = Buffer.isBuffer(payload) ? payload : Buffer.from(payload);
+        const errorMessage = (error as Error)?.message || String(error || '');
+
+        try {
+            channel.sendToQueue(failedQueue, body, errorMessage ? {
+                headers: { 'x-error': errorMessage }
+            } : undefined);
+        } catch (err) {
+            this.logger.error(`Failed to publish to failed queue ${failedQueue}: ${(err as Error).message}`);
+        }
+    }
+
+    private triggerReconnect(queueName: string, reason: string) {
+        if (this.stopping) return;
+        if (this.reconnectPromise) return;
+
+        this.reconnectPromise = this.reconnectLoop(queueName, reason)
+            .finally(() => {
+                this.reconnectPromise = null;
+            });
+    }
+
+    // Reconnect with backoff to avoid hammering the broker during outages.
+    private async reconnectLoop(queueName: string, reason: string): Promise<void> {
+        this.logger.warn(`RabbitMqSubscriber reconnecting for queue ${queueName}: ${reason}`);
+
+        while (!this.stopping) {
+            try {
+                await this.connectAndConsume(queueName);
+                this.reconnectAttempt = 0;
+                this.logger.log(`RabbitMqSubscriber reconnected for queue ${queueName}`);
+                return;
+            } catch (err) {
+                this.reconnectAttempt += 1;
+                const delay = this.backoff();
+                this.logger.warn(`RabbitMqSubscriber reconnect failed for queue ${queueName}; retrying in ${delay}ms`);
+                await this.sleep(delay);
+            }
+        }
+    }
+
+    private async cleanup(): Promise<void> {
+        const channel = this.channel;
+        const connection = this.connection;
+        const consumerTag = this.consumerTag;
+
+        this.channel = null;
+        this.connection = null;
+        this.consumerTag = null;
+
+        if (channel) {
+            try {
+                if (consumerTag) {
+                    await channel.cancel(consumerTag);
+                }
+            } catch (_) {
+                // ignore
+            }
+
+            try {
+                await channel.close();
+            } catch (_) {
+                // ignore
+            }
+        }
+
+        if (connection) {
+            try {
+                await connection.close();
+            } catch (_) {
+                // ignore
+            }
+        }
+    }
+
+    private sleep(ms: number): Promise<void> {
+        return new Promise(resolve => setTimeout(resolve, ms));
+    }
+
+    // Exponential backoff with jitter, capped to 30s.
+    private backoff(): number {
+        const baseMs = 1000;
+        const maxMs = 30_000;
+        const exp = Math.min(maxMs, baseMs * Math.pow(2, this.reconnectAttempt));
+        const jitter = Math.floor(Math.random() * (exp * 0.2));
+        return Math.min(maxMs, exp + jitter);
     }
 
     /**
@@ -168,43 +321,14 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         // Ack the message. 
         channel.ack(rawMessage);
 
-        // TODO: Update the database to indicate that the task is finished.
+        // Persist success output and timing.
         await this.updateStatusInDatabase('succeeded', message, '', result ? JSON.stringify(result, null, 2) : '');
 
     }
 
-    /**
-     * Retry the message by invoking the processing logic again.
-     */
-    private async retryMessage(message: QueueMessage<T>, rawMessage, channel) {
-        try {
-            await this.processMessage(message, rawMessage, channel);
-        } catch (error) {
-            if (message.currentRetry < message.retryCount) {
-                await this.updateStatusInDatabase('retrying', message);
-
-                message.currentRetry++;
-                this.logger.warn(`Retrying message (${message.currentRetry}/${message.retryCount}) after ${message.retryInterval}ms: ${error.message}`);
-                setTimeout(() => {
-                    this.retryMessage(message, rawMessage, channel);
-                }, message.retryInterval);
-            } else {
-
-                this.logger.error(`Message failed after ${message.retryCount} attempts: ${error.message}`);
-
-                // Discard the message after max retries
-                channel.ack(rawMessage);
-
-                // TODO: Store the error in the database and update the status accordingly.
-                await this.updateStatusInDatabase('failed', message, error.message, '');
-
-            }
-        }
-    }
-
     private async updateStatusInDatabase(stage: string, message: QueueMessage<T>, error: string = '', result: string = '') {
 
-        // TODO: make an entry in the relevant database table, generate a unique id earlier.
+        // Update the existing message record by messageId; creation happens upstream.
         try {
             // 1. resolve the queue first
             const mqMessage = await this.mqMessageService.repo.findOne({

@@ -876,7 +876,8 @@ export class ModelMetadataService {
       sequenceNumber: 1,
       actionUserKey: actionName,
       moduleUserKey: `${model.module.name}`,
-      parentMenuItemUserKey: ""
+      parentMenuItemUserKey: "",
+      iconName : ""
     };
 
     const modelListview = {

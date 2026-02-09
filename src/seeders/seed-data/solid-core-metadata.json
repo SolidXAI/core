@@ -5899,7 +5899,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "appBuilder-root",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "",
+      "iconName" : "app_registration"
     },
     {
       "displayName": "Module",
@@ -5931,7 +5932,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "layoutBuilder-root",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "",
+      "iconName": "space_dashboard"
     },
     {
       "displayName": "Menu Item",
@@ -5971,7 +5973,8 @@
       "sequenceNumber": 3,
       "actionUserKey": "media-root",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "",
+      "iconName":"perm_media"
     },
     {
       "displayName": "Media",
@@ -5995,7 +5998,8 @@
       "sequenceNumber": 4,
       "actionUserKey": "iam-root",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "",
+      "iconName": "person_shield"
     },
     {
       "displayName": "User",
@@ -6043,7 +6047,8 @@
       "sequenceNumber": 5,
       "actionUserKey": "queues-root",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "",
+      "iconName":"low_priority"
     },
     {
       "displayName": "Messages",
@@ -6067,7 +6072,8 @@
       "sequenceNumber": 6,
       "actionUserKey": "notification-root",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "",
+      "iconName":"notification_settings"
     },
     {
       "displayName": "Email",
@@ -6091,7 +6097,8 @@
       "sequenceNumber": 7,
       "actionUserKey": "other-root",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "",
+      "iconName":"other_admission"
     },
     {
       "displayName": "List of Values",
@@ -6171,7 +6178,8 @@
       "sequenceNumber": 8,
       "actionUserKey": "dasbhoard-root",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "",
+      "iconName" : "dashboard_customize"
     },
     {
       "displayName": "Dashboard",
@@ -6195,7 +6203,8 @@
       "sequenceNumber": 9,
       "actionUserKey": "settings-root",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": ""
+      "parentMenuItemUserKey": "",
+      "iconName":"settings"
     },
     {
       "displayName": "App Settings",
@@ -11143,6 +11152,22 @@
             "type": "field",
             "attrs": {
               "name": "ipAddress",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "userAgent",
+              "sortable": true,
+              "filterable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdAt",
               "sortable": true,
               "filterable": true
             }

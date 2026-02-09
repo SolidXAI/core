@@ -654,7 +654,8 @@ export class ModuleMetadataSeederService {
                     action,
                     module,
                     parentMenuItem,
-                    sequenceNumber: m.sequenceNumber
+                    sequenceNumber: m.sequenceNumber,
+                    iconName: m.iconName,
                 };
 
                 // If existing, set its id so save() will perform an update, otherwise insert
