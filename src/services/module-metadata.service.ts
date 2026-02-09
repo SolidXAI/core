@@ -181,7 +181,8 @@ export class ModuleMetadataService {
             sequenceNumber: 1,
             actionUserKey: `${module?.name}-home-action`,
             moduleUserKey: module?.name,
-            parentMenuItemUserKey: ""
+            parentMenuItemUserKey: "",
+            iconName : "home"
           }
         ],
         views: [],
