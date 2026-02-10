@@ -11,16 +11,6 @@
   "bin": {
     "solidCore": "dist/cli.js"
   },
-  "files": [
-    "dist/**",
-    "dist-tests/**",
-    "src/**",
-    "tests/**",
-    "sql/**",
-    "docs/**",
-    "playwright.core.config.js",
-    "nest-cli.json"
-  ],
   "scripts": {
     "build": "nest build",
     "build:tests": "tsc -p tsconfig.tests.json",
