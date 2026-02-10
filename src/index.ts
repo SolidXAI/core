@@ -179,6 +179,7 @@ export * from './helpers/security.helper'
 export * from './helpers/model-metadata-helper.service'
 export * from './helpers/image-encoding.helper'
 export * from './helpers/solid-microservice-adapter.service'
+export * from './helpers/typeorm-db-helper';
 
 export * from './services/crud.service'
 export * from './interceptors/logging.interceptor'
