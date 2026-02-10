@@ -11,8 +11,19 @@
   "bin": {
     "solidCore": "dist/cli.js"
   },
+  "files": [
+    "dist/**",
+    "dist-tests/**",
+    "src/**",
+    "tests/**",
+    "sql/**",
+    "docs/**",
+    "playwright.core.config.js",
+    "nest-cli.json"
+  ],
   "scripts": {
     "build": "nest build",
+    "build:tests": "tsc -p tsconfig.tests.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -24,7 +35,8 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "prepare": "npm run build"
+    "prepare": "npm run build",
+    "prepack": "npm run build && npm run build:tests"
   },
   "author": "Oswald Rodrigues <oswald@logicloop.io>",
   "license": "ISC",
@@ -118,6 +130,7 @@
     "@nestjs/testing": "^10.0.0",
     "@nestjs/typeorm": "^10.0.1",
     "@solidxai/code-builder": "^0.0.2",
+    "@playwright/test": "^1.50.0",
     "@types/express": "^4.17.17",
     "@types/hapi__joi": "^17.1.12",
     "@types/jest": "^29.5.2",

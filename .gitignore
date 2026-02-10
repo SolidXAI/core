@@ -21,6 +21,7 @@ yarn-error.log*
 
 # output/
 dist/
+dist-tests/
 
 *.tgz
 .env
