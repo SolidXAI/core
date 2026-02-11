@@ -125,11 +125,41 @@ Rationale:
 
 
 ## Step 4: Run Tests 
+```
 npx @solidxai/solidctl run-tests --module venue --api-base-url http://localhost:3000 --ui-base-url http://localhost:5173 --headless false
+```
+
+```
 npx @solidxai/solidctl run-tests --module venue --list-specs
+```
+
+What this does:
+- Loads `testing.scenarios` from the module metadata file.
+- Applies `--scenario-ids` or `--include-tags` filtering if provided.
+- Boots API and UI adapters with the supplied base URLs.
+- Registers any custom test specs listed in `testing.specs`.
+- Executes scenarios in order with fail‑fast behavior.
+
+Useful variants:
+```
+npx @solidxai/solidctl run-tests --module venue --scenario-ids api-authenticate-success,api-create-states
+```
+
+```
+npx @solidxai/solidctl run-tests --module venue --include-tags smoke
+```
+
+```
+npx @solidxai/solidctl run-tests --module venue --api-base-url http://localhost:3000 --headless true
+```
+
+Notes:
+- If your scenario depends on a previous scenario’s `saveAs` output (e.g., `loginSuccess`), ensure the auth scenario runs first.
+- For UI tests, `--ui-base-url` should point to a running frontend server.
+- `--list-specs` prints registered custom `test.spec` ids and exits.
 
 
-## Step 4: Tear everything down
+## Step 5: Tear everything down
 
 Command:
 ```

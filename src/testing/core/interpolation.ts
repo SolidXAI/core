@@ -119,10 +119,11 @@ function resolveToken(token: string, ctx: TestContext): TokenResolution {
     return { value, raw: false };
   }
 
-  if (token.startsWith("data.")) {
-    let path = token.slice("data.".length);
+  if (token.startsWith("data:") || token.startsWith("data.")) {
+    const prefix = token.startsWith("data:") ? "data:" : "data.";
+    let path = token.slice(prefix.length);
     if (!path) {
-      throw new Error('Invalid interpolation token: "data."');
+      throw new Error(`Invalid interpolation token: "${prefix}"`);
     }
     let raw = false;
     if (path.endsWith("._rec")) {

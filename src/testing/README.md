@@ -58,11 +58,11 @@ Available tokens:
 - `${env:NAME}` (environment variables)
 - `${params.foo}` (scenario params)
 - `${res:saveAs.path}` (saved step results)
-- `${data.modelUserKey["recUserKeyValue"].field}` (test data from `testing.data`)
-- `${data.modelUserKey["recUserKeyValue"]._rec}` (raw record object when used alone)
+- `${data:modelUserKey["recUserKeyValue"].field}` (test data from `testing.data`)
+- `${data:modelUserKey["recUserKeyValue"]._rec}` (raw record object when used alone)
 
 Test data lookup details:
-- Data is indexed as `data.<modelUserKey>["<recUserKeyValue>"]`.
+- Data is indexed as `data:<modelUserKey>["<recUserKeyValue>"]`.
 - You can access fields with `.fieldName`.
 - Bracket syntax is recommended for keys with spaces or punctuation.
 - Use `._rec` to return the full object when the token is the entire value.
@@ -71,7 +71,7 @@ Examples:
 ```json
 {
   "params": {
-    "state": "${data.stateMaster[\"Maharashtra\"].name}"
+    "state": "${data:stateMaster[\"Maharashtra\"].name}"
   },
   "steps": [
     {
@@ -82,8 +82,8 @@ Examples:
           "url": "${env:API_BASE_URL}/api/example",
           "json": {
             "stateName": "${params.state}",
-            "city": "${data.cityMaster[\"New Delhi\"].name}",
-            "cityRecord": "${data.cityMaster[\"New Delhi\"]._rec}"
+            "city": "${data:cityMaster[\"New Delhi\"].name}",
+            "cityRecord": "${data:cityMaster[\"New Delhi\"]._rec}"
           }
         }
       }
