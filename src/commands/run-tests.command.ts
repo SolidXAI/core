@@ -1,9 +1,11 @@
 import { Logger } from '@nestjs/common';
 import { Command, CommandRunner, Option } from 'nest-commander';
+import * as path from 'path';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { ConsoleReporter } from 'src/testing/reporter/console-reporter';
 import { runFromMetadata } from 'src/testing/runner/run-from-metadata';
 import type { TestingMetadata } from 'src/testing/contracts/testing-metadata.types';
+import { SpecRegistry } from 'src/testing/core/spec-registry';
 
 interface RunTestsCommandOptions {
   module?: string;
@@ -16,6 +18,7 @@ interface RunTestsCommandOptions {
   headless?: boolean;
   timeoutMs?: number;
   retries?: number;
+  listSpecs?: boolean;
 }
 
 @Command({
@@ -46,6 +49,24 @@ export class RunTestsCommand extends CommandRunner {
       }
 
       const metadata = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(metadataPath);
+      if (!metadata?.testing) {
+        this.logger.error(`No testing configuration found in metadata: ${metadataPath}`);
+        return;
+      }
+
+      const listSpecs = options?.listSpecs ?? false;
+      const specEntries = Array.isArray(metadata.testing?.specs)
+        ? metadata.testing.specs
+        : [];
+
+      if (listSpecs) {
+        const registry = new SpecRegistry();
+        if (specEntries.length) {
+          loadSpecRegistrations(specEntries, metadataPath, registry);
+        }
+        printSpecList(registry.list());
+        return;
+      }
       if (!metadata?.testing?.scenarios || !Array.isArray(metadata.testing.scenarios)) {
         this.logger.error(`No testing.scenarios found in metadata: ${metadataPath}`);
         return;
@@ -75,6 +96,9 @@ export class RunTestsCommand extends CommandRunner {
           timeoutMs: options?.timeoutMs,
           retries: options?.retries,
         },
+        specs: specEntries.length
+          ? (registry) => loadSpecRegistrations(specEntries, metadataPath, registry)
+          : undefined,
       });
     } catch (err: any) {
       const message = err?.message ?? String(err);
@@ -121,6 +145,16 @@ export class RunTestsCommand extends CommandRunner {
   })
   parseReporter(val: string): string {
     return val;
+  }
+
+  @Option({
+    flags: '--list-specs [true|false]',
+    description: 'List registered test specs and exit.',
+    required: false,
+  })
+  parseListSpecs(val?: string): boolean {
+    if (val === undefined) return true;
+    return val === 'false' ? false : true;
   }
 
   @Option({
@@ -176,4 +210,47 @@ function splitCsv(value?: string): string[] | undefined {
     .map((item) => item.trim())
     .filter(Boolean);
   return items.length ? items : undefined;
+}
+
+function resolveSpecPath(entry: string, metadataPath: string): string {
+  if (path.isAbsolute(entry)) {
+    return entry;
+  }
+  if (entry.startsWith('.')) {
+    return path.resolve(path.dirname(metadataPath), entry);
+  }
+  return path.resolve(process.cwd(), entry);
+}
+
+function loadSpecRegistrations(entries: string[], metadataPath: string, registry: SpecRegistry): void {
+  for (const entry of entries) {
+    const resolved = resolveSpecPath(entry, metadataPath);
+    let mod: any;
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-var-requires
+      mod = require(resolved);
+    } catch (err: any) {
+      const message = err?.message ?? String(err);
+      throw new Error(
+        `Failed to load test spec module "${entry}" resolved to "${resolved}": ${message}`,
+      );
+    }
+    const register = mod?.registerTestSpecs ?? mod?.default ?? mod;
+    if (typeof register !== 'function') {
+      throw new Error(
+        `Test spec module "${entry}" did not export a register function (expected "registerTestSpecs" or default export).`,
+      );
+    }
+    register(registry);
+  }
+}
+function printSpecList(specIds: string[]): void {
+  if (!specIds.length) {
+    console.log('No test specs registered.');
+    return;
+  }
+  console.log('Registered test specs:');
+  for (const id of specIds) {
+    console.log(`- ${id}`);
+  }
 }

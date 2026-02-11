@@ -1,5 +1,6 @@
 import type { StepPhase } from "../contracts/runtime-context.types";
 import type { OpStep, ScenarioSpec } from "../contracts/testing-metadata.types";
+import type { SolidTestSpecResult } from "../contracts/test-spec.types";
 
 export interface Reporter {
   onScenarioStart(scenario: ScenarioSpec): void;
@@ -19,6 +20,12 @@ export interface Reporter {
     ok: boolean;
     error?: unknown;
     durationMs: number;
+  }): void;
+  onSpecResult?(args: {
+    scenarioId: string;
+    specId: string;
+    stepName?: string;
+    result: SolidTestSpecResult;
   }): void;
   attach?(args: {
     scenarioId: string;

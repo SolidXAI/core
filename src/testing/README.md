@@ -50,12 +50,42 @@ Utilities:
 - `util.log`
 - `util.sleep`
 
+Custom:
+- `test.spec`
+
 ## Add A New Step (SOP)
 1. Create a new `*.step.ts` in the right domain folder.
 2. Implement a `registerXSteps(registry)` function and `registry.register("op.name", handler)`.
 3. Validate required `step.with` fields and throw clear errors.
 4. Use adapters via `ctx.api` / `ctx.ui` and update `ctx.last` when helpful.
 5. Export and register it from the domain `index.ts`.
+
+## Custom Specs (test.spec)
+Purpose: escape hatch for fully custom test logic.
+
+Step shape example:
+```json
+{
+  "when": {
+    "op": "test.spec",
+    "spec": "example.customHealth",
+    "with": { "input": { "url": "${env:API_BASE_URL}/health" } },
+    "saveAs": "custom.health"
+  }
+}
+```
+
+Register specs in the consuming project:
+```ts
+import { runFromMetadata } from "./runner/run-from-metadata";
+
+await runFromMetadata({
+  // ...
+  specs: (specRegistry) => {
+    specRegistry.register("example.customHealth", () => new CustomHealthSpec());
+  },
+});
+```
 
 ## Run From Metadata
 ```ts

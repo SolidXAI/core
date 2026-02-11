@@ -1,6 +1,7 @@
 import type { ApiAdapter } from "../adapters/api/api-adapter";
 import type { PlaywrightAdapter } from "../adapters/ui/playwright-adapter";
 import type { Reporter } from "../reporter/reporter.types";
+import type { SpecRegistry } from "../core/spec-registry";
 import type { ScenarioType } from "./testing-metadata.types";
 
 export type StepPhase = "given" | "when" | "then" | "and" | "step";
@@ -27,4 +28,5 @@ export interface TestContext {
   ui?: PlaywrightAdapter;
   last?: { apiResponse?: ApiResponse };
   reporter: Reporter;
+  specRegistry?: SpecRegistry;
 }

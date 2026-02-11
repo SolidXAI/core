@@ -48,6 +48,34 @@
             }
           }
         ]
+      },
+      {
+        "id": "custom-spec-health",
+        "name": "Custom spec health check",
+        "type": "api",
+        "steps": [
+          {
+            "when": {
+              "op": "test.spec",
+              "spec": "example.customHealth",
+              "with": {
+                "input": {
+                  "url": "${env:API_BASE_URL}/health"
+                }
+              },
+              "saveAs": "customHealthResult"
+            }
+          },
+          {
+            "then": {
+              "op": "assert.equals",
+              "with": {
+                "actual": "${res:customHealthResult.ok}",
+                "expected": "true"
+              }
+            }
+          }
+        ]
       }
     ]
   }

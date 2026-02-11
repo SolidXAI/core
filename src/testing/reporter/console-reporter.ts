@@ -173,4 +173,17 @@ export class ConsoleReporter implements Reporter {
       console.error(indentLines(details, `${STEP_INDENT}${INDENT}`));
     }
   }
+
+  onSpecResult(args: {
+    scenarioId: string;
+    specId: string;
+    stepName?: string;
+    result: { ok: boolean; details?: Record<string, any> };
+  }): void {
+    console.log(`${INDENT}↳ SPEC ${args.specId} ok=${args.result.ok}`);
+    if (args.result.details) {
+      const details = JSON.stringify(args.result.details, null, 2);
+      console.log(indentLines(details, `${INDENT}${INDENT}`));
+    }
+  }
 }

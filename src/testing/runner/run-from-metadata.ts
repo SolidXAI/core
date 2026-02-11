@@ -8,8 +8,10 @@ import { registerApiSteps } from "../steps/api";
 import { registerUiSteps } from "../steps/ui";
 import { registerAssertSteps } from "../steps/assert";
 import { registerUtilSteps } from "../steps/util";
+import { registerTestSteps } from "../steps/test";
 import { SimpleResourceStore } from "../core/resource-store";
 import { StepRegistry } from "../core/step-registry";
+import { SpecRegistry } from "../core/spec-registry";
 import { TestingEngine } from "../core/testing-engine";
 import { filterScenarios } from "./scenario-filter";
 import { ensureUiStarted, scenarioNeedsUi } from "./lifecycle";
@@ -23,6 +25,7 @@ export type RunnerOptions = {
   api?: ApiAdapterOptions;
   ui?: PlaywrightAdapterOptions;
   defaults?: { timeoutMs?: number; retries?: number };
+  specs?: (registry: SpecRegistry) => void;
 };
 
 export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
@@ -31,6 +34,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   registerUiSteps(registry);
   registerAssertSteps(registry);
   registerUtilSteps(registry);
+  registerTestSteps(registry);
 
   const engine = new TestingEngine(registry, opts.defaults);
   const scenarios = filterScenarios(opts.metadata.testing.scenarios, {
@@ -38,11 +42,16 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
     includeTags: opts.includeTags,
   });
 
+  const specRegistry = new SpecRegistry();
+  if (opts.specs) {
+    opts.specs(specRegistry);
+  }
+
   const resources = new SimpleResourceStore();
   const reporter = opts.reporter ?? new ConsoleReporter();
   const api = new ApiAdapter(opts.api);
   const ui = new PlaywrightAdapter(opts.ui);
-  const ctxBase = { resources, reporter, api, ui };
+  const ctxBase = { resources, reporter, api, ui, specRegistry };
   const uiStarted = { value: false };
 
   try {
