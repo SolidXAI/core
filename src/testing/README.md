@@ -53,6 +53,45 @@ Utilities:
 Custom:
 - `test.spec`
 
+## Interpolation
+Available tokens:
+- `${env:NAME}` (environment variables)
+- `${params.foo}` (scenario params)
+- `${res:saveAs.path}` (saved step results)
+- `${data.modelUserKey["recUserKeyValue"].field}` (test data from `testing.data`)
+- `${data.modelUserKey["recUserKeyValue"]._rec}` (raw record object when used alone)
+
+Test data lookup details:
+- Data is indexed as `data.<modelUserKey>["<recUserKeyValue>"]`.
+- You can access fields with `.fieldName`.
+- Bracket syntax is recommended for keys with spaces or punctuation.
+- Use `._rec` to return the full object when the token is the entire value.
+
+Examples:
+```json
+{
+  "params": {
+    "state": "${data.stateMaster[\"Maharashtra\"].name}"
+  },
+  "steps": [
+    {
+      "given": {
+        "op": "api.request",
+        "with": {
+          "method": "POST",
+          "url": "${env:API_BASE_URL}/api/example",
+          "json": {
+            "stateName": "${params.state}",
+            "city": "${data.cityMaster[\"New Delhi\"].name}",
+            "cityRecord": "${data.cityMaster[\"New Delhi\"]._rec}"
+          }
+        }
+      }
+    }
+  ]
+}
+```
+
 ## Add A New Step (SOP)
 1. Create a new `*.step.ts` in the right domain folder.
 2. Implement a `registerXSteps(registry)` function and `registry.register("op.name", handler)`.

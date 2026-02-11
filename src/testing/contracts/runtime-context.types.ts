@@ -29,4 +29,5 @@ export interface TestContext {
   last?: { apiResponse?: ApiResponse };
   reporter: Reporter;
   specRegistry?: SpecRegistry;
+  testData?: Record<string, Record<string, any>>;
 }

@@ -1,5 +1,5 @@
 import type { Reporter } from "../reporter/reporter.types";
-import type { TestingMetadata } from "../contracts/testing-metadata.types";
+import type { TestingMetadata, TestingDataRecord } from "../contracts/testing-metadata.types";
 import type { ApiAdapterOptions } from "../adapters/api/api.types";
 import type { PlaywrightAdapterOptions } from "../adapters/ui/ui.types";
 import { ApiAdapter } from "../adapters/api/api-adapter";
@@ -16,6 +16,20 @@ import { TestingEngine } from "../core/testing-engine";
 import { filterScenarios } from "./scenario-filter";
 import { ensureUiStarted, scenarioNeedsUi } from "./lifecycle";
 import { ConsoleReporter } from "../reporter/console-reporter";
+
+
+function buildTestDataIndex(data?: TestingDataRecord[]): Record<string, Record<string, any>> {
+  const index: Record<string, Record<string, any>> = {};
+  if (!Array.isArray(data)) return index;
+  for (const record of data) {
+    if (!record?.modelUserKey || !record?.recUserKeyValue) continue;
+    if (!index[record.modelUserKey]) {
+      index[record.modelUserKey] = {};
+    }
+    index[record.modelUserKey][record.recUserKeyValue] = record.data ?? {};
+  }
+  return index;
+}
 
 export type RunnerOptions = {
   metadata: TestingMetadata;
@@ -43,6 +57,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   });
 
   const specRegistry = new SpecRegistry();
+  const testData = buildTestDataIndex(opts.metadata.testing?.data);
   if (opts.specs) {
     opts.specs(specRegistry);
   }
@@ -51,7 +66,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const reporter = opts.reporter ?? new ConsoleReporter();
   const api = new ApiAdapter(opts.api);
   const ui = new PlaywrightAdapter(opts.ui);
-  const ctxBase = { resources, reporter, api, ui, specRegistry };
+  const ctxBase = { resources, reporter, api, ui, specRegistry, testData };
   const uiStarted = { value: false };
 
   try {

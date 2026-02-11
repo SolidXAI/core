@@ -57,6 +57,17 @@ export class ApiAdapter {
       }
     }
 
+    if (bodyJson === undefined) {
+      const trimmed = bodyText.trim();
+      if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+        try {
+          bodyJson = JSON.parse(trimmed);
+        } catch {
+          // ignore parse errors
+        }
+      }
+    }
+
     const apiResponse: ApiResponse = {
       status: response.status,
       headers: responseHeaders,

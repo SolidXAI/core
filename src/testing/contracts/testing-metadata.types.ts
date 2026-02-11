@@ -1,8 +1,15 @@
 export type ScenarioType = "api" | "ui" | "mixed";
 
+export interface TestingDataRecord {
+  modelUserKey: string;
+  recUserKeyValue: string;
+  data: Record<string, any>;
+}
+
 export interface TestingMetadata {
   testing: {
     specs?: string[];
+    data?: TestingDataRecord[];
     scenarios: ScenarioSpec[];
   };
 }

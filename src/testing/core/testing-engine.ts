@@ -105,6 +105,7 @@ export class TestingEngine {
             : await run;
 
         if (resolvedStep.saveAs) {
+          // console.log(`Step ${resolvedStep.name} attempting to saveAs ${resolvedStep.saveAs}`, JSON.stringify(result));
           ctx.resources.set(resolvedStep.saveAs, result);
         }
       } catch (err) {
