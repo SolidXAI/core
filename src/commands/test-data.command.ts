@@ -11,7 +11,7 @@ interface TestDataCommandOptions {
 
 @Command({
   name: 'test-data',
-  description: 'Seed test data from testData sections',
+  description: 'Seed test data from testing.data sections',
 })
 export class TestDataCommand extends CommandRunner {
   private readonly logger = new Logger(TestDataCommand.name);
@@ -78,7 +78,7 @@ export class TestDataCommand extends CommandRunner {
 
   @Option({
     flags: '--load-data',
-    description: 'Seed test data from testData sections',
+    description: 'Seed test data from testing.data sections',
   })
   parseLoadData(): boolean {
     return true;

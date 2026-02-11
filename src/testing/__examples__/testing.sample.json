@@ -1,0 +1,54 @@
+{
+  "testing": {
+    "scenarios": [
+      {
+        "id": "api-health",
+        "name": "API health check",
+        "type": "api",
+        "steps": [
+          {
+            "given": {
+              "op": "api.request",
+              "with": {
+                "method": "GET",
+                "url": "${env:API_BASE_URL}/health"
+              },
+              "saveAs": "lastHealth"
+            }
+          },
+          {
+            "then": {
+              "op": "assert.httpStatus",
+              "with": {
+                "is": 200
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": "ui-home",
+        "name": "UI home page",
+        "type": "ui",
+        "steps": [
+          {
+            "given": {
+              "op": "ui.goto",
+              "with": {
+                "url": "${env:UI_BASE_URL}/"
+              }
+            }
+          },
+          {
+            "then": {
+              "op": "ui.expectUrl",
+              "with": {
+                "contains": "/"
+              }
+            }
+          }
+        ]
+      }
+    ]
+  }
+}

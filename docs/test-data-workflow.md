@@ -123,6 +123,11 @@ Rationale:
 
 ---
 
+
+## Step 4: Run Tests 
+npx @solidxai/solidctl run-tests --module venue --api-base-url http://localhost:3000 --ui-base-url http://localhost:5173 --headless false
+
+
 ## Step 4: Tear everything down
 
 Command:

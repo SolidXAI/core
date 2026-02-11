@@ -185,8 +185,10 @@ export class ModuleTestDataService {
       throw new Error('Module metadata missing from test data payload.');
     }
 
-    const testData: Array<{ modelUserKey: string; data: Record<string, any> }> = overallMetadata.testData ?? [];
-    if (testData.length === 0) {
+    // console.log(JSON.stringify(moduleMetadata, null, 2));    
+
+    const testingData: Array<{ modelUserKey: string; data: Record<string, any> }> = overallMetadata?.testing?.data ?? [];
+    if (testingData.length === 0) {
       this.logger.debug(`No test data found for ${moduleMetadata.name}`);
       return;
     }
@@ -195,7 +197,7 @@ export class ModuleTestDataService {
       (moduleMetadata.models ?? []).map((m) => [m.singularName, m]),
     );
 
-    for (const entry of testData) {
+    for (const entry of testingData) {
       const modelUserKey = entry.modelUserKey;
       const modelDef = modelsByName.get(modelUserKey);
       if (!modelDef) {

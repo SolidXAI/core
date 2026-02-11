@@ -4,6 +4,7 @@ export * from './commands/refresh-module.command'
 export * from './commands/remove-fields.command'
 export * from './commands/seed.command'
 export * from './commands/test-data.command'
+export * from './commands/run-tests.command'
 
 export * from './config/cache.options'
 
