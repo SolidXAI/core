@@ -4,6 +4,7 @@ import { QueuesModuleOptions } from "../../interfaces";
 import { QueueMessage, QueueSubscriber } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
+import { underscore } from '@angular-devkit/core/src/utils/strings';
 
 
 export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscriber<T> { // TODO This can be made a generic type for better type visibility
@@ -80,11 +81,13 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 }
             }
 
+            // TODO: the env variable process.env.SOLID_APP_NAME needs to be converted to an underscore separated all lower case slug string.
+            const namespacedQueueName = `${underscore(process?.env?.SOLID_APP_NAME)}_${queueName}`;
             try {
-                await this.connectAndConsume(queueName);
+                await this.connectAndConsume(namespacedQueueName);
             } catch (err) {
-                this.logger.error(`Failed to connect to RabbitMQ for queue ${queueName}: ${(err as Error).message}`, (err as Error).stack);
-                this.triggerReconnect(queueName, 'initial connection failure');
+                this.logger.error(`Failed to connect to RabbitMQ for queue ${namespacedQueueName}: ${(err as Error).message}`, (err as Error).stack);
+                this.triggerReconnect(namespacedQueueName, 'initial connection failure');
             }
 
             this.logger.log(`RabbitMqSubscriber ready to consume messages: ${JSON.stringify(this.options())} and url: ${this.url}`);
