@@ -13,7 +13,6 @@
   },
   "scripts": {
     "build": "nest build",
-    "build:tests": "tsc -p tsconfig.tests.json",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -26,7 +25,7 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prepare": "npm run build",
-    "prepack": "npm run build && npm run build:tests"
+    "prepack": "npm run build"
   },
   "author": "Oswald Rodrigues <oswald@logicloop.io>",
   "license": "ISC",

@@ -27,6 +27,26 @@ function truncate(value: string, maxLen: number = MAX_DETAIL_LEN): string {
   return `${value.slice(0, maxLen - 1)}…`;
 }
 
+function formatHttpBody(body: unknown): string {
+  if (body === null || body === undefined) return "";
+  if (typeof body === "string") {
+    const trimmed = body.trim();
+    if (trimmed.startsWith("{") || trimmed.startsWith("[")) {
+      try {
+        return JSON.stringify(JSON.parse(trimmed), null, 2);
+      } catch {
+        return body;
+      }
+    }
+    return body;
+  }
+  try {
+    return JSON.stringify(body, null, 2);
+  } catch {
+    return String(body);
+  }
+}
+
 function withoutQuery(url: string): string {
   const idx = url.indexOf("?");
   return idx === -1 ? url : url.slice(0, idx);
@@ -138,10 +158,6 @@ export class ConsoleReporter implements Reporter {
     const label = scenario.name ? `${scenario.id} (${scenario.name})` : scenario.id;
     const status = result.ok ? "✔" : "✖";
     console.log(`${status} Scenario: ${label} (${result.durationMs}ms)`);
-    if (!result.ok && result.error) {
-      const details = formatError(result.error);
-      console.error(indentLines(`Error:\n${details}`, INDENT));
-    }
   }
 
   onStepStart(args: {
@@ -171,6 +187,17 @@ export class ConsoleReporter implements Reporter {
     if (!args.ok && args.error) {
       const details = formatError(args.error);
       console.error(indentLines(details, `${STEP_INDENT}${INDENT}`));
+      const httpBody = (args.error as any)?.httpResponseBody;
+      if (httpBody !== undefined) {
+        const formatted = formatHttpBody(httpBody);
+        const bodyText = formatted.length ? formatted : "<empty>";
+        console.error(
+          indentLines(
+            `HTTP Response Body:\n${bodyText}`,
+            `${STEP_INDENT}${INDENT}`,
+          ),
+        );
+      }
     }
   }
 

@@ -23,9 +23,13 @@ export function registerHttpAssertSteps(registry: StepRegistry): void {
     }
 
     if (response.status !== input.is) {
-      throw new Error(
+      const err = new Error(
         `Expected HTTP status ${input.is} but got ${response.status}`,
       );
+      (err as any).httpResponseBody = response.bodyText;
+      (err as any).httpStatus = response.status;
+      (err as any).httpExpectedStatus = input.is;
+      throw err;
     }
   });
 }

@@ -101,13 +101,10 @@ export class RunTestsCommand extends CommandRunner {
           : undefined,
       });
     } catch (err: any) {
-      const message = err?.message ?? String(err);
-      this.logger.error(message);
-      console.error(`Run tests command failed: ${message}`);
-      if (err?.stack) {
-        console.error(err.stack);
-      }
-      throw err;
+      this.logger.error('Run tests command failed');
+      console.error('Run tests command failed');
+      process.exitCode = 1;
+      return;
     }
   }
 
