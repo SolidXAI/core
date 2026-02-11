@@ -127,7 +127,6 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         }
     }
 
-
     async publish(message: QueueMessage<T>): Promise<string> {
         if (!this.url) {
             this.logger.error('RabbitMqPublisher url is not defined in the environment variables');
@@ -172,7 +171,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
             //     this.logger.warn('RabbitMqPublisher Message buffering failed!');
             // }
             // await channel.waitForConfirms();
-            // this.logger.debug('RabbitMqPublisher Message published successfully');
+            this.logger.debug('RabbitMqPublisher Message published successfully');
         } catch (err) {
             this.logger.error(`RabbitMqPublisher Message publish failed: ${JSON.stringify(err)}`);
             if (err instanceof Error) {
@@ -181,7 +180,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         }
         finally {
         }
-        // this.logger.debug(`Sent message: ${JSON.stringify(message)}`);
+        this.logger.debug(`Sent message: ${JSON.stringify(message)}`);
 
         // return the newly created message id.
         return message.messageId;
