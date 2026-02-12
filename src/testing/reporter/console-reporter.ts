@@ -213,4 +213,17 @@ export class ConsoleReporter implements Reporter {
       console.log(indentLines(details, `${INDENT}${INDENT}`));
     }
   }
+
+  attach(args: {
+    scenarioId: string;
+    name: string;
+    contentType: string;
+    data: Buffer | string;
+  }): void {
+    const header = `ATTACH ${args.name} (${args.contentType})`;
+    console.log(indentLines(header, `${STEP_INDENT}${INDENT}`));
+    const dataText = Buffer.isBuffer(args.data) ? args.data.toString("utf8") : String(args.data ?? "");
+    if (!dataText.length) return;
+    console.log(indentLines(dataText, `${STEP_INDENT}${INDENT}${INDENT}`));
+  }
 }

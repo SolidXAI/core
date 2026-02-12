@@ -19,6 +19,7 @@ interface TestRunCommandOptions {
   timeoutMs?: number;
   retries?: number;
   listSpecs?: boolean;
+  printApiLogs?: boolean;
 }
 
 @SubCommand({
@@ -84,6 +85,7 @@ export class TestRunCommand extends CommandRunner {
       const apiBaseUrl = options?.apiBaseUrl ?? process.env.BASE_URL;
       const uiBaseUrl = options?.uiBaseUrl ?? process.env.FRONTEND_BASE_URL;
       const headless = options?.headless ?? true;
+      const printApiLogs = options?.printApiLogs ?? false;
 
       await runFromMetadata({
         metadata: metadata as TestingMetadata,
@@ -96,6 +98,7 @@ export class TestRunCommand extends CommandRunner {
           timeoutMs: options?.timeoutMs,
           retries: options?.retries,
         },
+        options: { printApiLogs },
         specs: specEntries.length
           ? (registry) => loadSpecRegistrations(specEntries, metadataPath, registry)
           : undefined,
@@ -150,6 +153,16 @@ export class TestRunCommand extends CommandRunner {
     required: false,
   })
   parseListSpecs(val?: string): boolean {
+    if (val === undefined) return true;
+    return val === 'false' ? false : true;
+  }
+
+  @Option({
+    flags: '--print-api-logs [true|false]',
+    description: 'Print full API request/response logs for api.request steps.',
+    required: false,
+  })
+  parsePrintApiLogs(val?: string): boolean {
     if (val === undefined) return true;
     return val === 'false' ? false : true;
   }

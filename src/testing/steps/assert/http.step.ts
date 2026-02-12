@@ -18,7 +18,7 @@ export function registerHttpAssertSteps(registry: StepRegistry): void {
       throw new Error('Missing "is" in step.with for op "assert.httpStatus"');
     }
 
-    if (ctx.reporter.attach) {
+    if (ctx.options?.printApiLogs && ctx.reporter.attach) {
       attachJson(ctx, "apiResponse", response);
     }
 

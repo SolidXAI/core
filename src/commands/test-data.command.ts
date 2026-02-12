@@ -3,10 +3,10 @@ import { SubCommand, CommandRunner, Option } from 'nest-commander';
 import { ModuleTestDataService } from 'src/seeders/module-test-data.service';
 
 interface TestDataCommandOptions {
-  loadData?: boolean;
+  load?: boolean;
   modulesToTest?: string;
-  createDatasources?: boolean;
-  deleteDatasources?: boolean;
+  setup?: boolean;
+  teardown?: boolean;
 }
 
 @SubCommand({
@@ -22,38 +22,38 @@ export class TestDataCommand extends CommandRunner {
 
   async run(_passedParam: string[], options?: TestDataCommandOptions): Promise<void> {
     try {
-      const loadData = Boolean(options?.loadData);
-      const createDatasources = Boolean(options?.createDatasources);
-      const deleteDatasources = Boolean(options?.deleteDatasources);
+      const load = Boolean(options?.load);
+      const setup = Boolean(options?.setup);
+      const teardown = Boolean(options?.teardown);
 
-      const selectedModes = [loadData, createDatasources, deleteDatasources].filter(Boolean).length;
+      const selectedModes = [load, setup, teardown].filter(Boolean).length;
       if (selectedModes > 1) {
-        this.logger.error('Please specify only one of --load-data, --create-datasources, or --delete-datasources.');
-        console.log('Please specify only one of --load-data, --create-datasources, or --delete-datasources.');
+        this.logger.error('Please specify only one of --load, --setup, or --teardown.');
+        console.log('Please specify only one of --load, --setup, or --teardown.');
         return;
       }
 
-      if (!loadData && !createDatasources && !deleteDatasources) {
-        this.logger.error('Please specify one of --load-data, --create-datasources, or --delete-datasources.');
-        console.log('Please specify one of --load-data, --create-datasources, or --delete-datasources.');
+      if (!load && !setup && !teardown) {
+        this.logger.error('Please specify one of --load, --setup, or --teardown.');
+        console.log('Please specify one of --load, --setup, or --teardown.');
         return;
       }
 
-      if (deleteDatasources) {
+      if (teardown) {
         this.logger.log('Deleting test datasource environment and databases.');
         console.log('Deleting test datasource environment and databases.');
         await this.testDataService.deleteTestDatasources();
         return;
       }
 
-      if (createDatasources) {
+      if (setup) {
         this.logger.log('Creating test datasource environment file and manifest.');
         console.log('Creating test datasource environment file and manifest.');
         await this.testDataService.createTestDatasources();
         return;
       }
 
-      if (loadData) {
+      if (load) {
         const modulesToTest = options?.modulesToTest ? options.modulesToTest.split(',').map((m) => m.trim()).filter(Boolean) : null;
         if (modulesToTest?.length) {
           this.logger.log(`Test data setup for modules: ${modulesToTest.join(', ')}`);
@@ -77,26 +77,26 @@ export class TestDataCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--load-data',
+    flags: '--load',
     description: 'Seed test data from testing.data sections',
   })
-  parseLoadData(): boolean {
+  parseLoad(): boolean {
     return true;
   }
 
   @Option({
-    flags: '--create-datasources',
+    flags: '--setup',
     description: 'Create a new .env.<dbRunName> and test datasource manifest',
   })
-  parseCreateDatasources(): boolean {
+  parseSetup(): boolean {
     return true;
   }
 
   @Option({
-    flags: '--delete-datasources',
+    flags: '--teardown',
     description: 'Delete test datasource env/manifest and drop test databases',
   })
-  parseDeleteDatasources(): boolean {
+  parseTeardown(): boolean {
     return true;
   }
 

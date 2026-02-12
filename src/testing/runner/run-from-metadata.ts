@@ -39,6 +39,7 @@ export type RunnerOptions = {
   api?: ApiAdapterOptions;
   ui?: PlaywrightAdapterOptions;
   defaults?: { timeoutMs?: number; retries?: number };
+  options?: { printApiLogs?: boolean };
   specs?: (registry: SpecRegistry) => void;
 };
 
@@ -66,7 +67,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const reporter = opts.reporter ?? new ConsoleReporter();
   const api = new ApiAdapter(opts.api);
   const ui = new PlaywrightAdapter(opts.ui);
-  const ctxBase = { resources, reporter, api, ui, specRegistry, testData };
+  const ctxBase = { resources, reporter, api, ui, specRegistry, testData, options: opts.options };
   const uiStarted = { value: false };
 
   try {

@@ -293,6 +293,7 @@ await runFromMetadata({
 ```
 
 When using `solidctl test run`, specs are loaded from `testing.specs` in module metadata.
+Use `--print-api-logs` to print full API request/response details for `api.request` steps.
 
 ## Run From Metadata
 ```ts

@@ -18,7 +18,7 @@ The commands below are the canonical flow.
 
 Command:
 ```
-npx @solidxai/solidctl test data --create-datasources
+npx @solidxai/solidctl test data --setup
 ```
 
 What this does:
@@ -97,7 +97,7 @@ Rationale:
 
 Command:
 ```
-npx @solidxai/solidctl test data --load-data
+npx @solidxai/solidctl test data --load
 ```
 
 What this does:
@@ -167,7 +167,7 @@ Notes:
 
 Command:
 ```
-npx @solidxai/solidctl test data --delete-datasources
+npx @solidxai/solidctl test data --teardown
 ```
 
 What this does:
@@ -194,7 +194,7 @@ Rationale:
 
 You can restrict test data loading to a subset of modules:
 ```
-npx @solidxai/solidctl test data --load-data --modules-to-test venue,reports
+npx @solidxai/solidctl test data --load --modules-to-test venue,reports
 ```
 
 Only the listed modules are processed.
