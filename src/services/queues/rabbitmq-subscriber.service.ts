@@ -4,7 +4,7 @@ import { QueuesModuleOptions } from "../../interfaces";
 import { QueueMessage, QueueSubscriber } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
-import { underscore } from '@angular-devkit/core/src/utils/strings';
+import { buildNamespacedQueueName } from './common';
 
 
 export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscriber<T> { // TODO This can be made a generic type for better type visibility
@@ -81,8 +81,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 }
             }
 
-            // the env variable process.env.SOLID_APP_NAME needs to be converted to an underscore separated all lower case slug string.
-            const namespacedQueueName = `${underscore(process?.env?.SOLID_APP_NAME)}_${queueName}`;
+            const namespacedQueueName = buildNamespacedQueueName(queueName);
             try {
                 await this.connectAndConsume(namespacedQueueName);
             } catch (err) {

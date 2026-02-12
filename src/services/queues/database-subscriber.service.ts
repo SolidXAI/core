@@ -4,7 +4,7 @@ import { QueueMessage, QueueSubscriber } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
 import { PollerService } from '../poller.service';
-import { underscore } from '@angular-devkit/core/src/utils/strings';
+import { buildNamespacedQueueName } from './common';
 
 export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscriber<T> {
     private readonly logger = new Logger(DatabaseSubscriber.name);
@@ -97,7 +97,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
                 }
             }
 
-            const namespacedQueueName = `${underscore(process?.env?.SOLID_APP_NAME)}_${queueName}`;
+            const namespacedQueueName = buildNamespacedQueueName(queueName);
             this.poller.start(namespacedQueueName, (q) => this.processNext(q), {
                 baseDelayMs: 1000,
                 maxDelayMs: 30_000,
@@ -112,7 +112,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
     onModuleDestroy() {
         const options = this.options();
         const queueName = options.queueName;
-        const namespacedQueueName = `${underscore(process?.env?.SOLID_APP_NAME)}_${queueName}`;
+        const namespacedQueueName = buildNamespacedQueueName(queueName);
         this.poller.stop(namespacedQueueName);
     }
 
