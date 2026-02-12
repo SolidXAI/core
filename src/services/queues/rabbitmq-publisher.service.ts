@@ -34,6 +34,10 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
 
     abstract options(): QueuesModuleOptions;
 
+    private buildNamespacedQueueName(queueName: string): string {
+        return `${underscore(process?.env?.SOLID_APP_NAME)}_${queueName}`;
+    }
+
     private async ensureConnectionAndChannel(): Promise<amqp.Channel> {
         if (this.channel) {
             return this.channel;
@@ -71,13 +75,21 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
 
             const channel = await conn.createChannel();
 
+            channel.on('return', (msg) => {
+                const content = msg.content?.toString?.() ?? '';
+                this.logger.warn(
+                    `RabbitMqPublisher message returned from exchange ${msg.fields.exchange} with routingKey ${msg.fields.routingKey}: ${content}`,
+                );
+            });
+
             const options = this.options();
             const queueName = options.queueName;
-            const exchangeName = `${queueName}.exchange`;
-            const routingKey = `${queueName}.routing-key`;
+            const namespacedQueueName = this.buildNamespacedQueueName(queueName);
+            const exchangeName = `${namespacedQueueName}.exchange`;
+            const routingKey = `${namespacedQueueName}.routing-key`;
 
             await channel.assertExchange(exchangeName, 'direct', {});
-            const queue = await channel.assertQueue(queueName, {});
+            const queue = await channel.assertQueue(namespacedQueueName, {});
             await channel.bindQueue(queue.queue, exchangeName, routingKey);
 
             this.connection = conn;
@@ -148,7 +160,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         const options = this.options();
 
         const queueName = options.queueName;
-        const namespacedQueueName = `${underscore(process?.env?.SOLID_APP_NAME)}_${queueName}`;
+        const namespacedQueueName = this.buildNamespacedQueueName(queueName);
 
         const exchangeName = `${namespacedQueueName}.exchange`;
         const routingKey = `${namespacedQueueName}.routing-key`;

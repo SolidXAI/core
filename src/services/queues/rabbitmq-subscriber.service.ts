@@ -163,13 +163,12 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                     return;
                 }
 
-                const messageContentString = rawMessage.content.toString();
                 let message: QueueMessage<T> = null;
 
-                this.logger.debug(`rabbitmq subscriber received message with id: ${message.messageId} for queue ${queueName}`);
-
                 try {
+                    const messageContentString = rawMessage.content.toString();
                     message = JSON.parse(messageContentString) as QueueMessage<T>;
+                    this.logger.debug(`rabbitmq subscriber received message with id: ${message.messageId} for queue ${queueName}`);
                 } catch (error) {
                     this.logger.error(`Invalid JSON message on queue ${queueName}: ${(error as Error).message}`);
                     await this.publishToFailedQueue(queueName, rawMessage.content, channel, error);
