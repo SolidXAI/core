@@ -26,18 +26,21 @@ export function toSlug(value?: string | null, joinChar: string = '-'): string {
     for (let i = 0; i < value.length; i += 1) {
         const code = value.charCodeAt(i);
 
+        // ASCII uppercase -> lowercase
         if (code >= 65 && code <= 90) {
             slugChars.push(String.fromCharCode(code + 32));
             lastJoin = false;
             continue;
         }
 
+        // ASCII lowercase letters or digits are kept as-is
         if ((code >= 97 && code <= 122) || (code >= 48 && code <= 57)) {
             slugChars.push(value[i]);
             lastJoin = false;
             continue;
         }
 
+        // Any other char becomes a single join character (collapse runs)
         if (!lastJoin && slugChars.length > 0) {
             slugChars.push(joinChar);
             lastJoin = true;
