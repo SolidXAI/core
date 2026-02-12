@@ -90,12 +90,13 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 this.triggerReconnect(namespacedQueueName, 'initial connection failure');
             }
 
-            this.logger.log(`RabbitMqSubscriber ready to consume messages: ${JSON.stringify(this.options())} and url: ${this.url}`);
+            this.logger.log(`RabbitMqSubscriber ready to consume messages: ${JSON.stringify(options)} and url: ${this.url}`);
         }
     }
 
     private async connectAndConsume(queueName: string): Promise<void> {
         await this.cleanup();
+        this.logger.log(`RabbitMqSubscriber in connectAndConsume for queue: ${queueName} and url: ${this.url}`);
 
         let connection: amqp.Connection;
         try {
