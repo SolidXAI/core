@@ -4,6 +4,7 @@ import { QueuesModuleOptions } from "../../interfaces";
 import { QueueMessage, QueuePublisher } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
+import { underscore } from '@angular-devkit/core/src/utils/strings';
 
 export abstract class DatabasePublisher<T> implements QueuePublisher<T> {
     private readonly logger = new Logger(DatabasePublisher.name);
@@ -38,6 +39,8 @@ export abstract class DatabasePublisher<T> implements QueuePublisher<T> {
         const options = this.options();
 
         const queueName = options.queueName;
+        const namespacedQueueName = `${underscore(process?.env?.SOLID_APP_NAME)}_${queueName}`;
+
         if (!message.retryCount) message.retryCount = 0;
         if (!message.retryInterval) message.retryInterval = 1000;
 
@@ -45,7 +48,7 @@ export abstract class DatabasePublisher<T> implements QueuePublisher<T> {
         message.messageId = uuidv4();
 
         // Save the message to the DB so that we can then change its status in the subscriber...
-        await this.persistToDatabase(queueName, message);
+        await this.persistToDatabase(namespacedQueueName, message);
 
         // return the newly created message id.
         return message.messageId;

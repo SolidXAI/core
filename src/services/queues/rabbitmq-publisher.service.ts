@@ -5,6 +5,7 @@ import { QueuesModuleOptions } from "../../interfaces";
 import { QueueMessage, QueuePublisher } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
+import { underscore } from '@angular-devkit/core/src/utils/strings';
 
 export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePublisher<T> {
     private readonly logger = new Logger(RabbitMqPublisher.name);
@@ -147,8 +148,10 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         const options = this.options();
 
         const queueName = options.queueName;
-        const exchangeName = `${queueName}.exchange`;
-        const routingKey = `${queueName}.routing-key`;
+        const namespacedQueueName = `${underscore(process?.env?.SOLID_APP_NAME)}_${queueName}`;
+
+        const exchangeName = `${namespacedQueueName}.exchange`;
+        const routingKey = `${namespacedQueueName}.routing-key`;
 
         // Set default values for retry. 
         // by default there are no retries.
@@ -159,7 +162,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         message.messageId = uuidv4();
 
         // Save the message to the DB so that we can then change its status in the subscriber...
-        await this.persistToDatabase(queueName, message);
+        await this.persistToDatabase(namespacedQueueName, message);
 
         // wait for the channel to confirm 
         try {
@@ -171,7 +174,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
             //     this.logger.warn('RabbitMqPublisher Message buffering failed!');
             // }
             // await channel.waitForConfirms();
-            this.logger.debug('RabbitMqPublisher Message published successfully');
+            // this.logger.debug('RabbitMqPublisher Message published successfully');
         } catch (err) {
             this.logger.error(`RabbitMqPublisher Message publish failed: ${JSON.stringify(err)}`);
             if (err instanceof Error) {
@@ -180,7 +183,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         }
         finally {
         }
-        this.logger.debug(`Sent message: ${JSON.stringify(message)}`);
+        // this.logger.debug(`Sent message: ${JSON.stringify(message)}`);
 
         // return the newly created message id.
         return message.messageId;
