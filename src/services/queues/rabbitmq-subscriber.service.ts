@@ -81,7 +81,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 }
             }
 
-            // TODO: the env variable process.env.SOLID_APP_NAME needs to be converted to an underscore separated all lower case slug string.
+            // the env variable process.env.SOLID_APP_NAME needs to be converted to an underscore separated all lower case slug string.
             const namespacedQueueName = `${underscore(process?.env?.SOLID_APP_NAME)}_${queueName}`;
             try {
                 await this.connectAndConsume(namespacedQueueName);
