@@ -292,7 +292,7 @@ await runFromMetadata({
 });
 ```
 
-When using `solidctl run-tests`, specs are loaded from `testing.specs` in module metadata.
+When using `solidctl test run`, specs are loaded from `testing.specs` in module metadata.
 
 ## Run From Metadata
 ```ts

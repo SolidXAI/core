@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { Command, CommandRunner, Option } from 'nest-commander';
+import { SubCommand, CommandRunner, Option } from 'nest-commander';
 import * as path from 'path';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { ConsoleReporter } from 'src/testing/reporter/console-reporter';
@@ -7,7 +7,7 @@ import { runFromMetadata } from 'src/testing/runner/run-from-metadata';
 import type { TestingMetadata } from 'src/testing/contracts/testing-metadata.types';
 import { SpecRegistry } from 'src/testing/core/spec-registry';
 
-interface RunTestsCommandOptions {
+interface TestRunCommandOptions {
   module?: string;
   moduleName?: string;
   scenarioIds?: string;
@@ -21,12 +21,12 @@ interface RunTestsCommandOptions {
   listSpecs?: boolean;
 }
 
-@Command({
-  name: 'run-tests',
+@SubCommand({
+  name: 'run',
   description: 'Run testing scenarios from module metadata.',
 })
-export class RunTestsCommand extends CommandRunner {
-  private readonly logger = new Logger(RunTestsCommand.name);
+export class TestRunCommand extends CommandRunner {
+  private readonly logger = new Logger(TestRunCommand.name);
 
   constructor(
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
@@ -34,7 +34,7 @@ export class RunTestsCommand extends CommandRunner {
     super();
   }
 
-  async run(passedParam: string[], options?: RunTestsCommandOptions): Promise<void> {
+  async run(passedParam: string[], options?: TestRunCommandOptions): Promise<void> {
     try {
       const moduleName = options?.moduleName ?? options?.module ?? passedParam?.[0];
       if (!moduleName) {

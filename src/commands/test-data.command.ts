@@ -1,5 +1,5 @@
 import { Logger } from '@nestjs/common';
-import { Command, CommandRunner, Option } from 'nest-commander';
+import { SubCommand, CommandRunner, Option } from 'nest-commander';
 import { ModuleTestDataService } from 'src/seeders/module-test-data.service';
 
 interface TestDataCommandOptions {
@@ -9,8 +9,8 @@ interface TestDataCommandOptions {
   deleteDatasources?: boolean;
 }
 
-@Command({
-  name: 'test-data',
+@SubCommand({
+  name: 'data',
   description: 'Seed test data from testing.data sections',
 })
 export class TestDataCommand extends CommandRunner {
