@@ -22,7 +22,12 @@ export class ApiAdapter {
       ...(req.headers ?? {}),
     };
 
-    if (req.json !== undefined && !hasHeader(headers, "content-type")) {
+    if (req.formData) {
+      const formHeaders = req.formData.getHeaders();
+      for (const [key, value] of Object.entries(formHeaders)) {
+        headers[key.toLowerCase()] = String(value);
+      }
+    } else if (req.json !== undefined && !hasHeader(headers, "content-type")) {
       headers["content-type"] = "application/json";
     }
 
@@ -31,7 +36,7 @@ export class ApiAdapter {
       url: req.url,
       method: req.method as any,
       headers,
-      data: req.json !== undefined ? req.json : req.bodyText,
+      data: req.formData ?? (req.json !== undefined ? req.json : req.bodyText),
       responseType: "text",
       transformResponse: (data) => data,
       validateStatus: () => true,

@@ -1,5 +1,3 @@
-// Purpose: HTTP assertion step registrations.
-
 import type { ApiResponse, TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { StepRegistry } from "../../core/step-registry";

@@ -120,6 +120,9 @@ Options in `with`:
 - `headers` (optional)
 - `json` (optional)
 - `bodyText` (optional)
+- `query` (optional, object or querystring)
+- `formData` (optional, array of items)
+- `body` (optional alias for `formData`)
 
 Returns:
 - `status`
