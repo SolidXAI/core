@@ -121,7 +121,7 @@ Options in `with`:
 - `json` (optional)
 - `bodyText` (optional)
 - `query` (optional, object or querystring)
-- `formData` (optional, array of items)
+- `formData` (optional, array or object)
 - `body` (optional alias for `formData`)
 
 Returns:
@@ -133,6 +133,48 @@ Returns:
 
 Notes:
 - Sets `ctx.last.apiResponse` for `assert.httpStatus`.
+- `formData` can be an array of items or a plain object.
+- If `formData` is an object, keys become field names and values become field values.
+- File values can be `file:/absolute/path` or `url:https://...` and will be uploaded as files.
+- Non-string object values are JSON-stringified before sending.
+
+Form data item notes:
+- Array form items: `{ name, value, type?: "text" | "file", filename?, contentType? }`.
+- File values can be `file:/absolute/path` or `url:https://...`.
+- If `formData` is an object, keys become field names and values become field values.
+- Use `formData`/`body` instead of `json` or `bodyText`.
+
+Example (array form):
+```json
+{
+  "when": {
+    "op": "api.request",
+    "with": {
+      "method": "POST",
+      "url": "${env:API_BASE_URL}/api/lead",
+      "formData": [
+        { "name": "venueUserKey", "value": "Kolhapur-Karvir" },
+        { "name": "coupon", "type": "file", "value": "file:/abs/path/image.jpg" },
+        { "name": "campaignUserKey", "value": "Campaign: Drawing Competition" }
+      ]
+    }
+  }
+}
+```
+
+Example (object form from `testing.data`):
+```json
+{
+  "when": {
+    "op": "api.request",
+    "with": {
+      "method": "POST",
+      "url": "${env:API_BASE_URL}/api/lead",
+      "formData": "${data:lead[\"LeadWithFile\"]._rec}"
+    }
+  }
+}
+```
 
 ### **Op: `api.auth.bearerFromLogin`**
 Description: Logs in and returns a bearer access token from the response.
@@ -296,6 +338,8 @@ await runFromMetadata({
 ```
 
 When using `solidctl test run`, specs are loaded from `testing.specs` in module metadata.
+Use `--skip-scenario-ids` to exclude scenarios by id (comma-separated).
+Use `--print-api-logs` to print full API request/response details for `api.request` steps.
 Use `--print-api-logs` to print full API request/response details for `api.request` steps.
 
 ## Run From Metadata

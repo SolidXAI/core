@@ -35,6 +35,7 @@ export type RunnerOptions = {
   metadata: TestingMetadata;
   scenarioIds?: string[];
   includeTags?: string[];
+  skipScenarioIds?: string[];
   reporter?: Reporter;
   api?: ApiAdapterOptions;
   ui?: PlaywrightAdapterOptions;
@@ -55,6 +56,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const scenarios = filterScenarios(opts.metadata.testing.scenarios, {
     scenarioIds: opts.scenarioIds,
     includeTags: opts.includeTags,
+    skipScenarioIds: opts.skipScenarioIds,
   });
 
   const specRegistry = new SpecRegistry();

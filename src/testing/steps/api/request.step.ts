@@ -30,9 +30,9 @@ type ApiRequestInput = {
   // Extra query params (object or querystring).
   query?: Record<string, any> | string;
   // Form data payload (array of items).
-  formData?: ApiFormItem[];
-  // Alias for formData (array of items).
-  body?: ApiFormItem[];
+  formData?: ApiFormItem[] | Record<string, any>;
+  // Alias for formData (array or object).
+  body?: ApiFormItem[] | Record<string, any>;
 };
 
 function isPlainObject(value: unknown): value is Record<string, any> {
@@ -168,6 +168,15 @@ async function resolveFileReference(rawValue: string): Promise<{ filePath: strin
   return { filePath: resolveFilePath(rawValue), source: "file" };
 }
 
+function formItemsFromRecord(record: Record<string, any>): ApiFormItem[] {
+  return Object.entries(record).map(([name, value]) => {
+    if (typeof value === "string" && (value.startsWith("file:") || value.startsWith("url:"))) {
+      return { name, value, type: "file" };
+    }
+    return { name, value };
+  });
+}
+
 async function buildFormData(items: ApiFormItem[]): Promise<{ form: FormData; logItems: Record<string, any>[] }>{
   const form = new FormData();
   const logItems: Record<string, any>[] = [];
@@ -199,7 +208,9 @@ async function buildFormData(items: ApiFormItem[]): Promise<{ form: FormData; lo
         contentType: item.contentType,
       });
     } else {
-      const textValue = rawValue === undefined || rawValue === null ? "" : String(rawValue);
+      // TODO: Need to test the JSON.stringify(rawValue) functionality here...
+      // This scenario will happen only when we try to create embedded one-to-many or many-to-one objects in create API calls...
+      const textValue = rawValue === undefined || rawValue === null ? "" : typeof rawValue === "string" ? rawValue : JSON.stringify(rawValue);
       form.append(item.name, textValue);
       logItems.push({
         name: item.name,
@@ -226,7 +237,12 @@ export function registerApiRequestStep(registry: StepRegistry): void {
       throw new Error('Missing "url" in step.with for op "api.request"');
     }
 
-    const formItems = Array.isArray(input.formData) ? input.formData : Array.isArray(input.body) ? input.body : undefined;
+    const rawFormData = input.formData ?? input.body;
+    const formItems = Array.isArray(rawFormData) ? rawFormData : isPlainObject(rawFormData) ? formItemsFromRecord(rawFormData) : undefined;
+
+    if (rawFormData !== undefined && !formItems) {
+      throw new Error('formData/body must be an array of items or an object, for op "api.request".');
+    }
 
     if (formItems && (input.json !== undefined || input.bodyText !== undefined)) {
       throw new Error('Use either formData/body or json/bodyText, not both, for op "api.request".');

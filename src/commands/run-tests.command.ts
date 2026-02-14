@@ -12,6 +12,7 @@ interface TestRunCommandOptions {
   moduleName?: string;
   scenarioIds?: string;
   includeTags?: string;
+  skipScenarioIds?: string;
   reporter?: string;
   apiBaseUrl?: string;
   uiBaseUrl?: string;
@@ -75,6 +76,7 @@ export class TestRunCommand extends CommandRunner {
 
       const scenarioIds = splitCsv(options?.scenarioIds);
       const includeTags = splitCsv(options?.includeTags);
+      const skipScenarioIds = splitCsv(options?.skipScenarioIds);
 
       const reporterName = options?.reporter ?? 'console';
       if (reporterName !== 'console') {
@@ -91,6 +93,7 @@ export class TestRunCommand extends CommandRunner {
         metadata: metadata as TestingMetadata,
         scenarioIds,
         includeTags,
+        skipScenarioIds,
         reporter: new ConsoleReporter(),
         api: apiBaseUrl ? { baseUrl: apiBaseUrl } : undefined,
         ui: { baseUrl: uiBaseUrl, headless },
@@ -135,6 +138,15 @@ export class TestRunCommand extends CommandRunner {
     required: false,
   })
   parseIncludeTags(val: string): string {
+    return val;
+  }
+
+  @Option({
+    flags: '--skip-scenario-ids [ids]',
+    description: 'Comma-separated list of scenario ids to skip.',
+    required: false,
+  })
+  parseSkipScenarioIds(val: string): string {
     return val;
   }
 
