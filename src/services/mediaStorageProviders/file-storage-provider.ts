@@ -9,6 +9,7 @@ import { DiskFileService } from "src/services/file";
 import { Readable } from "stream";
 import { SettingService } from "../setting.service";
 import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
+import * as path from 'path';
 
 @Injectable()
 export class FileStorageProvider<T> implements MediaStorageProvider<T> {
@@ -49,7 +50,9 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         for (const file of files) {
             // Store the file in the configured file storage directory
             const fileStoragePath = await this.getFullFilePath(this.getFileName(file));
-            await this.fileService.copy(file.path, fileStoragePath);
+            // Resolve to absolute path to avoid DiskFileService prepending its default directory
+            const absoluteStoragePath = path.resolve(process.cwd(), fileStoragePath);
+            await this.fileService.copy(file.path, absoluteStoragePath);
             await this.fileService.delete(file.path);
 
             // Create an entry in the media table
@@ -78,7 +81,10 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         for (const pair of streamPairs) {
             const stream = pair[0];
             const fileName = pair[1];
-            await this.fileService.writeStream(await this.getFullFilePath(fileName), stream);
+            const fileStoragePath = await this.getFullFilePath(fileName);
+            // Resolve to absolute path
+            const absoluteStoragePath = path.resolve(process.cwd(), fileStoragePath);
+            await this.fileService.writeStream(absoluteStoragePath, stream);
             const mediaEntity = await this.mediaRepository.createMedia({
                 //@ts-ignore
                 entityId: entity.id,
@@ -102,7 +108,10 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
 
         for (const media of existingMedia) {
-            await this.fileService.delete(await this.getFullFilePath(media.relativeUri));
+            const fileStoragePath = await this.getFullFilePath(media.relativeUri);
+            // Resolve to absolute path
+            const absoluteStoragePath = path.resolve(process.cwd(), fileStoragePath);
+            await this.fileService.delete(absoluteStoragePath);
         }
         // existingMedia.forEach(media => {
         // });
