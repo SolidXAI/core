@@ -5,6 +5,7 @@ import { Type } from 'class-transformer';
 import { UpdateRoleMetadataDto } from 'src/dtos/update-role-metadata.dto';
 import { UpdateUserViewMetadataDto } from 'src/dtos/update-user-view-metadata.dto';
 
+export const DEFAULT_SA_PASSWORD = 'Admin@3214$';
 export class CreateUserDto {
     @IsOptional()
     @IsString()
