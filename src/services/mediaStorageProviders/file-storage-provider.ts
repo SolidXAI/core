@@ -51,7 +51,8 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
             // Store the file in the configured file storage directory
             const fileStoragePath = await this.getFullFilePath(this.getFileName(file));
             // Resolve to absolute path to avoid DiskFileService prepending its default directory
-            const absoluteStoragePath = path.resolve(process.cwd(), fileStoragePath);
+            const absoluteStoragePath = await this.getAbsolutePath(fileStoragePath);
+            //path.resolve(process.cwd(), fileStoragePath);
             await this.fileService.copy(file.path, absoluteStoragePath);
             await this.fileService.delete(file.path);
 
@@ -83,7 +84,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
             const fileName = pair[1];
             const fileStoragePath = await this.getFullFilePath(fileName);
             // Resolve to absolute path
-            const absoluteStoragePath = path.resolve(process.cwd(), fileStoragePath);
+            const absoluteStoragePath = await this.getAbsolutePath(fileStoragePath);
             await this.fileService.writeStream(absoluteStoragePath, stream);
             const mediaEntity = await this.mediaRepository.createMedia({
                 //@ts-ignore
@@ -110,7 +111,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         for (const media of existingMedia) {
             const fileStoragePath = await this.getFullFilePath(media.relativeUri);
             // Resolve to absolute path
-            const absoluteStoragePath = path.resolve(process.cwd(), fileStoragePath);
+            const absoluteStoragePath = await this.getAbsolutePath(fileStoragePath);
             await this.fileService.delete(absoluteStoragePath);
         }
         // existingMedia.forEach(media => {
@@ -125,5 +126,9 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
 
     private getFileName(file: Express.Multer.File): string {
         return `${file.filename}-${file.originalname}`;
+    }
+
+    private async getAbsolutePath(fileStoragePath: string): Promise<string> {
+        return path.resolve(process.cwd(), fileStoragePath);
     }
 }
