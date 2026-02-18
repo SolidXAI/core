@@ -4,6 +4,7 @@ import { QueuesModuleOptions } from "../../interfaces";
 import { QueueMessage, QueueSubscriber } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
+import { buildNamespacedQueueName } from './common';
 
 
 export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscriber<T> { // TODO This can be made a generic type for better type visibility
@@ -80,19 +81,21 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 }
             }
 
+            const namespacedQueueName = buildNamespacedQueueName(queueName);
             try {
-                await this.connectAndConsume(queueName);
+                await this.connectAndConsume(namespacedQueueName);
             } catch (err) {
-                this.logger.error(`Failed to connect to RabbitMQ for queue ${queueName}: ${(err as Error).message}`, (err as Error).stack);
-                this.triggerReconnect(queueName, 'initial connection failure');
+                this.logger.error(`Failed to connect to RabbitMQ for queue ${namespacedQueueName}: ${(err as Error).message}`, (err as Error).stack);
+                this.triggerReconnect(namespacedQueueName, 'initial connection failure');
             }
 
-            this.logger.log(`RabbitMqSubscriber ready to consume messages: ${JSON.stringify(this.options())} and url: ${this.url}`);
+            this.logger.log(`RabbitMqSubscriber ready to consume messages: ${JSON.stringify(options)} and url: ${this.url}`);
         }
     }
 
     private async connectAndConsume(queueName: string): Promise<void> {
         await this.cleanup();
+        this.logger.log(`RabbitMqSubscriber in connectAndConsume for queue: ${queueName} and url: ${this.url}`);
 
         let connection: amqp.Connection;
         try {
@@ -159,11 +162,12 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                     return;
                 }
 
-                const messageContentString = rawMessage.content.toString();
                 let message: QueueMessage<T> = null;
 
                 try {
+                    const messageContentString = rawMessage.content.toString();
                     message = JSON.parse(messageContentString) as QueueMessage<T>;
+                    this.logger.debug(`rabbitmq subscriber received message with id: ${message.messageId} for queue ${queueName}`);
                 } catch (error) {
                     this.logger.error(`Invalid JSON message on queue ${queueName}: ${(error as Error).message}`);
                     await this.publishToFailedQueue(queueName, rawMessage.content, channel, error);

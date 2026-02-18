@@ -4,6 +4,8 @@ export * from './commands/refresh-module.command'
 export * from './commands/remove-fields.command'
 export * from './commands/seed.command'
 export * from './commands/test-data.command'
+export * from './commands/run-tests.command'
+export * from './commands/test.command'
 
 export * from './config/cache.options'
 
@@ -179,6 +181,7 @@ export * from './helpers/security.helper'
 export * from './helpers/model-metadata-helper.service'
 export * from './helpers/image-encoding.helper'
 export * from './helpers/solid-microservice-adapter.service'
+export * from './helpers/typeorm-db-helper';
 
 export * from './services/crud.service'
 export * from './interceptors/logging.interceptor'

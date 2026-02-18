@@ -58,6 +58,8 @@ import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
 import { SeedCommand } from './commands/seed.command';
 import { TestDataCommand } from './commands/test-data.command';
+import { TestRunCommand } from './commands/run-tests.command';
+import { TestCommand } from './commands/test.command';
 import { AuthenticationController } from './controllers/authentication.controller';
 import { EmailTemplateController } from './controllers/email-template.controller';
 import { GoogleAuthenticationController } from './controllers/google-authentication.controller';
@@ -506,7 +508,9 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     TextractService,
     SolidRegistry,
     SeedCommand,
+    TestCommand,
     TestDataCommand,
+    TestRunCommand,
     McpCommand,
     IngestCommand,
     IngestMetadataService,

@@ -67,6 +67,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     protected get discoveryService(): DiscoveryService {
         return this._discoveryService ??= this.moduleRef.get(DiscoveryService, { strict: false });
     }
+
     protected get settingService(): SettingService {
         return this._settingService ??= this.moduleRef.get(SettingService, { strict: false });
     }

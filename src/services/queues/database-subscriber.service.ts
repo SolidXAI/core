@@ -4,7 +4,7 @@ import { QueueMessage, QueueSubscriber } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
 import { PollerService } from '../poller.service';
-
+import { buildNamespacedQueueName } from './common';
 
 export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscriber<T> {
     private readonly logger = new Logger(DatabaseSubscriber.name);
@@ -97,7 +97,8 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
                 }
             }
 
-            this.poller.start(queueName, (q) => this.processNext(q), {
+            const namespacedQueueName = buildNamespacedQueueName(queueName);
+            this.poller.start(namespacedQueueName, (q) => this.processNext(q), {
                 baseDelayMs: 1000,
                 maxDelayMs: 30_000,
                 timeoutPerIterationMs: 5 * 60_000,
@@ -111,7 +112,8 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
     onModuleDestroy() {
         const options = this.options();
         const queueName = options.queueName;
-        this.poller.stop(queueName);
+        const namespacedQueueName = buildNamespacedQueueName(queueName);
+        this.poller.stop(namespacedQueueName);
     }
 
     /**

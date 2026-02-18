@@ -5,6 +5,7 @@ import { QueuesModuleOptions } from "../../interfaces";
 import { QueueMessage, QueuePublisher } from '../../interfaces/mq';
 import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
+import { buildNamespacedQueueName } from './common';
 
 export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePublisher<T> {
     private readonly logger = new Logger(RabbitMqPublisher.name);
@@ -70,13 +71,21 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
 
             const channel = await conn.createChannel();
 
+            channel.on('return', (msg) => {
+                const content = msg.content?.toString?.() ?? '';
+                this.logger.warn(
+                    `RabbitMqPublisher message returned from exchange ${msg.fields.exchange} with routingKey ${msg.fields.routingKey}: ${content}`,
+                );
+            });
+
             const options = this.options();
             const queueName = options.queueName;
-            const exchangeName = `${queueName}.exchange`;
-            const routingKey = `${queueName}.routing-key`;
+            const namespacedQueueName = buildNamespacedQueueName(queueName);
+            const exchangeName = `${namespacedQueueName}.exchange`;
+            const routingKey = `${namespacedQueueName}.routing-key`;
 
             await channel.assertExchange(exchangeName, 'direct', {});
-            const queue = await channel.assertQueue(queueName, {});
+            const queue = await channel.assertQueue(namespacedQueueName, {});
             await channel.bindQueue(queue.queue, exchangeName, routingKey);
 
             this.connection = conn;
@@ -127,7 +136,6 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         }
     }
 
-
     async publish(message: QueueMessage<T>): Promise<string> {
         if (!this.url) {
             this.logger.error('RabbitMqPublisher url is not defined in the environment variables');
@@ -148,8 +156,10 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         const options = this.options();
 
         const queueName = options.queueName;
-        const exchangeName = `${queueName}.exchange`;
-        const routingKey = `${queueName}.routing-key`;
+        const namespacedQueueName = buildNamespacedQueueName(queueName);
+
+        const exchangeName = `${namespacedQueueName}.exchange`;
+        const routingKey = `${namespacedQueueName}.routing-key`;
 
         // Set default values for retry. 
         // by default there are no retries.
@@ -160,7 +170,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         message.messageId = uuidv4();
 
         // Save the message to the DB so that we can then change its status in the subscriber...
-        await this.persistToDatabase(queueName, message);
+        await this.persistToDatabase(namespacedQueueName, message);
 
         // wait for the channel to confirm 
         try {

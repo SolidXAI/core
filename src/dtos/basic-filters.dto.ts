@@ -28,11 +28,9 @@ export class BasicFilterDto extends PaginationQueryDto {
     @ApiProperty({ description: "aggregates" })
     readonly aggregates?: string[];
 
-
     @IsOptional()
     @ApiProperty({ description: "populate" })
     readonly populate?: string[];
-
 
     @IsOptional()
     @ApiProperty({ description: "populateMedia" })

@@ -18,7 +18,7 @@ The commands below are the canonical flow.
 
 Command:
 ```
-npx @solidxai/solidctl test-data --create-datasources
+npx @solidxai/solidctl test data --setup
 ```
 
 What this does:
@@ -33,7 +33,7 @@ What this does:
 
 Example output:
 ```
-▶ Running solid test-data
+▶ Running solid test data
 Creating test datasource environment file and manifest.
 Backed up .env to .env.backup.steady_wolf and applied new test datasource names to .env.
 Creating test database/schema "default_20260201234402_steady_wolf" on datasource "default"...
@@ -55,7 +55,7 @@ Creating test database/schema "default_20260201234402_steady_wolf" on datasource
   5) Tear down
 ============================================================
 
-✔ solid test-data completed
+✔ solid test data completed
 ```
 
 Rationale:
@@ -97,7 +97,7 @@ Rationale:
 
 Command:
 ```
-npx @solidxai/solidctl test-data --load-data
+npx @solidxai/solidctl test data --load
 ```
 
 What this does:
@@ -109,13 +109,13 @@ What this does:
 
 Example output:
 ```
-▶ Running solid test-data
+▶ Running solid test data
 Test data setup for all modules.
 Processing test data for module: solid-core
 ✔ Test data setup complete for module: solid-core
 Processing test data for module: venue
 ✔ Test data setup complete for module: venue
-✔ solid test-data completed
+✔ solid test data completed
 ```
 
 Rationale:
@@ -123,11 +123,51 @@ Rationale:
 
 ---
 
-## Step 4: Tear everything down
+
+## Step 4: Run Tests 
+```
+npx @solidxai/solidctl test run --module venue --api-base-url http://localhost:3000 --ui-base-url http://localhost:5173 --headless false
+```
+
+```
+npx @solidxai/solidctl test run --module venue --list-specs
+```
+
+What this does:
+- Loads `testing.scenarios` from the module metadata file.
+- Applies `--scenario-ids` or `--include-tags` filtering if provided.
+- Boots API and UI adapters with the supplied base URLs.
+- Registers any custom test specs listed in `testing.specs`.
+- Executes scenarios in order with fail‑fast behavior.
+
+Useful variants:
+```
+npx @solidxai/solidctl test run --module venue --scenario-ids api-authenticate-success,api-create-states
+```
+
+```
+npx @solidxai/solidctl test run --module venue --include-tags smoke
+```
+
+```
+npx @solidxai/solidctl test run --module venue --api-base-url http://localhost:3000 --headless true
+```
+
+```
+npx @solidxai/solidctl test run --module venue --headless false
+```
+
+Notes:
+- If your scenario depends on a previous scenario’s `saveAs` output (e.g., `loginSuccess`), ensure the auth scenario runs first.
+- For UI tests, `--ui-base-url` should point to a running frontend server.
+- `--list-specs` prints registered custom `test.spec` ids and exits.
+
+
+## Step 5: Tear everything down
 
 Command:
 ```
-npx @solidxai/solidctl test-data --delete-datasources
+npx @solidxai/solidctl test data --teardown
 ```
 
 What this does:
@@ -138,11 +178,11 @@ What this does:
 
 Example output:
 ```
-▶ Running solid test-data
+▶ Running solid test data
 Deleting test datasource environment and databases.
 Dropping test database/schema "default_20260201234402_steady_wolf" on datasource "default"...
 ✔ Test datasource env files and manifest deleted; test databases dropped.
-✔ solid test-data completed
+✔ solid test data completed
 ```
 
 Rationale:
@@ -154,7 +194,7 @@ Rationale:
 
 You can restrict test data loading to a subset of modules:
 ```
-npx @solidxai/solidctl test-data --load-data --modules-to-test venue,reports
+npx @solidxai/solidctl test data --load --modules-to-test venue,reports
 ```
 
 Only the listed modules are processed.

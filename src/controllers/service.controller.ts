@@ -26,7 +26,6 @@ export class ServiceController {
         private readonly mqMessageService: MqMessageService,
         private readonly errorMapper: ErrorMapperService,
         private readonly ingestMetadataService: IngestMetadataService,
-        
     ) { }
 
     @Public()
@@ -35,64 +34,64 @@ export class ServiceController {
         return { pong: 'v1.0.2' };
     }
 
-    @ApiBearerAuth("jwt")
-    @Get('mcp/ping')
-    async mcpPingPong(@ActiveUser() activeUser: ActiveUserData) {
-        // TODO: do a MCP client invocation, wait for response and return.
-        // If failure then decide shape to return.
+    // @ApiBearerAuth("jwt")
+    // @Get('mcp/ping')
+    // async mcpPingPong(@ActiveUser() activeUser: ActiveUserData) {
+    //     // TODO: do a MCP client invocation, wait for response and return.
+    //     // If failure then decide shape to return.
 
-        const threadId = `pingPongTxn-${activeUser.sub}`;
-        const dto ={prompt:"Can you do 1 + 1", moduleName:"solidCoreModule"}
-        const { queueMessageId, aiInteractionId } = await this.aiInteractionService.triggerMcpClientJob(
-            dto,
-            activeUser.sub,
-            true,
-            threadId
-        );
+    //     const threadId = `pingPongTxn-${activeUser.sub}`;
+    //     const dto = { prompt: "Can you do 1 + 1", moduleName: "solidCoreModule" }
+    //     const { queueMessageId, aiInteractionId } = await this.aiInteractionService.triggerMcpClientJob(
+    //         dto,
+    //         activeUser.sub,
+    //         true,
+    //         threadId
+    //     );
 
-        this.logger.debug(`mcp ping pong job triggered: queueMessageId=${queueMessageId}, aiInteractionId=${aiInteractionId}`);
+    //     this.logger.debug(`mcp ping pong job triggered: queueMessageId=${queueMessageId}, aiInteractionId=${aiInteractionId}`);
 
-        // Wait up to 2 minutes, start at 500ms poll, back off to max 2s, throw if failed:
-        const result = await this.mqMessageService.waitForTerminalStatus(queueMessageId, {
-            timeoutMs: 2 * 60 * 1000,
-            intervalMs: 500,
-            maxIntervalMs: 2000,
-            throwOnFailure: false,
-        });
+    //     // Wait up to 2 minutes, start at 500ms poll, back off to max 2s, throw if failed:
+    //     const result = await this.mqMessageService.waitForTerminalStatus(queueMessageId, {
+    //         timeoutMs: 2 * 60 * 1000,
+    //         intervalMs: 500,
+    //         maxIntervalMs: 2000,
+    //         throwOnFailure: false,
+    //     });
 
-        this.logger.debug(`mcp ping pong job finished with stage=${result.stage}`)
+    //     this.logger.debug(`mcp ping pong job finished with stage=${result.stage}`)
 
-        this.logger.debug(`mcp ping pong trying to find genai (child) interaction for aiInteraction for id=${aiInteractionId}`)
+    //     this.logger.debug(`mcp ping pong trying to find genai (child) interaction for aiInteraction for id=${aiInteractionId}`)
 
-        // @ts-ignore
-        const genAiInteractions = await this.aiInteractionService.find({
-            filters: {
-                parentInteraction: {
-                    id: {
-                        $eq: aiInteractionId
-                    }
-                }
-            }
-        });
+    //     // @ts-ignore
+    //     const genAiInteractions = await this.aiInteractionService.find({
+    //         filters: {
+    //             parentInteraction: {
+    //                 id: {
+    //                     $eq: aiInteractionId
+    //                 }
+    //             }
+    //         }
+    //     });
 
-        const genAiInteraction = genAiInteractions['records'][0];
-        this.logger.debug(genAiInteraction.message);
+    //     const genAiInteraction = genAiInteractions['records'][0];
+    //     this.logger.debug(genAiInteraction.message);
 
-        this.logger.debug(`identified gen-ai interaction with id=${genAiInteraction.id}`);
-        this.logger.debug(`proceeding with applying the gen-ai interaction`)
+    //     this.logger.debug(`identified gen-ai interaction with id=${genAiInteraction.id}`);
+    //     this.logger.debug(`proceeding with applying the gen-ai interaction`)
 
-        return {
-            mcpPong: 'v1.0.2',
-            genAiInteraction: {
-                status: genAiInteraction.status,
-                errorCode: genAiInteraction.status === 'failed' ? this.errorMapper.mapMessage(genAiInteraction.errorMessage, genAiInteraction.metadata) : '',
-                errorMessage: genAiInteraction.errorMessage,
-            }
-        };
-    }
+    //     return {
+    //         mcpPong: 'v1.0.2',
+    //         genAiInteraction: {
+    //             status: genAiInteraction.status,
+    //             errorCode: genAiInteraction.status === 'failed' ? this.errorMapper.mapMessage(genAiInteraction.errorMessage, genAiInteraction.metadata) : '',
+    //             errorMessage: genAiInteraction.errorMessage,
+    //         }
+    //     };
+    // }
 
-    @Public()
     // @SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only
+    @ApiBearerAuth("jwt")
     @Post('seed')
     async seedData(@Body() seedData: any) {
         const seeder = this.solidRegistry
@@ -111,7 +110,7 @@ export class ServiceController {
 
     @ApiBearerAuth("jwt")
     @Post('code-generation/post-process')
-    async postProcessCodeGeneration(@Body() config : PostProcessCodeGenConfig) {
+    async postProcessCodeGeneration(@Body() config: PostProcessCodeGenConfig) {
         // Set defaults if not provided
         config.runModuleMetadataSeeder = config.runModuleMetadataSeeder ?? true;
         config.runSolidIngestion = config.runSolidIngestion ?? true;
@@ -132,7 +131,7 @@ export class ServiceController {
         } else {
             this.logger.debug(`Skipping the Module Metadata Seeder Service as part of post-process code generation`);
         }
-        
+
         // Run the Solid ingestion command
         if (config.runSolidIngestion) {
             this.logger.debug(`Running the Solid ingestion command as part of post-process code generation`);
