@@ -31,7 +31,7 @@ import { ViewMetadataService } from '../services/view-metadata.service';
 import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
-import { ActionMetadata, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata, SignUpDto } from 'src';
+import { ActionMetadata, DEFAULT_SA_PASSWORD, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata, SignUpDto } from 'src';
 import { ADMIN_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
@@ -768,7 +768,7 @@ export class ModuleMetadataSeederService {
     }
 
     // OK
-    private async handleSeedUsers(users) {
+    private async handleSeedUsers(users: SignUpDto[]) {
         if (!users) {
             return;
         }
@@ -777,33 +777,12 @@ export class ModuleMetadataSeederService {
             const user: SignUpDto = users[l];
             let exisitingUser = await this.userService.findOneByUsername(user.username);
             if (!exisitingUser) {
-                let generatedAdminPassword: string | null = null;
                 if (user.username === 'sa') {
-                    generatedAdminPassword = uuidv4();
-                    user.password = generatedAdminPassword;
+                    user.password = DEFAULT_SA_PASSWORD;
                 }
 
                 exisitingUser = await this.authenticationService.signUp(user);
                 this.logger.log(`Newly created user ${user.username}`);
-
-                // Surface the generated SA password clearly to the operator.
-                if (generatedAdminPassword) {
-                    const banner = [
-                        '',
-                        '============================================================',
-                        '  SYSTEM ADMIN USER CREATED',
-                        '------------------------------------------------------------',
-                        '  Username : sa',
-                        `  Password : ${generatedAdminPassword}`,
-                        '',
-                        '  Copy and store this password securely now.',
-                        '  It is shown only once during seeding.',
-                        '============================================================',
-                        ''
-                    ].join('\n');
-                    // Use console.log to ensure visibility even if logger formatting changes.
-                    console.log(banner);
-                }
             }
             //FIXME: Create the user roles assignment logic here.
             // now add Roles to user.
