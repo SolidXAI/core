@@ -32,7 +32,7 @@ import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ActionMetadata, DEFAULT_SA_PASSWORD, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata, SignUpDto } from 'src';
-import { ADMIN_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
+import { ADMIN_ROLE_NAME, CreateRoleMetadataDto } from 'src/dtos/create-role-metadata.dto';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
@@ -402,7 +402,6 @@ export class ModuleMetadataSeederService {
     private async seedDefaultSystemFields() {
         await this.systemFieldsSeederService.seed();
     }
-
 
     // OK
     private async seedPermissions() {
@@ -857,7 +856,6 @@ export class ModuleMetadataSeederService {
         this.logger.debug(`[End] Processing module metadata`);
         return { pruned, upserted };
     }
-
 
     private async handleSeedSecurityRules(rulesDto: CreateSecurityRuleDto[]) {
         if (!rulesDto || rulesDto.length === 0) {
