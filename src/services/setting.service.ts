@@ -7,7 +7,7 @@ import { CreateSettingDto } from 'src/dtos/create-setting.dto';
 import { GetMcpUrlDto } from 'src/dtos/get-mcp-url.dto';
 import { User } from 'src/entities/user.entity';
 import { SettingRepository } from '../repository/setting.repository';
-import { FILE_SERVICE, IFileService } from './file';
+import { FILE_SERVICE, IFileService, FILE_STORAGE_PATH_BUILDER, IStoragePathBuilder } from './file';
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
@@ -32,6 +32,7 @@ export class SettingService {
 
   constructor(
     @Inject(FILE_SERVICE) readonly fileService: IFileService,
+    @Inject(FILE_STORAGE_PATH_BUILDER) readonly pathBuilder: IStoragePathBuilder,
     readonly solidRegistry: SolidRegistry,
     readonly repo: SettingRepository,
     readonly moduleMetadataRepo: ModuleMetadataRepository,
@@ -251,9 +252,10 @@ export class SettingService {
         const relativeFileName = `${file.filename}-${file.originalname}`;
 
         // Read file from local disk (where Multer stores uploads) and write to storage
-        // The file service resolves the storage path and returns the public URL
+        // The path builder constructs the provider-appropriate storage path
         const fileContent = await fsPromises.readFile(file.path);
-        const fileUrl = await this.fileService.write(relativeFileName, fileContent, { contentType: file.mimetype });
+        const storagePath = this.pathBuilder.build(relativeFileName);
+        const fileUrl = await this.fileService.write(storagePath, fileContent, { contentType: file.mimetype });
         // Delete the temp file from local disk
         await fsPromises.unlink(file.path);
 

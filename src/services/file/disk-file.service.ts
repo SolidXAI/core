@@ -9,23 +9,15 @@ import { IFileService, WriteOptions, CopyOptions, UrlOptions } from './file-serv
 /**
  * Disk-based implementation of IFileService.
  * Handles file operations on the local filesystem.
+ * Callers are responsible for providing complete paths (use DiskStoragePathBuilder for primary storage paths).
  */
 @Injectable()
 export class DiskFileService implements IFileService {
   private readonly logger = new Logger(DiskFileService.name);
-  private readonly fileStorageDir: string;
   private readonly baseUrl: string;
 
   constructor() {
-    this.fileStorageDir = process.env.AB_MEDIA_FILE_STORAGE_DIR || 'uploads';
     this.baseUrl = process.env.BASE_URL || '';
-  }
-
-  private resolvePath(filePath: string): string {
-    if (path.isAbsolute(filePath)) {
-      return filePath;
-    }
-    return `${this.fileStorageDir}/${filePath}`;
   }
 
   /**
@@ -50,10 +42,9 @@ export class DiskFileService implements IFileService {
    * @returns Public URL of the written file
    */
   async write(filePath: string, data: Buffer | string, options?: WriteOptions): Promise<string> {
-    const resolvedPath = this.resolvePath(filePath);
-    await this.ensureDirectoryExists(resolvedPath);
-    await fsPromises.writeFile(resolvedPath, data);
-    return `${this.baseUrl}/${resolvedPath}`;
+    await this.ensureDirectoryExists(filePath);
+    await fsPromises.writeFile(filePath, data);
+    return `${this.baseUrl}/${filePath}`;
   }
 
   /**
@@ -62,12 +53,11 @@ export class DiskFileService implements IFileService {
    * @returns Public URL of the written file
    */
   async writeStream(filePath: string, stream: Readable, options?: WriteOptions): Promise<string> {
-    const resolvedPath = this.resolvePath(filePath);
-    await this.ensureDirectoryExists(resolvedPath);
-    const writeStream = fs.createWriteStream(resolvedPath);
+    await this.ensureDirectoryExists(filePath);
+    const writeStream = fs.createWriteStream(filePath);
     await pipeline(stream, writeStream);
-    this.logger.debug(`File saved via stream: ${resolvedPath}`);
-    return `${this.baseUrl}/${resolvedPath}`;
+    this.logger.debug(`File saved via stream: ${filePath}`);
+    return `${this.baseUrl}/${filePath}`;
   }
 
   /**
