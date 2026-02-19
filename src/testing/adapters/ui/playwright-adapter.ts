@@ -1,4 +1,3 @@
-import { chromium } from "playwright";
 import type { Browser, BrowserContext, Page } from "playwright";
 
 import type { PlaywrightAdapterOptions } from "./ui.types";
@@ -20,6 +19,7 @@ export class PlaywrightAdapter {
   }
 
   async start(): Promise<void> {
+    const { chromium } = await import('playwright');
     this.browser = await chromium.launch({ headless: this.headless });
     this.context = await this.browser.newContext();
     this.page = await this.context.newPage();
