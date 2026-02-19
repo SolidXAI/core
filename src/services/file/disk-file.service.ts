@@ -17,16 +17,19 @@ export class DiskFileService implements IFileService {
   private readonly baseUrl: string;
 
   constructor() {
-    this.fileStorageDir = process.env.AB_MEDIA_FILE_STORAGE_DIR || 'uploads';
+    this.fileStorageDir = process.env.AB_MEDIA_FILE_STORAGE_DIR || '';
     this.baseUrl = process.env.BASE_URL || '';
   }
 
-  private resolvePath(filePath: string): string {
+private resolvePath(filePath: string): string {
     if (path.isAbsolute(filePath)) {
-      return filePath;
+        return filePath; // already absolute, use as-is
     }
-    return `${this.fileStorageDir}/${filePath}`;
-  }
+    if (!this.fileStorageDir) {
+        return filePath; // no base dir set, use as-is
+    }
+    return path.join(this.fileStorageDir, filePath); // join safely, no double slashes
+}
 
   /**
    * Read file contents as Buffer
