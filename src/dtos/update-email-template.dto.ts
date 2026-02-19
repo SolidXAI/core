@@ -12,29 +12,35 @@ export class UpdateEmailTemplateDto extends PartialType(CreateEmailTemplateDto) 
     @IsString()
     @ApiProperty()
     name: string;
+
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
     displayName: string;
+
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
     body: string;
+
     @IsOptional()
     @IsString()
     @ApiProperty()
     type: string;
+
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
     subject: string;
+
     @IsOptional()
     @IsString()
     @ApiProperty()
     description: string;
+
     @IsOptional()
     @IsBoolean()
     @ApiProperty()

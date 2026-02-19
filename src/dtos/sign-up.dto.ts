@@ -25,6 +25,4 @@ export class SignUpDto {
     @IsArray()
     @Type(() => String)
     roles?: string[];
-
-
 }

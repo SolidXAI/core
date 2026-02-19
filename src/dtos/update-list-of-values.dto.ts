@@ -5,38 +5,46 @@ export class UpdateListOfValuesDto {
     @IsOptional()
     @IsInt()
     id: number;
+
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
     type: string;
+
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
     value: string;
+
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
     display: string;
+
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
     description: string;
+
     @IsOptional()
     @IsBoolean()
     @ApiProperty()
     default: boolean;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
     sequence: number;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
     moduleId: number;
+
     @IsString()
     @IsOptional()
     @ApiProperty()

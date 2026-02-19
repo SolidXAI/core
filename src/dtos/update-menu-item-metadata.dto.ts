@@ -8,41 +8,50 @@ export class UpdateMenuItemMetadataDto {
     @IsOptional()
     @IsInt()
     id: number;
+
     @IsNotEmpty()
     @IsOptional()
     @Matches(/[a-z]+(-[a-z]+)*/)
     @IsString()
     @ApiProperty()
     name: string;
+
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
     displayName: string;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
     moduleId: number;
+
     @IsString()
     @IsOptional()
     @ApiProperty()
     moduleUserKey: string;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
     parentMenuItemId: number;
+
     @IsString()
     @IsOptional()
     @ApiProperty()
     parentMenuItemUserKey: string;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
     actionId: number;
+
     @IsString()
     @IsOptional()
     @ApiProperty()
     actionUserKey: string;
+
     @Transform(arrayTransformer)
     @IsOptional()
     @ApiProperty()
@@ -50,14 +59,17 @@ export class UpdateMenuItemMetadataDto {
     @ValidateNested({ each: true })
     @Type(() => UpdateRoleMetadataDto)
     roles: UpdateRoleMetadataDto[];
+
     @IsOptional()
     @IsArray()
     @ApiProperty()
     rolesIds: number[];
+
     @IsString()
     @IsOptional()
     @ApiProperty()
     rolesCommand: string;
+
     @IsOptional()
     @IsNumber()
     @ApiProperty()

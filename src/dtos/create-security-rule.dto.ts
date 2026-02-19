@@ -7,26 +7,32 @@ export class CreateSecurityRuleDto {
     @IsString()
     @ApiProperty()
     name: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
     description: string;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
     roleId: number;
+
     @IsString()
     @IsOptional()
     @ApiProperty()
     roleUserKey: string;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
     modelMetadataId: number;
+
     @IsString()
     @IsOptional()
     @ApiProperty()
     modelMetadataUserKey: string;
+
     @IsNotEmpty()
     @IsJSON()
     @ApiProperty()
