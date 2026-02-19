@@ -98,15 +98,12 @@ import { TestQueueSubscriber } from './jobs/test-queue-subscriber.service';
 import { UserRegistrationListener } from './listeners/user-registration.listener';
 import { GoogleOauthStrategy } from './passport-strategies/google-oauth.strategy';
 import { LocalStrategy } from './passport-strategies/local.strategy';
-import { EmailTemplateSeederService } from './seeders/email-template-seeder.service';
-import { SmsTemplateSeederService } from './seeders/sms-template-seeder.service';
-import { UserSeederService } from './seeders/user-seeder.service';
 import { AuthenticationService } from './services/authentication.service';
 import { BcryptService } from './services/bcrypt.service';
 import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
 import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/uuid-external-id-computed-field-provider.service';
 import { EmailTemplateService } from './services/email-template.service';
-import { DiskFileService, S3FileService, FileServiceFactory } from './services/file';
+import { DiskFileService, S3FileService, FileServiceFactory, DiskStoragePathBuilder, S3StoragePathBuilder, StoragePathBuilderFactory } from './services/file';
 import { HashingService } from './services/hashing.service';
 import { ElasticEmailService } from './services/mail/elastic-email.service';
 import { SMTPEMailService } from './services/mail/smtp-email.service';
@@ -505,6 +502,9 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     DiskFileService,
     S3FileService,
     FileServiceFactory,
+    DiskStoragePathBuilder,
+    S3StoragePathBuilder,
+    StoragePathBuilderFactory,
     TextractService,
     SolidRegistry,
     SeedCommand,
@@ -563,8 +563,6 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     Three60WhatsappService,
     MqMessageService,
     MqMessageQueueService,
-    EmailTemplateSeederService,
-    SmsTemplateSeederService,
     TinyUrlService,
     PdfService,
     UuidExternalIdComputedFieldProvider,
@@ -577,7 +575,6 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     AuthenticationService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,
-    UserSeederService,
     LocalStrategy,
     GoogleOauthStrategy,
     UserRegistrationListener,
@@ -734,6 +731,9 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     DiskFileService,
     S3FileService,
     FileServiceFactory,
+    DiskStoragePathBuilder,
+    S3StoragePathBuilder,
+    StoragePathBuilderFactory,
     HttpModule,
     ImportTransactionService,
     ListOfValuesService,
@@ -768,7 +768,6 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     TwilioSMSService,
     TypeOrmModule,
     UserActivityHistoryService,
-    UserSeederService,
     ImageEncodingService,
     SolidMicroserviceAdapter,
     UserService,

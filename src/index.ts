@@ -217,11 +217,8 @@ export * from './passport-strategies/local.strategy'
 export * from './services/selection-providers/list-of-values-selection-providers.service'
 
 // seed-data
-export * from './seeders/email-template-seeder.service'
 export * from './seeders/permission-metadata-seeder.service'
-export * from './seeders/sms-template-seeder.service'
 export * from './seeders/module-metadata-seeder.service'
-export * from './seeders/user-seeder.service'
 
 // export * from './services/access-token-storage.service'
 export * from './services/action-metadata.service'

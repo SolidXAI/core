@@ -3,8 +3,8 @@ import { Environment } from "src/decorators/disallow-in-production.decorator";
 import { SettingsProvider } from "src/decorators/settings-provider.decorator";
 import { ISettingsProvider, SettingDefinition, SettingLevel } from "src/interfaces";
 
-const DEFAULT_MEDIA_UPLOAD_DIR = 'media-uploads';
-const DEFAULT_MEDIA_FILE_STORAGE_DIR = 'media-files-storage';
+export const DEFAULT_MEDIA_UPLOAD_DIR = 'media-uploads';
+export const DEFAULT_MEDIA_FILE_STORAGE_DIR = 'media-files-storage';
 
 // 1. 
 const getSolidCoreSettings = (isProd: boolean) => ([

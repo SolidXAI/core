@@ -2,6 +2,8 @@ import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/commo
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager, In } from 'typeorm';
+import * as path from 'path';
+import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from "src/services/settings/default-settings-provider.service";
 import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 import { ConfigService } from '@nestjs/config';
@@ -52,7 +54,7 @@ export class MediaService extends CRUDService<Media> {
 
       for (const media of data.records) {
         if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-          media.relativeUri = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${await this.getFileSysytemFullFilePath(media.relativeUri)}`;
+          media.relativeUri = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${this.getFullFilePathForDisk(media.relativeUri)}`;
         } else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
           media.relativeUri = this.getAwsS3FullFilePath(
             media.relativeUri,
@@ -63,7 +65,7 @@ export class MediaService extends CRUDService<Media> {
       }
       // data.records.forEach((media: Media) => {
       //       if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-      //   media.relativeUri = `${process.env.BASE_URL}/${await this.getFileSysytemFullFilePath(media.relativeUri)}`;
+      //   media.relativeUri = `${process.env.BASE_URL}/${this.getFileSysytemFullFilePath(media.relativeUri)}`;
       // } else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
       //   media.relativeUri = this.getAwsS3FullFilePath(
       //     media.relativeUri,
@@ -78,7 +80,7 @@ export class MediaService extends CRUDService<Media> {
       for (const group of data.groupRecords) {
         for (const media of group.groupData.records) {
           if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-            media.relativeUri = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${await this.getFileSysytemFullFilePath(media.relativeUri)}`;
+            media.relativeUri = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${this.getFullFilePathForDisk(media.relativeUri)}`;
           }
           else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
             media.relativeUri = this.getAwsS3FullFilePath(media.relativeUri, media.mediaStorageProviderMetadata.bucketName, media.mediaStorageProviderMetadata.region);
@@ -129,7 +131,7 @@ export class MediaService extends CRUDService<Media> {
 
       switch (createDto.mediaStorageProviderMetadata.type) {
         case MediaStorageProviderType.Filesystem:
-          const fileStoragePath = await this.getFileSysytemFullFilePath(this.getFileName(file));
+          const fileStoragePath = this.getFullFilePathForDisk(this.getFileName(file));
           await this.diskFileService.copy(file.path, fileStoragePath);
           createDto['relativeUri'] = this.getFileName(file);
           break;
@@ -189,9 +191,13 @@ export class MediaService extends CRUDService<Media> {
   }
   //TODO: Move this to a app builder config
 
-  private async getFileSysytemFullFilePath(fileName: string): Promise<string> {
-    const fileStorageDir = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir");
-    return `${fileStorageDir}/${fileName}`;
+  private getFullFilePathForDisk(fileName: string): string {
+    const base = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
+      || DEFAULT_MEDIA_FILE_STORAGE_DIR;
+    if (path.isAbsolute(fileName) || fileName.startsWith(`${base}/`)) {
+      return fileName;
+    }
+    return `${base}/${fileName}`;
   }
 
   private getAwsS3FullFilePath(awsMediaurl: string, bucketName: string, regionName: string): string {
