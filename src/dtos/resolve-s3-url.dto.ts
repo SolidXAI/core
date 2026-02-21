@@ -2,17 +2,7 @@ import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
 
 export class ResolveS3UrlDto {
     @IsNotEmpty()
-    modelName: string;
-
-    @IsNotEmpty()
-    fieldName: string;
-
-
-    @IsNotEmpty()
-    fileType?: string;
-
-    @IsNotEmpty()
-    s3Key?: string;
+    s3Key: string;
 
     @IsOptional()
     bucketName?: string;
@@ -21,7 +11,7 @@ export class ResolveS3UrlDto {
     mediaStorageProviderUserKey?: string;
 
     @IsNotEmpty()
-    isPrivate?: string;
+    isPrivate: string;
 }
 
 
