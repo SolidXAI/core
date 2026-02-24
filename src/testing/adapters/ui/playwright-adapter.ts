@@ -1,10 +1,6 @@
-import type { PlaywrightAdapterOptions } from "./ui.types";
+import type { Browser, BrowserContext, Page } from "playwright";
 
-// Locally-defined minimal types so playwright is not a required install-time dependency.
-// The real types are loaded lazily via `import('playwright')` inside `start()`.
-type Browser = { newContext(): Promise<BrowserContext>; close(): Promise<void> };
-type BrowserContext = { newPage(): Promise<Page>; close(): Promise<void> };
-type Page = object;
+import type { PlaywrightAdapterOptions } from "./ui.types";
 
 function isAbsoluteUrl(url: string): boolean {
   return /^https?:\/\//i.test(url);
