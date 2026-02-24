@@ -527,58 +527,68 @@ export class AuthenticationService {
 
     async otpConfirmRegistration(confirmSignUpDto: OTPConfirmOTPDto) {
         const isPasswordlessRegistrationEnabled = await this.isPasswordlessRegistrationEnabled();
-
         if (!isPasswordlessRegistrationEnabled) {
             throw new BadRequestException(ERROR_MESSAGES.PASSWORDLESS_REGISTRATION_DISABLED);
         }
 
-        // Based on the identifier, validate by query the user table.
-        if (confirmSignUpDto.type === RegistrationValidationSource.EMAIL) {
-            const user = await this.userRepository.findOne({
-                where: {
-                    email: confirmSignUpDto.identifier,
-                }
-            });
-            if (!user) {
-                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
-            }
-            if (user.emailVerificationTokenOnRegistration !== confirmSignUpDto.otp) {
-                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
-            }
-            if (user.emailVerificationTokenOnRegistrationExpiresAt < new Date()) {
-                throw new UnauthorizedException(ERROR_MESSAGES.OTP_EXPIRED);
-            }
+        const { type, identifier, otp } = confirmSignUpDto;
+        if (type !== PasswordlessRegistrationValidateWhatSources.EMAIL &&
+            type !== PasswordlessRegistrationValidateWhatSources.MOBILE) {
+            throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
+        }
+
+        const user = await this.findUserByRegistrationIdentifier(type, identifier);
+        this.validateRegistrationOtp(user, otp, type);
+        this.clearRegistrationOtp(user, type);
+        user.active = this.settingService.getConfigValue<SolidCoreSetting>('activateUserOnRegistration') &&
+            await this.areAllPasswordlessRegistrationValidationSourcesVerified(user);
+
+        const savedUser: User = await this.userRepository.save(user);
+        this.triggerRegistrationEvent(savedUser);
+        return { active: savedUser.active, message: `User registration verified for ${type}` };
+    }
+
+    private async findUserByRegistrationIdentifier(
+        type: PasswordlessRegistrationValidateWhatSources,
+        identifier: string,
+    ): Promise<User> {
+        const where = type === PasswordlessRegistrationValidateWhatSources.EMAIL
+            ? { email: identifier }
+            : { mobile: identifier };
+        const user = await this.userRepository.findOne({ where });
+        if (!user) {
+            throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
+        }
+        return user;
+    }
+
+    private validateRegistrationOtp(
+        user: User,
+        otp: string,
+        type: PasswordlessRegistrationValidateWhatSources,
+    ): void {
+        const isEmail = type === PasswordlessRegistrationValidateWhatSources.EMAIL;
+        const token = isEmail ? user.emailVerificationTokenOnRegistration : user.mobileVerificationTokenOnRegistration;
+        const expiresAt = isEmail ? user.emailVerificationTokenOnRegistrationExpiresAt : user.mobileVerificationTokenOnRegistrationExpiresAt;
+
+        if (token !== otp) {
+            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
+        }
+        if (expiresAt < new Date()) {
+            throw new UnauthorizedException(ERROR_MESSAGES.OTP_EXPIRED);
+        }
+    }
+
+    private clearRegistrationOtp(user: User, type: PasswordlessRegistrationValidateWhatSources): void {
+        if (type === PasswordlessRegistrationValidateWhatSources.EMAIL) {
             user.emailVerifiedOnRegistrationAt = new Date();
             user.emailVerificationTokenOnRegistration = null;
             user.emailVerificationTokenOnRegistrationExpiresAt = null;
-            user.active = this.settingService.getConfigValue<SolidCoreSetting>('activateUserOnRegistration') && await this.areRegistrationValidationSourcesVerified(user);
-            const savedUser: User = await this.userRepository.save(user);
-            this.triggerRegistrationEvent(savedUser);
-            return { active: savedUser.active, message: `User registration verified for ${confirmSignUpDto.type}` }
-        } else if (confirmSignUpDto.type === RegistrationValidationSource.MOBILE) {
-            const user = await this.userRepository.findOne({
-                where: {
-                    mobile: confirmSignUpDto.identifier,
-                }
-            });
-            if (!user) {
-                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
-            }
-            if (user.mobileVerificationTokenOnRegistration !== confirmSignUpDto.otp) {
-                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
-            }
-            if (user.mobileVerificationTokenOnRegistrationExpiresAt < new Date()) {
-                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
-            }
+        } else {
             user.mobileVerifiedOnRegistrationAt = new Date();
             user.mobileVerificationTokenOnRegistration = null;
             user.mobileVerificationTokenOnRegistrationExpiresAt = null;
-            user.active = this.settingService.getConfigValue<SolidCoreSetting>('activateUserOnRegistration') && await this.areRegistrationValidationSourcesVerified(user);
-            const savedUser: User = await this.userRepository.save(user);
-            this.triggerRegistrationEvent(savedUser);
-            return { active: savedUser.active, message: `User registration verified for ${confirmSignUpDto.type}` }
         }
-        throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
     }
 
     private triggerRegistrationEvent(savedUser: User) {
@@ -587,10 +597,8 @@ export class AuthenticationService {
         this.eventEmitter.emit(EventType.USER_REGISTERED, event);
     }
 
-    async areRegistrationValidationSourcesVerified(user: User): Promise<boolean> {
-        const passwordlessRegistrationValidateWhat = this.settingService.getConfigValue<SolidCoreSetting>('passwordlessRegistrationValidateWhat');
-
-        const registrationValidationSources = passwordlessRegistrationValidateWhat;
+    private async areAllPasswordlessRegistrationValidationSourcesVerified(user: User): Promise<boolean> {
+        const registrationValidationSources = this.resolvePasswordlessValidationSources();
         if (registrationValidationSources.includes(RegistrationValidationSource.EMAIL)) {
             if (!user.emailVerifiedOnRegistrationAt) {
                 return false;
