@@ -712,6 +712,9 @@ export class AuthenticationService {
             if (!user) {
                 throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
             }
+            if (!user.active) {
+                throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
+            }
 
             const { token, expiresAt } = await this.otp();
             user.mobileVerificationTokenOnLogin = token;
