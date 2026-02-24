@@ -15,7 +15,7 @@ export enum RegistrationValidationSource {
   TRANSACTIONAL = 'transactional',
 }
 
-export enum TransactionalRegistrationValidationSource {
+export enum PasswordlessRegistrationValidateWhatSources {
   EMAIL = 'email',
   MOBILE = 'mobile',
 }
