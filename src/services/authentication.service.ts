@@ -389,7 +389,7 @@ export class AuthenticationService {
         }
 
         try {
-            const user = await this.upsertUserWithVerificationTokens(existingUser, signUpDto, validationSources);
+            const user = await this.upsertUserWithRegistrationVerificationTokens(existingUser, signUpDto, validationSources);
             await this.notifyUserOnOtpInitiateRegistration(user, validationSources);
         } catch (err) {
             if (err.code === '23505') {
@@ -429,15 +429,15 @@ export class AuthenticationService {
         return validationSources;
     }
 
-    private async upsertUserWithVerificationTokens(existingUser: User, signUpDto: OTPSignUpDto, validationSources: string[]): Promise<User> {
+    private async upsertUserWithRegistrationVerificationTokens(existingUser: User, signUpDto: OTPSignUpDto, validationSources: string[]): Promise<User> {
         let user = existingUser;
         if (isEmpty(user)) {
             user = this.createUser(signUpDto);
-            await this.populateVerificationTokens(validationSources, user);
+            await this.populateRegistrationVerificationTokens(validationSources, user);
             await this.userRepository.save(user);
             await this.userService.addRoleToUser(user.username, this.settingService.getConfigValue<SolidCoreSetting>('defaultRole'));
         } else {
-            await this.populateVerificationTokens(validationSources, user);
+            await this.populateRegistrationVerificationTokens(validationSources, user);
             await this.userRepository.save(user);
         }
         return user;
@@ -455,7 +455,7 @@ export class AuthenticationService {
     }
 
     // Generate the validation tokens for the user i.e (system configured + user provided)
-    private async populateVerificationTokens(passwordlessRegistrationValidateWhat: string[], user: User) {
+    private async populateRegistrationVerificationTokens(passwordlessRegistrationValidateWhat: string[], user: User) {
         if (passwordlessRegistrationValidateWhat.length === 0) {
             throw new BadRequestException(ERROR_MESSAGES.VALIDATION_SOURCE_REQUIRED);
         }
