@@ -433,11 +433,11 @@ export class AuthenticationService {
         let user = existingUser;
         if (isEmpty(user)) {
             user = this.createUser(signUpDto);
-            await this.populateRegistrationVerificationTokens(validationSources, user);
+            await this.assignRegistrationOtp(validationSources, user);
             await this.userRepository.save(user);
             await this.userService.addRoleToUser(user.username, this.settingService.getConfigValue<SolidCoreSetting>('defaultRole'));
         } else {
-            await this.populateRegistrationVerificationTokens(validationSources, user);
+            await this.assignRegistrationOtp(validationSources, user);
             await this.userRepository.save(user);
         }
         return user;
@@ -455,7 +455,7 @@ export class AuthenticationService {
     }
 
     // Generate the validation tokens for the user i.e (system configured + user provided)
-    private async populateRegistrationVerificationTokens(passwordlessRegistrationValidateWhat: string[], user: User) {
+    private async assignRegistrationOtp(passwordlessRegistrationValidateWhat: string[], user: User) {
         if (passwordlessRegistrationValidateWhat.length === 0) {
             throw new BadRequestException(ERROR_MESSAGES.VALIDATION_SOURCE_REQUIRED);
         }
