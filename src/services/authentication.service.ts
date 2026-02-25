@@ -26,7 +26,7 @@ import { DataSource, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import {
     ForgotPasswordSendVerificationTokenOn,
-    RegistrationValidationSource,
+    PasswordlessLoginValidateWhatSources,
     PasswordlessRegistrationValidateWhatSources
 } from "../constants";
 import { ChangePasswordDto } from "../dtos/change-password.dto";
@@ -486,7 +486,7 @@ export class AuthenticationService {
 
         if (dummyOtp)
             return; // Do nothing if dummy otp is configured.
-        if (registrationValidationSources.includes(RegistrationValidationSource.EMAIL)) {
+        if (registrationValidationSources.includes(PasswordlessLoginValidateWhatSources.EMAIL)) {
             const mailService = this.mailServiceFactory.getMailService();
             mailService.sendEmailUsingTemplate(
                 user.email,
@@ -506,7 +506,7 @@ export class AuthenticationService {
                 user.id
             );
         }
-        if (registrationValidationSources.includes(RegistrationValidationSource.MOBILE)) {
+        if (registrationValidationSources.includes(PasswordlessLoginValidateWhatSources.MOBILE)) {
             const smsService = this.smsFactory.getSmsService();
             smsService.sendSMSUsingTemplate(
                 user.mobile,
@@ -599,12 +599,12 @@ export class AuthenticationService {
 
     private async areAllPasswordlessRegistrationValidationSourcesVerified(user: User): Promise<boolean> {
         const registrationValidationSources = this.resolvePasswordlessValidationSources();
-        if (registrationValidationSources.includes(RegistrationValidationSource.EMAIL)) {
+        if (registrationValidationSources.includes(PasswordlessLoginValidateWhatSources.EMAIL)) {
             if (!user.emailVerifiedOnRegistrationAt) {
                 return false;
             }
         }
-        if (registrationValidationSources.includes(RegistrationValidationSource.MOBILE)) {
+        if (registrationValidationSources.includes(PasswordlessLoginValidateWhatSources.MOBILE)) {
             if (!user.mobileVerifiedOnRegistrationAt) {
                 return false;
             }
@@ -674,78 +674,77 @@ export class AuthenticationService {
             throw new BadRequestException(ERROR_MESSAGES.PASSWORDLESS_REGISTRATION_DISABLED);
         }
 
-        // Validate & generate otp token for the user based on the identifier type.
-        if (signInDto.type === RegistrationValidationSource.EMAIL) {
-            // const user = await this.userRepository.findOne({
-            //     where: {
-            //         email: signInDto.identifier,
-            //     }
-            // });
-            const user = await this.userRepository.findOne({
-                where: [
-                    { username: signInDto.identifier },
-                    { email: signInDto.identifier },
-                ]
-            });
-
-            if (!user) {
-                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
-            }
-            if (!user.active) {
-                throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
-            }
-            const { token, expiresAt } = await this.otp();
-            user.emailVerificationTokenOnLogin = token;
-            user.emailVerificationTokenOnLoginExpiresAt = expiresAt;
-            await this.userRepository.save(user);
-            this.notifyUserOnOtpInititateLogin(user, RegistrationValidationSource.EMAIL);
-            return {
-                message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_LOGIN,
-                user: {
-                    email: this.maskEmail(user.email)
-                }
-            };
-        } else if (signInDto.type === RegistrationValidationSource.MOBILE) {
-            // const user = await this.userRepository.findOne({
-            //     where: {
-            //         mobile: signInDto.identifier,
-            //     }
-            // });
-            const user = await this.userRepository.findOne({
-                where: [
-                    { username: signInDto.identifier },
-                    { mobile: signInDto.identifier },
-                ]
-            });
-
-            if (!user) {
-                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
-            }
-
-            const { token, expiresAt } = await this.otp();
-            user.mobileVerificationTokenOnLogin = token;
-            user.mobileVerificationTokenOnLoginExpiresAt = expiresAt;
-            await this.userRepository.save(user);
-            this.notifyUserOnOtpInititateLogin(user, RegistrationValidationSource.MOBILE);
-            return {
-                message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_LOGIN,
-                user: {
-                    mobile: this.maskMobile(user.mobile)
-                }
-            };
-        }
-        else {
-            throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
-        }
+        const type = this.resolveLoginType(signInDto);
+        const user = await this.findUserForLogin(type, signInDto.identifier);
+        await this.assignLoginOtp(user, type);
+        this.notifyUserOnOtpInititateLogin(user, type);
+        return this.buildLoginOtpResponse(user, type);
     }
 
-    private async notifyUserOnOtpInititateLogin(user: User, loginType: RegistrationValidationSource) {
+    private resolveLoginType(signInDto: OTPSignInDto): PasswordlessLoginValidateWhatSources {
+        const setting = this.settingService.getConfigValue<SolidCoreSetting>('passwordlessLoginValidateWhat') as PasswordlessLoginValidateWhatSources;
+
+        if (setting === PasswordlessLoginValidateWhatSources.SELECTABLE) {
+            if (signInDto.type !== PasswordlessLoginValidateWhatSources.EMAIL &&
+                signInDto.type !== PasswordlessLoginValidateWhatSources.MOBILE) {
+                throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
+            }
+            return signInDto.type as PasswordlessLoginValidateWhatSources;
+        }
+
+        if (setting === PasswordlessLoginValidateWhatSources.EMAIL ||
+            setting === PasswordlessLoginValidateWhatSources.MOBILE) {
+            return setting;
+        }
+
+        throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
+    }
+
+    private async findUserForLogin(
+        type: PasswordlessLoginValidateWhatSources,
+        identifier: string,
+    ): Promise<User> {
+        const typeWhere = type === PasswordlessLoginValidateWhatSources.EMAIL
+            ? { email: identifier }
+            : { mobile: identifier };
+        const user = await this.userRepository.findOne({
+            where: [{ username: identifier }, typeWhere],
+        });
+        if (!user) {
+            throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
+        }
+        if (!user.active) {
+            throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
+        }
+        return user;
+    }
+
+    private async assignLoginOtp(user: User, type: PasswordlessLoginValidateWhatSources): Promise<void> {
+        const { token, expiresAt } = await this.otp();
+        if (type === PasswordlessLoginValidateWhatSources.EMAIL) {
+            user.emailVerificationTokenOnLogin = token;
+            user.emailVerificationTokenOnLoginExpiresAt = expiresAt;
+        } else {
+            user.mobileVerificationTokenOnLogin = token;
+            user.mobileVerificationTokenOnLoginExpiresAt = expiresAt;
+        }
+        await this.userRepository.save(user);
+    }
+
+    private buildLoginOtpResponse(user: User, type: PasswordlessLoginValidateWhatSources) {
+        const maskedIdentifier = type === PasswordlessLoginValidateWhatSources.EMAIL
+            ? { email: this.maskEmail(user.email) }
+            : { mobile: this.maskMobile(user.mobile) };
+        return { message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_LOGIN, user: maskedIdentifier };
+    }
+
+    private async notifyUserOnOtpInititateLogin(user: User, loginType: PasswordlessLoginValidateWhatSources) {
         const companyLogo = await this.getCompanyLogo();
         const dummyOtp = this.settingService.getConfigValue<SolidCoreSetting>('dummyOtp');
 
         if (dummyOtp)
             return; // Do nothing if dummy otp is configured.
-        if (loginType === RegistrationValidationSource.EMAIL) {
+        if (loginType === PasswordlessLoginValidateWhatSources.EMAIL) {
             const mailService = this.mailServiceFactory.getMailService();
             mailService.sendEmailUsingTemplate(
                 user.email,
@@ -765,7 +764,7 @@ export class AuthenticationService {
                 user.id
             );
         }
-        if (loginType === RegistrationValidationSource.MOBILE) {
+        if (loginType === PasswordlessLoginValidateWhatSources.MOBILE) {
             const smsService = this.smsFactory.getSmsService();
             smsService.sendSMSUsingTemplate(
                 user.mobile,
@@ -789,7 +788,7 @@ export class AuthenticationService {
         if (!isPasswordlessRegistrationEnabled) {
             throw new BadRequestException(ERROR_MESSAGES.PASSWORDLESS_REGISTRATION_DISABLED);
         }
-        if (confirmSignInDto.type === RegistrationValidationSource.EMAIL) {
+        if (confirmSignInDto.type === PasswordlessLoginValidateWhatSources.EMAIL) {
             // const user = await this.userRepository.findOne({
             //     where: {
             //         email: confirmSignInDto.identifier,
@@ -825,7 +824,7 @@ export class AuthenticationService {
             const { id, username, email, mobile, lastLoginProvider } = user;
             const roles = user.roles.map((role) => role.name);
             return { accessToken, refreshToken, user: { id, username, email, mobile, lastLoginProvider, roles } };
-        } else if (confirmSignInDto.type === RegistrationValidationSource.MOBILE) {
+        } else if (confirmSignInDto.type === PasswordlessLoginValidateWhatSources.MOBILE) {
             // const user = await this.userRepository.findOne({
             //     where: {
             //         mobile: confirmSignInDto.identifier,
