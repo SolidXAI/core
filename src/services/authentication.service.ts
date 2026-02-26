@@ -703,12 +703,14 @@ export class AuthenticationService {
     private async findUserForLogin(
         type: PasswordlessLoginValidateWhatSources,
         identifier: string,
+        options: { withRoles?: boolean } = {},
     ): Promise<User> {
         const typeWhere = type === PasswordlessLoginValidateWhatSources.EMAIL
             ? { email: identifier }
             : { mobile: identifier };
         const user = await this.userRepository.findOne({
             where: [{ username: identifier }, typeWhere],
+            ...(options.withRoles ? { relations: { roles: true } } : {}),
         });
         if (!user) {
             throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
@@ -788,81 +790,50 @@ export class AuthenticationService {
         if (!isPasswordlessRegistrationEnabled) {
             throw new BadRequestException(ERROR_MESSAGES.PASSWORDLESS_REGISTRATION_DISABLED);
         }
-        if (confirmSignInDto.type === PasswordlessLoginValidateWhatSources.EMAIL) {
-            // const user = await this.userRepository.findOne({
-            //     where: {
-            //         email: confirmSignInDto.identifier,
-            //     },
-            //     relations: ['roles']
-            // });
-            const user = await this.userRepository.findOne({
-                where: [
-                    { username: confirmSignInDto.identifier },
-                    { email: confirmSignInDto.identifier },
-                ],
-                relations: {
-                    roles: true
-                }
-            });
-            if (!user) {
-                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
-            }
-            if (!user.active) {
-                throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
-            }
-            if (user.emailVerificationTokenOnLogin !== confirmSignInDto.otp) {
-                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
-            }
-            if (user.emailVerificationTokenOnLoginExpiresAt < new Date()) {
-                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
-            }
+
+        const { type, identifier, otp } = confirmSignInDto;
+        if (type !== PasswordlessLoginValidateWhatSources.EMAIL &&
+            type !== PasswordlessLoginValidateWhatSources.MOBILE) {
+            throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
+        }
+
+        const user = await this.findUserForLogin(type, identifier, { withRoles: true });
+        this.validateLoginOtp(user, otp, type);
+        this.clearLoginOtp(user, type);
+        await this.userRepository.save(user);
+        return this.buildLoginTokenResponse(user);
+    }
+
+    private validateLoginOtp(user: User, otp: string, type: PasswordlessLoginValidateWhatSources): void {
+        const isEmail = type === PasswordlessLoginValidateWhatSources.EMAIL;
+        const token = isEmail ? user.emailVerificationTokenOnLogin : user.mobileVerificationTokenOnLogin;
+        const expiresAt = isEmail ? user.emailVerificationTokenOnLoginExpiresAt : user.mobileVerificationTokenOnLoginExpiresAt;
+
+        if (token !== otp) {
+            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
+        }
+        if (expiresAt < new Date()) {
+            throw new UnauthorizedException(ERROR_MESSAGES.OTP_EXPIRED);
+        }
+    }
+
+    private clearLoginOtp(user: User, type: PasswordlessLoginValidateWhatSources): void {
+        if (type === PasswordlessLoginValidateWhatSources.EMAIL) {
             user.emailVerifiedOnLoginAt = new Date();
             user.emailVerificationTokenOnLogin = null;
             user.emailVerificationTokenOnLoginExpiresAt = null;
-            await this.userRepository.save(user);
-            const { accessToken, refreshToken } = await this.generateTokens(user);
-            const { id, username, email, mobile, lastLoginProvider } = user;
-            const roles = user.roles.map((role) => role.name);
-            return { accessToken, refreshToken, user: { id, username, email, mobile, lastLoginProvider, roles } };
-        } else if (confirmSignInDto.type === PasswordlessLoginValidateWhatSources.MOBILE) {
-            // const user = await this.userRepository.findOne({
-            //     where: {
-            //         mobile: confirmSignInDto.identifier,
-            //     },
-            //     relations: ['roles']
-            // });
-            const user = await this.userRepository.findOne({
-                where: [
-                    { username: confirmSignInDto.identifier },
-                    { mobile: confirmSignInDto.identifier },
-                ],
-                relations: {
-                    roles: true
-                }
-            });
-            if (!user) {
-                throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_ACTIVE);
-            }
-            if (!user.active) {
-                throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
-            }
-            if (user.mobileVerificationTokenOnLogin !== confirmSignInDto.otp) {
-                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
-            }
-            if (user.mobileVerificationTokenOnLoginExpiresAt < new Date()) {
-                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
-            }
+        } else {
             user.mobileVerifiedOnLoginAt = new Date();
             user.mobileVerificationTokenOnLogin = null;
             user.mobileVerificationTokenOnLoginExpiresAt = null;
-            await this.userRepository.save(user);
-            const { accessToken, refreshToken } = await this.generateTokens(user);
-            const { id, username, email, mobile, lastLoginProvider } = user;
-            const roles = user.roles.map((role) => role.name);
-            return { accessToken, refreshToken, user: { id, username, email, mobile, lastLoginProvider, roles } };
-
         }
-        throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
+    }
+
+    private async buildLoginTokenResponse(user: User) {
+        const { accessToken, refreshToken } = await this.generateTokens(user);
+        const { id, username, email, mobile, lastLoginProvider } = user;
+        const roles = user.roles.map((role) => role.name);
+        return { accessToken, refreshToken, user: { id, username, email, mobile, lastLoginProvider, roles } };
     }
 
     async changePassword(changePasswordDto: ChangePasswordDto, activeUser: ActiveUserData) {
