@@ -3,6 +3,7 @@ import type { SolidCoreSetting } from "src/services/settings/default-settings-pr
 import {
     BadRequestException,
     ConflictException,
+    ForbiddenException,
     Inject,
     Injectable,
     InternalServerErrorException,
@@ -124,33 +125,22 @@ export class AuthenticationService {
         });
     }
 
-    async validateUserAndRehashPasswordIfRequired(signInDto: SignInDto) {
-
-        const user = await this.resolveUser(signInDto.username, signInDto.email);
-
-        if (!user) {
-            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
-        }
+    private async validateUserForPasswordLogin(user: User, password: string): Promise<void> {
         if (!user.active) {
             throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_ACTIVE);
         }
-        const isEqual = await this.hashingService.compare(
-            signInDto.password,
-            user.password,
-            user.passwordSchemeVersion
-        );
+        this.checkAccountBlocked(user);
+        const isEqual = await this.hashingService.compare(password, user.password, user.passwordSchemeVersion);
         if (!isEqual) {
+            await this.incrementFailedAttempts(user);
             throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
         }
+    }
 
-        // If we reach here means that the user has been validated successfully.
-        // Now we check if the password needs to be rehashed based on the current hashing scheme and version.
+    private async rehashPasswordIfRequired(user: User, password: string): Promise<void> {
         if (this.hashingService.needsRehash(user.password, user.passwordSchemeVersion)) {
-            const rehashedUser = await this.updatePasswordDetails(user, signInDto.password);
-            return rehashedUser;
+            await this.updatePasswordDetails(user, password);
         }
-
-        return user;
     }
 
     async signUp(signUpDto: SignUpDto, activeUser: ActiveUserData = null): Promise<User> {
@@ -624,9 +614,14 @@ export class AuthenticationService {
     }
 
     async signIn(signInDto: SignInDto) {
-        const user = await this.validateUserAndRehashPasswordIfRequired(signInDto);
+        const user = await this.resolveUser(signInDto.username, signInDto.email);
+        if (!user) {
+            throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
+        }
+        await this.validateUserForPasswordLogin(user, signInDto.password);
+        await this.rehashPasswordIfRequired(user, signInDto.password);
+        await this.resetFailedAttempts(user);
 
-        // TODO: Unset the password etc...
         const tokens = await this.generateTokens(user);
 
         await this.userActivityHistoryService.logEvent('login', user);
@@ -798,8 +793,15 @@ export class AuthenticationService {
         }
 
         const user = await this.findUserForLogin(type, identifier, { withRoles: true });
-        this.validateLoginOtp(user, otp, type);
+        this.checkAccountBlocked(user);
+        try {
+            this.validateLoginOtp(user, otp, type);
+        } catch (e) {
+            await this.incrementFailedAttempts(user);
+            throw e;
+        }
         this.clearLoginOtp(user, type);
+        user.failedLoginAttempts = 0;
         await this.userRepository.save(user);
         return this.buildLoginTokenResponse(user);
     }
@@ -1230,11 +1232,19 @@ export class AuthenticationService {
             }
         });
 
-        // Validate the user against the Google oauth provider. 
-        // If the below call finishes without raising an exception then we have validated the user properly.
-        await this.validateUserUsingGoogle(user);
+        if (!user) {
+            throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
+        }
+        this.checkAccountBlocked(user);
 
-        // finally we simply generate the tokens. 
+        try {
+            await this.validateUserUsingGoogle(user);
+        } catch (e) {
+            await this.incrementFailedAttempts(user);
+            throw e;
+        }
+
+        await this.resetFailedAttempts(user);
         const tokens = await this.generateTokens(user);
         return {
             user: {
@@ -1252,6 +1262,24 @@ export class AuthenticationService {
     private async isPasswordlessRegistrationEnabled() {
         // return this.settingService.getConfigValue<SolidCoreSetting>('passwordlessRegistration');
         return this.settingService.getConfigValue<SolidCoreSetting>('passwordLessAuth');
+    }
+
+    private checkAccountBlocked(user: User): void {
+        const maxFailedAttempts = this.settingService.getConfigValue<SolidCoreSetting>('maxFailedLoginAttempts') as number;
+        if (maxFailedAttempts > 0 && user.failedLoginAttempts >= maxFailedAttempts) {
+            throw new ForbiddenException(ERROR_MESSAGES.ACCOUNT_BLOCKED);
+        }
+    }
+
+    private async incrementFailedAttempts(user: User): Promise<void> {
+        user.failedLoginAttempts += 1;
+        await this.userRepository.save(user);
+    }
+
+    private async resetFailedAttempts(user: User): Promise<void> {
+        if (user.failedLoginAttempts === 0) return;
+        user.failedLoginAttempts = 0;
+        await this.userRepository.save(user);
     }
 
     //FIXME - Pending implementation
