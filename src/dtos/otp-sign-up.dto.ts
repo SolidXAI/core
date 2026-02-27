@@ -1,6 +1,6 @@
 import { IsEmail, IsEnum, IsJSON, IsNotEmpty, IsOptional } from 'class-validator';
 
-import { TransactionalRegistrationValidationSource } from "../constants";
+import { PasswordlessRegistrationValidateWhatSources } from "../constants";
 
 export class OTPSignUpDto {
     @IsNotEmpty()
@@ -15,8 +15,8 @@ export class OTPSignUpDto {
     mobile: string;
 
     @IsOptional()
-    @IsEnum(TransactionalRegistrationValidationSource, { each: true })
-    validationSources: TransactionalRegistrationValidationSource[] = [];
+    @IsEnum(PasswordlessRegistrationValidateWhatSources, { each: true })
+    validationSources: PasswordlessRegistrationValidateWhatSources[] = [];
 
     @IsOptional()
     customPayload: any;

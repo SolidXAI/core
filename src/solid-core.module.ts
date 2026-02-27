@@ -97,7 +97,6 @@ import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
 import { TestQueueSubscriber } from './jobs/test-queue-subscriber.service';
 import { UserRegistrationListener } from './listeners/user-registration.listener';
 import { GoogleOauthStrategy } from './passport-strategies/google-oauth.strategy';
-import { LocalStrategy } from './passport-strategies/local.strategy';
 import { AuthenticationService } from './services/authentication.service';
 import { BcryptService } from './services/bcrypt.service';
 import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
@@ -575,7 +574,6 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     AuthenticationService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,
-    LocalStrategy,
     GoogleOauthStrategy,
     UserRegistrationListener,
     TestQueuePublisher,
