@@ -9,13 +9,13 @@ export const {
 } = new ConfigurableModuleBuilder<QueuesModuleOptions>().build();
 export const REQUEST_USER_KEY = 'user';
 
-export enum RegistrationValidationSource {
+export enum PasswordlessLoginValidateWhatSources {
   EMAIL = 'email',
   MOBILE = 'mobile',
-  TRANSACTIONAL = 'transactional',
+  SELECTABLE = 'selectable',
 }
 
-export enum TransactionalRegistrationValidationSource {
+export enum PasswordlessRegistrationValidateWhatSources {
   EMAIL = 'email',
   MOBILE = 'mobile',
 }

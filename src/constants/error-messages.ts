@@ -5,6 +5,7 @@ export const ERROR_MESSAGES = {
     USER_NOT_FOUND: 'User does not exist.',
     USER_NOT_ACTIVE: 'User profile is not activated.',
     USER_INACTIVE: 'User is inactive.',
+    ACCOUNT_BLOCKED: 'Your account has been blocked due to multiple failed login attempts.',
     PASSWORD_INCORRECT: 'Password does not match.',
     PUBLIC_REGISTRATION_DISABLED: 'Public registrations are disabled.',
     UNIQUE_CONSTRAINT_VIOLATION: 'A unique constraint violation occurred.',
