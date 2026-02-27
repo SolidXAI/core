@@ -366,6 +366,10 @@ export class ModuleMetadataSeederService {
     // OK
     private async seedRoles(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing roles`);
+        if (!overallMetadata?.roles) {
+            this.logger.debug(`No roles found in seed data`);
+            return { pruned: 0, upserted: 0 };
+        }
         // While creating roles we are only passing the role name to be used. 
         await this.roleService.createRolesIfNotExists(overallMetadata.roles.map(role => { return { name: role.name }; }));
         // After roles are created, we iterate over all roles and attach permissions (if specified in the seeder json) to the respective role.
@@ -482,6 +486,11 @@ export class ModuleMetadataSeederService {
     // OK
     private async seedMediaStorageProviders(mediaStorageProviders: any[]): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing Media Storage Provider`);
+
+        if (!mediaStorageProviders?.length) {
+            this.logger.debug(`No media storage providers found in seed data`);
+            return { pruned: 0, upserted: 0 };
+        }
 
         for (let i = 0; i < mediaStorageProviders.length; i++) {
             const mediaStorageProvider = mediaStorageProviders[i];

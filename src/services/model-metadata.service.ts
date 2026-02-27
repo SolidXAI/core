@@ -834,12 +834,18 @@ export class ModelMetadataService {
     } catch (error) {
       // console.error('File creation failed:', error);
       this.logger.error('File updation failed for View, action, menus config:', error);
+      this.logger.error('File updation failed for View, action, menus config', error?.stack || error);
       throw new Error('File updation failed for View, action, menus config'); // Trigger rollback
     }
   }
 
   // Populate the View, Actions and Menus in the config file
   private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string; }; }[], metaData: any) {
+    // ✅ Ensure arrays exist (IMPORTANT FIX)
+    metaData.menus = Array.isArray(metaData.menus) ? metaData.menus : [];
+    metaData.actions = Array.isArray(metaData.actions) ? metaData.actions : [];
+    metaData.views = Array.isArray(metaData.views) ? metaData.views : [];
+    
     const column1Fields = [];
     const column2Fields = [];
 
@@ -877,7 +883,7 @@ export class ModelMetadataService {
       actionUserKey: actionName,
       moduleUserKey: `${model.module.name}`,
       parentMenuItemUserKey: "",
-      iconName : ""
+      iconName: ""
     };
 
     const modelListview = {
