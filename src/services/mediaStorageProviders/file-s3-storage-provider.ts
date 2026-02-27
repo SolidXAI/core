@@ -43,7 +43,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             const region = this.getEffectiveRegion(storageMeta.region);
             if (storageMeta.isPublic === false) {
                 // Generate signed URL
-                const expiryInSeconds = (storageMeta.signedUrlExpiry ?? 60) * 60; // default 5 min
+                const expiryInSeconds = (storageMeta.signedUrlExpiry ?? 60) * 60;
                 m['_full_url'] = await this.s3FileService.getUrl(`${storageMeta?.bucketName}:${m.relativeUri}`, { expiresIn: expiryInSeconds, region });
             } else {
                 // Public S3 or local filesystem: use normal URL

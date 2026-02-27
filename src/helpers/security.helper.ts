@@ -24,7 +24,7 @@ export function buildDefaultSecurityHeaderOptions(): Readonly<HelmetOptions> {
 
         // clickjacking defense (modern)
         "frame-ancestors": ["'none'"],
-
+        "style-src": ["'self'"],
         // add/adjust as needed for your app:
         // "script-src": ["'self'"],              // add hashes/nonces/CSPRO if needed
         // "style-src": ["'self'", "'unsafe-inline'"],
