@@ -602,6 +602,20 @@ export class CrudHelperService {
         }
     }
 
+    private getGroupFieldValues(
+        group: any,
+        groupByFields: string[],
+        groupAliasMap: Record<string, string>
+    ): Array<{ rawVal: any; alias: string }> {
+        return groupByFields
+            .map(field => {
+                const alias = groupAliasMap[field] ?? this.sanitizeAlias(field.replace(/\./g, '_'));
+                const rawVal = group[alias] ?? group[field] ?? group[field.replace(/\./g, '_')];
+                return { rawVal, alias };
+            })
+            .filter(({ rawVal }) => rawVal !== undefined && rawVal !== null);
+    }
+
     getGroupName(
         group: any,
         aggregateAliases: Set<string>,
@@ -609,22 +623,28 @@ export class CrudHelperService {
         groupAliasMap: Record<string, string>,
         groupFormatMap: Record<string, string | undefined>
     ): string {
-        const orderedValues = groupByFields
-            .map(field => {
-                const alias = groupAliasMap[field] ?? this.sanitizeAlias(field.replace(/\./g, '_'));
-                const rawVal = group[alias] ?? group[field] ?? group[field.replace(/\./g, '_')];
-                return this.formatGroupValue(rawVal, groupFormatMap[alias]);
-            })
-            .filter(v => v !== undefined && v !== null);
+        const fieldValues = this.getGroupFieldValues(group, groupByFields, groupAliasMap);
 
-        if (orderedValues.length === 0) {
+        if (fieldValues.length === 0) {
             return Object.keys(group)
                 .filter(key => !this.isAggregateFieldKey(key, aggregateAliases))
                 .map(key => group[key])
                 .join('_');
         }
 
-        return orderedValues.join('_');
+        return fieldValues
+            .map(({ rawVal, alias }) => this.formatGroupValue(rawVal, groupFormatMap[alias]))
+            .join('_');
+    }
+
+    getGroupValue(
+        group: any,
+        groupByFields: string[],
+        groupAliasMap: Record<string, string>
+    ): any {
+        const fieldValues = this.getGroupFieldValues(group, groupByFields, groupAliasMap);
+        if (fieldValues.length === 1) return fieldValues[0].rawVal;
+        return fieldValues.map(({ rawVal }) => rawVal).join('_');
     }
 
     createGroupRecords(group: any, aggregateAliases: Set<string>, groupData: any, groupByFields: string[], groupAliasMap: Record<string, string>, groupFormatMap: Record<string, string | undefined>) {
@@ -636,6 +656,7 @@ export class CrudHelperService {
     }
     createGroupMeta(group: any, aggregateAliases: Set<string>, groupByFields: string[], groupAliasMap: Record<string, string>, groupFormatMap: Record<string, string | undefined>) {
         const groupName = this.getGroupName(group, aggregateAliases, groupByFields, groupAliasMap, groupFormatMap);
+        const groupValue = this.getGroupValue(group, groupByFields, groupAliasMap);
         const groupAggregateValues = {}
         for (const key in group) {
             if (group.hasOwnProperty(key) && this.isAggregateFieldKey(key, aggregateAliases)) {
@@ -645,6 +666,7 @@ export class CrudHelperService {
         }
         return {
             groupName,
+            groupValue,
             ...groupAggregateValues
         };
     }
