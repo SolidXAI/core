@@ -4,7 +4,6 @@ import { classify } from "@angular-devkit/core/src/utils/strings";
 import { ActiveUserData } from "src/interfaces/active-user-data.interface";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { BadRequestException, Logger } from "@nestjs/common";
-import { BadRequestException, Logger } from "@nestjs/common";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 
 export enum FilterCombinator {
@@ -67,22 +66,11 @@ export class CrudHelperService {
 
                 const [rawField, funcAlias] = key.split(':');
 
-                const [rawField, funcAlias] = key.split(':');
-
                 // Get the operator or field from the key
                 const operatorOrField = Object.keys(normalizedPrimaryFilterObj)[0];
                 // if the key is an operator, then build the query based on the operator
                 if (operatorOrField.startsWith('$')) {
                     const operator = operatorOrField;
-                    let columnExpression: string | undefined;
-                    if (funcAlias) {
-                        try {
-                            columnExpression = this.buildDateGranularityExpression(this.getDriver(selectQb), `${alias}.${rawField}`, funcAlias);
-                        } catch {
-                            throw new BadRequestException(`Unsupported field function '${funcAlias}'. Supported functions are: day, week, month, year.`);
-                        }
-                    }
-                    this.buildOperatorQuery(qb, alias, rawField, normalizedPrimaryFilterObj, operator, columnExpression);
                     let columnExpression: string | undefined;
                     if (funcAlias) {
                         try {
@@ -101,105 +89,76 @@ export class CrudHelperService {
                     const joinField = `${alias}.${rawField}`;
                     if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, rawField);
                     this.applyFilters(qb, primaryFilterObj, rawField, selectQb);
-                    if (funcAlias) {
-                        throw new BadRequestException(`Function alias ':${funcAlias}' is not valid on relation field '${rawField}'. It can only be applied to scalar fields.`);
-                    }
-                    const joinField = `${alias}.${rawField}`;
-                    if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, rawField);
-                    this.applyFilters(qb, primaryFilterObj, rawField, selectQb);
                 }
             });
         }
     }
 
     private buildOperatorQuery(qb: any, alias: string, field: string, normalizedPrimaryOperatorObj: any, operator: string, columnExpression?: string) {
-    private buildOperatorQuery(qb: any, alias: string, field: string, normalizedPrimaryOperatorObj: any, operator: string, columnExpression?: string) {
         const uniqueFieldAlias = `${alias}_${field}_${Math.floor(Math.random() * 1000)}`;
-        const colExpr = columnExpression ?? `${alias}.${field}`;
         const colExpr = columnExpression ?? `${alias}.${field}`;
         switch (operator) {
             case '$eq':
                 qb.andWhere(`${colExpr} = :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$eq });
-                qb.andWhere(`${colExpr} = :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$eq });
                 break;
             case '$eqi':
-                qb.andWhere(`LOWER(${colExpr}) = :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$eqi.toLowerCase() });
                 qb.andWhere(`LOWER(${colExpr}) = :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$eqi.toLowerCase() });
                 break;
             case '$ne':
                 qb.andWhere(`${colExpr} != :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$ne });
-                qb.andWhere(`${colExpr} != :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$ne });
                 break;
             case '$nei':
-                qb.andWhere(`LOWER(${colExpr}) != :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$nei.toLowerCase() });
                 qb.andWhere(`LOWER(${colExpr}) != :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$nei.toLowerCase() });
                 break;
             case '$gt':
                 qb.andWhere(`${colExpr} > :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$gt });
-                qb.andWhere(`${colExpr} > :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$gt });
                 break;
             case '$gte':
-                qb.andWhere(`${colExpr} >= :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$gte });
                 qb.andWhere(`${colExpr} >= :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$gte });
                 break;
             case '$lt':
                 qb.andWhere(`${colExpr} < :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$lt });
-                qb.andWhere(`${colExpr} < :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$lt });
                 break;
             case '$lte':
-                qb.andWhere(`${colExpr} <= :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$lte });
                 qb.andWhere(`${colExpr} <= :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$lte });
                 break;
             case '$in':
                 qb.andWhere(`${colExpr} IN (:...${uniqueFieldAlias})`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$in });
-                qb.andWhere(`${colExpr} IN (:...${uniqueFieldAlias})`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$in });
                 break;
             case '$notIn':
-                qb.andWhere(`${colExpr} NOT IN (:...${uniqueFieldAlias})`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$notIn });
                 qb.andWhere(`${colExpr} NOT IN (:...${uniqueFieldAlias})`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$notIn });
                 break;
             case '$contains':
                 qb.andWhere(`${colExpr} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$contains}%` });
-                qb.andWhere(`${colExpr} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$contains}%` });
                 break;
             case '$notContains':
-                qb.andWhere(`${colExpr} NOT LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$notContains}%` });
                 qb.andWhere(`${colExpr} NOT LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$notContains}%` });
                 break;
             case '$containsi':
                 qb.andWhere(`LOWER(${colExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$containsi.toLowerCase()}%` });
-                qb.andWhere(`LOWER(${colExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$containsi.toLowerCase()}%` });
                 break;
             case '$notContainsi':
-                qb.andWhere(`LOWER(${colExpr}) NOT LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$notContainsi.toLowerCase()}%` });
                 qb.andWhere(`LOWER(${colExpr}) NOT LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$notContainsi.toLowerCase()}%` });
                 break;
             case '$null':
                 qb.andWhere(`${colExpr} IS NULL`);
-                qb.andWhere(`${colExpr} IS NULL`);
                 break;
             case '$notNull':
-                qb.andWhere(`${colExpr} IS NOT NULL`);
                 qb.andWhere(`${colExpr} IS NOT NULL`);
                 break;
             case '$between':
                 qb.andWhere(`${colExpr} BETWEEN :${uniqueFieldAlias}0 AND :${uniqueFieldAlias}1`, { [`${uniqueFieldAlias}0`]: normalizedPrimaryOperatorObj.$between[0], [`${uniqueFieldAlias}1`]: normalizedPrimaryOperatorObj.$between[1] });
-                qb.andWhere(`${colExpr} BETWEEN :${uniqueFieldAlias}0 AND :${uniqueFieldAlias}1`, { [`${uniqueFieldAlias}0`]: normalizedPrimaryOperatorObj.$between[0], [`${uniqueFieldAlias}1`]: normalizedPrimaryOperatorObj.$between[1] });
                 break;
             case '$startsWith':
-                qb.andWhere(`${colExpr} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `${normalizedPrimaryOperatorObj.$startsWith}%` });
                 qb.andWhere(`${colExpr} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `${normalizedPrimaryOperatorObj.$startsWith}%` });
                 break;
             case '$startsWithi':
                 qb.andWhere(`LOWER(${colExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `${normalizedPrimaryOperatorObj.$startsWithi.toLowerCase()}%` });
-                qb.andWhere(`LOWER(${colExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `${normalizedPrimaryOperatorObj.$startsWithi.toLowerCase()}%` });
                 break;
             case '$endsWith':
                 qb.andWhere(`${colExpr} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$endsWith}` });
-                qb.andWhere(`${colExpr} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$endsWith}` });
                 break;
             case '$endsWithi':
-                qb.andWhere(`LOWER(${colExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$endsWithi.toLowerCase()}` });
                 qb.andWhere(`LOWER(${colExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$endsWithi.toLowerCase()}` });
                 break;
             default:
@@ -647,27 +606,14 @@ export class CrudHelperService {
         group: any,
         groupByFields: string[],
         groupAliasMap: Record<string, string>
-    ): Array<{ rawVal: any; alias: string; granularity?: string }> {
+    ): Array<{ rawVal: any; alias: string }> {
         return groupByFields
             .map(field => {
-                const parts = field.split(':');
-                const granularity = parts[1];
                 const alias = groupAliasMap[field] ?? this.sanitizeAlias(field.replace(/\./g, '_'));
                 const rawVal = group[alias] ?? group[field] ?? group[field.replace(/\./g, '_')];
-                return { rawVal, alias, granularity };
+                return { rawVal, alias };
             })
             .filter(({ rawVal }) => rawVal !== undefined && rawVal !== null);
-    }
-
-    private normalizeGroupValue(value: any, granularity?: string): any {
-        if (!granularity) return value;
-        const defaultFormats: Record<string, string> = {
-            day: 'YYYY-MM-DD',
-            week: 'YYYY-MM-DD',
-            month: 'YYYY-MM',
-            year: 'YYYY',
-        };
-        return this.formatGroupValue(value, defaultFormats[granularity]);
     }
 
     getGroupName(
@@ -677,9 +623,6 @@ export class CrudHelperService {
         groupAliasMap: Record<string, string>,
         groupFormatMap: Record<string, string | undefined>
     ): string {
-        const fieldValues = this.getGroupFieldValues(group, groupByFields, groupAliasMap);
-
-        if (fieldValues.length === 0) {
         const fieldValues = this.getGroupFieldValues(group, groupByFields, groupAliasMap);
 
         if (fieldValues.length === 0) {
@@ -700,8 +643,8 @@ export class CrudHelperService {
         groupAliasMap: Record<string, string>
     ): any {
         const fieldValues = this.getGroupFieldValues(group, groupByFields, groupAliasMap);
-        if (fieldValues.length === 1) return this.normalizeGroupValue(fieldValues[0].rawVal, fieldValues[0].granularity);
-        return fieldValues.map(({ rawVal, granularity }) => this.normalizeGroupValue(rawVal, granularity)).join('_');
+        if (fieldValues.length === 1) return fieldValues[0].rawVal;
+        return fieldValues.map(({ rawVal }) => rawVal).join('_');
     }
 
     createGroupRecords(group: any, aggregateAliases: Set<string>, groupData: any, groupByFields: string[], groupAliasMap: Record<string, string>, groupFormatMap: Record<string, string | undefined>) {
@@ -714,7 +657,6 @@ export class CrudHelperService {
     createGroupMeta(group: any, aggregateAliases: Set<string>, groupByFields: string[], groupAliasMap: Record<string, string>, groupFormatMap: Record<string, string | undefined>) {
         const groupName = this.getGroupName(group, aggregateAliases, groupByFields, groupAliasMap, groupFormatMap);
         const groupValue = this.getGroupValue(group, groupByFields, groupAliasMap);
-        const groupValue = this.getGroupValue(group, groupByFields, groupAliasMap);
         const groupAggregateValues = {}
         for (const key in group) {
             if (group.hasOwnProperty(key) && this.isAggregateFieldKey(key, aggregateAliases)) {
@@ -724,7 +666,6 @@ export class CrudHelperService {
         }
         return {
             groupName,
-            groupValue,
             groupValue,
             ...groupAggregateValues
         };
