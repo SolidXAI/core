@@ -620,13 +620,7 @@ export class CrudHelperService {
 
     private normalizeGroupValue(value: any, granularity?: string): any {
         if (!granularity) return value;
-        const defaultFormats: Record<string, string> = {
-            day: 'YYYY-MM-DD',
-            week: 'YYYY-MM-DD',
-            month: 'YYYY-MM',
-            year: 'YYYY',
-        };
-        return this.formatGroupValue(value, defaultFormats[granularity]);
+        return this.formatGroupValue(value, 'YYYY-MM-DD');
     }
 
     getGroupName(
@@ -650,7 +644,7 @@ export class CrudHelperService {
             .join('_');
     }
 
-    getGroupValue(
+    getGroupValue(  
         group: any,
         groupByFields: string[],
         groupAliasMap: Record<string, string>
