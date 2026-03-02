@@ -606,14 +606,27 @@ export class CrudHelperService {
         group: any,
         groupByFields: string[],
         groupAliasMap: Record<string, string>
-    ): Array<{ rawVal: any; alias: string }> {
+    ): Array<{ rawVal: any; alias: string; granularity?: string }> {
         return groupByFields
             .map(field => {
+                const parts = field.split(':');
+                const granularity = parts[1];
                 const alias = groupAliasMap[field] ?? this.sanitizeAlias(field.replace(/\./g, '_'));
                 const rawVal = group[alias] ?? group[field] ?? group[field.replace(/\./g, '_')];
-                return { rawVal, alias };
+                return { rawVal, alias, granularity };
             })
             .filter(({ rawVal }) => rawVal !== undefined && rawVal !== null);
+    }
+
+    private normalizeGroupValue(value: any, granularity?: string): any {
+        if (!granularity) return value;
+        const defaultFormats: Record<string, string> = {
+            day: 'YYYY-MM-DD',
+            week: 'YYYY-MM-DD',
+            month: 'YYYY-MM',
+            year: 'YYYY',
+        };
+        return this.formatGroupValue(value, defaultFormats[granularity]);
     }
 
     getGroupName(
@@ -643,8 +656,8 @@ export class CrudHelperService {
         groupAliasMap: Record<string, string>
     ): any {
         const fieldValues = this.getGroupFieldValues(group, groupByFields, groupAliasMap);
-        if (fieldValues.length === 1) return fieldValues[0].rawVal;
-        return fieldValues.map(({ rawVal }) => rawVal).join('_');
+        if (fieldValues.length === 1) return this.normalizeGroupValue(fieldValues[0].rawVal, fieldValues[0].granularity);
+        return fieldValues.map(({ rawVal, granularity }) => this.normalizeGroupValue(rawVal, granularity)).join('_');
     }
 
     createGroupRecords(group: any, aggregateAliases: Set<string>, groupData: any, groupByFields: string[], groupAliasMap: Record<string, string>, groupFormatMap: Record<string, string | undefined>) {
