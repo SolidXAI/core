@@ -12482,7 +12482,7 @@
           "label": "Model Sequence",
           "className": "grid"
         },
-        "onFieldChange": "",
+        "onFieldChange": "modelSequenceFormViewChangeHandler",
         "children": [
           {
             "type": "sheet",
