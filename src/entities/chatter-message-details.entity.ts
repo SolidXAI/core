@@ -3,6 +3,7 @@ import { Entity, JoinColumn, ManyToOne, Column, Index } from 'typeorm';
 import { ChatterMessage } from 'src/entities/chatter-message.entity'
 @Entity("ss_chatter_message_details")
 export class ChatterMessageDetails extends CommonEntity {
+    @Index()
     @ManyToOne(() => ChatterMessage, { nullable: true })
     @JoinColumn()
     chatterMessage: ChatterMessage;
