@@ -87,7 +87,7 @@ const getSolidCoreSettings = (isProd: boolean) => ([
   // iam-settings-provider.service.ts
   { moduleName: "solid-core", key: "passwordLessAuth", value: (process.env.IAM_PASSWORD_LESS_AUTH?.trim() ?? 'false') === 'true', level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "passwordBasedAuth", value: (process.env.IAM_PASSWORD_BASED_AUTH?.trim() ?? 'true') === 'true', level: SettingLevel.SystemAdminEditable },
-  { moduleName: "solid-core", key: "passwordlessRegistrationValidateWhat", value: (process.env.IAM_PASSWORD_LESS_REGISTRATION_VALIDATE_WHAT ?? 'email').split(',').map((item) => item.trim()), level: SettingLevel.SystemAdminEditable },
+  { moduleName: "solid-core", key: "passwordlessRegistrationValidateWhat", value: (process.env.IAM_PASSWORD_LESS_REGISTRATION_VALIDATE_WHAT ?? 'email').trim(), level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "passwordlessLoginValidateWhat", value: process.env.IAM_PASSWORD_LESS_LOGIN_VALIDATE_WHAT ?? 'email', level: SettingLevel.SystemAdminEditable }, 
   { moduleName: "solid-core", key: "allowPublicRegistration", value: (process.env.IAM_ALLOW_PUBLIC_REGISTRATION ?? 'true') === 'true', level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "activateUserOnRegistration", value: (process.env.IAM_ACTIVATE_USER_ON_REGISTRATION ?? 'true') === 'true', level: SettingLevel.SystemAdminEditable },
