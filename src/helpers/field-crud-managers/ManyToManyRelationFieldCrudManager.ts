@@ -14,6 +14,8 @@ export interface ManyToManyRelationFieldOptions {
     entityManager: EntityManager;
     fieldName: string;
     relationCoModelFieldName?: string;
+    isUpdate?: boolean;
+    entityId?: number;
 }
 
 const linkCommands = [RelationFieldsCommand.link, RelationFieldsCommand.unlink, RelationFieldsCommand.set];
@@ -74,16 +76,21 @@ export class ManyToManyRelationFieldCrudManager implements FieldCrudManager {
         const relatedEntityName = classify(this.options.relationCoModelSingularName);
         const relatedEntityRepository = this.options.entityManager.getRepository(relatedEntityName)
 
-        dto[this.valueFieldName] = await this.transformByCommand(dto, relatedEntityRepository, currentEntityRepository);
+        const result = await this.transformByCommand(dto, relatedEntityRepository, currentEntityRepository);
+        if (result !== undefined) {
+            dto[this.valueFieldName] = result;
+        } else {
+            delete dto[this.valueFieldName];
+        }
         return dto;
     }
 
-    private async transformByCommand(dto: any, relatedEntityRepository: any, currentEntityRepository: any): Promise<any[]> {
+    private async transformByCommand(dto: any, relatedEntityRepository: any, currentEntityRepository: any): Promise<any[] | undefined> {
         // TODO : Need to add support for the multiple commands
         const command = dto[this.commandFieldName];
         const values = dto[this.valueFieldName];
         const ids = dto[this.idFieldName];
-        
+
         switch (command) {
             case RelationFieldsCommand.create:
                 return await this.transformForCommandCreate(values, relatedEntityRepository);
@@ -94,15 +101,15 @@ export class ManyToManyRelationFieldCrudManager implements FieldCrudManager {
             case RelationFieldsCommand.clear:
                 return this.transformForCommandClear();
             case RelationFieldsCommand.set:
-                return await this.transformForCommandSet(ids, relatedEntityRepository, dto, currentEntityRepository);    
+                return await this.transformForCommandSet(ids, relatedEntityRepository);
             case RelationFieldsCommand.link:
-                return await this.tranformForCommandLink(ids, relatedEntityRepository, dto, currentEntityRepository);
+                return await this.tranformForCommandLink(ids, relatedEntityRepository);
             case RelationFieldsCommand.unlink:
-                return await this.transformForCommandUnLink(ids, relatedEntityRepository, dto, currentEntityRepository);
+                return await this.transformForCommandUnLink(ids);
             default:
                 this.logger.log(`Invalid command ${command}`);
                 return null;
-                
+
         }
     }
 
@@ -110,46 +117,50 @@ export class ManyToManyRelationFieldCrudManager implements FieldCrudManager {
         return []
     }
 
-    private async transformForCommandSet(ids: any[], relatedEntityRepository: any,  dto: any, currentEntityRepository: any): Promise<any[]> {
-        // Load the entities with the ids passed
+    private async transformForCommandSet(ids: any[], relatedEntityRepository: any): Promise<any[]> {
         const loadedEntities: any[] = await relatedEntityRepository.find({
-            where : {id: In(ids) } 
+            where : {id: In(ids) }
         })
         if (loadedEntities.length !== ids.length) {
-            throw new Error('Invalid entity ids provided for linking');
+            throw new Error('Invalid entity ids provided for set');
         }
 
         return loadedEntities;
     }
 
-    private async tranformForCommandLink(ids: any, relatedEntityRepository: any, dto: any, currentEntityRepository: any) {
-        const tranformedRelatedFields = [];
-        // Load the entities with the ids passed
-        const loadedEntities: any[] = await relatedEntityRepository.find({
-            where : {id: In(ids) } 
-        })
-        if (loadedEntities.length !== ids.length) {
+    private async tranformForCommandLink(ids: any[], relatedEntityRepository: any): Promise<undefined> {
+        if (!this.options.isUpdate) {
+            throw new Error('Link command is only supported for update operations');
+        }
+
+        const count: number = await relatedEntityRepository.count({
+            where: { id: In(ids) }
+        });
+        if (count !== ids.length) {
             throw new Error('Invalid entity ids provided for linking');
         }
-        tranformedRelatedFields.push(...loadedEntities);
 
-        return tranformedRelatedFields;
+        await this.options.entityManager
+            .createQueryBuilder()
+            .relation(classify(this.options.modelSingularName), this.valueFieldName)
+            .of(this.options.entityId)
+            .add(ids);
+
+        return undefined;
     }
 
-    private async transformForCommandUnLink(ids: any, relatedEntityRepository: any, dto: any, currentEntityRepository: any) {
-        if (dto.id == null) {
-            throw new Error('Entity id is required for unlinking');
-        } 
+    private async transformForCommandUnLink(ids: any[]): Promise<undefined> {
+        if (!this.options.isUpdate) {
+            throw new Error('Unlink command is only supported for update operations');
+        }
 
-        const tranformedRelatedFields = [];
-        const entityInstance = await currentEntityRepository.findOne({
-            where: {id: dto.id},
-            relations: [this.valueFieldName]
-        });
-        const filteredEntities = entityInstance[this.valueFieldName].filter((entity) => !ids.includes(entity.id));
-        tranformedRelatedFields.push(...filteredEntities);
+        await this.options.entityManager
+            .createQueryBuilder()
+            .relation(classify(this.options.modelSingularName), this.valueFieldName)
+            .of(this.options.entityId)
+            .remove(ids);
 
-        return tranformedRelatedFields;
+        return undefined;
     }
 
     private async transformForCommandCreate(values: any[], relatedEntityRepository: any): Promise<any[]> {
