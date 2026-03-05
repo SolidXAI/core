@@ -1,4 +1,5 @@
-import { Global, Module } from '@nestjs/common';
+import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import * as express from 'express';
 import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
   APP_FILTER,
@@ -772,4 +773,10 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     SettingService,
   ],
 })
-export class SolidCoreModule { }
+export class SolidCoreModule implements NestModule {
+  configure(consumer: MiddlewareConsumer) {
+    consumer
+      .apply(express.json({ limit: '10mb' }), express.urlencoded({ limit: '10mb', extended: true }))
+      .forRoutes('*');
+  }
+}
