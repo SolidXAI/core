@@ -10,7 +10,7 @@ import { Exclude, Expose } from "class-transformer";
 export class User extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     @Expose()
-    fullName: string; 
+    fullName: string;
     @Index({ unique: true })
     @Column({ type: "varchar" })
     @Expose()
@@ -103,16 +103,16 @@ export class User extends CommonEntity {
     // don't send to client
     userViewMetadata: UserViewMetadata[];
     // dont send to client
-    @Column({ type: "varchar", default: "bcrypt" })
+    @Column({ type: "varchar", default: "bcrypt", nullable: true })
     passwordScheme: string;
     // dont send to client
-    @Column({ type: "int", default: 1 })
+    @Column({ type: "int", default: 1, nullable: true })
     passwordSchemeVersion: number;
     // dont send to client
     @Column({ nullable: true })
     rehashedAt: Date;
     // dont send to client
-    @Column({ type: "int", default: 0 })
+    @Column({ type: "int", default: 0, nullable: true })
     failedLoginAttempts: number = 0;
     @Expose()
     _media: any;
