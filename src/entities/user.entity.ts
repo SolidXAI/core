@@ -10,7 +10,7 @@ import { Exclude, Expose } from "class-transformer";
 export class User extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     @Expose()
-    fullName: string; 
+    fullName: string;
     @Index({ unique: true })
     @Column({ type: "varchar" })
     @Expose()

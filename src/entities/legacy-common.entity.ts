@@ -1,7 +1,7 @@
 import { Exclude, Expose, Type } from "class-transformer";
 import { Column, CreateDateColumn, DeleteDateColumn, Index, JoinColumn, ManyToOne, UpdateDateColumn } from "typeorm";
 import type { User } from "./user.entity";
-import { LocalDateTimeTransformer } from "src/transformers/typeorm/local-date-time-transformer";
+import { UtcDateTimeTransformer } from "src/transformers/typeorm/local-date-time-transformer";
 
 export const LEGACY_TABLE_FIELDS_PREFIX = 'ss';
 
@@ -12,13 +12,13 @@ export abstract class LegacyCommonEntity {
     // @Generated("increment")
     // id: number
 
-    @CreateDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_created_at`, transformer: LocalDateTimeTransformer })
+    @CreateDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_created_at`, transformer: UtcDateTimeTransformer })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_updated_at`, transformer: LocalDateTimeTransformer })
+    @UpdateDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_updated_at`, transformer: UtcDateTimeTransformer })
     updatedAt: Date;
 
-    @DeleteDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_deleted_at`, transformer: LocalDateTimeTransformer })
+    @DeleteDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_deleted_at`, transformer: UtcDateTimeTransformer })
     @Index()
     deletedAt: Date;
 
@@ -26,7 +26,7 @@ export abstract class LegacyCommonEntity {
     deletedTracker: string;
 
     @Expose()
-    @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_published_at`, default: null, nullable: true, transformer: LocalDateTimeTransformer })
+    @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_published_at`, default: null, nullable: true, transformer: UtcDateTimeTransformer })
     publishedAt: Date;
 
     @Expose()

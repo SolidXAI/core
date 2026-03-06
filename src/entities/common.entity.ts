@@ -1,6 +1,6 @@
 import { Column, CreateDateColumn, DeleteDateColumn, Index, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
 import { Exclude, Expose } from "class-transformer";
-import { LocalDateTimeTransformer } from "src/transformers/typeorm/local-date-time-transformer";
+import { UtcDateTimeTransformer } from "src/transformers/typeorm/local-date-time-transformer";
 
 @Exclude()
 export abstract class CommonEntity {
@@ -8,13 +8,13 @@ export abstract class CommonEntity {
     @PrimaryGeneratedColumn({ type: 'integer' })
     id: number
 
-    @CreateDateColumn({ name: "created_at", transformer: LocalDateTimeTransformer })
+    @CreateDateColumn({ name: "created_at", transformer: UtcDateTimeTransformer })
     createdAt: Date;
 
-    @UpdateDateColumn({ name: "updated_at", transformer: LocalDateTimeTransformer })
+    @UpdateDateColumn({ name: "updated_at", transformer: UtcDateTimeTransformer })
     updatedAt: Date;
 
-    @DeleteDateColumn({ name: "deleted_at", transformer: LocalDateTimeTransformer })
+    @DeleteDateColumn({ name: "deleted_at", transformer: UtcDateTimeTransformer })
     @Index()
     deletedAt: Date;
 
@@ -22,7 +22,7 @@ export abstract class CommonEntity {
     deletedTracker: string;
 
     @Expose()
-    @Column({ name: 'published_at', default: null, nullable: true, transformer: LocalDateTimeTransformer })
+    @Column({ name: 'published_at', default: null, nullable: true, transformer: UtcDateTimeTransformer })
     publishedAt: Date;
 
     @Expose()
