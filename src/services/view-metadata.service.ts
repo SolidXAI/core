@@ -130,6 +130,34 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     if (menuItemId) {
       menuItem = await this.menuItemMetadataService.findOne(menuItemId, menuItemQuery, solidRequestContext);
     }
+
+
+    const qb = await this.menuItemMetadataService.repo.createSecurityRuleAwareQueryBuilder('menuItem')
+
+    const menuItems = await qb
+      .leftJoinAndSelect('menuItem.module', 'module')
+      .leftJoinAndSelect('menuItem.parentMenuItem', 'parentMenuItem')
+      .leftJoinAndSelect('menuItem.action', 'action')
+      .leftJoinAndSelect('action.model', 'model')
+      .leftJoinAndSelect('action.view', 'view')
+      .leftJoinAndSelect('menuItem.roles', 'roles')
+      .where('roles.name IN (:...roleNames)', { roleNames: activeUser.roles })
+      .andWhere('view.type IN (:...viewTypes)', { viewTypes: ['list', 'kanban', 'tree'] })
+      .andWhere('model.singularName = :modelName', { modelName: modelName }) // pass your model filter here
+      .addOrderBy('module.menuSequenceNumber', 'ASC')
+      .addOrderBy('menuItem.sequenceNumber', 'ASC')
+      .getMany();
+
+    // Map to your desired shape
+    const viewModes = menuItems.map(menuItem => ({
+      type: menuItem.action?.view?.type ?? '',
+      menuItemId: menuItem.id,
+      menuItemName: menuItem.displayName,
+      actionId: menuItem.action?.id ?? '',
+      actionName: menuItem.action?.displayName ?? '',
+    }));
+
+
     const viewId = action?.view?.id
     // 3. Fetch the view based on module, model & view name.
     const entity = await this.repo.findOne({
@@ -355,6 +383,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       'solidFieldsMetadata': Object.fromEntries(fieldsMap),
       'solidFormViewWorkflowData': solidFormViewWorkflowData,
       'applicableLocales': applicableLocales,
+      'viewModes': viewModes
     }
 
     return r;
