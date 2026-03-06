@@ -103,16 +103,16 @@ export class User extends CommonEntity {
     // don't send to client
     userViewMetadata: UserViewMetadata[];
     // dont send to client
-    @Column({ type: "varchar", default: "bcrypt", nullable: true })
+    @Column({ type: "varchar", default: "bcrypt" })
     passwordScheme: string;
     // dont send to client
-    @Column({ type: "int", default: 1, nullable: true })
+    @Column({ type: "int", default: 1 })
     passwordSchemeVersion: number;
     // dont send to client
     @Column({ nullable: true })
     rehashedAt: Date;
     // dont send to client
-    @Column({ type: "int", default: 0, nullable: true })
+    @Column({ type: "int", default: 0 })
     failedLoginAttempts: number = 0;
     @Expose()
     _media: any;
