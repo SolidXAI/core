@@ -18,6 +18,7 @@ import { ActionMetadataService } from './action-metadata.service';
 import { MenuItemMetadataService } from './menu-item-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { UserViewMetadataService } from './user-view-metadata.service';
+import { MenuItemMetadata } from 'src/entities/menu-item-metadata.entity';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -125,37 +126,35 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
 
     // 2. Fetch the menu based on menuItemId.
     const menuItemQuery = {
+      populate: ['action', 'action.model', 'module']
     }
-    let menuItem = null;
+    let menuItem: MenuItemMetadata = null;
     if (menuItemId) {
       menuItem = await this.menuItemMetadataService.findOne(menuItemId, menuItemQuery, solidRequestContext);
     }
 
+    let viewModes = [];
+    const menuItemModelId = menuItem?.action?.model?.id;
+    const menuItemModuleId = menuItem?.module?.id;
+    if (menuItemModelId && menuItemModuleId) {
+      const actionQb = await this.actionMetadataService.repo.createSecurityRuleAwareQueryBuilder('action');
+      const actionsForViewModes = await actionQb
+        .leftJoinAndSelect('action.model', 'model')
+        .leftJoinAndSelect('action.module', 'module')
+        .leftJoinAndSelect('action.view', 'view')
+        .where('model.id = :modelId', { modelId: menuItemModelId })
+        .andWhere('module.id = :moduleId', { moduleId: menuItemModuleId })
+        .andWhere('view.type IN (:...viewTypes)', { viewTypes: ['list', 'kanban', 'tree'] })
+        .getMany();
 
-    const qb = await this.menuItemMetadataService.repo.createSecurityRuleAwareQueryBuilder('menuItem')
-
-    const menuItems = await qb
-      .leftJoinAndSelect('menuItem.module', 'module')
-      .leftJoinAndSelect('menuItem.parentMenuItem', 'parentMenuItem')
-      .leftJoinAndSelect('menuItem.action', 'action')
-      .leftJoinAndSelect('action.model', 'model')
-      .leftJoinAndSelect('action.view', 'view')
-      .leftJoinAndSelect('menuItem.roles', 'roles')
-      .where('roles.name IN (:...roleNames)', { roleNames: activeUser.roles })
-      .andWhere('view.type IN (:...viewTypes)', { viewTypes: ['list', 'kanban', 'tree'] })
-      .andWhere('model.singularName = :modelName', { modelName: modelName }) // pass your model filter here
-      .addOrderBy('module.menuSequenceNumber', 'ASC')
-      .addOrderBy('menuItem.sequenceNumber', 'ASC')
-      .getMany();
-
-    // Map to your desired shape
-    const viewModes = menuItems.map(menuItem => ({
-      type: menuItem.action?.view?.type ?? '',
-      menuItemId: menuItem.id,
-      menuItemName: menuItem.displayName,
-      actionId: menuItem.action?.id ?? '',
-      actionName: menuItem.action?.displayName ?? '',
-    }));
+      viewModes = actionsForViewModes.map(actionItem => ({
+        type: actionItem.view?.type ?? '',
+        menuItemId: menuItem.id,
+        menuItemName: menuItem.displayName,
+        actionId: actionItem.id ?? '',
+        actionName: actionItem.displayName ?? '',
+      }));
+    }
 
 
     const viewId = action?.view?.id
