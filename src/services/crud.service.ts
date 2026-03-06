@@ -380,6 +380,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                         entityManager,
                         inverseFieldName: fieldMetadata.relationCoModelFieldName,
                         inverseRelationCoModelFieldName: fieldMetadata.name,
+                        entityId,
                     }
                     return new OneToManyRelationFieldCrudManager(oneToManyOptions);
                 }
