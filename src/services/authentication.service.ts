@@ -795,7 +795,12 @@ export class AuthenticationService {
             await this.incrementFailedAttempts(user);
             throw e;
         }
-        this.clearLoginOtp(user, type);
+
+        // we do not need to clear the otp when dummy otp is configured...
+        const dummyOtp = this.settingService.getConfigValue<SolidCoreSetting>('dummyOtp');
+        if (!dummyOtp)
+            this.clearLoginOtp(user, type);
+
         user.failedLoginAttempts = 0;
         await this.userRepository.save(user);
         return this.buildLoginTokenResponse(user);
