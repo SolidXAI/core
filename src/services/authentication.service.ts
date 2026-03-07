@@ -4,14 +4,12 @@ import {
     BadRequestException,
     ConflictException,
     ForbiddenException,
-    Inject,
     Injectable,
     InternalServerErrorException,
     Logger,
     NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common';
-import { ConfigType } from '@nestjs/config';
 import { EventEmitter2 } from '@nestjs/event-emitter';
 import { JwtService } from '@nestjs/jwt';
 import { InjectDataSource } from '@nestjs/typeorm';
@@ -22,7 +20,6 @@ import { SUCCESS_MESSAGES } from 'src/constants/success-messages';
 import { CreateUserDto } from 'src/dtos/create-user.dto';
 import { MailFactory } from 'src/factories/mail.factory';
 import { UserRepository } from 'src/repository/user.repository';
-import { Msg91OTPService } from 'src/services/sms/Msg91OTPService';
 import { DataSource, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 import {
