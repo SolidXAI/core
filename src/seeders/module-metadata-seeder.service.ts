@@ -925,7 +925,7 @@ export class ModuleMetadataSeederService {
         }
         for (const dto of createSavedFilterDto) {
             this.validateSavedFilterQueryJsonWrapper(dto);
-            await this.savedFiltersRepo.upsertWithDto({ ...dto, filterQueryJson: JSON.stringify(dto.filterQueryJson) });
+            await this.savedFiltersRepo.upsertWithDto({ ...dto, filterQueryJson: JSON.stringify(dto.filterQueryJson), isSeeded: true });
         }
     }
 

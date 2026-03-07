@@ -3069,6 +3069,17 @@
             "private": false,
             "encrypt": false,
             "isSystem": false
+          },
+          {
+            "name": "isSeeded",
+            "displayName": "Is Seeded",
+            "type": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
           }
         ]
       },
@@ -5887,7 +5898,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName" : "app_registration"
+      "iconName": "app_registration"
     },
     {
       "displayName": "Module",
@@ -5961,7 +5972,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName":"perm_media"
+      "iconName": "perm_media"
     },
     {
       "displayName": "Media",
@@ -6035,7 +6046,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName":"low_priority"
+      "iconName": "low_priority"
     },
     {
       "displayName": "Messages",
@@ -6060,7 +6071,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName":"notification_settings"
+      "iconName": "notification_settings"
     },
     {
       "displayName": "Email",
@@ -6085,7 +6096,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName":"other_admission"
+      "iconName": "other_admission"
     },
     {
       "displayName": "List of Values",
@@ -6166,7 +6177,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName" : "dashboard_customize"
+      "iconName": "dashboard_customize"
     },
     {
       "displayName": "Dashboard",
@@ -6191,7 +6202,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName":"settings"
+      "iconName": "settings"
     },
     {
       "displayName": "App Settings",

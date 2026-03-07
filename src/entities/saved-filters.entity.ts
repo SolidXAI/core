@@ -30,4 +30,7 @@ export class SavedFilters extends CommonEntity {
 
     @Column({ name: "description", type: "text", nullable: true })
     description: string;
+
+    @Column({ nullable: true, default: false })
+    isSeeded: boolean = false;
 }

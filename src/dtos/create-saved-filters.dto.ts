@@ -52,4 +52,11 @@ export class CreateSavedFiltersDto {
     @IsOptional()
     @ApiProperty({ description: "A brief description providing additional context about the saved filter’s purpose or usage within the view." })
     description: string;
+
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty()
+    isSeeded: boolean = false;
+
+
 }
