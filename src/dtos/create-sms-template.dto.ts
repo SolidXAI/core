@@ -7,26 +7,32 @@ export class CreateSmsTemplateDto {
     @IsString()
     @ApiProperty()
     name: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
     displayName: string;
+
     @IsOptional()
     @IsString()
     @ApiProperty()
     body: string;
+
     @IsOptional()
     @IsString()
     @ApiProperty()
     smsProviderTemplateId: string;
+
     @IsOptional()
     @IsString()
     @ApiProperty()
     description: string;
+
     @IsOptional()
     @IsBoolean()
     @ApiProperty()
     active: boolean = true;
+
     @IsOptional()
     @IsString()
     @ApiProperty()

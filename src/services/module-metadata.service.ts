@@ -1,14 +1,19 @@
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { InjectDataSource, InjectRepository } from '@nestjs/typeorm';
-import { DataSource, EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
+import { InjectDataSource } from '@nestjs/typeorm';
+import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from "src/services/settings/default-settings-provider.service";
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
+import { DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
-import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
-import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
+import { classify } from '@angular-devkit/core/src/utils/strings';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import * as path from 'path'; // To handle file paths
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
+import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
+import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
 import { PermissionMetadataSeederService } from 'src/seeders/permission-metadata-seeder.service';
 import { DiskFileService } from 'src/services/file';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
@@ -21,11 +26,6 @@ import { SolidRegistry } from '../helpers/solid-registry';
 import { CodeGenerationOptions, ModuleMetadataConfiguration } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { ModelMetadataService } from './model-metadata.service';
-import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
-import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
-import { ERROR_MESSAGES } from 'src/constants/error-messages';
-import Module from 'module';
-import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
 import { SettingService } from './setting.service';
 
 @Injectable()
@@ -40,7 +40,6 @@ export class ModuleMetadataService {
     private readonly moduleMetadataRepo: ModuleMetadataRepository,
     private readonly crudHelperService: CrudHelperService,
     private readonly schematicService: SchematicService,
-    private readonly configService: ConfigService,
     private readonly fileService: DiskFileService,
     private readonly settingService: SettingService,
 
@@ -133,7 +132,7 @@ export class ModuleMetadataService {
 
   async createInDB(manager: EntityManager, createDto: CreateModuleMetadataDto, files: Express.Multer.File[] = []) {
     if (files.length > 0) {
-      const fileStoragePath = await this.getFileSysytemFullFilePath(this.getFileName(files[0]));
+      const fileStoragePath = this.getFullFilePathForDisk(this.getFileName(files[0]));
       this.fileService.copy(files[0].path, fileStoragePath);
       this.fileService.delete(files[0].path);
       createDto.menuIconUrl = fileStoragePath;
@@ -239,7 +238,7 @@ export class ModuleMetadataService {
     }
     if (files.length > 0) {
 
-      const fileStoragePath = await this.getFileSysytemFullFilePath(this.getFileName(files[0]));
+      const fileStoragePath = this.getFullFilePathForDisk(this.getFileName(files[0]));
       this.fileService.copy(files[0].path, fileStoragePath);
       this.fileService.delete(files[0].path);
       module.menuIconUrl = fileStoragePath;
@@ -464,9 +463,13 @@ export class ModuleMetadataService {
     return outputLines.join('\n');
   }
 
-  private async getFileSysytemFullFilePath(fileName: string): Promise<string> {
-    const fileStorageDir = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
-    return `${fileStorageDir}/${fileName}`;
+  private getFullFilePathForDisk(fileName: string): string {
+    const base = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
+      || DEFAULT_MEDIA_FILE_STORAGE_DIR;
+    if (path.isAbsolute(fileName) || fileName.startsWith(`${base}/`)) {
+      return fileName;
+    }
+    return `${base}/${fileName}`;
   }
 
   private getFileName(file: Express.Multer.File): string {

@@ -129,8 +129,8 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         });
     }
 
-    private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean, isPartialUpdate: boolean = false, isUpdate: boolean = false) {
-        const fieldManager: FieldCrudManager = await this.fieldCrudManager(field, this.entityManager, isPartialUpdate, isUpdate);
+    private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean, isPartialUpdate: boolean = false, isUpdate: boolean = false, entityId?: number) {
+        const fieldManager: FieldCrudManager = await this.fieldCrudManager(field, this.entityManager, isPartialUpdate, isUpdate, entityId);
         const validationErrors = fieldManager.validate(dto, files);
         const errors = (validationErrors instanceof Promise) ? await validationErrors : validationErrors;
         if (errors.length > 0) {
@@ -211,7 +211,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         // 2. Loop through the fields with a switch statement
         // 3. Handle the fields based on field type
         for (const field of fieldsToProcess) {
-            const transformed = await this.validateAndTransformDto(field, updateDto, files, hasMediaFields, isPartialUpdate, isUpdate);
+            const transformed = await this.validateAndTransformDto(field, updateDto, files, hasMediaFields, isPartialUpdate, isUpdate, id);
             updateDto = transformed.dto;
             hasMediaFields = transformed.hasMediaFields;
         }
@@ -220,6 +220,8 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         // For media, we need to use a storage provider and save the media, then save the associated uri against the entity or media table
         const mergedEntity = this.repo.merge(entity, updateDto);
         const savedEntity = await this.repo.save(mergedEntity) as T;
+
+        //FIXME: Skip the many-to-many, and instead fire differential updates and avoid loading the entire association graph for the ids
 
         // 6. Save the media
         if (hasMediaFields) {
@@ -287,7 +289,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         }
     }
 
-    private async fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false) {
+    private async fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false, entityId?: number) {
         const commonOptions = { required: fieldMetadata.required && !isPartialUpdate, fieldName: fieldMetadata.name, isUpdate };
         switch (fieldMetadata.type) {
             case SolidFieldType.shortText: {
@@ -378,6 +380,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                         entityManager,
                         inverseFieldName: fieldMetadata.relationCoModelFieldName,
                         inverseRelationCoModelFieldName: fieldMetadata.name,
+                        entityId,
                     }
                     return new OneToManyRelationFieldCrudManager(oneToManyOptions);
                 }
@@ -390,6 +393,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                             isInverseSide: false,
                             entityManager,
                             fieldName: fieldMetadata.name,
+                            entityId,
                         }
                         return new ManyToManyRelationFieldCrudManager(manyToManyOptions);
                     }
@@ -402,6 +406,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                             entityManager,
                             fieldName: fieldMetadata.relationCoModelFieldName,
                             relationCoModelFieldName: fieldMetadata.name,
+                            entityId,
                         }
                         return new ManyToManyRelationFieldCrudManager(inverseManyToManyOptions);
                     }

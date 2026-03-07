@@ -7,30 +7,37 @@ export class CreateListOfValuesDto {
     @IsString()
     @ApiProperty()
     type: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
     value: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
     display: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
     description: string;
+
     @IsOptional()
     @IsBoolean()
     @ApiProperty()
     default: boolean = false;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
     sequence: number;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
     moduleId: number;
+
     @IsString()
     @IsOptional()
     @ApiProperty()

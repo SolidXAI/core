@@ -15,44 +15,53 @@ export class CreateRoleMetadataDto {
     @IsString()
     @ApiProperty()
     name: string;
+
     @IsOptional()
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => UpdatePermissionMetadataDto)
     permissions: UpdatePermissionMetadataDto[];
+
     @IsOptional()
     @IsArray()
     @ApiProperty()
     permissionsIds: number[];
+
     @IsString()
     @IsOptional()
     @ApiProperty()
     permissionsCommand: string;
+
     @IsOptional()
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => UpdateUserDto)
     users: UpdateUserDto[];
+
     @IsOptional()
     @IsArray()
     @ApiProperty()
     usersIds: number[];
+
     @IsString()
     @IsOptional()
     @ApiProperty()
     usersCommand: string;
+
     @IsOptional()
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => UpdateMenuItemMetadataDto)
     menuItems: UpdateMenuItemMetadataDto[];
+
     @IsOptional()
     @IsArray()
     @ApiProperty()
     menuItemsIds: number[];
+
     @IsString()
     @IsOptional()
     @ApiProperty()

@@ -7,7 +7,9 @@ import { MediaStorageProvider } from "src/interfaces";
 import { MediaRepository } from "src/repository/media.repository";
 import { DiskFileService } from "src/services/file";
 import { Readable } from "stream";
+import * as path from "path";
 import { SettingService } from "../setting.service";
+import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from "src/services/settings/default-settings-provider.service";
 import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 @Injectable()
@@ -34,7 +36,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // media.forEach(m => {
         // });
         for (const m of media) {
-            m['_full_url'] = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${await this.getFullFilePath(m.relativeUri)}`;
+            m['_full_url'] = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${this.getFullFilePath(m.relativeUri)}`;
         }
 
 
@@ -48,7 +50,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         const result: Media[] = [];
         for (const file of files) {
             // Store the file in the configured file storage directory
-            const fileStoragePath = await this.getFullFilePath(this.getFileName(file));
+            const fileStoragePath = this.getFullFilePath(this.getFileName(file));
             await this.fileService.copy(file.path, fileStoragePath);
             await this.fileService.delete(file.path);
 
@@ -78,7 +80,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         for (const pair of streamPairs) {
             const stream = pair[0];
             const fileName = pair[1];
-            await this.fileService.writeStream(await this.getFullFilePath(fileName), stream);
+            await this.fileService.writeStream(this.getFullFilePath(fileName), stream);
             const mediaEntity = await this.mediaRepository.createMedia({
                 //@ts-ignore
                 entityId: entity.id,
@@ -102,16 +104,19 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
 
         for (const media of existingMedia) {
-            await this.fileService.delete(await this.getFullFilePath(media.relativeUri));
+            await this.fileService.delete(this.getFullFilePath(media.relativeUri));
         }
         // existingMedia.forEach(media => {
         // });
     }
 
-    private async getFullFilePath(fileName: string): Promise<string> {
-        const fileStorageDir = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
-        return `${fileStorageDir}/${fileName}`;
-        // return `${this.configService.get('app-builder.fileStorageDir')}/${fileName}`;
+    private getFullFilePath(fileName: string): string {
+        const base = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
+            || DEFAULT_MEDIA_FILE_STORAGE_DIR;
+        if (path.isAbsolute(fileName) || fileName.startsWith(`${base}/`)) {
+            return fileName;
+        }
+        return `${base}/${fileName}`;
     }
 
     private getFileName(file: Express.Multer.File): string {

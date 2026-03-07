@@ -13,9 +13,11 @@ import {
     FindOptionsWhere,
     QueryRunner,
     Repository,
-    SelectQueryBuilder
+    SelectQueryBuilder,
+    UpdateResult
 } from 'typeorm';
 import { SecurityRuleRepository } from './security-rule.repository';
+import { PickKeysByType } from 'typeorm/common/PickKeysByType';
 
 export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
     protected readonly logger: Logger;
@@ -131,5 +133,174 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
         }
 
         return qb.getManyAndCount();
+    }
+
+    /**
+ * Security-aware count(): applies security rules before counting.
+ */
+    override async count(options?: FindManyOptions<T>): Promise<number> {
+        const alias = this.modelSingularName();
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
+
+        if (options) {
+            qb.setFindOptions(options);
+        }
+
+        return qb.getCount();
+    }
+
+    /**
+     * Security-aware countBy(): convenience wrapper routed through count().
+     */
+    override async countBy(where: FindOptionsWhere<T> | FindOptionsWhere<T>[]): Promise<number> {
+        return this.count({ where });
+    }
+
+    /**
+ * Security-aware average(): applies security rules before computing the average.
+ */
+    override async average(columnName: PickKeysByType<T, number>, where?: FindOptionsWhere<T> | FindOptionsWhere<T>[]): Promise<number | null> {
+        const alias = this.modelSingularName();
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
+
+        if (where) {
+            qb.setFindOptions({ where });
+        }
+
+        const result = await qb
+            .select(`AVG(CAST(${alias}.${String(columnName)} AS FLOAT))`, 'avg')
+            .getRawOne<{ avg: string | number | null }>();
+
+        if (result?.avg === null || result?.avg === undefined) {
+            return null;
+        }
+
+        return typeof result.avg === 'number'
+            ? result.avg
+            : parseFloat(result.avg);
+    }
+
+    /**
+ * Security-aware sum(): applies security rules before computing the sum.
+ */
+    override async sum(columnName: PickKeysByType<T, number>, where?: FindOptionsWhere<T> | FindOptionsWhere<T>[]): Promise<number | null> {
+        const alias = this.modelSingularName();
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
+
+        if (where) {
+            qb.setFindOptions({ where });
+        }
+
+        const result = await qb
+            .select(`SUM(CAST(${alias}.${String(columnName)} AS FLOAT))`, 'sum')
+            .getRawOne<{ sum: string | number | null }>();
+
+        if (result?.sum === null || result?.sum === undefined) {
+            return null;
+        }
+
+        return typeof result.sum === 'number'
+            ? result.sum
+            : parseFloat(result.sum);
+    }
+
+    /**
+     * Security-aware minimum(): applies security rules before computing the minimum.
+     */
+    override async minimum(columnName: PickKeysByType<T, number>, where?: FindOptionsWhere<T> | FindOptionsWhere<T>[]): Promise<number | null> {
+        const alias = this.modelSingularName();
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
+
+        if (where) {
+            qb.setFindOptions({ where });
+        }
+
+        const result = await qb
+            .select(`MIN(CAST(${alias}.${String(columnName)} AS FLOAT))`, 'min')
+            .getRawOne<{ min: string | number | null }>();
+
+        if (result?.min === null || result?.min === undefined) {
+            return null;
+        }
+
+        return typeof result.min === 'number'
+            ? result.min
+            : parseFloat(result.min);
+    }
+
+    /**
+     * Security-aware maximum(): applies security rules before computing the maximum.
+     */
+    override async maximum(columnName: PickKeysByType<T, number>, where?: FindOptionsWhere<T> | FindOptionsWhere<T>[]): Promise<number | null> {
+        const alias = this.modelSingularName();
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
+
+        if (where) {
+            qb.setFindOptions({ where });
+        }
+
+        const result = await qb
+            .select(`MAX(CAST(${alias}.${String(columnName)} AS FLOAT))`, 'max')
+            .getRawOne<{ max: string | number | null }>();
+
+        if (result?.max === null || result?.max === undefined) {
+            return null;
+        }
+
+        return typeof result.max === 'number'
+            ? result.max
+            : parseFloat(result.max);
+    }
+
+    /**
+     * Security-aware increment(): increments a column by a given value for all matching rows.
+     * Security rules are applied to determine which rows the user is allowed to modify.
+     */
+    override async increment(where: FindOptionsWhere<T>, propertyPath: string, value: string | number,): Promise<UpdateResult> {
+        const alias = this.modelSingularName();
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
+
+        qb.setFindOptions({ where });
+
+        const rows = await qb.select(`${alias}.id`).getMany();
+        const ids = rows.map((r) => (r as any).id);
+
+        if (ids.length === 0) {
+            return { raw: [], affected: 0, generatedMaps: [] };
+        }
+
+        return this.manager
+            .createQueryBuilder()
+            .update(this.metadata.target)
+            .set({ [propertyPath]: () => `${propertyPath} + :value` } as any)
+            .whereInIds(ids)
+            .setParameter('value', value)
+            .execute();
+    }
+
+    /**
+     * Security-aware decrement(): decrements a column by a given value for all matching rows.
+     * Security rules are applied to determine which rows the user is allowed to modify.
+     */
+    override async decrement(where: FindOptionsWhere<T>, propertyPath: string, value: string | number,): Promise<UpdateResult> {
+        const alias = this.modelSingularName();
+        const qb = await this.createSecurityRuleAwareQueryBuilder(alias);
+
+        qb.setFindOptions({ where });
+
+        const rows = await qb.select(`${alias}.id`).getMany();
+        const ids = rows.map((r) => (r as any).id);
+
+        if (ids.length === 0) {
+            return { raw: [], affected: 0, generatedMaps: [] };
+        }
+
+        return this.manager
+            .createQueryBuilder()
+            .update(this.metadata.target)
+            .set({ [propertyPath]: () => `${propertyPath} - :value` } as any)
+            .whereInIds(ids)
+            .setParameter('value', value)
+            .execute();
     }
 }

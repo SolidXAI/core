@@ -3069,6 +3069,17 @@
             "private": false,
             "encrypt": false,
             "isSystem": false
+          },
+          {
+            "name": "isSeeded",
+            "displayName": "Is Seeded",
+            "type": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
           }
         ]
       },
@@ -5510,7 +5521,7 @@
       "customComponent": "",
       "customIsModal": false,
       "serverEndpoint": "",
-      "viewUserKey": "chatter-message-list-view",
+      "viewUserKey": "chatterMessage-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "chatterMessage"
     },
@@ -5523,7 +5534,7 @@
       "customComponent": "",
       "customIsModal": false,
       "serverEndpoint": "",
-      "viewUserKey": "chatter-message-details-list-view",
+      "viewUserKey": "chatterMessageDetails-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "chatterMessageDetails"
     },
@@ -5723,19 +5734,6 @@
       "modelUserKey": "importTransaction"
     },
     {
-      "displayName": "locale List Action",
-      "name": "locale-list-view",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "locale-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "locale"
-    },
-    {
       "displayName": "User Activity History List Action",
       "name": "userActivityHistory-list-action",
       "type": "solid",
@@ -5897,10 +5895,10 @@
       "displayName": "App Builder",
       "name": "appBuilder-menu-item",
       "sequenceNumber": 1,
-      "actionUserKey": "appBuilder-root",
+      "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName" : "app_registration"
+      "iconName": "app_registration"
     },
     {
       "displayName": "Module",
@@ -5930,7 +5928,7 @@
       "displayName": "Layout Builder",
       "name": "layoutBuilder-menu-item",
       "sequenceNumber": 2,
-      "actionUserKey": "layoutBuilder-root",
+      "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
       "iconName": "space_dashboard"
@@ -5971,10 +5969,10 @@
       "displayName": "Media Management",
       "name": "mediaManagement-menu-item",
       "sequenceNumber": 3,
-      "actionUserKey": "media-root",
+      "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName":"perm_media"
+      "iconName": "perm_media"
     },
     {
       "displayName": "Media",
@@ -5996,7 +5994,7 @@
       "displayName": "IAM",
       "name": "iam-menu-item",
       "sequenceNumber": 4,
-      "actionUserKey": "iam-root",
+      "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
       "iconName": "person_shield"
@@ -6045,10 +6043,10 @@
       "displayName": "Queues",
       "name": "queues-menu-item",
       "sequenceNumber": 5,
-      "actionUserKey": "queues-root",
+      "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName":"low_priority"
+      "iconName": "low_priority"
     },
     {
       "displayName": "Messages",
@@ -6070,10 +6068,10 @@
       "displayName": "Notification",
       "name": "notification-menu-item",
       "sequenceNumber": 6,
-      "actionUserKey": "notification-root",
+      "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName":"notification_settings"
+      "iconName": "notification_settings"
     },
     {
       "displayName": "Email",
@@ -6095,10 +6093,10 @@
       "displayName": "Other",
       "name": "other-menu-item",
       "sequenceNumber": 7,
-      "actionUserKey": "other-root",
+      "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName":"other_admission"
+      "iconName": "other_admission"
     },
     {
       "displayName": "List of Values",
@@ -6176,10 +6174,10 @@
       "displayName": "Dashboard Management",
       "name": "dashboardManagement-menu-item",
       "sequenceNumber": 8,
-      "actionUserKey": "dasbhoard-root",
+      "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName" : "dashboard_customize"
+      "iconName": "dashboard_customize"
     },
     {
       "displayName": "Dashboard",
@@ -6201,10 +6199,10 @@
       "displayName": "Settings",
       "name": "settings-menu-item",
       "sequenceNumber": 9,
-      "actionUserKey": "settings-root",
+      "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName":"settings"
+      "iconName": "settings"
     },
     {
       "displayName": "App Settings",
@@ -12495,7 +12493,7 @@
           "label": "Model Sequence",
           "className": "grid"
         },
-        "onFieldChange": "",
+        "onFieldChange": "modelSequenceFormViewChangeHandler",
         "children": [
           {
             "type": "sheet",

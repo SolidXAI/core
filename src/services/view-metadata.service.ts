@@ -18,6 +18,7 @@ import { ActionMetadataService } from './action-metadata.service';
 import { MenuItemMetadataService } from './menu-item-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { UserViewMetadataService } from './user-view-metadata.service';
+import { MenuItemMetadata } from 'src/entities/menu-item-metadata.entity';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -125,11 +126,37 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
 
     // 2. Fetch the menu based on menuItemId.
     const menuItemQuery = {
+      populate: ['action', 'action.model', 'module']
     }
-    let menuItem = null;
+    let menuItem: MenuItemMetadata = null;
     if (menuItemId) {
       menuItem = await this.menuItemMetadataService.findOne(menuItemId, menuItemQuery, solidRequestContext);
     }
+
+    let viewModes = [];
+    const menuItemModelId = menuItem?.action?.model?.id;
+    const menuItemModuleId = menuItem?.module?.id;
+    if (menuItemModelId && menuItemModuleId) {
+      const actionQb = await this.actionMetadataService.repo.createSecurityRuleAwareQueryBuilder('action');
+      const actionsForViewModes = await actionQb
+        .leftJoinAndSelect('action.model', 'model')
+        .leftJoinAndSelect('action.module', 'module')
+        .leftJoinAndSelect('action.view', 'view')
+        .where('model.id = :modelId', { modelId: menuItemModelId })
+        .andWhere('module.id = :moduleId', { moduleId: menuItemModuleId })
+        .andWhere('view.type IN (:...viewTypes)', { viewTypes: ['list', 'kanban', 'tree'] })
+        .getMany();
+
+      viewModes = actionsForViewModes.map(actionItem => ({
+        type: actionItem.view?.type ?? '',
+        menuItemId: menuItem.id,
+        menuItemName: menuItem.displayName,
+        actionId: actionItem.id ?? '',
+        actionName: actionItem.displayName ?? '',
+      }));
+    }
+
+
     const viewId = action?.view?.id
     // 3. Fetch the view based on module, model & view name.
     const entity = await this.repo.findOne({
@@ -355,6 +382,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       'solidFieldsMetadata': Object.fromEntries(fieldsMap),
       'solidFormViewWorkflowData': solidFormViewWorkflowData,
       'applicableLocales': applicableLocales,
+      'viewModes': viewModes
     }
 
     return r;

@@ -3,8 +3,8 @@ import { Environment } from "src/decorators/disallow-in-production.decorator";
 import { SettingsProvider } from "src/decorators/settings-provider.decorator";
 import { ISettingsProvider, SettingDefinition, SettingLevel } from "src/interfaces";
 
-const DEFAULT_MEDIA_UPLOAD_DIR = 'media-uploads';
-const DEFAULT_MEDIA_FILE_STORAGE_DIR = 'media-files-storage';
+export const DEFAULT_MEDIA_UPLOAD_DIR = 'media-uploads';
+export const DEFAULT_MEDIA_FILE_STORAGE_DIR = 'media-files-storage';
 
 // 1. 
 const getSolidCoreSettings = (isProd: boolean) => ([
@@ -87,7 +87,8 @@ const getSolidCoreSettings = (isProd: boolean) => ([
   // iam-settings-provider.service.ts
   { moduleName: "solid-core", key: "passwordLessAuth", value: (process.env.IAM_PASSWORD_LESS_AUTH?.trim() ?? 'false') === 'true', level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "passwordBasedAuth", value: (process.env.IAM_PASSWORD_BASED_AUTH?.trim() ?? 'true') === 'true', level: SettingLevel.SystemAdminEditable },
-  { moduleName: "solid-core", key: "passwordlessRegistrationValidateWhat", value: (process.env.IAM_PASSWORD_LESS_REGISTRATION_VALIDATE_WHAT ?? 'email').split(',').map((item) => item.trim()), level: SettingLevel.SystemAdminEditable },
+  { moduleName: "solid-core", key: "passwordlessRegistrationValidateWhat", value: (process.env.IAM_PASSWORD_LESS_REGISTRATION_VALIDATE_WHAT ?? 'email').trim(), level: SettingLevel.SystemAdminEditable },
+  { moduleName: "solid-core", key: "passwordlessLoginValidateWhat", value: process.env.IAM_PASSWORD_LESS_LOGIN_VALIDATE_WHAT ?? 'email', level: SettingLevel.SystemAdminEditable }, 
   { moduleName: "solid-core", key: "allowPublicRegistration", value: (process.env.IAM_ALLOW_PUBLIC_REGISTRATION ?? 'true') === 'true', level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "activateUserOnRegistration", value: (process.env.IAM_ACTIVATE_USER_ON_REGISTRATION ?? 'true') === 'true', level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "autoLoginUserOnRegistration", value: (process.env.IAM_AUTO_LOGIN_USER_ON_REGISTRATION ?? 'false') === 'true', level: SettingLevel.SystemEnv },
@@ -96,6 +97,7 @@ const getSolidCoreSettings = (isProd: boolean) => ([
   { moduleName: "solid-core", key: "defaultRole", value: process.env.IAM_DEFAULT_ROLE ?? 'Public', level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "dummyOtp", value: process.env.IAM_OTP_DUMMY, level: SettingLevel.SystemEnv },
   { moduleName: "solid-core", key: "forgotPasswordSendVerificationTokenOn", value: process.env.IAM_FORGOT_PASSWORD_SEND_VERIFICATION_TOKEN_ON ?? 'email', level: SettingLevel.SystemEnv },
+  { moduleName: "solid-core", key: "maxFailedLoginAttempts", value: parseInt(process.env.IAM_MAX_FAILED_LOGIN_ATTEMPTS ?? '0'), level: SettingLevel.SystemAdminReadonly },
   { moduleName: "solid-core", key: "forceChangePasswordOnFirstLogin", value: false, level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "authenticationPasswordRegex", value: process.env.PASSWORD_REGEX || '^$|^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[^\\da-zA-Z]).*$', level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "authenticationPasswordRegexErrorMessage", value: process.env.PASSWORD_REGEX_ERROR_MESSAGE || 'Password must contain at least one uppercase, one lowercase, one number, and one special character.', level: SettingLevel.SystemAdminEditable },

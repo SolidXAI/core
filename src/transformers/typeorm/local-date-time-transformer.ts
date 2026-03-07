@@ -2,6 +2,8 @@ import dayjs from "dayjs";
 import utc from "dayjs/plugin/utc";
 import timezone from "dayjs/plugin/timezone";
 
+import { ValueTransformer } from "typeorm";
+
 dayjs.extend(utc);
 dayjs.extend(timezone);
 
@@ -22,7 +24,7 @@ function dateToUtcComponentString(d: Date): string {
     return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}.${ms}`;
 }
 
-export const LocalDateTimeTransformer = {
+export const LocalDateTimeTransformer: ValueTransformer & { utc: ValueTransformer } = {
     // DB → Entity
     from(value: Date | string | null | undefined): Date | null | undefined {
 
@@ -55,6 +57,22 @@ export const LocalDateTimeTransformer = {
             return dayjs(value).toDate();
         }
 
-        return dayjs(value).tz(SOLIDX_WALL_TIME_TZ).toDate();
+        const wallTimeStr = dayjs(value).tz(SOLIDX_WALL_TIME_TZ).format("YYYY-MM-DD HH:mm:ss.SSS");
+        return dayjs.utc(wallTimeStr).toDate();
     },
+
+    utc: {
+        from(value: Date | string | null | undefined): Date | null | undefined {
+            if (value === undefined) return undefined;
+            if (value === null) return null;
+            return dayjs(value).toDate();
+        },
+        to(value: Date | null | undefined): Date | null | undefined {
+            if (value === undefined) return undefined;
+            if (value === null) return null;
+            return dayjs(value).toDate();
+        }
+    }
 };
+
+export const UtcDateTimeTransformer = LocalDateTimeTransformer.utc;

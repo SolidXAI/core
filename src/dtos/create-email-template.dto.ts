@@ -9,31 +9,38 @@ export class CreateEmailTemplateDto {
     @IsString()
     @ApiProperty()
     name: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
     displayName: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
     body: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
     subject: string = "{}";
+
     @IsOptional()
     @IsString()
     @ApiProperty()
     description: string;
+
     @IsOptional()
     @IsBoolean()
     @ApiProperty()
     active: boolean = true;
+
     @IsOptional()
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => CreateEmailAttachmentDto)
     attachments: CreateEmailAttachmentDto[];
+
     @IsOptional()
     @IsString()
     @ApiProperty()

@@ -11,48 +11,59 @@ export class CreateViewMetadataDto {
     @IsString()
     @ApiProperty()
     name: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
     displayName: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
     type: string;
+
     @IsNotEmpty()
     @IsJSON()
     @ApiProperty()
     context: any = "{}";
+
     @IsNotEmpty()
     @IsJSON()
     @ApiProperty()
     layout: any;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
     moduleId: number;
+
     @IsString()
     @IsOptional()
     @ApiProperty()
     moduleUserKey: string;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
     modelId: number;
+
     @IsString()
     @IsOptional()
     @ApiProperty()
     modelUserKey: string;
+
     @IsOptional()
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => UpdateUserViewMetadataDto)
     userViewMetadata: UpdateUserViewMetadataDto[];
+
     @IsOptional()
     @IsArray()
     @ApiProperty()
     userViewMetadataIds: number[];
+
     @IsString()
     @IsOptional()
     @ApiProperty()

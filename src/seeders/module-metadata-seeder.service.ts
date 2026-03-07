@@ -32,7 +32,7 @@ import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ActionMetadata, DEFAULT_SA_PASSWORD, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata, SignUpDto } from 'src';
-import { ADMIN_ROLE_NAME } from 'src/dtos/create-role-metadata.dto';
+import { ADMIN_ROLE_NAME, CreateRoleMetadataDto } from 'src/dtos/create-role-metadata.dto';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
@@ -90,134 +90,152 @@ export class ModuleMetadataSeederService {
     ) { }
 
     async seed(conf?: any) {
-        this.enablePruning = Boolean(conf?.pruneMetadata);
-        console.log(this.enablePruning ? '▶ Pruning enabled: metadata not present in JSON will be removed.' : '▶ Pruning disabled: existing metadata will be kept.');
-
-        // Global seeding steps i.e across all modules
-        await this.seedGlobalMetadata();
-
-        // Module specific seeding steps.
-        // Get all the module metadata files which needs to be seeded.
-        const seedDataFiles = this.seedDataFiles;
-        this.logger.debug(`Found seed data for modules: ${seedDataFiles.map(s => s.moduleMetadata?.name)}`);
-
-        /** 
-         * -------------------------------------------------------------
-         * Selective module seeding via: solid seed --modules-to-seed onboarding,reports 
-         * -------------------------------------------------------------
-         */
+        let currentModule = 'global';
+        let currentStep = 'bootstrap';
         let modulesToSeed: string[] | null = null;
 
-        if (conf && Array.isArray(conf.modulesToSeed)) {
-            modulesToSeed = conf.modulesToSeed;
-            console.log(`▶ Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
-            this.logger.log(`Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
-        } else {
-            console.log(`▶ No modulesToSeed provided. Seeding ALL modules.`);
-            this.logger.log(`No modulesToSeed provided. Seeding ALL modules.`);
+        try {
+            this.enablePruning = Boolean(conf?.pruneMetadata);
+            console.log(this.enablePruning ? '▶ Pruning enabled: metadata not present in JSON will be removed.' : '▶ Pruning disabled: existing metadata will be kept.');
+
+            // Global seeding steps i.e across all modules
+            currentStep = 'seedGlobalMetadata';
+            await this.seedGlobalMetadata();
+
+            // Module specific seeding steps.
+            // Get all the module metadata files which needs to be seeded.
+            const seedDataFiles = this.seedDataFiles;
+            this.logger.debug(`Found seed data for modules: ${seedDataFiles.map(s => s.moduleMetadata?.name)}`);
+
+            /** 
+             * -------------------------------------------------------------
+             * Selective module seeding via: solid seed --modules-to-seed onboarding,reports 
+             * -------------------------------------------------------------
+             */
+            currentStep = 'resolveModulesToSeed';
+            if (conf && Array.isArray(conf.modulesToSeed)) {
+                modulesToSeed = conf.modulesToSeed;
+                console.log(`▶ Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
+                this.logger.log(`Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
+            } else {
+                console.log(`▶ No modulesToSeed provided. Seeding ALL modules.`);
+                this.logger.log(`No modulesToSeed provided. Seeding ALL modules.`);
+            }
+
+            // Filter modules if needed
+            const filteredSeedDataFiles = modulesToSeed ? seedDataFiles.filter((file) => modulesToSeed.includes(file.moduleMetadata?.name)) : seedDataFiles;
+
+            if (filteredSeedDataFiles.length === 0) {
+                this.logger.warn(`No modules matched the provided modulesToSeed list.`);
+                return;
+            }
+
+            // let usersDetail;
+            // For each module metadata file, we will process the seeding steps one by one.
+            for (let i = 0; i < filteredSeedDataFiles.length; i++) {
+                const overallMetadata = filteredSeedDataFiles[i];
+                const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
+                currentModule = moduleMetadata?.name ?? 'unknown';
+
+                console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
+                this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
+
+                // Process module metadata first.
+                currentStep = 'seedModuleModelFields';
+                this.logger.log(`Seeding Module / Model / Fields`);
+                const moduleModelFieldCounts = await this.seedModuleModelFields(moduleMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
+
+                currentStep = 'seedMediaStorageProviders';
+                this.logger.log(`Seeding Media Storage Providers`);
+                const mediaStorageCounts = await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Media Storage Providers', mediaStorageCounts)}`);
+
+                currentStep = 'seedRoles';
+                this.logger.log(`Seeding Roles`);
+                const roleCounts = await this.seedRoles(overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Roles', roleCounts)}`);
+
+                currentStep = 'seedUsers';
+                this.logger.log(`Seeding Users`);
+                const userCounts = await this.seedUsers(overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Users', userCounts)}`);
+
+                currentStep = 'seedViews';
+                this.logger.log(`Seeding Views`);
+                const viewCounts = await this.seedViews(overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Views', viewCounts)}`);
+
+                currentStep = 'seedActions';
+                this.logger.log(`Seeding Actions`);
+                const actionCounts = await this.seedActions(overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Actions', actionCounts)}`);
+
+                currentStep = 'seedMenus';
+                this.logger.log(`Seeding Menus`);
+                const menuCounts = await this.seedMenus(overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Menus', menuCounts)}`);
+
+                currentStep = 'seedEmailTemplates';
+                this.logger.log(`Seeding Email Templates`);
+                const emailTemplateCounts = await this.seedEmailTemplates(overallMetadata, moduleMetadata.name);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Email Templates', emailTemplateCounts)}`);
+
+                currentStep = 'seedSmsTemplates';
+                this.logger.log(`Seeding Sms Templates`);
+                const smsTemplateCounts = await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Sms Templates', smsTemplateCounts)}`);
+
+                currentStep = 'seedSecurityRules';
+                this.logger.log(`Seeding Security Rules`);
+                const securityRuleCounts = await this.seedSecurityRules(overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Security Rules', securityRuleCounts)}`);
+
+                currentStep = 'seedListOfValues';
+                this.logger.log(`Seeding List Of Values`);
+                const lovCounts = await this.seedListOfValues(moduleMetadata, overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'List Of Values', lovCounts)}`);
+
+                currentStep = 'seedDashboards';
+                this.logger.log(`Seeding Dashboards`);
+                const dashboardCounts = await this.seedDashboards(moduleMetadata, overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Dashboards', dashboardCounts)}`);
+
+                currentStep = 'seedScheduledJobs';
+                this.logger.log(`Seeding Scheduled Jobs`);
+                const scheduledJobCounts = await this.seedScheduledJobs(moduleMetadata, overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Scheduled Jobs', scheduledJobCounts)}`);
+
+                currentStep = 'seedSavedFilters';
+                this.logger.log(`Seeding Saved Filters`);
+                const savedFilterCounts = await this.seedSavedFilters(moduleMetadata, overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Saved Filters', savedFilterCounts)}`);
+
+                currentStep = 'seedModelSequences';
+                this.logger.log(`Seeding Model Sequences`);
+                const modelSequenceCounts = await this.seedModelSequences(overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Model Sequences', modelSequenceCounts)}`);
+            }
+
+            currentModule = 'global';
+            currentStep = 'setupDefaultRolesWithPermissions';
+            await this.setupDefaultRolesWithPermissions();
+
+            // Add a console log indicating seeding is finished. This needs to be console.log so that it looks proper when this code is run via CLI.
+            console.log(`✔ Seeding completed.`);
+            //this.logger.log(`All Seeders finished`);
+
+            //FIXME: Handle displaying the created users credentials in a better way.
+            // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
+        } catch (error) {
+            this.logSeedFailureForCli(error, {
+                moduleName: currentModule,
+                step: currentStep,
+                pruneEnabled: this.enablePruning,
+                modulesToSeed,
+            });
+            throw error;
         }
-
-        // Filter modules if needed
-        const filteredSeedDataFiles = modulesToSeed ? seedDataFiles.filter((file) => modulesToSeed.includes(file.moduleMetadata?.name)) : seedDataFiles;
-
-        if (filteredSeedDataFiles.length === 0) {
-            this.logger.warn(`No modules matched the provided modulesToSeed list.`);
-            return;
-        }
-
-        // let usersDetail;
-        // For each module metadata file, we will process the seeding steps one by one.
-        for (let i = 0; i < filteredSeedDataFiles.length; i++) {
-            const overallMetadata = filteredSeedDataFiles[i];
-            const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
-            console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
-            this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
-
-            // Process module metadata first. 
-            this.logger.log(`Seeding Module / Model / Fields`);
-            const moduleModelFieldCounts = await this.seedModuleModelFields(moduleMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
-
-            // Media Storage provider templates
-            this.logger.log(`Seeding Media Storage Providers`);
-            const mediaStorageCounts = await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Media Storage Providers', mediaStorageCounts)}`);
-
-            // Custom role handling
-            this.logger.log(`Seeding Roles`);
-            const roleCounts = await this.seedRoles(overallMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Roles', roleCounts)}`);
-
-            // Custom user handling
-            this.logger.log(`Seeding Users`);
-            const userCounts = await this.seedUsers(overallMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Users', userCounts)}`);
-
-            // Application Module View handling 
-            this.logger.log(`Seeding Views`);
-            const viewCounts = await this.seedViews(overallMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Views', viewCounts)}`);
-
-            // Application Module Action handling
-            this.logger.log(`Seeding Actions`);
-            const actionCounts = await this.seedActions(overallMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Actions', actionCounts)}`);
-
-            // Application Module Menu handling 
-            this.logger.log(`Seeding Menus`);
-            const menuCounts = await this.seedMenus(overallMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Menus', menuCounts)}`);
-
-            // Email templates 
-            this.logger.log(`Seeding Email Templates`);
-            const emailTemplateCounts = await this.seedEmailTemplates(overallMetadata, moduleMetadata.name);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Email Templates', emailTemplateCounts)}`);
-
-            // Sms templates
-            this.logger.log(`Seeding Sms Templates`);
-            const smsTemplateCounts = await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Sms Templates', smsTemplateCounts)}`);
-
-            // Security rules
-            this.logger.log(`Seeding Security Rules`);
-            const securityRuleCounts = await this.seedSecurityRules(overallMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Security Rules', securityRuleCounts)}`);
-
-            // List Of Values
-            this.logger.log(`Seeding List Of Values`);
-            const lovCounts = await this.seedListOfValues(moduleMetadata, overallMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'List Of Values', lovCounts)}`);
-
-            // Dashboards
-            this.logger.log(`Seeding Dashboards`);
-            const dashboardCounts = await this.seedDashboards(moduleMetadata, overallMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Dashboards', dashboardCounts)}`);
-
-            // Scheduled Jobs
-            this.logger.log(`Seeding Scheduled Jobs`);
-            const scheduledJobCounts = await this.seedScheduledJobs(moduleMetadata, overallMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Scheduled Jobs', scheduledJobCounts)}`);
-
-            // Saved Filters
-            this.logger.log(`Seeding Saved Filters`);
-            const savedFilterCounts = await this.seedSavedFilters(moduleMetadata, overallMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Saved Filters', savedFilterCounts)}`);
-
-            // Model Sequences
-            this.logger.log(`Seeding Model Sequences`);
-            const modelSequenceCounts = await this.seedModelSequences(overallMetadata);
-            console.log(`${this.formatSeedResult(moduleMetadata.name, 'Model Sequences', modelSequenceCounts)}`);
-        }
-
-        // Setup default roles with permissions.
-        await this.setupDefaultRolesWithPermissions();
-
-        // Add a console log indicating seeding is finished. This needs to be console.log so that it looks proper when this code is run via CLI.
-        console.log(`✔ Seeding completed.`);
-        //this.logger.log(`All Seeders finished`);
-
-        //FIXME: Handle displaying the created users credentials in a better way.
-        // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
     }
 
     private async seedScheduledJobs(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
@@ -402,7 +420,6 @@ export class ModuleMetadataSeederService {
     private async seedDefaultSystemFields() {
         await this.systemFieldsSeederService.seed();
     }
-
 
     // OK
     private async seedPermissions() {
@@ -858,7 +875,6 @@ export class ModuleMetadataSeederService {
         return { pruned, upserted };
     }
 
-
     private async handleSeedSecurityRules(rulesDto: CreateSecurityRuleDto[]) {
         if (!rulesDto || rulesDto.length === 0) {
             this.logger.debug(`No security rules found to seed`);
@@ -908,7 +924,27 @@ export class ModuleMetadataSeederService {
             return;
         }
         for (const dto of createSavedFilterDto) {
-            await this.savedFiltersRepo.upsertWithDto({ ...dto, filterQueryJson: JSON.stringify(dto.filterQueryJson) });
+            this.validateSavedFilterQueryJsonWrapper(dto);
+            await this.savedFiltersRepo.upsertWithDto({ ...dto, filterQueryJson: JSON.stringify(dto.filterQueryJson), isSeeded: true });
+        }
+    }
+
+    private validateSavedFilterQueryJsonWrapper(dto: CreateSavedFiltersDto): void {
+        const filterName = dto?.name ?? '<unnamed>';
+        const filterQueryJson = dto?.filterQueryJson;
+        const baseErrorMessage =
+            `Invalid saved filter "${filterName}": filterQueryJson must be wrapped with a top-level "$or" or "$and". ` +
+            `Example: {"$or":[{"employeeStatus":{"$eq":"Active"}}]}`;
+
+        if (!filterQueryJson || typeof filterQueryJson !== 'object' || Array.isArray(filterQueryJson)) {
+            throw new Error(baseErrorMessage);
+        }
+
+        const topLevelKeys = Object.keys(filterQueryJson);
+        const hasLogicalWrapper = topLevelKeys.includes('$or') || topLevelKeys.includes('$and');
+        if (!hasLogicalWrapper) {
+            const receivedKeys = topLevelKeys.length > 0 ? topLevelKeys.join(', ') : '(none)';
+            throw new Error(`${baseErrorMessage}. Received top-level keys: ${receivedKeys}`);
         }
     }
 
@@ -1493,6 +1529,32 @@ export class ModuleMetadataSeederService {
 
     //     return answer.trim().toLowerCase().startsWith('y');
     // }
+
+    private logSeedFailureForCli(
+        error: unknown,
+        context: { moduleName: string; step: string; pruneEnabled: boolean; modulesToSeed: string[] | null }
+    ): void {
+        const err = error instanceof Error ? error : new Error(String(error));
+        const stackLines = (err.stack ?? '')
+            .split('\n')
+            .slice(0, 8)
+            .map((line) => line.trim())
+            .filter(Boolean);
+        const logPayload = {
+            module: context.moduleName,
+            step: context.step,
+            pruneEnabled: context.pruneEnabled,
+            modulesToSeed: context.modulesToSeed?.length ? context.modulesToSeed : 'ALL',
+            error: {
+                name: err.name,
+                message: err.message,
+                stackPreview: stackLines.length > 0 ? stackLines : undefined,
+            },
+        };
+
+        console.log('✖ Seeding failed');
+        console.log(JSON.stringify(logPayload, null, 2));
+    }
 
     private formatSeedResult(moduleName: string, label: string, counts: { pruned: number; upserted: number }): string {
         if (this.enablePruning) {

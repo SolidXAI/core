@@ -10,7 +10,7 @@ import { Exclude, Expose } from "class-transformer";
 export class User extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     @Expose()
-    fullName: string; 
+    fullName: string;
     @Index({ unique: true })
     @Column({ type: "varchar" })
     @Expose()
@@ -111,6 +111,9 @@ export class User extends CommonEntity {
     // dont send to client
     @Column({ nullable: true })
     rehashedAt: Date;
+    // dont send to client
+    @Column({ type: "int", default: 0 })
+    failedLoginAttempts: number = 0;
     @Expose()
     _media: any;
 }
