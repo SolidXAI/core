@@ -98,7 +98,7 @@ export class SolidMicroserviceAdapter {
       const payload = JSON.parse(payloadJson) as { exp?: number };
       if (!payload?.exp || typeof payload.exp !== 'number') return undefined;
       const nowSeconds = Math.floor(Date.now() / 1000);
-      const ttl = payload.exp - nowSeconds;
+      const ttl = payload.exp - nowSeconds - 10;
       return ttl > 0 ? ttl : undefined;
     } catch {
       return undefined;
