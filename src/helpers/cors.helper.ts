@@ -8,13 +8,16 @@ export function buildDefaultCorsOptions(): CorsOptions {
 
   const escapeRx = (s: string) => s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
   const patternToRegex = (pattern: string): RegExp => {
-    const hasScheme = /^https?:\/\//i.test(pattern);
-    const schemePart = hasScheme ? '' : 'https?:\\/\\/';
     if (pattern === '*' || pattern === '.*') return /^.*$/i;
-    const escaped = escapeRx(pattern)
-      .replace(/^https?:\/\//i, '')      // strip scheme if present
-      .replace(/\*/g, '[^.]+');          // * => one subdomain segment
-    return new RegExp(`^${schemePart}${escaped}(?::\\d+)?$`, 'i');
+    // Strip scheme and split on wildcards BEFORE escaping so that escapeRx
+    // never turns '*' into '\*', which would leave a stray backslash and
+    // corrupt the character class when the wildcard is later substituted.
+    const body = pattern
+      .replace(/^https?:\/\//i, '')   // strip scheme (always re-added below)
+      .split('*')                      // split on wildcards
+      .map(escapeRx)                   // escape each literal segment
+      .join('[^.]+');                  // rejoin with single-segment wildcard
+    return new RegExp(`^https?:\\/\\/${body}(?::\\d+)?$`, 'i');
   };
 
   const matchers = allowed.map(patternToRegex);
