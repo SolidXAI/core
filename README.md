@@ -166,7 +166,7 @@ For full configuration options — environment variables, storage providers, que
 |---|---|
 | Framework | NestJS 10 |
 | ORM | TypeORM (PostgreSQL, MS SQL) |
-| Authentication | Database Authentication supporting pasword and otp login, Google OAuth2 |
+| Authentication | Database authentication with support for password, OTP, and Google OAuth 2.0 login methods |
 | Queues | RabbitMQ · Database-backed |
 | Storage | AWS S3 · Local disk |
 | Email | SMTP (Nodemailer) |
@@ -175,8 +175,6 @@ For full configuration options — environment variables, storage providers, que
 | PDF generation | Puppeteer |
 | CLI | nest-commander |
 | Logging | Winston |
-
----
 
 ## Part of the SolidX Platform
 
@@ -189,8 +187,6 @@ The output is not locked into a proprietary runtime. It runs on the same stack y
 | Website | [solidxai.com](https://solidxai.com) |
 | Documentation | [docs.solidxai.com](https://docs.solidxai.com/docs) |
 | Support | support@solidxai.com |
-
----
 
 ## License
 
