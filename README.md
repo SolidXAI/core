@@ -162,19 +162,19 @@ For full configuration options — environment variables, storage providers, que
 
 ## Technology Stack
 
-| Concern | Technology |
-|---|---|
-| Framework | NestJS 10 |
-| ORM | TypeORM (PostgreSQL, MS SQL) |
+| Concern        | Technology                                                                                  |
+|----------------|---------------------------------------------------------------------------------------------|
+| Framework      | NestJS 10                                                                                   |
+| ORM            | TypeORM (PostgreSQL, MS SQL)                                                                |
 | Authentication | Database authentication with support for password, OTP, and Google OAuth 2.0 login methods |
-| Queues | RabbitMQ · Database-backed |
-| Storage | AWS S3 · Local disk |
-| Email | SMTP (Nodemailer) |
-| SMS / WhatsApp | Twilio · MSG91 · 3Sixty |
-| Caching | Redis · In-memory (cache-manager) |
-| PDF generation | Puppeteer |
-| CLI | nest-commander |
-| Logging | Winston |
+| Queues         | RabbitMQ · Database-backed                                                                  |
+| Storage        | AWS S3 · Local disk                                                                         |
+| Email          | SMTP (Nodemailer)                                                                           |
+| SMS / WhatsApp | Twilio · MSG91 · 3Sixty                                                                     |
+| Caching        | Redis · In-memory (cache-manager)                                                           |
+| PDF generation | Puppeteer                                                                                   |
+| CLI            | nest-commander                                                                              |
+| Logging        | Winston                                                                                     |
 
 ## Part of the SolidX Platform
 
