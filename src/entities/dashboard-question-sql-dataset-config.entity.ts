@@ -7,21 +7,29 @@ export class DashboardQuestionSqlDatasetConfig extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     datasetName: string;
+
     @Column({ type: "varchar" })
     datasetDisplayName: string;
+
     @Column({ type: "text", nullable: true })
     description: string;
+
     @Column({ type: "text" })
     sql: string;
+
     @Column({ type: "varchar" })
     labelColumnName: string;
+
     @Column({ type: "varchar" })
     valueColumnName: string;
+
     @ManyToOne(() => DashboardQuestion, { nullable: false })
     @JoinColumn()
     question: DashboardQuestion;
+
     @Column({ type: "text", nullable: true })
     options: any;
+
     @Index({ unique: true })
     @Column({ type: "varchar", nullable: false })
     externalId: string;
