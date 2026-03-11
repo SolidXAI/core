@@ -97,6 +97,12 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         await this.cleanup();
         this.logger.log(`RabbitMqSubscriber in connectAndConsume for queue: ${queueName} and url: ${this.url}`);
 
+        const options = this.options();
+        const prefetch = options.prefetch ?? 1;
+        if (prefetch < 1) {
+            throw new Error(`RabbitMqSubscriber prefetch must be >= 1 for queue ${queueName}`);
+        }
+
         let connection: amqp.Connection;
         try {
             connection = await this.establishConnection();
@@ -133,7 +139,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         });
 
         // Process one message at a time per consumer to avoid parallel work on the same subscriber instance.
-        await channel.prefetch(1);
+        await channel.prefetch(prefetch);
 
         // Use a direct exchange with a stable routing key so retry DLX can route back to the main queue.
         const exchangeName = `${queueName}.exchange`;
