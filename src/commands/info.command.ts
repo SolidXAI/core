@@ -4,6 +4,7 @@ import { ISolidDatabaseModule } from 'src/interfaces';
 import { getDynamicModuleNames } from 'src/helpers/module.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { SettingService } from 'src/services/setting.service';
+import { InfoService } from 'src/services/info.service';
 
 interface InfoCommandOptions {
     detailed?: boolean;
@@ -16,6 +17,7 @@ export class InfoCommand extends CommandRunner {
     constructor(
         private readonly solidRegistry: SolidRegistry,
         private readonly settingService: SettingService,
+        private readonly infoService: InfoService,
     ) {
         super();
     }
@@ -25,6 +27,7 @@ export class InfoCommand extends CommandRunner {
         const dataSources = this.getDataSources();
 
         const output: Record<string, any> = {
+            packages: this.infoService.getPackageVersions(),
             modules: {
                 count: enabledModules.length,
                 names: enabledModules,
