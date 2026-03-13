@@ -145,6 +145,8 @@ import { SavedFiltersController } from './controllers/saved-filters.controller';
 import { ScheduledJobController } from './controllers/scheduled-job.controller';
 import { SecurityRuleController } from './controllers/security-rule.controller';
 import { SettingController } from './controllers/setting.controller';
+import { InfoController } from './controllers/info.controller';
+import { InfoService } from './services/info.service';
 import { UserActivityHistoryController } from './controllers/user-activity-history.controller';
 import { UserViewMetadataController } from './controllers/user-view-metadata.controller';
 import { UserController } from './controllers/user.controller';
@@ -436,6 +438,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     SecurityRuleController,
     ServiceController,
     SettingController,
+    InfoController,
     SmsTemplateController,
     TestController,
     TestQueueController,
@@ -475,6 +478,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     RefreshModelCommand,
     RefreshModuleCommand,
     InfoCommand,
+    InfoService,
     SolidIntrospectService,
     DiscoveryService,
     R2RHelperService,

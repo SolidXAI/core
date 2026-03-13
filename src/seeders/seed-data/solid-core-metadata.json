@@ -4932,7 +4932,7 @@
             "name": "user",
             "displayName": "User",
             "type": "relation",
-            "required": true,
+            "required": false,
             "unique": false,
             "index": true,
             "private": false,

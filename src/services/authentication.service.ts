@@ -464,7 +464,7 @@ export class AuthenticationService {
 
     private async notifyUserOnOtpInitiateRegistration(user: User, registrationValidationSource: string) {
         const companyLogo = await this.getCompanyLogo();
-        const dummyOtp = this.settingService.getConfigValue<SolidCoreSetting>('dummyOtp');
+        const dummyOtp = this.getDummyOtpForUser(user);
 
         if (dummyOtp)
             return; // Do nothing if dummy otp is configured.
@@ -594,15 +594,44 @@ export class AuthenticationService {
         return true;
     }
 
-    private async otp(): Promise<otp> {
+    private async otp(user?: User): Promise<otp> {
         const now = new Date();
         const otpExpiry = this.settingService.getConfigValue<SolidCoreSetting>('otpExpiry');
-        const dummyOtp = this.settingService.getConfigValue<SolidCoreSetting>('dummyOtp');
+        const dummyOtp = this.getDummyOtpForUser(user);
         now.setMinutes(now.getMinutes() + otpExpiry);
         return {
             token: dummyOtp ? dummyOtp : randomInt(100000, 999999).toString(),
             expiresAt: now,
         };
+    }
+
+    private getDummyOtpForUser(user?: User): string | undefined {
+        const dummyOtp = this.settingService.getConfigValue<SolidCoreSetting>('dummyOtp');
+        if (!dummyOtp || !user?.username) {
+            return undefined;
+        }
+        const allowedUsers = this.getDummyOtpUsers();
+        if (!allowedUsers.size) {
+            return undefined;
+        }
+        const username = user.username.trim().toLowerCase();
+        if (!username) {
+            return undefined;
+        }
+        return allowedUsers.has(username) ? dummyOtp : undefined;
+    }
+
+    private getDummyOtpUsers(): Set<string> {
+        const rawUsers = this.settingService.getConfigValue<SolidCoreSetting>('dummyOtpUsers');
+        if (!rawUsers || typeof rawUsers !== 'string') {
+            return new Set();
+        }
+        return new Set(
+            rawUsers
+                .split(',')
+                .map((value) => value.trim().toLowerCase())
+                .filter(Boolean),
+        );
     }
 
     async signIn(signInDto: SignInDto) {
@@ -709,7 +738,7 @@ export class AuthenticationService {
     }
 
     private async assignLoginOtp(user: User, type: PasswordlessLoginValidateWhatSources): Promise<void> {
-        const { token, expiresAt } = await this.otp();
+        const { token, expiresAt } = await this.otp(user);
         if (type === PasswordlessLoginValidateWhatSources.EMAIL) {
             user.emailVerificationTokenOnLogin = token;
             user.emailVerificationTokenOnLoginExpiresAt = expiresAt;
@@ -729,7 +758,7 @@ export class AuthenticationService {
 
     private async notifyUserOnOtpInititateLogin(user: User, loginType: PasswordlessLoginValidateWhatSources) {
         const companyLogo = await this.getCompanyLogo();
-        const dummyOtp = this.settingService.getConfigValue<SolidCoreSetting>('dummyOtp');
+        const dummyOtp = this.getDummyOtpForUser(user);
 
         if (dummyOtp)
             return; // Do nothing if dummy otp is configured.
@@ -794,7 +823,7 @@ export class AuthenticationService {
         }
 
         // we do not need to clear the otp when dummy otp is configured...
-        const dummyOtp = this.settingService.getConfigValue<SolidCoreSetting>('dummyOtp');
+        const dummyOtp = this.getDummyOtpForUser(user);
         if (!dummyOtp)
             this.clearLoginOtp(user, type);
 
@@ -890,16 +919,14 @@ export class AuthenticationService {
     }
 
     // generate uuid token for forgot password
-    private async generateForgotPasswordToken() {
+    private async generateForgotPasswordToken(user?: User) {
         const expiryTime = new Date();
         const forgotPasswordVerificationTokenExpiry = this.settingService.getConfigValue<SolidCoreSetting>('forgotPasswordVerificationTokenExpiry');
-        const dummyOtp = this.settingService.getConfigValue<SolidCoreSetting>('dummyOtp');
+        const dummyOtp = this.getDummyOtpForUser(user);
         expiryTime.setMinutes(expiryTime.getMinutes() + forgotPasswordVerificationTokenExpiry);
 
         return {
-            token: dummyOtp
-                ? dummyOtp
-                : uuidv4(),   // UUID instead of numeric OTP
+            token: dummyOtp ? dummyOtp : uuidv4(),
             expiresAt: expiryTime,
         };
     }
@@ -931,7 +958,7 @@ export class AuthenticationService {
         // 3. Generate a 6 digit validation token, we send this token to the user over their email & mobile number (controlled using configuration).
         // 4. Save this validation token in new fields on the user record. 
         if (isValidUser) {
-            const { token, expiresAt } = await this.generateForgotPasswordToken();
+            const { token, expiresAt } = await this.generateForgotPasswordToken(user);
             user.verificationTokenOnForgotPassword = token;
             user.verificationTokenOnForgotPasswordExpiresAt = expiresAt;
             await this.userRepository.save(user);
