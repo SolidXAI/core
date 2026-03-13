@@ -320,8 +320,32 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             }
         }
 
+        if (value instanceof Date) {
+            return value.toISOString();
+        }
 
         return value.toString();
+    }
+
+    private formatDateForDisplay(field: any, value: any): string {
+        const date = value instanceof Date ? value : new Date(value);
+        if (isNaN(date.getTime())) {
+            return value.toString();
+        }
+        const dd = String(date.getDate()).padStart(2, '0');
+        const mm = String(date.getMonth() + 1).padStart(2, '0');
+        const yyyy = date.getFullYear();
+        if (field.type === 'date') {
+            return `${dd}-${mm}-${yyyy}`;
+        }
+        if (field.type === 'time') {
+            const hh = String(date.getHours()).padStart(2, '0');
+            const min = String(date.getMinutes()).padStart(2, '0');
+            return `${hh}:${min}`;
+        }
+        const hh = String(date.getHours()).padStart(2, '0');
+        const min = String(date.getMinutes()).padStart(2, '0');
+        return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
     }
 
     private async formatFieldValueDisplay(field: any, value: any): Promise<string> {
@@ -331,6 +355,10 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         if (field.type === 'selectionStatic' || field.type === 'selectionDynamic') {
             return `${value}`;
+        }
+
+        if (['date', 'datetime', 'time'].includes(field.type)) {
+            return this.formatDateForDisplay(field, value);
         }
 
         if (field.type === 'relation') {
