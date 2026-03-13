@@ -4,7 +4,7 @@
 
 ### Breaking Changes
 
-- **Date/time handling (REVIEW)**: All base entity timestamp columns (`createdAt`, `updatedAt`, `deletedAt`, `publishedAt`) now use a UTC passthrough transformer. Previously, timestamps were adjusted to the configured wall-clock timezone when read back. They are now always returned as UTC. Applications that relied on timezone-adjusted timestamps from `CommonEntity` or `LegacyCommonEntity` will see different date values. 
+- **Date/time handling**: All base entity timestamp columns (`createdAt`, `updatedAt`, `deletedAt`, `publishedAt`) now use a UTC passthrough transformer. Previously, timestamps were adjusted to the configured wall-clock timezone when read back. They are now always returned as UTC. Applications that relied on timezone-adjusted timestamps from `CommonEntity` or `LegacyCommonEntity` will see different date values. 
 - **Passwordless registration configuration**: `IAM_PASSWORD_LESS_REGISTRATION_VALIDATE_WHAT` is now treated as a plain string (e.g. `"email"` or `"mobile"`) instead of a comma-separated list. Multi-value configurations are no longer supported.
 - **Local Passport strategy removed**: `LocalStrategy` / `LocalAuthGuard` have been deleted. Applications that depended on the local passport strategy must migrate away from it.
 ---
@@ -15,7 +15,7 @@
 - **Account blocking on repeated login failures**: A new `failedLoginAttempts` counter column is tracked on the `User` entity. When the counter exceeds the configured threshold (`IAM_MAX_FAILED_LOGIN_ATTEMPTS`, default `0` = disabled), the user receives a `ForbiddenException` with message `"Your account has been blocked due to multiple failed login attempts."` The check runs on password login, OTP login, and Google OAuth login. The counter resets to 0 on a successful login.
 - **Active-user check on OTP login**: Initiating a mobile OTP login now checks `user.active` upfront. Inactive users receive an `UnauthorizedException("User is inactive.")` before an OTP is ever generated.
 - **Per-user dummy OTP**: The dummy OTP can now be enabled on a per-user basis, in addition to the global setting. This allows test/development accounts to be individually configured without affecting all users.
-- **New system setting exposed (REVIEW)**: `maxFailedLoginAttempts` (env: `IAM_MAX_FAILED_LOGIN_ATTEMPTS`) is now surfaced as a `SystemAdminReadonly` setting.
+- **New system setting exposed**: `maxFailedLoginAttempts` (env: `IAM_MAX_FAILED_LOGIN_ATTEMPTS`) is now surfaced as a `SystemAdminReadonly` setting.
 
 #### Layout & Views
 - **`viewModes` in layout response**: `fetchLayout()` now returns a `viewModes` array alongside the layout payload. Each entry describes an alternative view (list, kanban, or tree) available for the current model, containing `{ type, menuItemId, menuItemName, actionId, actionName }`. This allows clients to offer view-switcher UI without a separate API call.
