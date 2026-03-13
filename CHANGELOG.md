@@ -1,14 +1,12 @@
 # Changelog
 
-## [0.1.5-beta.1] - 2026-03-09
+## [0.1.5] - 2026-03-13
 
 ### Breaking Changes
 
-- **Date/time handling**: All base entity timestamp columns (`createdAt`, `updatedAt`, `deletedAt`, `publishedAt`) now use a UTC passthrough transformer. Previously, timestamps were adjusted to the configured wall-clock timezone when read back. They are now always returned as UTC. Applications that relied on timezone-adjusted timestamps from `CommonEntity` or `LegacyCommonEntity` will see different date values.
+- **Date/time handling (REVIEW)**: All base entity timestamp columns (`createdAt`, `updatedAt`, `deletedAt`, `publishedAt`) now use a UTC passthrough transformer. Previously, timestamps were adjusted to the configured wall-clock timezone when read back. They are now always returned as UTC. Applications that relied on timezone-adjusted timestamps from `CommonEntity` or `LegacyCommonEntity` will see different date values. 
 - **Passwordless registration configuration**: `IAM_PASSWORD_LESS_REGISTRATION_VALIDATE_WHAT` is now treated as a plain string (e.g. `"email"` or `"mobile"`) instead of a comma-separated list. Multi-value configurations are no longer supported.
 - **Local Passport strategy removed**: `LocalStrategy` / `LocalAuthGuard` have been deleted. Applications that depended on the local passport strategy must migrate away from it.
-- **DB migrations required**: Three `User` entity columns (`passwordScheme`, `passwordSchemeVersion`, `failedLoginAttempts`) are now non-nullable. Existing rows with `NULL` in these columns must be back-filled before deploying.
-
 ---
 
 ### New Features
@@ -16,7 +14,8 @@
 #### Authentication & Security
 - **Account blocking on repeated login failures**: A new `failedLoginAttempts` counter column is tracked on the `User` entity. When the counter exceeds the configured threshold (`IAM_MAX_FAILED_LOGIN_ATTEMPTS`, default `0` = disabled), the user receives a `ForbiddenException` with message `"Your account has been blocked due to multiple failed login attempts."` The check runs on password login, OTP login, and Google OAuth login. The counter resets to 0 on a successful login.
 - **Active-user check on OTP login**: Initiating a mobile OTP login now checks `user.active` upfront. Inactive users receive an `UnauthorizedException("User is inactive.")` before an OTP is ever generated.
-- **New system setting exposed**: `maxFailedLoginAttempts` (env: `IAM_MAX_FAILED_LOGIN_ATTEMPTS`) is now surfaced as a `SystemAdminReadonly` setting.
+- **Per-user dummy OTP**: The dummy OTP can now be enabled on a per-user basis, in addition to the global setting. This allows test/development accounts to be individually configured without affecting all users.
+- **New system setting exposed (REVIEW)**: `maxFailedLoginAttempts` (env: `IAM_MAX_FAILED_LOGIN_ATTEMPTS`) is now surfaced as a `SystemAdminReadonly` setting.
 
 #### Layout & Views
 - **`viewModes` in layout response**: `fetchLayout()` now returns a `viewModes` array alongside the layout payload. Each entry describes an alternative view (list, kanban, or tree) available for the current model, containing `{ type, menuItemId, menuItemName, actionId, actionName }`. This allows clients to offer view-switcher UI without a separate API call.
@@ -34,6 +33,9 @@
 #### Role Management
 - **`PATCH /role-metadata/:id` endpoint**: A new partial update endpoint has been added to the role metadata controller, allowing partial role updates without sending the full role object.
 
+#### Version Info
+- **`GET /info` endpoint**: A new `InfoService` and controller expose the installed versions of `solid-core`, `solid-core-ui`, and `solid-code-builder`, indicating whether each package is resolved from a local path or npm.
+
 ---
 
 ### Bug Fixes
@@ -43,12 +45,15 @@
 - **`fetchLayout` view modes query**: Fixed an issue where the initial view modes query filtered by menu item role access and `modelName`, which produced incorrect results. The query now resolves the model and module IDs from the menu item and queries `ActionMetadata` directly.
 - **Seeder filter validation**: The seeder now validates that each saved filter's `filterQueryJson` is an object with a top-level `$or` or `$and` key before upserting. Invalid filter JSON fails with a clear error rather than silently seeding malformed data.
 - **`solid-core-metadata.json` corrections**: Fixed stale view user keys for chatter models (`chatter-message-list-view` → `chatterMessage-list-view`); removed a stale `locale-list-view` action definition; cleared incorrect `actionUserKey` values on top-level menu items that pointed to non-existent actions.
+- **AI interaction entity**: The `user` relation on `AiInteraction` is now nullable, allowing AI interactions to be recorded without a linked user.
 
 ---
 
 ### Improvements
 
 #### Authentication
+- **Microservice adapter access token caching**: `SolidMicroserviceAdapter` now caches the access token and reuses it across requests, avoiding redundant re-authentication on every call.
+- **JWT token optimisation**: Minor optimisation to JWT handling in the microservice adapter.
 - **Dummy OTP optimisation**: After a successful OTP login, the OTP is no longer cleared when a `dummyOtp` is configured in settings. This prevents the dummy OTP from being consumed on first use in test/development environments.
 - **OTP registration flow refactored**: Internal OTP registration logic split into focused private methods (`upsertUserWithRegistrationVerificationTokens`, `assignRegistrationOtp`, etc.) for maintainability.
 
@@ -57,7 +62,9 @@
 
 #### Database
 - **New indexes on Chatter tables**: A composite index on `ChatterMessage(coModelName, coModelEntityId)` and an index on `ChatterMessageDetails(chatterMessage)` have been added, improving lookup performance for the typical chatter query pattern.
-- **`passwordScheme` and `passwordSchemeVersion` made non-nullable**: These columns now rely on their default values (`"bcrypt"` and `1` respectively) rather than allowing `NULL`.
+
+#### Messaging
+- **RabbitMQ subscriber prefetch**: The RabbitMQ subscriber now sets a prefetch count, allowing fairer concurrency by preventing a single consumer from hogging all unacknowledged messages.
 
 #### Request Handling
 - **Request body size limit raised to 10 MB**: `SolidCoreModule` now configures `express.json` and `express.urlencoded` middleware with a `10mb` limit globally.
@@ -72,12 +79,6 @@
 #### Dependencies
 - **Playwright moved to optional peer dependency**: `@playwright/test` removed from `devDependencies`. `playwright` is now listed as an optional peer dependency — consumers who need it for testing must install it explicitly.
 - **`form-data` added as a direct dependency**.
-
----
-
-## [0.1.5-beta.0]
-
-Initial 0.1.5 beta release.
 
 ---
 
