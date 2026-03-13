@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:api.github.com)",
+      "Read(//Users/oswald/projects/Solid_Starters/solid-core-ui/**)",
+      "Bash(grep -E \"\\\\.md|\\\\.json|\\\\.config|\\\\.ts$|\\\\.js$\")",
+      "Bash(xargs basename -a)",
+      "Read(//Users/oswald/projects/Solid_Starters/solid-code-builder/**)",
+      "Bash(grep -E \"\\\\.\\(md|json\\)$|^d\")",
+      "Bash(ls -la /Users/oswald/projects/Solid_Starters/solid-code-builder/*.json)"
+    ],
+    "additionalDirectories": [
+      "/Users/oswald/projects/Solid_Starters/solid-core-ui",
+      "/Users/oswald/projects/Solid_Starters/solid-code-builder"
+    ]
+  }
+}

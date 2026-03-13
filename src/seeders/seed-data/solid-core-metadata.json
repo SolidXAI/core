@@ -4151,7 +4151,7 @@
         "singularName": "importTransactionErrorLog",
         "tableName": "ss_import_transaction_error_log",
         "pluralName": "importTransactionErrorLogs",
-        "displayName": "Import Transaction Error Logs",
+        "displayName": "Import Error Logs",
         "description": "Model to capture all information related to a file import transaction error log",
         "dataSource": "default",
         "dataSourceType": "postgres",
@@ -5864,7 +5864,7 @@
       "modelUserKey": "aiInteraction"
     },
     {
-      "displayName": "Import Transaction Error Logs List Action",
+      "displayName": "Import Error Logs List Action",
       "name": "importTransactionErrorLog-list-action",
       "type": "solid",
       "domain": "",
@@ -6163,7 +6163,7 @@
       "parentMenuItemUserKey": "other-menu-item"
     },
     {
-      "displayName": "Import Transaction Error Logs",
+      "displayName": "Import Error Logs",
       "name": "importTransactionErrorLog-menu-item",
       "sequenceNumber": 9,
       "actionUserKey": "importTransactionErrorLog-list-action",
@@ -6171,7 +6171,7 @@
       "parentMenuItemUserKey": "other-menu-item"
     },
     {
-      "displayName": "Dashboard Management",
+      "displayName": "Dashboards",
       "name": "dashboardManagement-menu-item",
       "sequenceNumber": 8,
       "actionUserKey": "",
@@ -12306,7 +12306,7 @@
     },
     {
       "name": "importTransactionErrorLog-list-view",
-      "displayName": "Import Transaction Error Logs",
+      "displayName": "Import Error Logs",
       "type": "list",
       "context": "{}",
       "moduleUserKey": "solid-core",
@@ -12343,7 +12343,7 @@
     },
     {
       "name": "importTransactionErrorLog-form-view",
-      "displayName": "Import Transaction Error Logs",
+      "displayName": "Import Error Logs",
       "type": "form",
       "context": "{}",
       "moduleUserKey": "solid-core",
@@ -12352,7 +12352,7 @@
         "type": "form",
         "attrs": {
           "name": "form-1",
-          "label": "Import Transaction Error Logs",
+          "label": "Import Error Logs",
           "className": "grid"
         },
         "children": [
