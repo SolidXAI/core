@@ -96,6 +96,7 @@ const getSolidCoreSettings = (isProd: boolean) => ([
   { moduleName: "solid-core", key: "forgotPasswordVerificationTokenExpiry", value: parseInt(process.env.IAM_FORGOT_PASSWORD_VERIFICATION_TOKEN_EXPIRY ?? '10'), level: SettingLevel.SystemEnv },
   { moduleName: "solid-core", key: "defaultRole", value: process.env.IAM_DEFAULT_ROLE ?? 'Public', level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "dummyOtp", value: process.env.IAM_OTP_DUMMY, level: SettingLevel.SystemEnv },
+  { moduleName: "solid-core", key: "dummyOtpUsers", value: process.env.IAM_OTP_DUMMY_USERS, level: SettingLevel.SystemEnv },
   { moduleName: "solid-core", key: "forgotPasswordSendVerificationTokenOn", value: process.env.IAM_FORGOT_PASSWORD_SEND_VERIFICATION_TOKEN_ON ?? 'email', level: SettingLevel.SystemEnv },
   { moduleName: "solid-core", key: "maxFailedLoginAttempts", value: parseInt(process.env.IAM_MAX_FAILED_LOGIN_ATTEMPTS ?? '0'), level: SettingLevel.SystemAdminReadonly },
   { moduleName: "solid-core", key: "forceChangePasswordOnFirstLogin", value: false, level: SettingLevel.SystemAdminEditable },

@@ -3,7 +3,6 @@ import type { TestingMetadata, TestingDataRecord } from "../contracts/testing-me
 import type { ApiAdapterOptions } from "../adapters/api/api.types";
 import type { PlaywrightAdapterOptions } from "../adapters/ui/ui.types";
 import { ApiAdapter } from "../adapters/api/api-adapter";
-import { PlaywrightAdapter } from "../adapters/ui/playwright-adapter";
 import { registerApiSteps } from "../steps/api";
 import { registerUiSteps } from "../steps/ui";
 import { registerAssertSteps } from "../steps/assert";
@@ -68,6 +67,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const resources = new SimpleResourceStore();
   const reporter = opts.reporter ?? new ConsoleReporter();
   const api = new ApiAdapter(opts.api);
+  const { PlaywrightAdapter } = await import("../adapters/ui/playwright-adapter");
   const ui = new PlaywrightAdapter(opts.ui);
   const ctxBase = { resources, reporter, api, ui, specRegistry, testData, options: opts.options };
   const uiStarted = { value: false };
