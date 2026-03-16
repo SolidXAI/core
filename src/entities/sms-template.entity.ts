@@ -12,7 +12,7 @@ export class SmsTemplate extends CommonEntity {
     body: string;
     @Column({ type: "varchar", nullable: true })
     smsProviderTemplateId: string;
-    @Column({ name: "description", type: "text", nullable: true })
+    @Column({ name: "description", nullable: true })
     description: string;
     @Column({ name: "active", nullable: true, default: true })
     active: boolean = true;

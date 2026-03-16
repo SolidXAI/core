@@ -3,6 +3,7 @@ import { Entity, Column, Index, ManyToOne, JoinColumn } from "typeorm";
 import { ModuleMetadata } from 'src/entities/module-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { ViewMetadata } from 'src/entities/view-metadata.entity'
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 @Entity("ss_action_metadata")
 export class ActionMetadata extends CommonEntity {
     @Column({ name: "name", type: "varchar", unique: true })
@@ -15,10 +16,10 @@ export class ActionMetadata extends CommonEntity {
     @Column({ name: "type", type: "varchar" })
     type: string;
 
-    @Column({ name: "domain", type: "text", nullable: true })
+    @Column({ name: "domain", nullable: true, ...getColumnType('longText') })
     domain: any;
 
-    @Column({ name: "context", type: "text", nullable: true })
+    @Column({ name: "context", nullable: true, ...getColumnType('longText') })
     context: any;
 
     @Column({ name: "custom_component", type: "varchar", nullable: true })
