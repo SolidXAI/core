@@ -32,7 +32,7 @@ export class DashboardVariable extends CommonEntity {
     @JoinColumn()
     dashboard: Dashboard;
 
-    @Column({ nullable: true, ...getColumnType('longText') })
+    @Column({ nullable: true})
     defaultValue: string;
 
     @Column({ type: "varchar", nullable: true })
