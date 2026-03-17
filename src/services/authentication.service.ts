@@ -828,6 +828,7 @@ export class AuthenticationService {
             this.clearLoginOtp(user, type);
 
         user.failedLoginAttempts = 0;
+        await this.userActivityHistoryService.logEvent('login', user); 
         await this.userRepository.save(user);
         return this.buildLoginTokenResponse(user);
     }
