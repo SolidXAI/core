@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -320,8 +321,29 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             }
         }
 
+        if (value instanceof Date) {
+            return value.toISOString();
+        }
 
         return value.toString();
+    }
+
+    private formatDateForDisplay(field: any, value: any): string {
+        const date = dayjs(value);
+
+        if (!date.isValid()) {
+            return value?.toString?.() ?? '';
+        }
+
+        if (field.type === 'date') {
+            return date.format('DD-MM-YYYY');
+        }
+
+        if (field.type === 'time') {
+            return date.format('HH:mm');
+        }
+
+        return date.format('DD-MM-YYYY HH:mm');
     }
 
     private async formatFieldValueDisplay(field: any, value: any): Promise<string> {
@@ -331,6 +353,10 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         if (field.type === 'selectionStatic' || field.type === 'selectionDynamic') {
             return `${value}`;
+        }
+
+        if (['date', 'datetime', 'time'].includes(field.type)) {
+            return this.formatDateForDisplay(field, value);
         }
 
         if (field.type === 'relation') {
