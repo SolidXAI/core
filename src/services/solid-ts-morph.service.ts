@@ -324,6 +324,80 @@ export class SolidTsMorphService {
         return { staged: true, overwritten: false, skipped: false };
     }
 
+    /**
+     * @param moduleFilePath  
+     * @param modelDasherizedName 
+     */
+    removeModelFromNestModule(moduleFilePath: string, modelDasherizedName: string): { staged: boolean; skipped: boolean } {
+        if (!existsSync(moduleFilePath)) {
+            this.logger.warn(`removeModelFromNestModule: module file not found at ${moduleFilePath}, skipping.`);
+            return { staged: false, skipped: true };
+        }
+
+        const existing = this.project.getSourceFile(moduleFilePath);
+        const sourceFile = existing
+            ? existing
+            : this.project.createSourceFile(moduleFilePath, readFileSync(moduleFilePath, "utf8"), { overwrite: true });
+
+        // Collect all import declarations whose specifier path references this model.
+        // Matches paths like ./entities/room.entity, ./services/room.service, etc.
+        const modelPathSegment = `/${modelDasherizedName}.`;
+        const importsToRemove = sourceFile.getImportDeclarations().filter(decl => {
+            const spec = decl.getModuleSpecifierValue().replace(/\\/g, "/");
+            return spec.includes(modelPathSegment);
+        });
+
+        if (importsToRemove.length === 0) {
+            this.logger.log(`removeModelFromNestModule: no imports found for model '${modelDasherizedName}' in ${this.rel(moduleFilePath)}`);
+            return { staged: false, skipped: true };
+        }
+
+        // Collect all identifier names imported from those declarations.
+        const identifiersToRemove = new Set<string>();
+        for (const decl of importsToRemove) {
+            for (const named of decl.getNamedImports()) {
+                identifiersToRemove.add(named.getAliasNode()?.getText() ?? named.getName());
+            }
+            const defaultImport = decl.getDefaultImport();
+            if (defaultImport) identifiersToRemove.add(defaultImport.getText());
+        }
+
+        // Remove identifiers from all @Module array properties.
+        const nestModuleClass = sourceFile.getClasses().find(cls =>
+            cls.getDecorators().some(dec => dec.getName() === "Module")
+        );
+        if (nestModuleClass) {
+            const moduleDec = nestModuleClass.getDecorators().find(dec => dec.getName() === "Module");
+            const arg0 = moduleDec?.getCallExpression()?.getArguments()[0];
+            if (arg0 && Node.isObjectLiteralExpression(arg0)) {
+                const meta = arg0 as ObjectLiteralExpression;
+                for (const propName of ["imports", "providers", "controllers", "exports"] as const) {
+                    const prop = meta.getProperty(propName);
+                    if (!prop || !Node.isPropertyAssignment(prop)) continue;
+                    const init = prop.getInitializer();
+                    if (!init || !Node.isArrayLiteralExpression(init)) continue;
+                    const arr = init as ArrayLiteralExpression;
+                    // Remove in reverse order to preserve indices.
+                    const elements = arr.getElements();
+                    for (let i = elements.length - 1; i >= 0; i--) {
+                        if (identifiersToRemove.has(elements[i].getText().trim())) {
+                            arr.removeElement(i);
+                        }
+                    }
+                }
+            }
+        }
+
+        // Remove the import declarations.
+        for (const decl of importsToRemove) {
+            decl.remove();
+        }
+
+        this.dirtySourceFiles.add(moduleFilePath);
+        this.logger.log(`Staged removal of model '${modelDasherizedName}' imports/references in: ${this.rel(moduleFilePath)}`);
+        return { staged: true, skipped: false };
+    }
+
     addImport(
         filePath: string,
         importLine: string

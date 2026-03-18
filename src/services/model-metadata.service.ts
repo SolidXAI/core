@@ -1,6 +1,7 @@
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
+import * as path from 'path';
 import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { ModelMetadata } from '../entities/model-metadata.entity';
@@ -33,6 +34,7 @@ import { RoleMetadataService } from './role-metadata.service';
 import { NavigationDto } from 'src/dtos/navigation.dto';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { CRUDService } from './crud.service';
+import { SolidTsMorphService } from './solid-ts-morph.service';
 
 @Injectable()
 export class ModelMetadataService {
@@ -54,8 +56,9 @@ export class ModelMetadataService {
     private readonly roleService: RoleMetadataService,
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
     readonly introspectService: SolidIntrospectService,
+    private readonly solidTsMorphService: SolidTsMorphService,
 
-    // No longer used. 
+    // No longer used.
     // private readonly generateCodePublihser: GenerateCodePublisherDatabase,
   ) { }
 
@@ -705,48 +708,19 @@ export class ModelMetadataService {
       await fs.writeFile(filePath, updatedContent);
     }
 
-    // <moduleName>.module.ts | Remove all references and imports of the above files. | Manual (X)
-    // const moduleFilePath = path.resolve(modulePath, `${dasherize(modelEntity.module.name)}.module.ts`);
-
-    // this.logger.log(`Working on module file ${moduleFilePath}`);
-    // const project = new Project();
-    // const sourceFile = project.addSourceFileAtPath(moduleFilePath);
-
-    // // Remove import declarations related to deleted files
-    // sourceFile.getImportDeclarations().forEach(importDecl => {
-    //   const moduleSpecifier = importDecl.getModuleSpecifierValue();
-    //   const resolvedPath = importDecl.getModuleSpecifierSourceFile()?.getFilePath() || '';
-    //   if (filesToDelete.some(file => resolvedPath.endsWith(file))) {
-    //     importDecl.remove();
-    //   }
-    // });
-
-    // // Remove identifiers from `@Module` metadata (imports, providers, controllers)
-    // const moduleDecorator = sourceFile.getFirstDescendantByKind(SyntaxKind.Decorator);
-    // const objectLiteral = moduleDecorator?.getCallExpression()?.getArguments()?.[0];
-
-    // if (objectLiteral && objectLiteral.getKind() === SyntaxKind.ObjectLiteralExpression) {
-    //   const objectLiteralExpr = objectLiteral.asKindOrThrow(SyntaxKind.ObjectLiteralExpression);
-
-    //   for (const propName of ['imports', 'providers', 'controllers', 'exports']) {
-    //     const prop = objectLiteralExpr.getProperty(propName);
-    //     if (prop && prop.getKind() === SyntaxKind.PropertyAssignment) {
-    //       const elements = prop.getFirstDescendantByKind(SyntaxKind.ArrayLiteralExpression);
-    //       elements?.getElements().forEach(el => {
-    //         const text = el.getText();
-    //         if (filesToDelete.some(file => text.toLowerCase().includes(file.split('.')[0]))) {
-    //           // @ts-ignore
-    //           el.remove();
-    //         }
-    //       });
-    //     }
-    //   }
-    // }
-
-    // // Save changes
-    // sourceFile.saveSync();
-
-    // Run seeder to reflect the removal. 
+    // <moduleName>.module.ts | Remove all references and imports of the deleted model files. | Automatic
+    if (modulePath) {
+      const moduleFilePath = path.resolve(modulePath, `${dasherize(modelEntity.module?.name)}.module.ts`);
+      this.logger.log(`Removing model '${modelEntity.singularName}' references from module file: ${moduleFilePath}`);
+      try {
+        this.solidTsMorphService.begin();
+        this.solidTsMorphService.removeModelFromNestModule(moduleFilePath, dasherize(modelEntity.singularName));
+        await this.solidTsMorphService.commit();
+      } catch (error) {
+        this.solidTsMorphService.rollback();
+        this.logger.error(`Failed to clean up module file for model '${modelEntity.singularName}':`, error);
+      }
+    }
 
     // - | Drop database table | Removes the database table from the DB, this is a very risky step. Best to review all relations to other models etc and then do this manually | Manual (X)
 
