@@ -1,3 +1,4 @@
+import dayjs from 'dayjs';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -328,24 +329,21 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
     }
 
     private formatDateForDisplay(field: any, value: any): string {
-        const date = value instanceof Date ? value : new Date(value);
-        if (isNaN(date.getTime())) {
-            return value.toString();
+        const date = dayjs(value);
+
+        if (!date.isValid()) {
+            return value?.toString?.() ?? '';
         }
-        const dd = String(date.getDate()).padStart(2, '0');
-        const mm = String(date.getMonth() + 1).padStart(2, '0');
-        const yyyy = date.getFullYear();
+
         if (field.type === 'date') {
-            return `${dd}-${mm}-${yyyy}`;
+            return date.format('DD-MM-YYYY');
         }
+
         if (field.type === 'time') {
-            const hh = String(date.getHours()).padStart(2, '0');
-            const min = String(date.getMinutes()).padStart(2, '0');
-            return `${hh}:${min}`;
+            return date.format('HH:mm');
         }
-        const hh = String(date.getHours()).padStart(2, '0');
-        const min = String(date.getMinutes()).padStart(2, '0');
-        return `${dd}-${mm}-${yyyy} ${hh}:${min}`;
+
+        return date.format('DD-MM-YYYY HH:mm');
     }
 
     private async formatFieldValueDisplay(field: any, value: any): Promise<string> {
