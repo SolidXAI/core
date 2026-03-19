@@ -11,15 +11,18 @@ import { SolidRegistry } from 'src/helpers/solid-registry';
 import { DashboardQuestion } from '../entities/dashboard-question.entity';
 import { SqlExpression, SqlExpressionOperator } from './question-data-providers/chartjs-sql-data-provider.service';
 import { DashboardQuestionRepository } from 'src/repository/dashboard-question.repository';
+import { QuestionSqlDataProviderContext } from 'src';
 
 enum SOURCE_TYPE {
   SQL = 'sql',
   PROVIDER = 'provider',
 }
 
-const CHARTJS_SQL_DATA_PROVIDER_NAME = 'ChartJsSqlDataProvider';
-const PRIME_REACT_METER_GROUP_SQL_DATA_PROVIDER_NAME = 'PrimeReactMeterGroupSqlDataProvider';
-const PRIME_REACT_DATATABLE_SQL_DATA_PROVIDER_NAME = 'PrimeReactDatatableSqlDataProvider';
+export const CHARTJS_SQL_DATA_PROVIDER_NAME = 'ChartJsSqlDataProvider';
+export const PRIME_REACT_METER_GROUP_SQL_DATA_PROVIDER_NAME = 'PrimeReactMeterGroupSqlDataProvider';
+export const PRIME_REACT_DATATABLE_SQL_DATA_PROVIDER_NAME = 'PrimeReactDatatableSqlDataProvider';
+
+export const INBUILT_SQL_DATA_PROVIDERS = [CHARTJS_SQL_DATA_PROVIDER_NAME, PRIME_REACT_METER_GROUP_SQL_DATA_PROVIDER_NAME, PRIME_REACT_DATATABLE_SQL_DATA_PROVIDER_NAME];
 
 @Injectable()
 export class DashboardQuestionService extends CRUDService<DashboardQuestion> {
@@ -50,22 +53,38 @@ export class DashboardQuestionService extends CRUDService<DashboardQuestion> {
 
     // Try to resolve the dataProvider based on a combination of sourceType and visualisedAs
     let dataProvider = null;
+    let context = {};
 
+    // Decide which data provider to use based on the question visualisation type if sourceType is SQL. 
     if (question.sourceType === SOURCE_TYPE.SQL && ['bar', 'pie', 'line', 'donut'].includes(question.visualisedAs)) {
       dataProvider = this.solidRegistry.getDashboardQuestionDataProviderInstance(CHARTJS_SQL_DATA_PROVIDER_NAME);
+      context = {
+        expressions,
+      } as QuestionSqlDataProviderContext;
     }
     if (question.sourceType === SOURCE_TYPE.SQL && ['prime-meter-group'].includes(question.visualisedAs)) {
       dataProvider = this.solidRegistry.getDashboardQuestionDataProviderInstance(PRIME_REACT_METER_GROUP_SQL_DATA_PROVIDER_NAME);
+            context = {
+        expressions,
+      } as QuestionSqlDataProviderContext;
     }
     if (question.sourceType === SOURCE_TYPE.SQL && ['prime-datatable'].includes(question.visualisedAs)) {
       dataProvider = this.solidRegistry.getDashboardQuestionDataProviderInstance(PRIME_REACT_DATATABLE_SQL_DATA_PROVIDER_NAME);
+      context = {
+        expressions,
+      } as QuestionSqlDataProviderContext;
+    }
+
+    // If a custom provider is specified, use that one instead
+    if (question.sourceType === SOURCE_TYPE.PROVIDER) {
+      dataProvider = this.solidRegistry.getDashboardQuestionDataProviderInstance(question.providerName);
     }
 
     if (!dataProvider) {
       throw new NotImplementedException(`Invalid data source type ${question.sourceType}`);
     }
 
-    return await dataProvider.getData(question, expressions);
+    return await dataProvider.getData(question, context);
 
   }
 
