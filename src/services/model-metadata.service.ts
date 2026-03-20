@@ -714,7 +714,12 @@ export class ModelMetadataService {
       this.logger.log(`Removing model '${modelEntity.singularName}' references from module file: ${moduleFilePath}`);
       try {
         this.solidTsMorphService.begin();
-        this.solidTsMorphService.removeModelFromNestModule(moduleFilePath, dasherize(modelEntity.singularName));
+        const modelPathSegment = `/${dasherize(modelEntity.singularName)}.`;
+        const { removedIdentifiers } = this.solidTsMorphService.removeImport(
+          moduleFilePath,
+          spec => spec.includes(modelPathSegment)
+        );
+        this.solidTsMorphService.removeImportMembers(moduleFilePath, removedIdentifiers);
         await this.solidTsMorphService.commit();
       } catch (error) {
         this.solidTsMorphService.rollback();
