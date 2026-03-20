@@ -1,4 +1,4 @@
-import dayjs from 'dayjs';
+import { parseDate, serializeDate } from 'src/transformers/typeorm/local-date-time-transformer';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -142,6 +142,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 messageDetail.chatterMessage = savedMessage;
                 messageDetail.fieldName = field.name;
                 messageDetail.fieldDisplayName = field.displayName;
+                messageDetail.fieldType = field.type;
                 messageDetail.oldValue = null;
                 messageDetail.oldValueDisplay = null;
                 messageDetail.newValue = this.formatFieldValue(field, fieldValue);
@@ -258,6 +259,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             messageDetail.chatterMessage = savedMessage;
             messageDetail.fieldName = field.name;
             messageDetail.fieldDisplayName = field.displayName;
+            messageDetail.fieldType = field.type;
             messageDetail.oldValue = this.formatFieldValue(field, oldValue);
             messageDetail.newValue = this.formatFieldValue(field, newValue);
             messageDetail.oldValueDisplay = await this.formatFieldValueDisplay(field, oldValue);
@@ -322,14 +324,14 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
 
         if (value instanceof Date) {
-            return value.toISOString();
+            return serializeDate(value);
         }
 
         return value.toString();
     }
 
     private formatDateForDisplay(field: any, value: any): string {
-        const date = dayjs(value);
+        const date = value instanceof Date ? parseDate(value) : parseDate(new Date(value));
 
         if (!date.isValid()) {
             return value?.toString?.() ?? '';
