@@ -1,4 +1,4 @@
-import { parseDate, serializeDate } from 'src/transformers/typeorm/local-date-time-transformer';
+import { LocalDateTimeTransformer, serializeDate } from 'src/transformers/typeorm/local-date-time-transformer';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -330,24 +330,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         return value.toString();
     }
 
-    private formatDateForDisplay(field: any, value: any): string {
-        const date = value instanceof Date ? parseDate(value) : parseDate(new Date(value));
-
-        if (!date.isValid()) {
-            return value?.toString?.() ?? '';
-        }
-
-        if (field.type === 'date') {
-            return date.format('DD-MM-YYYY');
-        }
-
-        if (field.type === 'time') {
-            return date.format('HH:mm');
-        }
-
-        return date.format('DD-MM-YYYY HH:mm');
-    }
-
     private async formatFieldValueDisplay(field: any, value: any): Promise<string> {
         if (value === null || value === undefined) {
             return '';
@@ -358,7 +340,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
 
         if (['date', 'datetime', 'time'].includes(field.type)) {
-            return this.formatDateForDisplay(field, value);
+            return null;
         }
 
         if (field.type === 'relation') {
@@ -645,6 +627,22 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const [entities, count] = await qb.getManyAndCount();
         this.logHeapUsed('getChatterMessages-entitiesLoaded');
+
+        // Convert date strings in message details to ISO format for consistent handling on the frontend
+        const DATE_FIELD_TYPES = ['date', 'datetime', 'time'];
+        for (const entity of entities) {
+            for (const detail of entity.chatterMessageDetails ?? []) {
+                if (!detail.fieldType || !DATE_FIELD_TYPES.includes(detail.fieldType)) continue;
+                if (detail.oldValue) {
+                    const d = LocalDateTimeTransformer.from(detail.oldValue);
+                    if (d) detail.oldValue = d.toISOString();
+                }
+                if (detail.newValue) {
+                    const d = LocalDateTimeTransformer.from(detail.newValue);
+                    if (d) detail.newValue = d.toISOString();
+                }
+            }
+        }
 
         if (populateMedia && populateMedia.length > 0) {
             const normalizedPopulateMedia = this.crudHelperService.normalize(populateMedia);
