@@ -11157,14 +11157,6 @@
           {
             "type": "field",
             "attrs": {
-              "name": "userAgent",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "createdAt",
               "sortable": true,
               "filterable": true
