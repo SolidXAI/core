@@ -225,6 +225,7 @@ export class ModelMetadataService {
     let userKeyField = null;
     const listViewLayout = [];
     const formViewLayout = [];
+    const treeViewLayout = [];
 
     for (let k = 0; k < fieldsMetadata.length; k++) {
       const fieldMetadata = fieldsMetadata[k];
@@ -245,6 +246,7 @@ export class ModelMetadataService {
       }
       listViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}` } })
       formViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}` } })
+      treeViewLayout.push({ type: "field", attrs: { name: `${affectedField.name}` } })
 
     }
 
@@ -818,6 +820,7 @@ export class ModelMetadataService {
       const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
       const listViewLayoutFields = [{ type: "field", attrs: { name: `id` } }];
+      const treeViewLayoutFields = [{ type: "field", attrs: { name: `id` } }];
       const formViewLayoutFields = [];
 
       for (let i = 0; i < model.fields.length; i++) {
@@ -825,8 +828,9 @@ export class ModelMetadataService {
         if (field.isSystem) continue;
         listViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
         formViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
+        treeViewLayoutFields.push({ type: "field", attrs: { name: `${field.name}` } })
       }
-      this.populateVAMConfigInFileInternal(formViewLayoutFields, model, listViewLayoutFields, metaData);
+      this.populateVAMConfigInFileInternal(formViewLayoutFields, model, listViewLayoutFields, treeViewLayoutFields, metaData);
       // Write the updated object back to the file
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
@@ -839,7 +843,7 @@ export class ModelMetadataService {
   }
 
   // Populate the View, Actions and Menus in the config file
-  private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string; }; }[], metaData: any) {
+  private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string; }; }[], treeViewLayoutFields: { type: string; attrs: { name: string; }; }[], metaData: any) {
     const column1Fields = [];
     const column2Fields = [];
 
@@ -852,7 +856,9 @@ export class ModelMetadataService {
       }
     }
     const actionName = `${model.singularName}-list-action`;
-    const viewName = `${model.singularName}-list-view`;
+    const treeViewActionName = `${model.singularName}-tree-view-action`;
+    const listViewName = `${model.singularName}-list-view`;
+    const treeViewName = `${model.singularName}-tree-view`;
     const formViewName = `${model.singularName}-form-view`;
     const menuName = `${model.singularName}-menu-item`;
 
@@ -865,7 +871,21 @@ export class ModelMetadataService {
       customComponent: ``,
       customIsModal: true,
       serverEndpoint: "",
-      viewUserKey: viewName,
+      viewUserKey: listViewName,
+      moduleUserKey: `${model.module.name}`,
+      modelUserKey: `${model.singularName}`
+    };
+
+    const treeViewAction = {
+      displayName: `${model.displayName} Tree View Action`,
+      name: treeViewActionName,
+      type: "solid",
+      domain: "",
+      context: "",
+      customComponent: ``,
+      customIsModal: true,
+      serverEndpoint: "",
+      viewUserKey: treeViewName,
       moduleUserKey: `${model.module.name}`,
       modelUserKey: `${model.singularName}`
     };
@@ -877,11 +897,11 @@ export class ModelMetadataService {
       actionUserKey: actionName,
       moduleUserKey: `${model.module.name}`,
       parentMenuItemUserKey: "",
-      iconName : ""
+      iconName: ""
     };
 
     const modelListview = {
-      name: viewName,
+      name: listViewName,
       displayName: `${model.displayName}`,
       type: "list",
       context: "{}",
@@ -902,6 +922,31 @@ export class ModelMetadataService {
           delete: true
         },
         children: listViewLayoutFields
+      }
+    };
+
+    const modelTreeview = {
+      name: treeViewName,
+      displayName: `${model.displayName}`,
+      type: "tree",
+      context: "{}",
+      moduleUserKey: `${model.module.name}`,
+      modelUserKey: `${model.singularName}`,
+      layout: {
+        type: "tree",
+        attrs: {
+          pagination: true,
+          pageSizeOptions: [
+            10,
+            25,
+            50
+          ],
+          enableGlobalSearch: true,
+          create: true,
+          edit: true,
+          delete: true
+        },
+        children: treeViewLayoutFields
       }
     };
 
@@ -954,8 +999,16 @@ export class ModelMetadataService {
       metaData.actions.push(action);
     }
 
-    if (notExists(metaData.views, viewName)) {
+    if (notExists(metaData.actions, treeViewActionName)) {
+      metaData.actions.push(treeViewAction);
+    }
+
+    if (notExists(metaData.views, listViewName)) {
       metaData.views.push(modelListview);
+    }
+
+    if (notExists(metaData.views, treeViewName)) {
+      metaData.views.push(modelTreeview);
     }
 
     if (notExists(metaData.views, formViewName)) {
@@ -972,6 +1025,14 @@ export class ModelMetadataService {
     const jsonFieldsList = model.fields.filter((field: FieldMetadata) => field.isSystem !== true);
 
     const listViewLayout = jsonFieldsList.map(field => ({
+      type: "field",
+      attrs: {
+        name: `${field.name}`,
+        isSearchable: true,
+      }
+    }));
+
+    const treeViewLayout = jsonFieldsList.map(field => ({
       type: "field",
       attrs: {
         name: `${field.name}`,
@@ -1017,6 +1078,26 @@ export class ModelMetadataService {
             delete: true
           },
           children: listViewLayout
+        }, null, 3)
+      },
+      {
+        name: `${model.singularName}-tree-view`,
+        displayName: `${model.displayName}`,
+        type: 'tree',
+        context: "{}",
+        module: resolvedModule,
+        model: model,
+        layout: JSON.stringify({
+          type: "tree",
+          attrs: {
+            pagination: true,
+            pageSizeOptions: [10, 25, 50],
+            enableGlobalSearch: true,
+            create: true,
+            edit: true,
+            delete: true
+          },
+          children: treeViewLayout
         }, null, 3)
       },
       {
@@ -1067,6 +1148,7 @@ export class ModelMetadataService {
     }
 
     let view = await viewRepo.findOne({ where: { name: `${model.singularName}-list-view` } });
+    let treeView = await viewRepo.findOne({ where: { name: `${model.singularName}-tree-view` } });
 
     const actionData = {
       displayName: `${model.displayName} List Action`,
@@ -1082,11 +1164,31 @@ export class ModelMetadataService {
       model: model
     };
 
+    const treeViewActionData = {
+      displayName: `${model.displayName} Tree View Action`,
+      name: `${model.singularName}-tree-view-action`,
+      type: "solid",
+      domain: "",
+      context: "",
+      customComponent: ``,
+      customIsModal: true,
+      serverEndpoint: "",
+      view: treeView,
+      module: resolvedModule,
+      model: model
+    };
+
     let existingAction = await actionRepo.findOne({ where: { name: actionData.name } });
+    let existingTreeViewAction = await actionRepo.findOne({ where: { name: treeViewActionData.name } });
 
     if (!existingAction) {
       const createdAction = actionRepo.create(actionData);
       existingAction = await actionRepo.save(createdAction);
+    }
+
+    if (!existingTreeViewAction) {
+      const createdTreeViewAction = actionRepo.create(treeViewActionData);
+      existingTreeViewAction = await actionRepo.save(createdTreeViewAction);
     }
 
     const adminRole = await this.roleService.findRoleByName('Admin');
