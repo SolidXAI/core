@@ -135,7 +135,7 @@ export class SchedulerServiceImpl implements ISchedulerService {
         return true;
     }
 
-    private computeNextRunForCustomCron(job: ScheduledJob, from: Date): Date {
+    public computeNextRunForCustomCron(job: ScheduledJob, from: Date): Date {
         const base = new Date(from);
 
         if (!job.cronExpression) {
@@ -165,7 +165,7 @@ export class SchedulerServiceImpl implements ISchedulerService {
         }
     }
 
-    private computeNextRunAt(job: ScheduledJob, from: Date): Date {
+    public computeNextRunAt(job: ScheduledJob, from: Date): Date {
         const base = new Date(from);
 
         switch (job.frequency.toLowerCase()) {
