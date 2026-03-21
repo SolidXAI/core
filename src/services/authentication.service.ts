@@ -464,10 +464,6 @@ export class AuthenticationService {
 
     private async notifyUserOnOtpInitiateRegistration(user: User, registrationValidationSource: string) {
         const companyLogo = await this.getCompanyLogo();
-        const dummyOtp = this.getDummyOtpForUser(user);
-
-        if (dummyOtp)
-            return; // Do nothing if dummy otp is configured.
         if (registrationValidationSource === PasswordlessLoginValidateWhatSources.EMAIL) {
             const mailService = this.mailServiceFactory.getMailService();
             mailService.sendEmailUsingTemplate(
@@ -594,13 +590,12 @@ export class AuthenticationService {
         return true;
     }
 
-    private async otp(user?: User): Promise<otp> {
+    private async otp(): Promise<otp> {
         const now = new Date();
         const otpExpiry = this.settingService.getConfigValue<SolidCoreSetting>('otpExpiry');
-        const dummyOtp = this.getDummyOtpForUser(user);
         now.setMinutes(now.getMinutes() + otpExpiry);
         return {
-            token: dummyOtp ? dummyOtp : randomInt(100000, 999999).toString(),
+            token: randomInt(100000, 999999).toString(),
             expiresAt: now,
         };
     }
@@ -692,8 +687,11 @@ export class AuthenticationService {
 
         const type = this.resolveLoginType(signInDto);
         const user = await this.findUserForLogin(type, signInDto.identifier);
-        await this.assignLoginOtp(user, type);
-        this.notifyUserOnOtpInititateLogin(user, type);
+        const dummyOtp = this.getDummyOtpForUser(user);
+        if (!dummyOtp) {
+            await this.assignLoginOtp(user, type);
+            this.notifyUserOnOtpInititateLogin(user, type);
+        }
         return this.buildLoginOtpResponse(user, type);
     }
 
@@ -738,7 +736,7 @@ export class AuthenticationService {
     }
 
     private async assignLoginOtp(user: User, type: PasswordlessLoginValidateWhatSources): Promise<void> {
-        const { token, expiresAt } = await this.otp(user);
+        const { token, expiresAt } = await this.otp();
         if (type === PasswordlessLoginValidateWhatSources.EMAIL) {
             user.emailVerificationTokenOnLogin = token;
             user.emailVerificationTokenOnLoginExpiresAt = expiresAt;
@@ -815,6 +813,15 @@ export class AuthenticationService {
 
         const user = await this.findUserForLogin(type, identifier, { withRoles: true });
         this.checkAccountBlocked(user);
+        const dummyOtp = this.getDummyOtpForUser(user);
+
+        if (dummyOtp) {
+            if (otp !== dummyOtp) {
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
+            }
+            return this.buildLoginTokenResponse(user);
+        }
+
         try {
             this.validateLoginOtp(user, otp, type);
         } catch (e) {
@@ -822,10 +829,7 @@ export class AuthenticationService {
             throw e;
         }
 
-        // we do not need to clear the otp when dummy otp is configured...
-        const dummyOtp = this.getDummyOtpForUser(user);
-        if (!dummyOtp)
-            this.clearLoginOtp(user, type);
+        this.clearLoginOtp(user, type);
 
         user.failedLoginAttempts = 0;
         await this.userActivityHistoryService.logEvent('login', user); 
