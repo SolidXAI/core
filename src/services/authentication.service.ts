@@ -740,11 +740,18 @@ export class AuthenticationService {
         if (type === PasswordlessLoginValidateWhatSources.EMAIL) {
             user.emailVerificationTokenOnLogin = token;
             user.emailVerificationTokenOnLoginExpiresAt = expiresAt;
+            await this.userRepository.update(user.id, {
+                emailVerificationTokenOnLogin: token,
+                emailVerificationTokenOnLoginExpiresAt: expiresAt,
+            });
         } else {
             user.mobileVerificationTokenOnLogin = token;
             user.mobileVerificationTokenOnLoginExpiresAt = expiresAt;
+            await this.userRepository.update(user.id, {
+                mobileVerificationTokenOnLogin: token,
+                mobileVerificationTokenOnLoginExpiresAt: expiresAt,
+            });
         }
-        await this.userRepository.save(user);
     }
 
     private buildLoginOtpResponse(user: User, type: PasswordlessLoginValidateWhatSources) {
@@ -829,11 +836,9 @@ export class AuthenticationService {
             throw e;
         }
 
-        this.clearLoginOtp(user, type);
-
-        user.failedLoginAttempts = 0;
+        await this.clearLoginOtp(user, type);
         await this.userActivityHistoryService.logEvent('login', user); 
-        await this.userRepository.save(user);
+        await this.resetFailedAttempts(user);
         return this.buildLoginTokenResponse(user);
     }
 
@@ -850,15 +855,27 @@ export class AuthenticationService {
         }
     }
 
-    private clearLoginOtp(user: User, type: PasswordlessLoginValidateWhatSources): void {
+    private async clearLoginOtp(user: User, type: PasswordlessLoginValidateWhatSources): Promise<void> {
         if (type === PasswordlessLoginValidateWhatSources.EMAIL) {
-            user.emailVerifiedOnLoginAt = new Date();
+            const verifiedAt = new Date();
+            user.emailVerifiedOnLoginAt = verifiedAt;
             user.emailVerificationTokenOnLogin = null;
             user.emailVerificationTokenOnLoginExpiresAt = null;
+            await this.userRepository.update(user.id, {
+                emailVerifiedOnLoginAt: verifiedAt,
+                emailVerificationTokenOnLogin: null,
+                emailVerificationTokenOnLoginExpiresAt: null,
+            });
         } else {
-            user.mobileVerifiedOnLoginAt = new Date();
+            const verifiedAt = new Date();
+            user.mobileVerifiedOnLoginAt = verifiedAt;
             user.mobileVerificationTokenOnLogin = null;
             user.mobileVerificationTokenOnLoginExpiresAt = null;
+            await this.userRepository.update(user.id, {
+                mobileVerifiedOnLoginAt: verifiedAt,
+                mobileVerificationTokenOnLogin: null,
+                mobileVerificationTokenOnLoginExpiresAt: null,
+            });
         }
     }
 
@@ -1301,14 +1318,15 @@ export class AuthenticationService {
     }
 
     private async incrementFailedAttempts(user: User): Promise<void> {
-        user.failedLoginAttempts += 1;
-        await this.userRepository.save(user);
+        const nextFailedAttempts = (user.failedLoginAttempts ?? 0) + 1;
+        user.failedLoginAttempts = nextFailedAttempts;
+        await this.userRepository.update(user.id, { failedLoginAttempts: nextFailedAttempts });
     }
 
     private async resetFailedAttempts(user: User): Promise<void> {
         if (user.failedLoginAttempts === 0) return;
         user.failedLoginAttempts = 0;
-        await this.userRepository.save(user);
+        await this.userRepository.update(user.id, { failedLoginAttempts: 0 });
     }
 
     //FIXME - Pending implementation
