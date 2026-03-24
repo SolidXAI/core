@@ -1,10 +1,10 @@
 import { CommonEntity } from 'src/entities/common.entity'
-import {Entity, Column, Index, JoinColumn, ManyToOne} from 'typeorm';
+import { Entity, Column, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { Dashboard } from 'src/entities/dashboard.entity'
 
 @Entity("ss_dashboard_variable")
 export class DashboardVariable extends CommonEntity {
-    @Index({ unique: true })
+    @Index()
     @Column({ type: "varchar" })
     variableName: string;
 
@@ -36,4 +36,8 @@ export class DashboardVariable extends CommonEntity {
 
     @Column({ type: "varchar", nullable: true })
     defaultOperator: string;
+
+    @Index({ unique: true })
+    @Column({ type: "varchar" })
+    externalId: string;
 }
