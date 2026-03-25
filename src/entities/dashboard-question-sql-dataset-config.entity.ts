@@ -4,7 +4,7 @@ import { DashboardQuestion } from 'src/entities/dashboard-question.entity'
 
 @Entity("ss_dashboard_question_sql_dataset_config")
 export class DashboardQuestionSqlDatasetConfig extends CommonEntity {
-    @Index({ unique: true })
+    @Index()
     @Column({ type: "varchar" })
     datasetName: string;
 
