@@ -5957,6 +5957,19 @@
       "modelUserKey": "dashboardQuestion"
     },
     {
+      "displayName": "Dashboard Layout List Action",
+      "name": "dashboardLayout-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboardLayout-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardLayout"
+    },
+    {
       "displayName": "Dashboard Question SQL Dataset Config List Action",
       "name": "dashboardQuestionSqlDatasetConfig-list-action",
       "type": "solid",
@@ -6311,6 +6324,14 @@
       "name": "dashboardQuestion-menu-item",
       "sequenceNumber": 2,
       "actionUserKey": "dashboardQuestion-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "dashboardManagement-menu-item"
+    },
+    {
+      "displayName": "Dashboard Layout",
+      "name": "dashboardLayout-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "dashboardLayout-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "dashboardManagement-menu-item"
     },
@@ -12158,6 +12179,111 @@
                         "type": "field",
                         "attrs": {
                           "name": "options"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardLayout-list-view",
+      "displayName": "Dashboard Layout",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardLayout",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dashboard"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardLayout-form-view",
+      "displayName": "Dashboard Layout",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardLayout",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Dashboard Layout",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "layout"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "dashboard"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "user"
                         }
                       }
                     ]
