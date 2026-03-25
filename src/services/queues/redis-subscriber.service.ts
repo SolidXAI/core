@@ -176,8 +176,8 @@ export abstract class RedisSubscriber<T> implements OnModuleInit, OnModuleDestro
 
     protected async processMessage(message: QueueMessage<T>): Promise<void> {
         await this.updateStatusInDatabase('started', message);
-        const result = await this.subscribe(message);
-        await this.updateStatusInDatabase('succeeded', message, '', result ? JSON.stringify(result, null, 2) : '');
+        const result: any = await (this.subscribe(message) as any);
+        await this.updateStatusInDatabase('succeeded', message, '', result != null ? JSON.stringify(result, null, 2) : '');
     }
 
     private async updateStatusInDatabase(
