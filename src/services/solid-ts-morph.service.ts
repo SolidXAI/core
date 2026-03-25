@@ -327,9 +327,9 @@ export class SolidTsMorphService {
 
     //Removes all import declarations from a file whose module specifier matches the given predicate.
     //Returns the set of identifier names that were imported by the removed declarations.
-    removeImport(
+    removeImports(
         filePath: string,
-        predicate: (moduleSpecifier: string) => boolean
+        filter: (moduleSpecifier: string) => boolean
     ): { removedIdentifiers: Set<string>; staged: boolean; skipped: boolean } {
         const abs = this.resolveRepoPath(filePath);
         if (!existsSync(abs)) {
@@ -344,7 +344,7 @@ export class SolidTsMorphService {
 
         const importsToRemove = sourceFile.getImportDeclarations().filter(decl => {
             const spec = decl.getModuleSpecifierValue().replace(/\\/g, "/");
-            return predicate(spec);
+            return filter(spec);
         });
 
         if (importsToRemove.length === 0) {
@@ -367,7 +367,7 @@ export class SolidTsMorphService {
     }
 
     //Removes the given identifier names from all @Module decorator array properties
-    removeImportMembers(
+    removeModuleMembers(
         filePath: string,
         names: Set<string> | string[]
     ): { staged: boolean; skipped: boolean } {

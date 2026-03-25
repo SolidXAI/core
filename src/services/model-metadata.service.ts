@@ -715,11 +715,11 @@ export class ModelMetadataService {
       try {
         this.solidTsMorphService.begin();
         const modelPathSegment = `/${dasherize(modelEntity.singularName)}.`;
-        const { removedIdentifiers } = this.solidTsMorphService.removeImport(
+        const { removedIdentifiers } = this.solidTsMorphService.removeImports(
           moduleFilePath,
           spec => spec.includes(modelPathSegment)
         );
-        this.solidTsMorphService.removeImportMembers(moduleFilePath, removedIdentifiers);
+        this.solidTsMorphService.removeModuleMembers(moduleFilePath, removedIdentifiers);
         await this.solidTsMorphService.commit();
       } catch (error) {
         this.solidTsMorphService.rollback();
