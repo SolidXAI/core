@@ -1,6 +1,7 @@
 import { CommonEntity } from 'src/entities/common.entity'
 import { Entity, Column, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { ImportTransaction } from 'src/entities/import-transaction.entity'
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity("ss_import_transaction_error_log")
 export class ImportTransactionErrorLog extends CommonEntity {
@@ -9,7 +10,7 @@ export class ImportTransactionErrorLog extends CommonEntity {
     importTransactionErrorLogId: string;
     @Column({ type: "integer" })
     rowNumber: number;
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true, ...getColumnType('longText') })
     rowData: any;
     @Index()
     @ManyToOne(() => ImportTransaction, { nullable: false })
@@ -17,6 +18,6 @@ export class ImportTransactionErrorLog extends CommonEntity {
     importTransaction: ImportTransaction;
     @Column({ type: "varchar" })
     errorMessage: string;
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true, ...getColumnType('longText') })
     errorTrace: string;
 }

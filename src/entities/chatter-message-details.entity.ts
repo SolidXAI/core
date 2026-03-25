@@ -1,6 +1,7 @@
 import { CommonEntity } from 'src/entities/common.entity'
 import { Entity, JoinColumn, ManyToOne, Column, Index } from 'typeorm';
 import { ChatterMessage } from 'src/entities/chatter-message.entity'
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 @Entity("ss_chatter_message_details")
 export class ChatterMessageDetails extends CommonEntity {
     @Index()
@@ -8,10 +9,10 @@ export class ChatterMessageDetails extends CommonEntity {
     @JoinColumn()
     chatterMessage: ChatterMessage;
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true, ...getColumnType('longText') })
     oldValue: string;
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true, ...getColumnType('longText') })
     newValue: string;
 
     @Column({ type: "varchar", nullable: true })
@@ -24,7 +25,7 @@ export class ChatterMessageDetails extends CommonEntity {
     @Column({ type: "varchar" })
     fieldName: string;
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true })
     fieldDisplayName: string;
 
     @Column({ type: "varchar", nullable: true })

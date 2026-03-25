@@ -1,6 +1,7 @@
 import { CommonEntity } from 'src/entities/common.entity'
 import { Entity, JoinColumn, ManyToOne, Index, Column } from 'typeorm';
 import { User } from 'src/entities/user.entity'
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity("ss_ai_interactions")
 export class AiInteraction extends CommonEntity {
@@ -16,7 +17,7 @@ export class AiInteraction extends CommonEntity {
     @Column({ type: "varchar" })
     role: string;
 
-    @Column({ type: "text" })
+    @Column({ ...getColumnType('longText') })
     message: string;
 
     @Column({ type: "varchar", nullable: true })
@@ -26,7 +27,7 @@ export class AiInteraction extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     status: string;
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true, ...getColumnType('longText') })
     errorMessage: string;
 
     @Column({ type: "varchar", nullable: true })
@@ -35,7 +36,7 @@ export class AiInteraction extends CommonEntity {
     @Column({ type: "integer", nullable: true })
     responseTimeMs: number;
 
-    @Column({ type: "simple-json", nullable: true })
+    @Column({ type: "simple-json", nullable: true, ...getColumnType('simpleJsonLargeText') })
     metadata: any;
 
     @Column({ nullable: true, default: false })
@@ -62,7 +63,7 @@ export class AiInteraction extends CommonEntity {
     @Column({ type: "integer", nullable: true })
     totalTokens: number;
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true, ...getColumnType('longText') })
     originalMessage: string;
 
     @Column({ nullable: true, default: false })
