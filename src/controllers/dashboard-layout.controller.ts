@@ -1,9 +1,9 @@
 import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
-import { UpdateScheduledJobDto } from 'src/dtos/update-scheduled-job.dto';
-import { ScheduledJobService } from 'src/services/scheduled-job.service';
+import { CreateDashboardLayoutDto } from 'src/dtos/create-dashboard-layout.dto';
+import { UpdateDashboardLayoutDto } from 'src/dtos/update-dashboard-layout.dto';
+import { DashboardLayoutService } from 'src/services/dashboard-layout.service';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -11,36 +11,43 @@ enum ShowSoftDeleted {
 }
 
 @ApiTags('Solid Core')
-@Controller('scheduled-job')
-export class ScheduledJobController {
-  constructor(private readonly service: ScheduledJobService) { }
+@Controller('dashboard-layout')
+export class DashboardLayoutController {
+  constructor(private readonly service: DashboardLayoutService) { }
 
   @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateScheduledJobDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  create(@Body() createDto: CreateDashboardLayoutDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.create(createDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateScheduledJobDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+  insertMany(@Body() createDtos: CreateDashboardLayoutDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
     return this.service.insertMany(createDtos, filesArray);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Post('/upsert-user-dashboard-layout')
+  @UseInterceptors(AnyFilesInterceptor())
+  upsertUserDashboardLayout(@Body() createDtos: CreateDashboardLayoutDto) {
+    return this.service.upsertUserDashboardLayout(createDtos);
   }
 
 
   @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateScheduledJobDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  update(@Param('id') id: number, @Body() updateDto: UpdateDashboardLayoutDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Patch(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateScheduledJobDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateDashboardLayoutDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files, true);
   }
 
@@ -48,6 +55,12 @@ export class ScheduledJobController {
   @Post('/bulk-recover')
   async recoverMany(@Body() ids: number[]) {
     return this.service.recoverMany(ids);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Get('/user-dashboard-layout/:dashboardId')
+  async getUserDashboardLayoutByDashboardId(@Param('dashboardId') dashboardId: number) {
+    return this.service.getUserDashboardLayoutByDashboardId(dashboardId);
   }
 
   @ApiBearerAuth("jwt")
@@ -87,12 +100,6 @@ export class ScheduledJobController {
   @Delete(':id')
   async delete(@Param('id') id: number) {
     return this.service.delete(id);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Post(':id/trigger')
-  async triggerRun(@Param('id') id: string) {
-    return this.service.triggerRun(+id);
   }
 
 
