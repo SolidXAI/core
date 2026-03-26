@@ -12,7 +12,7 @@ export class Dashboard extends CommonEntity {
     @Column({ type: "varchar" })
     name: string;
 
-    @Column({ ...getColumnType('longText') })
+    @Column({ ...getColumnType('longText'), nullable: true })
     layoutJson: any;
 
     @OneToMany(() => DashboardVariable, dashboardVariable => dashboardVariable.dashboard, { cascade: true })

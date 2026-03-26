@@ -23,7 +23,7 @@ export class SecurityRule extends CommonEntity {
     @JoinColumn()
     modelMetadata: ModelMetadata;
 
-    @Column({ ...getColumnType('longText') })
+    @Column({ ...getColumnType('longText'), nullable: true })
     securityRuleConfig: any;
 
     @Column({ type: "varchar", nullable: true })

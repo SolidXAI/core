@@ -17,7 +17,7 @@ export class AiInteraction extends CommonEntity {
     @Column({ type: "varchar" })
     role: string;
 
-    @Column({ ...getColumnType('longText') })
+    @Column({ ...getColumnType('longText'), nullable: true })
     message: string;
 
     @Column({ type: "varchar", nullable: true })

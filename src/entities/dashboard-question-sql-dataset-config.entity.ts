@@ -15,7 +15,7 @@ export class DashboardQuestionSqlDatasetConfig extends CommonEntity {
     @Column({ nullable: true })
     description: string;
 
-    @Column({ ...getColumnType('longText') })
+    @Column({ ...getColumnType('longText'), nullable: true })
     sql: string;
 
     @Column({ type: "varchar" })
