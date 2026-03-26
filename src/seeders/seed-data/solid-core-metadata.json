@@ -7239,6 +7239,13 @@
           {
             "type": "field",
             "attrs": {
+              "name": "fieldDisplayName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "fieldName",
               "isSearchable": true
             }
@@ -7254,20 +7261,6 @@
             "type": "field",
             "attrs": {
               "name": "newValueDisplay",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "oldValue",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "newValue",
               "isSearchable": true
             }
           }
@@ -7309,36 +7302,43 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "fieldName",
-                      "isSearchable": true
+                      "name": "fieldDisplayName"
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "oldValueDisplay",
-                      "isSearchable": true
+                      "name": "fieldName"
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "newValueDisplay",
-                      "isSearchable": true
+                      "name": "oldValueDisplay"
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "oldValue",
-                      "isSearchable": true
+                      "name": "newValueDisplay"
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "newValue",
-                      "isSearchable": true
+                      "name": "oldValue"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "newValue"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "chatterMessage"
                     }
                   }
                 ]
@@ -7387,6 +7387,13 @@
           {
             "type": "field",
             "attrs": {
+              "name": "modelDisplayName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "coModelEntityId",
               "isSearchable": true
             }
@@ -7394,8 +7401,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "coModelName",
-              "isSearchable": true
+              "name": "user"
             }
           }
         ]
@@ -7436,29 +7442,49 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "messageType",
-                      "isSearchable": true
+                      "name": "messageType"
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "messageSubType",
-                      "isSearchable": true
+                      "name": "messageSubType"
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "coModelEntityId",
-                      "isSearchable": true
+                      "name": "modelDisplayName"
                     }
                   },
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "coModelName",
-                      "isSearchable": true
+                      "name": "coModelEntityId"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "modelUserKey"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "user"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "messageBody"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "messageAttachments"
                     }
                   },
                   {
