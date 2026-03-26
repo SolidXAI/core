@@ -4410,7 +4410,7 @@
         "dataSource": "default",
         "dataSourceType": "postgres",
         "tableName": "ss_dashboard_variable",
-        "userKeyFieldUserKey": "externalId",
+        "userKeyFieldUserKey": "variableName",
         "fields": [
           {
             "name": "variableName",
@@ -4419,12 +4419,12 @@
             "ormType": "varchar",
             "length": 256,
             "required": true,
-            "unique": false,
+            "unique": true,
             "index": true,
             "private": false,
             "encrypt": false,
             "isSystem": true,
-            "isUserKey": false
+            "isUserKey": true
           },
           {
             "name": "variableType",
@@ -4576,35 +4576,6 @@
               "$gte:Greater Than or Equal To"
             ],
             "description": "This is the default operator for this variable when it is rendered at runtime. It can be a static value for this variable when it is rendered at runtime."
-          },
-          {
-            "name": "externalId",
-            "displayName": "Dashboard Variable User KExternal IDey",
-            "description": "Concatenation of variable name and dashboard name",
-            "type": "computed",
-            "ormType": "varchar",
-            "isSystem": false,
-            "computedFieldValueType": "string",
-            "computedFieldTriggerConfig": [
-              {
-                "modelName": "dashboardVariable",
-                "moduleName": "solid-core",
-                "operations": [
-                  "before-insert"
-                ]
-              }
-            ],
-            "computedFieldValueProvider": "ConcatEntityComputedFieldProvider",
-            "computedFieldValueProviderCtxt": "{\n  \"fields\": [\n    \"variableName\",\n    \"dashboard.name\"\n  ],\n  \"separator\": \"-\",\n  \"slugify\": true\n}",
-            "required": false,
-            "unique": true,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "isUserKey": true
           }
         ]
       },
@@ -4616,7 +4587,7 @@
         "dataSource": "default",
         "dataSourceType": "postgres",
         "tableName": "ss_dashboard_question",
-        "userKeyFieldUserKey": "externalId",
+        "userKeyFieldUserKey": "name",
         "fields": [
           {
             "name": "name",
@@ -4625,8 +4596,8 @@
             "ormType": "varchar",
             "length": 256,
             "required": true,
-            "unique": false,
-            "index": false,
+            "unique": true,
+            "index": true,
             "private": false,
             "encrypt": false,
             "isSystem": true,
@@ -4775,31 +4746,27 @@
           {
             "name": "externalId",
             "displayName": "External ID",
-            "description": "Concatenation of question name and dashboard name",
             "type": "computed",
             "ormType": "varchar",
-            "isSystem": false,
-            "computedFieldValueType": "string",
-            "computedFieldTriggerConfig": [
-              {
-                "modelName": "dashboardQuestion",
-                "moduleName": "solid-core",
-                "operations": [
-                  "before-insert"
-                ]
-              }
-            ],
-            "computedFieldValueProvider": "ConcatEntityComputedFieldProvider",
-            "computedFieldValueProviderCtxt": "{\n  \"fields\": [\n    \"name\",\n    \"dashboard.name\"\n  ],\n  \"separator\": \"-\",\n  \"slugify\": true\n}",
+            "length": 128,
             "required": false,
             "unique": true,
             "index": true,
             "private": false,
             "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "isUserKey": true
+            "isSystem": true,
+            "computedFieldValueType": "string",
+            "computedFieldValueProvider": "AlphaNumExternalIdComputationProvider",
+            "computedFieldValueProviderCtxt": "{\"prefix\": \"DQ\"}",
+            "computedFieldTriggerConfig": [
+              {
+                "modelName": "dashboardQuestion",
+                "moduleName": "fees-portal",
+                "operations": [
+                  "before-insert"
+                ]
+              }
+            ]
           }
         ]
       },
@@ -4811,7 +4778,7 @@
         "dataSource": "default",
         "dataSourceType": "postgres",
         "tableName": "ss_dashboard_question_sql_dataset_config",
-        "userKeyFieldUserKey": "externalId",
+        "userKeyFieldUserKey": "datasetName",
         "fields": [
           {
             "name": "datasetName",
@@ -4820,7 +4787,7 @@
             "ormType": "varchar",
             "length": 256,
             "required": true,
-            "unique": false,
+            "unique": true,
             "index": false,
             "private": false,
             "encrypt": false,
@@ -4926,100 +4893,27 @@
           {
             "name": "externalId",
             "displayName": "External ID",
-            "description": "Concatenation of dataset name, question name and dashboard name",
             "type": "computed",
             "ormType": "varchar",
-            "isSystem": false,
-            "computedFieldValueType": "string",
-            "computedFieldTriggerConfig": [
-              {
-                "modelName": "dashboardQuestionSqlDatasetConfig",
-                "moduleName": "solid-core",
-                "operations": [
-                  "before-insert"
-                ]
-              }
-            ],
-            "computedFieldValueProvider": "ConcatEntityComputedFieldProvider",
-            "computedFieldValueProviderCtxt": "{\n  \"fields\": [\n    \"datasetName\",\n \"question.name\",\n  \"question.dashboard.name\"\n  ],\n  \"separator\": \"-\",\n  \"slugify\": true\n}",
+            "length": 128,
             "required": false,
             "unique": true,
             "index": true,
             "private": false,
             "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "isUserKey": true
-          }
-        ]
-      },
-      {
-        "singularName": "dashboardLayout",
-        "pluralName": "dashboardLayouts",
-        "displayName": "Dashboard Layout",
-        "description": "This is used to maintain dashboard layouts",
-        "dataSource": "default",
-        "dataSourceType": "postgres",
-        "tableName": "ss_dashboard_layout",
-        "userKeyFieldUserKey": "externalId",
-        "fields": [
-          {
-            "name": "layout",
-            "displayName": "Layout",
-            "type": "longText",
-            "ormType": "text",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
             "isSystem": true,
-            "description": "This stores the dashboard layout"
-          },
-          {
-            "name": "dashboard",
-            "displayName": "Dashboard",
-            "description": "Related Dashboard Model",
-            "type": "relation",
-            "ormType": "integer",
-            "isSystem": true,
-            "relationType": "many-to-one",
-            "relationCoModelFieldName": "dashboardLayouts",
-            "relationCreateInverse": true,
-            "relationCoModelSingularName": "dashboard",
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "cascade",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false
-          },
-          {
-            "name": "user",
-            "displayName": "User",
-            "description": null,
-            "type": "relation",
-            "ormType": "integer",
-            "isSystem": false,
-            "relationType": "many-to-one",
-            "relationCoModelFieldName": null,
-            "relationCreateInverse": false,
-            "relationCoModelSingularName": "user",
-            "relationCoModelColumnName": "",
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "cascade",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "relationJoinTableName": "",
-            "isRelationManyToManyOwner": null
+            "computedFieldValueType": "string",
+            "computedFieldValueProvider": "AlphaNumExternalIdComputationProvider",
+            "computedFieldValueProviderCtxt": "{\"prefix\": \"DQSDC\"}",
+            "computedFieldTriggerConfig": [
+              {
+                "modelName": "dashboardQuestionSqlDatasetConfig",
+                "moduleName": "fees-portal",
+                "operations": [
+                  "before-insert"
+                ]
+              }
+            ]
           }
         ]
       },
@@ -5827,7 +5721,7 @@
       "modelUserKey": "listOfValues"
     },
     {
-      "displayName": "Import Transactions",
+      "displayName": "Import Transactions List Action",
       "name": "importTransaction-list-action",
       "type": "solid",
       "domain": "",
@@ -5840,7 +5734,7 @@
       "modelUserKey": "importTransaction"
     },
     {
-      "displayName": "User Activity History",
+      "displayName": "User Activity History List Action",
       "name": "userActivityHistory-list-action",
       "type": "solid",
       "domain": "",
@@ -5849,19 +5743,6 @@
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "userActivityHistory-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "userActivityHistory"
-    },
-    {
-      "displayName": "User Activity History",
-      "name": "userActivityHistory-tree-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "userActivityHistory-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "userActivityHistory"
     },
@@ -5955,19 +5836,6 @@
       "viewUserKey": "dashboardQuestion-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "dashboardQuestion"
-    },
-    {
-      "displayName": "Dashboard Layout List Action",
-      "name": "dashboardLayout-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "dashboardLayout-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardLayout"
     },
     {
       "displayName": "Dashboard Question SQL Dataset Config List Action",
@@ -6324,14 +6192,6 @@
       "name": "dashboardQuestion-menu-item",
       "sequenceNumber": 2,
       "actionUserKey": "dashboardQuestion-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "dashboardManagement-menu-item"
-    },
-    {
-      "displayName": "Dashboard Layout",
-      "name": "dashboardLayout-menu-item",
-      "sequenceNumber": 3,
-      "actionUserKey": "dashboardLayout-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "dashboardManagement-menu-item"
     },
@@ -11297,64 +11157,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "createdAt",
-              "sortable": true,
-              "filterable": true
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "userActivityHistory-tree-view",
-      "displayName": "User Activity History",
-      "type": "tree",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "userActivityHistory",
-      "layout": {
-        "type": "tree",
-        "attrs": {
-          "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
-          "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
-        },
-        "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "id",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "user",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "event",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "ipAddress",
+              "name": "userAgent",
               "sortable": true,
               "filterable": true
             }
@@ -11849,8 +11652,6 @@
           "label": "Dashboard Question",
           "className": "grid"
         },
-        "onFieldChange": "dashboardQuestionFieldChangeHandler",
-        "onFormLoad": "dashboardQuestionOnFormLoadHandler",
         "children": [
           {
             "type": "sheet",
@@ -11928,17 +11729,13 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "labelSql",
-                                  "editWidget": "codeEditor",
-                                  "editorLanguage": "sql"
+                                  "name": "labelSql"
                                 }
                               },
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "kpiSql",
-                                  "editWidget": "codeEditor",
-                                  "editorLanguage": "sql"
+                                  "name": "kpiSql"
                                 }
                               },
                               {
@@ -12179,111 +11976,6 @@
                         "type": "field",
                         "attrs": {
                           "name": "options"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "dashboardLayout-list-view",
-      "displayName": "Dashboard Layout",
-      "type": "list",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardLayout",
-      "layout": {
-        "type": "list",
-        "attrs": {
-          "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
-          "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
-        },
-        "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "id"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "dashboard"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "user"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "dashboardLayout-form-view",
-      "displayName": "Dashboard Layout",
-      "type": "form",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardLayout",
-      "layout": {
-        "type": "form",
-        "attrs": {
-          "name": "form-1",
-          "label": "Dashboard Layout",
-          "className": "grid"
-        },
-        "children": [
-          {
-            "type": "sheet",
-            "attrs": {
-              "name": "sheet-1"
-            },
-            "children": [
-              {
-                "type": "row",
-                "attrs": {
-                  "name": "sheet-1"
-                },
-                "children": [
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "group-1",
-                      "label": "",
-                      "className": "col-12"
-                    },
-                    "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "layout"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "dashboard"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "user"
                         }
                       }
                     ]

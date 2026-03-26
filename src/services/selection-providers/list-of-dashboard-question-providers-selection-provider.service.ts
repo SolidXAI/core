@@ -3,7 +3,6 @@ import { SelectionProvider } from "src/decorators/selection-provider.decorator";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, ISelectionProvider, ISelectionProviderContext, ISelectionProviderValues } from "../../interfaces";
 import { SQL_DYNAMIC_PROVIDER_NAME } from "../dashboard.service";
-import { CHARTJS_SQL_DATA_PROVIDER_NAME, INBUILT_SQL_DATA_PROVIDERS, PRIME_REACT_DATATABLE_SQL_DATA_PROVIDER_NAME, PRIME_REACT_METER_GROUP_SQL_DATA_PROVIDER_NAME } from "../dashboard-question.service";
 
 
 @SelectionProvider()
@@ -35,9 +34,7 @@ export class ListOfDashboardQuestionProvidersSelectionProvider implements ISelec
     async values(query: string, ctxt: ISelectionProviderContext): Promise<readonly ISelectionProviderValues[]> {
         const dashboardSelectionProviders = this.solidRegistry.getDashboardQuestionDataProviders()
         //Exclude the SQL dynamic provider from the list, (since although it is a dashboard selection provider, it is not a valid option for the user to select)
-        return dashboardSelectionProviders
-        .filter(provider => !INBUILT_SQL_DATA_PROVIDERS.includes(provider.name())) 
-        .map(i => {
+        return dashboardSelectionProviders.map(i => {
             return { label: i.name, value: i.name };
         });
     }
