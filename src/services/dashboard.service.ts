@@ -15,6 +15,7 @@ import { SolidRegistry } from 'src/helpers/solid-registry';
 import { DashboardMapper } from 'src/mappers/dashboard-mapper';
 import { DashboardRepository } from 'src/repository/dashboard.repository';
 import { Dashboard } from '../entities/dashboard.entity';
+import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 
 
 export const SQL_DYNAMIC_PROVIDER_NAME = 'DashboardVariableSQLDynamicProvider';
@@ -31,6 +32,12 @@ export class DashboardService extends CRUDService<Dashboard> {
     readonly dashboardMapper: DashboardMapper,
   ) {
     super(entityManager, repo, 'dashboard', 'solid-core', moduleRef);
+  }
+
+
+  async create(createDto: CreateDashboardDto, files: Express.Multer.File[]) {
+    createDto.name = createDto.name.trim().replace(/\s+/g, '-').toLowerCase();
+    return super.create(createDto, files);
   }
 
   async getSelectionDynamicValues(query: DashboardVariableSelectionDynamicQueryDto) {

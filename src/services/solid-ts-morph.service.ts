@@ -324,6 +324,104 @@ export class SolidTsMorphService {
         return { staged: true, overwritten: false, skipped: false };
     }
 
+
+    //Removes all import declarations from a file whose module specifier matches the given predicate.
+    //Returns the set of identifier names that were imported by the removed declarations.
+    removeImports(
+        filePath: string,
+        filter: (moduleSpecifier: string) => boolean
+    ): { removedIdentifiers: Set<string>; staged: boolean; skipped: boolean } {
+        const abs = this.resolveRepoPath(filePath);
+        if (!existsSync(abs)) {
+            this.logger.warn(`removeImport: file not found at ${filePath}, skipping.`);
+            return { removedIdentifiers: new Set(), staged: false, skipped: true };
+        }
+
+        const existing = this.project.getSourceFile(abs);
+        const sourceFile = existing
+            ? existing
+            : this.project.createSourceFile(abs, readFileSync(abs, "utf8"), { overwrite: true });
+
+        const importsToRemove = sourceFile.getImportDeclarations().filter(decl => {
+            const spec = decl.getModuleSpecifierValue().replace(/\\/g, "/");
+            return filter(spec);
+        });
+
+        if (importsToRemove.length === 0) {
+            return { removedIdentifiers: new Set(), staged: false, skipped: true };
+        }
+
+        const removedIdentifiers = new Set<string>();
+        for (const decl of importsToRemove) {
+            for (const named of decl.getNamedImports()) {
+                removedIdentifiers.add(named.getAliasNode()?.getText() ?? named.getName());
+            }
+            const defaultImport = decl.getDefaultImport();
+            if (defaultImport) removedIdentifiers.add(defaultImport.getText());
+            decl.remove();
+        }
+
+        this.dirtySourceFiles.add(abs);
+        this.logger.log(`Staged removal of ${importsToRemove.length} import(s) in: ${this.rel(abs)}`);
+        return { removedIdentifiers, staged: true, skipped: false };
+    }
+
+    //Removes the given identifier names from all @Module decorator array properties
+    removeModuleMembers(
+        filePath: string,
+        names: Set<string> | string[]
+    ): { staged: boolean; skipped: boolean } {
+        const abs = this.resolveRepoPath(filePath);
+        if (!existsSync(abs)) {
+            this.logger.warn(`removeImportMembers: file not found at ${filePath}, skipping.`);
+            return { staged: false, skipped: true };
+        }
+
+        const identifiers = names instanceof Set ? names : new Set(names);
+        if (identifiers.size === 0) return { staged: false, skipped: true };
+
+        const existing = this.project.getSourceFile(abs);
+        const sourceFile = existing
+            ? existing
+            : this.project.createSourceFile(abs, readFileSync(abs, "utf8"), { overwrite: true });
+
+        const nestModuleClass = sourceFile.getClasses().find(cls =>
+            cls.getDecorators().some(dec => dec.getName() === "Module")
+        );
+        if (!nestModuleClass) {
+            this.logger.warn(`removeImportMembers: no @Module() class found in ${filePath}`);
+            return { staged: false, skipped: true };
+        }
+
+        const moduleDec = nestModuleClass.getDecorators().find(dec => dec.getName() === "Module");
+        const arg0 = moduleDec?.getCallExpression()?.getArguments()[0];
+        if (!arg0 || !Node.isObjectLiteralExpression(arg0)) return { staged: false, skipped: true };
+
+        const meta = arg0 as ObjectLiteralExpression;
+        for (const propName of ["imports", "providers", "controllers", "exports"] as const) {
+            const prop = meta.getProperty(propName);
+            if (!prop || !Node.isPropertyAssignment(prop)) continue;
+            const init = prop.getInitializer();
+            if (!init || !Node.isArrayLiteralExpression(init)) continue;
+            const arr = init as ArrayLiteralExpression;
+            const elements = arr.getElements();
+            for (let i = elements.length - 1; i >= 0; i--) {
+                const elemText = elements[i].getText().trim();
+                // Match direct identifiers (e.g. TestService) or call expressions that reference them (e.g. TypeOrmModule.forFeature([Test])).
+                const shouldRemove = identifiers.has(elemText) ||
+                    [...identifiers].some(id => new RegExp(`\\b${id}\\b`).test(elemText));
+                if (shouldRemove) {
+                    arr.removeElement(i);
+                }
+            }
+        }
+
+        this.dirtySourceFiles.add(abs);
+        this.logger.log(`Staged removal of [${[...identifiers].join(", ")}] from @Module arrays in: ${this.rel(abs)}`);
+        return { staged: true, skipped: false };
+    }
+
+
     addImport(
         filePath: string,
         importLine: string
