@@ -17,10 +17,10 @@ export class ViewMetadata extends CommonEntity {
     @Column({ name: "type", type: "varchar" })
     type: string;
 
-    @Column({ name: "context", ...getColumnType('longText') })
+    @Column({ name: "context", ...getColumnType('longText'), default: '{}' })
     context: any = "{}";
 
-    @Column({ name: "layout", ...getColumnType('longText') })
+    @Column({ name: "layout", ...getColumnType('longText'), nullable: true })
     layout: any;
 
     @Index()
