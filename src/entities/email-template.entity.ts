@@ -14,7 +14,7 @@ export class EmailTemplate extends CommonEntity {
     body: string;
     @Column({ name: "subject", type: "varchar", default: "{}" })
     subject: string = "{}";
-    @Column({ name: "description", type: "text", nullable: true })
+    @Column({ name: "description", nullable: true })
     description: string;
     @Column({ name: "active", nullable: true, default: true })
     active: boolean = true;

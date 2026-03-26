@@ -1,5 +1,6 @@
 import { CommonEntity } from 'src/entities/common.entity'
 import { Entity, Column, Index, OneToMany, JoinColumn, ManyToOne } from 'typeorm';
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 import { DashboardVariable } from 'src/entities/dashboard-variable.entity';
 import { DashboardQuestion } from 'src/entities/dashboard-question.entity';
 import { ModuleMetadata } from 'src/entities/module-metadata.entity'
@@ -11,7 +12,7 @@ export class Dashboard extends CommonEntity {
     @Column({ type: "varchar" })
     name: string;
 
-    @Column({ type: "text" })
+    @Column({ ...getColumnType('longText') })
     layoutJson: any;
 
     @OneToMany(() => DashboardVariable, dashboardVariable => dashboardVariable.dashboard, { cascade: true })
@@ -30,6 +31,6 @@ export class Dashboard extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     displayName: string;
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true })
     description: string;
 }

@@ -3,10 +3,11 @@ import { Entity, Column, JoinColumn, ManyToOne, Index } from 'typeorm';
 import { User } from 'src/entities/user.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { ViewMetadata } from 'src/entities/view-metadata.entity'
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity("ss_saved_fitlers")
 export class SavedFilters extends CommonEntity {
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true, ...getColumnType('longText') })
     filterQueryJson: any;
 
     @Index({ unique: true })
@@ -28,7 +29,7 @@ export class SavedFilters extends CommonEntity {
     @JoinColumn()
     view: ViewMetadata;
 
-    @Column({ name: "description", type: "text", nullable: true })
+    @Column({ name: "description", nullable: true })
     description: string;
 
     @Column({ nullable: true, default: false })

@@ -1,5 +1,6 @@
 import { CommonEntity } from "src/entities/common.entity"
 import { Entity, Column, ManyToOne, Index, JoinColumn, OneToMany } from "typeorm";
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 import { ModuleMetadata } from 'src/entities/module-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { UserViewMetadata } from 'src/entities/user-view-metadata.entity'
@@ -16,10 +17,10 @@ export class ViewMetadata extends CommonEntity {
     @Column({ name: "type", type: "varchar" })
     type: string;
 
-    @Column({ name: "context", type: "text" })
+    @Column({ name: "context", ...getColumnType('longText') })
     context: any = "{}";
 
-    @Column({ name: "layout", type: "text" })
+    @Column({ name: "layout", ...getColumnType('longText') })
     layout: any;
 
     @Index()
