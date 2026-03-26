@@ -1,3 +1,4 @@
+import { LocalDateTimeTransformer, serializeDate } from 'src/transformers/typeorm/local-date-time-transformer';
 import { forwardRef, Inject, Injectable } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -141,6 +142,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 messageDetail.chatterMessage = savedMessage;
                 messageDetail.fieldName = field.name;
                 messageDetail.fieldDisplayName = field.displayName;
+                messageDetail.fieldType = field.type;
                 messageDetail.oldValue = null;
                 messageDetail.oldValueDisplay = null;
                 messageDetail.newValue = this.formatFieldValue(field, fieldValue);
@@ -257,6 +259,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             messageDetail.chatterMessage = savedMessage;
             messageDetail.fieldName = field.name;
             messageDetail.fieldDisplayName = field.displayName;
+            messageDetail.fieldType = field.type;
             messageDetail.oldValue = this.formatFieldValue(field, oldValue);
             messageDetail.newValue = this.formatFieldValue(field, newValue);
             messageDetail.oldValueDisplay = await this.formatFieldValueDisplay(field, oldValue);
@@ -320,6 +323,9 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             }
         }
 
+        if (value instanceof Date) {
+            return serializeDate(value);
+        }
 
         return value.toString();
     }
@@ -331,6 +337,10 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         if (field.type === 'selectionStatic' || field.type === 'selectionDynamic') {
             return `${value}`;
+        }
+
+        if (['date', 'datetime', 'time'].includes(field.type)) {
+            return null;
         }
 
         if (field.type === 'relation') {
@@ -617,6 +627,22 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const [entities, count] = await qb.getManyAndCount();
         this.logHeapUsed('getChatterMessages-entitiesLoaded');
+
+        // Convert date strings in message details to ISO format for consistent handling on the frontend
+        const DATE_FIELD_TYPES = ['date', 'datetime', 'time'];
+        for (const entity of entities) {
+            for (const detail of entity.chatterMessageDetails ?? []) {
+                if (!detail.fieldType || !DATE_FIELD_TYPES.includes(detail.fieldType)) continue;
+                if (detail.oldValue) {
+                    const d = LocalDateTimeTransformer.from(detail.oldValue);
+                    if (d) detail.oldValue = d.toISOString();
+                }
+                if (detail.newValue) {
+                    const d = LocalDateTimeTransformer.from(detail.newValue);
+                    if (d) detail.newValue = d.toISOString();
+                }
+            }
+        }
 
         if (populateMedia && populateMedia.length > 0) {
             const normalizedPopulateMedia = this.crudHelperService.normalize(populateMedia);

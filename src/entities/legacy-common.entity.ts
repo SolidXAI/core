@@ -1,7 +1,6 @@
-import { Exclude, Expose, Type } from "class-transformer";
-import { Column, CreateDateColumn, DeleteDateColumn, Index, JoinColumn, ManyToOne, UpdateDateColumn } from "typeorm";
-import type { User } from "./user.entity";
-import { LocalDateTimeTransformer, UtcDateTimeTransformer } from "src/transformers/typeorm/local-date-time-transformer";
+import { Exclude, Expose } from "class-transformer";
+import { LocalDateTimeTransformer } from "src/transformers/typeorm/local-date-time-transformer";
+import { Column, CreateDateColumn, DeleteDateColumn, Index, UpdateDateColumn } from "typeorm";
 
 export const LEGACY_TABLE_FIELDS_PREFIX = 'ss';
 

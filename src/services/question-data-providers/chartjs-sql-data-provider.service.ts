@@ -1,16 +1,11 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { DashboardQuestionDataProvider } from "src/decorators/dashboard-question-data-provider.decorator";
 import { DashboardQuestion } from "src/entities/dashboard-question.entity";
-import { IDashboardQuestionDataProvider } from "src/interfaces";
+import { IDashboardQuestionDataProvider, QuestionSqlDataProviderContext } from "src/interfaces";
 import { EntityManager } from "typeorm";
 import { SqlExpressionResolverService } from "../sql-expression-resolver.service";
 import { getKpi, getLabels } from "./helpers";
 
-export interface QuestionSqlDataProviderContext {
-    // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
-    // questionId: number;
-    // question: Question;
-}
 
 export enum SqlExpressionOperator {
     EQUALS = '$equals',
@@ -49,7 +44,8 @@ export class ChartJsSqlDataProvider implements IDashboardQuestionDataProvider<Qu
         return "ChartJsSqlDataProvider";
     }
 
-    async getData(question: DashboardQuestion, expressions?: SqlExpression[], context?: QuestionSqlDataProviderContext): Promise<any> {
+    async getData(question: DashboardQuestion, context?: QuestionSqlDataProviderContext): Promise<any> {
+        const expressions: SqlExpression[] = context?.expressions || [];
         // TODO: put some validation to check if the results of each SQL in each dataset returns the same number of rows 
 
         // This is what we have to return.
