@@ -16,10 +16,10 @@ export class ActionMetadata extends CommonEntity {
     @Column({ name: "type", type: "varchar" })
     type: string;
 
-    @Column({ name: "domain", nullable: true})
+    @Column({ name: "domain", type: "simple-json", nullable: true})
     domain: any;
 
-    @Column({ name: "context", nullable: true})
+    @Column({ name: "context", type: "simple-json", nullable: true})
     context: any;
 
     @Column({ name: "custom_component", type: "varchar", nullable: true })
