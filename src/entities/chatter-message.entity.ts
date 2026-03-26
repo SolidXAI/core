@@ -2,6 +2,7 @@ import { CommonEntity } from 'src/entities/common.entity'
 import { Entity, Column, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
 import { User } from 'src/entities/user.entity'
 import { ChatterMessageDetails } from './chatter-message-details.entity';
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Index(["coModelName", "coModelEntityId"])
 @Entity("ss_chatter_message")
@@ -13,7 +14,7 @@ export class ChatterMessage extends CommonEntity {
     @Column({ type: "varchar" })
     messageSubType: string; // audit_update | audit_insert | audit_delete | custom
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true, ...getColumnType('longText') })
     messageBody: string;
 
     @Index()
@@ -32,9 +33,9 @@ export class ChatterMessage extends CommonEntity {
     @OneToMany(() => ChatterMessageDetails, (chatterMessageDetails) => chatterMessageDetails.chatterMessage, { cascade: true })
     chatterMessageDetails: ChatterMessageDetails[];
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true })
     modelDisplayName: string;
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true })
     modelUserKey: string;
 }

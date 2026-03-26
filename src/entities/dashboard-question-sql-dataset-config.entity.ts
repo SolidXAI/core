@@ -1,20 +1,21 @@
 import { CommonEntity } from 'src/entities/common.entity'
 import { Entity, Column, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { DashboardQuestion } from 'src/entities/dashboard-question.entity'
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity("ss_dashboard_question_sql_dataset_config")
 export class DashboardQuestionSqlDatasetConfig extends CommonEntity {
-    @Index({ unique: true })
+    @Index()
     @Column({ type: "varchar" })
     datasetName: string;
 
     @Column({ type: "varchar" })
     datasetDisplayName: string;
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true })
     description: string;
 
-    @Column({ type: "text" })
+    @Column({ ...getColumnType('longText'), nullable: true })
     sql: string;
 
     @Column({ type: "varchar" })
@@ -27,7 +28,7 @@ export class DashboardQuestionSqlDatasetConfig extends CommonEntity {
     @JoinColumn()
     question: DashboardQuestion;
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true, ...getColumnType('longText') })
     options: any;
 
     @Index({ unique: true })

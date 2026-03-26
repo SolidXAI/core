@@ -2,6 +2,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { RoleMetadata } from 'src/entities/role-metadata.entity';
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity("ss_security_rule")
 export class SecurityRule extends CommonEntity {
@@ -22,7 +23,7 @@ export class SecurityRule extends CommonEntity {
     @JoinColumn()
     modelMetadata: ModelMetadata;
 
-    @Column({ type: "text" })
+    @Column({ ...getColumnType('longText'), nullable: true })
     securityRuleConfig: any;
 
     @Column({ type: "varchar", nullable: true })
