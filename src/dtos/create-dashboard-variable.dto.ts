@@ -53,8 +53,4 @@ export class CreateDashboardVariableDto {
     @IsString()
     @ApiProperty({ description: "This is the default operator for this variable when it is rendered at runtime. It can be a static value for this variable when it is rendered at runtime." })
     defaultOperator: string;
-    @IsString()
-    @IsOptional()
-    @ApiProperty()
-    externalId: string;
 }
