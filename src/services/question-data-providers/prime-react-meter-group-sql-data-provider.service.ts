@@ -1,12 +1,18 @@
 import { Injectable } from "@nestjs/common";
 import { DashboardQuestionDataProvider } from "src/decorators/dashboard-question-data-provider.decorator";
 import { DashboardQuestion } from "src/entities/dashboard-question.entity";
-import { IDashboardQuestionDataProvider, QuestionSqlDataProviderContext } from "src/interfaces";
+import { IDashboardQuestionDataProvider } from "src/interfaces";
 import { EntityManager } from "typeorm";
 import { SqlExpressionResolverService } from "../sql-expression-resolver.service";
 import { Logger } from '@nestjs/common';
 import { SqlExpression } from "./chartjs-sql-data-provider.service";
 import { getKpi } from "./helpers";
+
+export interface QuestionSqlDataProviderContext {
+    // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
+    // questionId: number;
+    // question: Question;
+}
 
 @DashboardQuestionDataProvider()
 @Injectable()
@@ -52,9 +58,7 @@ export class PrimeReactMeterGroupSqlDataProvider implements IDashboardQuestionDa
         return colors;
     }
 
-    async getData(question: DashboardQuestion, context?: QuestionSqlDataProviderContext): Promise<any> {
-        const expressions: SqlExpression[] = context?.expressions || [];
-
+    async getData(question: DashboardQuestion, expressions?: SqlExpression[], context?: QuestionSqlDataProviderContext): Promise<any> {
         // TODO: put some validation to check if the results of each SQL in each dataset returns the same number of rows 
 
         // This is what we have to return.

@@ -7,7 +7,7 @@ import { PollerService } from '../poller.service';
 import { buildNamespacedQueueName } from './common';
 
 export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscriber<T> {
-    private _loggerInstance?: Logger;
+    private readonly logger = new Logger(DatabaseSubscriber.name);
     private readonly url: string;
     private readonly serviceRole: string;
 
@@ -21,17 +21,6 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
             this.logger.debug('Queue service Role is not defined in the environment variables');
         }
         // this.logger.debug(`DatabaseSubscriber instance created with options: ${JSON.stringify(this.options())}`);
-    }
-
-    protected get loggerContext(): string {
-        return this.constructor.name;
-    }
-
-    protected get logger(): Logger {
-        if (!this._loggerInstance) {
-            this._loggerInstance = new Logger(this.loggerContext);
-        }
-        return this._loggerInstance;
     }
 
     abstract subscribe(message: QueueMessage<T>);

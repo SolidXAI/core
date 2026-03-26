@@ -89,11 +89,5 @@ export class ScheduledJobController {
     return this.service.delete(id);
   }
 
-  @ApiBearerAuth("jwt")
-  @Post(':id/trigger')
-  async triggerRun(@Param('id') id: string) {
-    return this.service.triggerRun(+id);
-  }
-
 
 }

@@ -1,4 +1,4 @@
-import { IsInt, IsOptional, IsString, IsNotEmpty, IsJSON, IsBoolean } from 'class-validator';
+import { IsInt,IsOptional, IsString, IsNotEmpty, IsJSON, IsBoolean } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
 export class UpdateDashboardVariableDto {
@@ -51,8 +51,4 @@ export class UpdateDashboardVariableDto {
     @IsString()
     @ApiProperty({ description: "This is the default operator for this variable when it is rendered at runtime. It can be a static value for this variable when it is rendered at runtime." })
     defaultOperator: string;
-    @IsString()
-    @IsOptional()
-    @ApiProperty()
-    externalId: string;
 }

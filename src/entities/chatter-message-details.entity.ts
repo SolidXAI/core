@@ -26,7 +26,4 @@ export class ChatterMessageDetails extends CommonEntity {
 
     @Column({ type: "text", nullable: true })
     fieldDisplayName: string;
-
-    @Column({ type: "varchar", nullable: true })
-    fieldType: string;
 }
