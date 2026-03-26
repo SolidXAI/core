@@ -136,18 +136,12 @@ export interface IMcpToolResponseHandler {
   apply(aiInteraction: AiInteraction);
 }
 
-export interface QuestionSqlDataProviderContext {
-    // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
-    // questionId: number;
-    // question: Question;
-    expressions?: SqlExpression[]
-}
 export interface IDashboardQuestionDataProvider<TContext, TData> {
   help(): string;
 
   name(): string;
 
-  getData(question: DashboardQuestion, ctxt?: TContext): Promise<TData[] | TData>;
+  getData(question: DashboardQuestion, expressions?: SqlExpression[], ctxt?: TContext): Promise<TData[] | TData>;
 }
 
 /**

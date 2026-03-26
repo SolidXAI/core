@@ -23,16 +23,14 @@ export class PublisherFactory<T> {
         // Register all ISolidDatabaseModules implementations
         let actualPublisherToUse = this.solidIntrospectionService.getProvider(resolvedPublisherName);
         if (!actualPublisherToUse) {
-            // Relaxed extra check in place to make sure we do not have to refactor old publishers or publishers named without the ____RabbitMq or ____Database convention
-            actualPublisherToUse = this.solidIntrospectionService.getProvider(publisherName);
 
             // Extra check in place to make sure we do not have to refactor old publishers which have been created earlier. 
-            // if (defaultBrokerToUse === 'rabbitmq') {
-            //     actualPublisherToUse = this.solidIntrospectionService.getProvider(publisherName);
-            // }
-        }
-        if (!actualPublisherToUse) {
-            throw new Error(`Unable to locate publisher with name ${resolvedPublisherName}`);
+            if (defaultBrokerToUse === 'rabbitmq') {
+                actualPublisherToUse = this.solidIntrospectionService.getProvider(publisherName);
+                if (!actualPublisherToUse) {
+                    throw new Error(`Unable to locate publisher with name ${resolvedPublisherName}`);
+                }
+            }
         }
 
         // type safe

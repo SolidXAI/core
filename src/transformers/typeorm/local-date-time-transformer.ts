@@ -20,67 +20,59 @@ function dateToUtcComponentString(d: Date): string {
     const ss = pad(d.getUTCSeconds());
     const ms = pad(d.getUTCMilliseconds(), 3);
 
-    // A "naive" timestamp string representing the DB wall-clock components
+    // A “naive” timestamp string representing the DB wall-clock components
     return `${yyyy}-${mm}-${dd} ${hh}:${mi}:${ss}.${ms}`;
 }
 
-function getWallClockConfig(): { tz: string; wallTimeMode: boolean } {
-    return {
-        tz: process.env.SOLIDX_WALL_TIME_TIMEZONE || process.env.SOLIDX_TIMEZONE || "UTC",
-        wallTimeMode: (process.env.SOLIDX_TIME_STORED_AS_WALL_TIME || "").toLowerCase() === "true",
-    };
-}
-
-/**
- * Returns a dayjs instance positioned at the wall-clock time for the given Date.
- * - Wall-clock mode ON:  dayjs in the configured timezone (components = wall-clock components)
- * - Wall-clock mode OFF: dayjs in UTC
- * Counterpart to serializeDate — use this to format/display a date value correctly.
- */
-export function parseDate(date: Date): dayjs.Dayjs {
-    const { tz, wallTimeMode } = getWallClockConfig();
-    if (!wallTimeMode) return dayjs.utc(date);
-    return dayjs(date).tz(tz);
-}
-
-/**
- * Converts a Date to a string for storage in plain text columns (e.g. audit values).
- * - Wall-clock mode ON:  "YYYY-MM-DD HH:mm:ss.SSS" in the configured timezone (no Z suffix)
- * - Wall-clock mode OFF: ISO 8601 UTC string with Z suffix
- * The presence/absence of the Z suffix lets consumers distinguish the two cases.
- */
-export function serializeDate(date: Date): string {
-    const { wallTimeMode } = getWallClockConfig();
-    if (!wallTimeMode) return date.toISOString();
-    return parseDate(date).format("YYYY-MM-DD HH:mm:ss.SSS");
-}
-
-export const LocalDateTimeTransformer: ValueTransformer = {
-    // DB -> Entity
+export const LocalDateTimeTransformer: ValueTransformer & { utc: ValueTransformer } = {
+    // DB → Entity
     from(value: Date | string | null | undefined): Date | null | undefined {
-        // critical... super important to return undefined here
+
+        const SOLIDX_WALL_TIME_TZ = process.env.SOLIDX_WALL_TIME_TIMEZONE || process.env.SOLIDX_TIMEZONE || "UTC";
+        const SOLIDX_TIME_STORED_AS_WALL_TIME = (process.env.SOLIDX_TIME_STORED_AS_WALL_TIME || "").toLowerCase() === "true";
+
+        // critical... super important to return undefined here 
         if (value === undefined) return undefined;
         if (value === null) return null;
 
-        const { tz, wallTimeMode } = getWallClockConfig();
-
-        if (!wallTimeMode) {
+        if (!SOLIDX_TIME_STORED_AS_WALL_TIME) {
             return dayjs(value).toDate();
         }
 
         const naive = value instanceof Date ? dateToUtcComponentString(value) : String(value);
-        return dayjs.tz(naive, tz).utc().toDate();
+        return dayjs.tz(naive, SOLIDX_WALL_TIME_TZ).utc().toDate();
     },
 
-    // Entity -> DB
+    // Entity → DB
     to(value: Date | null | undefined): Date | null | undefined {
-        // critical... super important to return undefined here
+
+        const SOLIDX_WALL_TIME_TZ = process.env.SOLIDX_WALL_TIME_TIMEZONE || process.env.SOLIDX_TIMEZONE || "UTC";
+        const SOLIDX_TIME_STORED_AS_WALL_TIME = (process.env.SOLIDX_TIME_STORED_AS_WALL_TIME || "").toLowerCase() === "true";
+
+        // critical... super important to return undefined here 
         if (value === undefined) return undefined;
         if (value === null) return null;
 
-        const wallTimeStr = serializeDate(value);
+        if (!SOLIDX_TIME_STORED_AS_WALL_TIME) {
+            return dayjs(value).toDate();
+        }
+
+        const wallTimeStr = dayjs(value).tz(SOLIDX_WALL_TIME_TZ).format("YYYY-MM-DD HH:mm:ss.SSS");
         return dayjs.utc(wallTimeStr).toDate();
     },
 
+    utc: {
+        from(value: Date | string | null | undefined): Date | null | undefined {
+            if (value === undefined) return undefined;
+            if (value === null) return null;
+            return dayjs(value).toDate();
+        },
+        to(value: Date | null | undefined): Date | null | undefined {
+            if (value === undefined) return undefined;
+            if (value === null) return null;
+            return dayjs(value).toDate();
+        }
+    }
 };
 
+export const UtcDateTimeTransformer = LocalDateTimeTransformer.utc;

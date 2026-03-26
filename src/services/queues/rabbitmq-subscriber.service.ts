@@ -8,7 +8,7 @@ import { buildNamespacedQueueName } from './common';
 
 
 export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscriber<T> { // TODO This can be made a generic type for better type visibility
-    private _loggerInstance?: Logger;
+    private readonly logger = new Logger(RabbitMqSubscriber.name);
     private readonly url: string;
     private readonly serviceRole: string;
     private connection: amqp.Connection | null = null;
@@ -28,17 +28,6 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             this.logger.debug('Queue service Role is not defined in the environment variables');
         }
         // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
-    }
-
-    protected get loggerContext(): string {
-        return this.constructor.name;
-    }
-
-    protected get logger(): Logger {
-        if (!this._loggerInstance) {
-            this._loggerInstance = new Logger(this.loggerContext);
-        }
-        return this._loggerInstance;
     }
 
     abstract subscribe(message: QueueMessage<T>);

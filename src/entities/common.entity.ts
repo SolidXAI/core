@@ -1,6 +1,6 @@
-import { Exclude, Expose } from "class-transformer";
-import { LocalDateTimeTransformer } from "src/transformers/typeorm/local-date-time-transformer";
 import { Column, CreateDateColumn, DeleteDateColumn, Index, PrimaryGeneratedColumn, UpdateDateColumn } from "typeorm";
+import { Exclude, Expose } from "class-transformer";
+import { LocalDateTimeTransformer, UtcDateTimeTransformer } from "src/transformers/typeorm/local-date-time-transformer";
 
 @Exclude()
 export abstract class CommonEntity {
