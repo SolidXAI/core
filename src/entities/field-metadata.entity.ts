@@ -36,7 +36,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'regex_pattern', nullable: true })
     regexPattern: string;
 
-    @Column({ name: 'regex_pattern_not_matching_error_msg', type: 'text', nullable: true, default: ERROR_MESSAGES.DEFAULT_REGEX_PATTERN_NOT_MATCHING_ERROR_MSG })
+    @Column({ name: 'regex_pattern_not_matching_error_msg', nullable: true, default: ERROR_MESSAGES.DEFAULT_REGEX_PATTERN_NOT_MATCHING_ERROR_MSG })
     regexPatternNotMatchingErrorMsg: string;
 
     @Column({ name: "required", default: false })
@@ -119,7 +119,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'selection_static_values', nullable: true, type: 'simple-array' })
     selectionStaticValues: string[];
 
-    @Column({ name: 'selection_value_type', nullable: true, type: 'text' }) // text type cannot have a default value
+    @Column({ name: 'selection_value_type', nullable: true })
     selectionValueType: string = 'string';
 
     // @Column({ name: "computed", default: false })
