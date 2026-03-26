@@ -17,10 +17,12 @@ export class ViewMetadata extends CommonEntity {
     @Column({ name: "type", type: "varchar" })
     type: string;
 
-    @Column({ name: "context", ...getColumnType('longText'), default: '{}' })
+    //TODO: To make this truly cross db compatible, we should avoid setting a db type
+    @Column({ name: "context", type: "text" })
     context: any = "{}";
 
-    @Column({ name: "layout", ...getColumnType('longText'), nullable: true })
+    //TODO: To make this truly cross db compatible, we should avoid setting a db type
+    @Column({ name: "layout", type: "text" })
     layout: any;
 
     @Index()
