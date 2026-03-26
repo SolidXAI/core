@@ -11,6 +11,7 @@ export interface MediaFieldOptions {
     fieldName: string | undefined | null;
     mediaMaxSizeKb: number | undefined | null;
     mediaTypes: string[];
+    isUpdate: boolean | undefined | null;
 }
 
 type MediaType = 'image' | 'audio' | 'video' | 'file' | 'pdf';
@@ -119,25 +120,24 @@ export class MediaFieldCrudManager implements FieldCrudManager {
     }
 
     validate(dto: any, files: Array<Express.Multer.File>): ValidationError[] {
-        const isValidateForUpdate = dto.id !== undefined; //FIXME: This is a hack, since we are using PUT for update. Once we support PATCH, this will be removed
         const fieldFiles = files.filter(file => file.fieldname === this.options.fieldName);
-        return this.applyValidations(fieldFiles, isValidateForUpdate);
+        return this.applyValidations(fieldFiles);
     }
 
-    private applyValidations(fieldFiles: Array<Express.Multer.File>, isValidateForUpdate: boolean): ValidationError[] {
+    private applyValidations(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
         switch (this.options.type) {
             case SolidMediaType.mediaSingle:
-                return this.validateMediaSingle(fieldFiles, isValidateForUpdate);
+                return this.validateMediaSingle(fieldFiles);
             case SolidMediaType.mediaMultiple:
-                return this.validateMediaMultiple(fieldFiles, isValidateForUpdate);
+                return this.validateMediaMultiple(fieldFiles);
             default:
                 return [];
         }
     }
 
-    private validateMediaSingle(fieldFiles: Array<Express.Multer.File>, isValidateForUpdate: boolean): ValidationError[] {
+    private validateMediaSingle(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
         const errors: ValidationError[] = [];
-        if (!isValidateForUpdate && this.options.required && fieldFiles.length === 0) {
+        if (!this.options.isUpdate && this.options.required && fieldFiles.length === 0) {
             errors.push({
                 field: this.options.fieldName,
                 error: `${this.options.fieldName} is required`
@@ -184,9 +184,9 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         return errors;
     }
 
-    private validateMediaMultiple(fieldFiles: Array<Express.Multer.File>, isValidateForUpdate: boolean): ValidationError[] {
+    private validateMediaMultiple(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
         const errors: ValidationError[] = [];
-        if (!isValidateForUpdate && this.options.required && fieldFiles.length === 0) {
+        if (!this.options.isUpdate && this.options.required && fieldFiles.length === 0) {
             errors.push({
                 field: this.options.fieldName,
                 error: `${this.options.fieldName} is required`
