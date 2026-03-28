@@ -84,9 +84,15 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'rabbitmq';
         const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
         const queueNameRegex = (process.env.QUEUES_QUEUE_NAME_REGEX_TO_ENABLE || '').trim();
+        const roleAllowed = ['both', 'subscriber'].includes(this.serviceRole);
+
+        if (!roleAllowed) {
+            this.logger.log(`RabbitMqSubscriber is disabled because QUEUES_SERVICE_ROLE is "${this.serviceRole}". Expected "both" or "subscriber".`);
+            return;
+        }
 
         // we will start subscriber only if the current service role is subscriber. 
-        if (this.url && ['both', 'subscriber'].includes(this.serviceRole) && solidCliRunning === "false" && defaultBroker === 'rabbitmq') {
+        if (this.url && solidCliRunning === "false" && defaultBroker === 'rabbitmq') {
             const options = this.options();
             const queueName = options.queueName;
 
