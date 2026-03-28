@@ -31,6 +31,16 @@ export class SchedulerServiceImpl implements ISchedulerService {
         if (solidCliRunning === "true") {
             return;
         }
+        const jobsRegexToEnable = (process.env.SOLID_SCHEDULER_JOBS_REGEX_TO_ENABLE || '').trim();
+        let jobsRegex: RegExp | null = null;
+        if (jobsRegexToEnable && jobsRegexToEnable !== "all") {
+            try {
+                jobsRegex = new RegExp(jobsRegexToEnable);
+            } catch (error) {
+                this.logger.error(`Invalid SOLID_SCHEDULER_JOBS_REGEX_TO_ENABLE regex "${jobsRegexToEnable}". Scheduler loop will skip this run.`);
+                return;
+            }
+        }
 
         const now = new Date();
 
@@ -53,6 +63,12 @@ export class SchedulerServiceImpl implements ISchedulerService {
 
         for (const job of dueJobs) {
             const jobKey = String(job.id ?? job.scheduleName ?? job.job);
+            const jobName = String(job.job ?? '');
+
+            if (jobsRegex && !jobsRegex.test(jobName)) {
+                this.logger.log(`[${now.getTime()}]: scheduler service skipping job ${jobName} because it does not match SOLID_SCHEDULER_JOBS_REGEX_TO_ENABLE=${jobsRegexToEnable}`);
+                continue;
+            }
 
             if (this.runningJobs.has(jobKey)) {
                 this.logger.log(`[${now.getTime()}]: scheduler service skipping job ${job.job} because a run is already in progress`);
