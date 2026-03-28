@@ -5736,6 +5736,19 @@
       "modelUserKey": "mqMessage"
     },
     {
+      "displayName": "Message Tree Action",
+      "name": "mqMessage-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "mqMessage-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessage"
+    },
+    {
       "displayName": "Queues List Action",
       "name": "mqMessageQueue-list-action",
       "type": "solid",
@@ -9725,6 +9738,95 @@
       "modelUserKey": "mqMessage",
       "layout": {
         "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "messageId",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "messageBroker",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "stage",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "startedAt",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "finishedAt",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "elapsedMillis",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "parentEntityId",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "parentEntity",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mqMessageQueue",
+              "label": "Queue",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "mqMessage-tree-view",
+      "displayName": "Messages Tree View",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessage",
+      "layout": {
+        "type": "tree",
         "attrs": {
           "pagination": true,
           "pageSizeOptions": [
