@@ -5,7 +5,7 @@ import { CommonEntity } from "src/entities/common.entity";
 import { ModelSequence } from "src/entities/model-sequence.entity";
 import { ComputedFieldMetadata } from "src/helpers/solid-registry";
 import { IEntityPreComputeFieldProvider } from "src/interfaces";
-import { DataSource, EntityTarget } from "typeorm";
+import { DataSource, EntityManager } from "typeorm";
 
 
 export interface SequenceNumComputedFieldContext {
@@ -36,11 +36,10 @@ export class SequenceNumComputedFieldProvider<T extends CommonEntity> implements
             throw new Error("sequenceName is required for sequence computation");
         }
 
-        await this.dataSource.transaction(async (manager) => {
-            /**
-             * 1️⃣ Lock sequence row (prevents race conditions)
-             */
-            // 1️⃣ Fetch sequence row
+        const contextManager = computedFieldMetadata.eventContext?.manager;
+
+        const compute = async (manager: EntityManager) => {
+            // Lock sequence row to avoid duplicate sequence numbers under concurrency.
             const modelSequenceRepo = manager.getRepository(ModelSequence)
             const modelSequence = await modelSequenceRepo.findOne({
                 where: { sequenceName },
@@ -61,25 +60,21 @@ export class SequenceNumComputedFieldProvider<T extends CommonEntity> implements
 
             const sequenceString = `${prefix}${separator}${paddedValue}`;
 
-            // 3️⃣ Duplicate check on TARGET ENTITY (extra safety)
-            const entityRepo = manager.getRepository(triggerEntity.constructor as any);
-
-            const existing = await entityRepo.findOne({
-                where: {
-                    [computedFieldMetadata.fieldName]: sequenceString,
-                },
-            });
-
-            if (existing) {
-                throw new Error(`Duplicate Sequence generated: ${sequenceString}`);
-            }
-
-            // 4️⃣ set the computed field on the entity
+            // Set the computed field on the trigger entity.
             (triggerEntity as any)[computedFieldMetadata.fieldName] = sequenceString;
 
-            // 5️⃣ Persist updated sequence current value
+            // Persist updated sequence current value.
             modelSequence.currentValue = nextValue;
             await modelSequenceRepo.save(modelSequence);
+        };
+
+        if (contextManager?.queryRunner?.isTransactionActive) {
+            await compute(contextManager);
+            return;
+        }
+
+        await this.dataSource.transaction(async (manager) => {
+            await compute(manager);
         });
     }
 

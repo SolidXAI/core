@@ -31,6 +31,7 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
   async preComputeValue(triggerEntity: T, computedFieldMetadata: ComputedFieldMetadata<AlphaNumExternalIdContext>) {
     const { prefix, length, dynamicFieldPrefix } = computedFieldMetadata.computedFieldValueProviderCtxt;
     const eventContext = computedFieldMetadata.eventContext;
+    const manager = eventContext?.manager ?? this.entityManager;
     const entityName = eventContext?.metadataName ?? eventContext.databaseEntity?.constructor?.name ?? '';
 
     const codeLength = length || 5;
@@ -45,7 +46,7 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
       }
     }
 
-    const uniqueCode = await this.generateUniqueExternalId(resolvedPrefix, codeLength, computedFieldMetadata.fieldName, entityName);
+    const uniqueCode = await this.generateUniqueExternalId(manager, resolvedPrefix, codeLength, computedFieldMetadata.fieldName, entityName);
     const finalExternalId = resolvedPrefix ? `${resolvedPrefix}-${uniqueCode}` : uniqueCode;
 
     triggerEntity[computedFieldMetadata.fieldName] = finalExternalId;
@@ -60,8 +61,8 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
     return result;
   }
 
-  private async isExternalIdUnique(externalId: string, fieldName: string, entityName: string): Promise<boolean> {
-    const count = await this.entityManager.count(entityName as any,
+  private async isExternalIdUnique(manager: EntityManager, externalId: string, fieldName: string, entityName: string): Promise<boolean> {
+    const count = await manager.count(entityName as any,
       {
         where: { [fieldName]: externalId },
       }
@@ -69,7 +70,7 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
     return count === 0;
   }
 
-  private async generateUniqueExternalId(resolvedPrefix: string, codeLength: number, fieldName: string, entityName: string): Promise<string> {
+  private async generateUniqueExternalId(manager: EntityManager, resolvedPrefix: string, codeLength: number, fieldName: string, entityName: string): Promise<string> {
     const maxAttempts = 10;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -78,7 +79,7 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
 
       const fullId = resolvedPrefix ? `${resolvedPrefix}-${newId}` : newId;
 
-      const isUnique = await this.isExternalIdUnique(fullId, fieldName, entityName);
+      const isUnique = await this.isExternalIdUnique(manager, fullId, fieldName, entityName);
 
       if (isUnique) {
         return newId;
