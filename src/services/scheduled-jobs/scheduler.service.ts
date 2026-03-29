@@ -210,16 +210,18 @@ export class SchedulerServiceImpl implements ISchedulerService {
                 tz: 'UTC'
             });
             const nextRun = interval.next().toDate();
+            const runAfterNext = interval.next().toDate();
 
-            // Validate minimum 1 minute interval
-            if (nextRun.getTime() - from.getTime() < 60000) {
+            // Validate minimum 1 minute cadence between consecutive runs.
+            // Comparing nextRun to "from" is incorrect near minute boundaries.
+            if (runAfterNext.getTime() - nextRun.getTime() < 60000) {
                 throw new Error('Cron expression interval must be at least 1 minute');
             }
             
             this.logger.log(`Custom cron '${job.cronExpression}' next run: ${nextRun}`);
             return nextRun;
         } catch (error) {
-            this.logger.error(`Invalid cron expression for job ${job.scheduleName}: ${job.cronExpression}`, error);
+            this.logger.error(`Invalid cron expression for job ${job.scheduleName}: ${job.cronExpression}. Reason: ${(error as Error).message}`);
             // Fallback to daily if cron parsing fails
             return new Date(base.getTime() + 24 * 60 * 60 * 1000);
         }
