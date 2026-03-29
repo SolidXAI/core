@@ -7,7 +7,7 @@ import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
 import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule, ISettingsProvider, SettingDefinition } from "../interfaces";
 import { DatasourceType } from 'src/dtos/create-model-metadata.dto';
-import { EntityManager, ObjectLiteral, QueryRunner } from 'typeorm';
+import { ObjectLiteral } from 'typeorm';
 import { ColumnMetadata } from 'typeorm/metadata/ColumnMetadata';
 import { RelationMetadata } from 'typeorm/metadata/RelationMetadata';
 import { Setting } from 'src/entities/setting.entity';
@@ -51,8 +51,6 @@ export interface TypeOrmEventContext {
   metadataName?: string;
   updatedColumns?: string[];
   updatedRelations?: string[];
-  manager?: EntityManager;
-  queryRunner?: QueryRunner;
 }
 
 export interface ComputedFieldMetadata<TContext = any> {
@@ -359,3 +357,4 @@ export class SolidRegistry {
     }
   }
 }
+
