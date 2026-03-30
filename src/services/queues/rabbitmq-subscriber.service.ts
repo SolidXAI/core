@@ -233,7 +233,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
     // Retry flow: update DB -> increment retry -> send to retry queue with per-message expiration -> ack original.
     private async handleProcessingError(message: QueueMessage<T>, rawMessage: amqp.ConsumeMessage, channel: amqp.Channel, error: any, queueName: string): Promise<void> {
         const errorMessage = (error as Error)?.message || String(error);
-        this.logger.error(`Error processing message on queue ${queueName}: ${errorMessage}`);
+        this.logger.error(`Error processing message on queue ${queueName}: ${errorMessage}`, (error as Error)?.stack);
 
         if (message.currentRetry < message.retryCount) {
             await this.updateStatusInDatabase('retrying', message);
@@ -472,6 +472,13 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             // - If timeoutPromise rejects first, we fail fast with timeout error.
             // This ensures we mark DB status via normal error handling before broker ack-timeout.
             return await Promise.race([subscribePromise, timeoutPromise]);
+        } catch (error) {
+            const errorMessage = (error as Error)?.message || String(error);
+            this.logger.error(
+                `Subscriber execution failed for queue ${queueName} and messageId ${messageId}: ${errorMessage}`,
+                (error as Error)?.stack,
+            );
+            throw error;
         } finally {
             // Always clear timer once race settles to avoid timer leaks.
             if (timeoutHandle) {
