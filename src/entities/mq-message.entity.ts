@@ -4,6 +4,7 @@ import { MqMessageQueue } from 'src/entities/mq-message-queue.entity'
 import { getColumnType } from 'src/helpers/typeorm-db-helper';
 @Entity("ss_mq_message")
 export class MqMessage extends CommonEntity {
+    @Index()
     @Column({ type: "varchar", nullable: true })
     messageId: string;
 
