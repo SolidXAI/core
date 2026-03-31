@@ -111,6 +111,8 @@ export interface ISelectionProviderContext {
   limit: number;
   offset: number;
   formValues: Record<string, any>;
+  //Attribute to control the validation on creating the record
+  validateOnSave?: boolean;
   // query: string;
 }
 
