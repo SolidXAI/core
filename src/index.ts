@@ -178,6 +178,7 @@ export * from './helpers/field-crud-managers/ShortTextFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/UUIDFieldCrudManager' //rename
 export * from './helpers/bootstrap.helper'
 export * from './helpers/environment.helper'
+export * from './helpers/cache.helper'
 export * from './helpers/cors.helper'
 export * from './helpers/security.helper'
 export * from './helpers/model-metadata-helper.service'
