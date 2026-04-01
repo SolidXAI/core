@@ -40,10 +40,10 @@ export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
         const cacheKey = this.buildPermissionsByRoleCacheKey(role);
         const hit = await this.cacheManager.get<PermissionMetadata[]>(cacheKey);
         if (hit) {
-          this.logger.debug(`Cache hit for findAllUsingRoles: key=${cacheKey}`);
+          // this.logger.debug(`Cache hit for findAllUsingRoles: key=${cacheKey}`);
           cached.push(...hit);
         } else {
-          this.logger.debug(`Cache miss for findAllUsingRoles: key=${cacheKey}`);
+          // this.logger.debug(`Cache miss for findAllUsingRoles: key=${cacheKey}`);
           uncachedRoles.push(role);
         }
       }
@@ -82,10 +82,10 @@ export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
     if (useCache) {
       const hit = await this.cacheManager.get<PermissionMetadata[]>(cacheKey);
       if (hit) {
-        this.logger.debug(`Cache hit for permissionExistsInRole: key=${cacheKey}`);
+        // this.logger.debug(`Cache hit for permissionExistsInRole: key=${cacheKey}`);
         return hit.filter(p => p.name === permission);
       }
-      this.logger.debug(`Cache miss for permissionExistsInRole: key=${cacheKey}`);
+      // this.logger.debug(`Cache miss for permissionExistsInRole: key=${cacheKey}`);
     }
 
     const fromDb = await this.repo.find({

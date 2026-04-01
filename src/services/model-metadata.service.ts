@@ -127,10 +127,10 @@ export class ModelMetadataService {
     if (useCache) {
       const cached = await this.cacheManager.get<ModelMetadata>(cacheKey);
       if (cached) {
-        this.logger.debug(`Cache hit for findOneBySingularName: key=${cacheKey}`);
+        // this.logger.debug(`Cache hit for findOneBySingularName: key=${cacheKey}`);
         return cached;
       }
-      this.logger.debug(`Cache miss for findOneBySingularName: key=${cacheKey}`);
+      // this.logger.debug(`Cache miss for findOneBySingularName: key=${cacheKey}`);
     }
 
     const entity = await this.modelMetadataRepo.findOne({
@@ -157,10 +157,10 @@ export class ModelMetadataService {
     if (useCache) {
       const cached = await this.cacheManager.get<ModelMetadata>(cacheKey);
       if (cached) {
-        this.logger.debug(`Cache hit for findOneByUserKey: key=${cacheKey}`);
+        // this.logger.debug(`Cache hit for findOneByUserKey: key=${cacheKey}`);
         return cached;
       }
-      this.logger.debug(`Cache miss for findOneByUserKey: key=${cacheKey}`);
+      // this.logger.debug(`Cache miss for findOneByUserKey: key=${cacheKey}`);
     }
 
     const entity = await this.modelMetadataRepo.findOne({
