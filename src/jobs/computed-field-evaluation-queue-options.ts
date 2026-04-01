@@ -6,4 +6,5 @@ export default {
     name: QUEUE_NAME,
     type: BrokerType.RabbitMQ,
     queueName: QUEUE_NAME,
+    prefetch: 20
 };

@@ -1,7 +1,9 @@
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import * as path from 'path';
+import { Cache } from 'cache-manager';
 import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { ModelMetadata } from '../entities/model-metadata.entity';
@@ -12,6 +14,7 @@ import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
+import { shouldUseCache } from 'src/helpers/cache.helper';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
@@ -57,6 +60,7 @@ export class ModelMetadataService {
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
     readonly introspectService: SolidIntrospectService,
     private readonly solidTsMorphService: SolidTsMorphService,
+    @Inject(CACHE_MANAGER) private readonly cacheManager: Cache,
 
     // No longer used.
     // private readonly generateCodePublihser: GenerateCodePublisherDatabase,
@@ -112,7 +116,21 @@ export class ModelMetadataService {
     return entity;
   }
 
+  private buildModelBySingularNameCacheKey(singularName: string): string {
+    return `modelMetadata:singularName:${singularName}`;
+  }
+
   async findOneBySingularName(singularName: string, relations = {}) {
+    const useCache = shouldUseCache();
+    const cacheKey = this.buildModelBySingularNameCacheKey(singularName);
+
+    if (useCache) {
+      const cached = await this.cacheManager.get<ModelMetadata>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const entity = await this.modelMetadataRepo.findOne({
       where: {
         singularName: singularName,
@@ -122,10 +140,25 @@ export class ModelMetadataService {
     if (!entity) {
       throw new NotFoundException(ERROR_MESSAGES.ENTITY_NOT_FOUND(singularName));
     }
+
+    if (useCache) {
+      await this.cacheManager.set(cacheKey, entity);
+    }
+
     return entity;
   }
 
   async findOneByUserKey(singularName: string, relations = {}) {
+    const useCache = shouldUseCache();
+    const cacheKey = this.buildModelBySingularNameCacheKey(singularName);
+
+    if (useCache) {
+      const cached = await this.cacheManager.get<ModelMetadata>(cacheKey);
+      if (cached) {
+        return cached;
+      }
+    }
+
     const entity = await this.modelMetadataRepo.findOne({
       where: {
         singularName: singularName,
@@ -135,6 +168,11 @@ export class ModelMetadataService {
     if (!entity) {
       throw new NotFoundException(ERROR_MESSAGES.ENTITY_NOT_FOUND(singularName));
     }
+
+    if (useCache) {
+      await this.cacheManager.set(cacheKey, entity);
+    }
+
     return entity;
   }
 
