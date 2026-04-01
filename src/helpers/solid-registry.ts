@@ -82,6 +82,7 @@ export class SolidRegistry {
   private securityRuleConfigProviders: Set<InstanceWrapper> = new Set();
   private errorCodeProviders: Set<InstanceWrapper> = new Set();
   private settingsProviders: Set<InstanceWrapper> = new Set();
+  private auditableModels: Set<string> = new Set();
 
   registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
     this.errorCodeProviders.add(errorCodeProvider);
@@ -336,6 +337,14 @@ export class SolidRegistry {
     return this.securityRules.filter((rule) => {
       return rule.modelMetadata.singularName === modelSingularName && roleNames.includes(rule.role.name);
     });
+  }
+
+  registerAuditableModels(models: Set<string>): void {
+    this.auditableModels = models;
+  }
+
+  isAuditableModel(modelSingularName: string): boolean {
+    return this.auditableModels.has(modelSingularName.toLowerCase());
   }
 
   getCommonEntityKeys(): (keyof CommonEntity | 'createdBy' | 'updatedBy')[] {

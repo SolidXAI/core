@@ -1,7 +1,6 @@
-import { forwardRef, Inject, Injectable, Scope } from '@nestjs/common';
-import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
+import { Injectable, Scope } from '@nestjs/common';
 import { lowerFirst } from 'src/helpers/string.helper';
-import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
+import { SolidRegistry } from 'src/helpers/solid-registry';
 import { DataSource, EntityMetadata, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
 import { ChatterMessageService } from '../services/chatter-message.service';
 
@@ -16,17 +15,9 @@ type DeferredCall =
 export class AuditSubscriber implements EntitySubscriberInterface {
     private dataSource: DataSource;
     constructor(
-        // @InjectDataSource()
-        // private readonly dataSource: DataSource,
         private readonly chatterMessageService: ChatterMessageService,
-        // @InjectRepository(ModelMetadata)
-        // private readonly modelMetadataRepo: Repository<ModelMetadata>,
-        @Inject(forwardRef(() => ModelMetadataRepository))
-        private readonly modelMetadataRepo: ModelMetadataRepository,
-        private readonly modelMetadataHelperService: ModelMetadataHelperService,
-    ) {
-        // this.dataSource.subscribers.push(this);
-    }
+        private readonly solidRegistry: SolidRegistry,
+    ) { }
 
     bindToDataSource(dataSource: DataSource) {
         this.dataSource = dataSource;
@@ -43,46 +34,12 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         this.perTxn.set(qr, arr);
     }
 
-    private async shouldTrackAudit(entity: any, metadata: EntityMetadata): Promise<boolean> {
-        const model = await this.modelMetadataRepo.findOne({
-            where: {
-                singularName: lowerFirst(metadata.name)
-            },
-            relations: {
-                fields: true,
-                module: true
-            }
-        });
-
-        if (!model || !model.enableAuditTracking) {
-            return false;
-        }
-
-        const modelFields = await this.modelMetadataHelperService.loadFieldHierarchy(model.singularName)
-
-        const auditFields = modelFields.filter(field =>
-            field.enableAuditTracking &&
-            !['mediaSingle', 'mediaMultiple', 'richText', 'json'].includes(field.type) &&
-            !(field.type === 'relation' && field.relationType === 'one-to-many')
-        );
-
-        if (auditFields.length === 0) {
-            return false;
-        }
-
-        // if (!entity) {
-        //     console.warn(`[AuditSubscriber] Skipping audit for ${metadata.name} – entity is undefined or null`);
-        //     return false;
-        // }
-
-        return entity && auditFields.some(field => {
-            const fieldValue = entity[field.name];
-            return fieldValue !== undefined && fieldValue !== null;
-        });
+    private shouldTrackAudit(metadata: EntityMetadata): boolean {
+        return this.solidRegistry.isAuditableModel(lowerFirst(metadata.name));
     }
 
     async afterInsert(event: InsertEvent<any>) {
-        if (await this.shouldTrackAudit(event.entity, event.metadata)) {
+        if (this.shouldTrackAudit(event.metadata)) {
             // await this.chatterMessageService.postAuditMessageOnInsert(event.entity, event.metadata);
             this.enqueue(event, {
                 kind: 'insert',
@@ -92,7 +49,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
     }
 
     async afterUpdate(event: UpdateEvent<any>) {
-        if (await this.shouldTrackAudit(event.entity, event.metadata)) {
+        if (this.shouldTrackAudit(event.metadata)) {
             // await this.chatterMessageService.postAuditMessageOnUpdate(event.entity, event.metadata, event.databaseEntity, event.updatedColumns || []);
             this.enqueue(event, {
                 kind: 'update',
@@ -107,7 +64,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
     }
 
     async afterRemove(event: RemoveEvent<any>) {
-        if (await this.shouldTrackAudit(event.entity, event.metadata)) {
+        if (this.shouldTrackAudit(event.metadata)) {
             // await this.chatterMessageService.postAuditMessageOnDelete(event.entity, event.metadata, event.databaseEntity);
             this.enqueue(event, {
                 kind: 'delete',
