@@ -1,4 +1,4 @@
-import { Inject, Injectable } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
@@ -13,6 +13,7 @@ import { PermissionMetadata } from '../entities/permission-metadata.entity';
 
 @Injectable()
 export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
+  private readonly logger = new Logger(PermissionMetadataService.name);
   constructor(
     @InjectEntityManager()
     readonly entityManager: EntityManager,
@@ -36,10 +37,13 @@ export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
 
     if (useCache) {
       for (const role of roles) {
-        const hit = await this.cacheManager.get<PermissionMetadata[]>(this.buildPermissionsByRoleCacheKey(role));
+        const cacheKey = this.buildPermissionsByRoleCacheKey(role);
+        const hit = await this.cacheManager.get<PermissionMetadata[]>(cacheKey);
         if (hit) {
+          this.logger.debug(`Cache hit for findAllUsingRoles: key=${cacheKey}`);
           cached.push(...hit);
         } else {
+          this.logger.debug(`Cache miss for findAllUsingRoles: key=${cacheKey}`);
           uncachedRoles.push(role);
         }
       }
@@ -78,8 +82,10 @@ export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
     if (useCache) {
       const hit = await this.cacheManager.get<PermissionMetadata[]>(cacheKey);
       if (hit) {
+        this.logger.debug(`Cache hit for permissionExistsInRole: key=${cacheKey}`);
         return hit.filter(p => p.name === permission);
       }
+      this.logger.debug(`Cache miss for permissionExistsInRole: key=${cacheKey}`);
     }
 
     const fromDb = await this.repo.find({
@@ -95,5 +101,4 @@ export class PermissionMetadataService extends CRUDService<PermissionMetadata> {
   }
 
 }
-
 
