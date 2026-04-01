@@ -338,7 +338,6 @@ import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.s
 import { InfoCommand } from './commands/info.command';
 import { ListOfRolesSelectionProvider } from './services/selection-providers/list-of-roles-selectionproviders.service';
 import { Entity } from 'typeorm';
-import { EntityIdSequenceNumComputedFieldProvider } from './services/computed-fields/entity/entity-id-sequence-num-computed-field-provider';
 
 
 @Global()
@@ -722,7 +721,6 @@ import { EntityIdSequenceNumComputedFieldProvider } from './services/computed-fi
     FixturesTearDownCommand,
     DatabaseBootstrapService,
     SequenceNumComputedFieldProvider,
-    EntityIdSequenceNumComputedFieldProvider,
     ModelSequenceService,
     ModelSequenceRepository,
     SolidCoreDefaultSettingsProvider,
