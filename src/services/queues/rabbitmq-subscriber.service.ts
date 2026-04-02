@@ -56,6 +56,10 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
 
     abstract options(): QueuesModuleOptions;
 
+    protected shouldPersistToDatabase(): boolean {
+        return this.options().persistToDatabase ?? true;
+    }
+
     async establishConnection(): Promise<amqp.Connection> {
 
         const url = new URL(this.url);
@@ -236,7 +240,9 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         this.logger.error(`Error processing message on queue ${queueName}: ${errorMessage}`, (error as Error)?.stack);
 
         if (message.currentRetry < message.retryCount) {
-            await this.updateStatusInDatabase('retrying', message);
+            if (this.shouldPersistToDatabase()) {
+                await this.updateStatusInDatabase('retrying', message);
+            }
 
             message.currentRetry++;
             const retryQueue = `${queueName}.retry`;
@@ -254,8 +260,9 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             this.logger.warn(`Retrying message (${message.currentRetry}/${message.retryCount}) after ${message.retryInterval}ms on queue ${queueName}`);
             return;
         }
-
-        await this.updateStatusInDatabase('failed', message, errorMessage, '');
+        if (this.shouldPersistToDatabase()) {
+            await this.updateStatusInDatabase('failed', message, errorMessage, '');
+        }
         channel.ack(rawMessage);
         await this.publishToFailedQueue(queueName, Buffer.from(JSON.stringify(message)), channel, error);
         this.logger.error(`Message failed after ${message.retryCount} attempts on queue ${queueName}: ${errorMessage}`);
@@ -355,7 +362,9 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
      * Abstract method for message processing logic.
      */
     protected async processMessage(message: QueueMessage<T>, rawMessage, channel, queueName: string): Promise<void> {
-        await this.updateStatusInDatabase('started', message);
+        if (this.shouldPersistToDatabase()) {
+            await this.updateStatusInDatabase('started', message);
+        }
 
         // Capture the results of handling the task.
         const result = await this.subscribeWithTimeout(message, queueName);
@@ -364,7 +373,9 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         channel.ack(rawMessage);
 
         // Persist success output and timing.
-        await this.updateStatusInDatabase('succeeded', message, '', result ? JSON.stringify(result, null, 2) : '');
+        if (this.shouldPersistToDatabase()) {
+            await this.updateStatusInDatabase('succeeded', message, '', result ? JSON.stringify(result, null, 2) : '');
+        }
 
     }
 

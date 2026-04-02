@@ -1,11 +1,9 @@
 import { Injectable, Scope } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
-import { User } from "src/entities/user.entity";
-import { ActiveUserData } from "src/interfaces/active-user-data.interface";
 import { RequestContextService } from "src/services/request-context.service";
-import { DataSource, EntitySubscriberInterface, EventSubscriber, InsertEvent, UpdateEvent } from "typeorm";
+import { DataSource, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
 
-@Injectable({scope: Scope.TRANSIENT})
+@Injectable({ scope: Scope.TRANSIENT })
 // @EventSubscriber()
 export class CreatedByUpdatedBySubscriber implements EntitySubscriberInterface {
     private dataSource: DataSource;
@@ -30,7 +28,7 @@ export class CreatedByUpdatedBySubscriber implements EntitySubscriberInterface {
         await this.stampUserField(event, false);
     }
 
-    private async stampUserField(event: InsertEvent<any> | UpdateEvent<any>, isInsert: boolean){
+    private async stampUserField(event: InsertEvent<any> | UpdateEvent<any>, isInsert: boolean) {
         if (!event.entity) {
             return;
         }
@@ -40,21 +38,29 @@ export class CreatedByUpdatedBySubscriber implements EntitySubscriberInterface {
             return;
         }
 
-        const loadedUser = await this.loadUser(activeUserOrUndefined as unknown as ActiveUserData);
+        // const loadedUser = await this.loadUser(activeUserOrUndefined as unknown as ActiveUserData);
+        // if (isInsert) {
+        //     event.entity.createdBy = loadedUser?.id;
+        //     event.entity.updatedBy = loadedUser?.id; // For insert, we set both createdBy and updatedBy to the same user
+        // }
+        // else {
+        //     event.entity.updatedBy = loadedUser?.id;
+        // }
+
         if (isInsert) {
-            event.entity.createdBy = loadedUser?.id;
-            event.entity.updatedBy = loadedUser?.id; // For insert, we set both createdBy and updatedBy to the same user
+            event.entity.createdBy = activeUserOrUndefined?.sub;
+            event.entity.updatedBy = activeUserOrUndefined?.sub; // For insert, we set both createdBy and updatedBy to the same user
         }
         else {
-            event.entity.updatedBy = loadedUser?.id;
+            event.entity.updatedBy = activeUserOrUndefined?.sub;
         }
     }
 
-    private async loadUser(activeUser: ActiveUserData): Promise<User> {
-        const userRepo = this.defaultDataSource.getRepository(User); // Assuming 'User' is the entity name for users in your application
-        const loadedUser = await userRepo.findOne({
-            where: { id: activeUser.sub }, // Assuming 'sub' is the user ID in the JWT token
-        });
-        return loadedUser;;
-    }
+    // private async loadUser(activeUser: ActiveUserData): Promise<User> {
+    //     const userRepo = this.defaultDataSource.getRepository(User); // Assuming 'User' is the entity name for users in your application
+    //     const loadedUser = await userRepo.findOne({
+    //         where: { id: activeUser.sub }, // Assuming 'sub' is the user ID in the JWT token
+    //     });
+    //     return loadedUser;;
+    // }
 }

@@ -271,6 +271,7 @@ export interface QueuesModuleOptions {
   type: BrokerType;
   queueName: string;
   prefetch?: number;
+  persistToDatabase?: boolean;
 }
 
 export type MediaWithFullUrl = Media & {
