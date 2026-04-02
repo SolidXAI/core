@@ -110,7 +110,7 @@ export async function bootstrapSolidApp(
     if (req.query) {
       req.query = qs.parse(req.url.split('?')[1], {
         allowDots: true,
-        depth: 10,
+        depth: 20,
         arrayLimit: 100,
       });
     }
