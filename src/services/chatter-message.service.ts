@@ -90,13 +90,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         return savedMessage;
     }
 
-    async postAuditMessageOnInsert(entity: any, metadata: EntityMetadata, messageQueue: boolean = false) {
+    async postAuditMessageOnInsert(entity: any, modelName: string, messageQueue: boolean = false) {
         if (!entity) {
             return;
         }
         const model = await this.modelMetadataRepo.findOne({
             where: {
-                singularName: lowerFirst(metadata.name)
+                singularName: lowerFirst(modelName)
             },
             relations: {
                 fields: true,
@@ -152,13 +152,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
     }
 
-    async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEntity: any, updatedColumns: any[] = [], messageQueue: boolean = false) {
+    async postAuditMessageOnUpdate(entity: any, modelName: string, databaseEntity: any, updatedColumns: any[] = [], messageQueue: boolean = false) {
         if (!databaseEntity || !entity) {
             return;
         }
         const model = await this.modelMetadataRepo.findOne({
             where: {
-                singularName: lowerFirst(metadata.name)
+                singularName: lowerFirst(modelName)
             },
             relations: {
                 fields: true,
@@ -204,6 +204,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const changedRelationFields = [];
         if (potentialRelationFields.length > 0) {
+            const metadata = this.entityManager.connection.entityMetadatas.find(m => m.name === modelName);
             const populatedOldEntity = await this.populateRelationFields(databaseEntity, potentialRelationFields, metadata);
 
             for (const field of potentialRelationFields) {
@@ -268,10 +269,10 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
     }
 
-    async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata, databaseEntity: any, messageQueue: boolean = false) {
+    async postAuditMessageOnDelete(entity: any, modelName: string, databaseEntity: any, messageQueue: boolean = false) {
         const model = await this.modelMetadataRepo.findOne({
             where: {
-                singularName: lowerFirst(metadata.name)
+                singularName: lowerFirst(modelName)
             },
             relations: {
                 fields: true,
