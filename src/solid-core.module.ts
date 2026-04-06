@@ -94,8 +94,10 @@ import { Msg91SmsQueuePublisher } from './jobs/msg91-sms-publisher.service';
 import { Msg91SmsQueueSubscriber } from './jobs/msg91-sms-subscriber.service';
 import { SmtpEmailQueuePublisherRabbitmq } from './jobs/smtp-email-publisher.service';
 import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/smtp-email-subscriber.service';
-import { ChatterQueuePublisher } from './jobs/chatter-queue-publisher.service';
-import { ChatterQueueSubscriber } from './jobs/chatter-queue-subscriber.service';
+import { ChatterQueuePublisherRabbitmq } from './jobs/chatter-queue-publisher.service';
+import { ChatterQueueSubscriberRabbitmq } from './jobs/chatter-queue-subscriber.service';
+import { ChatterQueuePublisherDatabase } from './jobs/database/chatter-queue-publisher-database.service';
+import { ChatterQueueSubscriberDatabase } from './jobs/database/chatter-queue-subscriber-database.service';
 import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
 import { TestQueueSubscriber } from './jobs/test-queue-subscriber.service';
 import { UserRegistrationListener } from './listeners/user-registration.listener';
@@ -597,8 +599,10 @@ import { Entity } from 'typeorm';
     TestQueuePublisher,
     TestQueueSubscriber,
 
-    ChatterQueuePublisher,
-    ChatterQueueSubscriber,
+    ChatterQueuePublisherRabbitmq,
+    ChatterQueueSubscriberRabbitmq,
+    ChatterQueuePublisherDatabase,
+    ChatterQueueSubscriberDatabase,
 
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,

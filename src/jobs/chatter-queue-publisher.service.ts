@@ -17,11 +17,11 @@ export interface AuditQueuePayload {
     after?: any;                    // entity state after operation (insert/update)
     before?: any;                   // entity state before operation (update/delete)
     updatedColumnNames?: string[];  // propertyNames of changed columns (update only)
-    userId?: string | null;         // active user captured at event time
+    userId?: number | null;         // active user captured at event time
 }
 
 @Injectable()
-export class ChatterQueuePublisher extends RabbitMqPublisher<AuditQueuePayload> {
+export class ChatterQueuePublisherRabbitmq extends RabbitMqPublisher<AuditQueuePayload> {
     constructor(
         protected readonly mqMessageService: MqMessageService,
         protected readonly mqMessageQueueService: MqMessageQueueService,

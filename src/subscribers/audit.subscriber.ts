@@ -2,14 +2,15 @@ import { Injectable, Scope } from '@nestjs/common';
 import { lowerFirst } from 'src/helpers/string.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { DataSource, EntityMetadata, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
-import { AuditQueuePayload, ChatterQueuePublisher } from 'src/jobs/chatter-queue-publisher.service';
+import { AuditQueuePayload } from 'src/jobs/chatter-queue-publisher.service';
 import { RequestContextService } from 'src/services/request-context.service';
+import { PublisherFactory } from 'src/services/queues/publisher-factory.service';
 
 @Injectable({scope: Scope.TRANSIENT})
 export class AuditSubscriber implements EntitySubscriberInterface {
     private dataSource: DataSource;
     constructor(
-        private readonly chatterQueuePublisher: ChatterQueuePublisher,
+        private readonly publisherFactory: PublisherFactory<AuditQueuePayload>,
         private readonly solidRegistry: SolidRegistry,
         private readonly requestContextService: RequestContextService,
     ) { }
@@ -33,7 +34,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         return this.solidRegistry.isAuditableModel(lowerFirst(metadata.name));
     }
 
-    private activeUserId(): string | null {
+    private activeUserId(): number | null {
         return this.requestContextService.getActiveUser()?.sub ?? null;
     }
 
@@ -83,7 +84,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         // Now outside the DB transaction — safe to publish to the queue.
         for (const payload of batch) {
             try {
-                await this.chatterQueuePublisher.publish({ payload });
+                await this.publisherFactory.publish({ payload }, 'ChatterQueuePublisher');
             } catch (e) {
                 // Best effort: audit failure must not surface after core txn has committed.
             }
