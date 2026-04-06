@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiForbiddenResponse, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { MenuItemMetadataService } from '../services/menu-item-metadata.service';
@@ -34,6 +34,13 @@ export class MenuItemMetadataController {
   @UseInterceptors(AnyFilesInterceptor())
   update(@Param('id') id: number, @Body() updateDto: UpdateMenuItemMetadataDto, @UploadedFiles() files: Array<Express.Multer.File>,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
     return this.service.update(id, updateDto, files,false,solidRequestContext);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Patch(':id')
+  @UseInterceptors(AnyFilesInterceptor())
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateMenuItemMetadataDto, @UploadedFiles() files: Array<Express.Multer.File>,@SolidRequestContextDecorator() solidRequestContext:SolidRequestContextDto) {
+    return this.service.update(id, updateDto, files, true, solidRequestContext);
   }
 
   @ApiBearerAuth("jwt")
