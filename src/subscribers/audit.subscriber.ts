@@ -1,4 +1,4 @@
-import { Injectable, Scope } from '@nestjs/common';
+import { Injectable, Logger, Scope } from '@nestjs/common';
 import { lowerFirst } from 'src/helpers/string.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { DataSource, EntityMetadata, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
@@ -8,6 +8,7 @@ import { PublisherFactory } from 'src/services/queues/publisher-factory.service'
 
 @Injectable({scope: Scope.TRANSIENT})
 export class AuditSubscriber implements EntitySubscriberInterface {
+    private readonly logger = new Logger(AuditSubscriber.name);
     private dataSource: DataSource;
     constructor(
         private readonly publisherFactory: PublisherFactory<AuditQueuePayload>,
@@ -45,7 +46,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
             modelName: event.metadata.name,
             entityId: event.entity?.id ?? null,
             occurredAt: new Date().toISOString(),
-            after: event.entity,
+            after: event.entity ?? null,
             userId: this.activeUserId(),
         });
     }
@@ -57,8 +58,10 @@ export class AuditSubscriber implements EntitySubscriberInterface {
             modelName: event.metadata.name,
             entityId: event.entity?.id ?? null,
             occurredAt: new Date().toISOString(),
-            after: event.entity,
-            before: event.databaseEntity,
+            after: event.entity ?? null,
+            // databaseEntity is only populated when the entity was fetched first (save() path).
+            // QueryBuilder update() leaves this undefined; postAuditMessageOnUpdate guards for it.
+            before: event.databaseEntity ?? null,
             updatedColumnNames: (event.updatedColumns ?? []).map(c => c.propertyName),
             userId: this.activeUserId(),
         });
@@ -82,13 +85,19 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         this.perTxn.delete(event.queryRunner);
 
         // Now outside the DB transaction — safe to publish to the queue.
-        for (const payload of batch) {
-            try {
-                await this.publisherFactory.publish({ payload }, 'ChatterQueuePublisher');
-            } catch (e) {
-                // Best effort: audit failure must not surface after core txn has committed.
+        // allSettled: publish in parallel; a single failure does not block the rest.
+        const results = await Promise.allSettled(
+            batch.map(payload => this.publisherFactory.publish({ payload }, 'ChatterQueuePublisher'))
+        );
+
+        results.forEach((result, i) => {
+            if (result.status === 'rejected') {
+                this.logger.error(
+                    `Failed to publish audit event for ${batch[i].modelName}#${batch[i].entityId}`,
+                    result.reason,
+                );
             }
-        }
+        });
     }
 
     afterTransactionRollback(event: { queryRunner: any }) {

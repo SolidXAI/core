@@ -46,7 +46,7 @@ export class ChatterQueueSubscriberDatabase extends DatabaseSubscriber<AuditQueu
                 );
                 break;
             case 'delete':
-                await this.chatterMessageService.postAuditMessageOnDelete(p.before, p.modelName, p.before);
+                await this.chatterMessageService.postAuditMessageOnDelete(p.modelName, p.before);
                 break;
         }
     }
