@@ -269,7 +269,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
     }
 
-    async postAuditMessageOnDelete(entity: any, modelName: string, databaseEntity: any, messageQueue: boolean = false) {
+    async postAuditMessageOnDelete(modelName: string, databaseEntity: any, messageQueue: boolean = false) {
         const model = await this.modelMetadataRepo.findOne({
             where: {
                 singularName: lowerFirst(modelName)
@@ -291,7 +291,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.coModelEntityId = databaseEntity?.id;
         chatterMessage.coModelName = model?.singularName;
         chatterMessage.modelDisplayName = model?.displayName;
-        chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
+        chatterMessage.modelUserKey = databaseEntity[model?.userKeyField?.name];
         chatterMessage.messageBody = `${model?.displayName} deleted`;
 
         const activeUser = this.requestContextService.getActiveUser();
