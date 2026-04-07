@@ -1,8 +1,10 @@
+import { log } from 'console';
 import { CorsOptions } from 'cors';
 
 /** Build CorsOptions from env; supports wildcards like https://*.example.com */
 export function buildDefaultCorsOptions(): CorsOptions {
   const rawOrigins = process.env.SECURITY_CORS_ORIGINS ?? '*';
+  log(`CORS allowed origins: ${rawOrigins}`);
 
   const allowed = rawOrigins.split(',').map(s => s.trim()).filter(Boolean);
 
@@ -18,6 +20,8 @@ export function buildDefaultCorsOptions(): CorsOptions {
   };
 
   const matchers = allowed.map(patternToRegex);
+  log(`CORS regexes: ${matchers.map(r => r.toString()).join(', ')}`);
+
   const isAllowed = (origin: string) =>
     matchers.length > 0 && matchers.some(rx => rx.test(origin));
 
