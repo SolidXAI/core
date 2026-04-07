@@ -25,7 +25,7 @@ export function buildDefaultCorsOptions(): CorsOptions {
     origin: (origin, cb) => {
       if (!origin) return cb(null, true);           // allow no-origin (CLI/mobile/internal)
       if (isAllowed(origin)) return cb(null, true);
-      return cb(new Error(`Origin ${origin} not allowed by CORS`), false);
+      return cb(new Error(`Origin ${origin} not allowed by CORS. Allowed origins: ${allowed.join(', ')}`), false);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
     allowedHeaders: ['Content-Type', 'Authorization'],
