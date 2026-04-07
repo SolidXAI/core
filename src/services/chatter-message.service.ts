@@ -90,13 +90,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         return savedMessage;
     }
 
-    async postAuditMessageOnInsert(entity: any, metadata: EntityMetadata, messageQueue: boolean = false) {
+    async postAuditMessageOnInsert(entity: any, modelName: string, messageQueue: boolean = false) {
         if (!entity) {
             return;
         }
         const model = await this.modelMetadataRepo.findOne({
             where: {
-                singularName: lowerFirst(metadata.name)
+                singularName: lowerFirst(modelName)
             },
             relations: {
                 fields: true,
@@ -152,13 +152,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
     }
 
-    async postAuditMessageOnUpdate(entity: any, metadata: EntityMetadata, databaseEntity: any, updatedColumns: any[] = [], messageQueue: boolean = false) {
+    async postAuditMessageOnUpdate(entity: any, modelName: string, databaseEntity: any, updatedColumns: any[] = [], messageQueue: boolean = false) {
         if (!databaseEntity || !entity) {
             return;
         }
         const model = await this.modelMetadataRepo.findOne({
             where: {
-                singularName: lowerFirst(metadata.name)
+                singularName: lowerFirst(modelName)
             },
             relations: {
                 fields: true,
@@ -204,6 +204,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const changedRelationFields = [];
         if (potentialRelationFields.length > 0) {
+            const metadata = this.entityManager.connection.entityMetadatas.find(m => m.name === modelName);
             const populatedOldEntity = await this.populateRelationFields(databaseEntity, potentialRelationFields, metadata);
 
             for (const field of potentialRelationFields) {
@@ -268,13 +269,12 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
     }
 
-    async postAuditMessageOnDelete(entity: any, metadata: EntityMetadata, databaseEntity: any, messageQueue: boolean = false) {
+    async postAuditMessageOnDelete(modelName: string, databaseEntity: any, messageQueue: boolean = false) {
         const model = await this.modelMetadataRepo.findOne({
             where: {
-                singularName: lowerFirst(metadata.name)
+                singularName: lowerFirst(modelName)
             },
             relations: {
-                fields: true,
                 module: true,
                 userKeyField: true
             }
@@ -284,13 +284,29 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             return;
         }
 
+        const modelFields = await this.modelMetadataHelperService.loadFieldHierarchy(model.singularName);
+
+        const auditFields = modelFields.filter(field =>
+            field.enableAuditTracking &&
+            !['mediaSingle', 'mediaMultiple', 'richText', 'json'].includes(field.type) &&
+            !(field.type === 'relation' && field.relationType === 'one-to-many')
+        );
+
+        // Populate relation fields so display values (e.g. names) are resolvable.
+        // The related entities themselves still exist in the DB after a delete.
+        const relationFields = auditFields.filter(field => field.type === 'relation');
+        const entityMetadata = this.entityManager.connection.entityMetadatas.find(m => m.name === modelName);
+        const populatedEntity = relationFields.length > 0 && entityMetadata
+            ? await this.populateRelationFields(databaseEntity, relationFields, entityMetadata)
+            : { ...databaseEntity };
+
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.AUDIT;
         chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.AUDIT_DELETE;
         chatterMessage.coModelEntityId = databaseEntity?.id;
         chatterMessage.coModelName = model?.singularName;
         chatterMessage.modelDisplayName = model?.displayName;
-        chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
+        chatterMessage.modelUserKey = databaseEntity[model?.userKeyField?.name];
         chatterMessage.messageBody = `${model?.displayName} deleted`;
 
         const activeUser = this.requestContextService.getActiveUser();
@@ -302,7 +318,23 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             chatterMessage.user = null;
         }
 
-        await this.repo.save(chatterMessage);
+        const savedMessage = await this.repo.save(chatterMessage);
+
+        for (const field of auditFields) {
+            const fieldValue = populatedEntity[field.name];
+            if (fieldValue !== undefined && fieldValue !== null && fieldValue !== '') {
+                const messageDetail = new ChatterMessageDetails();
+                messageDetail.chatterMessage = savedMessage;
+                messageDetail.fieldName = field.name;
+                messageDetail.fieldDisplayName = field.displayName;
+                messageDetail.fieldType = field.type;
+                messageDetail.oldValue = this.formatFieldValue(field, fieldValue);
+                messageDetail.oldValueDisplay = await this.formatFieldValueDisplay(field, fieldValue);
+                messageDetail.newValue = null;
+                messageDetail.newValueDisplay = null;
+                await this.chatterMessageDetailsRepo.save(messageDetail);
+            }
+        }
     }
 
     private formatFieldValue(field: any, value: any): string {

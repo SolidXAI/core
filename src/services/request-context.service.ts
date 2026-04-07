@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { ClsService } from "nestjs-cls";
 import { REQUEST_USER_KEY } from "src/constants";
 import { BasicFilterDto } from "src/dtos/basic-filters.dto";
+import { ActiveUserData } from "src/interfaces/active-user-data.interface";
 
 @Injectable()
 export class RequestContextService {
@@ -9,7 +10,7 @@ export class RequestContextService {
     }
 
     // This method i.e getActiveUser() will fetch the user from the request object in the context
-    getActiveUser() {
+    getActiveUser(): ActiveUserData | undefined {
         return this.cls.get(REQUEST_USER_KEY);
     }
 

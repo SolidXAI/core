@@ -34,6 +34,10 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
 
     abstract options(): QueuesModuleOptions;
 
+    protected shouldPersistToDatabase(): boolean {
+        return this.options().persistToDatabase ?? true;
+    }
+
     private async ensureConnectionAndChannel(): Promise<amqp.Channel> {
         if (this.channel) {
             return this.channel;
@@ -170,7 +174,9 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         message.messageId = uuidv4();
 
         // Save the message to the DB so that we can then change its status in the subscriber...
-        await this.persistToDatabase(namespacedQueueName, message);
+        if (this.shouldPersistToDatabase()) {
+            await this.persistToDatabase(namespacedQueueName, message);
+        }
 
         // wait for the channel to confirm 
         try {
@@ -199,7 +205,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
 
     private async persistToDatabase(queueName: string, message: QueueMessage<T>) {
 
-        // TODO: make an entry in the relevant database table, generate a unique id earlier.
+        // make an entry in the relevant database table, generate a unique id earlier.
         try {
             // 1. resolve the queue first
             const mqMessageQueue = await this.mqMessageQueueService.resolveQueue(queueName);

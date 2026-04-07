@@ -619,8 +619,10 @@ import { Entity } from 'typeorm';
     TestQueuePublisher,
     TestQueueSubscriber,
 
-    // ChatterQueuePublisher,
-    // ChatterQueueSubscriber,
+    ChatterQueuePublisherRabbitmq,
+    ChatterQueueSubscriberRabbitmq,
+    ChatterQueuePublisherDatabase,
+    ChatterQueueSubscriberDatabase,
 
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,

@@ -1,6 +1,8 @@
 import { classify } from '@angular-devkit/core/src/utils/strings';
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, ModuleRef, Reflector } from '@nestjs/core';
+import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
+import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import { IS_COMPUTED_FIELD_PROVIDER } from 'src/decorators/computed-field-provider.decorator';
@@ -40,6 +42,8 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     private readonly solidRegistry: SolidRegistry,
     private readonly moduleRef: ModuleRef,
     private readonly settingService: SettingService,
+    private readonly modelMetadataRepo: ModelMetadataRepository,
+    private readonly modelMetadataHelperService: ModelMetadataHelperService,
   ) { }
 
   private readonly logger = new Logger(SolidIntrospectService.name);
@@ -142,7 +146,31 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
 
     // Register the core subscribers against all the configured database modules / datasources
     await this.bootstrapCoreTypeOrmSubscribers(solidDatabaseModules);
+    await this.cacheAuditableModels();
     await this.settingService.updateSettingsCache();
+  }
+
+  private async cacheAuditableModels(): Promise<void> {
+    const models = await this.modelMetadataRepo.find({
+      where: { enableAuditTracking: true },
+      relations: { fields: true, module: true },
+    });
+
+    const auditableSet = new Set<string>();
+    for (const model of models) {
+      const allFields = await this.modelMetadataHelperService.loadFieldHierarchy(model.singularName);
+      const hasAuditableField = allFields.some(field =>
+        field.enableAuditTracking &&
+        !['mediaSingle', 'mediaMultiple', 'richText', 'json'].includes(field.type) &&
+        !(field.type === 'relation' && field.relationType === 'one-to-many')
+      );
+      if (hasAuditableField) {
+        auditableSet.add(model.singularName.toLowerCase());
+      }
+    }
+
+    this.solidRegistry.registerAuditableModels(auditableSet);
+    this.logger.debug(`Cached ${auditableSet.size} auditable model(s): ${[...auditableSet].join(', ')}`);
   }
 
   async bootstrapCoreTypeOrmSubscribers(dbModules: Array<InstanceWrapper<any>>): Promise<void> {
