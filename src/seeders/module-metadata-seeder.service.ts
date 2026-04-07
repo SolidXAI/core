@@ -140,16 +140,16 @@ export class ModuleMetadataSeederService {
                 console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
                 this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
 
+                currentStep = 'seedMediaStorageProviders';
+                this.logger.log(`Seeding Media Storage Providers`);
+                const mediaStorageCounts = await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Media Storage Providers', mediaStorageCounts)}`);
+
                 // Process module metadata first.
                 currentStep = 'seedModuleModelFields';
                 this.logger.log(`Seeding Module / Model / Fields`);
                 const moduleModelFieldCounts = await this.seedModuleModelFields(moduleMetadata);
                 console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
-
-                currentStep = 'seedMediaStorageProviders';
-                this.logger.log(`Seeding Media Storage Providers`);
-                const mediaStorageCounts = await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Media Storage Providers', mediaStorageCounts)}`);
 
                 currentStep = 'seedRoles';
                 this.logger.log(`Seeding Roles`);

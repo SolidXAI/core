@@ -24,12 +24,22 @@ export class SchedulerServiceImpl implements ISchedulerService {
     async runScheduledJobs(): Promise<void> {
         const solidSchedulerEnabled = process.env.SOLID_SCHEDULER_ENABLED || "true";
         if (solidSchedulerEnabled.toLowerCase() !== "true") {
-            // this.logger.debug('Solid scheduler is disabled via environment variable');
+            this.logger.debug('Solid scheduler is disabled via environment variable');
             return;
         }
         const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
         if (solidCliRunning === "true") {
             return;
+        }
+        const jobsRegexToEnable = (process.env.SOLID_SCHEDULER_JOBS_REGEX_TO_ENABLE || '').trim();
+        let jobsRegex: RegExp | null = null;
+        if (jobsRegexToEnable && jobsRegexToEnable !== "all") {
+            try {
+                jobsRegex = new RegExp(jobsRegexToEnable);
+            } catch (error) {
+                this.logger.error(`Invalid SOLID_SCHEDULER_JOBS_REGEX_TO_ENABLE regex "${jobsRegexToEnable}". Scheduler loop will skip this run.`);
+                return;
+            }
         }
 
         const now = new Date();
@@ -53,6 +63,12 @@ export class SchedulerServiceImpl implements ISchedulerService {
 
         for (const job of dueJobs) {
             const jobKey = String(job.id ?? job.scheduleName ?? job.job);
+            const jobName = String(job.job ?? '');
+
+            if (jobsRegex && !jobsRegex.test(jobName)) {
+                this.logger.log(`[${now.getTime()}]: scheduler service skipping job ${jobName} because it does not match SOLID_SCHEDULER_JOBS_REGEX_TO_ENABLE=${jobsRegexToEnable}`);
+                continue;
+            }
 
             if (this.runningJobs.has(jobKey)) {
                 this.logger.log(`[${now.getTime()}]: scheduler service skipping job ${job.job} because a run is already in progress`);
@@ -94,22 +110,21 @@ export class SchedulerServiceImpl implements ISchedulerService {
     }
 
     private shouldRunNow(job: ScheduledJob, now: Date): boolean {
-        const today = now.toISOString().split('T')[0]; // yyyy-mm-dd
-        const timeNow = now.toTimeString().slice(0, 5); // hh:mm
+        const today = new Date(now);
+        today.setHours(0, 0, 0, 0);
+        const timeNow = this.toHHMM(now); // hh:mm
 
         // 1. Check startDate / endDate
-        if (job.startDate && new Date(today) < new Date(job.startDate)) return false;
-        if (job.endDate && new Date(today) > new Date(job.endDate)) return false;
+        const startDate = this.toDateOnly(job.startDate as unknown as Date | string | null);
+        const endDate = this.toDateOnly(job.endDate as unknown as Date | string | null);
+        if (startDate && today < startDate) return false;
+        if (endDate && today > endDate) return false;
 
         // 2. Check startTime / endTime
-        if (job.startTime) {
-            const jobStart = job.startTime.toTimeString().slice(0, 5);
-            if (timeNow < jobStart) return false;
-        }
-        if (job.endTime) {
-            const jobEnd = job.endTime.toTimeString().slice(0, 5);
-            if (timeNow > jobEnd) return false;
-        }
+        const jobStart = this.toHHMM(job.startTime as unknown as Date | string | null);
+        const jobEnd = this.toHHMM(job.endTime as unknown as Date | string | null);
+        if (jobStart && timeNow < jobStart) return false;
+        if (jobEnd && timeNow > jobEnd) return false;
 
         // 3. Check custom frequency
         if (job.frequency.toLowerCase() === 'custom') {
@@ -121,8 +136,7 @@ export class SchedulerServiceImpl implements ISchedulerService {
         // 3. Check dayOfWeek (for weekly)
         if (job.frequency.toLowerCase() === 'weekly' && job.dayOfWeek) {
             const todayName = now.toLocaleString('en-US', { weekday: 'long' }); // e.g., "Monday"
-            // const days = job.dayOfWeek.split(',').map(d => d.trim());
-            const days = JSON.parse(job.dayOfWeek) as string[];
+            const days = this.parseDayOfWeek(job.dayOfWeek);
             if (!days.includes(todayName)) return false;
         }
 
@@ -135,7 +149,53 @@ export class SchedulerServiceImpl implements ISchedulerService {
         return true;
     }
 
-    private computeNextRunForCustomCron(job: ScheduledJob, from: Date): Date {
+    private parseDayOfWeek(dayOfWeek: string): string[] {
+        try {
+            const parsed = JSON.parse(dayOfWeek);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch (error) {
+            this.logger.warn(`Invalid dayOfWeek JSON '${dayOfWeek}'`, error as any);
+            return [];
+        }
+    }
+
+    private toDateOnly(value: Date | string | null | undefined): Date | null {
+        if (!value) return null;
+
+        if (value instanceof Date) {
+            const d = new Date(value);
+            d.setHours(0, 0, 0, 0);
+            return d;
+        }
+
+        const parsed = new Date(value);
+        if (Number.isNaN(parsed.getTime())) return null;
+
+        parsed.setHours(0, 0, 0, 0);
+        return parsed;
+    }
+
+    private toHHMM(value: Date | string | null | undefined): string | null {
+        if (!value) return null;
+
+        if (value instanceof Date) {
+            return value.toTimeString().slice(0, 5);
+        }
+
+        if (typeof value === 'string') {
+            const match = value.match(/^(\d{2}):(\d{2})/);
+            if (match) return `${match[1]}:${match[2]}`;
+
+            const parsed = new Date(value);
+            if (!Number.isNaN(parsed.getTime())) {
+                return parsed.toTimeString().slice(0, 5);
+            }
+        }
+
+        return null;
+    }
+
+    public computeNextRunForCustomCron(job: ScheduledJob, from: Date): Date {
         const base = new Date(from);
 
         if (!job.cronExpression) {
@@ -150,22 +210,24 @@ export class SchedulerServiceImpl implements ISchedulerService {
                 tz: 'UTC'
             });
             const nextRun = interval.next().toDate();
+            const runAfterNext = interval.next().toDate();
 
-            // Validate minimum 1 minute interval
-            if (nextRun.getTime() - from.getTime() < 60000) {
+            // Validate minimum 1 minute cadence between consecutive runs.
+            // Comparing nextRun to "from" is incorrect near minute boundaries.
+            if (runAfterNext.getTime() - nextRun.getTime() < 60000) {
                 throw new Error('Cron expression interval must be at least 1 minute');
             }
             
             this.logger.log(`Custom cron '${job.cronExpression}' next run: ${nextRun}`);
             return nextRun;
         } catch (error) {
-            this.logger.error(`Invalid cron expression for job ${job.scheduleName}: ${job.cronExpression}`, error);
+            this.logger.error(`Invalid cron expression for job ${job.scheduleName}: ${job.cronExpression}. Reason: ${(error as Error).message}`);
             // Fallback to daily if cron parsing fails
             return new Date(base.getTime() + 24 * 60 * 60 * 1000);
         }
     }
 
-    private computeNextRunAt(job: ScheduledJob, from: Date): Date {
+    public computeNextRunAt(job: ScheduledJob, from: Date): Date {
         const base = new Date(from);
 
         switch (job.frequency.toLowerCase()) {

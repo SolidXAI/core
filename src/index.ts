@@ -137,6 +137,7 @@ export * from './entities/user-activity-history.entity'
 export * from './entities/dashboard.entity'
 export * from './entities/dashboard-variable.entity'
 export * from './entities/dashboard-question.entity'
+export * from './entities/dashboard-layout.entity'
 export * from './entities/dashboard-question-sql-dataset-config.entity'
 export * from './entities/ai-interaction.entity'
 export * from './entities/model-sequence.entity'
@@ -175,7 +176,9 @@ export * from './helpers/field-crud-managers/SelectionDynamicFieldCrudManager' /
 export * from './helpers/field-crud-managers/SelectionStaticFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/ShortTextFieldCrudManager' //rename
 export * from './helpers/field-crud-managers/UUIDFieldCrudManager' //rename
+export * from './helpers/bootstrap.helper'
 export * from './helpers/environment.helper'
+export * from './helpers/cache.helper'
 export * from './helpers/cors.helper'
 export * from './helpers/security.helper'
 export * from './helpers/model-metadata-helper.service'

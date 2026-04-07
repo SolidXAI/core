@@ -1,11 +1,12 @@
 import { CommonEntity } from 'src/entities/common.entity'
 import { Entity, Column, Index, JoinColumn, ManyToOne, OneToMany } from 'typeorm';
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 import { Dashboard } from 'src/entities/dashboard.entity';
 import { DashboardQuestionSqlDatasetConfig } from 'src/entities/dashboard-question-sql-dataset-config.entity'
 
 @Entity("ss_dashboard_question")
 export class DashboardQuestion extends CommonEntity {
-    @Index({ unique: true })
+    @Index()
     @Column({ type: "varchar" })
     name: string;
 
@@ -27,13 +28,13 @@ export class DashboardQuestion extends CommonEntity {
     @OneToMany(() => DashboardQuestionSqlDatasetConfig, dashboardQuestionSqlDatasetConfig => dashboardQuestionSqlDatasetConfig.question, { cascade: true })
     questionSqlDatasetConfigs: DashboardQuestionSqlDatasetConfig[];
 
-    @Column({ type: "simple-json", nullable: true })
+    @Column({ type: "simple-json", nullable: true, ...getColumnType('simpleJsonLargeText') })
     chartOptions: any;
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true, ...getColumnType('longText') })
     labelSql: string;
 
-    @Column({ type: "text", nullable: true })
+    @Column({ nullable: true, ...getColumnType('longText') })
     kpiSql: string;
 
     @Column({ type: "integer", nullable: true })

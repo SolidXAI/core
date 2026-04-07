@@ -7,21 +7,21 @@ import { MqMessageService } from '../services/mq-message.service';
 import { QueuesModuleOptions } from "../interfaces";
 
 
-export type ChatterEventType = 'insert' | 'update' | 'delete';
+export type AuditEventType = 'insert' | 'update' | 'delete';
 
-export interface ChatterMessagePayload {
-    eventType: ChatterEventType;
-    model: string;         // entity name
-    entityId: string;      // id string
-    occurredAt: string;    // ISO
-    before?: any;
-    after?: any;
-    diff?: string[];       // changed column names for updates
-    userId?: string | null;
+export interface AuditQueuePayload {
+    eventType: AuditEventType;
+    modelName: string;              // TypeORM entity class name (e.g. 'Order')
+    entityId: string | number | null;
+    occurredAt: string;             // ISO timestamp, captured at event time
+    after?: any;                    // entity state after operation (insert/update)
+    before?: any;                   // entity state before operation (update/delete)
+    updatedColumnNames?: string[];  // propertyNames of changed columns (update only)
+    userId?: number | null;         // active user captured at event time
 }
 
 @Injectable()
-export class ChatterQueuePublisher extends RabbitMqPublisher<any> {
+export class ChatterQueuePublisherRabbitmq extends RabbitMqPublisher<AuditQueuePayload> {
     constructor(
         protected readonly mqMessageService: MqMessageService,
         protected readonly mqMessageQueueService: MqMessageQueueService,

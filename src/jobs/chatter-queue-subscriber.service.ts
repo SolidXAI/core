@@ -6,12 +6,12 @@ import { MqMessageService } from '../services/mq-message.service';
 import { MqMessageQueueService } from '../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../interfaces";
 import chatterQueueOptions from './chatter-queue-options';
-import { ChatterMessagePayload } from './chatter-queue-publisher.service';
+import { AuditQueuePayload } from './chatter-queue-publisher.service';
 import { ChatterMessageService } from 'src/services/chatter-message.service';
 
 @Injectable()
-export class ChatterQueueSubscriber extends RabbitMqSubscriber<any> {
-    private readonly chatterQueueLogger = new Logger(ChatterQueueSubscriber.name);
+export class ChatterQueueSubscriberRabbitmq extends RabbitMqSubscriber<AuditQueuePayload> {
+    private readonly chatterLogger = new Logger(ChatterQueueSubscriberRabbitmq.name);
 
     constructor(
         readonly mqMessageService: MqMessageService,
@@ -27,19 +27,24 @@ export class ChatterQueueSubscriber extends RabbitMqSubscriber<any> {
         }
     }
 
-    async subscribe(message: QueueMessage<ChatterMessagePayload>) {
+    async subscribe(message: QueueMessage<AuditQueuePayload>) {
         const p = message.payload;
-        this.chatterQueueLogger.debug(`Audit event ${p.eventType} ${p.model}#${p.entityId}`);
+        this.chatterLogger.debug(`Audit event ${p.eventType} ${p.modelName}#${p.entityId}`);
 
         switch (p.eventType) {
             case 'insert':
-                await this.chatterMessageService.postAuditMessageOnInsert(p.after, { name: p.model } as any);
+                await this.chatterMessageService.postAuditMessageOnInsert(p.after, p.modelName);
                 break;
             case 'update':
-                await this.chatterMessageService.postAuditMessageOnUpdate(p.after, { name: p.model } as any, p.before, (p.diff || []).map(n => ({ propertyName: n })));
+                await this.chatterMessageService.postAuditMessageOnUpdate(
+                    p.after,
+                    p.modelName,
+                    p.before,
+                    (p.updatedColumnNames ?? []).map(n => ({ propertyName: n })),
+                );
                 break;
             case 'delete':
-                await this.chatterMessageService.postAuditMessageOnDelete(p.before, { name: p.model } as any, p.before);
+                await this.chatterMessageService.postAuditMessageOnDelete(p.modelName, p.before);
                 break;
         }
     }

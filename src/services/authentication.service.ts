@@ -464,10 +464,6 @@ export class AuthenticationService {
 
     private async notifyUserOnOtpInitiateRegistration(user: User, registrationValidationSource: string) {
         const companyLogo = await this.getCompanyLogo();
-        const dummyOtp = this.getDummyOtpForUser(user);
-
-        if (dummyOtp)
-            return; // Do nothing if dummy otp is configured.
         if (registrationValidationSource === PasswordlessLoginValidateWhatSources.EMAIL) {
             const mailService = this.mailServiceFactory.getMailService();
             mailService.sendEmailUsingTemplate(
@@ -594,13 +590,12 @@ export class AuthenticationService {
         return true;
     }
 
-    private async otp(user?: User): Promise<otp> {
+    private async otp(): Promise<otp> {
         const now = new Date();
         const otpExpiry = this.settingService.getConfigValue<SolidCoreSetting>('otpExpiry');
-        const dummyOtp = this.getDummyOtpForUser(user);
         now.setMinutes(now.getMinutes() + otpExpiry);
         return {
-            token: dummyOtp ? dummyOtp : randomInt(100000, 999999).toString(),
+            token: randomInt(100000, 999999).toString(),
             expiresAt: now,
         };
     }
@@ -692,8 +687,11 @@ export class AuthenticationService {
 
         const type = this.resolveLoginType(signInDto);
         const user = await this.findUserForLogin(type, signInDto.identifier);
-        await this.assignLoginOtp(user, type);
-        this.notifyUserOnOtpInititateLogin(user, type);
+        const dummyOtp = this.getDummyOtpForUser(user);
+        if (!dummyOtp) {
+            await this.assignLoginOtp(user, type);
+            this.notifyUserOnOtpInititateLogin(user, type);
+        }
         return this.buildLoginOtpResponse(user, type);
     }
 
@@ -738,15 +736,22 @@ export class AuthenticationService {
     }
 
     private async assignLoginOtp(user: User, type: PasswordlessLoginValidateWhatSources): Promise<void> {
-        const { token, expiresAt } = await this.otp(user);
+        const { token, expiresAt } = await this.otp();
         if (type === PasswordlessLoginValidateWhatSources.EMAIL) {
             user.emailVerificationTokenOnLogin = token;
             user.emailVerificationTokenOnLoginExpiresAt = expiresAt;
+            await this.userRepository.update(user.id, {
+                emailVerificationTokenOnLogin: token,
+                emailVerificationTokenOnLoginExpiresAt: expiresAt,
+            });
         } else {
             user.mobileVerificationTokenOnLogin = token;
             user.mobileVerificationTokenOnLoginExpiresAt = expiresAt;
+            await this.userRepository.update(user.id, {
+                mobileVerificationTokenOnLogin: token,
+                mobileVerificationTokenOnLoginExpiresAt: expiresAt,
+            });
         }
-        await this.userRepository.save(user);
     }
 
     private buildLoginOtpResponse(user: User, type: PasswordlessLoginValidateWhatSources) {
@@ -815,6 +820,15 @@ export class AuthenticationService {
 
         const user = await this.findUserForLogin(type, identifier, { withRoles: true });
         this.checkAccountBlocked(user);
+        const dummyOtp = this.getDummyOtpForUser(user);
+
+        if (dummyOtp) {
+            if (otp !== dummyOtp) {
+                throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
+            }
+            return this.buildLoginTokenResponse(user);
+        }
+
         try {
             this.validateLoginOtp(user, otp, type);
         } catch (e) {
@@ -822,13 +836,9 @@ export class AuthenticationService {
             throw e;
         }
 
-        // we do not need to clear the otp when dummy otp is configured...
-        const dummyOtp = this.getDummyOtpForUser(user);
-        if (!dummyOtp)
-            this.clearLoginOtp(user, type);
-
-        user.failedLoginAttempts = 0;
-        await this.userRepository.save(user);
+        await this.clearLoginOtp(user, type);
+        await this.userActivityHistoryService.logEvent('login', user); 
+        await this.resetFailedAttempts(user);
         return this.buildLoginTokenResponse(user);
     }
 
@@ -845,15 +855,27 @@ export class AuthenticationService {
         }
     }
 
-    private clearLoginOtp(user: User, type: PasswordlessLoginValidateWhatSources): void {
+    private async clearLoginOtp(user: User, type: PasswordlessLoginValidateWhatSources): Promise<void> {
         if (type === PasswordlessLoginValidateWhatSources.EMAIL) {
-            user.emailVerifiedOnLoginAt = new Date();
+            const verifiedAt = new Date();
+            user.emailVerifiedOnLoginAt = verifiedAt;
             user.emailVerificationTokenOnLogin = null;
             user.emailVerificationTokenOnLoginExpiresAt = null;
+            await this.userRepository.update(user.id, {
+                emailVerifiedOnLoginAt: verifiedAt,
+                emailVerificationTokenOnLogin: null,
+                emailVerificationTokenOnLoginExpiresAt: null,
+            });
         } else {
-            user.mobileVerifiedOnLoginAt = new Date();
+            const verifiedAt = new Date();
+            user.mobileVerifiedOnLoginAt = verifiedAt;
             user.mobileVerificationTokenOnLogin = null;
             user.mobileVerificationTokenOnLoginExpiresAt = null;
+            await this.userRepository.update(user.id, {
+                mobileVerifiedOnLoginAt: verifiedAt,
+                mobileVerificationTokenOnLogin: null,
+                mobileVerificationTokenOnLoginExpiresAt: null,
+            });
         }
     }
 
@@ -1296,14 +1318,15 @@ export class AuthenticationService {
     }
 
     private async incrementFailedAttempts(user: User): Promise<void> {
-        user.failedLoginAttempts += 1;
-        await this.userRepository.save(user);
+        const nextFailedAttempts = (user.failedLoginAttempts ?? 0) + 1;
+        user.failedLoginAttempts = nextFailedAttempts;
+        await this.userRepository.update(user.id, { failedLoginAttempts: nextFailedAttempts });
     }
 
     private async resetFailedAttempts(user: User): Promise<void> {
         if (user.failedLoginAttempts === 0) return;
         user.failedLoginAttempts = 0;
-        await this.userRepository.save(user);
+        await this.userRepository.update(user.id, { failedLoginAttempts: 0 });
     }
 
     //FIXME - Pending implementation

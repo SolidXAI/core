@@ -4,9 +4,10 @@ import { Logger } from 'winston';
 import { Inject } from '@nestjs/common';
 import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import * as winston from 'winston';
+import { Environment } from './decorators/disallow-in-production.decorator';
 
 export const WinstonLoggerConfig = {
-    level: 'debug', // Allow all log levels for debugging
+    level: process.env.LOG_LEVEL || (process.env.ENV === Environment.Production ? 'warn' : 'debug'),
     format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.errors({ stack: true }),

@@ -5,12 +5,8 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule, ISettingsProvider, SettingDefinition } from "../interfaces";
-import { DatasourceType } from 'src/dtos/create-model-metadata.dto';
+import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule } from "../interfaces";
 import { ObjectLiteral } from 'typeorm';
-import { ColumnMetadata } from 'typeorm/metadata/ColumnMetadata';
-import { RelationMetadata } from 'typeorm/metadata/RelationMetadata';
-import { Setting } from 'src/entities/setting.entity';
 
 type ControllerMetadata = {
   name: string;
@@ -86,6 +82,7 @@ export class SolidRegistry {
   private securityRuleConfigProviders: Set<InstanceWrapper> = new Set();
   private errorCodeProviders: Set<InstanceWrapper> = new Set();
   private settingsProviders: Set<InstanceWrapper> = new Set();
+  private auditableModels: Set<string> = new Set();
 
   registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
     this.errorCodeProviders.add(errorCodeProvider);
@@ -340,6 +337,14 @@ export class SolidRegistry {
     return this.securityRules.filter((rule) => {
       return rule.modelMetadata.singularName === modelSingularName && roleNames.includes(rule.role.name);
     });
+  }
+
+  registerAuditableModels(models: Set<string>): void {
+    this.auditableModels = models;
+  }
+
+  isAuditableModel(modelSingularName: string): boolean {
+    return this.auditableModels.has(modelSingularName.toLowerCase());
   }
 
   getCommonEntityKeys(): (keyof CommonEntity | 'createdBy' | 'updatedBy')[] {

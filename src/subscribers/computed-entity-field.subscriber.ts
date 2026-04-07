@@ -78,9 +78,9 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
             modelName
         );
         //TODO: We can add a feature i.e dependsOn, where we can check if the computed field depends on other computed fields and evaluate them first
-        await Promise.all(
-            computedFieldsTobeEvaluated.map(c => this.evaluateComputedField(this.attachContext(c, eventContext), entity, currentOperation))
-        )
+        for (const computedField of computedFieldsTobeEvaluated) {
+            await this.evaluateComputedField(this.attachContext(computedField, eventContext), entity, currentOperation);
+        }
     }
 
     private handleComputedFieldEvaluationJob(entity: any, currentOperation: ComputedFieldTriggerOperation, modelName: string, eventContext?: TypeOrmEventContext) {

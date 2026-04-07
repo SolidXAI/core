@@ -1,5 +1,6 @@
 import { CommonEntity } from "src/entities/common.entity"
 import { Entity, Column, ManyToOne, Index, JoinColumn, OneToMany } from "typeorm";
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 import { ModuleMetadata } from 'src/entities/module-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { UserViewMetadata } from 'src/entities/user-view-metadata.entity'
@@ -16,9 +17,11 @@ export class ViewMetadata extends CommonEntity {
     @Column({ name: "type", type: "varchar" })
     type: string;
 
+    //TODO: To make this truly cross db compatible, we should avoid setting a db type
     @Column({ name: "context", type: "text" })
     context: any = "{}";
 
+    //TODO: To make this truly cross db compatible, we should avoid setting a db type
     @Column({ name: "layout", type: "text" })
     layout: any;
 

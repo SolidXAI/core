@@ -6,9 +6,20 @@ import { MqMessageQueueService } from '../mq-message-queue.service';
 import { MqMessageService } from '../mq-message.service';
 import { buildNamespacedQueueName } from './common';
 
+class ConsumerProcessingTimeoutError extends Error {
+    constructor(
+        readonly queueName: string,
+        readonly messageId: string,
+        readonly timeoutMs: number,
+    ) {
+        super(`Subscriber processing timed out after ${timeoutMs}ms for queue ${queueName} and messageId ${messageId}`);
+        this.name = 'ConsumerProcessingTimeoutError';
+    }
+}
+
 
 export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscriber<T> { // TODO This can be made a generic type for better type visibility
-    private readonly logger = new Logger(RabbitMqSubscriber.name);
+    private _loggerInstance?: Logger;
     private readonly url: string;
     private readonly serviceRole: string;
     private connection: amqp.Connection | null = null;
@@ -30,9 +41,24 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
     }
 
+    protected get loggerContext(): string {
+        return this.constructor.name;
+    }
+
+    protected get logger(): Logger {
+        if (!this._loggerInstance) {
+            this._loggerInstance = new Logger(this.loggerContext);
+        }
+        return this._loggerInstance;
+    }
+
     abstract subscribe(message: QueueMessage<T>);
 
     abstract options(): QueuesModuleOptions;
+
+    protected shouldPersistToDatabase(): boolean {
+        return this.options().persistToDatabase ?? true;
+    }
 
     async establishConnection(): Promise<amqp.Connection> {
 
@@ -62,9 +88,15 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'rabbitmq';
         const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
         const queueNameRegex = (process.env.QUEUES_QUEUE_NAME_REGEX_TO_ENABLE || '').trim();
+        const roleAllowed = ['both', 'subscriber'].includes(this.serviceRole);
+
+        if (!roleAllowed) {
+            this.logger.log(`RabbitMqSubscriber is disabled because QUEUES_SERVICE_ROLE is "${this.serviceRole}". Expected "both" or "subscriber".`);
+            return;
+        }
 
         // we will start subscriber only if the current service role is subscriber. 
-        if (this.url && ['both', 'subscriber'].includes(this.serviceRole) && solidCliRunning === "false" && defaultBroker === 'rabbitmq') {
+        if (this.url && solidCliRunning === "false" && defaultBroker === 'rabbitmq') {
             const options = this.options();
             const queueName = options.queueName;
 
@@ -101,6 +133,10 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         const prefetch = options.prefetch ?? 1;
         if (prefetch < 1) {
             throw new Error(`RabbitMqSubscriber prefetch must be >= 1 for queue ${queueName}`);
+        }
+        const processingTimeoutMs = this.resolveProcessingTimeoutMs();
+        if (processingTimeoutMs > 0) {
+            this.logger.log(`RabbitMqSubscriber using processing timeout ${processingTimeoutMs}ms for queue ${queueName}`);
         }
 
         let connection: amqp.Connection;
@@ -186,7 +222,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 if (!message.currentRetry) message.currentRetry = 0;
 
                 try {
-                    await this.processMessage(message, rawMessage, channel);
+                    await this.processMessage(message, rawMessage, channel, queueName);
                 } catch (error) {
                     await this.handleProcessingError(message, rawMessage, channel, error, queueName);
                 }
@@ -201,10 +237,12 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
     // Retry flow: update DB -> increment retry -> send to retry queue with per-message expiration -> ack original.
     private async handleProcessingError(message: QueueMessage<T>, rawMessage: amqp.ConsumeMessage, channel: amqp.Channel, error: any, queueName: string): Promise<void> {
         const errorMessage = (error as Error)?.message || String(error);
-        this.logger.error(`Error processing message on queue ${queueName}: ${errorMessage}`);
+        this.logger.error(`Error processing message on queue ${queueName}: ${errorMessage}`, (error as Error)?.stack);
 
         if (message.currentRetry < message.retryCount) {
-            await this.updateStatusInDatabase('retrying', message);
+            if (this.shouldPersistToDatabase()) {
+                await this.updateStatusInDatabase('retrying', message);
+            }
 
             message.currentRetry++;
             const retryQueue = `${queueName}.retry`;
@@ -222,8 +260,9 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             this.logger.warn(`Retrying message (${message.currentRetry}/${message.retryCount}) after ${message.retryInterval}ms on queue ${queueName}`);
             return;
         }
-
-        await this.updateStatusInDatabase('failed', message, errorMessage, '');
+        if (this.shouldPersistToDatabase()) {
+            await this.updateStatusInDatabase('failed', message, errorMessage, '');
+        }
         channel.ack(rawMessage);
         await this.publishToFailedQueue(queueName, Buffer.from(JSON.stringify(message)), channel, error);
         this.logger.error(`Message failed after ${message.retryCount} attempts on queue ${queueName}: ${errorMessage}`);
@@ -322,17 +361,21 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
     /**
      * Abstract method for message processing logic.
      */
-    protected async processMessage(message: QueueMessage<T>, rawMessage, channel): Promise<void> {
-        await this.updateStatusInDatabase('started', message);
+    protected async processMessage(message: QueueMessage<T>, rawMessage, channel, queueName: string): Promise<void> {
+        if (this.shouldPersistToDatabase()) {
+            await this.updateStatusInDatabase('started', message);
+        }
 
         // Capture the results of handling the task.
-        const result = await this.subscribe(message);
+        const result = await this.subscribeWithTimeout(message, queueName);
 
         // Ack the message. 
         channel.ack(rawMessage);
 
         // Persist success output and timing.
-        await this.updateStatusInDatabase('succeeded', message, '', result ? JSON.stringify(result, null, 2) : '');
+        if (this.shouldPersistToDatabase()) {
+            await this.updateStatusInDatabase('succeeded', message, '', result ? JSON.stringify(result, null, 2) : '');
+        }
 
     }
 
@@ -368,6 +411,91 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             this.logger.error(error.message, error.stack);
         }
 
+    }
+
+    private resolveProcessingTimeoutMs(): number {
+        // Broker-side delivery-ack timeout (ms). If not provided, assume RabbitMQ default
+        // behavior used in this project: 30 minutes.
+        // Example (RabbitMQ broker):
+        // - Broker ack timeout: 30m => 1,800,000ms (QUEUES_RABBITMQ_CONSUMER_ACK_TIMEOUT_MS)
+        // - App soft timeout should be slightly lower, e.g. 29m30s => 1,770,000ms
+        //   (QUEUES_RABBITMQ_SUBSCRIBER_PROCESSING_TIMEOUT_MS), so application code fails first,
+        //   records DB state/error, and avoids broker-forced channel close as primary failure signal.
+        const brokerTimeoutMs = this.parsePositiveInt(process.env.QUEUES_RABBITMQ_CONSUMER_ACK_TIMEOUT_MS, 30 * 60 * 1000);
+
+        // Soft timeout should fire *before* broker timeout so we can fail explicitly,
+        // persist status/error, and avoid broker-forced channel closure as primary signal.
+        // Keep at least 1s to avoid zero/negative values when broker timeout is very small.
+        const defaultSoftTimeoutMs = Math.max(1_000, brokerTimeoutMs - 30_000);
+
+        // Final timeout precedence:
+        // 1) QUEUES_RABBITMQ_SUBSCRIBER_PROCESSING_TIMEOUT_MS (if valid positive int)
+        // 2) Derived defaultSoftTimeoutMs (broker timeout - 30s)
+        return this.parsePositiveInt(process.env.QUEUES_RABBITMQ_SUBSCRIBER_PROCESSING_TIMEOUT_MS, defaultSoftTimeoutMs);
+    }
+
+    private parsePositiveInt(value: string | undefined, fallback: number): number {
+        // Shared env parsing helper:
+        // - missing/invalid/non-positive => fallback
+        // - valid positive integer => parsed value
+        if (!value) return fallback;
+        const parsed = Number.parseInt(value, 10);
+        return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+    }
+
+    private async subscribeWithTimeout(message: QueueMessage<T>, queueName: string): Promise<any> {
+        const timeoutMs = this.resolveProcessingTimeoutMs();
+        const messageId = message?.messageId || 'unknown';
+
+        // Allow an escape hatch: non-positive timeout means run without a soft timeout.
+        if (timeoutMs <= 0) {
+            return this.subscribe(message);
+        }
+
+        let timedOut = false;
+        let timeoutHandle: NodeJS.Timeout | null = null;
+
+        // Main subscriber work promise.
+        // If timeout has already fired, suppress rethrow to avoid unhandled rejection noise
+        // (the timeout error is already the authoritative failure we track).
+        const subscribePromise = this.subscribe(message).catch((error) => {
+            if (timedOut) {
+                this.logger.error(
+                    `Subscriber promise rejected after timeout for queue ${queueName} and messageId ${messageId}: ${(error as Error)?.message || String(error)}`,
+                    (error as Error)?.stack,
+                );
+                return undefined;
+            }
+            throw error;
+        });
+
+        // Timeout promise rejects after timeoutMs with an explicit domain-specific error.
+        const timeoutPromise = new Promise<never>((_, reject) => {
+            timeoutHandle = setTimeout(() => {
+                timedOut = true;
+                reject(new ConsumerProcessingTimeoutError(queueName, messageId, timeoutMs));
+            }, timeoutMs);
+        });
+
+        try {
+            // Promise.race settles as soon as the *first* promise settles.
+            // - If subscribePromise resolves/rejects first, we use that outcome.
+            // - If timeoutPromise rejects first, we fail fast with timeout error.
+            // This ensures we mark DB status via normal error handling before broker ack-timeout.
+            return await Promise.race([subscribePromise, timeoutPromise]);
+        } catch (error) {
+            const errorMessage = (error as Error)?.message || String(error);
+            this.logger.error(
+                `Subscriber execution failed for queue ${queueName} and messageId ${messageId}: ${errorMessage}`,
+                (error as Error)?.stack,
+            );
+            throw error;
+        } finally {
+            // Always clear timer once race settles to avoid timer leaks.
+            if (timeoutHandle) {
+                clearTimeout(timeoutHandle);
+            }
+        }
     }
 
 }

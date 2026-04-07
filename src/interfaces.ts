@@ -111,6 +111,8 @@ export interface ISelectionProviderContext {
   limit: number;
   offset: number;
   formValues: Record<string, any>;
+  //Attribute to control the validation on creating the record
+  validateOnSave?: boolean;
   // query: string;
 }
 
@@ -136,12 +138,18 @@ export interface IMcpToolResponseHandler {
   apply(aiInteraction: AiInteraction);
 }
 
+export interface QuestionSqlDataProviderContext {
+    // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
+    // questionId: number;
+    // question: Question;
+    expressions?: SqlExpression[]
+}
 export interface IDashboardQuestionDataProvider<TContext, TData> {
   help(): string;
 
   name(): string;
 
-  getData(question: DashboardQuestion, expressions?: SqlExpression[], ctxt?: TContext): Promise<TData[] | TData>;
+  getData(question: DashboardQuestion, ctxt?: TContext): Promise<TData[] | TData>;
 }
 
 /**
@@ -263,6 +271,7 @@ export interface QueuesModuleOptions {
   type: BrokerType;
   queueName: string;
   prefetch?: number;
+  persistToDatabase?: boolean;
 }
 
 export type MediaWithFullUrl = Media & {

@@ -432,7 +432,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 //     dataSource: string; // The name of the selection provider
                 //     filterSchema : json // This is a custom json object that every data source will handle accordingly. We could validate the query against the selection provider
                 //     values : string[]; // The values returned by the selection provider
-                const options = { ...commonOptions, selectionDynamicProvider: fieldMetadata.selectionDynamicProvider, selectionDynamicProviderCtxt: fieldMetadata.selectionDynamicProviderCtxt, selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, discoveryService: this.discoveryService, isMultiSelect: fieldMetadata.isMultiSelect };
+                const options = { ...commonOptions, selectionDynamicProvider: fieldMetadata.selectionDynamicProvider, selectionDynamicProviderCtxt: JSON.parse(fieldMetadata.selectionDynamicProviderCtxt), selectionValueType: fieldMetadata.selectionValueType as SelectionValueType, discoveryService: this.discoveryService, isMultiSelect: fieldMetadata.isMultiSelect };
                 return new SelectionDynamicFieldCrudManager(options);
             }
             case SolidFieldType.uuid: {

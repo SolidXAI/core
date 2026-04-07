@@ -7,7 +7,7 @@ export interface SelectionDynamicFieldOptions {
     selectionDynamicProvider: string;
     selectionValueType: SelectionValueType;
     required: boolean | undefined | null;
-    selectionDynamicProviderCtxt: any;
+    selectionDynamicProviderCtxt: ISelectionProviderContext;
     fieldName: string;
     discoveryService: DiscoveryService;
     isMultiSelect: boolean | undefined | null;
@@ -85,8 +85,11 @@ export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
     private async applyFormatValidations(fieldValue: any): Promise<ValidationError[]> {
         const errors: ValidationError[] = [];
         !this.isValidSelectionValueType(fieldValue, this.options.selectionValueType) ? errors.push({ field: this.options.fieldName, error: 'Field value type is invalid' }) : "no errors";
-        const _isValidSelectionValue = await this.isValidSelectionValue(fieldValue, this.options.selectionDynamicProvider)
-        !_isValidSelectionValue ? errors.push({ field: this.options.fieldName, error: 'Field value is invalid' }) : "no errors";
+        const ctxt = this.options.selectionDynamicProviderCtxt;
+        if (ctxt.validateOnSave !== false) {
+            const _isValidSelectionValue = await this.isValidSelectionValue(fieldValue, this.options.selectionDynamicProvider, ctxt);
+            !_isValidSelectionValue ? errors.push({ field: this.options.fieldName, error: 'Field value is invalid' }) : "no errors";
+        }
         return errors;
     }
 
@@ -106,11 +109,11 @@ export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
         }
     }
 
-    private async isValidSelectionValue(fieldValue: any, selectionDynamicProvider: string): Promise<boolean> {
+    private async isValidSelectionValue(fieldValue: any, selectionDynamicProvider: string, ctxt: ISelectionProviderContext): Promise<boolean> {
         const providerInstance = this.providerInstance<any>(selectionDynamicProvider);
         try {
             // Use the value method first
-            const valueOption = await providerInstance.value(fieldValue, JSON.parse(this.options.selectionDynamicProviderCtxt));
+            const valueOption = await providerInstance.value(fieldValue, ctxt);
             if (valueOption && valueOption.value === fieldValue) {
                 return true;
             }
@@ -118,7 +121,7 @@ export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
         }
         catch (error) {
             // Use the values method as a fallback, if the value method is not implemented
-            const values = await providerInstance.values('', JSON.parse(this.options.selectionDynamicProviderCtxt));
+            const values = await providerInstance.values('', ctxt);
             const isValid = values.some(v => v.value === fieldValue);
             return isValid;
         }

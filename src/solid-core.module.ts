@@ -94,6 +94,10 @@ import { Msg91SmsQueuePublisher } from './jobs/msg91-sms-publisher.service';
 import { Msg91SmsQueueSubscriber } from './jobs/msg91-sms-subscriber.service';
 import { SmtpEmailQueuePublisherRabbitmq } from './jobs/smtp-email-publisher.service';
 import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/smtp-email-subscriber.service';
+import { ChatterQueuePublisherRabbitmq } from './jobs/chatter-queue-publisher.service';
+import { ChatterQueueSubscriberRabbitmq } from './jobs/chatter-queue-subscriber.service';
+import { ChatterQueuePublisherDatabase } from './jobs/database/chatter-queue-publisher-database.service';
+import { ChatterQueueSubscriberDatabase } from './jobs/database/chatter-queue-subscriber-database.service';
 import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
 import { TestQueueSubscriber } from './jobs/test-queue-subscriber.service';
 import { UserRegistrationListener } from './listeners/user-registration.listener';
@@ -133,6 +137,8 @@ import { ChatterMessageController } from './controllers/chatter-message.controll
 import { DashboardQuestionSqlDatasetConfigController } from './controllers/dashboard-question-sql-dataset-config.controller';
 import { DashboardQuestionController } from './controllers/dashboard-question.controller';
 import { DashboardVariableController } from './controllers/dashboard-variable.controller';
+import { DashboardLayoutController } from './controllers/dashboard-layout.controller';
+
 import { DashboardController } from './controllers/dashboard.controller';
 import { ExportTemplateController } from './controllers/export-template.controller';
 import { ExportTransactionController } from './controllers/export-transaction.controller';
@@ -156,6 +162,8 @@ import { ChatterMessage } from './entities/chatter-message.entity';
 import { DashboardQuestionSqlDatasetConfig } from './entities/dashboard-question-sql-dataset-config.entity';
 import { DashboardQuestion } from './entities/dashboard-question.entity';
 import { DashboardVariable } from './entities/dashboard-variable.entity';
+import { DashboardLayout } from './entities/dashboard-layout.entity';
+
 import { Dashboard } from './entities/dashboard.entity';
 import { ExportTemplate } from './entities/export-template.entity';
 import { ExportTransaction } from './entities/export-transaction.entity';
@@ -221,6 +229,8 @@ import { DashboardQuestionSqlDatasetConfigRepository } from './repository/dashbo
 import { DashboardQuestionRepository } from './repository/dashboard-question.repository';
 import { DashboardVariableRepository } from './repository/dashboard-variable.repository';
 import { DashboardRepository } from './repository/dashboard.repository';
+import { DashboardLayoutRepository } from './repository/dashboard-layout.repository';
+
 import { EmailTemplateRepository } from './repository/email-template.repository';
 import { ExportTemplateRepository } from './repository/export-template.repository';
 import { ExportTransactionRepository } from './repository/export-transaction.repository';
@@ -263,6 +273,8 @@ import { DashboardVariableSQLDynamicProvider } from './services/dashboard-select
 import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-test-dynamic-provider.service';
 import { DashboardVariableService } from './services/dashboard-variable.service';
 import { DashboardService } from './services/dashboard.service';
+import { DashboardLayoutService } from './services/dashboard-layout.service';
+
 import { ExcelService } from './services/excel.service';
 import { ExportTemplateService } from './services/export-template.service';
 import { ExportTransactionService } from './services/export-transaction.service';
@@ -329,6 +341,7 @@ import { ImageEncodingService } from './helpers/image-encoding.helper';
 import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.service';
 import { InfoCommand } from './commands/info.command';
 import { ListOfRolesSelectionProvider } from './services/selection-providers/list-of-roles-selectionproviders.service';
+import { Entity } from 'typeorm';
 
 
 @Global()
@@ -343,6 +356,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
       DashboardQuestion,
       DashboardQuestionSqlDatasetConfig,
       DashboardVariable,
+      DashboardLayout,
       EmailAttachment,
       EmailTemplate,
       ExportTemplate,
@@ -414,6 +428,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     DashboardQuestionController,
     DashboardQuestionSqlDatasetConfigController,
     DashboardVariableController,
+    DashboardLayoutController,
     EmailTemplateController,
     ExportTemplateController,
     ExportTransactionController,
@@ -584,8 +599,10 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     TestQueuePublisher,
     TestQueueSubscriber,
 
-    // ChatterQueuePublisher,
-    // ChatterQueueSubscriber,
+    ChatterQueuePublisherRabbitmq,
+    ChatterQueueSubscriberRabbitmq,
+    ChatterQueuePublisherDatabase,
+    ChatterQueueSubscriberDatabase,
 
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,
@@ -638,6 +655,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     UserActivityHistoryService,
     DashboardService,
     DashboardVariableService,
+    DashboardLayoutService,
     DashboardQuestionService,
     DashboardVariableSQLDynamicProvider,
     DasbhoardVariableTestDynamicProvider,
@@ -682,6 +700,7 @@ import { ListOfRolesSelectionProvider } from './services/selection-providers/lis
     DashboardQuestionSqlDatasetConfigRepository,
     DashboardQuestionRepository,
     DashboardVariableRepository,
+    DashboardLayoutRepository,
     EmailTemplateRepository,
     ExportTemplateRepository,
     ExportTransactionRepository,
