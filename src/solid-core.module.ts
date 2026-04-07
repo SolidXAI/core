@@ -98,6 +98,10 @@ import { SmtpEmailQueuePublisherRabbitmq } from './jobs/rabbitmq/smtp-email-publ
 import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/rabbitmq/smtp-email-subscriber.service';
 import { TestQueuePublisher } from './jobs/rabbitmq/test-queue-publisher.service';
 import { TestQueueSubscriber } from './jobs/rabbitmq/test-queue-subscriber.service';
+import { ChatterQueuePublisherRabbitmq } from './jobs/rabbitmq/chatter-queue-publisher.service';
+import { ChatterQueueSubscriberRabbitmq } from './jobs/rabbitmq/chatter-queue-subscriber.service';
+import { ChatterQueuePublisherDatabase } from './jobs/database/chatter-queue-publisher-database.service';
+import { ChatterQueueSubscriberDatabase } from './jobs/database/chatter-queue-subscriber-database.service';
 import { ApiEmailQueuePublisherRedis } from './jobs/redis/api-email-publisher-redis.service';
 import { ApiEmailQueueSubscriberRedis } from './jobs/redis/api-email-subscriber-redis.service';
 import { ChatterQueuePublisherRedis } from './jobs/redis/chatter-queue-publisher-redis.service';

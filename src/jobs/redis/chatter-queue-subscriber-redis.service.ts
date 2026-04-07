@@ -6,7 +6,7 @@ import chatterQueueConfig from './chatter-queue-options-redis';
 import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../../interfaces";
-import { ChatterMessagePayload } from '../rabbitmq/chatter-queue-publisher.service';
+import { AuditQueuePayload } from '../rabbitmq/chatter-queue-publisher.service';
 import { ChatterMessageService } from '../../services/chatter-message.service';
 
 @Injectable()
@@ -27,19 +27,19 @@ export class ChatterQueueSubscriberRedis extends RedisSubscriber<any> {
         }
     }
 
-    async subscribe(message: QueueMessage<ChatterMessagePayload>) {
+    async subscribe(message: QueueMessage<AuditQueuePayload>) {
         const p = message.payload;
-        this.chatterQueueLogger.debug(`Audit event ${p.eventType} ${p.model}#${p.entityId}`);
+        this.chatterQueueLogger.debug(`Audit event ${p.eventType} ${p.modelName}#${p.entityId}`);
 
         switch (p.eventType) {
             case 'insert':
-                await this.chatterMessageService.postAuditMessageOnInsert(p.after, { name: p.model } as any);
+                await this.chatterMessageService.postAuditMessageOnInsert(p.after, { name: p.modelName } as any);
                 break;
             case 'update':
-                await this.chatterMessageService.postAuditMessageOnUpdate(p.after, { name: p.model } as any, p.before, (p.diff || []).map(n => ({ propertyName: n })));
+                await this.chatterMessageService.postAuditMessageOnUpdate(p.after, { name: p.modelName } as any, p.before, (p.updatedColumnNames || []).map(n => ({ propertyName: n })));
                 break;
             case 'delete':
-                await this.chatterMessageService.postAuditMessageOnDelete(p.before, { name: p.model } as any, p.before);
+                await this.chatterMessageService.postAuditMessageOnDelete(p.before, { name: p.modelName } as any, p.before);
                 break;
         }
     }

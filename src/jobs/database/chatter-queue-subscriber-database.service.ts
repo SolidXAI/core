@@ -6,7 +6,7 @@ import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../../interfaces";
 import { PollerService } from 'src/services/poller.service';
-import { AuditQueuePayload } from '../chatter-queue-publisher.service';
+import { AuditQueuePayload } from '../rabbitmq/chatter-queue-publisher.service';
 import { ChatterMessageService } from 'src/services/chatter-message.service';
 import chatterQueueOptionsDatabase from './chatter-queue-options-database';
 
