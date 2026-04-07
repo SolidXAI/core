@@ -204,7 +204,7 @@ export class OneToManyRelationFieldCrudManager implements FieldCrudManager {
     }
 
     private isApplyRequiredValidation(): boolean {
-        return this.options.required;
+        return false; // Setting this to false, since we always want to skip required validation, since the SolidX UI persists many-to-many relation fields lazily
     }
 
     // TODO: We have moved this to SolidRegistry service, refactor to use that service.
