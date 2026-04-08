@@ -1,32 +1,30 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
+import { RabbitMqSubscriber } from 'src/services/queues/rabbitmq-subscriber.service';
 import { QueueMessage } from 'src/interfaces/mq';
 import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../../interfaces";
-import { PollerService } from 'src/services/poller.service';
-import { AuditQueuePayload } from '../rabbitmq/chatter-queue-publisher.service';
+import chatterQueueOptions from './chatter-queue-options';
+import { AuditQueuePayload } from './chatter-queue-publisher.service';
 import { ChatterMessageService } from 'src/services/chatter-message.service';
-import chatterQueueOptionsDatabase from './chatter-queue-options-database';
 
 @Injectable()
-export class ChatterQueueSubscriberDatabase extends DatabaseSubscriber<AuditQueuePayload> {
-    private readonly chatterLogger = new Logger(ChatterQueueSubscriberDatabase.name);
+export class ChatterQueueSubscriberRabbitmq extends RabbitMqSubscriber<AuditQueuePayload> {
+    private readonly chatterLogger = new Logger(ChatterQueueSubscriberRabbitmq.name);
 
     constructor(
         readonly mqMessageService: MqMessageService,
         readonly mqMessageQueueService: MqMessageQueueService,
-        readonly poller: PollerService,
         private readonly chatterMessageService: ChatterMessageService,
     ) {
-        super(mqMessageService, mqMessageQueueService, poller);
+        super(mqMessageService, mqMessageQueueService);
     }
 
     options(): QueuesModuleOptions {
         return {
-            ...chatterQueueOptionsDatabase
-        };
+            ...chatterQueueOptions
+        }
     }
 
     async subscribe(message: QueueMessage<AuditQueuePayload>) {

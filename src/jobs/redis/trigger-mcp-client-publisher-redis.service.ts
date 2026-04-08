@@ -1,14 +1,13 @@
 import { Injectable } from '@nestjs/common';
 
-import { DatabasePublisher } from 'src/services/queues/database-publisher.service';
+import { RedisPublisher } from 'src/services/queues/redis-publisher.service';
+import triggerMcpClientQueueConfig from './trigger-mcp-client-queue-options-redis';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { MqMessageService } from '../../services/mq-message.service';
-import { QueuesModuleOptions } from "../../interfaces";
-import { AuditQueuePayload } from '../rabbitmq/chatter-queue-publisher.service';
-import chatterQueueOptionsDatabase from './chatter-queue-options-database';
+import { TriggerMcpClientOptions, QueuesModuleOptions } from "../../interfaces";
 
 @Injectable()
-export class ChatterQueuePublisherDatabase extends DatabasePublisher<AuditQueuePayload> {
+export class TriggerMcpClientPublisherRedis extends RedisPublisher<TriggerMcpClientOptions> {
     constructor(
         protected readonly mqMessageService: MqMessageService,
         protected readonly mqMessageQueueService: MqMessageQueueService,
@@ -18,7 +17,7 @@ export class ChatterQueuePublisherDatabase extends DatabasePublisher<AuditQueueP
 
     options(): QueuesModuleOptions {
         return {
-            ...chatterQueueOptionsDatabase
-        };
+            ...triggerMcpClientQueueConfig
+        }
     }
 }
