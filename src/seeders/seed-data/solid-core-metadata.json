@@ -5749,6 +5749,19 @@
       "modelUserKey": "mqMessage"
     },
     {
+      "displayName": "Message Kanban Action",
+      "name": "mqMessage-kanban-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "mqMessage-kanban-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessage"
+    },
+    {
       "displayName": "Queues List Action",
       "name": "mqMessageQueue-list-action",
       "type": "solid",
@@ -9929,6 +9942,145 @@
               "label": "Queue",
               "isSearchable": true
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "mqMessage-kanban-view",
+      "displayName": "Messages Kanban",
+      "type": "kanban",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessage",
+      "layout": {
+        "type": "kanban",
+        "attrs": {
+          "swimlanesCount": 5,
+          "recordsInSwimlane": 10,
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "groupBy": "stage",
+          "draggable": true,
+          "allowedViews": [
+            "list",
+            "kanban"
+          ]
+        },
+        "children": [
+          {
+            "type": "card",
+            "attrs": {
+              "name": "Card"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "row-1",
+                  "label": "",
+                  "className": "row"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "col-1",
+                      "label": "",
+                      "className": "col-12"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "messageId",
+                          "className": "text-xl",
+                          "isSearchable": true
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "stage",
+                          "label": "Stage",
+                          "className": "text-sm"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "row-2",
+                  "label": "",
+                  "className": "row"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "col-1",
+                      "label": "",
+                      "className": "col-12"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "startedAt",
+                          "label": "Started At"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "finishedAt",
+                          "label": "Finished At"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "row-2",
+                  "label": "",
+                  "className": "row"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "col-1",
+                      "label": "",
+                      "className": "col-12"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "elapsedMillis",
+                          "label": "Elapsed Millis"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "parentEntity",
+                          "label": "Parent Entity"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
           }
         ]
       }
