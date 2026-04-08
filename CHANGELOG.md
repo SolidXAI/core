@@ -1,5 +1,76 @@
 # Changelog
 
+## [1.6.0] - 2026-04-08
+
+### New Features
+
+#### Bootstrap Helper
+- **`bootstrapSolidApp()` and `bootstrapSolidCli()`**: New exported helper functions that wire up a SolidX NestJS HTTP server or CLI application with sensible defaults — security headers, CORS, Winston logger, `ValidationPipe`, `WrapResponseInterceptor`, qs deep query parsing, Swagger, and the pg BIGINT type parser. Replaces the boilerplate `main.ts` that every app had to copy and maintain.
+
+#### Dashboard Layouts
+- **`DashboardLayout` entity and full CRUD**: A new `DashboardLayout` entity, repository, service, and controller have been added. Dashboard layouts allow configuring the visual arrangement of a dashboard and are available via `/dashboard-layout` endpoints. Create and update DTOs are included.
+
+#### Scheduled Jobs
+- **Manual trigger endpoint**: `POST /scheduled-job/:id/trigger` allows any scheduled job to be invoked immediately on demand, outside its normal cron window. The job's `lastRunAt` and `nextRunAt` are updated after execution.
+- **Selective job enabling via regex**: Set `SOLID_SCHEDULER_JOBS_REGEX_TO_ENABLE` to a regex string to allow only matching job names to run in a given environment. Set it to `"all"` (or leave it empty) to enable all jobs. Invalid regex causes the scheduler loop to skip the run and log an error.
+
+#### Audit — Fully Queue-Driven Processing
+- **All audit work pushed to the queue**: The audit subscriber no longer calls `ChatterMessageService` directly. All insert/update/delete audit events are serialised into `AuditQueuePayload` messages and dispatched through the publisher (RabbitMQ or database broker). The chatter queue subscriber then processes these asynchronously, improving database connection pool utilisation under load.
+- **Database broker for chatter queue**: New `ChatterQueuePublisherDatabase` and `ChatterQueueSubscriberDatabase` services provide a database-backed alternative to the RabbitMQ chatter queue, for deployments that do not run RabbitMQ.
+- **Old and new field values captured on delete**: The audit subscriber now records the full entity state (old values) when a delete event fires, so the audit log shows what was deleted.
+
+#### SQL Stored Procedures
+- **`proc_CleanupModelMetadata` and `proc_CleanupModuleMetadata`**: New stored procedures for MariaDB and MySQL that purge stale model and module metadata entries. Useful for keeping the metadata tables clean after module restructuring.
+
+---
+
+### Performance Improvements
+
+#### Audit & Subscribers
+- **`shouldTrackAudit` moved to registry**: The per-event auditability check is now a synchronous in-memory lookup against the `SolidRegistry` (populated at startup) rather than a live database query on every TypeORM event. Removes N+1 queries from the hot path.
+- **`CreatedByUpdatedBySubscriber` no longer queries the database**: `createdBy` / `updatedBy` are now stamped directly from the JWT `sub` claim available in `RequestContextService`, eliminating a `User` table lookup per insert/update.
+- **Model metadata queries cached**: Frequently used model metadata lookups are cached in the registry, avoiding repeated database round-trips during request handling.
+- **Permission service hot-path optimisation**: Methods in `PermissionMetadataService` used during auth and access-token guard evaluation have been optimised to reduce redundant work on the critical authentication path.
+
+#### Computed Fields
+- **`EntityIdSequenceNumComputedFieldProvider` merged into `SequenceNumComputedFieldProvider`**: The two sequence providers have been consolidated. The entity-ID-based sequence now runs as a post-compute step, removing a duplicated provider registration.
+
+#### Database
+- **Indexes on `User.email` and `User.mobile`**: Both columns now have database indexes, speeding up the frequent lookups performed during OTP and email-based login flows.
+- **Index on `MqMessage` message ID**: Adds an index on the message ID column in the MQ message table for faster message lookups.
+
+---
+
+### Improvements
+
+#### Logging
+- **Environment-variable log level control**: Log verbosity can now be configured via environment variables, with sensible defaults per environment (development vs production). Previously log levels were hardcoded.
+- **CORS diagnostic logging**: The CORS helper logs the allowed origins list and the compiled regexes at startup, and logs per-request debug output showing which regex matched (or why a request was rejected). Makes CORS misconfiguration much easier to diagnose.
+- **RabbitMQ subscriber logs service role on skip**: When `QUEUES_SERVICE_ROLE` is set to a value that disables the subscriber, a clear log message is emitted instead of silently not connecting.
+- **RabbitMQ error logs now include stack traces**: `handleProcessingError` passes the full error stack to the logger, rather than only the message string.
+
+#### RabbitMQ Subscriber
+- **Processing timeout**: Subscribers can now declare a per-queue processing timeout. If a message handler exceeds the timeout a `ConsumerProcessingTimeoutError` is thrown, preventing a slow message from blocking the consumer indefinitely.
+- **`shouldPersistToDatabase()` flag**: Subscribers can opt out of DB persistence for retry/dead-letter tracking by overriding `shouldPersistToDatabase()` returning `false`.
+
+#### Audit — Chatter Message Details
+- **`fieldType` stored on `ChatterMessageDetails`**: Audit detail records now capture the field's metadata type (e.g. `"relation"`, `"date"`, `"select"`), enabling richer display logic on the client without re-fetching field metadata.
+
+#### Scheduler
+- **Scheduler disabled state is now logged**: When `SOLID_SCHEDULER_ENABLED=false` the scheduler logs a debug message instead of returning silently.
+
+#### Query String Parsing
+- **qs depth limit increased**: The `qs` query-string depth limit has been raised to accommodate deeper nested filter objects.
+
+---
+
+### Bug Fixes
+
+- **RabbitMQ subscriber role check refactored**: The service-role guard that was inline inside the connection block has been pulled out to a top-level check with a clear log message, preventing silent no-ops when the role is misconfigured.
+- **Audit subscriber no longer holds `ChatterMessageService` in synchronous TypeORM event scope**: Resolves potential circular dependency and scope issues that could cause runtime errors under certain module initialisation orders.
+
+---
+
 ## [0.1.5] - 2026-03-13
 
 ### Breaking Changes
