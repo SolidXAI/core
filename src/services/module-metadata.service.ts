@@ -326,14 +326,13 @@ export class ModuleMetadataService {
     }
   }
 
+  @DisallowInProduction()
   async remove(id: number) {
     const entity = await this.findOne(id);
     await this.cleanupOnDelete(entity.id);
     const r = await this.moduleMetadataRepo.remove(entity);
     return r
-
   }
-
 
   async cleanupOnDelete(moduleEntityId: number) {
     const moduleEntity = await this.moduleMetadataRepo.findOne({
