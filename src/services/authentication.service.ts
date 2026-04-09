@@ -1213,9 +1213,7 @@ export class AuthenticationService {
 
             const currentRefreshToken = await this.refreshTokenIdsStorage.validateAndRotate(user, refreshTokenDto.refreshToken);
 
-            try {
-                await this.userActivityHistoryService.logEvent('tokenRefreshed', user);
-            } catch (_) {}
+            await this.userActivityHistoryService.logEvent('tokenRefreshed', user);
 
             return {
                 accessToken: await this.generateAccessToken(user),
