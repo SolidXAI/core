@@ -5409,6 +5409,463 @@
             "isSystem": false
           }
         ]
+      },
+      {
+        "singularName": "agentSession",
+        "pluralName": "agentSessions",
+        "displayName": "Agent Session",
+        "description": "AI agent sessions",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_agent_sessions",
+        "isChild": false,
+        "isLegacyTable": true,
+        "isLegacyTableWithId": true,
+        "enableAuditTracking": false,
+        "enableSoftDelete": false,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "isSystem": true,
+        "userKeyFieldUserKey": "sessionId",
+        "fields": [
+          {
+            "name": "id",
+            "displayName": "ID",
+            "type": "int",
+            "ormType": "integer",
+            "columnName": "id",
+            "isPrimaryKey": true,
+            "required": false,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "sessionId",
+            "displayName": "Session ID",
+            "type": "shortText",
+            "ormType": "varchar",
+            "columnName": "session_id",
+            "length": 36,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "userId",
+            "displayName": "User ID",
+            "type": "int",
+            "ormType": "integer",
+            "columnName": "user_id",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "projectRoot",
+            "displayName": "Project Root",
+            "type": "longText",
+            "ormType": "text",
+            "columnName": "project_root",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "modelName",
+            "displayName": "Model Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "columnName": "model_name",
+            "length": 255,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "columnName": "status",
+            "length": 32,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionStaticValues": ["active", "completed", "failed", "cancelled"],
+            "selectionValueType": "string"
+          },
+          {
+            "name": "totalCost",
+            "displayName": "Total Cost",
+            "type": "decimal",
+            "ormType": "double precision",
+            "columnName": "total_cost",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "totalSteps",
+            "displayName": "Total Steps",
+            "type": "int",
+            "ormType": "integer",
+            "columnName": "total_steps",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "totalInputTokens",
+            "displayName": "Total Input Tokens",
+            "type": "int",
+            "ormType": "integer",
+            "columnName": "total_input_tokens",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "totalOutputTokens",
+            "displayName": "Total Output Tokens",
+            "type": "int",
+            "ormType": "integer",
+            "columnName": "total_output_tokens",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "defaultValue": "0"
+          },
+          {
+            "name": "summary",
+            "displayName": "Summary",
+            "type": "longText",
+            "ormType": "text",
+            "columnName": "summary",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "createdAt",
+            "displayName": "Created At",
+            "type": "datetime",
+            "ormType": "timestamp without time zone",
+            "columnName": "created_at",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "updatedAt",
+            "displayName": "Updated At",
+            "type": "datetime",
+            "ormType": "timestamp without time zone",
+            "columnName": "updated_at",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "agentEvent",
+        "pluralName": "agentEvents",
+        "displayName": "Agent Event",
+        "description": "AI agent events per session",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_agent_events",
+        "isChild": true,
+        "isLegacyTable": true,
+        "isLegacyTableWithId": true,
+        "enableAuditTracking": false,
+        "enableSoftDelete": false,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "isSystem": true,
+        "userKeyFieldUserKey": "id",
+        "fields": [
+          {
+            "name": "id",
+            "displayName": "ID",
+            "type": "int",
+            "ormType": "integer",
+            "columnName": "id",
+            "isPrimaryKey": true,
+            "required": false,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "sessionId",
+            "displayName": "Session ID",
+            "type": "shortText",
+            "ormType": "varchar",
+            "columnName": "session_id",
+            "length": 36,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "turnNumber",
+            "displayName": "Turn Number",
+            "type": "int",
+            "ormType": "integer",
+            "columnName": "turn_number",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "stepNumber",
+            "displayName": "Step Number",
+            "type": "int",
+            "ormType": "integer",
+            "columnName": "step_number",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "eventType",
+            "displayName": "Event Type",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "columnName": "event_type",
+            "length": 64,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionStaticValues": [
+              "user_message",
+              "assistant_message",
+              "tool_use",
+              "tool_result",
+              "system_prompt",
+              "thinking",
+              "error",
+              "session_start",
+              "session_end"
+            ],
+            "selectionValueType": "string"
+          },
+          {
+            "name": "eventData",
+            "displayName": "Event Data",
+            "type": "json",
+            "ormType": "text",
+            "columnName": "event_data",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "content",
+            "displayName": "Content",
+            "type": "longText",
+            "ormType": "text",
+            "columnName": "content",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "toolName",
+            "displayName": "Tool Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "columnName": "tool_name",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "toolArguments",
+            "displayName": "Tool Arguments",
+            "type": "json",
+            "ormType": "text",
+            "columnName": "tool_arguments",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "toolOutput",
+            "displayName": "Tool Output",
+            "type": "longText",
+            "ormType": "text",
+            "columnName": "tool_output",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "toolReturncode",
+            "displayName": "Tool Return Code",
+            "type": "int",
+            "ormType": "integer",
+            "columnName": "tool_returncode",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "durationMs",
+            "displayName": "Duration (ms)",
+            "type": "decimal",
+            "ormType": "double precision",
+            "columnName": "duration_ms",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "cost",
+            "displayName": "Cost",
+            "type": "decimal",
+            "ormType": "double precision",
+            "columnName": "cost",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "inputTokens",
+            "displayName": "Input Tokens",
+            "type": "int",
+            "ormType": "integer",
+            "columnName": "input_tokens",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "outputTokens",
+            "displayName": "Output Tokens",
+            "type": "int",
+            "ormType": "integer",
+            "columnName": "output_tokens",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "modelUsed",
+            "displayName": "Model Used",
+            "type": "shortText",
+            "ormType": "varchar",
+            "columnName": "model_used",
+            "length": 255,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "createdAt",
+            "displayName": "Created At",
+            "type": "datetime",
+            "ormType": "timestamp without time zone",
+            "columnName": "created_at",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
       }
     ]
   },
@@ -5464,7 +5921,11 @@
         "ExportTemplateController.startExportAsync",
         "ListOfValuesController.findMany",
         "ListOfValuesController.findOne",
-        "SettingController.getAllSettings"
+        "SettingController.getAllSettings",
+        "AgentSessionController.findMany",
+        "AgentSessionController.findOne",
+        "AgentEventController.findMany",
+        "AgentEventController.findOne"
       ]
     },
     {
@@ -6046,6 +6507,58 @@
       "viewUserKey": "modelSequence-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "modelSequence"
+    },
+    {
+      "displayName": "Agent Session List Action",
+      "name": "agentSession-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentSession-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentSession"
+    },
+    {
+      "displayName": "Agent Session Form Action",
+      "name": "agentSession-form-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentSession-form-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentSession"
+    },
+    {
+      "displayName": "Agent Event List Action",
+      "name": "agentEvent-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentEvent-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentEvent"
+    },
+    {
+      "displayName": "Agent Event Form Action",
+      "name": "agentEvent-form-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentEvent-form-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentEvent"
     }
   ],
   "menus": [
@@ -6409,6 +6922,31 @@
       "actionUserKey": "modelSequence-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
+    },
+    {
+      "displayName": "Agent",
+      "name": "agent-menu-item",
+      "sequenceNumber": 8,
+      "actionUserKey": "",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "",
+      "iconName": "smart_toy"
+    },
+    {
+      "displayName": "Sessions",
+      "name": "agentSession-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "agentSession-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "agent-menu-item"
+    },
+    {
+      "displayName": "Events",
+      "name": "agentEvent-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "agentEvent-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "agent-menu-item"
     }
   ],
   "views": [
@@ -13046,6 +13584,205 @@
                           "name": "padding"
                         }
                       }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentSession-list-view",
+      "displayName": "Agent Sessions",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentSession",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [10, 25, 50],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          { "type": "field", "attrs": { "name": "sessionId", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "modelName", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "status", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "totalSteps" } },
+          { "type": "field", "attrs": { "name": "totalCost" } },
+          { "type": "field", "attrs": { "name": "totalInputTokens" } },
+          { "type": "field", "attrs": { "name": "totalOutputTokens" } },
+          { "type": "field", "attrs": { "name": "projectRoot", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "createdAt" } },
+          { "type": "field", "attrs": { "name": "updatedAt" } }
+        ]
+      }
+    },
+    {
+      "name": "agentSession-form-view",
+      "displayName": "Agent Session",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentSession",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Agent Session",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": { "name": "sheet-1" },
+            "children": [
+              {
+                "type": "row",
+                "attrs": { "name": "row-1" },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": { "name": "col-1", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "children": [
+                      { "type": "field", "attrs": { "name": "sessionId" } },
+                      { "type": "field", "attrs": { "name": "modelName" } },
+                      { "type": "field", "attrs": { "name": "status" } },
+                      { "type": "field", "attrs": { "name": "projectRoot" } }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": { "name": "col-2", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "children": [
+                      { "type": "field", "attrs": { "name": "totalSteps" } },
+                      { "type": "field", "attrs": { "name": "totalCost" } },
+                      { "type": "field", "attrs": { "name": "totalInputTokens" } },
+                      { "type": "field", "attrs": { "name": "totalOutputTokens" } },
+                      { "type": "field", "attrs": { "name": "createdAt" } },
+                      { "type": "field", "attrs": { "name": "updatedAt" } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "row",
+                "attrs": { "name": "row-2" },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": { "name": "col-summary", "label": "", "className": "col-12" },
+                    "children": [
+                      { "type": "field", "attrs": { "name": "summary" } }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentEvent-list-view",
+      "displayName": "Agent Events",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentEvent",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [10, 25, 50],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          { "type": "field", "attrs": { "name": "id" } },
+          { "type": "field", "attrs": { "name": "sessionId", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "eventType", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "turnNumber" } },
+          { "type": "field", "attrs": { "name": "stepNumber" } },
+          { "type": "field", "attrs": { "name": "toolName", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "durationMs" } },
+          { "type": "field", "attrs": { "name": "cost" } },
+          { "type": "field", "attrs": { "name": "inputTokens" } },
+          { "type": "field", "attrs": { "name": "outputTokens" } },
+          { "type": "field", "attrs": { "name": "modelUsed", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "createdAt" } }
+        ]
+      }
+    },
+    {
+      "name": "agentEvent-form-view",
+      "displayName": "Agent Event",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentEvent",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Agent Event",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": { "name": "sheet-1" },
+            "children": [
+              {
+                "type": "row",
+                "attrs": { "name": "row-1" },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": { "name": "col-1", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "children": [
+                      { "type": "field", "attrs": { "name": "sessionId" } },
+                      { "type": "field", "attrs": { "name": "eventType" } },
+                      { "type": "field", "attrs": { "name": "turnNumber" } },
+                      { "type": "field", "attrs": { "name": "stepNumber" } },
+                      { "type": "field", "attrs": { "name": "toolName" } },
+                      { "type": "field", "attrs": { "name": "modelUsed" } }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": { "name": "col-2", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "children": [
+                      { "type": "field", "attrs": { "name": "durationMs" } },
+                      { "type": "field", "attrs": { "name": "cost" } },
+                      { "type": "field", "attrs": { "name": "inputTokens" } },
+                      { "type": "field", "attrs": { "name": "outputTokens" } },
+                      { "type": "field", "attrs": { "name": "toolReturncode" } },
+                      { "type": "field", "attrs": { "name": "createdAt" } }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "row",
+                "attrs": { "name": "row-2" },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": { "name": "col-content", "label": "", "className": "col-12" },
+                    "children": [
+                      { "type": "field", "attrs": { "name": "content" } },
+                      { "type": "field", "attrs": { "name": "toolArguments" } },
+                      { "type": "field", "attrs": { "name": "toolOutput" } },
+                      { "type": "field", "attrs": { "name": "eventData" } }
                     ]
                   }
                 ]

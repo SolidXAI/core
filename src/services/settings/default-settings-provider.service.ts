@@ -34,8 +34,8 @@ const getSolidCoreSettings = (isProd: boolean) => ([
   { moduleName: "solid-core", key: "authScreenCenterBackgroundImage", value: null, level: SettingLevel.SystemAdminEditable },
   {
     moduleName: "solid-core", key: "solidXGenAiCodeBuilderConfig", value: JSON.stringify({
-      defaultProvider: "",
-      availableProviders: []
+      fastModel: { provider: "", availableProviders: [] },
+      defaultProvider: { provider: "", availableProviders: [] },
     }), level: SettingLevel.SystemAdminEditable
   },
   { moduleName: "solid-core", key: "mcpEnabled", value: process.env.MCP_ENABLED || false, level: SettingLevel.SystemAdminReadonly },

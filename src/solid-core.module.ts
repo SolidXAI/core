@@ -173,6 +173,8 @@ import { LocaleController } from './controllers/locale.controller';
 import { RoleMetadataController } from './controllers/role-metadata.controller';
 import { SavedFiltersController } from './controllers/saved-filters.controller';
 import { ScheduledJobController } from './controllers/scheduled-job.controller';
+import { AgentSessionController } from './controllers/agent-session.controller';
+import { AgentEventController } from './controllers/agent-event.controller';
 import { SecurityRuleController } from './controllers/security-rule.controller';
 import { SettingController } from './controllers/setting.controller';
 import { InfoController } from './controllers/info.controller';
@@ -197,6 +199,8 @@ import { Locale } from './entities/locale.entity';
 import { RoleMetadata } from './entities/role-metadata.entity';
 import { SavedFilters } from './entities/saved-filters.entity';
 import { ScheduledJob } from './entities/scheduled-job.entity';
+import { AgentSession } from './entities/agent-session.entity';
+import { AgentEvent } from './entities/agent-event.entity';
 import { SecurityRule } from './entities/security-rule.entity';
 import { Setting } from './entities/setting.entity';
 import { UserActivityHistory } from './entities/user-activity-history.entity';
@@ -273,6 +277,8 @@ import { PermissionMetadataRepository } from './repository/permission-metadata.r
 import { RoleMetadataRepository } from './repository/role-metadata.repository';
 import { SavedFiltersRepository } from './repository/saved-filters.repository';
 import { ScheduledJobRepository } from './repository/scheduled-job.repository';
+import { AgentSessionRepository } from './repository/agent-session.repository';
+import { AgentEventRepository } from './repository/agent-event.repository';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
 import { SettingRepository } from './repository/setting.repository';
 import { SmsTemplateRepository } from './repository/sms-template.repository';
@@ -319,6 +325,8 @@ import { RequestContextService } from './services/request-context.service';
 import { RoleMetadataService } from './services/role-metadata.service';
 import { SavedFiltersService } from './services/saved-filters.service';
 import { ScheduledJobService } from './services/scheduled-job.service';
+import { AgentSessionService } from './services/agent-session.service';
+import { AgentEventService } from './services/agent-event.service';
 import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
 import { SecurityRuleService } from './services/security-rule.service';
 import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-question-providers-selection-provider.service';
@@ -401,6 +409,8 @@ import { Entity } from 'typeorm';
       RoleMetadata,
       SavedFilters,
       ScheduledJob,
+      AgentSession,
+      AgentEvent,
       SecurityRule,
       Setting,
       SmsTemplate,
@@ -474,6 +484,8 @@ import { Entity } from 'typeorm';
     RoleMetadataController,
     SavedFiltersController,
     ScheduledJobController,
+    AgentSessionController,
+    AgentEventController,
     SecurityRuleController,
     ServiceController,
     SettingController,
@@ -735,6 +747,10 @@ import { Entity } from 'typeorm';
 
     ViewMetadataRepository,
     ScheduledJobRepository,
+    AgentSessionRepository,
+    AgentEventRepository,
+    AgentSessionService,
+    AgentEventService,
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
     ListOfValuesSubscriber,
