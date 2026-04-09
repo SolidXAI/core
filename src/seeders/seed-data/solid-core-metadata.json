@@ -6067,6 +6067,19 @@
       "modelUserKey": "media"
     },
     {
+      "displayName": "Media Card Action",
+      "name": "media-card-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "media-card-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "media"
+    },
+    {
       "displayName": "Solid Media Storage Provider Model List Action",
       "name": "mediaStorageProviderMetadata-list-action",
       "type": "solid",
@@ -9015,7 +9028,7 @@
           "delete": true,
           "allowedViews": [
             "list",
-            "kanban"
+            "card"
           ]
         },
         "children": [
@@ -9059,34 +9072,37 @@
       }
     },
     {
-      "name": "media-kanban-view",
-      "displayName": "Media Kanban",
-      "type": "kanban",
+      "name": "media-card-view",
+      "displayName": "Media Card",
+      "type": "card",
       "context": "{}",
       "moduleUserKey": "solid-core",
       "modelUserKey": "media",
       "layout": {
-        "type": "kanban",
+        "type": "card",
         "attrs": {
-          "swimlanesCount": 10,
-          "recordsInSwimlane": 20,
+          "pagination": true,
+          "pageSize": 24,
+          "pageSizeOptions": [
+            12,
+            24,
+            48
+          ],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
           "delete": true,
-          "groupBy": "mimeType",
-          "grouped": false,
-          "draggable": true,
           "allowedViews": [
             "list",
-            "kanban"
+            "card"
           ]
         },
         "children": [
           {
             "type": "card",
             "attrs": {
-              "name": "Card"
+              "name": "Card",
+              "cardWidget": "MediaCardWidget"
             },
             "children": [
               {
@@ -9108,13 +9124,6 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "mimeType",
-                          "label": "mimeType"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
                           "name": "relativeUri",
                           "label": "relativeUri",
                           "widget": "image"
@@ -9125,6 +9134,13 @@
                         "attrs": {
                           "name": "originalFileName",
                           "label": "originalFileName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "mimeType",
+                          "label": "mimeType"
                         }
                       }
                     ]
@@ -9157,8 +9173,22 @@
                       {
                         "type": "field",
                         "attrs": {
+                          "name": "modelMetadata",
+                          "label": "modelMetadata"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
                           "name": "mediaStorageProviderMetadata",
                           "label": "mediaStorageProviderMetadata"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "fieldMetadata",
+                          "label": "fieldMetadata"
                         }
                       }
                     ]
