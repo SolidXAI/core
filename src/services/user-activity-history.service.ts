@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ModuleRef } from "@nestjs/core";
 import { EntityManager } from 'typeorm';
@@ -13,6 +13,8 @@ import { UserActivityHistoryRepository } from 'src/repository/user-activity-hist
 
 @Injectable()
 export class UserActivityHistoryService extends CRUDService<UserActivityHistory> {
+  private readonly _logger = new Logger(UserActivityHistoryService.name);
+
   constructor(
     @InjectEntityManager()
     readonly entityManager: EntityManager,
@@ -26,15 +28,19 @@ export class UserActivityHistoryService extends CRUDService<UserActivityHistory>
     super(entityManager, repo, 'userActivityHistory', 'solid-core', moduleRef);
   }
   async logEvent(event: 'login' | 'logout' | 'tokenRefreshed', user: User) {
-    const ip = this.requestContextService.getIp();
-    const userAgent = this.requestContextService.getUserAgent();
+    try {
+      const ip = this.requestContextService.getIp();
+      const userAgent = this.requestContextService.getUserAgent();
 
-    await this.repo.save({
-      user,
-      event,
-      ipAddress: ip,
-      userAgent,
-    });
+      await this.repo.save({
+        user,
+        event,
+        ipAddress: ip,
+        userAgent,
+      });
+    } catch (err) {
+      this._logger.warn(`Failed to log event "${event}" for user ${user?.id}: ${err}`);
+    }
   }
 
 }
