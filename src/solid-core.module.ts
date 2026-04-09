@@ -140,6 +140,7 @@ import { MqMessageQueueService } from './services/mq-message-queue.service';
 import { MqMessageService } from './services/mq-message.service';
 import { PdfService } from './services/pdf.service';
 import { RefreshTokenIdsStorageService } from './services/refresh-token-ids-storage.service';
+import { SsoCodeStorageService } from './services/sso-code-storage.service';
 import { ListOfModelsSelectionProvider } from './services/selection-providers/list-of-models-selection-provider.service';
 import { TinyUrlService } from './services/short-url/tiny-url.service';
 import { SmsTemplateService } from './services/sms-template.service';
@@ -630,6 +631,7 @@ import { Entity } from 'typeorm';
     AuthenticationService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,
+    SsoCodeStorageService,
     GoogleOauthStrategy,
     UserRegistrationListener,
     TestQueuePublisher,
