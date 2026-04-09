@@ -53,14 +53,18 @@ export class MediaService extends CRUDService<Media> {
     if (data.records) {
 
       for (const media of data.records) {
-        if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
+        const mediaStorageProvider = media.mediaStorageProviderMetadata;
+
+        if (mediaStorageProvider?.type === MediaStorageProviderType.Filesystem) {
           media.relativeUri = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${this.getFullFilePathForDisk(media.relativeUri)}`;
-        } else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
-          media.relativeUri = this.getAwsS3FullFilePath(
-            media.relativeUri,
-            media.mediaStorageProviderMetadata.bucketName,
-            media.mediaStorageProviderMetadata.region
-          );
+          // media.relativeUri = await this.diskFileService.getUrl(media.relativeUri);
+        } else if (mediaStorageProvider?.type === MediaStorageProviderType.AwsS3) {
+          media.relativeUri = await this.s3FileService.getUrl(`${mediaStorageProvider.bucketName}:${media.relativeUri}`, { region: mediaStorageProvider.region });
+          // media.relativeUri = this.getAwsS3FullFilePath(
+          //   media.relativeUri,
+          //   media.mediaStorageProviderMetadata.bucketName,
+          //   media.mediaStorageProviderMetadata.region
+          // );
         }
       }
       // data.records.forEach((media: Media) => {

@@ -9106,94 +9106,60 @@
             },
             "children": [
               {
-                "type": "row",
+                "type": "field",
                 "attrs": {
-                  "name": "row-1",
-                  "label": "",
-                  "className": "row"
-                },
-                "children": [
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "col-1",
-                      "label": "",
-                      "className": "col-12"
-                    },
-                    "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "relativeUri",
-                          "label": "relativeUri",
-                          "widget": "image"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "originalFileName",
-                          "label": "originalFileName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "mimeType",
-                          "label": "mimeType"
-                        }
-                      }
-                    ]
-                  }
-                ]
+                  "name": "relativeUri",
+                  "label": "relativeUri",
+                  "widget": "image",
+                  "isSearchable": true
+                }
               },
               {
-                "type": "row",
+                "type": "field",
                 "attrs": {
-                  "name": "row-2",
-                  "label": "",
-                  "className": "row"
-                },
-                "children": [
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "col-1",
-                      "label": "",
-                      "className": "col-12"
-                    },
-                    "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "fileSize",
-                          "label": "fileSize"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "modelMetadata",
-                          "label": "modelMetadata"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "mediaStorageProviderMetadata",
-                          "label": "mediaStorageProviderMetadata"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "fieldMetadata",
-                          "label": "fieldMetadata"
-                        }
-                      }
-                    ]
-                  }
-                ]
+                  "name": "originalFileName",
+                  "label": "originalFileName",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "mimeType",
+                  "label": "mimeType",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "fileSize",
+                  "label": "fileSize"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "modelMetadata",
+                  "label": "modelMetadata",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "mediaStorageProviderMetadata",
+                  "label": "mediaStorageProviderMetadata",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "fieldMetadata",
+                  "label": "fieldMetadata",
+                  "isSearchable": true
+                }
               }
             ]
           }
@@ -10543,7 +10509,98 @@
             "attrs": {
               "name": "Card",
               "cardWidget": "MqMessageKanbanCardWidget"
-            }
+            },
+            "children": [
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "messageId",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "messageBroker",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "messageType",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "stage",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "startedAt",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "finishedAt",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "elapsedMillis",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "retryCount"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "retryInterval"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "parentEntityId",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "parentEntity",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "error"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "mqMessageQueue",
+                  "label": "Queue",
+                  "isSearchable": true
+                }
+              }
+            ]
           }
         ]
       }
