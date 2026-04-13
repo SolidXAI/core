@@ -343,6 +343,53 @@
             "relationCascade": "cascade",
             "relationModelModuleName": "solid-core",
             "isSystem": true
+          },
+          {
+            "name": "cacheEnabled",
+            "displayName": "Cache Enabled",
+            "type": "boolean",
+            "defaultValue": "false",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "cache_enabled",
+            "isSystem": true
+          },
+          {
+            "name": "cacheStrategy",
+            "displayName": "Cache Strategy",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "length": 64,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "cache_strategy",
+            "defaultValue": "ttl",
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "ttl:TTL",
+              "onReboot:On Reboot"
+            ],
+            "isSystem": true
+          },
+          {
+            "name": "cacheTtl",
+            "displayName": "Cache TTL (seconds)",
+            "type": "int",
+            "ormType": "integer",
+            "defaultValue": "-1",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "cache_ttl",
+            "isSystem": true
           }
         ]
       },
