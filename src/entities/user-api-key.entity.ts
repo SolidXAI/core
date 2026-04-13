@@ -8,16 +8,16 @@ import { User } from "./user.entity";
 export class UserApiKey extends CommonEntity {
 
     @Expose()
-    @Column({ type: "varchar" })
+    @Column()
     name: string;
 
     // SHA-256 hash of the raw key — never exposed, same treatment as User.password
     @Index({ unique: true })
-    @Column({ type: "varchar" })
+    @Column()
     hashedKey: string;
 
     @Expose()
-    @Column({ type: "varchar" })
+    @Column()
     maskedKey: string;
 
     @Expose()
