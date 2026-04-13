@@ -2086,6 +2086,19 @@
             "isSystem": true
           },
           {
+            "name": "isAllowedToGenerateApiKeys",
+            "displayName": "Is Allowed To Generate API Keys",
+            "type": "boolean",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "defaultValue": "false",
+            "isSystem": true,
+            "enableAuditTracking": true
+          },
+          {
             "name": "apiKeys",
             "displayName": "API Keys",
             "type": "relation",

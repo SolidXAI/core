@@ -1,4 +1,5 @@
 import {
+    ForbiddenException,
     Injectable,
     Logger,
     NotFoundException,
@@ -25,12 +26,18 @@ export class ApiKeyService {
     ) {}
 
     async generate(userId: number, dto: CreateApiKeyDto): Promise<{ apiKey: string; record: UserApiKey }> {
+        const user = await this.apiKeyRepository.manager.findOne(User, {
+            where: { id: userId },
+            select: ['id', 'isAllowedToGenerateApiKeys'],
+        });
+
+        if (!user?.isAllowedToGenerateApiKeys) {
+            throw new ForbiddenException('You are not allowed to generate API keys');
+        }
+
         const rawKey = 'sldx_' + randomBytes(32).toString('hex');
         const hashedKey = this.hash(rawKey);
         const maskedKey = 'sldx_****' + rawKey.slice(-4);
-
-        const user = new User();
-        user.id = userId;
 
         const record = this.apiKeyRepository.create({
             name: dto.name,

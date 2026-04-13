@@ -152,6 +152,10 @@ export class User extends CommonEntity {
     @Expose()
     _media: any;
 
+    @Column({ default: false })
+    @Expose()
+    isAllowedToGenerateApiKeys: boolean = false;
+
     @OneToMany(() => UserApiKey, key => key.user)
     apiKeys: UserApiKey[];
 
