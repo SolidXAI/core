@@ -8,23 +8,26 @@ import { Reflector } from '@nestjs/core';
 import { AUTH_TYPE_KEY } from '../decorators/auth.decorator';
 import { AuthType } from '../enums/auth-type.enum';
 import { AccessTokenGuard } from './access-token.guard';
+import { ApiKeyGuard } from './api-key.guard';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { PermissionMetadataService } from '../services/permission-metadata.service';
 import { ClsService } from 'nestjs-cls';
 
 @Injectable()
 export class AuthenticationGuard implements CanActivate {
-  private static readonly defaultAuthType = AuthType.Bearer;
+  private static readonly defaultAuthTypes = [AuthType.Bearer, AuthType.ApiKey];
   private readonly authTypeGuardMap: Record<
     AuthType,
     CanActivate | CanActivate[]> = {
       [AuthType.Bearer]: this.accessTokenGuard,
+      [AuthType.ApiKey]: this.apiKeyGuard,
       [AuthType.None]: { canActivate: () => true },
     };
 
   constructor(
     private readonly reflector: Reflector,
     private readonly accessTokenGuard: AccessTokenGuard,
+    private readonly apiKeyGuard: ApiKeyGuard,
     private readonly permissionService: PermissionMetadataService,
     private readonly cls: ClsService,
   ) { }
@@ -49,7 +52,7 @@ export class AuthenticationGuard implements CanActivate {
       return true;
     }
 
-    // TODO: Check if this permission viz. contextPermission is listed in the Public role. 
+    // TODO: Check if this permission viz. contextPermission is listed in the Public role.
     const contextPermission = `${context.getClass().name}.${context.getHandler().name}`;
 
     const permissionExistsInRole = await this.permissionService.permissionExistsInRole('Public', contextPermission)
@@ -61,7 +64,7 @@ export class AuthenticationGuard implements CanActivate {
     const authTypes = this.reflector.getAllAndOverride<AuthType[]>(
       AUTH_TYPE_KEY,
       [context.getHandler(), context.getClass()],
-    ) ?? [AuthenticationGuard.defaultAuthType];
+    ) ?? AuthenticationGuard.defaultAuthTypes;
     const guards = authTypes.map((type) => this.authTypeGuardMap[type]).flat();
     let error = new UnauthorizedException();
 

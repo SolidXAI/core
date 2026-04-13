@@ -2086,6 +2086,22 @@
             "isSystem": true
           },
           {
+            "name": "apiKeys",
+            "displayName": "API Keys",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "one-to-many",
+            "relationCoModelSingularName": "userApiKey",
+            "relationCoModelFieldName": "user",
+            "relationCreateInverse": true,
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
             "name": "passwordScheme",
             "displayName": "Password Scheme",
             "type": "selectionStatic",
@@ -2125,6 +2141,108 @@
             "index": false,
             "private": false,
             "encrypt": false,
+            "isSystem": true
+          }
+        ]
+      },
+      {
+        "singularName": "userApiKey",
+        "tableName": "ss_user_api_key",
+        "pluralName": "userApiKeys",
+        "displayName": "User API Key",
+        "description": "API keys for programmatic server-to-server access",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "userKeyFieldUserKey": "name",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "hashedKey",
+            "displayName": "Hashed Key",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": true,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "maskedKey",
+            "displayName": "Masked Key",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "isActive",
+            "displayName": "Is Active",
+            "type": "boolean",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "defaultValue": "true",
+            "isSystem": true
+          },
+          {
+            "name": "expiresAt",
+            "displayName": "Expires At",
+            "type": "datetime",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "lastUsedAt",
+            "displayName": "Last Used At",
+            "type": "datetime",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "user",
+            "displayName": "User",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "user",
+            "relationCoModelFieldName": "apiKeys",
+            "relationCreateInverse": true,
+            "relationModelModuleName": "solid-core",
             "isSystem": true
           }
         ]

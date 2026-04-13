@@ -1,15 +1,18 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Param, ParseIntPipe, Patch, Post, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ActiveUser } from "../decorators/active-user.decorator";
 import { Public } from '../decorators/public.decorator';
 import { ChangePasswordDto } from "../dtos/change-password.dto";
 import { ConfirmForgotPasswordDto } from '../dtos/confirm-forgot-password.dto';
+import { CreateApiKeyDto } from '../dtos/create-api-key.dto';
+import { UpdateApiKeyDto } from '../dtos/update-api-key.dto';
 import { InitiateForgotPasswordDto } from '../dtos/initiate-forgot-password.dto';
 import { RefreshTokenDto } from '../dtos/refresh-token.dto';
 import { SignInDto } from '../dtos/sign-in.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
+import { ApiKeyService } from '../services/api-key.service';
 import { AuthenticationService } from '../services/authentication.service';
 
 
@@ -21,7 +24,10 @@ import { AuthenticationService } from '../services/authentication.service';
 export class AuthenticationController {
     private readonly logger = new Logger(AuthenticationController.name);
 
-    constructor(private readonly authService: AuthenticationService) { }
+    constructor(
+        private readonly authService: AuthenticationService,
+        private readonly apiKeyService: ApiKeyService,
+    ) { }
 
     @Public()
     // @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
@@ -101,5 +107,26 @@ export class AuthenticationController {
     @HttpCode(HttpStatus.OK)
     async logout(@Body('refreshToken') refreshToken: string) {
         return this.authService.logout(refreshToken);
+    }
+
+    @ApiBearerAuth("jwt")
+    @Post('api-keys')
+    @HttpCode(HttpStatus.CREATED)
+    generateApiKey(
+        @Body() dto: CreateApiKeyDto,
+        @ActiveUser() activeUser: ActiveUserData,
+    ) {
+        return this.apiKeyService.generate(activeUser.sub, dto);
+    }
+
+    @ApiBearerAuth("jwt")
+    @Patch('api-keys/:id')
+    @HttpCode(HttpStatus.OK)
+    updateApiKey(
+        @Param('id', ParseIntPipe) id: number,
+        @Body() dto: UpdateApiKeyDto,
+        @ActiveUser() activeUser: ActiveUserData,
+    ) {
+        return this.apiKeyService.updateKey(id, activeUser.sub, dto);
     }
 }

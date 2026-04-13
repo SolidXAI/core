@@ -78,6 +78,7 @@ import { MqMessageQueue } from './entities/mq-message-queue.entity';
 import { MqMessage } from './entities/mq-message.entity';
 import { SmsTemplate } from './entities/sms-template.entity';
 import { AccessTokenGuard } from './guards/access-token.guard';
+import { ApiKeyGuard } from './guards/api-key.guard';
 import { AuthenticationGuard } from './guards/authentication.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { SolidRegistry } from './helpers/solid-registry';
@@ -126,6 +127,7 @@ import { TwilioSmsQueuePublisherRedis } from './jobs/redis/twilio-sms-publisher-
 import { TwilioSmsQueueSubscriberRedis } from './jobs/redis/twilio-sms-subscriber-redis.service';
 import { UserRegistrationListener } from './listeners/user-registration.listener';
 import { GoogleOauthStrategy } from './passport-strategies/google-oauth.strategy';
+import { ApiKeyService } from './services/api-key.service';
 import { AuthenticationService } from './services/authentication.service';
 import { BcryptService } from './services/bcrypt.service';
 import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
@@ -205,6 +207,7 @@ import { SecurityRule } from './entities/security-rule.entity';
 import { Setting } from './entities/setting.entity';
 import { UserActivityHistory } from './entities/user-activity-history.entity';
 import { UserViewMetadata } from './entities/user-view-metadata.entity';
+import { UserApiKey } from './entities/user-api-key.entity';
 import { User } from './entities/user.entity';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
@@ -415,6 +418,7 @@ import { Entity } from 'typeorm';
       Setting,
       SmsTemplate,
       User,
+      UserApiKey,
       UserActivityHistory,
       UserViewMetadata,
       ViewMetadata,
@@ -627,6 +631,8 @@ import { Entity } from 'typeorm';
     LocaleListSelectionProvider,
     SoftDeleteAwareEventSubscriber,
     AccessTokenGuard,
+    ApiKeyGuard,
+    ApiKeyService,
     AuthenticationService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,
