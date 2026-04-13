@@ -57,6 +57,16 @@ export class ModelMetadata extends CommonEntity {
     @ManyToOne(() => FieldMetadata, {})
     userKeyField: FieldMetadata;
 
+    @Column({ name: "cache_enabled", default: false })
+    cacheEnabled: boolean;
+
+    @Column({ name: "cache_strategy", default: "ttl", nullable: true })
+    cacheStrategy: 'ttl' | 'onReboot';
+
+    // -1 = no expiry (cache forever). Only applies to 'ttl' strategy.
+    @Column({ name: "cache_ttl", default: -1, nullable: true })
+    cacheTtl: number;
+
     @Column({ default: false })
     isSystem: boolean;
 

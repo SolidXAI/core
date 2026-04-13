@@ -2,8 +2,10 @@ import { camelize } from '@angular-devkit/core/src/utils/strings';
 import { Logger } from '@nestjs/common';
 import { CommonEntity } from 'src/entities/common.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
+import { buildCacheKey } from 'src/helpers/cache-key.helper';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { RequestContextService } from 'src/services/request-context.service';
+import { CacheConfig, SolidCacheService } from 'src/services/solid-cache.service';
 import {
     DataSource,
     EntityNotFoundError,
@@ -22,14 +24,62 @@ import { PickKeysByType } from 'typeorm/common/PickKeysByType';
 export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
     protected readonly logger: Logger;
 
+    // undefined = not yet loaded, null = model not found in metadata
+    private _cacheConfig: CacheConfig | null | undefined = undefined;
+
     constructor(
         entity: EntityTarget<T>,
         dataSource: DataSource,
         protected readonly requestContextService: RequestContextService | null,
         protected readonly securityRuleRepository: SecurityRuleRepository | null,
+        protected readonly solidCacheService?: SolidCacheService,
     ) {
         super(entity, dataSource.createEntityManager());
         this.logger = new Logger(this.constructor.name);
+    }
+
+    /**
+     * Loads cache config for this model once and memoizes it on the repo instance.
+     * Since repos are singletons, this results in a single DB query per model per
+     * app lifetime — all subsequent calls are served from the in-process field.
+     */
+    private async getCacheConfig(): Promise<CacheConfig | null> {
+        if (this._cacheConfig !== undefined) return this._cacheConfig;
+
+        const modelName = this.modelSingularName();
+        const modelMeta = await this.manager.getRepository(ModelMetadata).findOne({
+            where: { singularName: modelName },
+            select: ['cacheEnabled', 'cacheStrategy', 'cacheTtl'],
+        });
+
+        this._cacheConfig = modelMeta
+            ? { cacheEnabled: modelMeta.cacheEnabled, cacheStrategy: modelMeta.cacheStrategy, cacheTtl: modelMeta.cacheTtl }
+            : null;
+
+        return this._cacheConfig;
+    }
+
+    /**
+     * Wraps a QueryBuilder execution with cache read-through.
+     * If caching is not configured or not enabled for this model, the executor
+     * is called directly with no overhead.
+     */
+    private async executeWithCache<R>(
+        qb: SelectQueryBuilder<T>,
+        executor: () => Promise<R>,
+    ): Promise<R> {
+        if (!this.solidCacheService) return executor();
+
+        const config = await this.getCacheConfig();
+        if (!config?.cacheEnabled) return executor();
+
+        const key = buildCacheKey(this.modelSingularName(), qb);
+        const cached = await this.solidCacheService.get<R>(key);
+        if (cached !== null) return cached;
+
+        const result = await executor();
+        await this.solidCacheService.set(key, result, config.cacheStrategy, config.cacheTtl);
+        return result;
     }
 
     modelSingularName(): string {
@@ -84,7 +134,7 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
             if (options) qb.setFindOptions(options); // <- applies where, relations, select, order, etc.
         }
 
-        return qb.getOne();
+        return this.executeWithCache(qb, () => qb.getOne());
     }
 
     /**
@@ -117,7 +167,7 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
             qb.setFindOptions(options);
         }
 
-        return qb.getMany();
+        return this.executeWithCache(qb, () => qb.getMany());
     }
 
     /**
@@ -132,7 +182,7 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
             qb.setFindOptions(options);
         }
 
-        return qb.getManyAndCount();
+        return this.executeWithCache(qb, () => qb.getManyAndCount());
     }
 
     /**
@@ -146,7 +196,7 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
             qb.setFindOptions(options);
         }
 
-        return qb.getCount();
+        return this.executeWithCache(qb, () => qb.getCount());
     }
 
     /**

@@ -127,6 +127,8 @@ import { TwilioSmsQueueSubscriberRedis } from './jobs/redis/twilio-sms-subscribe
 import { UserRegistrationListener } from './listeners/user-registration.listener';
 import { GoogleOauthStrategy } from './passport-strategies/google-oauth.strategy';
 import { AuthenticationService } from './services/authentication.service';
+import { CacheBootstrapService } from './services/cache-bootstrap.service';
+import { SolidCacheService } from './services/solid-cache.service';
 import { BcryptService } from './services/bcrypt.service';
 import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
 import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/uuid-external-id-computed-field-provider.service';
@@ -628,6 +630,8 @@ import { Entity } from 'typeorm';
     SoftDeleteAwareEventSubscriber,
     AccessTokenGuard,
     AuthenticationService,
+    CacheBootstrapService,
+    SolidCacheService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,
     GoogleOauthStrategy,
@@ -858,6 +862,7 @@ import { Entity } from 'typeorm';
     SolidMicroserviceAdapter,
     UserService,
     SettingService,
+    SolidCacheService,
   ],
 })
 export class SolidCoreModule implements NestModule {

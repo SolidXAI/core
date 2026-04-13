@@ -1,5 +1,7 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
+import { buildCacheKey } from "src/helpers/cache-key.helper";
+import { CacheConfig, SolidCacheService } from "src/services/solid-cache.service";
 import { isArray } from "class-validator";
 import { CommonEntity, SettingService, SolidBaseRepository, User } from "src";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
@@ -46,6 +48,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     private _crudHelperService: CrudHelperService;
     private _discoveryService: DiscoveryService;
     private _settingService: SettingService;
+    private _solidCacheService: SolidCacheService;
 
     constructor(
         readonly entityManager: EntityManager,
@@ -70,6 +73,24 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
     protected get settingService(): SettingService {
         return this._settingService ??= this.moduleRef.get(SettingService, { strict: false });
+    }
+
+    protected get solidCacheService(): SolidCacheService {
+        return this._solidCacheService ??= this.moduleRef.get(SolidCacheService, { strict: false });
+    }
+
+    private async executeQbWithCache<R>(
+        qb: SelectQueryBuilder<T>,
+        executor: () => Promise<R>,
+        config: CacheConfig,
+    ): Promise<R> {
+        const key = buildCacheKey(this.modelName, qb);
+        const cached = await this.solidCacheService.get<R>(key);
+        if (cached !== null) return cached;
+
+        const result = await executor();
+        await this.solidCacheService.set(key, result, config.cacheStrategy, config.cacheTtl);
+        return result;
     }
 
     async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
@@ -466,7 +487,8 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         let { limit, offset, populateMedia, populateGroup, groupFilter } = basicFilterDto;
         const populateUserIdFields = this.crudHelperService.extractUserIdFieldsFromPopulate(basicFilterDto.populate);
 
-        const { singularName, internationalisation, draftPublishWorkflow } = await this.loadModel();
+        const { singularName, internationalisation, draftPublishWorkflow, cacheEnabled, cacheStrategy, cacheTtl } = await this.loadModel();
+        const cacheConfig: CacheConfig = { cacheEnabled, cacheStrategy, cacheTtl };
         // Check wheather user has update permission for model
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasReadPermissionOnModel(solidRequestContext.activeUser, singularName);
@@ -522,7 +544,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             qb = (internationalisation && draftPublishWorkflow)
                 ? this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef)
                 : this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
-            const { meta, records } = await this.handleNonGroupFind(qb, populateUserIdFields, populateMedia, offset, limit, alias);
+            const { meta, records } = await this.handleNonGroupFind(qb, populateUserIdFields, populateMedia, offset, limit, alias, cacheConfig);
             return {
                 meta,
                 records,
@@ -530,8 +552,11 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         }
     }
 
-    private async handleNonGroupFind(qb: SelectQueryBuilder<T>, populateUserIdFields: UserIdFields[], populateMedia: string[], offset: number, limit: number, alias: string) {
-        const [entities, count] = await qb.getManyAndCount();
+    private async handleNonGroupFind(qb: SelectQueryBuilder<T>, populateUserIdFields: UserIdFields[], populateMedia: string[], offset: number, limit: number, alias: string, cacheConfig?: CacheConfig) {
+        const execute = () => qb.getManyAndCount();
+        const [entities, count] = cacheConfig?.cacheEnabled
+            ? await this.executeQbWithCache(qb, execute, cacheConfig)
+            : await execute();
 
         // Populate the entity with the userId fields
         if (populateUserIdFields && populateUserIdFields.length > 0) {
