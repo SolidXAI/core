@@ -53,6 +53,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.messageBody = postDto.messageBody;
         chatterMessage.coModelEntityId = postDto.coModelEntityId;
         chatterMessage.coModelName = postDto.coModelName;
+        chatterMessage.modelUserKey = postDto.modelUserKey ?? null;
+
+        const model = await this.modelMetadataRepo.findOne({
+            where: { singularName: lowerFirst(postDto.coModelName) },
+            relations: { userKeyField: true }
+        });
+        chatterMessage.modelDisplayName = model?.displayName ?? null;
 
         const activeUser = this.requestContextService.getActiveUser();
 

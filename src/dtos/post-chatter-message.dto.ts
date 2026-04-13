@@ -16,4 +16,8 @@ export class PostChatterMessageDto {
     @IsString()
     @IsOptional()
     messageSubType?: string;
+
+    @IsString()
+    @IsOptional()
+    modelUserKey?: string;
 }
