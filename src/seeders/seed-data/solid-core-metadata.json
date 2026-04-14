@@ -5509,7 +5509,12 @@
             "private": false,
             "encrypt": false,
             "isSystem": true,
-            "selectionStaticValues": ["active", "completed", "failed", "cancelled"],
+            "selectionStaticValues": [
+              "active",
+              "completed",
+              "failed",
+              "cancelled"
+            ],
             "selectionValueType": "string"
           },
           {
@@ -7959,9 +7964,16 @@
             "type": "field",
             "attrs": {
               "name": "coModelEntityId",
-              "isSearchable": true
+              "isSearchable": true,
+              "viewWidget": "SolidChatterMessageCoModelEntityIdListViewWidget"
             }
           },
+          {
+              "type": "field",
+              "attrs": {
+                "name": "coModelName"
+              }
+            },
           {
             "type": "field",
             "attrs": {
@@ -8024,7 +8036,8 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "coModelEntityId"
+                      "name": "coModelEntityId",
+                      "viewWidget": "SolidChatterMessageCoModelEntityIdFormViewWidget"
                     }
                   },
                   {
@@ -10321,7 +10334,19 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "headerButtons": [
+            {
+              "attrs": {
+                "label": "Summarize",
+                "action": "SolidSummarizeListHeaderActionMqMessages",
+                "actionInContextMenu": false,
+                "openInPopup": true,
+                "icon": "pi pi-file-excel",
+                "closable": true
+              }
+            }
+          ]
         },
         "children": [
           {
@@ -10342,7 +10367,8 @@
             "type": "field",
             "attrs": {
               "name": "stage",
-              "isSearchable": true
+              "isSearchable": true,
+              "viewWidget": "SolidMqMessageStageListViewWidget"
             }
           },
           {
@@ -13691,23 +13717,81 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [10, 25, 50],
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
           "enableGlobalSearch": true,
           "create": false,
           "edit": true,
           "delete": false
         },
         "children": [
-          { "type": "field", "attrs": { "name": "sessionId", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "modelName", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "status", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "totalSteps" } },
-          { "type": "field", "attrs": { "name": "totalCost" } },
-          { "type": "field", "attrs": { "name": "totalInputTokens" } },
-          { "type": "field", "attrs": { "name": "totalOutputTokens" } },
-          { "type": "field", "attrs": { "name": "projectRoot", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "createdAt" } },
-          { "type": "field", "attrs": { "name": "updatedAt" } }
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sessionId",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "totalSteps"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "totalCost"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "totalInputTokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "totalOutputTokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "projectRoot",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "updatedAt"
+            }
+          }
         ]
       }
     },
@@ -13728,45 +13812,118 @@
         "children": [
           {
             "type": "sheet",
-            "attrs": { "name": "sheet-1" },
+            "attrs": {
+              "name": "sheet-1"
+            },
             "children": [
               {
                 "type": "row",
-                "attrs": { "name": "row-1" },
+                "attrs": {
+                  "name": "row-1"
+                },
                 "children": [
                   {
                     "type": "column",
-                    "attrs": { "name": "col-1", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "attrs": {
+                      "name": "col-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
                     "children": [
-                      { "type": "field", "attrs": { "name": "sessionId" } },
-                      { "type": "field", "attrs": { "name": "modelName" } },
-                      { "type": "field", "attrs": { "name": "status" } },
-                      { "type": "field", "attrs": { "name": "projectRoot" } }
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sessionId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "modelName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "status"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "projectRoot"
+                        }
+                      }
                     ]
                   },
                   {
                     "type": "column",
-                    "attrs": { "name": "col-2", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "attrs": {
+                      "name": "col-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
                     "children": [
-                      { "type": "field", "attrs": { "name": "totalSteps" } },
-                      { "type": "field", "attrs": { "name": "totalCost" } },
-                      { "type": "field", "attrs": { "name": "totalInputTokens" } },
-                      { "type": "field", "attrs": { "name": "totalOutputTokens" } },
-                      { "type": "field", "attrs": { "name": "createdAt" } },
-                      { "type": "field", "attrs": { "name": "updatedAt" } }
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "totalSteps"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "totalCost"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "totalInputTokens"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "totalOutputTokens"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "createdAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "updatedAt"
+                        }
+                      }
                     ]
                   }
                 ]
               },
               {
                 "type": "row",
-                "attrs": { "name": "row-2" },
+                "attrs": {
+                  "name": "row-2"
+                },
                 "children": [
                   {
                     "type": "column",
-                    "attrs": { "name": "col-summary", "label": "", "className": "col-12" },
+                    "attrs": {
+                      "name": "col-summary",
+                      "label": "",
+                      "className": "col-12"
+                    },
                     "children": [
-                      { "type": "field", "attrs": { "name": "summary" } }
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "summary"
+                        }
+                      }
                     ]
                   }
                 ]
@@ -13787,25 +13944,93 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [10, 25, 50],
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
           "delete": false
         },
         "children": [
-          { "type": "field", "attrs": { "name": "id" } },
-          { "type": "field", "attrs": { "name": "sessionId", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "eventType", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "turnNumber" } },
-          { "type": "field", "attrs": { "name": "stepNumber" } },
-          { "type": "field", "attrs": { "name": "toolName", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "durationMs" } },
-          { "type": "field", "attrs": { "name": "cost" } },
-          { "type": "field", "attrs": { "name": "inputTokens" } },
-          { "type": "field", "attrs": { "name": "outputTokens" } },
-          { "type": "field", "attrs": { "name": "modelUsed", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "createdAt" } }
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sessionId",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "eventType",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "turnNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "stepNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "toolName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "durationMs"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "cost"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "inputTokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "outputTokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelUsed",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdAt"
+            }
+          }
         ]
       }
     },
@@ -13826,50 +14051,148 @@
         "children": [
           {
             "type": "sheet",
-            "attrs": { "name": "sheet-1" },
+            "attrs": {
+              "name": "sheet-1"
+            },
             "children": [
               {
                 "type": "row",
-                "attrs": { "name": "row-1" },
+                "attrs": {
+                  "name": "row-1"
+                },
                 "children": [
                   {
                     "type": "column",
-                    "attrs": { "name": "col-1", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "attrs": {
+                      "name": "col-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
                     "children": [
-                      { "type": "field", "attrs": { "name": "sessionId" } },
-                      { "type": "field", "attrs": { "name": "eventType" } },
-                      { "type": "field", "attrs": { "name": "turnNumber" } },
-                      { "type": "field", "attrs": { "name": "stepNumber" } },
-                      { "type": "field", "attrs": { "name": "toolName" } },
-                      { "type": "field", "attrs": { "name": "modelUsed" } }
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sessionId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "eventType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "turnNumber"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "stepNumber"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "toolName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "modelUsed"
+                        }
+                      }
                     ]
                   },
                   {
                     "type": "column",
-                    "attrs": { "name": "col-2", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "attrs": {
+                      "name": "col-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
                     "children": [
-                      { "type": "field", "attrs": { "name": "durationMs" } },
-                      { "type": "field", "attrs": { "name": "cost" } },
-                      { "type": "field", "attrs": { "name": "inputTokens" } },
-                      { "type": "field", "attrs": { "name": "outputTokens" } },
-                      { "type": "field", "attrs": { "name": "toolReturncode" } },
-                      { "type": "field", "attrs": { "name": "createdAt" } }
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "durationMs"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "cost"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "inputTokens"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "outputTokens"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "toolReturncode"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "createdAt"
+                        }
+                      }
                     ]
                   }
                 ]
               },
               {
                 "type": "row",
-                "attrs": { "name": "row-2" },
+                "attrs": {
+                  "name": "row-2"
+                },
                 "children": [
                   {
                     "type": "column",
-                    "attrs": { "name": "col-content", "label": "", "className": "col-12" },
+                    "attrs": {
+                      "name": "col-content",
+                      "label": "",
+                      "className": "col-12"
+                    },
                     "children": [
-                      { "type": "field", "attrs": { "name": "content" } },
-                      { "type": "field", "attrs": { "name": "toolArguments" } },
-                      { "type": "field", "attrs": { "name": "toolOutput" } },
-                      { "type": "field", "attrs": { "name": "eventData" } }
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "content"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "toolArguments"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "toolOutput"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "eventData"
+                        }
+                      }
                     ]
                   }
                 ]
