@@ -1,4 +1,4 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, Entity, Index, PrimaryGeneratedColumn, CreateDateColumn } from 'typeorm';
 import { Expose, Exclude } from 'class-transformer';
 
 @Exclude()
@@ -52,11 +52,11 @@ export class AgentEvent {
   toolReturncode: number;
 
   @Expose()
-  @Column({ type: 'double precision', nullable: true, name: 'duration_ms' })
+  @Column({ type: 'decimal', nullable: true, name: 'duration_ms', precision: 18, scale: 6 })
   durationMs: number;
 
   @Expose()
-  @Column({ type: 'double precision', nullable: true, name: 'cost' })
+  @Column({ type: 'decimal', nullable: true, name: 'cost', precision: 18, scale: 6 })
   cost: number;
 
   @Expose()
@@ -72,7 +72,7 @@ export class AgentEvent {
   modelUsed: string;
 
   @Expose()
-  @Column({ type: 'timestamp without time zone', name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at' })
   createdAt: Date;
 
   // The following properties satisfy CRUDService<T extends CommonEntity> structural typing
