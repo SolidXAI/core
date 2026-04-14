@@ -9,8 +9,12 @@ import * as path from 'path';
 import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { CreateModuleMetadataDto } from 'src/dtos/create-module-metadata.dto';
 import { CreateModelMetadataDto } from 'src/dtos/create-model-metadata.dto';
+import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
 import { getDynamicModuleNamesBasedOnMetadata } from 'src/helpers/module.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { MediaRepository } from 'src/repository/media.repository';
+import { ModelMetadataService } from 'src/services/model-metadata.service';
+import { getMediaStorageProvider } from 'src/services/mediaStorageProviders';
 
 @Injectable()
 export class ModuleTestDataService {
@@ -185,7 +189,7 @@ export class ModuleTestDataService {
       throw new Error('Module metadata missing from test data payload.');
     }
 
-    // console.log(JSON.stringify(moduleMetadata, null, 2));    
+    // console.log(JSON.stringify(moduleMetadata, null, 2));
 
     const testingData: Array<{ modelUserKey: string; data: Record<string, any> }> = overallMetadata?.testing?.data ?? [];
     if (testingData.length === 0) {
@@ -243,19 +247,97 @@ export class ModuleTestDataService {
         }
       }
 
+      // Strip media fields from entity payload — file paths cannot be saved as columns
+      const mediaPayload: Record<string, string> = {};
+      for (const field of modelDef.fields ?? []) {
+        if ((field.type === 'mediaSingle' || field.type === 'mediaMultiple') && payload[field.name] !== undefined) {
+          mediaPayload[field.name] = payload[field.name] as string;
+          delete payload[field.name];
+        }
+      }
+
+      // Upsert entity, capturing the saved result for media seeding
+      let savedEntity: any;
       const userKeyField = modelDef.userKeyFieldUserKey;
       if (userKeyField && payload[userKeyField] !== undefined) {
         const existing = await entityRepo.findOne({
           where: { [userKeyField]: payload[userKeyField] },
         });
         if (existing) {
-          await entityRepo.save(entityRepo.merge(existing, payload));
-          continue;
+          savedEntity = await entityRepo.save(entityRepo.merge(existing, payload));
+        } else {
+          savedEntity = await entityRepo.save(entityRepo.create(payload));
         }
+      } else {
+        savedEntity = await entityRepo.save(entityRepo.create(payload));
       }
 
-      await entityRepo.save(entityRepo.create(payload));
+      if (Object.keys(mediaPayload).length > 0) {
+        await this.seedEntityMedia(savedEntity.id, modelUserKey, mediaPayload);
+      }
     }
+  }
+
+  private async seedEntityMedia(
+    entityId: number,
+    modelUserKey: string,
+    mediaPayload: Record<string, string>,
+  ): Promise<void> {
+    const mediaBasePath = process.env.TEST_UPLOADS_MEDIA_FILE_PATH;
+    if (!mediaBasePath) {
+      throw new Error('TEST_UPLOADS_MEDIA_FILE_PATH is not set. Cannot seed test media.');
+    }
+
+    const modelMetadata = await this.modelMetadataService.findOneBySingularName(modelUserKey, {
+      fields: {
+        model: { userKeyField: true },
+        mediaStorageProvider: true,
+      },
+    });
+
+    for (const [fieldName, fileName] of Object.entries(mediaPayload)) {
+      if (!fileName) continue;
+
+      const fieldMetadata = modelMetadata.fields.find((f) => f.name === fieldName);
+      if (!fieldMetadata) {
+        throw new Error(`Media field "${fieldName}" not found in loaded metadata for model ${modelUserKey}`);
+      }
+      if (!fieldMetadata.mediaStorageProvider) {
+        throw new Error(`Media field "${fieldName}" in model ${modelUserKey} has no storage provider configured`);
+      }
+
+      const storageProviderType = fieldMetadata.mediaStorageProvider.type as MediaStorageProviderType;
+      if (storageProviderType !== MediaStorageProviderType.Filesystem) {
+        throw new Error(`Test media seeding supports filesystem storage only. Field "${fieldName}" uses "${storageProviderType}".`);
+      }
+
+      // Idempotency: skip if media already exists for this entity + field
+      const existing = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(
+        entityId, fieldMetadata.id, fieldMetadata.model.id,
+      );
+      if (existing.length > 0) {
+        this.logger.debug(`Media already seeded for ${modelUserKey}.${fieldName} entityId=${entityId}, skipping`);
+        continue;
+      }
+
+      const sourcePath = path.join(mediaBasePath, fileName);
+      if (!fs.existsSync(sourcePath)) {
+        throw new Error(`Test media file not found: ${sourcePath}`);
+      }
+
+      const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
+      const stream = fs.createReadStream(sourcePath);
+      await storageProvider.storeStreams([[stream, fileName]], { id: entityId }, fieldMetadata);
+      this.logger.debug(`Seeded media for ${modelUserKey}.${fieldName} entityId=${entityId} file=${fileName}`);
+    }
+  }
+
+  private get modelMetadataService(): ModelMetadataService {
+    return this.moduleRef.get(ModelMetadataService, { strict: false });
+  }
+
+  private get mediaRepository(): MediaRepository {
+    return this.moduleRef.get(MediaRepository, { strict: false });
   }
 
   private resolveRepository(modelUserKey: string): any {
