@@ -2,7 +2,7 @@ import { Injectable, Logger } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from '@nestjs/core';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import { classify } from '@angular-devkit/core/src/utils/strings';
-import { DataSource } from 'typeorm';
+import { DataSource, EntityManager } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';
 
@@ -256,7 +256,22 @@ export class ModuleTestDataService {
         }
       }
 
-      // Upsert entity, capturing the saved result for media seeding
+      // Strip many-to-many and one-to-many fields — these are resolved post-save via the relation builder
+      const multiRelationPayload: Array<{ field: any; userKeys: string[] }> = [];
+      for (const field of modelDef.fields ?? []) {
+        if (field.type !== 'relation') continue;
+        if (field.relationType !== 'many-to-many' && field.relationType !== 'one-to-many') continue;
+
+        const userKeysProp = `${field.name}UserKeys`;
+        if (userKeysProp in payload && Array.isArray(payload[userKeysProp])) {
+          multiRelationPayload.push({ field, userKeys: payload[userKeysProp] });
+          delete payload[userKeysProp];
+        }
+        // Remove raw field value if accidentally present
+        delete payload[field.name];
+      }
+
+      // Upsert entity, capturing the saved result for post-save steps
       let savedEntity: any;
       const userKeyField = modelDef.userKeyFieldUserKey;
       if (userKeyField && payload[userKeyField] !== undefined) {
@@ -272,9 +287,67 @@ export class ModuleTestDataService {
         savedEntity = await entityRepo.save(entityRepo.create(payload));
       }
 
+      if (multiRelationPayload.length > 0) {
+        await this.seedMultiRelations(savedEntity.id, modelUserKey, multiRelationPayload, modelsByName);
+      }
+
       if (Object.keys(mediaPayload).length > 0) {
         await this.seedEntityMedia(savedEntity.id, modelUserKey, mediaPayload);
       }
+    }
+  }
+
+  private async seedMultiRelations(
+    entityId: number,
+    modelUserKey: string,
+    relations: Array<{ field: any; userKeys: string[] }>,
+    modelsByName: Map<string, CreateModelMetadataDto>,
+  ): Promise<void> {
+    for (const { field, userKeys } of relations) {
+      if (!userKeys.length) continue;
+
+      const coModelName = field.relationCoModelSingularName;
+      const coModelDef = modelsByName.get(coModelName);
+      if (!coModelDef) {
+        throw new Error(`Relation model "${coModelName}" not found in metadata for field ${modelUserKey}.${field.name}`);
+      }
+      const coUserKeyField = coModelDef.userKeyFieldUserKey;
+      if (!coUserKeyField) {
+        throw new Error(`Relation model "${coModelName}" is missing userKeyFieldUserKey, needed to resolve ${modelUserKey}.${field.name}`);
+      }
+
+      const coRepo = this.resolveRepository(coModelName);
+      const resolvedIds: number[] = [];
+      for (const uk of userKeys) {
+        const related = typeof coRepo.findOneByUserKey === 'function'
+          ? await coRepo.findOneByUserKey(uk)
+          : await coRepo.findOne({ where: { [coUserKeyField]: uk } });
+        if (!related) {
+          throw new Error(`Related entity not found: ${coModelName}.${coUserKeyField}=${uk}`);
+        }
+        resolvedIds.push(related.id);
+      }
+
+      // Load currently associated entities to diff (set semantics — idempotent)
+      const existingRelated: any[] = await this.entityManager
+        .createQueryBuilder()
+        .relation(classify(modelUserKey), field.name)
+        .of(entityId)
+        .loadMany();
+      const existingIds: number[] = existingRelated.map((e) => e.id);
+
+      const toAdd = resolvedIds.filter((id) => !existingIds.includes(id));
+      const toRemove = existingIds.filter((id) => !resolvedIds.includes(id));
+
+      if (toAdd.length > 0 || toRemove.length > 0) {
+        await this.entityManager
+          .createQueryBuilder()
+          .relation(classify(modelUserKey), field.name)
+          .of(entityId)
+          .addAndRemove(toAdd, toRemove);
+      }
+
+      this.logger.debug(`Seeded ${field.relationType} relation ${modelUserKey}.${field.name} entityId=${entityId}: +${toAdd.length} -${toRemove.length}`);
     }
   }
 
@@ -330,6 +403,10 @@ export class ModuleTestDataService {
       await storageProvider.storeStreams([[stream, fileName]], { id: entityId }, fieldMetadata);
       this.logger.debug(`Seeded media for ${modelUserKey}.${fieldName} entityId=${entityId} file=${fileName}`);
     }
+  }
+
+  private get entityManager(): EntityManager {
+    return this.moduleRef.get(EntityManager, { strict: false });
   }
 
   private get modelMetadataService(): ModelMetadataService {
@@ -390,7 +467,7 @@ export class ModuleTestDataService {
         if (!trimmed || trimmed.startsWith('#') || !trimmed.includes('=')) {
           return line;
         }
-        const [rawKey, ...rest] = line.split('=');
+        const [rawKey] = line.split('=');
         const key = rawKey.trim();
         if (!key.endsWith('_DATABASE_NAME')) {
           return line;
