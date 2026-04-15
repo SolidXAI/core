@@ -37,10 +37,10 @@ export class AgentEvent extends CommonEntity {
   @Column({ nullable: true })
   toolReturncode: number;
 
-  @Column({ nullable: true, ...getColumnType('float') })
+  @Column({ nullable: true, ...getColumnType('decimal') })
   durationMs: number;
 
-  @Column({ nullable: true, ...getColumnType('float') })
+  @Column({ nullable: true, ...getColumnType('decimal') })
   cost: number;
 
   @Column({ nullable: true })
