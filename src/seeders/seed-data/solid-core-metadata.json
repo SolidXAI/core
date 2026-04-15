@@ -5429,20 +5429,6 @@
         "userKeyFieldUserKey": "sessionId",
         "fields": [
           {
-            "name": "id",
-            "displayName": "ID",
-            "type": "int",
-            "ormType": "integer",
-            "columnName": "id",
-            "isPrimaryKey": true,
-            "required": false,
-            "unique": true,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
             "name": "sessionId",
             "displayName": "Session ID",
             "type": "shortText",
@@ -5580,32 +5566,6 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
-          },
-          {
-            "name": "createdAt",
-            "displayName": "Created At",
-            "type": "datetime",
-            "ormType": "timestamp without time zone",
-            "columnName": "created_at",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "updatedAt",
-            "displayName": "Updated At",
-            "type": "datetime",
-            "ormType": "timestamp without time zone",
-            "columnName": "updated_at",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
           }
         ]
       },
@@ -5627,20 +5587,6 @@
         "isSystem": true,
         "userKeyFieldUserKey": "id",
         "fields": [
-          {
-            "name": "id",
-            "displayName": "ID",
-            "type": "int",
-            "ormType": "integer",
-            "columnName": "id",
-            "isPrimaryKey": true,
-            "required": false,
-            "unique": true,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
           {
             "name": "sessionId",
             "displayName": "Session ID",
@@ -5846,19 +5792,6 @@
             "columnName": "model_used",
             "length": 255,
             "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "createdAt",
-            "displayName": "Created At",
-            "type": "datetime",
-            "ormType": "timestamp without time zone",
-            "columnName": "created_at",
-            "required": true,
             "unique": false,
             "index": false,
             "private": false,
