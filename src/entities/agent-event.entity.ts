@@ -1,88 +1,54 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
-import { Expose, Exclude } from 'class-transformer';
+import { Column, Entity, Index } from 'typeorm';
+import { CommonEntity } from 'src/entities/common.entity';
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
-@Exclude()
 @Entity({ name: 'ss_agent_events', synchronize: false })
-export class AgentEvent {
-  @Expose()
-  @PrimaryGeneratedColumn({ type: 'integer' })
-  id: number;
-
-  @Expose()
+export class AgentEvent extends CommonEntity {
   @Index()
-  @Column({ type: 'varchar', length: 36, name: 'session_id' })
+  @Column({ })
   sessionId: string;
 
-  @Expose()
-  @Column({ type: 'integer', name: 'turn_number' })
+  @Column({ })
   turnNumber: number;
 
-  @Expose()
-  @Column({ type: 'integer', nullable: true, name: 'step_number' })
+  @Column({ nullable: true })
   stepNumber: number;
 
-  @Expose()
   @Index()
-  @Column({ type: 'varchar', length: 64, name: 'event_type' })
+  @Column({ })
   eventType: string;
 
-  @Expose()
-  @Column({ type: 'text', nullable: true, name: 'event_data' })
-  eventData: string;
+  @Column({ type: "simple-json", nullable: true, ...getColumnType('simpleJsonLargeText') })
+  eventData: any;
 
-  @Expose()
-  @Column({ type: 'text', nullable: true, name: 'content' })
+  @Column({ nullable: true, ...getColumnType('longText') })
   content: string;
 
-  @Expose()
   @Index()
-  @Column({ type: 'varchar', length: 128, nullable: true, name: 'tool_name' })
+  @Column({ nullable: true })
   toolName: string;
 
-  @Expose()
-  @Column({ type: 'text', nullable: true, name: 'tool_arguments' })
+  @Column({ type: "simple-json", nullable: true, ...getColumnType('simpleJsonLargeText') })
   toolArguments: string;
 
-  @Expose()
-  @Column({ type: 'text', nullable: true, name: 'tool_output' })
+  @Column({ nullable: true, ...getColumnType('longText') })
   toolOutput: string;
 
-  @Expose()
-  @Column({ type: 'integer', nullable: true, name: 'tool_returncode' })
+  @Column({ nullable: true })
   toolReturncode: number;
 
-  @Expose()
-  @Column({ type: 'double precision', nullable: true, name: 'duration_ms' })
+  @Column({ nullable: true, ...getColumnType('float') })
   durationMs: number;
 
-  @Expose()
-  @Column({ type: 'double precision', nullable: true, name: 'cost' })
+  @Column({ nullable: true, ...getColumnType('float') })
   cost: number;
 
-  @Expose()
-  @Column({ type: 'integer', nullable: true, name: 'input_tokens' })
+  @Column({ nullable: true })
   inputTokens: number;
 
-  @Expose()
-  @Column({ type: 'integer', nullable: true, name: 'output_tokens' })
+  @Column({ nullable: true })
   outputTokens: number;
 
-  @Expose()
-  @Column({ type: 'varchar', length: 255, nullable: true, name: 'model_used' })
+  @Column({ nullable: true })
   modelUsed: string;
-
-  @Expose()
-  @Column({ type: 'timestamp without time zone', name: 'created_at' })
-  createdAt: Date;
-
-  // The following properties satisfy CRUDService<T extends CommonEntity> structural typing
-  // They are not mapped to DB columns (synchronize: false ensures no schema changes)
-  updatedAt: Date;
-  deletedAt: Date;
-  deletedTracker: string;
-  publishedAt: Date;
-  localeName: string;
-  defaultEntityLocaleId: number;
-  createdBy: number;
-  updatedBy: number;
 }
