@@ -1,5 +1,6 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
+import { Column, CreateDateColumn, Entity, Index, PrimaryGeneratedColumn, UpdateDateColumn } from 'typeorm';
 import { Expose, Exclude } from 'class-transformer';
+import { LocalDateTimeTransformer } from 'src/transformers/typeorm/local-date-time-transformer';
 
 @Exclude()
 @Entity({ name: 'ss_agent_sessions', synchronize: false })
@@ -52,11 +53,11 @@ export class AgentSession {
   summary: string;
 
   @Expose()
-  @Column({ type: 'timestamp without time zone', name: 'created_at' })
+  @CreateDateColumn({ name: 'created_at', transformer: LocalDateTimeTransformer })
   createdAt: Date;
 
   @Expose()
-  @Column({ type: 'timestamp without time zone', name: 'updated_at' })
+  @UpdateDateColumn({ name: 'updated_at', transformer: LocalDateTimeTransformer })
   updatedAt: Date;
 
   // The following properties satisfy CRUDService<T extends CommonEntity> structural typing
