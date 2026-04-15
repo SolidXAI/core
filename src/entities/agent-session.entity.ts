@@ -12,7 +12,7 @@ export class AgentSession extends CommonEntity {
   @Column({ nullable: true })
   userId: number;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, length: 1024 })
   projectRoot: string;
 
   @Column({ })
@@ -22,7 +22,7 @@ export class AgentSession extends CommonEntity {
   @Column({ })
   status: string;
 
-  @Column({ default: 0, ...getColumnType('float'),  })
+  @Column({ default: 0, ...getColumnType('float') })
   totalCost: number;
 
   @Column({ default: 0 })
@@ -34,6 +34,6 @@ export class AgentSession extends CommonEntity {
   @Column({ default: 0 })
   totalOutputTokens: number;
 
-  @Column({ nullable: true })
+  @Column({ nullable: true, ...getColumnType('longText') })
   summary: string;
 }
