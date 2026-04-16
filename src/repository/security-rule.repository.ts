@@ -81,9 +81,6 @@ export class SecurityRuleRepository extends SolidBaseRepository<SecurityRule> {
     }
 
     private resolveSecurityRuleConfig(configString: string, activeUser: ActiveUserData) {
-        if (!configString) {
-            return null;
-        }
         return configString.replace('$activeUserId', activeUser.sub.toString());
     }
 
