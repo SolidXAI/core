@@ -11,30 +11,30 @@ export abstract class LegacyCommonEntity {
     // @Generated("increment")
     // id: number
 
-    @CreateDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_created_at`, transformer: LocalDateTimeTransformer, nullable: true })
-    createdAt: Date | null;
+    @CreateDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_created_at`, transformer: LocalDateTimeTransformer })
+    createdAt: Date;
 
-    @UpdateDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_updated_at`, transformer: LocalDateTimeTransformer, nullable: true })
-    updatedAt: Date | null;
+    @UpdateDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_updated_at`, transformer: LocalDateTimeTransformer })
+    updatedAt: Date;
 
-    @DeleteDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_deleted_at`, transformer: LocalDateTimeTransformer, nullable: true })
+    @DeleteDateColumn({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_deleted_at`, transformer: LocalDateTimeTransformer })
     @Index()
-    deletedAt: Date | null;
+    deletedAt: Date;
 
-    @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_deleted_tracker`, default: "not-deleted", nullable: true })
-    deletedTracker: string | null;
+    @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_deleted_tracker`, default: "not-deleted" })
+    deletedTracker: string;
 
     @Expose()
     @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_published_at`, default: null, nullable: true, transformer: LocalDateTimeTransformer })
-    publishedAt: Date | null;
+    publishedAt: Date;
 
     @Expose()
-    @Column({ type: "varchar", name: `${LEGACY_TABLE_FIELDS_PREFIX}_locale_name`, default: null, nullable: true })
-    localeName: string | null;
+    @Column({ type: "varchar", name: `${LEGACY_TABLE_FIELDS_PREFIX}_locale_name`, default: null })
+    localeName: string;
 
     @Expose()
-    @Column({ type: "int", name: `${LEGACY_TABLE_FIELDS_PREFIX}_default_entity_locale_id`, default: null, nullable: true })
-    defaultEntityLocaleId: number | null;
+    @Column({ type: "int", name: `${LEGACY_TABLE_FIELDS_PREFIX}_default_entity_locale_id`, default: null })
+    defaultEntityLocaleId: number;
 
     // @Expose()
     // @Type( () => require('./user.entity').User?.default ?? require('./user.entity').User )
@@ -50,9 +50,9 @@ export abstract class LegacyCommonEntity {
 
     @Expose()
     @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_created_by_id`, nullable: true })
-    createdBy: number | null;
+    createdBy: number;
 
     @Expose()
     @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_updated_by_id`, nullable: true })
-    updatedBy: number | null;
+    updatedBy: number;
 }
