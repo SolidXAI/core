@@ -128,14 +128,25 @@ export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
     }
 
     private providerInstance<T extends ISelectionProviderContext>(selectionDynamicProvider: string): ISelectionProvider<T> {
-        const provider = this.options.discoveryService
-            .getProviders()
-            .filter((provider) => provider.name === selectionDynamicProvider)
-            .pop();
-        if (!provider) {
+        const providers = this.options.discoveryService.getProviders();
+
+        const byToken = providers.find((p) => p.name === selectionDynamicProvider);
+        if (byToken) {
+            return byToken.instance as ISelectionProvider<T>;
+        }
+
+        const byName = providers.find((p) => {
+            try {
+                return typeof p.instance?.name === 'function' && p.instance.name() === selectionDynamicProvider;
+            } catch {
+                return false;
+            }
+        });
+
+        if (!byName) {
             throw new Error(`Provider for ${selectionDynamicProvider} not found`);
         }
-        return provider.instance as ISelectionProvider<T>;
+        return byName.instance as ISelectionProvider<T>;
     }
 
     private isApplyRequiredValidation(): boolean {
