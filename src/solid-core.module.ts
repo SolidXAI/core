@@ -287,6 +287,7 @@ import { SettingRepository } from './repository/setting.repository';
 import { SmsTemplateRepository } from './repository/sms-template.repository';
 import { UserActivityHistoryRepository } from './repository/user-activity-history.repository';
 import { UserViewMetadataRepository } from './repository/user-view-metadata.repository';
+import { UserApiKeyRepository } from './repository/user-api-key.repository';
 import { UserRepository } from './repository/user.repository';
 import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
@@ -685,6 +686,7 @@ import { Entity } from 'typeorm';
     RoleMetadataService,
     PermissionMetadataSeederService,
     UserService,
+    UserApiKeyRepository,
     UserRepository,
     SettingService,
     ConcatComputedFieldProvider,

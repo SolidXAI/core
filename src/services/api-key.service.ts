@@ -5,23 +5,21 @@ import {
     NotFoundException,
     UnauthorizedException,
 } from '@nestjs/common';
-import { InjectRepository } from '@nestjs/typeorm';
 import { createHash, randomBytes } from 'crypto';
 import { CreateApiKeyDto } from 'src/dtos/create-api-key.dto';
 import { UpdateApiKeyDto } from 'src/dtos/update-api-key.dto';
 import { UserApiKey } from 'src/entities/user-api-key.entity';
 import { User } from 'src/entities/user.entity';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
+import { UserApiKeyRepository } from 'src/repository/user-api-key.repository';
 import { PermissionMetadataService } from 'src/services/permission-metadata.service';
-import { Repository } from 'typeorm';
 
 @Injectable()
 export class ApiKeyService {
     private readonly logger = new Logger(ApiKeyService.name);
 
     constructor(
-        @InjectRepository(UserApiKey)
-        private readonly apiKeyRepository: Repository<UserApiKey>,
+        private readonly apiKeyRepository: UserApiKeyRepository,
         private readonly permissionMetadataService: PermissionMetadataService,
     ) {}
 
@@ -59,6 +57,7 @@ export class ApiKeyService {
     async validate(rawKey: string): Promise<ActiveUserData> {
         const hashedKey = this.hash(rawKey);
 
+        // Bypass security rules for auth validation — must find the key regardless of caller context
         const keyRecord = await this.apiKeyRepository.findOne({
             where: { hashedKey, isActive: true },
             relations: ['user', 'user.roles'],
@@ -72,7 +71,7 @@ export class ApiKeyService {
             throw new UnauthorizedException('API key expired');
         }
 
-        // Update lastUsedAt without blocking the request
+        // Fire-and-forget — does not need security rule context
         this.apiKeyRepository.update(keyRecord.id, { lastUsedAt: new Date() }).catch((err) => {
             this.logger.warn(`Failed to update lastUsedAt for key ${keyRecord.id}: ${err.message}`);
         });
@@ -98,7 +97,12 @@ export class ApiKeyService {
             throw new NotFoundException('API key not found');
         }
 
-        await this.apiKeyRepository.update(id, { isActive: dto.isActive });
+        await this.apiKeyRepository.manager
+            .createQueryBuilder()
+            .update(UserApiKey)
+            .set({ isActive: dto.isActive })
+            .where('id = :id', { id })
+            .execute();
     }
 
     private hash(rawKey: string): string {

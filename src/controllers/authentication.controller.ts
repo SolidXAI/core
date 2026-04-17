@@ -121,6 +121,16 @@ export class AuthenticationController {
     }
 
     @ApiBearerAuth("jwt")
+    @Post('api-keys/users/:userId')
+    @HttpCode(HttpStatus.CREATED)
+    generateApiKeyForUser(
+        @Param('userId', ParseIntPipe) userId: number,
+        @Body() dto: CreateApiKeyDto,
+    ) {
+        return this.apiKeyService.generate(userId, dto);
+    }
+
+    @ApiBearerAuth("jwt")
     @Patch('api-keys/:id')
     @HttpCode(HttpStatus.OK)
     updateApiKey(
