@@ -53,51 +53,29 @@ export class MediaService extends CRUDService<Media> {
     if (data.records) {
 
       for (const media of data.records) {
-        if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-          media.relativeUri = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${this.getFullFilePathForDisk(media.relativeUri)}`;
-        } else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
-          media.relativeUri = this.getAwsS3FullFilePath(
-            media.relativeUri,
-            media.mediaStorageProviderMetadata.bucketName,
-            media.mediaStorageProviderMetadata.region
-          );
+        const mediaStorageProvider = media.mediaStorageProviderMetadata;
+
+        if (mediaStorageProvider?.type === MediaStorageProviderType.Filesystem) {
+          media.relativeUri = await this.diskFileService.getUrl(this.getFullFilePathForDisk(media.relativeUri));
+        } else if (mediaStorageProvider?.type === MediaStorageProviderType.AwsS3) {
+          media.relativeUri = await this.s3FileService.getUrl(`${mediaStorageProvider.bucketName}:${media.relativeUri}`, { region: mediaStorageProvider.region });
         }
       }
-      // data.records.forEach((media: Media) => {
-      //       if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-      //   media.relativeUri = `${process.env.BASE_URL}/${this.getFileSysytemFullFilePath(media.relativeUri)}`;
-      // } else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
-      //   media.relativeUri = this.getAwsS3FullFilePath(
-      //     media.relativeUri,
-      //     media.mediaStorageProviderMetadata.bucketName,
-      //     media.mediaStorageProviderMetadata.region
-      //   );
-      // }
-      // });
     }
     if (data.groupRecords) {
 
       for (const group of data.groupRecords) {
         for (const media of group.groupData.records) {
-          if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-            media.relativeUri = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${this.getFullFilePathForDisk(media.relativeUri)}`;
+          const mediaStorageProvider = media.mediaStorageProviderMetadata;
+
+          if (mediaStorageProvider?.type === MediaStorageProviderType.Filesystem) {
+            media.relativeUri = await this.diskFileService.getUrl(this.getFullFilePathForDisk(media.relativeUri));
           }
-          else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
-            media.relativeUri = this.getAwsS3FullFilePath(media.relativeUri, media.mediaStorageProviderMetadata.bucketName, media.mediaStorageProviderMetadata.region);
+          else if (mediaStorageProvider?.type === MediaStorageProviderType.AwsS3) {
+            media.relativeUri = await this.s3FileService.getUrl(`${mediaStorageProvider.bucketName}:${media.relativeUri}`, { region: mediaStorageProvider.region });
           }
         }
       }
-
-      // data.groupRecords.forEach((group) => {
-      //   group.groupData.records.forEach((media) => {
-      //     if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.Filesystem) {
-      //       media.relativeUri = `${process.env.BASE_URL}/${this.getFileSysytemFullFilePath(media.relativeUri)}`;
-      //     }
-      //     else if (media.mediaStorageProviderMetadata?.type === MediaStorageProviderType.AwsS3) {
-      //       media.relativeUri = this.getAwsS3FullFilePath(media.relativeUri, media.mediaStorageProviderMetadata.bucketName, media.mediaStorageProviderMetadata.region);
-      //     }
-      //   });
-      // });
     }
     return data
   }
@@ -172,24 +150,12 @@ export class MediaService extends CRUDService<Media> {
       }
     }
     );
-    // if (media.mediaStorageProviderMetadata.type === 'filesystem') {
-    //     const fileStorageProvider = new FileStorageProvider(this.configService, this.fileService, this);
-
-    //     await fileStorageProvider.delete(media, media.fieldMetadata);
-
-    // } else if (media.mediaStorageProviderMetadata.type === 'aws-s3') {
-    //     const fileStorageProvider = new FileS3StorageProvider(this.configService, this.fileService, this);
-    //     await fileStorageProvider.delete(media, media.fieldMetadata);
-
-    // } else {
-    // }
     const storageProviderType = media.mediaStorageProviderMetadata.type as MediaStorageProviderType;
     const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
     await storageProvider.delete(modelEntity, media.fieldMetadata);
 
     return this.repo.remove(media);
   }
-  //TODO: Move this to a app builder config
 
   private getFullFilePathForDisk(fileName: string): string {
     const base = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
@@ -198,11 +164,6 @@ export class MediaService extends CRUDService<Media> {
       return fileName;
     }
     return `${base}/${fileName}`;
-  }
-
-  private getAwsS3FullFilePath(awsMediaurl: string, bucketName: string, regionName: string): string {
-    // https://lunarismedia.s3.ap-south-1.amazonaws.com/LUNARIS_CP_REGISTRATION_CREATIVE.jpg
-    return `https://${bucketName}.s3.${regionName}.amazonaws.com/${awsMediaurl}`;
   }
 
   private getFileName(file: Express.Multer.File): string {

@@ -274,32 +274,6 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
           }
         }
 
-        // Include userKey from each related field
-        for (const [relatedFieldName, userKeyFieldName] of relatedModelsUserKeyMap.entries()) {
-          const relatedData = record[relatedFieldName];
-          const displayKey = fieldNameToDisplayName.get(relatedFieldName) ?? relatedFieldName;
-
-          if (Array.isArray(relatedData)) {
-            // For many-to-many or one-to-many
-            const values = relatedData
-              .map(item => {
-                let val = item?.[userKeyFieldName];
-                const relatedFieldMeta = modelFields.find(f => f.name === relatedFieldName);
-                if ((relatedFieldMeta?.type === 'datetime' || relatedFieldMeta?.type === 'date') && val) {
-                  val = new Date(val).toISOString();
-                }
-                return val;
-              })
-              .filter(Boolean);
-            newRecord[displayKey] = values.join(', ');
-          } else if (relatedData && typeof relatedData === 'object') {
-            // For many-to-one or one-to-one
-            newRecord[relatedFieldName] = relatedData?.[userKeyFieldName] ?? null;
-          } else {
-            newRecord[displayKey] = null;
-          }
-        }
-
         // Include userKey from each related field (with displayName)
         for (const [relatedFieldName, userKeyFieldName] of relatedModelsUserKeyMap.entries()) {
           const relatedData = record[relatedFieldName];

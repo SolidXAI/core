@@ -5429,24 +5429,9 @@
         "userKeyFieldUserKey": "sessionId",
         "fields": [
           {
-            "name": "id",
-            "displayName": "ID",
-            "type": "int",
-            "ormType": "integer",
-            "columnName": "id",
-            "isPrimaryKey": true,
-            "required": false,
-            "unique": true,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
             "name": "sessionId",
             "displayName": "Session ID",
             "type": "shortText",
-            "ormType": "varchar",
             "columnName": "session_id",
             "length": 36,
             "required": true,
@@ -5460,7 +5445,6 @@
             "name": "userId",
             "displayName": "User ID",
             "type": "int",
-            "ormType": "integer",
             "columnName": "user_id",
             "required": false,
             "unique": false,
@@ -5473,7 +5457,6 @@
             "name": "projectRoot",
             "displayName": "Project Root",
             "type": "longText",
-            "ormType": "text",
             "columnName": "project_root",
             "required": false,
             "unique": false,
@@ -5486,7 +5469,6 @@
             "name": "modelName",
             "displayName": "Model Name",
             "type": "shortText",
-            "ormType": "varchar",
             "columnName": "model_name",
             "length": 255,
             "required": true,
@@ -5500,7 +5482,6 @@
             "name": "status",
             "displayName": "Status",
             "type": "selectionStatic",
-            "ormType": "varchar",
             "columnName": "status",
             "length": 32,
             "required": true,
@@ -5516,7 +5497,6 @@
             "name": "totalCost",
             "displayName": "Total Cost",
             "type": "decimal",
-            "ormType": "double precision",
             "columnName": "total_cost",
             "required": true,
             "unique": false,
@@ -5530,7 +5510,6 @@
             "name": "totalSteps",
             "displayName": "Total Steps",
             "type": "int",
-            "ormType": "integer",
             "columnName": "total_steps",
             "required": true,
             "unique": false,
@@ -5544,7 +5523,6 @@
             "name": "totalInputTokens",
             "displayName": "Total Input Tokens",
             "type": "int",
-            "ormType": "integer",
             "columnName": "total_input_tokens",
             "required": true,
             "unique": false,
@@ -5558,7 +5536,6 @@
             "name": "totalOutputTokens",
             "displayName": "Total Output Tokens",
             "type": "int",
-            "ormType": "integer",
             "columnName": "total_output_tokens",
             "required": true,
             "unique": false,
@@ -5572,35 +5549,8 @@
             "name": "summary",
             "displayName": "Summary",
             "type": "longText",
-            "ormType": "text",
             "columnName": "summary",
             "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "createdAt",
-            "displayName": "Created At",
-            "type": "datetime",
-            "ormType": "timestamp without time zone",
-            "columnName": "created_at",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "updatedAt",
-            "displayName": "Updated At",
-            "type": "datetime",
-            "ormType": "timestamp without time zone",
-            "columnName": "updated_at",
-            "required": true,
             "unique": false,
             "index": false,
             "private": false,
@@ -5628,24 +5578,9 @@
         "userKeyFieldUserKey": "id",
         "fields": [
           {
-            "name": "id",
-            "displayName": "ID",
-            "type": "int",
-            "ormType": "integer",
-            "columnName": "id",
-            "isPrimaryKey": true,
-            "required": false,
-            "unique": true,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
             "name": "sessionId",
             "displayName": "Session ID",
             "type": "shortText",
-            "ormType": "varchar",
             "columnName": "session_id",
             "length": 36,
             "required": true,
@@ -5659,7 +5594,6 @@
             "name": "turnNumber",
             "displayName": "Turn Number",
             "type": "int",
-            "ormType": "integer",
             "columnName": "turn_number",
             "required": true,
             "unique": false,
@@ -5672,7 +5606,6 @@
             "name": "stepNumber",
             "displayName": "Step Number",
             "type": "int",
-            "ormType": "integer",
             "columnName": "step_number",
             "required": false,
             "unique": false,
@@ -5685,7 +5618,6 @@
             "name": "eventType",
             "displayName": "Event Type",
             "type": "selectionStatic",
-            "ormType": "varchar",
             "columnName": "event_type",
             "length": 64,
             "required": true,
@@ -5711,7 +5643,6 @@
             "name": "eventData",
             "displayName": "Event Data",
             "type": "json",
-            "ormType": "text",
             "columnName": "event_data",
             "required": false,
             "unique": false,
@@ -5724,7 +5655,6 @@
             "name": "content",
             "displayName": "Content",
             "type": "longText",
-            "ormType": "text",
             "columnName": "content",
             "required": false,
             "unique": false,
@@ -5737,7 +5667,6 @@
             "name": "toolName",
             "displayName": "Tool Name",
             "type": "shortText",
-            "ormType": "varchar",
             "columnName": "tool_name",
             "length": 128,
             "required": false,
@@ -5751,7 +5680,6 @@
             "name": "toolArguments",
             "displayName": "Tool Arguments",
             "type": "json",
-            "ormType": "text",
             "columnName": "tool_arguments",
             "required": false,
             "unique": false,
@@ -5764,7 +5692,6 @@
             "name": "toolOutput",
             "displayName": "Tool Output",
             "type": "longText",
-            "ormType": "text",
             "columnName": "tool_output",
             "required": false,
             "unique": false,
@@ -5777,7 +5704,6 @@
             "name": "toolReturncode",
             "displayName": "Tool Return Code",
             "type": "int",
-            "ormType": "integer",
             "columnName": "tool_returncode",
             "required": false,
             "unique": false,
@@ -5790,7 +5716,6 @@
             "name": "durationMs",
             "displayName": "Duration (ms)",
             "type": "decimal",
-            "ormType": "double precision",
             "columnName": "duration_ms",
             "required": false,
             "unique": false,
@@ -5803,7 +5728,6 @@
             "name": "cost",
             "displayName": "Cost",
             "type": "decimal",
-            "ormType": "double precision",
             "columnName": "cost",
             "required": false,
             "unique": false,
@@ -5816,7 +5740,6 @@
             "name": "inputTokens",
             "displayName": "Input Tokens",
             "type": "int",
-            "ormType": "integer",
             "columnName": "input_tokens",
             "required": false,
             "unique": false,
@@ -5829,7 +5752,6 @@
             "name": "outputTokens",
             "displayName": "Output Tokens",
             "type": "int",
-            "ormType": "integer",
             "columnName": "output_tokens",
             "required": false,
             "unique": false,
@@ -5842,23 +5764,9 @@
             "name": "modelUsed",
             "displayName": "Model Used",
             "type": "shortText",
-            "ormType": "varchar",
             "columnName": "model_used",
             "length": 255,
             "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "createdAt",
-            "displayName": "Created At",
-            "type": "datetime",
-            "ormType": "timestamp without time zone",
-            "columnName": "created_at",
-            "required": true,
             "unique": false,
             "index": false,
             "private": false,
@@ -6063,6 +5971,19 @@
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "media-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "media"
+    },
+    {
+      "displayName": "Media Card Action",
+      "name": "media-card-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "media-card-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "media"
     },
@@ -9015,7 +8936,7 @@
           "delete": true,
           "allowedViews": [
             "list",
-            "kanban"
+            "card"
           ]
         },
         "children": [
@@ -9059,111 +8980,94 @@
       }
     },
     {
-      "name": "media-kanban-view",
-      "displayName": "Media Kanban",
-      "type": "kanban",
+      "name": "media-card-view",
+      "displayName": "Media Card",
+      "type": "card",
       "context": "{}",
       "moduleUserKey": "solid-core",
       "modelUserKey": "media",
       "layout": {
-        "type": "kanban",
+        "type": "card",
         "attrs": {
-          "swimlanesCount": 10,
-          "recordsInSwimlane": 20,
+          "pagination": true,
+          "pageSize": 24,
+          "pageSizeOptions": [
+            12,
+            24,
+            48
+          ],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
           "delete": true,
-          "groupBy": "mimeType",
-          "grouped": false,
-          "draggable": true,
           "allowedViews": [
             "list",
-            "kanban"
+            "card"
           ]
         },
         "children": [
           {
             "type": "card",
             "attrs": {
-              "name": "Card"
+              "name": "Card",
+              "cardWidget": "MediaCardWidget"
             },
             "children": [
               {
-                "type": "row",
+                "type": "field",
                 "attrs": {
-                  "name": "row-1",
-                  "label": "",
-                  "className": "row"
-                },
-                "children": [
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "col-1",
-                      "label": "",
-                      "className": "col-12"
-                    },
-                    "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "mimeType",
-                          "label": "mimeType"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "relativeUri",
-                          "label": "relativeUri",
-                          "widget": "image"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "originalFileName",
-                          "label": "originalFileName"
-                        }
-                      }
-                    ]
-                  }
-                ]
+                  "name": "relativeUri",
+                  "label": "relativeUri",
+                  "widget": "image",
+                  "isSearchable": true
+                }
               },
               {
-                "type": "row",
+                "type": "field",
                 "attrs": {
-                  "name": "row-2",
-                  "label": "",
-                  "className": "row"
-                },
-                "children": [
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "col-1",
-                      "label": "",
-                      "className": "col-12"
-                    },
-                    "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "fileSize",
-                          "label": "fileSize"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "mediaStorageProviderMetadata",
-                          "label": "mediaStorageProviderMetadata"
-                        }
-                      }
-                    ]
-                  }
-                ]
+                  "name": "originalFileName",
+                  "label": "originalFileName",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "mimeType",
+                  "label": "mimeType",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "fileSize",
+                  "label": "fileSize"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "modelMetadata",
+                  "label": "modelMetadata",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "mediaStorageProviderMetadata",
+                  "label": "mediaStorageProviderMetadata",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "fieldMetadata",
+                  "label": "fieldMetadata",
+                  "isSearchable": true
+                }
               }
             ]
           }
@@ -10513,7 +10417,98 @@
             "attrs": {
               "name": "Card",
               "cardWidget": "MqMessageKanbanCardWidget"
-            }
+            },
+            "children": [
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "messageId",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "messageBroker",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "messageType",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "stage",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "startedAt",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "finishedAt",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "elapsedMillis",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "retryCount"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "retryInterval"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "parentEntityId",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "parentEntity",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "error"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "mqMessageQueue",
+                  "label": "Queue",
+                  "isSearchable": true
+                }
+              }
+            ]
           }
         ]
       }

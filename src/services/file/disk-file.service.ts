@@ -44,7 +44,7 @@ export class DiskFileService implements IFileService {
   async write(filePath: string, data: Buffer | string, options?: WriteOptions): Promise<string> {
     await this.ensureDirectoryExists(filePath);
     await fsPromises.writeFile(filePath, data);
-    return `${this.baseUrl}/${filePath}`;
+    return this.buildUrl(filePath);
   }
 
   /**
@@ -57,7 +57,7 @@ export class DiskFileService implements IFileService {
     const writeStream = fs.createWriteStream(filePath);
     await pipeline(stream, writeStream);
     this.logger.debug(`File saved via stream: ${filePath}`);
-    return `${this.baseUrl}/${filePath}`;
+    return this.buildUrl(filePath);
   }
 
   /**
@@ -97,13 +97,10 @@ export class DiskFileService implements IFileService {
   }
 
   /**
-   * Get an accessible URL/path for the file
-   * For disk storage, returns the file path as-is
+   * Get an accessible URL for the file
    */
   async getUrl(filePath: string, options?: UrlOptions): Promise<string> {
-    // For disk storage, we simply return the path
-    // The caller is responsible for constructing a full URL if needed
-    return filePath;
+    return this.buildUrl(filePath);
   }
 
   /**
@@ -116,5 +113,16 @@ export class DiskFileService implements IFileService {
     } catch {
       await fsPromises.mkdir(dir, { recursive: true });
     }
+  }
+
+  private buildUrl(filePath: string): string {
+    const normalizedBaseUrl = this.baseUrl.replace(/\/+$/, '');
+    const normalizedPath = filePath.replace(/^\/+/, '');
+
+    if (!normalizedBaseUrl) {
+      return `/${normalizedPath}`;
+    }
+
+    return `${normalizedBaseUrl}/${normalizedPath}`;
   }
 }

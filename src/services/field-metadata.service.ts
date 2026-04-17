@@ -18,7 +18,6 @@ import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import qs from 'qs';
 import { ResolveS3UrlDto } from 'src/dtos/resolve-s3-url.dto';
 import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
-import { ConfigService } from '@nestjs/config';
 import { S3FileService } from './file';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
 
@@ -27,7 +26,6 @@ import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provide
 export class FieldMetadataService implements OnApplicationBootstrap {
     constructor(
         private readonly fieldMetadataRepo: FieldMetadataRepository,
-        private readonly configService: ConfigService,
         private readonly fileService: S3FileService,
         private readonly mediaStorageProviderMetadataRepository: MediaStorageProviderMetadataRepository,
 
@@ -1291,7 +1289,6 @@ export class FieldMetadataService implements OnApplicationBootstrap {
     }
 
     async resolveS3Url(resolveS3UrlDto: ResolveS3UrlDto) {
-        let url = "";
         const normalizedKey = this.normalizeS3Key(resolveS3UrlDto.s3Key);
 
         let resolvedBucketName = resolveS3UrlDto.bucketName;
@@ -1308,14 +1305,11 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         }
         this.logger.debug(`INSIDE::resolveS3Url:: resolvedBucketName: ${resolvedBucketName}`)
 
-        if (resolveS3UrlDto.isPrivate == "true") {
-            const expiryInSeconds = 60 * 60;
-            url = await this.fileService.getUrl(`${resolvedBucketName}:${normalizedKey}`, { expiresIn: expiryInSeconds });
-        } else {
-            url = `https://${resolvedBucketName}.s3.${this.configService.get(
-                'S3_AWS_REGION_NAME',
-            )}.amazonaws.com/${normalizedKey}`;
-        }
+        const expiryInSeconds = resolveS3UrlDto.isPrivate == "true" ? 60 * 60 : 0;
+        const url = await this.fileService.getUrl(`${resolvedBucketName}:${normalizedKey}`, {
+            expiresIn: expiryInSeconds,
+        });
+
         return { url: url }
     }
 
@@ -1331,5 +1325,4 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         }
     }
 }
-
 

@@ -119,7 +119,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'selection_static_values', nullable: true, type: 'simple-array' })
     selectionStaticValues: string[];
 
-    @Column({ name: 'selection_value_type', nullable: true })
+    @Column({ name: 'selection_value_type', nullable: true, default: 'string' })
     selectionValueType: string = 'string';
 
     // @Column({ name: "computed", default: false })
