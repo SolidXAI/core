@@ -5490,7 +5490,7 @@
             "private": false,
             "encrypt": false,
             "isSystem": true,
-            "selectionStaticValues": ["active", "completed", "failed", "cancelled"],
+            "selectionStaticValues": ["active:Active", "completed:Completed", "failed:Failed", "cancelled:Cancelled"],
             "selectionValueType": "string"
           },
           {
@@ -5627,15 +5627,15 @@
             "encrypt": false,
             "isSystem": true,
             "selectionStaticValues": [
-              "user_message",
-              "assistant_message",
-              "tool_use",
-              "tool_result",
-              "system_prompt",
-              "thinking",
-              "error",
-              "session_start",
-              "session_end"
+              "user_message:User Message",
+              "assistant_message:Assistant Message",
+              "tool_use:Tool Use",
+              "tool_result:Tool Result",
+              "system_prompt:System Prompt",
+              "thinking:Thinking",
+              "error:Error",
+              "session_start:Session Start",
+              "session_end:Session End"
             ],
             "selectionValueType": "string"
           },
@@ -13601,9 +13601,9 @@
           "pagination": true,
           "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
-          "create": false,
+          "create": true,
           "edit": true,
-          "delete": false
+          "delete": true
         },
         "children": [
           { "type": "field", "attrs": { "name": "sessionId", "isSearchable": true } },
@@ -13659,9 +13659,7 @@
                       { "type": "field", "attrs": { "name": "totalSteps" } },
                       { "type": "field", "attrs": { "name": "totalCost" } },
                       { "type": "field", "attrs": { "name": "totalInputTokens" } },
-                      { "type": "field", "attrs": { "name": "totalOutputTokens" } },
-                      { "type": "field", "attrs": { "name": "createdAt" } },
-                      { "type": "field", "attrs": { "name": "updatedAt" } }
+                      { "type": "field", "attrs": { "name": "totalOutputTokens" } }
                     ]
                   }
                 ]
@@ -13697,9 +13695,9 @@
           "pagination": true,
           "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
-          "create": false,
-          "edit": false,
-          "delete": false
+          "create": true,
+          "edit": true,
+          "delete": true
         },
         "children": [
           { "type": "field", "attrs": { "name": "id" } },
@@ -13760,8 +13758,7 @@
                       { "type": "field", "attrs": { "name": "cost" } },
                       { "type": "field", "attrs": { "name": "inputTokens" } },
                       { "type": "field", "attrs": { "name": "outputTokens" } },
-                      { "type": "field", "attrs": { "name": "toolReturncode" } },
-                      { "type": "field", "attrs": { "name": "createdAt" } }
+                      { "type": "field", "attrs": { "name": "toolReturncode" } }
                     ]
                   }
                 ]
