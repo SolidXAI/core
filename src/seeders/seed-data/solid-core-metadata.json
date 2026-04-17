@@ -5490,7 +5490,7 @@
             "private": false,
             "encrypt": false,
             "isSystem": true,
-            "selectionStaticValues": ["active", "completed", "failed", "cancelled"],
+            "selectionStaticValues": ["active:Active", "completed:Completed", "failed:Failed", "cancelled:Cancelled"],
             "selectionValueType": "string"
           },
           {
@@ -5627,15 +5627,15 @@
             "encrypt": false,
             "isSystem": true,
             "selectionStaticValues": [
-              "user_message",
-              "assistant_message",
-              "tool_use",
-              "tool_result",
-              "system_prompt",
-              "thinking",
-              "error",
-              "session_start",
-              "session_end"
+              "user_message:User Message",
+              "assistant_message:Assistant Message",
+              "tool_use:Tool Use",
+              "tool_result:Tool Result",
+              "system_prompt:System Prompt",
+              "thinking:Thinking",
+              "error:Error",
+              "session_start:Session Start",
+              "session_end:Session End"
             ],
             "selectionValueType": "string"
           },
@@ -13601,9 +13601,9 @@
           "pagination": true,
           "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
-          "create": false,
+          "create": true,
           "edit": true,
-          "delete": false
+          "delete": true
         },
         "children": [
           { "type": "field", "attrs": { "name": "sessionId", "isSearchable": true } },
@@ -13697,9 +13697,9 @@
           "pagination": true,
           "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
-          "create": false,
-          "edit": false,
-          "delete": false
+          "create": true,
+          "edit": true,
+          "delete": true
         },
         "children": [
           { "type": "field", "attrs": { "name": "id" } },
