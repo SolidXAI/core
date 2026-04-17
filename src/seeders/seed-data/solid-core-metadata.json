@@ -7969,11 +7969,11 @@
             }
           },
           {
-              "type": "field",
-              "attrs": {
-                "name": "coModelName"
-              }
-            },
+            "type": "field",
+            "attrs": {
+              "name": "coModelName"
+            }
+          },
           {
             "type": "field",
             "attrs": {
@@ -10640,6 +10640,7 @@
       "modelUserKey": "mqMessage",
       "layout": {
         "type": "form",
+        "onFormLoad": "mqMessageOnFormLoadHandler",
         "attrs": {
           "name": "form-1",
           "label": "Mq Message",
