@@ -1,71 +1,39 @@
-import { Column, Entity, Index, PrimaryGeneratedColumn } from 'typeorm';
-import { Expose, Exclude } from 'class-transformer';
+import { Column, Entity, Index } from 'typeorm';
+import { CommonEntity } from 'src/entities/common.entity';
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
-@Exclude()
 @Entity({ name: 'ss_agent_sessions', synchronize: false })
-export class AgentSession {
-  @Expose()
-  @PrimaryGeneratedColumn({ type: 'integer' })
-  id: number;
-
-  @Expose()
+export class AgentSession extends CommonEntity {
   @Index({ unique: true })
-  @Column({ type: 'varchar', length: 36, name: 'session_id' })
+  @Column({ })
   sessionId: string;
 
-  @Expose()
   @Index()
-  @Column({ type: 'integer', nullable: true, name: 'user_id' })
+  @Column({ nullable: true })
   userId: number;
 
-  @Expose()
-  @Column({ type: 'text', nullable: true, name: 'project_root' })
+  @Column({ nullable: true, ...getColumnType('longText') })
   projectRoot: string;
 
-  @Expose()
-  @Column({ type: 'varchar', length: 255, name: 'model_name' })
+  @Column({ })
   modelName: string;
 
-  @Expose()
   @Index()
-  @Column({ type: 'varchar', length: 32, name: 'status' })
+  @Column({ })
   status: string;
 
-  @Expose()
-  @Column({ type: 'double precision', name: 'total_cost', default: 0 })
+  @Column({ default: 0, ...getColumnType('decimal') })
   totalCost: number;
 
-  @Expose()
-  @Column({ type: 'integer', name: 'total_steps', default: 0 })
+  @Column({ default: 0 })
   totalSteps: number;
 
-  @Expose()
-  @Column({ type: 'integer', name: 'total_input_tokens', default: 0 })
+  @Column({ default: 0 })
   totalInputTokens: number;
 
-  @Expose()
-  @Column({ type: 'integer', name: 'total_output_tokens', default: 0 })
+  @Column({ default: 0 })
   totalOutputTokens: number;
 
-  @Expose()
-  @Column({ type: 'text', nullable: true, name: 'summary' })
+  @Column({ nullable: true, ...getColumnType('longText') })
   summary: string;
-
-  @Expose()
-  @Column({ type: 'timestamp without time zone', name: 'created_at' })
-  createdAt: Date;
-
-  @Expose()
-  @Column({ type: 'timestamp without time zone', name: 'updated_at' })
-  updatedAt: Date;
-
-  // The following properties satisfy CRUDService<T extends CommonEntity> structural typing
-  // They are not mapped to DB columns (synchronize: false ensures no schema changes)
-  deletedAt: Date;
-  deletedTracker: string;
-  publishedAt: Date;
-  localeName: string;
-  defaultEntityLocaleId: number;
-  createdBy: number;
-  updatedBy: number;
 }

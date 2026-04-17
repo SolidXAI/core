@@ -127,7 +127,7 @@ export async function bootstrapSolidApp(
 
   // Swagger
   if (swagger !== false) {
-    const { title = 'Solid Starters', description = 'Solid Starters API', version = '1.0' } = swagger;
+    const { title = process.env.SOLID_APP_NAME, description = process.env.SOLID_APP_DESCRIPTION, version = '1.0' } = swagger;
     const swaggerConfig = new DocumentBuilder()
       .setTitle(title)
       .setDescription(description)

@@ -102,8 +102,9 @@ export class UserService extends CRUDService<User> {
     if (!user) {
       throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
     }
-    const roles = updateDto.roles ? updateDto.roles : [];
-    await this.addRolesToUser(user.username, roles);
+    if (updateDto.roles != null) {
+      await this.addRolesToUser(user.username, updateDto.roles);
+    }
     await this.update(id, updateDto, files, true);
   }
 
