@@ -10,6 +10,7 @@ import { UpdateApiKeyDto } from '../dtos/update-api-key.dto';
 import { InitiateForgotPasswordDto } from '../dtos/initiate-forgot-password.dto';
 import { RefreshTokenDto } from '../dtos/refresh-token.dto';
 import { SignInDto } from '../dtos/sign-in.dto';
+import { RegisterPrivateDto } from '../dtos/register-private.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
 import { ApiKeyService } from '../services/api-key.service';
@@ -38,7 +39,7 @@ export class AuthenticationController {
 
     @ApiBearerAuth("jwt")
     @Post('register-private')
-    signUpPrivate(@Body() signUpDto: SignUpDto, @ActiveUser() activeUser: ActiveUserData) {
+    signUpPrivate(@Body() signUpDto: RegisterPrivateDto, @ActiveUser() activeUser: ActiveUserData) {
         return this.authService.signUp(signUpDto, activeUser);
     }
 
