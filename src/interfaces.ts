@@ -70,6 +70,7 @@ export interface SettingDefinition<T = any> {
   key: string;
   value: T;
   level: SettingLevel;
+  encrypted?: boolean;
 }
 
 // solid-core/settings/settings-provider.interface.ts
