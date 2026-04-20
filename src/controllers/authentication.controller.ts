@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Param, ParseIntPipe, Patch, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Param, ParseIntPipe, Patch, Post, Res, Headers } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ActiveUser } from "../decorators/active-user.decorator";
@@ -9,6 +9,7 @@ import { CreateApiKeyDto } from '../dtos/create-api-key.dto';
 import { UpdateApiKeyDto } from '../dtos/update-api-key.dto';
 import { InitiateForgotPasswordDto } from '../dtos/initiate-forgot-password.dto';
 import { RefreshTokenDto } from '../dtos/refresh-token.dto';
+import { SsoExchangeDto } from '../dtos/sso-exchange.dto';
 import { SignInDto } from '../dtos/sign-in.dto';
 import { RegisterPrivateDto } from '../dtos/register-private.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
@@ -139,5 +140,22 @@ export class AuthenticationController {
         @ActiveUser() activeUser: ActiveUserData,
     ) {
         return this.apiKeyService.updateKey(id, activeUser.sub, dto);
+    }
+
+    @Post('sso/code')
+    @HttpCode(HttpStatus.OK)
+    generateSsoCode(
+        @ActiveUser() activeUser: ActiveUserData,   
+        @Headers('authorization') authorization: string,
+    ) {
+        const rawAccessToken = authorization?.replace(/^Bearer\s+/i, '');
+        return this.authService.generateSsoCode(activeUser, rawAccessToken);
+    }
+
+    @Public()
+    @Post('sso/exchange')
+    @HttpCode(HttpStatus.OK)
+    exchangeSsoCode(@Body() ssoExchangeDto: SsoExchangeDto) {
+        return this.authService.exchangeSsoCode(ssoExchangeDto.code);
     }
 }

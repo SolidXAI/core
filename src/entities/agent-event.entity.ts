@@ -2,7 +2,7 @@ import { Column, Entity, Index } from 'typeorm';
 import { CommonEntity } from 'src/entities/common.entity';
 import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
-@Entity({ name: 'ss_agent_events', synchronize: false })
+@Entity({ name: 'ss_agent_events' })
 export class AgentEvent extends CommonEntity {
   @Index()
   @Column({ })
