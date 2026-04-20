@@ -1,4 +1,4 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Post, Res } from '@nestjs/common';
+import { Body, Controller, Get, Headers, HttpCode, HttpStatus, Logger, Post, Res } from '@nestjs/common';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ActiveUser } from "../decorators/active-user.decorator";
@@ -7,6 +7,7 @@ import { ChangePasswordDto } from "../dtos/change-password.dto";
 import { ConfirmForgotPasswordDto } from '../dtos/confirm-forgot-password.dto';
 import { InitiateForgotPasswordDto } from '../dtos/initiate-forgot-password.dto';
 import { RefreshTokenDto } from '../dtos/refresh-token.dto';
+import { SsoExchangeDto } from '../dtos/sso-exchange.dto';
 import { SignInDto } from '../dtos/sign-in.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
@@ -101,5 +102,23 @@ export class AuthenticationController {
     @HttpCode(HttpStatus.OK)
     async logout(@Body('refreshToken') refreshToken: string) {
         return this.authService.logout(refreshToken);
+    }
+
+    @ApiBearerAuth("jwt")
+    @Post('sso/code')
+    @HttpCode(HttpStatus.OK)
+    generateSsoCode(
+        @ActiveUser() activeUser: ActiveUserData,
+        @Headers('authorization') authorization: string,
+    ) {
+        const rawAccessToken = authorization?.replace(/^Bearer\s+/i, '');
+        return this.authService.generateSsoCode(activeUser, rawAccessToken);
+    }
+
+    @Public()
+    @Post('sso/exchange')
+    @HttpCode(HttpStatus.OK)
+    exchangeSsoCode(@Body() ssoExchangeDto: SsoExchangeDto) {
+        return this.authService.exchangeSsoCode(ssoExchangeDto.code);
     }
 }
