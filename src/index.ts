@@ -315,6 +315,7 @@ export * from './services/user.service'
 export * from './services/view-metadata.service'
 export * from './services/whatsapp/Msg91WhatsappService' //rename
 export * from './services/setting.service'
+export * from './services/encryption.service'
 export * from './services/info.service'
 export * from './controllers/info.controller'
 export * from './services/settings/default-settings-provider.service'
