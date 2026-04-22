@@ -6,7 +6,7 @@ import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../../interfaces";
 import chatterQueueOptions from './chatter-queue-options';
-import { AuditQueuePayload } from './chatter-queue-publisher.service';
+import { AuditQueuePayload } from '../../interfaces';
 import { ChatterMessageService } from 'src/services/chatter-message.service';
 
 @Injectable()

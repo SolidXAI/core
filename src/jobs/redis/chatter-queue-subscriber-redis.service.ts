@@ -6,7 +6,7 @@ import chatterQueueConfig from './chatter-queue-options-redis';
 import { MqMessageService } from '../../services/mq-message.service';
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { QueuesModuleOptions } from "../../interfaces";
-import { AuditQueuePayload } from '../rabbitmq/chatter-queue-publisher.service';
+import { AuditQueuePayload } from '../../interfaces';
 import { ChatterMessageService } from '../../services/chatter-message.service';
 
 @Injectable()

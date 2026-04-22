@@ -396,3 +396,18 @@ export interface AwsS3Config {
 
 // Prevents inference so callers must provide explicit type arguments; reusable for other APIs.
 export type NoInfer<T> = [T][T extends any ? 0 : never];
+
+export type AuditEventType = 'insert' | 'update' | 'delete';
+
+export interface AuditQueuePayload {
+    eventType: AuditEventType;
+    modelName: string;
+    entityId: string | number | null;
+    occurredAt: string;
+    after?: any;
+    before?: any;
+    updatedColumnNames?: string[];
+    userId?: number | null;
+}
+
+
