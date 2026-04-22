@@ -35,8 +35,8 @@ const getSolidCoreSettings = (isProd: boolean) => ([
   {
     moduleName: "solid-core", key: "solidXGenAiCodeBuilderConfig", value: JSON.stringify({
       models: {
-        default: { providerKey: "", behavior: { streaming: false, custom: "" } },
-        fast: { providerKey: "", behavior: { streaming: false, custom: "" } },
+        default: { providerId: "", model: "", behavior: { streaming: false, custom: "" } },
+        fast: { providerId: "", model: "", behavior: { streaming: false, custom: "" } },
       },
       providers: {},
     }), level: SettingLevel.SystemAdminEditable, encrypted: true
