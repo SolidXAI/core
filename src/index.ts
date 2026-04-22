@@ -148,6 +148,7 @@ export * from './entities/dashboard-layout.entity'
 export * from './entities/dashboard-question-sql-dataset-config.entity'
 export * from './entities/ai-interaction.entity'
 export * from './entities/model-sequence.entity'
+export * from './entities/user-api-key.entity'
 
 export * from './enums/auth-type.enum'
 export * from './decorators/disallow-in-production.decorator'
