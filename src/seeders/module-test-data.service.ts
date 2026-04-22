@@ -13,8 +13,13 @@ import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider
 import { getDynamicModuleNamesBasedOnMetadata } from 'src/helpers/module.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { MediaRepository } from 'src/repository/media.repository';
+import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
+import { AuthenticationService } from 'src/services/authentication.service';
 import { ModelMetadataService } from 'src/services/model-metadata.service';
+import { RoleMetadataService } from 'src/services/role-metadata.service';
+import { UserService } from 'src/services/user.service';
 import { getMediaStorageProvider } from 'src/services/mediaStorageProviders';
+import { TestingRoleSpec, TestingUserSpec } from 'src/testing/contracts/testing-metadata.types';
 
 @Injectable()
 export class ModuleTestDataService {
@@ -191,7 +196,17 @@ export class ModuleTestDataService {
 
     // console.log(JSON.stringify(moduleMetadata, null, 2));
 
+    const testingRoles: TestingRoleSpec[] = overallMetadata?.testing?.roles ?? [];
+    const testingUsers: TestingUserSpec[] = overallMetadata?.testing?.users ?? [];
     const testingData: Array<{ modelUserKey: string; data: Record<string, any> }> = overallMetadata?.testing?.data ?? [];
+
+    if (testingRoles.length > 0) {
+      await this.seedTestRoles(testingRoles);
+    }
+    if (testingUsers.length > 0) {
+      await this.seedTestUsers(testingUsers);
+    }
+
     if (testingData.length === 0) {
       this.logger.debug(`No test data found for ${moduleMetadata.name}`);
       return;
@@ -294,6 +309,97 @@ export class ModuleTestDataService {
       if (Object.keys(mediaPayload).length > 0) {
         await this.seedEntityMedia(savedEntity.id, modelUserKey, mediaPayload);
       }
+    }
+  }
+
+  private async seedTestRoles(roles: TestingRoleSpec[]): Promise<void> {
+    const roleService = this.moduleRef.get(RoleMetadataService, { strict: false });
+    if (!roleService) {
+      throw new Error('RoleMetadataService not available — cannot seed test roles.');
+    }
+
+    await roleService.createRolesIfNotExists(roles.map((r) => ({ name: r.name } as any)));
+
+    for (const role of roles) {
+      const perms = role.permissions ?? [];
+      if (perms.length === 0) continue;
+
+      if (perms.some((p) => p === '*')) {
+        await roleService.addAllPermissionsToRole(role.name);
+        this.logger.log(`Bound all permissions to test role "${role.name}"`);
+        continue;
+      }
+
+      const expanded = await this.expandPermissionNames(perms);
+      if (expanded.length === 0) {
+        this.logger.warn(`Test role "${role.name}" has permissions declared but none resolved — skipping binding.`);
+        continue;
+      }
+
+      try {
+        await roleService.addPermissionsToRole(role.name, expanded);
+      } catch (err: any) {
+        throw new Error(
+          `Failed to bind permissions to test role "${role.name}": ${err?.message ?? err}. ` +
+          `Did you run "solid seed" first so controller permissions are registered?`,
+        );
+      }
+      this.logger.log(`Bound ${expanded.length} permissions to test role "${role.name}"`);
+    }
+  }
+
+  private async expandPermissionNames(permissions: string[]): Promise<string[]> {
+    const permissionRepo = this.moduleRef.get(PermissionMetadataRepository, { strict: false });
+    if (!permissionRepo) {
+      throw new Error('PermissionMetadataRepository not available — cannot resolve test role permissions.');
+    }
+
+    const exact = new Set<string>();
+    const prefixes: string[] = [];
+    for (const entry of permissions) {
+      if (!entry) continue;
+      if (entry.endsWith('.*')) {
+        prefixes.push(entry.slice(0, -1));
+      } else {
+        exact.add(entry);
+      }
+    }
+
+    if (prefixes.length > 0) {
+      const allPermissions = await permissionRepo.find();
+      for (const p of allPermissions) {
+        if (prefixes.some((prefix) => p.name.startsWith(prefix))) {
+          exact.add(p.name);
+        }
+      }
+    }
+
+    return Array.from(exact);
+  }
+
+  private async seedTestUsers(users: TestingUserSpec[]): Promise<void> {
+    const userService = this.moduleRef.get(UserService, { strict: false });
+    const authService = this.moduleRef.get(AuthenticationService, { strict: false });
+    if (!userService || !authService) {
+      throw new Error('UserService / AuthenticationService not available — cannot seed test users.');
+    }
+
+    for (const user of users) {
+      const existing = await userService.findOneByUsername(user.username);
+      if (existing) {
+        this.logger.debug(`Test user "${user.username}" already exists — skipping signUp.`);
+        continue;
+      }
+
+      await authService.signUp({
+        username: user.username,
+        email: user.email,
+        password: user.password,
+        fullName: user.fullName,
+        mobile: user.mobile,
+        roles: user.roles,
+      });
+      this.logger.log(`Created test user "${user.username}"${user.roles?.length ? ` with roles [${user.roles.join(', ')}]` : ''}`);
     }
   }
 
