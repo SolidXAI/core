@@ -2,7 +2,7 @@ import { Injectable, Logger, Scope } from '@nestjs/common';
 import { lowerFirst } from 'src/helpers/string.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { DataSource, EntityMetadata, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
-import { AuditQueuePayload } from 'src/jobs/chatter-queue-publisher.service';
+import { AuditQueuePayload } from 'src/interfaces';
 import { RequestContextService } from 'src/services/request-context.service';
 import { PublisherFactory } from 'src/services/queues/publisher-factory.service';
 

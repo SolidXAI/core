@@ -551,6 +551,7 @@ export class ModelMetadataService {
     return removedEntities
   }
 
+  @DisallowInProduction()
   async remove(id: number) {
     const entity = await this.findOne(id);
     await this.cleanupOnDelete(entity.id);

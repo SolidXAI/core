@@ -144,7 +144,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
         .leftJoinAndSelect('action.view', 'view')
         .where('model.id = :modelId', { modelId: menuItemModelId })
         .andWhere('module.id = :moduleId', { moduleId: menuItemModuleId })
-        .andWhere('view.type IN (:...viewTypes)', { viewTypes: ['list', 'kanban', 'tree'] })
+        .andWhere('view.type IN (:...viewTypes)', { viewTypes: ['card', 'list', 'kanban', 'tree'] })
         .getMany();
 
       viewModes = actionsForViewModes.map(actionItem => ({

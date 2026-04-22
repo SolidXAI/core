@@ -1,17 +1,8 @@
-import { IsEmail, IsNotEmpty, IsOptional, MinLength } from 'class-validator';
+import { IsBoolean, IsOptional } from 'class-validator';
+import { SignUpDto } from './sign-up.dto';
 
-export class RegisterPrivateDto {
-    @IsNotEmpty()
-    username: string;
-
-    @IsEmail()
-    @IsNotEmpty()
-    email: string;
-
+export class RegisterPrivateDto extends SignUpDto {
+    @IsBoolean()
     @IsOptional()
-    mobile?: string;
-
-    @IsOptional()
-    @MinLength(10)
-    password?: string;
+    isAllowedToGenerateApiKeys?: boolean;
 }

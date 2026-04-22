@@ -32,6 +32,14 @@ const SIMPLE_JSON_LARGE_TEXT_MAP: Record<DatasourceType, ColumnOptions> = {
     [DatasourceType.oracle]: { type: "clob" },
 };
 
+const DECIMAL_MAP: Record<DatasourceType, ColumnOptions> = {
+    [DatasourceType.postgres]: { type: "float4" },
+    [DatasourceType.mssql]: { type: "float" },
+    [DatasourceType.mysql]: { type: "float" },
+    [DatasourceType.mariadb]: { type: "float" },
+    [DatasourceType.oracle]: { type: "float" },
+};
+
 const solidCoreDbType: DatasourceType =
     Object.values(DatasourceType).includes(process.env.SOLID_CORE_DB_TYPE as DatasourceType)
         ? (process.env.SOLID_CORE_DB_TYPE as DatasourceType)
@@ -45,6 +53,9 @@ export function getColumnType(solidType: string): ColumnOptions {
 
         case "simpleJsonLargeText":
             return SIMPLE_JSON_LARGE_TEXT_MAP[solidCoreDbType];
+
+        case "decimal":
+            return DECIMAL_MAP[solidCoreDbType];
 
         default:
             return {};

@@ -70,6 +70,7 @@ export interface SettingDefinition<T = any> {
   key: string;
   value: T;
   level: SettingLevel;
+  encrypted?: boolean;
 }
 
 // solid-core/settings/settings-provider.interface.ts
@@ -263,7 +264,8 @@ export interface MailAttachment {
 
 export enum BrokerType {
   RabbitMQ = 'rabbitmq',
-  Database = 'database'
+  Database = 'database',
+  Redis = 'redis',
 }
 
 export interface QueuesModuleOptions {
@@ -394,3 +396,18 @@ export interface AwsS3Config {
 
 // Prevents inference so callers must provide explicit type arguments; reusable for other APIs.
 export type NoInfer<T> = [T][T extends any ? 0 : never];
+
+export type AuditEventType = 'insert' | 'update' | 'delete';
+
+export interface AuditQueuePayload {
+    eventType: AuditEventType;
+    modelName: string;
+    entityId: string | number | null;
+    occurredAt: string;
+    after?: any;
+    before?: any;
+    updatedColumnNames?: string[];
+    userId?: number | null;
+}
+
+

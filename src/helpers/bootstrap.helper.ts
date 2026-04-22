@@ -90,6 +90,21 @@ export async function bootstrapSolidApp(
   // Security headers
   app.use(helmet(buildDefaultSecurityHeaderOptions()));
 
+  // Nest's Swagger UI HTML injects inline styles; keep CSP strict elsewhere.
+  const isSwaggerPath = (path: string) =>
+    path === '/docs' ||
+    path === '/docs/' ||
+    path.startsWith('/docs/') ||
+    path === '/docs-json' ||
+    path === '/docs-yaml';
+
+  app.use((req: Request, res: Response, next: NextFunction) => {
+    if (isSwaggerPath(req.path)) {
+      res.removeHeader('Content-Security-Policy');
+    }
+    next();
+  });
+
   // Permissions-Policy header
   app.use((_req: Request, res: Response, next: NextFunction) => {
     res.setHeader('Permissions-Policy', buildPermissionsPolicyHeader(permissionsPolicyOverrides));
@@ -127,7 +142,7 @@ export async function bootstrapSolidApp(
 
   // Swagger
   if (swagger !== false) {
-    const { title = 'Solid Starters', description = 'Solid Starters API', version = '1.0' } = swagger;
+    const { title = process.env.SOLID_APP_NAME, description = process.env.SOLID_APP_DESCRIPTION, version = '1.0' } = swagger;
     const swaggerConfig = new DocumentBuilder()
       .setTitle(title)
       .setDescription(description)

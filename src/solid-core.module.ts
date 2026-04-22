@@ -78,30 +78,56 @@ import { MqMessageQueue } from './entities/mq-message-queue.entity';
 import { MqMessage } from './entities/mq-message.entity';
 import { SmsTemplate } from './entities/sms-template.entity';
 import { AccessTokenGuard } from './guards/access-token.guard';
+import { ApiKeyGuard } from './guards/api-key.guard';
 import { AuthenticationGuard } from './guards/authentication.guard';
 import { PermissionsGuard } from './guards/permissions.guard';
 import { SolidRegistry } from './helpers/solid-registry';
 import { LoggingInterceptor } from './interceptors/logging.interceptor';
-import { ApiEmailQueuePublisher } from './jobs/api-email-publisher.service';
-import { ApiEmailQueueSubscriber } from './jobs/api-email-subscriber.service';
+import { ApiEmailQueuePublisher } from './jobs/rabbitmq/api-email-publisher.service';
+import { ApiEmailQueueSubscriber } from './jobs/rabbitmq/api-email-subscriber.service';
 import { TestQueuePublisherDatabase } from './jobs/database/test-queue-publisher-database.service';
 import { TestQueueSubscriberDatabase } from './jobs/database/test-queue-subscriber-database.service';
-import { Msg91WhatsappQueuePublisher } from './jobs/msg91-whatsapp-publisher.service';
-import { Msg91WhatsappQueueSubscriber } from './jobs/msg91-whatsapp-subscriber.service';
-import { Msg91OTPQueuePublisher } from './jobs/msg91-otp-publisher.service';
-import { Msg91OTPQueueSubscriber } from './jobs/msg91-otp-subscriber.service';
-import { Msg91SmsQueuePublisher } from './jobs/msg91-sms-publisher.service';
-import { Msg91SmsQueueSubscriber } from './jobs/msg91-sms-subscriber.service';
-import { SmtpEmailQueuePublisherRabbitmq } from './jobs/smtp-email-publisher.service';
-import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/smtp-email-subscriber.service';
-import { ChatterQueuePublisherRabbitmq } from './jobs/chatter-queue-publisher.service';
-import { ChatterQueueSubscriberRabbitmq } from './jobs/chatter-queue-subscriber.service';
+import { TestQueuePublisherRedis } from './jobs/redis/test-queue-publisher-redis.service';
+import { TestQueueSubscriberRedis } from './jobs/redis/test-queue-subscriber-redis.service';
+import { Msg91WhatsappQueuePublisher } from './jobs/rabbitmq/msg91-whatsapp-publisher.service';
+import { Msg91WhatsappQueueSubscriber } from './jobs/rabbitmq/msg91-whatsapp-subscriber.service';
+import { Msg91OTPQueuePublisher } from './jobs/rabbitmq/msg91-otp-publisher.service';
+import { Msg91OTPQueueSubscriber } from './jobs/rabbitmq/msg91-otp-subscriber.service';
+import { Msg91SmsQueuePublisher } from './jobs/rabbitmq/msg91-sms-publisher.service';
+import { Msg91SmsQueueSubscriber } from './jobs/rabbitmq/msg91-sms-subscriber.service';
+import { SmtpEmailQueuePublisherRabbitmq } from './jobs/rabbitmq/smtp-email-publisher.service';
+import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/rabbitmq/smtp-email-subscriber.service';
+import { TestQueuePublisher } from './jobs/rabbitmq/test-queue-publisher.service';
+import { TestQueueSubscriber } from './jobs/rabbitmq/test-queue-subscriber.service';
+import { ChatterQueuePublisherRabbitmq } from './jobs/rabbitmq/chatter-queue-publisher.service';
+import { ChatterQueueSubscriberRabbitmq } from './jobs/rabbitmq/chatter-queue-subscriber.service';
 import { ChatterQueuePublisherDatabase } from './jobs/database/chatter-queue-publisher-database.service';
 import { ChatterQueueSubscriberDatabase } from './jobs/database/chatter-queue-subscriber-database.service';
-import { TestQueuePublisher } from './jobs/test-queue-publisher.service';
-import { TestQueueSubscriber } from './jobs/test-queue-subscriber.service';
+import { ApiEmailQueuePublisherRedis } from './jobs/redis/api-email-publisher-redis.service';
+import { ApiEmailQueueSubscriberRedis } from './jobs/redis/api-email-subscriber-redis.service';
+import { ChatterQueuePublisherRedis } from './jobs/redis/chatter-queue-publisher-redis.service';
+import { ChatterQueueSubscriberRedis } from './jobs/redis/chatter-queue-subscriber-redis.service';
+import { ComputedFieldEvaluationPublisherRedis } from './jobs/redis/computed-field-evaluation-publisher-redis.service';
+import { ComputedFieldEvaluationSubscriberRedis } from './jobs/redis/computed-field-evaluation-subscriber-redis.service';
+import { GenerateCodePublisherRedis } from './jobs/redis/generate-code-publisher-redis.service';
+import { GenerateCodeSubscriberRedis } from './jobs/redis/generate-code-subscriber-redis.service';
+import { Msg91OTPQueuePublisherRedis } from './jobs/redis/msg91-otp-publisher-redis.service';
+import { Msg91OTPQueueSubscriberRedis } from './jobs/redis/msg91-otp-subscriber-redis.service';
+import { Msg91SmsQueuePublisherRedis } from './jobs/redis/msg91-sms-publisher-redis.service';
+import { Msg91SmsQueueSubscriberRedis } from './jobs/redis/msg91-sms-subscriber-redis.service';
+import { Msg91WhatsappQueuePublisherRedis } from './jobs/redis/msg91-whatsapp-publisher-redis.service';
+import { Msg91WhatsappQueueSubscriberRedis } from './jobs/redis/msg91-whatsapp-subscriber-redis.service';
+import { SmtpEmailQueuePublisherRedis } from './jobs/redis/smtp-email-publisher-redis.service';
+import { SmtpEmailQueueSubscriberRedis } from './jobs/redis/smtp-email-subscriber-redis.service';
+import { Three60WhatsappQueuePublisherRedis } from './jobs/redis/three60-whatsapp-publisher-redis.service';
+import { Three60WhatsappQueueSubscriberRedis } from './jobs/redis/three60-whatsapp-subscriber-redis.service';
+import { TriggerMcpClientPublisherRedis } from './jobs/redis/trigger-mcp-client-publisher-redis.service';
+import { TriggerMcpClientSubscriberRedis } from './jobs/redis/trigger-mcp-client-subscriber-redis.service';
+import { TwilioSmsQueuePublisherRedis } from './jobs/redis/twilio-sms-publisher-redis.service';
+import { TwilioSmsQueueSubscriberRedis } from './jobs/redis/twilio-sms-subscriber-redis.service';
 import { UserRegistrationListener } from './listeners/user-registration.listener';
 import { GoogleOauthStrategy } from './passport-strategies/google-oauth.strategy';
+import { ApiKeyService } from './services/api-key.service';
 import { AuthenticationService } from './services/authentication.service';
 import { BcryptService } from './services/bcrypt.service';
 import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
@@ -116,6 +142,7 @@ import { MqMessageQueueService } from './services/mq-message-queue.service';
 import { MqMessageService } from './services/mq-message.service';
 import { PdfService } from './services/pdf.service';
 import { RefreshTokenIdsStorageService } from './services/refresh-token-ids-storage.service';
+import { SsoCodeStorageService } from './services/sso-code-storage.service';
 import { ListOfModelsSelectionProvider } from './services/selection-providers/list-of-models-selection-provider.service';
 import { TinyUrlService } from './services/short-url/tiny-url.service';
 import { SmsTemplateService } from './services/sms-template.service';
@@ -149,6 +176,8 @@ import { LocaleController } from './controllers/locale.controller';
 import { RoleMetadataController } from './controllers/role-metadata.controller';
 import { SavedFiltersController } from './controllers/saved-filters.controller';
 import { ScheduledJobController } from './controllers/scheduled-job.controller';
+import { AgentSessionController } from './controllers/agent-session.controller';
+import { AgentEventController } from './controllers/agent-event.controller';
 import { SecurityRuleController } from './controllers/security-rule.controller';
 import { SettingController } from './controllers/setting.controller';
 import { InfoController } from './controllers/info.controller';
@@ -173,10 +202,13 @@ import { Locale } from './entities/locale.entity';
 import { RoleMetadata } from './entities/role-metadata.entity';
 import { SavedFilters } from './entities/saved-filters.entity';
 import { ScheduledJob } from './entities/scheduled-job.entity';
+import { AgentSession } from './entities/agent-session.entity';
+import { AgentEvent } from './entities/agent-event.entity';
 import { SecurityRule } from './entities/security-rule.entity';
 import { Setting } from './entities/setting.entity';
 import { UserActivityHistory } from './entities/user-activity-history.entity';
 import { UserViewMetadata } from './entities/user-view-metadata.entity';
+import { UserApiKey } from './entities/user-api-key.entity';
 import { User } from './entities/user.entity';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
@@ -203,22 +235,22 @@ import { IngestCommand } from './commands/ingest.command';
 import { MailFactory } from './factories/mail.factory';
 import { ErrorMapperService } from './helpers/error-mapper.service';
 import { SolidCoreErrorCodesProvider } from './helpers/solid-core-error-codes-provider.service';
-import { ComputedFieldEvaluationPublisherRabbitmq } from './jobs/computed-field-evaluation-publisher.service';
-import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/computed-field-evaluation-subscriber.service';
+import { ComputedFieldEvaluationPublisherRabbitmq } from './jobs/rabbitmq/computed-field-evaluation-publisher.service';
+import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/rabbitmq/computed-field-evaluation-subscriber.service';
 import { Msg91WhatsappQueuePublisherDatabase } from './jobs/database/msg91-whatsapp-publisher-database.service';
 import { Msg91WhatsappQueueSubscriberDatabase } from './jobs/database/msg91-whatsapp-subscriber-database.service';
 import { Three60WhatsappQueuePublisherDatabase } from './jobs/database/three60-whatsapp-publisher-database.service';
 import { Three60WhatsappQueueSubscriberDatabase } from './jobs/database/three60-whatsapp-subscriber-database.service';
 import { TriggerMcpClientPublisherDatabase } from './jobs/database/trigger-mcp-client-publisher-database.service';
 import { TriggerMcpClientSubscriberDatabase } from './jobs/database/trigger-mcp-client-subscriber-database.service';
-import { GenerateCodePublisherRabbitmq } from './jobs/generate-code-publisher.service';
-import { GenerateCodeSubscriberRabbitmq } from './jobs/generate-code-subscriber.service';
-import { Three60WhatsappQueuePublisher } from './jobs/three60-whatsapp-publisher.service';
-import { Three60WhatsappQueueSubscriber } from './jobs/three60-whatsapp-subscriber.service';
-import { TriggerMcpClientPublisherRabbitmq } from './jobs/trigger-mcp-client-publisher.service';
-import { TriggerMcpClientSubscriberRabbitmq } from './jobs/trigger-mcp-client-subscriber.service';
-import { TwilioSmsQueuePublisherRabbitmq } from './jobs/twilio-sms-publisher.service';
-import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/twilio-sms-subscriber.service';
+import { GenerateCodePublisherRabbitmq } from './jobs/rabbitmq/generate-code-publisher.service';
+import { GenerateCodeSubscriberRabbitmq } from './jobs/rabbitmq/generate-code-subscriber.service';
+import { Three60WhatsappQueuePublisher } from './jobs/rabbitmq/three60-whatsapp-publisher.service';
+import { Three60WhatsappQueueSubscriber } from './jobs/rabbitmq/three60-whatsapp-subscriber.service';
+import { TriggerMcpClientPublisherRabbitmq } from './jobs/rabbitmq/trigger-mcp-client-publisher.service';
+import { TriggerMcpClientSubscriberRabbitmq } from './jobs/rabbitmq/trigger-mcp-client-subscriber.service';
+import { TwilioSmsQueuePublisherRabbitmq } from './jobs/rabbitmq/twilio-sms-publisher.service';
+import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/rabbitmq/twilio-sms-subscriber.service';
 import { DashboardMapper } from './mappers/dashboard-mapper';
 import { ListOfValuesMapper } from './mappers/list-of-values-mapper';
 import { ActionMetadataRepository } from './repository/action-metadata.repository';
@@ -249,11 +281,14 @@ import { PermissionMetadataRepository } from './repository/permission-metadata.r
 import { RoleMetadataRepository } from './repository/role-metadata.repository';
 import { SavedFiltersRepository } from './repository/saved-filters.repository';
 import { ScheduledJobRepository } from './repository/scheduled-job.repository';
+import { AgentSessionRepository } from './repository/agent-session.repository';
+import { AgentEventRepository } from './repository/agent-event.repository';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
 import { SettingRepository } from './repository/setting.repository';
 import { SmsTemplateRepository } from './repository/sms-template.repository';
 import { UserActivityHistoryRepository } from './repository/user-activity-history.repository';
 import { UserViewMetadataRepository } from './repository/user-view-metadata.repository';
+import { UserApiKeyRepository } from './repository/user-api-key.repository';
 import { UserRepository } from './repository/user.repository';
 import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
@@ -295,6 +330,8 @@ import { RequestContextService } from './services/request-context.service';
 import { RoleMetadataService } from './services/role-metadata.service';
 import { SavedFiltersService } from './services/saved-filters.service';
 import { ScheduledJobService } from './services/scheduled-job.service';
+import { AgentSessionService } from './services/agent-session.service';
+import { AgentEventService } from './services/agent-event.service';
 import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
 import { SecurityRuleService } from './services/security-rule.service';
 import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-question-providers-selection-provider.service';
@@ -377,10 +414,13 @@ import { Entity } from 'typeorm';
       RoleMetadata,
       SavedFilters,
       ScheduledJob,
+      AgentSession,
+      AgentEvent,
       SecurityRule,
       Setting,
       SmsTemplate,
       User,
+      UserApiKey,
       UserActivityHistory,
       UserViewMetadata,
       ViewMetadata,
@@ -450,6 +490,8 @@ import { Entity } from 'typeorm';
     RoleMetadataController,
     SavedFiltersController,
     ScheduledJobController,
+    AgentSessionController,
+    AgentEventController,
     SecurityRuleController,
     ServiceController,
     SettingController,
@@ -591,9 +633,12 @@ import { Entity } from 'typeorm';
     LocaleListSelectionProvider,
     SoftDeleteAwareEventSubscriber,
     AccessTokenGuard,
+    ApiKeyGuard,
+    ApiKeyService,
     AuthenticationService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,
+    SsoCodeStorageService,
     GoogleOauthStrategy,
     UserRegistrationListener,
     TestQueuePublisher,
@@ -606,6 +651,30 @@ import { Entity } from 'typeorm';
 
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,
+    TestQueuePublisherRedis,
+    TestQueueSubscriberRedis,
+    ApiEmailQueuePublisherRedis,
+    ApiEmailQueueSubscriberRedis,
+    ChatterQueuePublisherRedis,
+    ChatterQueueSubscriberRedis,
+    ComputedFieldEvaluationPublisherRedis,
+    ComputedFieldEvaluationSubscriberRedis,
+    GenerateCodePublisherRedis,
+    GenerateCodeSubscriberRedis,
+    Msg91OTPQueuePublisherRedis,
+    Msg91OTPQueueSubscriberRedis,
+    Msg91SmsQueuePublisherRedis,
+    Msg91SmsQueueSubscriberRedis,
+    Msg91WhatsappQueuePublisherRedis,
+    Msg91WhatsappQueueSubscriberRedis,
+    SmtpEmailQueuePublisherRedis,
+    SmtpEmailQueueSubscriberRedis,
+    Three60WhatsappQueuePublisherRedis,
+    Three60WhatsappQueueSubscriberRedis,
+    TriggerMcpClientPublisherRedis,
+    TriggerMcpClientSubscriberRedis,
+    TwilioSmsQueuePublisherRedis,
+    TwilioSmsQueueSubscriberRedis,
     GenerateCodePublisherDatabase,
     GenerateCodeSubscriberDatabase,
     GenerateCodePublisherRabbitmq,
@@ -619,6 +688,7 @@ import { Entity } from 'typeorm';
     RoleMetadataService,
     PermissionMetadataSeederService,
     UserService,
+    UserApiKeyRepository,
     UserRepository,
     SettingService,
     ConcatComputedFieldProvider,
@@ -687,6 +757,10 @@ import { Entity } from 'typeorm';
 
     ViewMetadataRepository,
     ScheduledJobRepository,
+    AgentSessionRepository,
+    AgentEventRepository,
+    AgentSessionService,
+    AgentEventService,
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
     ListOfValuesSubscriber,
