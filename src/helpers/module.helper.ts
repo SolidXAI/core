@@ -23,11 +23,9 @@ export const getDynamicModuleNames = (): string[] => {
 
       if (!isValidDirectory) return false;
 
-      // return true
-      const fullPath = path.join(srcPath, dirent.name);
-      const files = fs.readdirSync(fullPath);
-      // skip if empty directory
-      return files.length > 0;
+      const moduleManifestPath = path.join(srcPath, dirent.name, `${dirent.name}.module.ts`);
+      const stats = fs.statSync(moduleManifestPath, { throwIfNoEntry: false });
+      return !!stats && stats.isFile();
     })
     .map(dirent => dirent.name);
 
