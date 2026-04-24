@@ -31,7 +31,7 @@ export class AgentEvent extends CommonEntity {
   @Column({ type: "simple-json", nullable: true, ...getColumnType('simpleJsonLargeText') })
   toolArguments: string;
 
-  @Column({ nullable: true, ...getColumnType('longText') })
+  @Column({ type: "simple-json", nullable: true, ...getColumnType('simpleJsonLargeText') })
   toolOutput: string;
 
   @Column({ nullable: true })

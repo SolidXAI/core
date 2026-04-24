@@ -5819,7 +5819,7 @@
           {
             "name": "toolOutput",
             "displayName": "Tool Output",
-            "type": "longText",
+            "type": "json",
             "columnName": "tool_output",
             "required": false,
             "unique": false,
@@ -13900,9 +13900,9 @@
                     "attrs": { "name": "col-content", "label": "", "className": "col-12" },
                     "children": [
                       { "type": "field", "attrs": { "name": "content" } },
-                      { "type": "field", "attrs": { "name": "toolArguments" } },
-                      { "type": "field", "attrs": { "name": "toolOutput" } },
-                      { "type": "field", "attrs": { "name": "eventData" } }
+                      { "type": "field", "attrs": { "name": "toolArguments", "viewWidget": "SolidJsonFormViewWidget" } },
+                      { "type": "field", "attrs": { "name": "toolOutput", "viewWidget": "SolidJsonFormViewWidget" } },
+                      { "type": "field", "attrs": { "name": "eventData", "viewWidget": "SolidJsonFormViewWidget" } }
                     ]
                   }
                 ]
