@@ -40,7 +40,13 @@ export class SchematicService {
     debug: boolean,
   ): CommandWithArgs {
     const schematicName = `${this.SCHEMATIC_PROJECT}:${command}`;
-    const baseArgs = [schematicName, `--debug=${debug}`];
+    // Only forward --debug when explicitly enabled. The Angular schematics
+    // CLI treats the *presence* of --debug as truthy (regardless of the
+    // assigned value), and once debug is on it forces dry-run mode — so
+    // passing `--debug=false` previously made every schematic invocation
+    // silently dry-run, leaving "CREATE …" lines in the log but writing
+    // nothing to disk.
+    const baseArgs = [schematicName, ...(debug ? ['--debug=true'] : [])];
 
     if (
       command === REMOVE_FIELDS_COMMAND ||
