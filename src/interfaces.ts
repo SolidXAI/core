@@ -1,3 +1,5 @@
+import { Repository } from 'typeorm';
+import { User } from 'src/entities/user.entity';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
 import { SignUpDto } from 'src/dtos/sign-up.dto';
@@ -195,6 +197,16 @@ export class EventDetails<T> {
     public type: any,
     public payload: T,
   ) { }
+}
+
+export interface ExtensionUserPrepareResult<T extends User = User> {
+  entity: T;
+  repo: Repository<T>;
+  signUpDtoOverrides?: Partial<SignUpDto>;
+}
+
+export interface IExtensionUserCreationProvider<T extends User = User> {
+  prepare(spec: Record<string, any>): ExtensionUserPrepareResult<T>;
 }
 
 export interface IMail<TResponse = unknown> {

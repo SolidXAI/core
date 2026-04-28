@@ -13,6 +13,7 @@ import { IS_MAIL_PROVIDER } from 'src/decorators/mail-provider.decorator';
 import { IS_SCHEDULED_JOB_PROVIDER } from 'src/decorators/scheduled-job-provider.decorator';
 import { IS_SECURITY_RULE_CONFIG_PROVIDER } from 'src/decorators/security-rule-config-provider.decorator';
 import { IS_SELECTION_PROVIDER } from 'src/decorators/selection-provider.decorator';
+import { IS_EXTENSION_USER_CREATION_PROVIDER } from 'src/decorators/extension-user-creation-provider.decorator';
 import { IS_SOLID_DATABASE_MODULE } from 'src/decorators/solid-database-module.decorator';
 import { IS_WA_PROVIDER } from 'src/decorators/whatsapp-provider.decorator';
 import { SolidRegistry } from 'src/helpers/solid-registry';
@@ -142,6 +143,12 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     const securityRuleConfigProviders = this.discoveryService.getProviders().filter((provider) => this.isSecurityRuleConfigProvider(provider));
     securityRuleConfigProviders.forEach((securityRuleConfigProvider) => {
       this.solidRegistry.registerSecurityRuleConfigProvider(securityRuleConfigProvider);
+    });
+
+    // Register IExtensionUserCreationProvider implementation (at most one per project)
+    const extensionUserCreationProviders = this.discoveryService.getProviders().filter((provider) => this.isExtensionUserCreationProvider(provider));
+    extensionUserCreationProviders.forEach((provider) => {
+      this.solidRegistry.registerExtensionUserCreationProvider(provider);
     });
 
     // Register the core subscribers against all the configured database modules / datasources
@@ -285,6 +292,12 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     );
 
     return !!isSelectionProvider;
+  }
+
+  private isExtensionUserCreationProvider(provider: InstanceWrapper): boolean {
+    const { instance } = provider;
+    if (!instance) return false;
+    return !!this.reflector.get<boolean>(IS_EXTENSION_USER_CREATION_PROVIDER, instance.constructor);
   }
 
   private isSettingsProvider(provider: InstanceWrapper) {

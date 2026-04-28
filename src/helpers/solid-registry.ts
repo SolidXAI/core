@@ -1,5 +1,7 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
+import { IExtensionUserCreationProvider } from 'src/interfaces';
+import { User } from 'src/entities/user.entity';
 import { ComputedFieldTriggerConfig, ComputedFieldValueType } from 'src/dtos/create-field-metadata.dto';
 import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
@@ -64,6 +66,8 @@ export interface ComputedFieldMetadata<TContext = any> {
 
 @Injectable()
 export class SolidRegistry {
+  private readonly logger = new Logger(SolidRegistry.name);
+  private extensionUserCreationProvider: InstanceWrapper | null = null;
   private seeders: Set<InstanceWrapper> = new Set();
   private scheduledJobProviders: Set<InstanceWrapper> = new Set();
   private selectionProviders: Set<InstanceWrapper> = new Set();
@@ -83,6 +87,20 @@ export class SolidRegistry {
   private errorCodeProviders: Set<InstanceWrapper> = new Set();
   private settingsProviders: Set<InstanceWrapper> = new Set();
   private auditableModels: Set<string> = new Set();
+
+  registerExtensionUserCreationProvider(provider: InstanceWrapper): void {
+    if (this.extensionUserCreationProvider) {
+      this.logger.warn(
+        `ExtensionUserCreationProvider already registered by ${this.extensionUserCreationProvider.name}; ignoring ${provider.name}`,
+      );
+      return;
+    }
+    this.extensionUserCreationProvider = provider;
+  }
+
+  getExtensionUserCreationProvider<T extends User = User>(): IExtensionUserCreationProvider<T> | null {
+    return (this.extensionUserCreationProvider?.instance as IExtensionUserCreationProvider<T>) ?? null;
+  }
 
   registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
     this.errorCodeProviders.add(errorCodeProvider);

@@ -26,6 +26,7 @@ export * from './decorators/mail-provider.decorator'
 export * from './decorators/security-rule-config-provider.decorator'
 export * from './decorators/sms-provider.decorator'
 export * from './decorators/settings-provider.decorator'
+export * from './decorators/extension-user-creation-provider.decorator'
 
 export * from './dtos/post-chatter-message.dto'
 export * from './dtos/security-rule-config.dto'
