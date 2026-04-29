@@ -126,6 +126,10 @@ export class CreateUserDto {
     @ApiProperty()
     customPayload: string;
     @IsOptional()
+    @IsBoolean()
+    @ApiProperty()
+    isAllowedToGenerateApiKeys: boolean = false;
+    @IsOptional()
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })

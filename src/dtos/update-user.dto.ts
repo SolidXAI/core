@@ -130,6 +130,10 @@ export class UpdateUserDto {
     @ApiProperty()
     customPayload: string;
     @IsOptional()
+    @IsBoolean()
+    @ApiProperty()
+    isAllowedToGenerateApiKeys: boolean;
+    @IsOptional()
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
