@@ -1,2 +1,0 @@
-1. Do we want to handle activateUserOnRegistration flag seperately for the normal signup vs signupForExtensionUser?
-2. 
