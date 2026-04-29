@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { UserActivityHistory } from 'src';
+import { UserActivityHistory } from '../entities/user-activity-history.entity';
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { SecurityRuleRepository } from './security-rule.repository';

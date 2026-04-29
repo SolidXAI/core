@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { DashboardQuestion } from 'src';
+import { DashboardQuestion } from '../entities/dashboard-question.entity';
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { SecurityRuleRepository } from './security-rule.repository';

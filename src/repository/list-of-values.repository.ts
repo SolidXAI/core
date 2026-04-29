@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ListOfValues } from 'src';
+import { ListOfValues } from '../entities/list-of-values.entity';
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { SecurityRuleRepository } from './security-rule.repository';

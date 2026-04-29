@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { MqMessage } from 'src';
+import { MqMessage } from '../entities/mq-message.entity';
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { SecurityRuleRepository } from './security-rule.repository';

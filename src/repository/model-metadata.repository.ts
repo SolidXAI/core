@@ -2,7 +2,7 @@ import { CACHE_MANAGER } from '@nestjs/cache-manager';
 import { Inject, Injectable } from '@nestjs/common';
 import { Cache } from 'cache-manager';
 import { createHash } from 'crypto';
-import { ModelMetadata } from 'src';
+import { ModelMetadata } from '../entities/model-metadata.entity';
 import { shouldUseCache } from 'src/helpers/cache.helper';
 import { DataSource } from 'typeorm';
 import { SolidBaseRepository } from './solid-base.repository';

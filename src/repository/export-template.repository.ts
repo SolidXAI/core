@@ -1,5 +1,6 @@
 import { Injectable } from '@nestjs/common';
-import { EmailTemplate, ExportTemplate } from 'src';
+import { EmailTemplate } from '../entities/email-template.entity';
+import { ExportTemplate } from '../entities/export-template.entity';
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { SecurityRuleRepository } from './security-rule.repository';
