@@ -1,7 +1,10 @@
 import { BadRequestException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
-import { CommonEntity, SettingService, SolidBaseRepository, User } from "src";
+import { CommonEntity } from "../entities/common.entity";
+import { User } from "../entities/user.entity";
+import { SolidBaseRepository } from "../repository/solid-base.repository";
+import { SettingService } from "./setting.service";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
@@ -33,7 +36,6 @@ import { ShortTextFieldCrudManager } from "../helpers/field-crud-managers/ShortT
 import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCrudManager";
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
 import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper.service";
-import { AuthenticationService } from "./authentication.service";
 import { HashingService } from "./hashing.service";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
@@ -82,6 +84,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 `No ExtensionUserCreationProvider registered. Register one to create ${this.repo.metadata.name} entities.`,
             );
         }
+        const { AuthenticationService } = await import('./authentication.service');
         const authService = this.moduleRef.get(AuthenticationService, { strict: false });
         return authService.signUp(createDto) as unknown as T;
     }
