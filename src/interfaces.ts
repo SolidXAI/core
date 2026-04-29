@@ -202,7 +202,7 @@ export class EventDetails<T> {
 export interface IExtensionUserCreationProvider<T extends User = User> {
   readonly repo: Repository<T>;
   buildEntity(spec: Record<string, any>): Promise<T>;
-  roles?(spec: Record<string, any>): string[];
+  roles(spec: Record<string, any>): string[];
 }
 
 export interface IMail<TResponse = unknown> {

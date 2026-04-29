@@ -1,4 +1,4 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
 import { CommonEntity, SettingService, SolidBaseRepository, User } from "src";
@@ -77,7 +77,11 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     private async tryCreateAsExtensionUser(createDto: any): Promise<T | null> {
         if (this.repo.metadata?.parentEntityMetadata?.target !== User) return null;
         const registry = this.moduleRef.get(SolidRegistry, { strict: false });
-        if (!registry?.getExtensionUserCreationProvider()) return null;
+        if (!registry?.getExtensionUserCreationProvider()) {
+            throw new InternalServerErrorException(
+                `No ExtensionUserCreationProvider registered. Register one to create ${this.repo.metadata.name} entities.`,
+            );
+        }
         const authService = this.moduleRef.get(AuthenticationService, { strict: false });
         return authService.signUp(createDto) as unknown as T;
     }
