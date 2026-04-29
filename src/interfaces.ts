@@ -199,14 +199,10 @@ export class EventDetails<T> {
   ) { }
 }
 
-export interface ExtensionUserPrepareResult<T extends User = User> {
-  entity: T;
-  repo: Repository<T>;
-  signUpDtoOverrides?: Partial<SignUpDto>;
-}
-
-export interface IExtensionUserCreationProvider<T extends User = User> {
-  prepare(spec: Record<string, any>): Promise<ExtensionUserPrepareResult<T>>;
+export abstract class BaseExtensionUserCreationProvider<T extends User = User> {
+  abstract readonly repo: Repository<T>;
+  abstract buildEntity(spec: Record<string, any>): Promise<T>;
+  roles?(spec: Record<string, any>): string[];
 }
 
 export interface IMail<TResponse = unknown> {

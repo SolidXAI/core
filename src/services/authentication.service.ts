@@ -147,9 +147,10 @@ export class AuthenticationService {
     async signUp(signUpDto: SignUpDto & Record<string, any>, activeUser: ActiveUserData = null): Promise<User> {
         const provider = this.solidRegistry.getExtensionUserCreationProvider();
         if (provider) {
-            const { entity, repo, signUpDtoOverrides } = await provider.prepare(signUpDto);
-            const effectiveDto = signUpDtoOverrides ? { ...signUpDto, ...signUpDtoOverrides } : signUpDto;
-            return this.performSignUp(effectiveDto, entity, repo as Repository<User>);
+            const entity = await provider.buildEntity(signUpDto);
+            const roles = provider.roles?.(signUpDto);
+            const effectiveDto = roles ? { ...signUpDto, roles } : signUpDto;
+            return this.performSignUp(effectiveDto, entity, provider.repo as Repository<User>);
         }
         return this.performSignUp(signUpDto, new User(), this.userRepository);
     }
