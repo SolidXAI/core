@@ -205,13 +205,6 @@ export interface IExtensionUserCreationProvider<T extends User = User> {
   roles?(spec: Record<string, any>): string[];
 }
 
-export abstract class BaseExtensionUserCreationProvider<T extends User = User>
-  implements IExtensionUserCreationProvider<T> {
-  abstract readonly repo: Repository<T>;
-  abstract buildEntity(spec: Record<string, any>): Promise<T>;
-  roles?(spec: Record<string, any>): string[];
-}
-
 export interface IMail<TResponse = unknown> {
   sendEmail(
     to: string,
