@@ -391,14 +391,7 @@ export class ModuleTestDataService {
         continue;
       }
 
-      await authService.signUp({
-        username: user.username,
-        email: user.email,
-        password: user.password,
-        fullName: user.fullName,
-        mobile: user.mobile,
-        roles: user.roles,
-      });
+      await authService.signUp({ ...user });
       this.logger.log(`Created test user "${user.username}"${user.roles?.length ? ` with roles [${user.roles.join(', ')}]` : ''}`);
     }
   }

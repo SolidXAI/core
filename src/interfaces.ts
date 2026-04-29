@@ -206,7 +206,7 @@ export interface ExtensionUserPrepareResult<T extends User = User> {
 }
 
 export interface IExtensionUserCreationProvider<T extends User = User> {
-  prepare(spec: Record<string, any>): ExtensionUserPrepareResult<T>;
+  prepare(spec: Record<string, any>): Promise<ExtensionUserPrepareResult<T>>;
 }
 
 export interface IMail<TResponse = unknown> {
