@@ -1,6 +1,6 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { BaseExtensionUserCreationProvider } from 'src/interfaces';
+import { IExtensionUserCreationProvider } from 'src/interfaces';
 import { User } from 'src/entities/user.entity';
 import { ComputedFieldTriggerConfig, ComputedFieldValueType } from 'src/dtos/create-field-metadata.dto';
 import { CommonEntity } from 'src/entities/common.entity';
@@ -98,8 +98,8 @@ export class SolidRegistry {
     this.extensionUserCreationProvider = provider;
   }
 
-  getExtensionUserCreationProvider<T extends User = User>(): BaseExtensionUserCreationProvider<T> | null {
-    return (this.extensionUserCreationProvider?.instance as BaseExtensionUserCreationProvider<T>) ?? null;
+  getExtensionUserCreationProvider<T extends User = User>(): IExtensionUserCreationProvider<T> | null {
+    return (this.extensionUserCreationProvider?.instance as IExtensionUserCreationProvider<T>) ?? null;
   }
 
   registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
