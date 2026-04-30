@@ -144,7 +144,11 @@ export class AuthenticationService {
         }
     }
 
-    private static readonly SIGNUP_DTO_KEYS = new Set(['username', 'email', 'password', 'fullName', 'mobile', 'roles', 'forcePasswordChange']);
+    private static readonly SIGNUP_DTO_KEYS = new Set<string>([
+        ...(['username', 'email', 'password', 'fullName', 'mobile', 'roles'] satisfies Array<keyof SignUpDto>),
+        'isAllowedToGenerateApiKeys', // from RegisterPrivateDto
+        'forcePasswordChange'
+    ]);
 
     async signUp(signUpDto: SignUpDto & Record<string, any>, activeUser: ActiveUserData = null): Promise<User> {
         const hasExtensionFields = Object.keys(signUpDto).some(k => !AuthenticationService.SIGNUP_DTO_KEYS.has(k));
