@@ -5905,6 +5905,10 @@
       }
     ]
   },
+  "permissions": [
+    "mcp:invoke",
+    "agent:invoke"
+  ],
   "roles": [
     {
       "name": "Admin"
@@ -5961,7 +5965,9 @@
         "AgentSessionController.findMany",
         "AgentSessionController.findOne",
         "AgentEventController.findMany",
-        "AgentEventController.findOne"
+        "AgentEventController.findOne",
+        "mcp:invoke",
+        "agent:invoke"
       ]
     },
     {
