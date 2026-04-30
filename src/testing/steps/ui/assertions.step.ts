@@ -22,6 +22,15 @@ export function registerAssertionSteps(registry: StepRegistry): void {
     await page.waitForSelector(input.selector, { state: "visible" });
   });
 
+  registry.register("ui.expectHidden", async (ctx: TestContext, step: OpStep) => {
+    const page = requirePage(ctx, "ui.expectHidden");
+    const input = (step.with ?? {}) as VisibleInput;
+    if (!input.selector) {
+      throw new Error('Missing "selector" in step.with for op "ui.expectHidden"');
+    }
+    await page.waitForSelector(input.selector, { state: "hidden" });
+  });
+
   registry.register("ui.expectText", async (ctx: TestContext, step: OpStep) => {
     const page = requirePage(ctx, "ui.expectText");
     const input = (step.with ?? {}) as ExpectTextInput;
