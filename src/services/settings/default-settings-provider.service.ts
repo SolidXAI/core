@@ -23,7 +23,9 @@ const getSolidCoreSettings = (isProd: boolean) =>
       sortOrder: 50,
       controlType: "boolean",
     },
-    {
+    { moduleName: "solid-core", key: "iamFacebookOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
+  { moduleName: "solid-core", key: "iamMicrosoftOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
+  {
       moduleName: "solid-core",
       key: "authPagesLayout",
       value: "center",
@@ -613,6 +615,20 @@ const getSolidCoreSettings = (isProd: boolean) =>
       sortOrder: 30,
       controlType: "shortText",
     },
+
+  // facebook-oauth-settings-provider.service.ts
+  { moduleName: "solid-core", key: "FACEBOOK_CLIENT_ID", value: process.env.IAM_FACEBOOK_OAUTH_CLIENT_ID, level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "FACEBOOK_CLIENT_SECRET", value: process.env.IAM_FACEBOOK_OAUTH_CLIENT_SECRET, level: SettingLevel.SystemEnv },
+  { moduleName: "solid-core", key: "FACEBOOK_CALLBACK_URL", value: process.env.IAM_FACEBOOK_OAUTH_CALLBACK_URL, level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "FACEBOOK_REDIRECT_URL", value: process.env.IAM_FACEBOOK_OAUTH_REDIRECT_URL, level: SettingLevel.SystemAdminReadonly },
+
+  
+  // microsoft-oauth-settings-provider.service.ts
+  { moduleName: "solid-core", key: "MICROSOFT_CLIENT_ID", value: process.env.IAM_MICROSOFT_OAUTH_CLIENT_ID, level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "MICROSOFT_CLIENT_SECRET", value: process.env.IAM_MICROSOFT_OAUTH_CLIENT_SECRET, level: SettingLevel.SystemEnv },
+  { moduleName: "solid-core", key: "MICROSOFT_TENANT_ID", value: process.env.IAM_MICROSOFT_OAUTH_TENANT_ID || 'common', level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "MICROSOFT_CALLBACK_URL", value: process.env.IAM_MICROSOFT_OAUTH_CALLBACK_URL, level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "MICROSOFT_REDIRECT_URL", value: process.env.IAM_MICROSOFT_OAUTH_REDIRECT_URL, level: SettingLevel.SystemAdminReadonly },
 
     // iam-settings-provider.service.ts
     {
