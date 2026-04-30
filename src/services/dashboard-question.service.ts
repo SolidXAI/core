@@ -11,7 +11,7 @@ import { SolidRegistry } from 'src/helpers/solid-registry';
 import { DashboardQuestion } from '../entities/dashboard-question.entity';
 import { SqlExpression, SqlExpressionOperator } from './question-data-providers/chartjs-sql-data-provider.service';
 import { DashboardQuestionRepository } from 'src/repository/dashboard-question.repository';
-import { QuestionSqlDataProviderContext } from 'src';
+import { QuestionSqlDataProviderContext } from '../interfaces';
 
 enum SOURCE_TYPE {
   SQL = 'sql',

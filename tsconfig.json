@@ -12,6 +12,9 @@
     "outDir": "./dist",
     "rootDir": "./src",
     "baseUrl": "./",
+    "paths": {
+      "src/*": ["./src/*"]
+    },
     "incremental": false,
     "skipLibCheck": true,
     "strictNullChecks": false,

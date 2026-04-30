@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ImportTransactionErrorLog } from 'src';
+import { ImportTransactionErrorLog } from '../entities/import-transaction-error-log.entity';
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { SecurityRuleRepository } from './security-rule.repository';

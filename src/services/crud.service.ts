@@ -1,7 +1,10 @@
-import { BadRequestException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
-import { CommonEntity, SettingService, SolidBaseRepository, User } from "src";
+import { CommonEntity } from "../entities/common.entity";
+import { User } from "../entities/user.entity";
+import { SolidBaseRepository } from "../repository/solid-base.repository";
+import { SettingService } from "./setting.service";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
@@ -34,6 +37,7 @@ import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCr
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
 import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper.service";
 import { HashingService } from "./hashing.service";
+import { SolidRegistry } from "src/helpers/solid-registry";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { RequestContextService } from "./request-context.service";
@@ -72,7 +76,23 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return this._settingService ??= this.moduleRef.get(SettingService, { strict: false });
     }
 
+    private async tryCreateAsExtensionUser(createDto: any): Promise<T | null> {
+        if (this.repo.metadata?.parentEntityMetadata?.target !== User) return null;
+        const registry = this.moduleRef.get(SolidRegistry, { strict: false });
+        if (!registry?.getExtensionUserCreationProvider()) {
+            throw new InternalServerErrorException(
+                `No ExtensionUserCreationProvider registered. Register one to create ${this.repo.metadata.name} entities.`,
+            );
+        }
+        const { AuthenticationService } = await import('./authentication.service');
+        const authService = this.moduleRef.get(AuthenticationService, { strict: false });
+        return authService.signUp(createDto) as unknown as T;
+    }
+
     async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
+        const asExtensionUser = await this.tryCreateAsExtensionUser(createDto);
+        if (asExtensionUser !== null) return asExtensionUser;
+
         // This class will be extended by the generated service class i.e PersonService
         // The data required to identify the model and module name will be passed from the generate CrudService subclass
         //TODO: Algorithm to create the entity

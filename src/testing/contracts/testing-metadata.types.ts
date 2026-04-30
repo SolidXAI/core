@@ -18,6 +18,7 @@ export interface TestingUserSpec {
   fullName?: string;
   mobile?: string;
   roles?: string[];
+  [key: string]: any;
 }
 
 export interface TestingMetadata {

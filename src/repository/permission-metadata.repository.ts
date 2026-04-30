@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { PermissionMetadata } from 'src';
+import { PermissionMetadata } from '../entities/permission-metadata.entity';
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { SecurityRuleRepository } from './security-rule.repository';

@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleMetadata } from 'src';
+import { ModuleMetadata } from '../entities/module-metadata.entity';
 import { DataSource } from 'typeorm';
 import { SolidBaseRepository } from './solid-base.repository';
 

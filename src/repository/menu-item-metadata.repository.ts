@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { MenuItemMetadata } from 'src';
+import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { SecurityRuleRepository } from './security-rule.repository';
