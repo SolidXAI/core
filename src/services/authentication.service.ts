@@ -147,17 +147,17 @@ export class AuthenticationService {
     private static readonly SIGNUP_DTO_KEYS = new Set(['username', 'email', 'password', 'fullName', 'mobile', 'roles']);
 
     async signUp(signUpDto: SignUpDto & Record<string, any>, activeUser: ActiveUserData = null): Promise<User> {
-        const provider = this.solidRegistry.getExtensionUserCreationProvider();
-        if (provider) {
-            const entity = await provider.buildEntity(signUpDto);
-            const effectiveDto = { ...signUpDto, roles: provider.roles(signUpDto) };
-            return this.performSignUp(effectiveDto, entity, provider.repo as Repository<User>);
-        }
         const hasExtensionFields = Object.keys(signUpDto).some(k => !AuthenticationService.SIGNUP_DTO_KEYS.has(k));
         if (hasExtensionFields) {
-            throw new InternalServerErrorException(
-                'No ExtensionUserCreationProvider registered. Register one to handle extension user creation.',
-            );
+            const provider = this.solidRegistry.getExtensionUserCreationProvider();
+            if (!provider) {
+                throw new InternalServerErrorException(
+                    'No ExtensionUserCreationProvider registered. Register one to handle extension user creation.',
+                );
+            }
+            const entity = await provider.buildExtensionEntity(signUpDto);
+            const effectiveDto = { ...signUpDto, roles: provider.roles(signUpDto) };
+            return this.performSignUp(effectiveDto, entity, provider.repo as Repository<User>);
         }
         return this.performSignUp(signUpDto, new User(), this.userRepository);
     }

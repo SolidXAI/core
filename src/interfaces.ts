@@ -202,7 +202,7 @@ export class EventDetails<T> {
 
 export interface IExtensionUserCreationProvider<T extends User = User, TDto extends CreateUserDto = CreateUserDto> {
   readonly repo: Repository<T>;
-  buildEntity(dto: TDto): Promise<T>;
+  buildExtensionEntity(dto: TDto): Promise<T>;
   roles(dto: TDto): string[];
 }
 
