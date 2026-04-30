@@ -1,5 +1,6 @@
 import { Repository } from 'typeorm';
 import { User } from 'src/entities/user.entity';
+import { CreateUserDto } from 'src/dtos/create-user.dto';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
 import { SignUpDto } from 'src/dtos/sign-up.dto';
@@ -199,10 +200,10 @@ export class EventDetails<T> {
   ) { }
 }
 
-export interface IExtensionUserCreationProvider<T extends User = User> {
+export interface IExtensionUserCreationProvider<T extends User = User, TDto extends CreateUserDto = CreateUserDto> {
   readonly repo: Repository<T>;
-  buildEntity(spec: Record<string, any>): Promise<T>;
-  roles(spec: Record<string, any>): string[];
+  buildEntity(dto: TDto): Promise<T>;
+  roles(dto: TDto): string[];
 }
 
 export interface IMail<TResponse = unknown> {

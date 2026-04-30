@@ -98,8 +98,8 @@ export class SolidRegistry {
     this.extensionUserCreationProvider = provider;
   }
 
-  getExtensionUserCreationProvider<T extends User = User>(): IExtensionUserCreationProvider<T> | null {
-    return (this.extensionUserCreationProvider?.instance as IExtensionUserCreationProvider<T>) ?? null;
+  getExtensionUserCreationProvider<T extends User = User>(): IExtensionUserCreationProvider<T, any> | null {
+    return (this.extensionUserCreationProvider?.instance as IExtensionUserCreationProvider<T, any>) ?? null;
   }
 
   registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
