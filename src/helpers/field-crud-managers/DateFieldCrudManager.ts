@@ -27,11 +27,25 @@ export class DateFieldCrudManager implements FieldCrudManager {
 
     private applyFormatValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        !isDate(fieldValue) ? errors.push({ field: this.options.fieldName, error: 'Field is not a date' }) : "no errors";
+        if (typeof fieldValue === 'string') {
+            const date = new Date(fieldValue);
+            if (isNaN(date.getTime())) {
+                errors.push({ field: this.options.fieldName, error: 'Field is not a valid date string' });
+            }
+        } else if (!isDate(fieldValue)) {
+            errors.push({ field: this.options.fieldName, error: 'Field is not a date' });
+        }
         return errors;
     }
 
     transformForCreate(dto: any): any {
+        const fieldValue = dto[this.options.fieldName];
+        if (typeof fieldValue === 'string') {
+            const date = new Date(fieldValue);
+            if (!isNaN(date.getTime())) {
+                dto[this.options.fieldName] = date;
+            }
+        }
         return dto;
     }
 

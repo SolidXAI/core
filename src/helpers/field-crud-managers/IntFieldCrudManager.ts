@@ -29,13 +29,25 @@ export class IntFieldCrudManager implements FieldCrudManager {
 
     private applyFormatValidations(fieldValue: any): ValidationError[] {
         const errors: ValidationError[] = [];
-        !isInt(fieldValue) ? errors.push({ field: this.options.fieldName, error: 'Field is not an int' }) : "no errors";
-        (this.isApplyMinValidation() && !min(fieldValue, this.options.min)) ? errors.push({ field: this.options.fieldName, error: 'Field value is lesser than minimum required' }): "no errors"; 
-        (this.isApplyMaxValidation() && !max(fieldValue, this.options.max)) ?  errors.push({ field: this.options.fieldName, error: 'Field value is greater than maximum required' }) : "no errors";
+        let val = fieldValue;
+        if (typeof fieldValue === 'string' && /^-?\d+$/.test(fieldValue)) {
+            val = parseInt(fieldValue, 10);
+        }
+
+        if (!isInt(val)) {
+            errors.push({ field: this.options.fieldName, error: 'Field is not an int' });
+        } else {
+            (this.isApplyMinValidation() && !min(val, this.options.min)) ? errors.push({ field: this.options.fieldName, error: 'Field value is lesser than minimum required' }) : "no errors";
+            (this.isApplyMaxValidation() && !max(val, this.options.max)) ? errors.push({ field: this.options.fieldName, error: 'Field value is greater than maximum required' }) : "no errors";
+        }
         return errors;
     }
 
     transformForCreate(createDto: any): any {
+        const fieldValue = createDto[this.options.fieldName];
+        if (typeof fieldValue === 'string' && /^-?\d+$/.test(fieldValue)) {
+            createDto[this.options.fieldName] = parseInt(fieldValue, 10);
+        }
         return createDto;
     }
 
