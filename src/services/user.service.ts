@@ -239,6 +239,89 @@ export class UserService extends CRUDService<User> {
     return user;
   }
 
+  async resolveUserOnOauthFacebook(oauthUserDto: OauthUserDto): Promise<User> {
+    const user = await this.repo.findOne({
+      where: {
+        email: oauthUserDto.email,
+      },
+      relations: {
+        roles: true,
+      },
+    });
+
+    if (!user) {
+      const newUser = new User();
+      newUser.username = oauthUserDto.email;
+      newUser.email = oauthUserDto.email;
+      newUser.fullName = oauthUserDto.name;
+      newUser.lastLoginProvider = oauthUserDto.provider;
+      newUser.accessCode = oauthUserDto.accessCode;
+      newUser.facebookAccessToken = oauthUserDto.accessToken;
+      newUser.facebookId = oauthUserDto.providerId;
+
+      const savedUser = await this.repo.save(newUser);
+
+      await this.initializeRolesForNewUser(
+        [this.settingService.getConfigValue<SolidCoreSetting>('defaultRole')],
+        savedUser,
+      );
+      return savedUser;
+    } else {
+      const entity = await this.repo.preload({
+        id: user.id,
+        lastLoginProvider: oauthUserDto.provider,
+        accessCode: oauthUserDto.accessCode,
+        facebookAccessToken: oauthUserDto.accessToken,
+        facebookId: oauthUserDto.providerId,
+      });
+
+      await this.repo.save(entity);
+      return entity;
+    }
+  }
+
+
+  async resolveUserOnOauthMicrosoft(oauthUserDto: OauthUserDto): Promise<User> {
+    const user = await this.repo.findOne({
+      where: {
+        email: oauthUserDto.email,
+      },
+      relations: {
+        roles: true,
+      },
+    });
+
+    if (!user) {
+      const newUser = new User();
+      newUser.username = oauthUserDto.email;
+      newUser.email = oauthUserDto.email;
+      newUser.fullName = oauthUserDto.name;
+      newUser.lastLoginProvider = oauthUserDto.provider;
+      newUser.accessCode = oauthUserDto.accessCode;
+      newUser.microsoftAccessToken = oauthUserDto.accessToken;
+      newUser.microsoftId = oauthUserDto.providerId;
+
+      const savedUser = await this.repo.save(newUser);
+
+      await this.initializeRolesForNewUser(
+        [this.settingService.getConfigValue<SolidCoreSetting>('defaultRole')],
+        savedUser,
+      );
+      return savedUser;
+    } else {
+      const entity = await this.repo.preload({
+        id: user.id,
+        lastLoginProvider: oauthUserDto.provider,
+        accessCode: oauthUserDto.accessCode,
+        microsoftAccessToken: oauthUserDto.accessToken,
+        microsoftId: oauthUserDto.providerId,
+      });
+
+      await this.repo.save(entity);
+      return entity;
+    }
+  }
+
   async findUsersByRole(roleName: string, relations: any = {}): Promise<User[]> {
     return await this.repo.find({
       where: {
