@@ -385,7 +385,7 @@ export class CreateFieldMetadataDto {
   @ApiProperty({ description: 'Static values for selection. Only for type=selectionStatic', })
   @IsArray()
   @IsString({ each: true })
-  @Matches(/^[\w\s\d\-\/]+:[\w\s\-\/]+$/, { each: true })
+  // @Matches(/^[\w\s\d\-\/]+:[\w\s\-\/]+$/, { each: true })
   @IsOptional()
   selectionStaticValues: string[];
 
