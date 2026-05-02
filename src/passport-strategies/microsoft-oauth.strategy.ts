@@ -1,127 +1,68 @@
-import { PassportStrategy } from "@nestjs/passport";
-import { Strategy } from "passport-microsoft";
-import {
-  Inject,
-  Injectable,
-  InternalServerErrorException,
-  Logger,
-  UnauthorizedException,
-} from "@nestjs/common";
-import { SettingService } from "../services/setting.service";
-import {
-  MicrosoftAuthConfiguration,
-  isMicrosoftOAuthConfigured,
-} from "../helpers/microsoft-oauth.helper";
-import { UserService } from "../services/user.service";
-import { v4 as uuid } from "uuid";
-import type { SolidCoreSetting } from "../services/settings/default-settings-provider.service";
+import { Injectable, Logger } from '@nestjs/common';
+import { AuthGuard, PassportStrategy } from '@nestjs/passport';
+import { Strategy } from 'passport-microsoft';
+import { MicrosoftAuthConfiguration, isMicrosoftOAuthConfigured } from 'src/helpers/microsoft-oauth.helper';
+import { v4 as uuid } from 'uuid';
+import { UserService } from '../services/user.service';
 
-const DUMMY_CLIENT_ID = "DUMMY_CLIENT_ID";
-const DUMMY_CLIENT_SECRET = "DUMMY_CLIENT_SECRET";
-const DUMMY_TENANT = "common";
-const DUMMY_CALLBACK_URL = "DUMMY_CALLBACK_URL";
+const DUMMY_CLIENT_ID = 'DUMMY_CLIENT_ID';
+const DUMMY_CLIENT_SECRET = 'DUMMY_CLIENT_SECRET';
+const DUMMY_TENANT = 'common';
+const DUMMY_CALLBACK_URL = 'DUMMY_CALLBACK_URL';
 
 @Injectable()
-export class MicrosoftOAuthStrategy extends PassportStrategy(
-  Strategy,
-  "microsoft",
-) {
+export class MicrosoftOauthGuard extends AuthGuard('microsoft') { }
+
+@Injectable()
+export class MicrosoftOAuthStrategy extends PassportStrategy(Strategy, 'microsoft') {
   private readonly logger = new Logger(MicrosoftOAuthStrategy.name);
 
-  constructor(
-    @Inject(SettingService)
-    private readonly settingService: SettingService,
-    private readonly userService: UserService,
-  ) {
-    const clientID =
-      process.env.IAM_MICROSOFT_OAUTH_CLIENT_ID ?? DUMMY_CLIENT_ID;
-    const clientSecret =
-      process.env.IAM_MICROSOFT_OAUTH_CLIENT_SECRET ?? DUMMY_CLIENT_SECRET;
-    const tenant =
-      process.env.IAM_MICROSOFT_OAUTH_TENANT_ID ?? DUMMY_TENANT;
-    const callbackURL =
-      process.env.IAM_MICROSOFT_OAUTH_CALLBACK_URL ?? DUMMY_CALLBACK_URL;
-    
+  constructor(private readonly userService: UserService) {
+    // Reading configuration from environment variables (Static approach like Google)
+    const clientID = process.env.IAM_MICROSOFT_OAUTH_CLIENT_ID ?? DUMMY_CLIENT_ID;
+    const clientSecret = process.env.IAM_MICROSOFT_OAUTH_CLIENT_SECRET ?? DUMMY_CLIENT_SECRET;
+    const tenant = process.env.IAM_MICROSOFT_OAUTH_TENANT_ID ?? DUMMY_TENANT;
+    const callbackURL = process.env.IAM_MICROSOFT_OAUTH_CALLBACK_URL ?? DUMMY_CALLBACK_URL;
+    const redirectURL = process.env.IAM_MICROSOFT_OAUTH_REDIRECT_URL;
+
     super({
       clientID,
       clientSecret,
       callbackURL,
       tenant,
+      scope: ['user.read'],
       addUPNAsEmail: true,
-      scope: ["user.read"],
     });
 
-    const microsoftOauth: MicrosoftAuthConfiguration = {
-      clientID,
-      clientSecret,
-      tenant,
-      callbackURL,
-      redirectURL: process.env.IAM_MICROSOFT_OAUTH_REDIRECT_URL,
-    };
+    const microsoftOauth: MicrosoftAuthConfiguration = { clientID, clientSecret, tenant, callbackURL, redirectURL };
     if (!isMicrosoftOAuthConfigured(microsoftOauth)) {
-      this.logger.debug("Microsoft OAuth strategy is not configured");
+      this.logger.debug('Microsoft OAuth strategy is not configured');
     }
   }
 
-  async authenticate(req: any, options: any) {
-    const [clientID, clientSecret, tenant, callbackURL] = await Promise.all([
-      this.settingService.getConfigValue<SolidCoreSetting>(
-        "MICROSOFT_CLIENT_ID" as any,
-      ),
-      this.settingService.getConfigValue<SolidCoreSetting>(
-        "MICROSOFT_CLIENT_SECRET" as any,
-      ),
-      this.settingService.getConfigValue<SolidCoreSetting>(
-        "MICROSOFT_TENANT_ID" as any,
-      ),
-      this.settingService.getConfigValue<SolidCoreSetting>(
-        "MICROSOFT_CALLBACK_URL" as any,
-      ),
-    ]);
+  async validate(_accessToken: string, _refreshToken: string, profile: any, done: any): Promise<any> {
+    const { id, displayName, emails, photos } = profile;
 
-    if (!clientID || !clientSecret || !tenant || !callbackURL) {
-      throw new InternalServerErrorException(
-        "Microsoft OAuth is not configured",
-      );
-    }
-
-    (this as any)._oauth2._clientId = clientID;
-    (this as any)._oauth2._clientSecret = clientSecret;
-    (this as any)._callbackURL = callbackURL;
-    (this as any)._oauth2._authorizeUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/authorize`;
-    (this as any)._oauth2._accessTokenUrl = `https://login.microsoftonline.com/${tenant}/oauth2/v2.0/token`;
-
-    return super.authenticate(req, options);
-  }
-
-  async validate(
-    accessToken: string,
-    refreshToken: string,
-    profile: any,
-    done: (err: any, user: any, info?: any) => void,
-  ): Promise<any> {
-    const { id, displayName, emails } = profile;
+    // generate a unique access code. 
     const loginAccessCode: string = uuid();
 
+    // Handle email fallback logic within the standard validate flow
     const email = emails?.[0]?.value || profile._json?.mail || profile._json?.userPrincipalName;
 
-    if (!email) {
-      throw new UnauthorizedException("Microsoft OAuth did not return an email address");
-    }
-
     const user = {
-      provider: "microsoft",
+      provider: 'microsoft',
       providerId: id,
       email: email,
       name: displayName,
+      picture: photos?.[0]?.value || null,
       accessCode: loginAccessCode,
     };
 
-    await this.userService.resolveUserOnOauthMicrosoft({
-      ...user,
-      accessToken,
-      refreshToken: null,
-      picture: null,
+    // store the access code and the access token in the database. 
+    await this.userService.resolveUserOnOauthMicrosoft({ 
+        ...user, 
+        accessToken: _accessToken, 
+        refreshToken: null 
     });
 
     done(null, user);

@@ -258,6 +258,7 @@ export class UserService extends CRUDService<User> {
       newUser.accessCode = oauthUserDto.accessCode;
       newUser.facebookAccessToken = oauthUserDto.accessToken;
       newUser.facebookId = oauthUserDto.providerId;
+      newUser.facebookProfilePicture = oauthUserDto.picture;
 
       const savedUser = await this.repo.save(newUser);
 
@@ -273,6 +274,7 @@ export class UserService extends CRUDService<User> {
         accessCode: oauthUserDto.accessCode,
         facebookAccessToken: oauthUserDto.accessToken,
         facebookId: oauthUserDto.providerId,
+        facebookProfilePicture: oauthUserDto.picture,
       });
 
       await this.repo.save(entity);
@@ -300,6 +302,7 @@ export class UserService extends CRUDService<User> {
       newUser.accessCode = oauthUserDto.accessCode;
       newUser.microsoftAccessToken = oauthUserDto.accessToken;
       newUser.microsoftId = oauthUserDto.providerId;
+      newUser.microsoftProfilePicture = oauthUserDto.picture;
 
       const savedUser = await this.repo.save(newUser);
 
@@ -315,6 +318,7 @@ export class UserService extends CRUDService<User> {
         accessCode: oauthUserDto.accessCode,
         microsoftAccessToken: oauthUserDto.accessToken,
         microsoftId: oauthUserDto.providerId,
+        microsoftProfilePicture: oauthUserDto.picture,
       });
 
       await this.repo.save(entity);

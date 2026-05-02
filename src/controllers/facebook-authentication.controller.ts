@@ -16,20 +16,20 @@ import {
 } from "../helpers/facebook-oauth.helper";
 import { AuthenticationService } from "../services/authentication.service";
 import { SettingService } from "../services/setting.service";
-import { AuthGuard } from "@nestjs/passport";
-import type { SolidCoreSetting } from "../services/settings/default-settings-provider.service";
 import { Public } from "src/decorators/public.decorator";
 import { Auth } from "../decorators/auth.decorator";
 import { AuthType } from "../enums/auth-type.enum";
+import { FacebookOauthGuard } from "../passport-strategies/facebook-oauth.strategy";
+import { UserService } from "../services/user.service";
+import type { SolidCoreSetting } from "../services/settings/default-settings-provider.service";
 
 @Auth(AuthType.None)
 @ApiTags("Iam")
 @Controller("iam/facebook")
 export class FacebookAuthenticationController {
   constructor(
-    @Inject(AuthenticationService)
+    private readonly userService: UserService,
     private readonly authService: AuthenticationService,
-    @Inject(SettingService)
     private readonly settingService: SettingService,
   ) {}
 
@@ -61,24 +61,50 @@ export class FacebookAuthenticationController {
     return config;
   }
 
-  @Get("connect")
   @Public()
-  @UseGuards(AuthGuard("facebook"))
-  async facebookConnect() {
+  @UseGuards(FacebookOauthGuard)
+  @Get("connect")
+  async connect() {
     await this.validateConfiguration();
   }
 
-  @Get(["connect/callback", "callback"])
   @Public()
-  @UseGuards(AuthGuard("facebook"))
-  async facebookCallback(@Req() req: Request, @Res() res: Response) {
+  @Get("connect/callback")
+  @UseGuards(FacebookOauthGuard)
+  async facebookAuthCallback(@Req() req: Request, @Res() res: Response) {
     const config = await this.validateConfiguration();
-    const { accessCode } = req.user as any;
-    res.redirect(`${config.redirectURL}?accessCode=${accessCode}`);
+    const user = req.user;
+    return res.redirect(`${config.redirectURL}?accessCode=${user['accessCode']}`);
   }
 
-  @Get("authenticate")
+  /**
+   * This is just a dummy endpoint where we are passing in the accessCode, this will be configured in the .env as an environment variable and 
+   * will be passed the accessCode, using the accessCode the UI code on this page will mostly invoke the /iam/facebook/auth endpoint which will finally generate the JWT token.
+   * 
+   * @param accessCode 
+   * @returns 
+   */
   @Public()
+  @Get('dummy-redirect')
+  async dummyFacebookAuthRedirect(@Query('accessCode') accessCode) {
+      await this.validateConfiguration();
+      const user = await this.userService.findOneByAccessCode(accessCode);
+
+      if (user) {
+          delete user['password'];
+      }
+
+      return user;
+  }
+
+  /**
+   * Use this endpoint to authenticate using an accessCode with Facebook.
+   * 
+   * @param accessCode 
+   * @returns 
+   */
+  @Public()
+  @Get("authenticate")
   @ApiQuery({ name: "accessCode", required: true, type: String })
   async facebookAuth(@Query("accessCode") accessCode: string) {
     await this.validateConfiguration();

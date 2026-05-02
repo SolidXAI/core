@@ -66,6 +66,10 @@ export class User extends CommonEntity {
 
     @Column({ type: "varchar", nullable: true })
     // don't send to client
+    facebookProfilePicture: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
     appleId: string;
 
     @Column({ type: "varchar", nullable: true })
@@ -79,6 +83,10 @@ export class User extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     // don't send to client
     microsoftAccessToken: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    microsoftProfilePicture: string;
 
     @Column({ default: true })
     @Expose()
