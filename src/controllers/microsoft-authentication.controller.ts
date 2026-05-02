@@ -16,20 +16,20 @@ import {
 } from "../helpers/microsoft-oauth.helper";
 import { AuthenticationService } from "../services/authentication.service";
 import { SettingService } from "../services/setting.service";
-import { AuthGuard } from "@nestjs/passport";
-import type { SolidCoreSetting } from "../services/settings/default-settings-provider.service";
 import { Public } from "src/decorators/public.decorator";
 import { Auth } from "../decorators/auth.decorator";
 import { AuthType } from "../enums/auth-type.enum";
+import { MicrosoftOauthGuard } from "../passport-strategies/microsoft-oauth.strategy";
+import { UserService } from "../services/user.service";
+import type { SolidCoreSetting } from "../services/settings/default-settings-provider.service";
 
 @Auth(AuthType.None)
 @ApiTags("Iam")
 @Controller("iam/microsoft")
 export class MicrosoftAuthenticationController {
   constructor(
-    @Inject(AuthenticationService)
+    private readonly userService: UserService,
     private readonly authService: AuthenticationService,
-    @Inject(SettingService)
     private readonly settingService: SettingService,
   ) {}
 
@@ -64,24 +64,50 @@ export class MicrosoftAuthenticationController {
     return config;
   }
 
-  @Get("connect")
   @Public()
-  @UseGuards(AuthGuard("microsoft"))
-  async microsoftConnect() {
+  @UseGuards(MicrosoftOauthGuard)
+  @Get("connect")
+  async connect() {
     await this.validateConfiguration();
   }
 
-  @Get(["connect/callback", "callback"])
   @Public()
-  @UseGuards(AuthGuard("microsoft"))
-  async microsoftCallback(@Req() req: Request, @Res() res: Response) {
+  @Get("connect/callback")
+  @UseGuards(MicrosoftOauthGuard)
+  async microsoftAuthCallback(@Req() req: Request, @Res() res: Response) {
     const config = await this.validateConfiguration();
-    const { accessCode } = req.user as any;
-    res.redirect(`${config.redirectURL}?accessCode=${accessCode}`);
+    const user = req.user;
+    return res.redirect(`${config.redirectURL}?accessCode=${user['accessCode']}`);
   }
 
-  @Get("authenticate")
+  /**
+   * This is just a dummy endpoint where we are passing in the accessCode, this will be configured in the .env as an environment variable and 
+   * will be passed the accessCode, using the accessCode the UI code on this page will mostly invoke the /iam/microsoft/auth endpoint which will finally generate the JWT token.
+   * 
+   * @param accessCode 
+   * @returns 
+   */
   @Public()
+  @Get('dummy-redirect')
+  async dummyMicrosoftAuthRedirect(@Query('accessCode') accessCode) {
+      await this.validateConfiguration();
+      const user = await this.userService.findOneByAccessCode(accessCode);
+
+      if (user) {
+          delete user['password'];
+      }
+
+      return user;
+  }
+
+  /**
+   * Use this endpoint to authenticate using an accessCode with Microsoft.
+   * 
+   * @param accessCode 
+   * @returns 
+   */
+  @Public()
+  @Get("authenticate")
   @ApiQuery({ name: "accessCode", required: true, type: String })
   async microsoftAuth(@Query("accessCode") accessCode: string) {
     await this.validateConfiguration();
