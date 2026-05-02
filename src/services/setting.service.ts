@@ -216,9 +216,9 @@ export class SettingService {
    * 
    * @returns 
    */
-  async getSystemAdminReadonlyAndAboveSettings(): Promise<Record<any, any>> {
+  async getNonEncryptedSystemAdminReadonlyAndAboveSettings(): Promise<Record<any, any>> {
     const finalSettings: Record<any, any> = {};
-    const systemAdminReadonlyAndAboveSettings = this.settings.filter(i => i.level !== "system-env");
+    const systemAdminReadonlyAndAboveSettings = this.settings.filter(i => i.level !== "system-env" && !i.encrypted);
     for (const setting of systemAdminReadonlyAndAboveSettings) {
       finalSettings[setting.key] = setting.value;
     }

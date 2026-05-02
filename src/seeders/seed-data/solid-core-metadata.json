@@ -6434,19 +6434,6 @@
       "modelUserKey": "setting"
     },
     {
-      "displayName": "Ai settings Action",
-      "name": "aiSettings-action",
-      "type": "custom",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/core/solid-core/settings/ai-settings",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "setting"
-    },
-    {
       "displayName": "Misc Action",
       "name": "miscSettings-action",
       "type": "custom",
@@ -6955,17 +6942,9 @@
       "parentMenuItemUserKey": "settings-menu-item"
     },
     {
-      "displayName": "Ai Settings",
-      "name": "aiSettings-menu-item",
-      "sequenceNumber": 3,
-      "actionUserKey": "aiSettings-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "settings-menu-item"
-    },
-    {
       "displayName": "Misc",
       "name": "miscSettings-menu-item",
-      "sequenceNumber": 4,
+      "sequenceNumber": 3,
       "actionUserKey": "miscSettings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "settings-menu-item"
