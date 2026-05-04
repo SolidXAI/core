@@ -22,11 +22,11 @@ export class OTPAuthenticationController {
     @Public()
     @Post('register/initiate')
     initiateRegistration(@Body() signUpDto: OTPSignUpDto) {
-        return this.authService.otpInitiateRegistration(signUpDto); //TODO finalize if 200 or 201 to be returned
+        return this.authService.otpInitiateRegistration(signUpDto);
     }
 
     @Public()
-    @HttpCode(HttpStatus.OK) // by default @Post does 201, we wanted 200 - hence using @HttpCode(HttpStatus.OK)
+    @HttpCode(HttpStatus.OK)
     @Post('register/confirm')
     async confirmRegistration(
         @Res({ passthrough: true }) response: Response,

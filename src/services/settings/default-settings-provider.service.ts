@@ -10,7 +10,8 @@ export const DEFAULT_MEDIA_FILE_STORAGE_DIR = 'media-files-storage';
 const getSolidCoreSettings = (isProd: boolean) => ([
   { moduleName: "solid-core", key: "iamGoogleOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "authPagesLayout", value: "center", level: SettingLevel.SystemAdminEditable },
-  { moduleName: "solid-core", key: "authPagesTheme", value: "light", level: SettingLevel.SystemAdminEditable },
+  // Removed authPagesTheme as we are going to use the local storage based theme switching in the frontend instead of server side theme switching.
+  // { moduleName: "solid-core", key: "authPagesTheme", value: "light", level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "appLogo", value: null, level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "companylogo", value: null, level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "favicon", value: null, level: SettingLevel.SystemAdminEditable },

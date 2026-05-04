@@ -11458,13 +11458,6 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "authPagesTheme",
-                      "label": "Auth Pages Theme"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
                       "name": "appTitle",
                       "label": "App Title"
                     }
