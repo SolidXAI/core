@@ -418,6 +418,7 @@ export class AuthenticationService {
         let user = existingUser;
         if (isEmpty(user)) {
             user = this.createUser(signUpDto);
+            user.active = false; // User will be activated only after OTP verification, hence setting active to false for new user.
             await this.assignRegistrationOtp(validationSource, user);
             await this.userRepository.save(user);
             await this.userService.addRoleToUser(user.username, this.settingService.getConfigValue<SolidCoreSetting>('defaultRole'));
