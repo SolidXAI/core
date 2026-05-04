@@ -157,6 +157,7 @@ export class User extends CommonEntity {
     isAllowedToGenerateApiKeys: boolean = false;
 
     @OneToMany(() => UserApiKey, key => key.user)
+    @Expose()
     apiKeys: UserApiKey[];
 
 }
