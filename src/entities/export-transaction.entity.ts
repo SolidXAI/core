@@ -18,6 +18,6 @@ export class ExportTransaction extends CommonEntity {
     @Column({ nullable: true, ...getColumnType('longText') })
     error: string;
     @Index()
-    @ManyToOne(() => ExportTemplate, { nullable: true })
+    @ManyToOne(() => ExportTemplate, { nullable: true, onDelete: 'CASCADE' })
     exportTemplate: ExportTemplate;
 }
