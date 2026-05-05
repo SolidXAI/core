@@ -25,6 +25,6 @@ export class Msg91WhatsappQueueSubscriber extends RabbitMqSubscriber<any> {
     }
 
     subscribe(message: QueueMessage<any>) {
-        this.whatsappService.sendWhatsAppMessageSynchronously(message);
+        return this.whatsappService.sendWhatsAppMessageSynchronously(message);
     }
 }
