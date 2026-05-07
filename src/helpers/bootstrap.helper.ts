@@ -6,8 +6,9 @@ import helmet from 'helmet';
 import qs from 'qs';
 import { existsSync } from 'fs';
 import { resolve } from 'path';
-import { WINSTON_MODULE_NEST_PROVIDER } from 'nest-winston';
+import { WINSTON_MODULE_NEST_PROVIDER, WinstonModule } from 'nest-winston';
 import { CommandFactory } from 'nest-commander';
+import { WinstonLoggerConfig } from '../winston.logger';
 import { WrapResponseInterceptor } from '../interceptors/wrap-response.interceptor';
 import { buildDefaultCorsOptions } from './cors.helper';
 import { buildDefaultSecurityHeaderOptions, buildPermissionsPolicyHeader, PermissionsPolicyConfig } from './security.helper';
@@ -71,7 +72,9 @@ export async function bootstrapSolidApp(
   const { globalPrefix = 'api', swagger = {}, permissionsPolicyOverrides = {} } = options;
 
   const appModule = await appModuleFactory();
-  const app = await NestFactory.create(appModule);
+  const app = await NestFactory.create(appModule, {
+    logger: WinstonModule.createLogger(WinstonLoggerConfig),
+  });
 
   const apiEnabled = parseBooleanEnv('API_ENABLED', true);
 
