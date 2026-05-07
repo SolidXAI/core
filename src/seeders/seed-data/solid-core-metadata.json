@@ -2892,7 +2892,7 @@
             "encryptionType": null,
             "decryptWhen": null,
             "columnName": null,
-            "isMultiSelect": false
+            "isMultiSelect": true
           },
           {
             "name": "job",
