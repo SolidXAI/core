@@ -11214,6 +11214,7 @@
           "label": "Scheduled Job",
           "className": "grid"
         },
+        "onFieldChange": "scheduleFrequencyOnFieldChangeHandler",
         "children": [
           {
             "type": "sheet",
@@ -11291,7 +11292,8 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "cronExpression"
+                                  "name": "cronExpression",
+                                  "visible": false
                                 }
                               },
                               {
@@ -11321,13 +11323,15 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "dayOfWeek"
+                                  "name": "dayOfWeek",
+                                  "visible": false
                                 }
                               },
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "dayOfMonth"
+                                  "name": "dayOfMonth",
+                                  "visible": false
                                 }
                               }
                             ]
