@@ -104,7 +104,7 @@ export class ChatterMessageDetailsRepository extends SolidBaseRepository<Chatter
     const coModelName = get(requestFilter, this.CO_MODEL_NAME_PATH);
     if (!coModelName) return [undefined, undefined];
 
-    const alias = camelize(coModelName);
+    const alias = camelCase(coModelName);
     return [coModelName, alias];
   }
 

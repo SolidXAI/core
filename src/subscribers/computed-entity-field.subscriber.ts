@@ -41,27 +41,27 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
     }
 
     async beforeUpdate(event: UpdateEvent<any>): Promise<any> {
-        const modelName = camelize(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
+        const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'beforeUpdate');
         // await this.handleComputedFieldEvaluation(event.databaseEntity, ComputedFieldTriggerOperation.beforeUpdate, modelName, eventContext);
         await this.handleComputedFieldEvaluation(event.entity, ComputedFieldTriggerOperation.beforeUpdate, modelName, eventContext);
     }
 
     afterInsert(event: InsertEvent<any>) {
-        const modelName = camelize(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
+        const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'afterInsert');
         this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterInsert, modelName, eventContext);
     }
 
     afterUpdate(event: UpdateEvent<any>) {
-        const modelName = camelize(event.metadata?.name ?? event.entity?.constructor?.name ?? event.databaseEntity?.constructor?.name ?? '');
+        const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? event.databaseEntity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'afterUpdate');
         // this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterUpdate, modelName, eventContext);
         this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterUpdate, modelName, eventContext);
     }
 
     afterRemove(event: RemoveEvent<any>) {
-        const modelName = camelize(event.metadata?.name ?? event.entity?.constructor?.name ?? event.databaseEntity?.constructor?.name ?? '');
+        const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? event.databaseEntity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'afterRemove');
         this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterRemove, modelName, eventContext);
     }
