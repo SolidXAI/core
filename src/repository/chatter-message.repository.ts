@@ -1,4 +1,3 @@
-import { camelize, classify } from "@angular-devkit/core/src/utils/strings";
 import { Injectable } from "@nestjs/common";
 import { ChatterMessage } from "src/entities/chatter-message.entity";
 import { ActiveUserData } from "src/interfaces/active-user-data.interface";
@@ -6,7 +5,8 @@ import { RequestContextService } from "src/services/request-context.service";
 import { DataSource, QueryRunner, SelectQueryBuilder } from "typeorm";
 import { SecurityRuleRepository } from "./security-rule.repository";
 import { SolidBaseRepository } from "./solid-base.repository";
-import {get} from "lodash"
+import { get, camelCase } from 'lodash';
+import { classify } from '../helpers/string.helper';
 
 @Injectable()
 export class ChatterMessageRepository extends SolidBaseRepository<ChatterMessage> {
@@ -44,7 +44,7 @@ export class ChatterMessageRepository extends SolidBaseRepository<ChatterMessage
         // const Target = resolveEntityFromCoModelName(coModelName); // your mapping
         const entityName = classify(coModelName)
         const meta = this.dataSource.getMetadata(entityName);
-        const alias = camelize(meta.name);
+        const alias = camelCase(meta.name);
         qb.leftJoin(
             entityName,
             alias,

@@ -5,8 +5,8 @@ import { EntityManager } from 'typeorm';
 
 import { CRUDService } from 'src/services/crud.service';
 
-
-import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
+import { kebabCase } from 'lodash';
+import { classify } from '../helpers/string.helper';
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { validate } from 'class-validator';
 import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
@@ -196,7 +196,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
 
   private getFileName(templateName: string, exportTransactionUUID: string, fileFormat: string): string {
     const extension = (fileFormat === ExportFormat.EXCEL) ? 'xlsx' : 'csv';
-    return `${dasherize(templateName)}-${exportTransactionUUID}.${extension}`;
+    return `${kebabCase(templateName)}-${exportTransactionUUID}.${extension}`;
   }
 
   private getMimeType(fileFormat: string): string {
@@ -236,7 +236,6 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
         fieldNameToDisplayName.set(field.name, field.displayName ?? field.name);
       }
     }
-
 
     return async (chunkIndex: number, chunkSize: number) => {
       const offset = chunkIndex * chunkSize;

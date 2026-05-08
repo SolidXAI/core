@@ -1,4 +1,4 @@
-import { classify } from '@angular-devkit/core/src/utils/strings';
+import { classify } from '../helpers/string.helper';
 import { Injectable, Logger, OnApplicationBootstrap } from '@nestjs/common';
 import { DiscoveryService, MetadataScanner, ModuleRef, Reflector } from '@nestjs/core';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';

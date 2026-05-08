@@ -6,7 +6,6 @@ import { EntityManager } from 'typeorm';
 import { CRUDService } from 'src/services/crud.service';
 
 
-import { classify } from '@angular-devkit/core/src/utils/strings';
 import { HttpService } from '@nestjs/axios';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { RelationFieldsCommand, RelationType, SolidFieldType } from 'src/dtos/create-field-metadata.dto';
@@ -27,6 +26,7 @@ import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.se
 import { getUserExcludedFields } from 'src/helpers/user-helper';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import {upperFirst, camelCase} from 'lodash';
+import { classify } from '../helpers/string.helper';
 
 interface ImportTemplateFileInfo {
   stream: NodeJS.ReadableStream;

@@ -1,7 +1,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { SolidIntrospectService } from "./solid-introspect.service";
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
-import { classify } from "@angular-devkit/core/src/utils/strings";
+import { classify } from '../helpers/string.helper';
 
 interface ScenarioFixture {
     name: string;

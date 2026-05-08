@@ -9,7 +9,7 @@ import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { UpdateMenuItemMetadataDto } from '../dtos/update-menu-item-metadata.dto';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
-import { dasherize } from '@angular-devkit/core/src/utils/strings';
+import { kebabCase } from 'lodash';
 import { MenuItemMetadataRepository } from 'src/repository/menu-item-metadata.repository';
 import { SavedFiltersRepository } from 'src/repository/saved-filters.repository';
 
@@ -191,7 +191,7 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
             // TODO: Here we are assuming that we will always take the user to collection view of a model. 
             // We can make provision to take them other views also in the future. 
             // path = `/admin/core/${rootItem.module.name}/${rootItem.action.model.singularName}/${rootItem.action.view.name}`;
-            path = `/admin/core/${rootItem.module.name}/${dasherize(rootItem.action?.model?.singularName ?? 'unknown')}/${rootItem.action?.view?.type ?? 'list'}?menuItemId=${menuItemId}&menuItemName=${menuItemName}&actionId=${actionId}&actionName=${actionName}${savedFilterId ? `&savedQuery=${savedFilterId}` : ''}`;
+            path = `/admin/core/${rootItem.module.name}/${kebabCase(rootItem.action?.model?.singularName ?? 'unknown')}/${rootItem.action?.view?.type ?? 'list'}?menuItemId=${menuItemId}&menuItemName=${menuItemName}&actionId=${actionId}&actionName=${actionName}${savedFilterId ? `&savedQuery=${savedFilterId}` : ''}`;
 
           }
         }

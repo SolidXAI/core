@@ -4,7 +4,8 @@ import {
   QueryRunner,
   SelectQueryBuilder,
 } from 'typeorm';
-import { camelize, classify } from '@angular-devkit/core/src/utils/strings';
+import { upperFirst, camelCase } from 'lodash';
+import { classify } from '../helpers/string.helper';
 
 import { ChatterMessageDetails } from 'src/entities/chatter-message-details.entity';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
@@ -80,7 +81,7 @@ export class ChatterMessageDetailsRepository extends SolidBaseRepository<Chatter
     const entityName = classify(coModelName);                 // "client" -> "Client"
     const meta = this.dataSource.getMetadata(entityName);     // throws if not registered
     // const table = meta.tablePath;                             // schema-qualified
-    const coAlias = camelize(meta.name);                      // stable alias, e.g., "client"
+    const coAlias = camelCase(meta.name);                      // stable alias, e.g., "client"
 
     // LEFT JOIN "<schema>"."<table>" "<coAlias>"
     //   ON "<coAlias>"."id" = "message"."co_model_entity_id"

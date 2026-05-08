@@ -1,6 +1,6 @@
 import { Brackets, SelectQueryBuilder, WhereExpressionBuilder } from "typeorm";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
-import { classify } from "@angular-devkit/core/src/utils/strings";
+import { classify } from '../helpers/string.helper';
 import { ActiveUserData } from "src/interfaces/active-user-data.interface";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { BadRequestException, Logger } from "@nestjs/common";
@@ -286,7 +286,6 @@ export class CrudHelperService {
                 });
             }
         }
-
 
         if (showSoftDeleted === 'inclusive') {
             qb.withDeleted();
@@ -743,7 +742,5 @@ export class CrudHelperService {
         const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
         return matchingPermssions.length > 0
     }
-
-
 
 }

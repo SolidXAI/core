@@ -2,9 +2,8 @@ import { forwardRef, Inject, Logger } from '@nestjs/common';
 import { Injectable } from '@nestjs/common';
 
 import { QueueMessage, QueuePublisher } from 'src/interfaces/mq';
-import { classify } from '@angular-devkit/core/src/utils/strings';
+import { classify } from '../../helpers/string.helper';
 import { SolidIntrospectService } from '../solid-introspect.service';
-
 
 @Injectable()
 export class PublisherFactory<T> {

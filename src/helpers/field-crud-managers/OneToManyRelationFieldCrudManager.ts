@@ -1,4 +1,4 @@
-import { classify } from "@angular-devkit/core/src/utils/strings";
+import { classify } from '../string.helper';
 import { Logger } from "@nestjs/common";
 import { isEmpty, isEnum, isInt, isNotEmpty } from "class-validator";
 import { RelationFieldsCommand } from "src/dtos/create-field-metadata.dto";

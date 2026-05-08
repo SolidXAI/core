@@ -7,7 +7,8 @@ import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 
-import { classify, dasherize } from '@angular-devkit/core/src/utils/strings';
+import { kebabCase } from 'lodash';
+import { classify } from '../helpers/string.helper';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
@@ -586,32 +587,32 @@ export class ModelMetadataService {
 
       const filesToDelete = [];
       // <singularName>.entity.ts | The TypeORM model that needs to be deleted. | Automatic
-      const entityFilePath = `${modulePath}/entities/${dasherize(modelEntity.singularName)}.entity.ts`;
+      const entityFilePath = `${modulePath}/entities/${kebabCase(modelEntity.singularName)}.entity.ts`;
       filesToDelete.push(entityFilePath);
       this.logger.log(`About to delete entity file path: ${entityFilePath}`);
 
       // <singularName>.create.dto.ts | The TypeORM model that needs to be deleted. | Automatic
-      const createDtoFilePath = `${modulePath}/dtos/create-${dasherize(modelEntity.singularName)}.dto.ts`;
+      const createDtoFilePath = `${modulePath}/dtos/create-${kebabCase(modelEntity.singularName)}.dto.ts`;
       filesToDelete.push(createDtoFilePath);
       this.logger.log(`About to delete create DTO file path: ${createDtoFilePath}`);
 
       // <singularName>.update.dto.ts | The TypeORM model that needs to be deleted. | Automatic
-      const updateDtoFilePath = `${modulePath}/dtos/update-${dasherize(modelEntity.singularName)}.dto.ts`;
+      const updateDtoFilePath = `${modulePath}/dtos/update-${kebabCase(modelEntity.singularName)}.dto.ts`;
       filesToDelete.push(updateDtoFilePath);
       this.logger.log(`About to delete update DTO file path: ${updateDtoFilePath}`);
 
       // <singularName>.repository.ts | The TypeORM model that needs to be deleted. | Automatic
-      const repositoryFilePath = `${modulePath}/repositories/${dasherize(modelEntity.singularName)}.repository.ts`;
+      const repositoryFilePath = `${modulePath}/repositories/${kebabCase(modelEntity.singularName)}.repository.ts`;
       filesToDelete.push(repositoryFilePath);
       this.logger.log(`About to delete repository file path: ${repositoryFilePath}`);
 
       // <singularName>.service.ts | The TypeORM model that needs to be deleted. | Automatic
-      const serviceFilePath = `${modulePath}/services/${dasherize(modelEntity.singularName)}.service.ts`;
+      const serviceFilePath = `${modulePath}/services/${kebabCase(modelEntity.singularName)}.service.ts`;
       filesToDelete.push(serviceFilePath);
       this.logger.log(`About to delete service file path: ${serviceFilePath}`);
 
       // <singularName>.controller.ts | The TypeORM model that needs to be deleted. | Automatic
-      const controllerFilePath = `${modulePath}/controllers/${dasherize(modelEntity.singularName)}.controller.ts`;
+      const controllerFilePath = `${modulePath}/controllers/${kebabCase(modelEntity.singularName)}.controller.ts`;
       filesToDelete.push(controllerFilePath);
       this.logger.log(`About to delete controller file path: ${controllerFilePath}`);
 
@@ -713,11 +714,11 @@ export class ModelMetadataService {
 
     // <moduleName>.module.ts | Remove all references and imports of the deleted model files. | Automatic
     if (modulePath) {
-      const moduleFilePath = path.resolve(modulePath, `${dasherize(modelEntity.module?.name)}.module.ts`);
+      const moduleFilePath = path.resolve(modulePath, `${kebabCase(modelEntity.module?.name)}.module.ts`);
       this.logger.log(`Removing model '${modelEntity.singularName}' references from module file: ${moduleFilePath}`);
       try {
         this.solidTsMorphService.begin();
-        const modelPathSegment = `/${dasherize(modelEntity.singularName)}.`;
+        const modelPathSegment = `/${kebabCase(modelEntity.singularName)}.`;
         const { removedIdentifiers } = this.solidTsMorphService.removeImports(
           moduleFilePath,
           spec => spec.includes(modelPathSegment)
@@ -929,7 +930,6 @@ export class ModelMetadataService {
         children: treeViewLayoutFields
       }
     };
-
 
     const modelFormView = {
       name: formViewName,
@@ -1415,7 +1415,6 @@ export class ModelMetadataService {
     const currentOffset = (meta.currentPage - 1) * meta.perPage;
     const currentIndexGlobal = currentOffset + index + 1;
 
-
     let prev: { record: any; offset: number; limit: number } | null = null;
     let next: { record: any; offset: number; limit: number } | null = null;
 
@@ -1516,6 +1515,5 @@ export class ModelMetadataService {
 
     };
   }
-
 
 }

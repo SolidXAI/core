@@ -1,4 +1,4 @@
-import { camelize } from "@angular-devkit/core/src/utils/strings";
+import { camelCase } from 'lodash';
 import { Delete } from "@aws-sdk/client-s3";
 import { forwardRef, Inject, Injectable, InternalServerErrorException, Logger, Scope } from "@nestjs/common";
 import { model } from "mongoose";
@@ -35,7 +35,7 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
     }
 
     async beforeInsert(event: InsertEvent<any>): Promise<any> {
-        const modelName = camelize(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
+        const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'beforeInsert');
         await this.handleComputedFieldEvaluation(event.entity, ComputedFieldTriggerOperation.beforeInsert, modelName, eventContext);
     }

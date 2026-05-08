@@ -1,7 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { DiscoveryService, ModuleRef } from '@nestjs/core';
 import { getDataSourceToken } from '@nestjs/typeorm';
-import { classify } from '@angular-devkit/core/src/utils/strings';
+import { classify } from '../helpers/string.helper';
 import { DataSource, EntityManager } from 'typeorm';
 import * as fs from 'fs';
 import * as path from 'path';

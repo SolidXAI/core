@@ -4,7 +4,7 @@ import { BadRequestException, Injectable } from "@nestjs/common";
 import { ISelectionProvider, ISelectionProviderContext, ISelectionProviderValues } from "../../interfaces";
 import { BasicFilterDto } from "src/dtos/basic-filters.dto";
 import { SolidIntrospectService } from "../solid-introspect.service";
-import { classify } from "@angular-devkit/core/src/utils/strings";
+import { classify } from '../../helpers/string.helper';
 import { CRUDService } from "../crud.service";
 
 interface PseudoForeignKeySelectionProviderContext extends ISelectionProviderContext {

@@ -4,7 +4,7 @@ import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { Brackets, EntityManager, EntityMetadata } from 'typeorm';
 
-import { classify } from '@angular-devkit/core/src/utils/strings';
+import { classify } from '../helpers/string.helper';
 import { CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE } from 'src/constants/chatter-message.constants';
 import { PostChatterMessageDto } from 'src/dtos/post-chatter-message.dto';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
@@ -228,7 +228,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             }
         }
 
-
         const allChangedFields = [
             ...changedNonRelationFields.map(field => ({
                 field,
@@ -412,7 +411,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 return value.map(item => item.name).join(', ');
             }
         }
-
 
         return value.toString();
     }
