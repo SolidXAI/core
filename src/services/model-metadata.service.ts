@@ -837,7 +837,7 @@ export class ModelMetadataService {
       }
     }
     const actionName = `${model.singularName}-list-action`;
-    const treeViewActionName = `${model.singularName}-tree-view-action`;
+    const treeViewActionName = `${model.singularName}-tree-action`;
     const listViewName = `${model.singularName}-list-view`;
     const treeViewName = `${model.singularName}-tree-view`;
     const formViewName = `${model.singularName}-form-view`;
