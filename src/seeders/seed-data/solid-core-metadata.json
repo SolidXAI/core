@@ -5924,7 +5924,8 @@
   },
   "permissions": [
     "mcp:invoke",
-    "agent:invoke"
+    "agent:invoke",
+    "settings:view_encrypted"
   ],
   "roles": [
     {
