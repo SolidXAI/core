@@ -1511,7 +1511,7 @@
             "encrypt": false,
             "relationType": "many-to-many",
             "relationCoModelSingularName": "roleMetadata",
-            "relationCoModelFieldName": "users",
+            "relationCoModelFieldName": "menuItems",
             "relationCreateInverse": true,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
