@@ -68,12 +68,43 @@ export enum SettingLevel {
   InternalUser = "internal-user"
 }
 
+export type SettingControlType =
+  | 'shortText'
+  | 'longText'
+  | 'numeric'
+  | 'boolean'
+  | 'date'
+  | 'datetime'
+  | 'mediaSingle'
+  | 'selectionStatic'
+  | 'custom';
+
+export interface SettingOption {
+  label: string;
+  value: string | number | boolean;
+}
+
 export interface SettingDefinition<T = any> {
   moduleName: string;
   key: string;
   value: T;
   level: SettingLevel;
   encrypted?: boolean;
+  label?: string;
+  description?: string;
+  placeholder?: string;
+  group?: string;
+  sortOrder?: number;
+  controlType?: SettingControlType;
+  options?: SettingOption[];
+}
+
+export interface AdminSettingDefinition<T = any> extends SettingDefinition<T> {
+  editable: boolean;
+}
+
+export interface AdminSettingsResponse<T = any> {
+  data: AdminSettingDefinition<T>[];
 }
 
 // solid-core/settings/settings-provider.interface.ts
@@ -418,5 +449,4 @@ export interface AuditQueuePayload {
     updatedColumnNames?: string[];
     userId?: number | null;
 }
-
 

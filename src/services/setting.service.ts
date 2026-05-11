@@ -11,7 +11,7 @@ import { FILE_SERVICE, IFileService, FILE_STORAGE_PATH_BUILDER, IStoragePathBuil
 import { Setting } from '../entities/setting.entity';
 import { RequestContextService } from './request-context.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
-import { ISettingsProvider, NoInfer, SettingDefinition, SettingLevel } from '../interfaces';
+import { AdminSettingDefinition, AdminSettingsResponse, ISettingsProvider, NoInfer, SettingControlType, SettingDefinition, SettingLevel } from '../interfaces';
 import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
 import type { SolidCoreSetting } from './settings/default-settings-provider.service';
 import { Logger } from '@nestjs/common';
@@ -66,6 +66,44 @@ export class SettingService {
       }
       return value;
     }
+  }
+
+  private buildSettingLabel(key: string): string {
+    return key
+      .replace(/([a-z0-9])([A-Z])/g, '$1 $2')
+      .replace(/[-_]+/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim()
+      .replace(/\b\w/g, (match) => match.toUpperCase());
+  }
+
+  private inferControlType(setting: SettingDefinition): SettingControlType {
+    if (setting.controlType) {
+      return setting.controlType;
+    }
+
+    if (setting.options?.length) {
+      return 'selectionStatic';
+    }
+
+    if (typeof setting.value === 'boolean') {
+      return 'boolean';
+    }
+
+    if (typeof setting.value === 'number') {
+      return 'numeric';
+    }
+
+    return 'shortText';
+  }
+
+  private toAdminSettingDefinition(setting: SettingDefinition): AdminSettingDefinition {
+    return {
+      ...setting,
+      label: setting.label ?? this.buildSettingLabel(setting.key),
+      controlType: this.inferControlType(setting),
+      editable: setting.level === SettingLevel.SystemAdminEditable,
+    };
   }
 
   /**
@@ -216,13 +254,27 @@ export class SettingService {
    * 
    * @returns 
    */
-  async getNonEncryptedSystemAdminReadonlyAndAboveSettings(): Promise<Record<any, any>> {
-    const finalSettings: Record<any, any> = {};
-    const systemAdminReadonlyAndAboveSettings = this.settings.filter(i => i.level !== "system-env" && !i.encrypted);
-    for (const setting of systemAdminReadonlyAndAboveSettings) {
-      finalSettings[setting.key] = setting.value;
-    }
-    return finalSettings;
+  async getNonEncryptedSystemAdminReadonlyAndAboveSettings(): Promise<AdminSettingsResponse> {
+    const data = this.settings
+      .filter(i => i.level !== "system-env" && !i.encrypted)
+      .filter((setting) => [SettingLevel.SystemAdminReadonly, SettingLevel.SystemAdminEditable].includes(setting.level))
+      .map((setting) => this.toAdminSettingDefinition(setting))
+      .sort((left, right) => {
+        const groupCompare = (left.group ?? '').localeCompare(right.group ?? '');
+        if (groupCompare !== 0) {
+          return groupCompare;
+        }
+
+        const leftSort = left.sortOrder ?? Number.MAX_SAFE_INTEGER;
+        const rightSort = right.sortOrder ?? Number.MAX_SAFE_INTEGER;
+        if (leftSort !== rightSort) {
+          return leftSort - rightSort;
+        }
+
+        return left.label!.localeCompare(right.label!);
+      });
+
+    return { data };
   }
 
   /**
