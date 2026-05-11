@@ -111,9 +111,8 @@ export class ApiKeyService {
     }
 
 
-    async apiKeyMe(query: any) {
+    async apiKeyMe(apiKey: string) {
 
-        const apiKey = query.apiKey;
         const hasedKey = this.hash(apiKey);
         const apiKeyRecord = await this.apiKeyRepository.findOne({
             where: {
