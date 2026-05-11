@@ -259,8 +259,6 @@ export * from './jobs/redis/twilio-sms-subscriber-redis.service'
 export * from './listeners/user-registration.listener'
 
 export * from './passport-strategies/google-oauth.strategy'
-export * from './passport-strategies/facebook-oauth.strategy'
-export * from './passport-strategies/microsoft-oauth.strategy'
 
 export * from './services/selection-providers/list-of-values-selection-providers.service'
 

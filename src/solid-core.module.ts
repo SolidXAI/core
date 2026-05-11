@@ -26,7 +26,7 @@ import { ModuleMetadata } from './entities/module-metadata.entity';
 import { CommandService } from './helpers/command.service';
 import { SchematicService } from './helpers/schematic.service';
 import { ListOfValuesSelectionProvider } from './services/selection-providers/list-of-values-selection-providers.service';
-import { PseudoForeignKeySelectionProvider } from './services/selection-providers/pseudo-foreign-key-selection-provider.service';
+import { PseudoForeignKeySelectionProvider } from './services/selection-providers/pseudo-foreign-key-selection-provider.service'
 import { ModuleMetadataSeederService } from './seeders/module-metadata-seeder.service';
 import { ModuleTestDataService } from './seeders/module-test-data.service';
 import { CrudHelperService } from './services/crud-helper.service';
@@ -54,11 +54,6 @@ import { ViewMetadataService } from './services/view-metadata.service';
 import { ActionMetadataController } from './controllers/action-metadata.controller';
 import { ActionMetadata } from './entities/action-metadata.entity';
 import { ActionMetadataService } from './services/action-metadata.service';
-
-import { FacebookAuthenticationController } from './controllers/facebook-authentication.controller';
-import { MicrosoftAuthenticationController } from './controllers/microsoft-authentication.controller';
-import { FacebookOAuthStrategy } from './passport-strategies/facebook-oauth.strategy';
-import { MicrosoftOAuthStrategy } from './passport-strategies/microsoft-oauth.strategy';
 
 import { HttpModule } from '@nestjs/axios';
 import { JwtModule } from '@nestjs/jwt';
@@ -138,14 +133,7 @@ import { BcryptService } from './services/bcrypt.service';
 import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
 import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/uuid-external-id-computed-field-provider.service';
 import { EmailTemplateService } from './services/email-template.service';
-import {
-  DiskFileService,
-  S3FileService,
-  FileServiceFactory,
-  DiskStoragePathBuilder,
-  S3StoragePathBuilder,
-  StoragePathBuilderFactory,
-} from './services/file';
+import { DiskFileService, S3FileService, FileServiceFactory, DiskStoragePathBuilder, S3StoragePathBuilder, StoragePathBuilderFactory } from './services/file';
 import { HashingService } from './services/hashing.service';
 import { ElasticEmailService } from './services/mail/elastic-email.service';
 import { SMTPEMailService } from './services/mail/smtp-email.service';
@@ -240,6 +228,7 @@ import { SmtpEmailQueueSubscriberDatabase } from './jobs/database/smtp-email-sub
 
 import { TwilioSmsQueuePublisherDatabase } from './jobs/database/twilio-sms-publisher-database.service';
 import { TwilioSmsQueueSubscriberDatabase } from './jobs/database/twilio-sms-subscriber-database.service';
+
 
 // import { ThrottlerModule } from '@nestjs/throttler';
 import { IngestCommand } from './commands/ingest.command';
@@ -391,6 +380,7 @@ import { InfoCommand } from './commands/info.command';
 import { ListOfRolesSelectionProvider } from './services/selection-providers/list-of-roles-selectionproviders.service';
 import { Entity } from 'typeorm';
 
+
 @Global()
 @Module({
   imports: [
@@ -452,12 +442,12 @@ import { Entity } from 'typeorm';
           // you can also expose CORS here (not needed for simple <img>):
           // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
         },
-      },
+      }
     }),
     MulterModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        dest: process.env.AB_MEDIA_UPLOAD_DIR ?? 'media-uploads',
+        dest: process.env.AB_MEDIA_UPLOAD_DIR ?? "media-uploads",
       }),
       inject: [ConfigService],
     }),
@@ -484,8 +474,6 @@ import { Entity } from 'typeorm';
     ExportTransactionController,
     FieldMetadataController,
     GoogleAuthenticationController,
-    FacebookAuthenticationController,
-    MicrosoftAuthenticationController,
     ImportTransactionController,
     ImportTransactionErrorLogController,
     ListOfValuesController,
@@ -536,7 +524,7 @@ import { Entity } from 'typeorm';
     },
     {
       provide: APP_FILTER,
-      useClass: HttpExceptionFilter,
+      useClass: HttpExceptionFilter
     },
     ModuleMetadataService,
     ModuleMetadataHelperService,
@@ -652,8 +640,6 @@ import { Entity } from 'typeorm';
     RefreshTokenIdsStorageService,
     SsoCodeStorageService,
     GoogleOauthStrategy,
-    FacebookOAuthStrategy,
-    MicrosoftOAuthStrategy,
     UserRegistrationListener,
     TestQueuePublisher,
     TestQueueSubscriber,
@@ -887,10 +873,7 @@ import { Entity } from 'typeorm';
 export class SolidCoreModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
-      .apply(
-        express.json({ limit: '10mb' }),
-        express.urlencoded({ limit: '10mb', extended: true }),
-      )
+      .apply(express.json({ limit: '10mb' }), express.urlencoded({ limit: '10mb', extended: true }))
       .forRoutes('*');
   }
 }
