@@ -1,5 +1,5 @@
-import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Param, ParseIntPipe, Patch, Post, Res, Headers } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Param, ParseIntPipe, Patch, Post, Res, Headers, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ActiveUser } from "../decorators/active-user.decorator";
 import { Public } from '../decorators/public.decorator';
@@ -140,6 +140,13 @@ export class AuthenticationController {
         @ActiveUser() activeUser: ActiveUserData,
     ) {
         return this.apiKeyService.updateKey(id, activeUser.sub, dto);
+    }
+
+    @Public()
+    @ApiQuery({ name: 'apiKey', required: true, type: String })
+    @Get('api-keys/me')
+    async findMany(@Query() query: any) { 
+        return this.apiKeyService.apiKeyMe(query);  
     }
 
     @Post('sso/code')

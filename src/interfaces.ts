@@ -97,6 +97,7 @@ export interface SettingDefinition<T = any> {
   sortOrder?: number;
   controlType?: SettingControlType;
   options?: SettingOption[];
+  settingsWidget?: string; // for custom controlType, specify the frontend widget to use
 }
 
 export interface AdminSettingDefinition<T = any> extends SettingDefinition<T> {

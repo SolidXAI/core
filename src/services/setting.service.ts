@@ -255,8 +255,12 @@ export class SettingService {
    * @returns 
    */
   async getNonEncryptedSystemAdminReadonlyAndAboveSettings(): Promise<AdminSettingsResponse> {
+    const activeUser = this.requestContextService.getActiveUser();
+    const hasViewEncryptedPermission = !!activeUser?.permissions?.includes('settings:view_encrypted');
+
     const data = this.settings
-      .filter(i => i.level !== "system-env" && !i.encrypted)
+      .filter(i => i.level !== "system-env")
+      .filter(i => hasViewEncryptedPermission || !i.encrypted)
       .filter((setting) => [SettingLevel.SystemAdminReadonly, SettingLevel.SystemAdminEditable].includes(setting.level))
       .map((setting) => this.toAdminSettingDefinition(setting))
       .sort((left, right) => {

@@ -278,7 +278,8 @@ const getSolidCoreSettings = (isProd: boolean) =>
       description: "Structured configuration for AI providers and model assignments.",
       group: "ai-settings",
       sortOrder: 10,
-      controlType: "longText",
+      controlType: "custom",
+      settingsWidget: "solidXGenAiCodeBuilderConfigWidget"
     },
     {
       moduleName: "solid-core",
