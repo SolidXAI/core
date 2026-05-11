@@ -1,11 +1,12 @@
 import { LocalDateTimeTransformer, serializeDate } from 'src/transformers/typeorm/local-date-time-transformer';
-import { forwardRef, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { Brackets, EntityManager, EntityMetadata } from 'typeorm';
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
-import { CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE } from 'src/constants/chatter-message.constants';
+import { CHATTER_MESSAGE_STATUS, CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE } from 'src/constants/chatter-message.constants';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { PostChatterMessageDto } from 'src/dtos/post-chatter-message.dto';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { lowerFirst } from 'src/helpers/string.helper';
@@ -46,10 +47,26 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         super(entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
     }
 
+    async markCompleted(id: number) {
+        const activeUser = this.requestContextService.getActiveUser();
+        if (!activeUser) {
+            throw new BadRequestException(ERROR_MESSAGES.FORBIDDEN);
+        }
+
+        const message = await this.repo.findOne({ where: { id } });
+        if (!message) {
+            throw new NotFoundException(`Entity [solid-core.chatterMessage] with id ${id} not found`);
+        }
+
+        message.status = CHATTER_MESSAGE_STATUS.COMPLETED;
+        return this.repo.save(message);
+    }
+
     async postMessage(postDto: PostChatterMessageDto, files: Express.Multer.File[] = []) {
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.CUSTOM;
         chatterMessage.messageSubType = postDto.messageSubType || CHATTER_MESSAGE_SUBTYPE.CUSTOM;
+        chatterMessage.status = postDto.status ?? CHATTER_MESSAGE_STATUS.PENDING;
         chatterMessage.messageBody = postDto.messageBody;
         chatterMessage.coModelEntityId = postDto.coModelEntityId;
         chatterMessage.coModelName = postDto.coModelName;
@@ -127,6 +144,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.AUDIT;
         chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.AUDIT_INSERT;
+        chatterMessage.status = CHATTER_MESSAGE_STATUS.PENDING;
         chatterMessage.coModelEntityId = entity.id;
         chatterMessage.coModelName = model?.singularName;
         chatterMessage.modelDisplayName = model?.displayName;
@@ -247,6 +265,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.AUDIT;
         chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.AUDIT_UPDATE;
+        chatterMessage.status = CHATTER_MESSAGE_STATUS.PENDING;
         chatterMessage.coModelEntityId = entity?.id;
         chatterMessage.coModelName = model?.singularName;
         chatterMessage.modelDisplayName = model.displayName;
@@ -310,6 +329,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.AUDIT;
         chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.AUDIT_DELETE;
+        chatterMessage.status = CHATTER_MESSAGE_STATUS.PENDING;
         chatterMessage.coModelEntityId = databaseEntity?.id;
         chatterMessage.coModelName = model?.singularName;
         chatterMessage.modelDisplayName = model?.displayName;

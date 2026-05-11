@@ -121,4 +121,10 @@ export class ChatterMessageController {
   ) {
     return this.service.postMessage(postDto, files);
   }
+
+  @ApiBearerAuth("jwt")
+  @Patch(':id/complete')
+  async markCompleted(@Param('id') id: string) {
+    return this.service.markCompleted(+id);
+  }
 }
