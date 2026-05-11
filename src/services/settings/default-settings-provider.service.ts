@@ -9,6 +9,8 @@ export const DEFAULT_MEDIA_FILE_STORAGE_DIR = 'media-files-storage';
 // 1. 
 const getSolidCoreSettings = (isProd: boolean) => ([
   { moduleName: "solid-core", key: "iamGoogleOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
+  { moduleName: "solid-core", key: "iamFacebookOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
+  { moduleName: "solid-core", key: "iamMicrosoftOAuthEnabled", value: false, level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "authPagesLayout", value: "center", level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "authPagesTheme", value: "light", level: SettingLevel.SystemAdminEditable },
   { moduleName: "solid-core", key: "appLogo", value: null, level: SettingLevel.SystemAdminEditable },
@@ -87,6 +89,20 @@ const getSolidCoreSettings = (isProd: boolean) => ([
   { moduleName: "solid-core", key: "clientSecret", value: process.env.IAM_GOOGLE_OAUTH_CLIENT_SECRET, level: SettingLevel.SystemEnv },
   { moduleName: "solid-core", key: "callbackURL", value: process.env.IAM_GOOGLE_OAUTH_CALLBACK_URL, level: SettingLevel.SystemAdminReadonly },
   { moduleName: "solid-core", key: "redirectURL", value: process.env.IAM_GOOGLE_OAUTH_REDIRECT_URL, level: SettingLevel.SystemAdminReadonly },
+
+  // facebook-oauth-settings-provider.service.ts
+  { moduleName: "solid-core", key: "FACEBOOK_CLIENT_ID", value: process.env.IAM_FACEBOOK_OAUTH_CLIENT_ID, level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "FACEBOOK_CLIENT_SECRET", value: process.env.IAM_FACEBOOK_OAUTH_CLIENT_SECRET, level: SettingLevel.SystemEnv },
+  { moduleName: "solid-core", key: "FACEBOOK_CALLBACK_URL", value: process.env.IAM_FACEBOOK_OAUTH_CALLBACK_URL, level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "FACEBOOK_REDIRECT_URL", value: process.env.IAM_FACEBOOK_OAUTH_REDIRECT_URL, level: SettingLevel.SystemAdminReadonly },
+
+  
+  // microsoft-oauth-settings-provider.service.ts
+  { moduleName: "solid-core", key: "MICROSOFT_CLIENT_ID", value: process.env.IAM_MICROSOFT_OAUTH_CLIENT_ID, level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "MICROSOFT_CLIENT_SECRET", value: process.env.IAM_MICROSOFT_OAUTH_CLIENT_SECRET, level: SettingLevel.SystemEnv },
+  { moduleName: "solid-core", key: "MICROSOFT_TENANT_ID", value: process.env.IAM_MICROSOFT_OAUTH_TENANT_ID || 'common', level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "MICROSOFT_CALLBACK_URL", value: process.env.IAM_MICROSOFT_OAUTH_CALLBACK_URL, level: SettingLevel.SystemAdminReadonly },
+  { moduleName: "solid-core", key: "MICROSOFT_REDIRECT_URL", value: process.env.IAM_MICROSOFT_OAUTH_REDIRECT_URL, level: SettingLevel.SystemAdminReadonly },
 
   // iam-settings-provider.service.ts
   { moduleName: "solid-core", key: "passwordLessAuth", value: (process.env.IAM_PASSWORD_LESS_AUTH?.trim() ?? 'false') === 'true', level: SettingLevel.SystemAdminEditable },
