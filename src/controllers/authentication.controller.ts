@@ -145,7 +145,7 @@ export class AuthenticationController {
     @Public()
     @ApiQuery({ name: 'apiKey', required: true, type: String })
     @Get('api-keys/me')
-    async findMany(@Query() query: any) { 
+    async apiKeyMe(@Query() query: any) { 
         return this.apiKeyService.apiKeyMe(query);  
     }
 
