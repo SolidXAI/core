@@ -1,6 +1,6 @@
 {
   "name": "@solidxai/core",
-  "version": "0.1.9-beta.5",
+  "version": "0.1.9-beta.7",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -30,7 +30,6 @@
   "author": "Oswald Rodrigues <oswald@logicloop.io>",
   "license": "ISC",
   "dependencies": {
-    "@angular-devkit/core": "^18.0.3",
     "@aws-sdk/client-s3": "^3.637.0",
     "@aws-sdk/client-textract": "^3.873.0",
     "@aws-sdk/s3-request-presigner": "^3.828.0",

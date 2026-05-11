@@ -25,6 +25,6 @@ export class ApiEmailQueueSubscriberRedis extends RedisSubscriber<any> {
     }
 
     subscribe(message: QueueMessage<any>) {
-        this.emailService.sendEmailSynchronously(message);
+        return this.emailService.sendEmailSynchronously(message);
     }
 }

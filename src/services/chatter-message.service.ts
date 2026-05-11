@@ -246,7 +246,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             }
         }
 
-
         const allChangedFields = [
             ...changedNonRelationFields.map(field => ({
                 field,
@@ -432,7 +431,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 return value.map(item => item.name).join(', ');
             }
         }
-
 
         return value.toString();
     }

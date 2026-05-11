@@ -1,4 +1,4 @@
-import { classify } from "@angular-devkit/core/src/utils/strings";
+import { classify } from '../../../helpers/string.helper';
 import { Injectable } from "@nestjs/common";
 import { InjectDataSource } from "@nestjs/typeorm";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
@@ -8,7 +8,6 @@ import { ModelSequence } from "src/entities/model-sequence.entity";
 import { ComputedFieldMetadata } from "src/helpers/solid-registry";
 import { IEntityPostComputeFieldProvider } from "src/interfaces";
 import { DataSource, EntityManager } from "typeorm";
-
 
 export interface SequenceNumComputedFieldContext {
     sequenceName: string;

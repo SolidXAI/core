@@ -1,4 +1,4 @@
-import { camelize } from '@angular-devkit/core/src/utils/strings';
+import { camelCase } from 'lodash';
 import { Logger } from '@nestjs/common';
 import { CommonEntity } from 'src/entities/common.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
@@ -33,7 +33,7 @@ export class SolidBaseRepository<T extends CommonEntity> extends Repository<T> {
     }
 
     modelSingularName(): string {
-        return camelize(this.metadata.name);
+        return camelCase(this.metadata.name);
     }
 
     async findOneByUserKey(userKeyValue: string | number): Promise<T | null> {

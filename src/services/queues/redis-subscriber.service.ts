@@ -23,7 +23,7 @@ export abstract class RedisSubscriber<T> implements OnModuleInit, OnModuleDestro
         }
     }
 
-    abstract subscribe(message: QueueMessage<T>): void;
+    abstract subscribe(message: QueueMessage<T>): Promise<any>;
 
     abstract options(): QueuesModuleOptions;
 

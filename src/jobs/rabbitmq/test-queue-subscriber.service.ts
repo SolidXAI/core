@@ -35,12 +35,11 @@ export class TestQueueSubscriber extends RabbitMqSubscriber<any> {
 
         this.testQueueLogger.debug(`Processing message with timeout: ${timeoutSecondsParsed}`);
 
-        // Simulate some processing time
-        setTimeout(() => {
-            this.testQueueLogger.debug(`Processed message: ${JSON.stringify(message)}`);
-            // resolve({ status: 'success', messageId: message.messageId, message: `Processed message` });
-        }, timeoutSecondsParsed * 1000);
-
-        // return new Promise((resolve, reject) => {});
+        return new Promise((resolve) => {
+            setTimeout(() => {
+                this.testQueueLogger.debug(`Processed message: ${JSON.stringify(message)}`);
+                resolve({ status: 'success', messageId: message.messageId, message: 'Processed message' });
+            }, timeoutSecondsParsed * 1000);
+        });
     }
 }

@@ -34,7 +34,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
         return this._loggerInstance;
     }
 
-    abstract subscribe(message: QueueMessage<T>);
+    abstract subscribe(message: QueueMessage<T>): Promise<any>;
 
     abstract options(): QueuesModuleOptions;
 

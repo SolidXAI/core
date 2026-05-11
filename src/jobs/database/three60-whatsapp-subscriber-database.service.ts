@@ -27,6 +27,6 @@ export class Three60WhatsappQueueSubscriberDatabase extends DatabaseSubscriber<a
     }
 
     subscribe(message: QueueMessage<any>) {
-        this.whatsappService.sendWhatsAppMessageSynchronously(message);
+        return this.whatsappService.sendWhatsAppMessageSynchronously(message);
     }
 }

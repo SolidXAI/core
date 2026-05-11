@@ -4,8 +4,7 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { CRUDService } from 'src/services/crud.service';
 import { EntityManager } from 'typeorm';
 
-
-import { classify } from '@angular-devkit/core/src/utils/strings';
+import { classify } from '../helpers/string.helper';
 import { Locale } from 'src/entities/locale.entity';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
@@ -111,7 +110,6 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
   async getLayout(query, activeUser) {
     let { modelName, moduleName, viewType, id, populate, menuItemId, menuItemName, actionId, actionName } = query;
 
-
     // 1. Fetch the action based on actionId.
     const solidRequestContext = {
       activeUser: activeUser
@@ -155,7 +153,6 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
         actionName: actionItem.displayName ?? '',
       }));
     }
-
 
     const viewId = action?.view?.id
     // 3. Fetch the view based on module, model & view name.
@@ -202,7 +199,6 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     } else {
       entity.layout = JSON.parse(entity.layout);
     }
-
 
     // 6. We are resolving the create & edit actions if specified in the layout.
     if (entity?.layout?.attrs?.createAction) {

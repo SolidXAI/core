@@ -1,4 +1,4 @@
-import { classify } from "@angular-devkit/core/src/utils/strings";
+import { classify } from '../string.helper';
 import { BadRequestException } from "@nestjs/common";
 import { isEmpty, isNotEmpty, isString } from "class-validator";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
@@ -86,7 +86,6 @@ export class ManyToOneRelationFieldCrudManager implements FieldCrudManager {
                 throw new Error(`Field ${this.options.fieldName} resolution failed. Record with userKey: ${this.options.relationCoModelUserKeyFieldName}: ${fieldUserKeyValue} not found in ${this.options.relationCoModelSingularName}`);
             }
         }
-
 
         return dto;
     }

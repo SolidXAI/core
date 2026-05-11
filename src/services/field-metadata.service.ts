@@ -1,4 +1,4 @@
-import { classify } from '@angular-devkit/core/src/utils/strings';
+import { classify } from '../helpers/string.helper';
 import { Injectable, Logger, NotFoundException, OnApplicationBootstrap } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
@@ -20,7 +20,6 @@ import { ResolveS3UrlDto } from 'src/dtos/resolve-s3-url.dto';
 import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
 import { S3FileService } from './file';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
-
 
 @Injectable()
 export class FieldMetadataService implements OnApplicationBootstrap {
@@ -806,7 +805,6 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "columnName"
                 ];
 
-
             case SolidFieldType.json:
                 return [
                     "name",
@@ -1193,7 +1191,6 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         // Parse the form values if they are in string format using qs
         const parsedFormValues = typeof formValues === 'string' ? qs.parse(formValues, { allowDots: true }) : formValues;
         selectionDynamicProviderCtxt['formValues'] = parsedFormValues;
-
 
         // 3. get hold of the provider instance from the SolidRegistry
         const selectionProviderInstance = this.solidRegistry.getSelectionProviderInstance(selectionDynamicProvider);
