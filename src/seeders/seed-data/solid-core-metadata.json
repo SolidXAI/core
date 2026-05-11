@@ -3780,7 +3780,9 @@
               "audit_insert:audit_insert",
               "audit_update:audit_update",
               "audit_delete:audit_delete",
-              "custom:custom"
+              "custom:custom",
+              "note:note",
+              "task:task"
             ]
           },
           {
@@ -3891,6 +3893,21 @@
             "private": false,
             "encrypt": false,
             "isSystem": false
+          },
+          {
+            "name": "status",
+            "displayName": "Message Status",
+            "type": "selectionStatic",
+            "defaultValue": "pending",
+            "length": 256,
+            "required": true,
+            "index": false,
+            "isSystem": false,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "pending:pending",
+              "completed:completed"
+            ]
           }
         ]
       },
@@ -5951,6 +5968,7 @@
         "ChatterMessageController.getChatterMessages",
         "ChatterMessageController.postMessage",
         "ChatterMessageController.findMany",
+        "ChatterMessageController.markCompleted",
         "ImportTransactionController.getImportTemplate",
         "ImportTransactionController.getImportInstructions",
         "ImportTransactionController.getImportMappingInfo",
