@@ -4,7 +4,7 @@ import { DatabasePublisher } from 'src/services/queues/database-publisher.servic
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { MqMessageService } from '../../services/mq-message.service';
 import { QueuesModuleOptions } from "../../interfaces";
-import { AuditQueuePayload } from '../rabbitmq/chatter-queue-publisher.service';
+import { AuditQueuePayload } from '../../interfaces';
 import chatterQueueOptionsDatabase from './chatter-queue-options-database';
 
 @Injectable()

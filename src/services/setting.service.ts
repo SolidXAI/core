@@ -15,6 +15,7 @@ import { ISettingsProvider, NoInfer, SettingDefinition, SettingLevel } from '../
 import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
 import type { SolidCoreSetting } from './settings/default-settings-provider.service';
 import { Logger } from '@nestjs/common';
+import { EncryptionService } from './encryption.service';
 
 
 @Injectable()
@@ -23,6 +24,7 @@ export class SettingService {
 
   private settings: SettingDefinition[] = [];
   private settingsByKey = new Map<string, SettingDefinition>();
+  private readonly encryptionService: EncryptionService | null;
 
   private readonly arrayKeysToSkip = new Set([
     'authenticationPasswordRegex',
@@ -38,7 +40,11 @@ export class SettingService {
     readonly moduleMetadataRepo: ModuleMetadataRepository,
     private readonly requestContextService: RequestContextService,
     @InjectRepository(User) private readonly userRepository: Repository<User>,
-  ) { }
+  ) {
+    const encKey = process.env.APP_ENCRYPTION_KEY;
+    this.encryptionService = encKey ? new EncryptionService(encKey) : null;
+    if (!encKey) this._logger.warn('APP_ENCRYPTION_KEY is not set — encrypted settings will not be decrypted');
+  }
 
   private async getSettingsFromDb(): Promise<Setting[]> {
     const settings = await this.repo.find({ relations: ['user'] });
@@ -112,7 +118,15 @@ export class SettingService {
       const settingFromDb = settingsFromDbByKey.get(setting.key);
       const valueFromDb = settingFromDb?.value;
       if (settingFromDb?.key && valueFromDb !== undefined && valueFromDb !== null) {
-        const parsedValue = typeof valueFromDb === 'string' ? this.parseSettingValue(valueFromDb, settingFromDb.key) : valueFromDb;
+        let rawValue = valueFromDb;
+        if (settingFromDb.encrypted && this.encryptionService) {
+          try {
+            rawValue = this.encryptionService.decrypt(rawValue);
+          } catch {
+            this._logger.warn(`Failed to decrypt setting "${setting.key}" — using raw value`);
+          }
+        }
+        const parsedValue = typeof rawValue === 'string' ? this.parseSettingValue(rawValue, settingFromDb.key) : rawValue;
         return { ...setting, value: parsedValue };
       }
       return setting;
@@ -149,30 +163,38 @@ export class SettingService {
     const settingsToMutate: Setting[] = [];
     // const settingsToUpdate: Setting[] = [];
 
-    for (const { key, value, level, moduleName } of saEditableAndAbove) {
+    for (const { key, value, level, moduleName, encrypted } of saEditableAndAbove) {
       const moduleMetadata = await this.moduleMetadataRepo.findOneBy({ name: moduleName });
       if (!existingSettingsFromDbByKey.has(key)) {
         const setting = new Setting();
         setting.key = key;
         setting.level = level;
+        setting.encrypted = !!encrypted;
         if (moduleMetadata)
           setting.moduleMetadata = moduleMetadata;
 
+        let rawValue: string | null;
         if (typeof value === 'boolean') {
-          setting.value = value.toString();
+          rawValue = value.toString();
         } else if (Array.isArray(value)) {
-          setting.value = value.join(',');
+          rawValue = value.join(',');
         } else if (value === null || value === undefined) {
-          setting.value = null;
+          rawValue = null;
         } else {
-          setting.value = String(value);
+          rawValue = String(value);
         }
+
+        if (encrypted && this.encryptionService && rawValue !== null) {
+          rawValue = this.encryptionService.encrypt(rawValue);
+        }
+        setting.value = rawValue;
 
         settingsToMutate.push(setting);
       }
       else {
         const setting = existingSettingsFromDbByKey.get(key);
         setting.level = level;
+        setting.encrypted = !!encrypted;
         if (moduleMetadata)
           setting.moduleMetadata = moduleMetadata;
         settingsToMutate.push(setting);
@@ -289,22 +311,29 @@ export class SettingService {
       }
 
       const key = settingDto.key;
-      // const value = settingDto.value ?? '';
       const rawValue = settingDto.value;
-      const value = rawValue === null || rawValue === undefined ? null : String(rawValue);
+      let value = rawValue === null || rawValue === undefined ? null : String(rawValue);
 
       const settingType = settingDto.type ?? 'system';
+      const definition = this.settingsByKey.get(key);
+      const shouldEncrypt = !!definition?.encrypted && this.encryptionService !== null && value !== null;
+
+      if (shouldEncrypt) {
+        value = this.encryptionService.encrypt(value);
+      }
 
       const existingSetting = existingSettings.find(s => s.key === key);
       if (existingSetting) {
         existingSetting.value = value;
         existingSetting.type = settingType;
+        existingSetting.encrypted = shouldEncrypt;
         settingsToUpdate.push(existingSetting);
       } else {
         const newSetting = new Setting();
         newSetting.key = key;
         newSetting.value = value;
         newSetting.type = settingType;
+        newSetting.encrypted = shouldEncrypt;
 
         if (settingType === 'user' && user) {
           newSetting.user = user;

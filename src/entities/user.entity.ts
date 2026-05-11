@@ -2,6 +2,7 @@ import { CommonEntity } from "src/entities/common.entity"
 import { Entity, Column, Index, JoinTable, ManyToMany, OneToMany, TableInheritance } from "typeorm";
 import { RoleMetadata } from 'src/entities/role-metadata.entity';
 import { UserViewMetadata } from 'src/entities/user-view-metadata.entity'
+import { UserApiKey } from 'src/entities/user-api-key.entity'
 import { Exclude, Expose } from "class-transformer";
 
 @Entity("ss_user")
@@ -182,5 +183,12 @@ export class User extends CommonEntity {
 
     @Expose()
     _media: any;
+
+    @Column({ default: false })
+    @Expose()
+    isAllowedToGenerateApiKeys: boolean = false;
+
+    @OneToMany(() => UserApiKey, key => key.user)
+    apiKeys: UserApiKey[];
 
 }
