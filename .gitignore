@@ -27,3 +27,4 @@ dist-tests/
 .env
 .env.*
 .env-*
+docs
