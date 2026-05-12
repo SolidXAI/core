@@ -42,7 +42,7 @@ export function buildDefaultCorsOptions(): CorsOptions {
       return cb(new Error(`Origin ${origin} not allowed by CORS. Allowed origins: ${allowed.join(', ')}`), false);
     },
     methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'OPTIONS'],
-    allowedHeaders: ['Content-Type', 'Authorization'],
+    allowedHeaders: ['Content-Type', 'Authorization','solidx-api-key'],
     credentials: true,
   };
 }
