@@ -26,6 +26,7 @@ export * from './decorators/mail-provider.decorator'
 export * from './decorators/security-rule-config-provider.decorator'
 export * from './decorators/sms-provider.decorator'
 export * from './decorators/settings-provider.decorator'
+export * from './decorators/extension-user-creation-provider.decorator'
 
 export * from './dtos/post-chatter-message.dto'
 export * from './dtos/security-rule-config.dto'
@@ -148,6 +149,7 @@ export * from './entities/dashboard-layout.entity'
 export * from './entities/dashboard-question-sql-dataset-config.entity'
 export * from './entities/ai-interaction.entity'
 export * from './entities/model-sequence.entity'
+export * from './entities/user-api-key.entity'
 
 export * from './enums/auth-type.enum'
 export * from './decorators/disallow-in-production.decorator'
@@ -259,6 +261,8 @@ export * from './jobs/redis/twilio-sms-subscriber-redis.service'
 export * from './listeners/user-registration.listener'
 
 export * from './passport-strategies/google-oauth.strategy'
+export * from './passport-strategies/facebook-oauth.strategy'
+export * from './passport-strategies/microsoft-oauth.strategy'
 
 export * from './services/selection-providers/list-of-values-selection-providers.service'
 

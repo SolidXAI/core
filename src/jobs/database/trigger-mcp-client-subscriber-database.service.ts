@@ -1,5 +1,5 @@
 import { Injectable, Logger } from '@nestjs/common';
-import { ModelMetadataService } from 'src';
+import { ModelMetadataService } from '../../services/model-metadata.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { QueueMessage } from 'src/interfaces/mq';
 import { DashboardRepository } from 'src/repository/dashboard.repository';

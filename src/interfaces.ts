@@ -1,3 +1,6 @@
+import { Repository } from 'typeorm';
+import { User } from 'src/entities/user.entity';
+import { CreateUserDto } from 'src/dtos/create-user.dto';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
 import { SignUpDto } from 'src/dtos/sign-up.dto';
@@ -65,12 +68,44 @@ export enum SettingLevel {
   InternalUser = "internal-user"
 }
 
+export type SettingControlType =
+  | 'shortText'
+  | 'longText'
+  | 'numeric'
+  | 'boolean'
+  | 'date'
+  | 'datetime'
+  | 'mediaSingle'
+  | 'selectionStatic'
+  | 'custom';
+
+export interface SettingOption {
+  label: string;
+  value: string | number | boolean;
+}
+
 export interface SettingDefinition<T = any> {
   moduleName: string;
   key: string;
   value: T;
   level: SettingLevel;
   encrypted?: boolean;
+  label?: string;
+  description?: string;
+  placeholder?: string;
+  group?: string;
+  sortOrder?: number;
+  controlType?: SettingControlType;
+  options?: SettingOption[];
+  settingsWidget?: string; // for custom controlType, specify the frontend widget to use
+}
+
+export interface AdminSettingDefinition<T = any> extends SettingDefinition<T> {
+  editable: boolean;
+}
+
+export interface AdminSettingsResponse<T = any> {
+  data: AdminSettingDefinition<T>[];
 }
 
 // solid-core/settings/settings-provider.interface.ts
@@ -195,6 +230,12 @@ export class EventDetails<T> {
     public type: any,
     public payload: T,
   ) { }
+}
+
+export interface IExtensionUserCreationProvider<T extends User = User, TDto extends CreateUserDto = CreateUserDto> {
+  readonly repo: Repository<T>;
+  buildExtensionEntity(dto: TDto): Promise<T>;
+  roles(dto: TDto): string[];
 }
 
 export interface IMail<TResponse = unknown> {
@@ -409,5 +450,4 @@ export interface AuditQueuePayload {
     updatedColumnNames?: string[];
     userId?: number | null;
 }
-
 

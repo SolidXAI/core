@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { SmsTemplate } from 'src';
+import { SmsTemplate } from '../entities/sms-template.entity';
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { SecurityRuleRepository } from './security-rule.repository';

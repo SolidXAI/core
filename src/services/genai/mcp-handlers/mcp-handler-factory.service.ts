@@ -1,9 +1,8 @@
 import { Injectable, Logger } from '@nestjs/common';
 
-import { classify } from '@angular-devkit/core/src/utils/strings';
+import { classify } from '../../../helpers/string.helper';
 import { IMcpToolResponseHandler } from 'src/interfaces';
 import { SolidIntrospectService } from '../../solid-introspect.service';
-
 
 @Injectable()
 export class McpHandlerFactory {

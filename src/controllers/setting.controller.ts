@@ -36,13 +36,13 @@ export class SettingController {
   @Get('/wrapped')
   @Public()
   async wrapSettings() {
-    return this.service.getSystemAdminReadonlyAndAboveSettings();
+    return this.service.getNonEncryptedSystemAdminReadonlyAndAboveSettings();
   }
 
   @ApiBearerAuth("jwt")
   @Get()
   async getAllSettings() {
-    return this.service.getSystemAdminReadonlyAndAboveSettings();
+    return this.service.getNonEncryptedSystemAdminReadonlyAndAboveSettings();
   }
 
   @ApiBearerAuth("jwt")

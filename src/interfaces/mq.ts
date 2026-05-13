@@ -19,5 +19,5 @@ export interface QueuePublisher<T> {
 
 export interface QueueSubscriber<T> {
     options(): QueuesModuleOptions;
-    subscribe(message: QueueMessage<T>): void;
+    subscribe(message: QueueMessage<T>): Promise<any>;
 }

@@ -56,6 +56,38 @@ export class User extends CommonEntity {
     // don't send to client
     googleProfilePicture: string;
 
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    facebookId: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    facebookAccessToken: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    facebookProfilePicture: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    appleId: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    appleAccessToken: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    microsoftId: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    microsoftAccessToken: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    microsoftProfilePicture: string;
+
     @Column({ default: true })
     @Expose()
     active: boolean = true;
@@ -157,6 +189,7 @@ export class User extends CommonEntity {
     isAllowedToGenerateApiKeys: boolean = false;
 
     @OneToMany(() => UserApiKey, key => key.user)
+    @Expose()
     apiKeys: UserApiKey[];
 
 }

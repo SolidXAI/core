@@ -12,7 +12,7 @@ export class ChatterMessage extends CommonEntity {
     messageType: string; // audit | custom 
 
     @Column({ type: "varchar" })
-    messageSubType: string; // audit_update | audit_insert | audit_delete | custom
+    messageSubType: string; // audit_update | audit_insert | audit_delete | custom | note | task
 
     @Column({ nullable: true, ...getColumnType('longText') })
     messageBody: string;
@@ -38,4 +38,7 @@ export class ChatterMessage extends CommonEntity {
 
     @Column({ nullable: true })
     modelUserKey: string;
+
+    @Column({ default: 'pending' })
+    status: string; // pending | completed
 }

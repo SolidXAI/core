@@ -25,6 +25,6 @@ export class Msg91WhatsappQueueSubscriberRedis extends RedisSubscriber<any> {
     }
 
     subscribe(message: QueueMessage<any>) {
-        this.whatsappService.sendWhatsAppMessageSynchronously(message);
+        return this.whatsappService.sendWhatsAppMessageSynchronously(message);
     }
 }

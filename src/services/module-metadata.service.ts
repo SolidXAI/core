@@ -6,7 +6,7 @@ import { DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 
-import { classify } from '@angular-devkit/core/src/utils/strings';
+import { classify } from '../helpers/string.helper';
 import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import * as path from 'path'; // To handle file paths
@@ -277,7 +277,6 @@ export class ModuleMetadataService {
           mediaStorageProviders: [],
         };
       }
-
 
       metaData.moduleMetadata.name = module?.name;
       metaData.moduleMetadata.displayName = module?.displayName;

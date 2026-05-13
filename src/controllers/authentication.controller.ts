@@ -1,5 +1,5 @@
 import { Body, Controller, Get, HttpCode, HttpStatus, Logger, Param, ParseIntPipe, Patch, Post, Res, Headers } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiHeader, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ActiveUser } from "../decorators/active-user.decorator";
 import { Public } from '../decorators/public.decorator';
@@ -140,6 +140,13 @@ export class AuthenticationController {
         @ActiveUser() activeUser: ActiveUserData,
     ) {
         return this.apiKeyService.updateKey(id, activeUser.sub, dto);
+    }
+
+    @Public()
+    @ApiHeader({ name: 'solidx-api-key', required: true, description: 'API key for authenticating the request' })
+    @Get('api-keys/me')
+    async apiKeyMe(@Headers('solidx-api-key') apiKey: string) {
+        return this.apiKeyService.apiKeyMe(apiKey);
     }
 
     @Post('sso/code')

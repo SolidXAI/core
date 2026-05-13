@@ -31,7 +31,13 @@ import { ViewMetadataService } from '../services/view-metadata.service';
 import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
-import { ActionMetadata, DEFAULT_SA_PASSWORD, MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL, MenuItemMetadata, ModuleMetadata, RoleMetadata, SignUpDto } from 'src';
+import { ActionMetadata } from '../entities/action-metadata.entity';
+import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
+import { ModuleMetadata } from '../entities/module-metadata.entity';
+import { RoleMetadata } from '../entities/role-metadata.entity';
+import { MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL } from '../dtos/create-menu-item-metadata.dto';
+import { DEFAULT_SA_PASSWORD } from '../dtos/create-user.dto';
+import { SignUpDto } from '../dtos/sign-up.dto';
 import { ADMIN_ROLE_NAME, CreateRoleMetadataDto } from 'src/dtos/create-role-metadata.dto';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
@@ -150,6 +156,11 @@ export class ModuleMetadataSeederService {
                 this.logger.log(`Seeding Module / Model / Fields`);
                 const moduleModelFieldCounts = await this.seedModuleModelFields(moduleMetadata);
                 console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
+
+                currentStep = 'seedPermissions';
+                this.logger.log(`Seeding Permissions`);
+                const permissionCounts = await this.seedPermissions(overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Permissions', permissionCounts)}`);
 
                 currentStep = 'seedRoles';
                 this.logger.log(`Seeding Roles`);
@@ -282,6 +293,7 @@ export class ModuleMetadataSeederService {
         this.logger.debug(`About to add all permissions to the Admin role`);
         await this.roleService.addAllPermissionsToRole(ADMIN_ROLE_NAME);
 
+        // The below code is commented out for now as we are including permissions for these roles from the seeder json for the Internal and Public role. 
         // 2. Give  permissions to the Internal / Public role.
         // this.logger.debug(`About to add all permissions to the Internal role`);
         // await this.roleService.addPermissionToRole(INTERNAL_ROLE_NAME, INTERNAL_ROLE_PERMISSIONS);
@@ -379,6 +391,14 @@ export class ModuleMetadataSeederService {
         return { pruned: 0, upserted: overallMetadata.roles?.length ?? 0 };
     }
 
+    private async seedPermissions(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
+        this.logger.debug(`[Start] Processing permissions`);
+        const permissions = overallMetadata.permissions ?? [];
+        await this.handleSeedPermissions(permissions);
+        this.logger.debug(`[End] Processing permissions`);
+        return { pruned: 0, upserted: permissions?.length ?? 0 };
+    }
+
     // OK
     private get seedDataFiles(): any[] {
         const typedSolidCoreMetadata = structuredClone(solidCoreMetadata);
@@ -401,7 +421,7 @@ export class ModuleMetadataSeederService {
     // OK
     private async seedGlobalMetadata() {
         this.logger.log(`Seeding Permissions`);
-        await this.seedPermissions();
+        await this.seedControllerPermissions();
 
         // this.logger.log(`Seeding Default Media Storage Providers`);
         // await this.seedDefaultMediaStorageProviders();
@@ -422,7 +442,7 @@ export class ModuleMetadataSeederService {
     }
 
     // OK
-    private async seedPermissions() {
+    private async seedControllerPermissions() {
 
         const controllers = this.solidRegistry.getControllers();
         const permissionNames: string[] = [];
@@ -440,28 +460,7 @@ export class ModuleMetadataSeederService {
                     const permissionName = `${controller.name}.${methodName}`;
                     permissionNames.push(permissionName);
 
-                    const existingPermission = await this.permissionRepo.findOne({
-                        where: {
-                            name: permissionName
-                        }
-                    });
-
-                    // if (existingPermission) {
-                    //     this.logger.log(`Permission ${permissionName} already exists.`);
-                    // }
-                    // else { }
-
-                    if (!existingPermission) {
-
-                        this.logger.log(`Permission ${permissionName} does not exist, creating new.`);
-
-                        const newPermission = this.permissionRepo.create({
-                            name: permissionName
-                        });
-                        await this.permissionRepo.save(newPermission);
-
-
-                    }
+                    await this.createPermissionIfNotExists(permissionName);
                 }
 
             } catch (error) {
@@ -471,6 +470,32 @@ export class ModuleMetadataSeederService {
 
         if (this.enablePruning) {
             await this.prunePermissions(permissionNames);
+        }
+    }
+
+    private async createPermissionIfNotExists(permissionName: string): Promise<void> {
+        const existingPermission = await this.permissionRepo.findOne({
+            where: {
+                name: permissionName
+            }
+        });
+
+        if (!existingPermission) {
+            this.logger.log(`Permission ${permissionName} does not exist, creating new.`);
+
+            const newPermission = this.permissionRepo.create({
+                name: permissionName
+            });
+            await this.permissionRepo.save(newPermission);
+        }
+    }
+
+    private async handleSeedPermissions(permissions: any[]): Promise<void> {
+        for (const permission of permissions) {
+            const permissionName = typeof permission === 'string' ? permission : permission?.name;
+            if (permissionName) {
+                await this.createPermissionIfNotExists(permissionName);
+            }
         }
     }
 

@@ -20,4 +20,8 @@ export class PostChatterMessageDto {
     @IsString()
     @IsOptional()
     modelUserKey?: string;
+
+    @IsString()
+    @IsOptional()
+    status?: string;
 }

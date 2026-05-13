@@ -19,8 +19,8 @@ export class Setting extends CommonEntity {
     @Column({ name: "level", type: "varchar", nullable: true })
     level: string;
 
-    @Column({ name: "encrypted", type: "boolean", default: false })
-    encrypted: boolean;
+    @Column({ name: "encrypted", default: false })
+    encrypted: boolean; 
 
     @Index()
     @ManyToOne(() => User, { nullable: true })

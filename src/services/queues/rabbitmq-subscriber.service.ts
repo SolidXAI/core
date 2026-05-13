@@ -52,7 +52,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         return this._loggerInstance;
     }
 
-    abstract subscribe(message: QueueMessage<T>);
+    abstract subscribe(message: QueueMessage<T>): Promise<any>;
 
     abstract options(): QueuesModuleOptions;
 
@@ -458,16 +458,18 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         // Main subscriber work promise.
         // If timeout has already fired, suppress rethrow to avoid unhandled rejection noise
         // (the timeout error is already the authoritative failure we track).
-        const subscribePromise = this.subscribe(message).catch((error) => {
-            if (timedOut) {
-                this.logger.error(
-                    `Subscriber promise rejected after timeout for queue ${queueName} and messageId ${messageId}: ${(error as Error)?.message || String(error)}`,
-                    (error as Error)?.stack,
-                );
-                return undefined;
-            }
-            throw error;
-        });
+        const subscribePromise = Promise.resolve()
+            .then(() => this.subscribe(message))
+            .catch((error) => {
+                if (timedOut) {
+                    this.logger.error(
+                        `Subscriber promise rejected after timeout for queue ${queueName} and messageId ${messageId}: ${(error as Error)?.message || String(error)}`,
+                        (error as Error)?.stack,
+                    );
+                    return undefined;
+                }
+                throw error;
+            });
 
         // Timeout promise rejects after timeoutMs with an explicit domain-specific error.
         const timeoutPromise = new Promise<never>((_, reject) => {

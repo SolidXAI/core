@@ -7,7 +7,7 @@ import * as winston from 'winston';
 import { Environment } from './decorators/disallow-in-production.decorator';
 
 export const WinstonLoggerConfig = {
-    level: process.env.LOG_LEVEL || (process.env.ENV === Environment.Production ? 'warn' : 'debug'),
+    level: process.env.LOG_LEVEL || (process.env.ENV === Environment.Production ? 'info' : 'debug'),
     format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.errors({ stack: true }),

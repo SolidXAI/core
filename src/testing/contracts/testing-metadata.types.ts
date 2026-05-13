@@ -6,9 +6,26 @@ export interface TestingDataRecord {
   data: Record<string, any>;
 }
 
+export interface TestingRoleSpec {
+  name: string;
+  permissions?: string[];
+}
+
+export interface TestingUserSpec {
+  username: string;
+  email: string;
+  password: string;
+  fullName?: string;
+  mobile?: string;
+  roles?: string[];
+  [key: string]: any;
+}
+
 export interface TestingMetadata {
   testing: {
     specs?: string[];
+    roles?: TestingRoleSpec[];
+    users?: TestingUserSpec[];
     data?: TestingDataRecord[];
     scenarios: ScenarioSpec[];
   };

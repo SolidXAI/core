@@ -1,5 +1,5 @@
 import { Injectable } from '@nestjs/common';
-import { Locale } from 'src';
+import { Locale } from '../entities/locale.entity';
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { SecurityRuleRepository } from './security-rule.repository';

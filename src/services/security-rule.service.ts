@@ -8,7 +8,7 @@ import { CRUDService } from 'src/services/crud.service';
 
 import { SecurityRule } from '../entities/security-rule.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
-import { SecurityRuleRepository } from 'src';
+import { SecurityRuleRepository } from '../repository/security-rule.repository';
 
 @Injectable()
 export class SecurityRuleService extends CRUDService<SecurityRule> implements OnApplicationBootstrap {

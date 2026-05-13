@@ -1,37 +1,68 @@
-import { BadRequestException, forwardRef, Inject, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  forwardRef,
+  Inject,
+  Injectable,
+} from "@nestjs/common";
 import { ModuleRef } from "@nestjs/core";
-import { InjectEntityManager, InjectRepository } from '@nestjs/typeorm';
-import { CRUDService } from 'src/services/crud.service';
-import { EntityManager, Repository } from 'typeorm';
+import { InjectEntityManager, InjectRepository } from "@nestjs/typeorm";
+import { CRUDService } from "src/services/crud.service";
+import { EntityManager, Repository } from "typeorm";
 import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
-
-import { OauthUserDto } from '../dtos/oauth-user-dto';
-import { RoleMetadata } from '../entities/role-metadata.entity';
-import { User } from '../entities/user.entity';
-import { ActiveUserData } from '../interfaces/active-user-data.interface';
-import { ERROR_MESSAGES } from 'src/constants/error-messages';
-import { UserRepository } from 'src/repository/user.repository';
-import { RoleMetadataRepository } from 'src/repository/role-metadata.repository';
-import { HashingService } from './hashing.service';
+import { OauthUserDto } from "../dtos/oauth-user-dto";
+import { RoleMetadata } from "../entities/role-metadata.entity";
+import { User } from "../entities/user.entity";
+import { ActiveUserData } from "../interfaces/active-user-data.interface";
+import { ERROR_MESSAGES } from "src/constants/error-messages";
+import { UserRepository } from "src/repository/user.repository";
+import { RoleMetadataRepository } from "src/repository/role-metadata.repository";
+import { HashingService } from "./hashing.service";
 
 @Injectable()
 export class UserService extends CRUDService<User> {
+  private buildFacebookUsernameBase(name?: string): string {
+    const normalized = (name || "")
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    return normalized || "facebook_user";
+  }
+
+  private async resolveUniqueUsername(
+    preferredUsername: string,
+    // fallbackUsername: string,
+  ): Promise<string> {
+    let candidate = preferredUsername;
+    let suffix = 0;
+
+    while (await this.repo.findOne({ where: { username: candidate } })) {
+      suffix += 1;
+      candidate = `${preferredUsername}_${suffix}`;
+    }
+
+    if (candidate) {
+      return candidate;
+    }
+
+    // return fallbackUsername;
+  }
+
   constructor(
     readonly hashingService: HashingService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(User, 'default')
     readonly repo: UserRepository,
-    @InjectRepository(User, 'default')
+    @InjectRepository(User, "default")
     readonly nonSecurityRuleAwareRepo: Repository<User>,
     // @InjectRepository(RoleMetadata)
     // private readonly roleRepository: Repository<RoleMetadata>,
     private readonly roleRepository: RoleMetadataRepository,
     readonly moduleRef: ModuleRef,
-
   ) {
-    super(entityManager, repo, 'user', 'solid-core', moduleRef);
+    super(entityManager, repo, "user", "solid-core", moduleRef);
   }
 
   override async delete(id: number, solidRequestContext: any = {}) {
@@ -44,13 +75,19 @@ export class UserService extends CRUDService<User> {
     return super.delete(id, solidRequestContext);
   }
 
-  override async deleteMany(ids: number[], solidRequestContext: any = {}): Promise<any> {
+  override async deleteMany(
+    ids: number[],
+    solidRequestContext: any = {},
+  ): Promise<any> {
     if (!ids || ids.length === 0) {
       throw new Error(ERROR_MESSAGES.DELETE_IDS_REQUIRED);
     }
 
     // ❌ If the active user is trying to delete themselves
-    if (solidRequestContext?.activeUser?.sub && ids.includes(solidRequestContext.activeUser.id)) {
+    if (
+      solidRequestContext?.activeUser?.sub &&
+      ids.includes(solidRequestContext.activeUser.id)
+    ) {
       throw new BadRequestException(ERROR_MESSAGES.DELETE_SELF_NOT_ALLOWED);
     }
 
@@ -60,9 +97,9 @@ export class UserService extends CRUDService<User> {
   async findOneByEmail(email: string): Promise<User> {
     return await this.repo.findOne({
       where: {
-        email: email
+        email: email,
       },
-      relations: {}
+      relations: {},
     });
     // if (!entity) {
     //     throw new NotFoundException(`user with email #${email} not found`);
@@ -73,18 +110,18 @@ export class UserService extends CRUDService<User> {
   async findOneByAccessCode(accessCode: string): Promise<User> {
     return await this.repo.findOne({
       where: {
-        accessCode: accessCode
+        accessCode: accessCode,
       },
-      relations: {}
+      relations: {},
     });
   }
 
   async findOneByUsername(username: string): Promise<User> {
     return await this.repo.findOne({
       where: {
-        username: username
+        username: username,
       },
-      relations: {}
+      relations: {},
     });
     // if (!entity) {
     //     throw new NotFoundException(`user with username ${username} not found`);
@@ -96,8 +133,8 @@ export class UserService extends CRUDService<User> {
     const user = await this.repo.findOne({
       where: { id: id },
       relations: {
-        roles: true
-      }
+        roles: true,
+      },
     });
     if (!user) {
       throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
@@ -113,21 +150,22 @@ export class UserService extends CRUDService<User> {
     const user = await this.repo.findOne({
       where: { username: username },
       relations: {
-        roles: true
-      }
+        roles: true,
+      },
     });
     if (!user) {
       throw new Error(ERROR_MESSAGES.USER_NOT_FOUND_BY_USERNAME(username));
     }
-    const role = await this.roleRepository.findOne({ where: { name: roleName } });
+    const role = await this.roleRepository.findOne({
+      where: { name: roleName },
+    });
     if (!role) {
       throw new Error(ERROR_MESSAGES.ROLE_NOT_FOUND(roleName));
     }
 
     if (user.roles && user.roles.length > 0) {
       user.roles.push(role);
-    }
-    else {
+    } else {
       user.roles = [role];
     }
 
@@ -137,7 +175,7 @@ export class UserService extends CRUDService<User> {
   async addRolesToUser(username: string, roleNames: string[]): Promise<User> {
     const user = await this.nonSecurityRuleAwareRepo.findOne({
       where: { username: username },
-      relations: { roles: true }
+      relations: { roles: true },
     });
 
     if (!user) {
@@ -145,43 +183,47 @@ export class UserService extends CRUDService<User> {
     }
 
     const roles = await this.roleRepository.find({
-      where: roleNames.map(roleName => ({ name: roleName }))
+      where: roleNames.map((roleName) => ({ name: roleName })),
     });
 
     if (roles.length !== roleNames.length) {
-      const foundRoleNames = roles.map(role => role.name);
-      const missingRoles = roleNames.filter(roleName => !foundRoleNames.includes(roleName));
+      const foundRoleNames = roles.map((role) => role.name);
+      const missingRoles = roleNames.filter(
+        (roleName) => !foundRoleNames.includes(roleName),
+      );
       throw new Error(ERROR_MESSAGES.ROLES_NOT_FOUND(missingRoles));
     }
 
-    const currentRoles = user.roles.map(role => role.name);
+    const currentRoles = user.roles.map((role) => role.name);
 
-    const rolesToAdd = roles.filter(role => !currentRoles.includes(role.name));
+    const rolesToAdd = roles.filter(
+      (role) => !currentRoles.includes(role.name),
+    );
 
-    const rolesToRemove = user.roles.filter(role => !roleNames.includes(role.name));
+    const rolesToRemove = user.roles.filter(
+      (role) => !roleNames.includes(role.name),
+    );
 
     if (rolesToAdd.length > 0) {
       user.roles.push(...rolesToAdd);
     }
 
     if (rolesToRemove.length > 0) {
-      user.roles = user.roles.filter(role => !rolesToRemove.includes(role));
+      user.roles = user.roles.filter((role) => !rolesToRemove.includes(role));
     }
 
     return await this.nonSecurityRuleAwareRepo.save(user);
   }
 
-
   async removeRoleFromUser(username: string, roleName: string): Promise<User> {
-
     // load the role with the respective permissions.
     const user = await this.repo.findOne({
       where: {
-        username: username
+        username: username,
       },
       relations: {
-        roles: true
-      }
+        roles: true,
+      },
     });
 
     if (!user) {
@@ -189,7 +231,7 @@ export class UserService extends CRUDService<User> {
     }
 
     // modify the permissions array.
-    user.roles = user.roles.filter(role => role.name !== roleName);
+    user.roles = user.roles.filter((role) => role.name !== roleName);
 
     return await this.repo.save(user);
   }
@@ -201,11 +243,11 @@ export class UserService extends CRUDService<User> {
         email: oauthUserDto.email,
       },
       relations: {
-        roles: true
-      }
+        roles: true,
+      },
     });
 
-    // if we are unable to find a user then we need to create one. 
+    // if we are unable to find a user then we need to create one.
     if (!user) {
       const user = new User();
       user.username = oauthUserDto.email;
@@ -220,9 +262,12 @@ export class UserService extends CRUDService<User> {
       const savedUser = await this.repo.save(user);
 
       // Initialize the user roles
-      await this.initializeRolesForNewUser([this.settingService.getConfigValue<SolidCoreSetting>('defaultRole')], savedUser);
+      await this.initializeRolesForNewUser(
+        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        savedUser,
+      );
     }
-    // else we update the user and store the generated code & access token. 
+    // else we update the user and store the generated code & access token.
     else {
       const entity = await this.repo.preload({
         id: user.id,
@@ -239,21 +284,138 @@ export class UserService extends CRUDService<User> {
     return user;
   }
 
-  async findUsersByRole(roleName: string, relations: any = {}): Promise<User[]> {
+  async resolveUserOnOauthFacebook(oauthUserDto: OauthUserDto): Promise<User> {
+    const normalizedEmail = oauthUserDto.email?.trim().toLowerCase() || null;
+    let user: User | null = null;
+
+    if (oauthUserDto.providerId) {
+      user = await this.repo.findOne({
+        where: {
+          facebookId: oauthUserDto.providerId,
+        },
+        relations: {
+          roles: true,
+        },
+      });
+    }
+
+    if (!user) {
+      const facebookProviderFallback = `facebook_${oauthUserDto.providerId}`;
+      const facebookNameUsername = this.buildFacebookUsernameBase(
+        oauthUserDto.name,
+      );
+      // let username = normalizedEmail || facebookNameUsername;
+      let username = facebookNameUsername;
+
+      let email = normalizedEmail;
+
+      // Avoid clashing with local users that already own the same email/username.
+      if (normalizedEmail) {
+        const existingByEmail = await this.repo.findOne({
+          where: { email: normalizedEmail },
+        });
+        if (existingByEmail) {
+          username = facebookNameUsername;
+          email = null;
+        }
+      }
+      username = await this.resolveUniqueUsername(
+        username,
+        // facebookProviderFallback,
+      );
+
+      const newUser = new User();
+      newUser.username = username;
+      newUser.email = email;
+      newUser.fullName = oauthUserDto.name;
+      newUser.lastLoginProvider = oauthUserDto.provider;
+      newUser.accessCode = oauthUserDto.accessCode;
+      newUser.facebookAccessToken = oauthUserDto.accessToken;
+      newUser.facebookId = oauthUserDto.providerId;
+      newUser.facebookProfilePicture = oauthUserDto.picture;
+
+      const savedUser = await this.repo.save(newUser);
+
+      await this.initializeRolesForNewUser(
+        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        savedUser,
+      );
+      return savedUser;
+    } else {
+      const entity = await this.repo.preload({
+        id: user.id,
+        lastLoginProvider: oauthUserDto.provider,
+        accessCode: oauthUserDto.accessCode,
+        facebookAccessToken: oauthUserDto.accessToken,
+        facebookId: oauthUserDto.providerId,
+        facebookProfilePicture: oauthUserDto.picture,
+      });
+      await this.repo.save(entity);
+      return entity;
+    }
+  }
+
+  async resolveUserOnOauthMicrosoft(oauthUserDto: OauthUserDto): Promise<User> {
+    const user = await this.repo.findOne({
+      where: {
+        email: oauthUserDto.email,
+      },
+      relations: {
+        roles: true,
+      },
+    });
+
+    if (!user) {
+      const newUser = new User();
+      newUser.username = oauthUserDto.email;
+      newUser.email = oauthUserDto.email;
+      newUser.fullName = oauthUserDto.name;
+      newUser.lastLoginProvider = oauthUserDto.provider;
+      newUser.accessCode = oauthUserDto.accessCode;
+      newUser.microsoftAccessToken = oauthUserDto.accessToken;
+      newUser.microsoftId = oauthUserDto.providerId;
+      newUser.microsoftProfilePicture = oauthUserDto.picture;
+
+      const savedUser = await this.repo.save(newUser);
+
+      await this.initializeRolesForNewUser(
+        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        savedUser,
+      );
+    } else {
+      const entity = await this.repo.preload({
+        id: user.id,
+        lastLoginProvider: oauthUserDto.provider,
+        accessCode: oauthUserDto.accessCode,
+        microsoftAccessToken: oauthUserDto.accessToken,
+        microsoftId: oauthUserDto.providerId,
+        microsoftProfilePicture: oauthUserDto.picture,
+      });
+
+      await this.repo.save(entity);
+    }
+    return user;
+  }
+
+  async findUsersByRole(
+    roleName: string,
+    relations: any = {},
+  ): Promise<User[]> {
     return await this.repo.find({
       where: {
         roles: {
-          name: roleName
-        }
+          name: roleName,
+        },
       },
-      relations: relations
+      relations: relations,
     });
   }
 
   async checkIfPermissionExists(query: any, activeUser: ActiveUserData) {
-
-    const matchingPermssions = activeUser.permissions.filter((p) => query.permissionNames.includes(p));
-    return matchingPermssions
+    const matchingPermssions = activeUser.permissions.filter((p) =>
+      query.permissionNames.includes(p),
+    );
+    return matchingPermssions;
   }
 
   async initializeRolesForNewUser(roles: string[], user: User) {
@@ -261,7 +423,7 @@ export class UserService extends CRUDService<User> {
       throw new BadRequestException(ERROR_MESSAGES.USER_MISSING_ID);
     }
     let userRoles = [];
-    // Default Internal user role assigned 
+    // Default Internal user role assigned
     userRoles.push("Internal User");
     if (roles) {
       userRoles = [...userRoles, ...roles];
@@ -285,7 +447,4 @@ export class UserService extends CRUDService<User> {
       passwordSchemeVersion: this.hashingService.currentVersion(),
     };
   }
-
-
 }
-

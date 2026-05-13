@@ -1511,7 +1511,7 @@
             "encrypt": false,
             "relationType": "many-to-many",
             "relationCoModelSingularName": "roleMetadata",
-            "relationCoModelFieldName": "users",
+            "relationCoModelFieldName": "menuItems",
             "relationCreateInverse": true,
             "relationCascade": "set null",
             "relationModelModuleName": "solid-core",
@@ -3780,7 +3780,9 @@
               "audit_insert:audit_insert",
               "audit_update:audit_update",
               "audit_delete:audit_delete",
-              "custom:custom"
+              "custom:custom",
+              "note:note",
+              "task:task"
             ]
           },
           {
@@ -3891,6 +3893,21 @@
             "private": false,
             "encrypt": false,
             "isSystem": false
+          },
+          {
+            "name": "status",
+            "displayName": "Message Status",
+            "type": "selectionStatic",
+            "defaultValue": "pending",
+            "length": 256,
+            "required": false,
+            "index": false,
+            "isSystem": false,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "pending:pending",
+              "completed:completed"
+            ]
           }
         ]
       },
@@ -5819,7 +5836,7 @@
           {
             "name": "toolOutput",
             "displayName": "Tool Output",
-            "type": "longText",
+            "type": "json",
             "columnName": "tool_output",
             "required": false,
             "unique": false,
@@ -5905,6 +5922,11 @@
       }
     ]
   },
+  "permissions": [
+    "mcp:invoke",
+    "agent:invoke",
+    "settings:view_encrypted"
+  ],
   "roles": [
     {
       "name": "Admin"
@@ -5947,6 +5969,7 @@
         "ChatterMessageController.getChatterMessages",
         "ChatterMessageController.postMessage",
         "ChatterMessageController.findMany",
+        "ChatterMessageController.markCompleted",
         "ImportTransactionController.getImportTemplate",
         "ImportTransactionController.getImportInstructions",
         "ImportTransactionController.getImportMappingInfo",
@@ -5961,7 +5984,9 @@
         "AgentSessionController.findMany",
         "AgentSessionController.findOne",
         "AgentEventController.findMany",
-        "AgentEventController.findOne"
+        "AgentEventController.findOne",
+        "mcp:invoke",
+        "agent:invoke"
       ]
     },
     {
@@ -6402,51 +6427,12 @@
       "modelUserKey": "userActivityHistory"
     },
     {
-      "displayName": "App Settings",
-      "name": "appSettings-action",
+      "displayName": "Settings",
+      "name": "settings-action",
       "type": "custom",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/core/solid-core/settings/app-settings",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "setting"
-    },
-    {
-      "displayName": "Authentication Settings Action",
-      "name": "authenticationSettings-action",
-      "type": "custom",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/core/solid-core/settings/authentication-settings",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "setting"
-    },
-    {
-      "displayName": "Ai settings Action",
-      "name": "aiSettings-action",
-      "type": "custom",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/core/solid-core/settings/ai-settings",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "setting"
-    },
-    {
-      "displayName": "Misc Action",
-      "name": "miscSettings-action",
-      "type": "custom",
-      "domain": "",
-      "context": "",
-      "customComponent": "/admin/core/solid-core/settings/misc-settings",
+      "customComponent": "/admin/core/settings",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "",
@@ -6927,42 +6913,10 @@
       "displayName": "Settings",
       "name": "settings-menu-item",
       "sequenceNumber": 9,
-      "actionUserKey": "",
+      "actionUserKey": "settings-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
       "iconName": "settings"
-    },
-    {
-      "displayName": "App Settings",
-      "name": "appSettings-menu-item",
-      "sequenceNumber": 1,
-      "actionUserKey": "appSettings-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "settings-menu-item"
-    },
-    {
-      "displayName": "Authentication Settings",
-      "name": "authenticationSettings-menu-item",
-      "sequenceNumber": 2,
-      "actionUserKey": "authenticationSettings-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "settings-menu-item"
-    },
-    {
-      "displayName": "Ai Settings",
-      "name": "aiSettings-menu-item",
-      "sequenceNumber": 3,
-      "actionUserKey": "aiSettings-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "settings-menu-item"
-    },
-    {
-      "displayName": "Misc",
-      "name": "miscSettings-menu-item",
-      "sequenceNumber": 4,
-      "actionUserKey": "miscSettings-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "settings-menu-item"
     },
     {
       "displayName": "Model Sequence",
@@ -10533,7 +10487,7 @@
           "edit": true,
           "delete": true,
           "groupBy": "stage",
-          "draggable": true,
+          "draggable": false,
           "allowedViews": [
             "list",
             "kanban"
@@ -11229,6 +11183,7 @@
           "label": "Scheduled Job",
           "className": "grid"
         },
+        "onFieldChange": "scheduleFrequencyOnFieldChangeHandler",
         "children": [
           {
             "type": "sheet",
@@ -11306,7 +11261,8 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "cronExpression"
+                                  "name": "cronExpression",
+                                  "visible": false
                                 }
                               },
                               {
@@ -11336,13 +11292,15 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "dayOfWeek"
+                                  "name": "dayOfWeek",
+                                  "visible": false
                                 }
                               },
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "dayOfMonth"
+                                  "name": "dayOfMonth",
+                                  "visible": false
                                 }
                               }
                             ]
@@ -11468,13 +11426,6 @@
                     "attrs": {
                       "name": "authPagesLayout",
                       "label": "Auth Pages Layout"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "authPagesTheme",
-                      "label": "Auth Pages Theme"
                     }
                   },
                   {
@@ -13900,9 +13851,9 @@
                     "attrs": { "name": "col-content", "label": "", "className": "col-12" },
                     "children": [
                       { "type": "field", "attrs": { "name": "content" } },
-                      { "type": "field", "attrs": { "name": "toolArguments" } },
-                      { "type": "field", "attrs": { "name": "toolOutput" } },
-                      { "type": "field", "attrs": { "name": "eventData" } }
+                      { "type": "field", "attrs": { "name": "toolArguments", "viewWidget": "SolidJsonFormViewWidget" } },
+                      { "type": "field", "attrs": { "name": "toolOutput", "viewWidget": "SolidJsonFormViewWidget" } },
+                      { "type": "field", "attrs": { "name": "eventData", "viewWidget": "SolidJsonFormViewWidget" } }
                     ]
                   }
                 ]

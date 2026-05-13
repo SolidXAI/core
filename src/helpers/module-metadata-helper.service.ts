@@ -1,4 +1,4 @@
-import { dasherize } from "@angular-devkit/core/src/utils/strings";
+import { kebabCase } from 'lodash';
 import { Injectable, Logger } from "@nestjs/common";
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import * as path from 'path'; // To handle file paths
@@ -41,7 +41,7 @@ export class ModuleMetadataHelperService {
         if (!moduleName) {
             return '';
         }
-        const dashModuleName = dasherize(moduleName);
+        const dashModuleName = kebabCase(moduleName);
         const folderPath = path.resolve(process.cwd(), 'module-metadata', dashModuleName);
         const filePath = path.join(folderPath, `${dashModuleName}-metadata.json`);
         // Check if filePath exists
@@ -62,7 +62,7 @@ export class ModuleMetadataHelperService {
             return '';
         }
 
-        const dashModuleName = dasherize(moduleName);
+        const dashModuleName = kebabCase(moduleName);
 
         const folderPath = path.resolve(
             process.cwd(),
