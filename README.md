@@ -5,8 +5,9 @@
 `@solidxai/core` is the backend engine that powers every [SolidX](https://solidxai.com) application. It is a global NestJS module that wires up a complete, production-ready backend infrastructure — authentication, security, metadata-driven CRUD APIs, notifications, queues, storage providers, dashboards, and more — so you can focus on your business logic rather than rebuilding the same plumbing from scratch.
 
 [![npm version](https://img.shields.io/npm/v/@solidxai/core)](https://www.npmjs.com/package/@solidxai/core)
-[![License: BSL](https://img.shields.io/badge/License-BSL-blue.svg)](https://opensource.org/licenses/BSL-1.1)
+[![License: BSL-1.1](https://img.shields.io/badge/License-BSL--1.1-blue.svg)](https://mariadb.com/bsl11/)
 [![Documentation](https://img.shields.io/badge/docs-solidxai.com-blue)](https://docs.solidxai.com/docs)
+[![Discord](https://img.shields.io/badge/discord-online-brightgreen.svg)](https://discord.gg/ATQW4CEksA)
 
 
 ## Why @solidxai/core?
@@ -188,6 +189,7 @@ The output is not locked into a proprietary runtime. It runs on the same stack y
 |---|---|
 | Website | [solidxai.com](https://solidxai.com) |
 | Documentation | [docs.solidxai.com](https://docs.solidxai.com/docs) |
+| Discord | [discord.gg/ATQW4CEksA](https://discord.gg/ATQW4CEksA) |
 | Support | support@solidxai.com |
 
 ---
