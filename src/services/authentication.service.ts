@@ -38,16 +38,19 @@ import { SignInDto } from "../dtos/sign-in.dto";
 import { SignUpDto } from "../dtos/sign-up.dto";
 import { User } from "../entities/user.entity";
 import { EventDetails, EventType } from "../interfaces";
-import { ActiveUserData } from '../interfaces/active-user-data.interface';
-import { HashingService } from './hashing.service';
-import { InvalidatedRefreshTokenError, RefreshTokenIdsStorageService } from './refresh-token-ids-storage.service';
-import { SsoCodeStorageService } from './sso-code-storage.service';
-import { RoleMetadataService } from './role-metadata.service';
-import { SettingService } from './setting.service';
-import { UserActivityHistoryService } from './user-activity-history.service';
-import { UserService } from './user.service';
-import { SmsFactory } from 'src/factories/sms.factory';
-import { SolidRegistry } from 'src/helpers/solid-registry';
+import { ActiveUserData } from "../interfaces/active-user-data.interface";
+import { HashingService } from "./hashing.service";
+import {
+  InvalidatedRefreshTokenError,
+  RefreshTokenIdsStorageService,
+} from "./refresh-token-ids-storage.service";
+import { SsoCodeStorageService } from "./sso-code-storage.service";
+import { RoleMetadataService } from "./role-metadata.service";
+import { SettingService } from "./setting.service";
+import { UserActivityHistoryService } from "./user-activity-history.service";
+import { UserService } from "./user.service";
+import { SmsFactory } from "src/factories/sms.factory";
+import { SolidRegistry } from "src/helpers/solid-registry";
 
 enum LoginProvider {
   LOCAL = "local",
@@ -62,32 +65,32 @@ interface otp {
 
 @Injectable()
 export class AuthenticationService {
-    private readonly logger = new Logger(AuthenticationService.name);
-    // private readonly mailService: IMail;
-    constructor(
-        private readonly userService: UserService,
-        // @InjectRepository(User) private readonly userRepository: Repository<User>,
-        private readonly userRepository: UserRepository,
-        private readonly hashingService: HashingService,
-        private readonly jwtService: JwtService,
-        private readonly refreshTokenIdsStorage: RefreshTokenIdsStorageService,
-        private readonly httpService: HttpService,
-        // private readonly mailService: SMTPEMailService,
-        private readonly mailServiceFactory: MailFactory,
-        // private readonly smsService: Msg91OTPService,
-        private readonly smsFactory: SmsFactory,
-        private readonly eventEmitter: EventEmitter2,
-        private readonly settingService: SettingService,
-        private readonly roleMetadataService: RoleMetadataService,
-        private readonly userActivityHistoryService: UserActivityHistoryService,
-        private readonly ssoCodeStorage: SsoCodeStorageService,
+  private readonly logger = new Logger(AuthenticationService.name);
+  // private readonly mailService: IMail;
+  constructor(
+    private readonly userService: UserService,
+    // @InjectRepository(User) private readonly userRepository: Repository<User>,
+    private readonly userRepository: UserRepository,
+    private readonly hashingService: HashingService,
+    private readonly jwtService: JwtService,
+    private readonly refreshTokenIdsStorage: RefreshTokenIdsStorageService,
+    private readonly httpService: HttpService,
+    // private readonly mailService: SMTPEMailService,
+    private readonly mailServiceFactory: MailFactory,
+    // private readonly smsService: Msg91OTPService,
+    private readonly smsFactory: SmsFactory,
+    private readonly eventEmitter: EventEmitter2,
+    private readonly settingService: SettingService,
+    private readonly roleMetadataService: RoleMetadataService,
+    private readonly userActivityHistoryService: UserActivityHistoryService,
+    private readonly ssoCodeStorage: SsoCodeStorageService,
 
-        @InjectDataSource()
-        private readonly dataSource: DataSource,
-        private readonly solidRegistry: SolidRegistry,
-    ) {
-        // this.mailService = this.mailServiceFactory.getMailService();
-    }
+    @InjectDataSource()
+    private readonly dataSource: DataSource,
+    private readonly solidRegistry: SolidRegistry,
+  ) {
+    // this.mailService = this.mailServiceFactory.getMailService();
+  }
 
   private async getCompanyLogo(): Promise<string> {
     return this.settingService.getConfigValue<SolidCoreSetting>("companylogo");
@@ -153,58 +156,102 @@ export class AuthenticationService {
     }
   }
 
-    private static readonly SIGNUP_DTO_KEYS = new Set(['username', 'email', 'password', 'fullName', 'mobile', 'roles', 'forcePasswordChange']);
+  private static readonly SIGNUP_DTO_KEYS = new Set([
+    "username",
+    "email",
+    "password",
+    "fullName",
+    "mobile",
+    "roles",
+    "forcePasswordChange",
+  ]);
 
-    async signUp(signUpDto: SignUpDto & Record<string, any>, activeUser: ActiveUserData = null): Promise<User> {
-        const hasExtensionFields = Object.keys(signUpDto).some(k => !AuthenticationService.SIGNUP_DTO_KEYS.has(k));
-        if (hasExtensionFields) {
-            const provider = this.solidRegistry.getExtensionUserCreationProvider();
-            if (!provider) {
-                throw new InternalServerErrorException(
-                    'No ExtensionUserCreationProvider registered. Register one to handle extension user creation.',
-                );
-            }
-            const entity = await provider.buildExtensionEntity(signUpDto);
-            const effectiveDto = { ...signUpDto, roles: provider.roles(signUpDto) };
-            return this.performSignUp(effectiveDto, entity, provider.repo as Repository<User>);
-        }
-        return this.performSignUp(signUpDto, new User(), this.userRepository);
+  async signUp(
+    signUpDto: SignUpDto & Record<string, any>,
+    activeUser: ActiveUserData = null,
+  ): Promise<User> {
+    const hasExtensionFields = Object.keys(signUpDto).some(
+      (k) => !AuthenticationService.SIGNUP_DTO_KEYS.has(k),
+    );
+    if (hasExtensionFields) {
+      const provider = this.solidRegistry.getExtensionUserCreationProvider();
+      if (!provider) {
+        throw new InternalServerErrorException(
+          "No ExtensionUserCreationProvider registered. Register one to handle extension user creation.",
+        );
+      }
+      const entity = await provider.buildExtensionEntity(signUpDto);
+      const effectiveDto = { ...signUpDto, roles: provider.roles(signUpDto) };
+      return this.performSignUp(
+        effectiveDto,
+        entity,
+        provider.repo as Repository<User>,
+      );
     }
+    return this.performSignUp(signUpDto, new User(), this.userRepository);
+  }
 
-    private async performSignUp<T extends User>(signUpDto: SignUpDto, entity: T, repo: Repository<T>): Promise<T> {
-        try {
-            const onForcePasswordChange = this.settingService.getConfigValue<SolidCoreSetting>('forceChangePasswordOnFirstLogin');
-            const activateUserOnRegistration = this.settingService.getConfigValue<SolidCoreSetting>('activateUserOnRegistration');
-            const defaultRole = this.settingService.getConfigValue<SolidCoreSetting>('defaultRole');
+  private async performSignUp<T extends User>(
+    signUpDto: SignUpDto,
+    entity: T,
+    repo: Repository<T>,
+  ): Promise<T> {
+    try {
+      const onForcePasswordChange =
+        this.settingService.getConfigValue<SolidCoreSetting>(
+          "forceChangePasswordOnFirstLogin",
+        );
+      const activateUserOnRegistration =
+        this.settingService.getConfigValue<SolidCoreSetting>(
+          "activateUserOnRegistration",
+        );
+      const defaultRole =
+        this.settingService.getConfigValue<SolidCoreSetting>("defaultRole");
 
-            var { user, pwd, autoGeneratedPwd } = await this.populateForSignup<T>(entity, signUpDto, activateUserOnRegistration, onForcePasswordChange);
-            const privateDto = signUpDto as { isAllowedToGenerateApiKeys?: boolean };
-            if (privateDto.isAllowedToGenerateApiKeys !== undefined) {
-                user.isAllowedToGenerateApiKeys = privateDto.isAllowedToGenerateApiKeys;
-            }
-            const savedUser = await repo.save(user);
-            const userRoles = signUpDto.roles ?? [];
-            if ((signUpDto.roles?.length ?? 0) === 0 && signUpDto.username !== 'sa' && defaultRole) {
-                userRoles.push(defaultRole);
-            }
-            await this.handlePostSignup(savedUser, userRoles, pwd, autoGeneratedPwd);
+      var { user, pwd, autoGeneratedPwd } = await this.populateForSignup<T>(
+        entity,
+        signUpDto,
+        activateUserOnRegistration,
+        onForcePasswordChange,
+      );
+      const privateDto = signUpDto as { isAllowedToGenerateApiKeys?: boolean };
+      if (privateDto.isAllowedToGenerateApiKeys !== undefined) {
+        user.isAllowedToGenerateApiKeys = privateDto.isAllowedToGenerateApiKeys;
+      }
+      const savedUser = await repo.save(user);
+      const userRoles = signUpDto.roles ?? [];
+      if (
+        (signUpDto.roles?.length ?? 0) === 0 &&
+        signUpDto.username !== "sa" &&
+        defaultRole
+      ) {
+        userRoles.push(defaultRole);
+      }
+      await this.handlePostSignup(savedUser, userRoles, pwd, autoGeneratedPwd);
 
-            return savedUser;
-        } catch (err) {
-            const pgUniqueViolationErrorCode = '23505';
-            if (err.code === pgUniqueViolationErrorCode) {
-                throw new ConflictException(parseUniqueConstraintError(err.detail || ERROR_MESSAGES.UNIQUE_CONSTRAINT_VIOLATION));
-            }
-            throw err;
-        }
+      return savedUser;
+    } catch (err) {
+      const pgUniqueViolationErrorCode = "23505";
+      if (err.code === pgUniqueViolationErrorCode) {
+        throw new ConflictException(
+          parseUniqueConstraintError(
+            err.detail || ERROR_MESSAGES.UNIQUE_CONSTRAINT_VIOLATION,
+          ),
+        );
+      }
+      throw err;
     }
+  }
 
-    /** @deprecated Use IExtensionUserCreationProvider instead. Kept for backward compatibility. */
-    async signupForExtensionUser<T extends User, U extends CreateUserDto>(signUpDto: SignUpDto, extensionUserDto: U, extensionUserRepo: Repository<T>): Promise<T> {
-        // @ts-ignore
-        const entity = extensionUserRepo.merge(extensionUserRepo.create() as T, extensionUserDto);
-        return this.performSignUp(signUpDto, entity, extensionUserRepo);
-    }
+  /** @deprecated Use IExtensionUserCreationProvider instead. Kept for backward compatibility. */
+  async signupForExtensionUser<T extends User>(
+    signUpDto: SignUpDto,
+    extensionUserDto: DeepPartial<T>,
+    extensionUserRepo: Repository<T>,
+  ): Promise<T> {
+    const entity = extensionUserRepo.create(extensionUserDto);
+    return this.performSignUp(signUpDto, entity, extensionUserRepo);
+  }
 
   private async populateForSignup<T extends User>(
     user: T,
@@ -489,20 +536,27 @@ export class AuthenticationService {
     );
   }
 
-    private async upsertUserWithRegistrationVerificationTokens(existingUser: User, signUpDto: OTPSignUpDto, validationSource: string): Promise<User> {
-        let user = existingUser;
-        if (isEmpty(user)) {
-            user = this.createUser(signUpDto);
-            user.active = false; // User will be activated only after OTP verification, hence setting active to false for new user.
-            await this.assignRegistrationOtp(validationSource, user);
-            await this.userRepository.save(user);
-            await this.userService.addRoleToUser(user.username, this.settingService.getConfigValue<SolidCoreSetting>('defaultRole'));
-        } else {
-            await this.assignRegistrationOtp(validationSource, user);
-            await this.userRepository.save(user);
-        }
-        return user;
+  private async upsertUserWithRegistrationVerificationTokens(
+    existingUser: User,
+    signUpDto: OTPSignUpDto,
+    validationSource: string,
+  ): Promise<User> {
+    let user = existingUser;
+    if (isEmpty(user)) {
+      user = this.createUser(signUpDto);
+      user.active = false; // User will be activated only after OTP verification, hence setting active to false for new user.
+      await this.assignRegistrationOtp(validationSource, user);
+      await this.userRepository.save(user);
+      await this.userService.addRoleToUser(
+        user.username,
+        this.settingService.getConfigValue<SolidCoreSetting>("defaultRole"),
+      );
+    } else {
+      await this.assignRegistrationOtp(validationSource, user);
+      await this.userRepository.save(user);
     }
+    return user;
+  }
 
   // Create a new user entity.
   private createUser(signUpDto: OTPSignUpDto) {
@@ -1068,16 +1122,16 @@ export class AuthenticationService {
     }
   }
 
-    private buildUserPayload(user: User) {
-        const { id, username, email, mobile, lastLoginProvider } = user;
-        const roles = user.roles.map((role) => role.name);
-        return { id, username, email, mobile, lastLoginProvider, roles };
-    }
+  private buildUserPayload(user: User) {
+    const { id, username, email, mobile, lastLoginProvider } = user;
+    const roles = user.roles.map((role) => role.name);
+    return { id, username, email, mobile, lastLoginProvider, roles };
+  }
 
-    private async buildLoginTokenResponse(user: User) {
-        const { accessToken, refreshToken } = await this.generateTokens(user);
-        return { accessToken, refreshToken, user: this.buildUserPayload(user) };
-    }
+  private async buildLoginTokenResponse(user: User) {
+    const { accessToken, refreshToken } = await this.generateTokens(user);
+    return { accessToken, refreshToken, user: this.buildUserPayload(user) };
+  }
 
   async changePassword(
     changePasswordDto: ChangePasswordDto,
@@ -1590,9 +1644,19 @@ export class AuthenticationService {
   }
 
   async validateUserUsingFacebook(user: User) {
+    if (!user.facebookAccessToken || !user.facebookId) {
+      throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+
     try {
       const response = await this.httpService.axiosRef.get(
-        `https://graph.facebook.com/me?fields=id,name,email&access_token=${user.facebookAccessToken}`,
+        `https://graph.facebook.com/me`,
+        {
+          params: { fields: "id,name,email" },
+          headers: {
+            Authorization: `Bearer ${user.facebookAccessToken}`,
+          },
+        },
       );
       const userProfile = response.data;
 
@@ -1605,7 +1669,10 @@ export class AuthenticationService {
         throw new UnauthorizedException(ERROR_MESSAGES.INVALID_USER_PROFILE);
       }
     } catch (error) {
-      throw new UnauthorizedException("Facebook OAuth profile fetch failed");
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+      throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
   }
 
@@ -1846,43 +1913,52 @@ export class AuthenticationService {
     const refreshTokenState =
       await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(user.id);
 
-        const response = {
-            user: {
-                email: user.email,
-                mobile: user.mobile,
-                username: user.username,
-                // forcePasswordChange: user.forcePasswordChange,
-                id: user.id,
-                roles: user.roles.map((role) => role.name)
-            },
-            refreshToken: refreshTokenState.currentRefreshToken,
-            // ...tokens
-        }
-        return response;
-    }
+    const response = {
+      user: {
+        email: user.email,
+        mobile: user.mobile,
+        username: user.username,
+        // forcePasswordChange: user.forcePasswordChange,
+        id: user.id,
+        roles: user.roles.map((role) => role.name),
+      },
+      refreshToken: refreshTokenState.currentRefreshToken,
+      // ...tokens
+    };
+    return response;
+  }
 
-    async generateSsoCode(activeUser: ActiveUserData, rawAccessToken: string): Promise<{ ssoCode: string }> {
-        const refreshTokenState = await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(activeUser.sub);
-        if (!refreshTokenState?.currentRefreshToken) {
-            throw new UnauthorizedException('No active session found');
-        }
-        const ssoCode = await this.ssoCodeStorage.generateCode(
-            activeUser.sub,
-            rawAccessToken,
-            refreshTokenState.currentRefreshToken,
-        );
-        return { ssoCode };
+  async generateSsoCode(
+    activeUser: ActiveUserData,
+    rawAccessToken: string,
+  ): Promise<{ ssoCode: string }> {
+    const refreshTokenState =
+      await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(
+        activeUser.sub,
+      );
+    if (!refreshTokenState?.currentRefreshToken) {
+      throw new UnauthorizedException("No active session found");
     }
+    const ssoCode = await this.ssoCodeStorage.generateCode(
+      activeUser.sub,
+      rawAccessToken,
+      refreshTokenState.currentRefreshToken,
+    );
+    return { ssoCode };
+  }
 
-    async exchangeSsoCode(code: string) {
-        const { userId, accessToken, refreshToken } = await this.ssoCodeStorage.consumeCode(code);
-        const user = await this.userRepository.findOne({ where: { id: userId }, relations: { roles: true } });
-        if (!user) {
-            throw new UnauthorizedException('User not found');
-        }
-        return { accessToken, refreshToken, user: this.buildUserPayload(user) };
+  async exchangeSsoCode(code: string) {
+    const { userId, accessToken, refreshToken } =
+      await this.ssoCodeStorage.consumeCode(code);
+    const user = await this.userRepository.findOne({
+      where: { id: userId },
+      relations: { roles: true },
+    });
+    if (!user) {
+      throw new UnauthorizedException("User not found");
     }
-
+    return { accessToken, refreshToken, user: this.buildUserPayload(user) };
+  }
 }
 
 function parseUniqueConstraintError(detail: string): string {
