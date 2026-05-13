@@ -3900,7 +3900,7 @@
             "type": "selectionStatic",
             "defaultValue": "pending",
             "length": 256,
-            "required": true,
+            "required": false,
             "index": false,
             "isSystem": false,
             "selectionValueType": "string",
