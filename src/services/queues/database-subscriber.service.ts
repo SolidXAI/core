@@ -16,9 +16,9 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
         protected readonly mqMessageQueueService: MqMessageQueueService,
         protected readonly poller: PollerService,
     ) {
-        this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
-        if (!this.serviceRole) {
-            this.logger.debug('Queue service Role is not defined in the environment variables');
+        this.serviceRole = process.env.QUEUES_SERVICE_ROLE || 'both';
+        if (!process.env.QUEUES_SERVICE_ROLE) {
+            this.logger.debug('QUEUES_SERVICE_ROLE is not defined. Defaulting DatabaseSubscriber service role to "both".');
         }
         // this.logger.debug(`DatabaseSubscriber instance created with options: ${JSON.stringify(this.options())}`);
     }
@@ -60,7 +60,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
 
             await this.processMessage(message);
         }
-        catch (error) {
+        catch (error: any) {
             this.logger.error(`Error processing message: ${error.message}`);
 
             // if an error occurs then if retryCount is set we start retrying. 
@@ -152,7 +152,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
     private async retryMessage(message: QueueMessage<T>) {
         try {
             await this.processMessage(message);
-        } catch (error) {
+        } catch (error: any) {
             if (message.currentRetry < message.retryCount) {
                 await this.updateStatusInDatabase('retrying', message);
 
@@ -203,7 +203,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
                 this.logger.debug(`Message status updated to ${stage} for messageId: ${mqMessage.id}`);
             }
         }
-        catch (error) {
+        catch (error: any) {
             this.logger.error(error.message, error.stack);
         }
     }

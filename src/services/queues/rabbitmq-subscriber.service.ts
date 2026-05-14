@@ -31,12 +31,12 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
 
     constructor(protected readonly mqMessageService: MqMessageService, protected readonly mqMessageQueueService: MqMessageQueueService) {
         this.url = process.env.QUEUES_RABBIT_MQ_URL;
-        this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
+        this.serviceRole = process.env.QUEUES_SERVICE_ROLE || 'both';
         if (!this.url) {
             this.logger.debug('RabbitMqPublisher url is not defined in the environment variables');
         }
-        if (!this.serviceRole) {
-            this.logger.debug('Queue service Role is not defined in the environment variables');
+        if (!process.env.QUEUES_SERVICE_ROLE) {
+            this.logger.debug('QUEUES_SERVICE_ROLE is not defined. Defaulting RabbitMqSubscriber service role to "both".');
         }
         // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
     }
@@ -85,7 +85,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
     async onModuleInit(): Promise<void> {
         // Not using SettingService here as that will necessitate all implementors of RabbitMqSubscriber to also inject SettingService which is not ideal. 
         // Instead we directly read the environment variables here.
-        const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'rabbitmq';
+        const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'database';
         const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
         const queueNameRegex = (process.env.QUEUES_QUEUE_NAME_REGEX_TO_ENABLE || '').trim();
         const roleAllowed = ['both', 'subscriber'].includes(this.serviceRole);
@@ -407,7 +407,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 await this.mqMessageService.repo.update(mqMessage.id, updatedFields);
             }
         }
-        catch (error) {
+        catch (error: any) {
             this.logger.error(error.message, error.stack);
         }
 
