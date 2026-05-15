@@ -9,10 +9,12 @@ import {
 import { SettingService } from "../setting.service";
 import { Injectable, Logger } from "@nestjs/common";
 import { IMail, MailAttachment, MailAttachmentWrapper } from "src/interfaces";
+import { QueueMessage } from "src/interfaces/mq";
 import { MailProvider } from "src/decorators/mail-provider.decorator";
 import { EmailTemplateService } from "../email-template.service";
 import Handlebars from "handlebars";
 import { SolidCoreSetting } from "../settings/default-settings-provider.service";
+import { PublisherFactory } from "../queues/publisher-factory.service";
 
 @Injectable()
 @MailProvider()
@@ -37,6 +39,7 @@ export class AmazonSESService implements IMail {
   }
 
   constructor(
+    private readonly publisherFactory: PublisherFactory<any>,
     private readonly emailTemplateService: EmailTemplateService,
     private readonly settingService: SettingService,
   ) {}
@@ -94,11 +97,46 @@ export class AmazonSESService implements IMail {
     bcc?: string[],
     from?: string,
   ): Promise<unknown> {
-    if (shouldQueueEmails) {
-      this.logger.warn(
-        "Queue sending requested for SES, but queue integration is not implemented yet. Sending synchronously.",
-      );
+    const message: QueueMessage<any> = {
+      payload: {
+        from:
+          from ||
+          this.settingService.getConfigValue<SolidCoreSetting>("sesMailFrom") ||
+          this.settingService.getConfigValue<SolidCoreSetting>("smtpMailFrom"),
+        to,
+        subject,
+        body,
+        cc,
+        bcc,
+        wrapperAttachments,
+        attachments,
+      },
+      parentEntity: _parentEntity,
+      parentEntityId: _parentEntityId,
+    };
+
+    if (shouldQueueEmails === true) {
+      return this.sendEmailAsynchronously(message);
+    } else if (
+      shouldQueueEmails === false &&
+      this.settingService.getConfigValue<SolidCoreSetting>("shouldQueueEmails") ===
+        true
+    ) {
+      return this.sendEmailAsynchronously(message);
     }
+
+    return this.sendEmailSynchronously(message);
+  }
+
+  async sendEmailAsynchronously(message: QueueMessage<any>): Promise<string> {
+    const { to, subject } = message.payload;
+    this.logger.debug(`Queueing SES email to ${to} with subject ${subject}`);
+    return this.publisherFactory.publish(message, "AmazonSesEmailQueuePublisher");
+  }
+
+  async sendEmailSynchronously(message: QueueMessage<any>): Promise<unknown> {
+    const { from, to, subject, body, cc, bcc, attachments, wrapperAttachments } =
+      message.payload;
 
     if (
       (attachments && attachments.length > 0) ||
@@ -109,10 +147,7 @@ export class AmazonSESService implements IMail {
       );
     }
 
-    const sourceEmail =
-      from ||
-      this.settingService.getConfigValue<SolidCoreSetting>("sesMailFrom");
-    if (!sourceEmail || !to || !subject || !body) {
+    if (!from || !to || !subject || !body) {
       this.logger.error(
         "Required SES email fields are missing. Ensure from/to/subject/body are present.",
       );
@@ -120,7 +155,7 @@ export class AmazonSESService implements IMail {
     }
 
     const command = new SendEmailCommand({
-      Source: sourceEmail,
+      Source: from,
       Destination: this.buildDestination(to, cc, bcc),
       Message: this.buildMessage(subject, body),
     });
