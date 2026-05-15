@@ -121,7 +121,7 @@ export class TestRunCommand extends CommandRunner {
         process.exitCode = 1;
       } finally {
         if (reporter instanceof WebhookReporter) {
-          await reporter.flush(process.exitCode ?? 0);
+          await reporter.flush(Number(process.exitCode ?? 0));
         }
       }
       return;
