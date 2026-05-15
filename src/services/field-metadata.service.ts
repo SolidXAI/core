@@ -774,8 +774,6 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "regexPattern",
                     "regexPatternNotMatchingErrorMsg",
                     "defaultValue",
-                    "min",
-                    "max",
                     "required",
                     "unique",
                     "index",
