@@ -3,6 +3,7 @@ import { SubCommand, CommandRunner, Option } from 'nest-commander';
 import * as path from 'path';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { ConsoleReporter } from 'src/testing/reporter/console-reporter';
+import { WebhookReporter } from 'src/testing/reporter/webhook-reporter';
 import { runFromMetadata } from 'src/testing/runner/run-from-metadata';
 import type { TestingMetadata } from 'src/testing/contracts/testing-metadata.types';
 import { SpecRegistry } from 'src/testing/core/spec-registry';
@@ -21,6 +22,7 @@ interface TestRunCommandOptions {
   retries?: number;
   listSpecs?: boolean;
   printApiLogs?: boolean;
+  runName?: string;
 }
 
 @SubCommand({
@@ -89,23 +91,40 @@ export class TestRunCommand extends CommandRunner {
       const headless = options?.headless ?? true;
       const printApiLogs = options?.printApiLogs ?? false;
 
-      await runFromMetadata({
-        metadata: metadata as TestingMetadata,
-        scenarioIds,
-        includeTags,
-        skipScenarioIds,
-        reporter: new ConsoleReporter(),
-        api: apiBaseUrl ? { baseUrl: apiBaseUrl } : undefined,
-        ui: { baseUrl: uiBaseUrl, headless },
-        defaults: {
-          timeoutMs: options?.timeoutMs,
-          retries: options?.retries,
-        },
-        options: { printApiLogs },
-        specs: specEntries.length
-          ? (registry) => loadSpecRegistrations(specEntries, metadataPath, registry)
-          : undefined,
-      });
+      const webhookUrl = process.env.SOLIDCTL_WEBHOOK_URL;
+      const runName = options?.runName ?? `run-${Date.now()}`;
+      const reporter = webhookUrl
+        ? new WebhookReporter(webhookUrl, runName)
+        : new ConsoleReporter();
+
+      try {
+        await runFromMetadata({
+          metadata: metadata as TestingMetadata,
+          scenarioIds,
+          includeTags,
+          skipScenarioIds,
+          reporter,
+          api: apiBaseUrl ? { baseUrl: apiBaseUrl } : undefined,
+          ui: { baseUrl: uiBaseUrl, headless },
+          defaults: {
+            timeoutMs: options?.timeoutMs,
+            retries: options?.retries,
+          },
+          options: { printApiLogs },
+          specs: specEntries.length
+            ? (registry) => loadSpecRegistrations(specEntries, metadataPath, registry)
+            : undefined,
+        });
+      } catch (err: any) {
+        this.logger.error('Run tests command failed');
+        console.error('Run tests command failed');
+        process.exitCode = 1;
+      } finally {
+        if (reporter instanceof WebhookReporter) {
+          await reporter.flush(process.exitCode ?? 0);
+        }
+      }
+      return;
     } catch (err: any) {
       this.logger.error('Run tests command failed');
       console.error('Run tests command failed');
@@ -222,6 +241,15 @@ export class TestRunCommand extends CommandRunner {
   })
   parseRetries(val: string): number {
     return Number(val);
+  }
+
+  @Option({
+    flags: '--run-name [name]',
+    description: 'Logical name for this test run (used by webhook reporter).',
+    required: false,
+  })
+  parseRunName(val: string): string {
+    return val;
   }
 }
 

@@ -17,7 +17,10 @@ export abstract class RedisSubscriber<T> implements OnModuleInit, OnModuleDestro
         protected readonly mqMessageService: MqMessageService,
         protected readonly mqMessageQueueService: MqMessageQueueService,
     ) {
-        this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
+        this.serviceRole = process.env.QUEUES_SERVICE_ROLE || 'both';
+        if (!process.env.QUEUES_SERVICE_ROLE) {
+            this.logger.debug('QUEUES_SERVICE_ROLE is not defined. Defaulting RedisSubscriber service role to "both".');
+        }
         if (!process.env.QUEUES_REDIS_URL) {
             this.logger.debug('RedisSubscriber: QUEUES_REDIS_URL is not defined in the environment variables');
         }
@@ -201,7 +204,7 @@ export abstract class RedisSubscriber<T> implements OnModuleInit, OnModuleDestro
                 if (stage === 'failed') updatedFields['error'] = error;
                 await this.mqMessageService.repo.update(mqMessage.id, updatedFields);
             }
-        } catch (err) {
+        } catch (err: any) {
             this.logger.error(err.message, err.stack);
         }
     }
