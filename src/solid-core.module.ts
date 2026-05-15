@@ -148,6 +148,7 @@ import {
 } from './services/file';
 import { HashingService } from './services/hashing.service';
 import { ElasticEmailService } from './services/mail/elastic-email.service';
+import { AmazonSESService } from './services/mail/amazon-ses.service';
 import { SMTPEMailService } from './services/mail/smtp-email.service';
 import { MenuItemMetadataService } from './services/menu-item-metadata.service';
 import { MqMessageQueueService } from './services/mq-message-queue.service';
@@ -589,6 +590,7 @@ import { Entity } from 'typeorm';
     IngestMetadataService,
     SMTPEMailService,
     ElasticEmailService,
+    AmazonSESService,
     Msg91SMSService,
     Msg91OTPService,
     Msg91WhatsappService,
