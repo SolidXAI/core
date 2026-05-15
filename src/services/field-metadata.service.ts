@@ -745,6 +745,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
                     "type",
                     "ormType",
                     "isSystem",
+                    "regexPattern",
+                    "regexPatternNotMatchingErrorMsg",
                     "defaultValue",
                     "min",
                     "max",
