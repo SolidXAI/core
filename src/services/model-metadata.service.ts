@@ -842,6 +842,7 @@ export class ModelMetadataService {
     const treeViewName = `${model.singularName}-tree-view`;
     const formViewName = `${model.singularName}-form-view`;
     const menuName = `${model.singularName}-menu-item`;
+    const nextMenuSequenceNumber = (metaData.menus?.length ?? 0) + 1;
 
     const action = {
       displayName: `${model.displayName} List Action`,
@@ -874,7 +875,7 @@ export class ModelMetadataService {
     const menu = {
       displayName: `${model.displayName}`,
       name: menuName,
-      sequenceNumber: 1,
+      sequenceNumber: nextMenuSequenceNumber,
       actionUserKey: actionName,
       moduleUserKey: `${model.module.name}`,
       parentMenuItemUserKey: "",

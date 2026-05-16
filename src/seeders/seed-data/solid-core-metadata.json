@@ -11552,7 +11552,7 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": false
+          "delete": true
         },
         "children": [
           {
@@ -11570,7 +11570,18 @@
               "name": "name",
               "label": "Name",
               "sortable": true,
-              "filterable": true
+              "filterable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "label": "Description",
+              "sortable": true,
+              "filterable": true,
+              "isSearchable": true
             }
           }
         ]

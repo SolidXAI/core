@@ -908,7 +908,11 @@ const getSolidCoreSettings = (isProd: boolean) =>
         (
           process.env.IAM_SEND_WELCOME_EMAIL_ON_SIGNUP ?? "false"
         ).toLowerCase() === "true",
-      level: SettingLevel.SystemEnv,
+      level: SettingLevel.SystemAdminEditable,
+      label: "Send Welcome Email On Signup",
+      group: "authentication-settings",
+      sortOrder: 180,
+      controlType: "boolean",
     },
     {
       moduleName: "solid-core",
@@ -917,7 +921,11 @@ const getSolidCoreSettings = (isProd: boolean) =>
         (
           process.env.IAM_SEND_WELCOME_SMS_ON_SIGNUP ?? "false"
         ).toLowerCase() === "true",
-      level: SettingLevel.SystemEnv,
+      level: SettingLevel.SystemAdminEditable,
+      label: "Send Welcome SMS On Signup",
+      group: "authentication-settings",
+      sortOrder: 190,
+      controlType: "boolean",
     },
     {
       moduleName: "solid-core",
