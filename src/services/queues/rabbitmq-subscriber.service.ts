@@ -107,7 +107,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                         this.logger.log(`RabbitMqSubscriber for queue ${queueName} is disabled because it does not match QUEUES_QUEUE_NAME_REGEX_TO_ENABLE=${queueNameRegex}`);
                         return;
                     }
-                } catch (error) {
+                } catch (error: any) {
                     this.logger.error(`Invalid QUEUES_QUEUE_NAME_REGEX_TO_ENABLE regex "${queueNameRegex}". Subscriber for queue ${queueName} will not start.`);
                     return;
                 }
@@ -210,7 +210,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                     const messageContentString = rawMessage.content.toString();
                     message = JSON.parse(messageContentString) as QueueMessage<T>;
                     this.logger.debug(`rabbitmq subscriber received message with id: ${message.messageId} for queue ${queueName}`);
-                } catch (error) {
+                } catch (error: any) {
                     this.logger.error(`Invalid JSON message on queue ${queueName}: ${(error as Error).message}`);
                     await this.publishToFailedQueue(queueName, rawMessage.content, channel, error);
                     channel.ack(rawMessage);
@@ -223,7 +223,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
 
                 try {
                     await this.processMessage(message, rawMessage, channel, queueName);
-                } catch (error) {
+                } catch (error: any) {
                     await this.handleProcessingError(message, rawMessage, channel, error, queueName);
                 }
             },
@@ -485,7 +485,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             // - If timeoutPromise rejects first, we fail fast with timeout error.
             // This ensures we mark DB status via normal error handling before broker ack-timeout.
             return await Promise.race([subscribePromise, timeoutPromise]);
-        } catch (error) {
+        } catch (error: any) {
             const errorMessage = (error as Error)?.message || String(error);
             this.logger.error(
                 `Subscriber execution failed for queue ${queueName} and messageId ${messageId}: ${errorMessage}`,

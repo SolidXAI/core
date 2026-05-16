@@ -1587,7 +1587,7 @@ export class AuthenticationService {
       } else {
         throw new UnauthorizedException(ERROR_MESSAGES.INVALID_USER_PROFILE);
       }
-    } catch (error) {
+    } catch (error: any) {
       throw new UnauthorizedException(
         ERROR_MESSAGES.GOOGLE_OAUTH_PROFILE_FETCH_FAILED,
       );
@@ -1656,7 +1656,7 @@ export class AuthenticationService {
       } else {
         throw new UnauthorizedException(ERROR_MESSAGES.INVALID_USER_PROFILE);
       }
-    } catch (error) {
+    } catch (error: any) {
       if (error instanceof UnauthorizedException) {
         throw error;
       }
@@ -1721,7 +1721,7 @@ export class AuthenticationService {
       } else {
         throw new UnauthorizedException(ERROR_MESSAGES.INVALID_USER_PROFILE);
       }
-    } catch (error) {
+    } catch (error: any) {
       throw new UnauthorizedException("Microsoft OAuth profile fetch failed");
     }
   }

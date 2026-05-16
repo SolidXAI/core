@@ -129,7 +129,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 await this.saveMedia(model, files, savedEntity);
             }
             return savedEntity;
-        } catch (error) {
+        } catch (error: any) {
             if (error instanceof QueryFailedError && error.message.includes('duplicate key value violates unique constraint')) {
                 throw new BadRequestException(ERROR_MESSAGES.DUPLICATE_ENTRY);
             }

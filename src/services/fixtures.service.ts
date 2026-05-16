@@ -35,7 +35,7 @@ export class FixturesService {
                 // Create the model instance in the database
                 const createdInstance = await modelServiceInstance.create(modelFixture.data);
                 this.logger.log(`Successfully created fixture for model: ${modelFixture.singularName} with ID: ${createdInstance.id}`);
-            } catch (error) {
+            } catch (error: any) {
                 this.logger.error(`Error creating fixture for model: ${modelFixture.singularName} - ${error.message}`);
             }
         }
@@ -59,7 +59,7 @@ export class FixturesService {
                 const deleteCriteria = modelFixture.data; // This should be adjusted based on actual criteria
                 await modelServiceInstance.delete(deleteCriteria);
                 this.logger.log(`Successfully deleted fixture for model: ${modelFixture.singularName}`);
-            } catch (error) {
+            } catch (error: any) {
                 this.logger.error(`Error deleting fixture for model: ${modelFixture.singularName} - ${error.message}`);
             }
         }
