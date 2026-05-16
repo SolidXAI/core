@@ -826,15 +826,15 @@ export class ModelMetadataService {
   // Populate the View, Actions and Menus in the config file
   private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string; }; }[], treeViewLayoutFields: { type: string; attrs: { name: string; }; }[], metaData: any) {
     const column1Fields = [];
-    const column2Fields = [];
+    // const column2Fields = [];
 
     // Distribute fields between two columns
     for (let i = 0; i < formViewLayoutFields.length; i++) {
-      if (i % 2 === 0) {
-        column1Fields.push(formViewLayoutFields[i]);
-      } else {
-        column2Fields.push(formViewLayoutFields[i]);
-      }
+      // if (i % 2 === 0) {
+      column1Fields.push(formViewLayoutFields[i]);
+      // } else {
+      // column2Fields.push(formViewLayoutFields[i]);
+      // }
     }
     const actionName = `${model.singularName}-list-action`;
     const treeViewActionName = `${model.singularName}-tree-action`;
@@ -955,11 +955,11 @@ export class ModelMetadataService {
                     attrs: { name: "group-1", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
                     children: column1Fields
                   },
-                  {
-                    type: "column",
-                    attrs: { name: "group-2", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
-                    children: column2Fields
-                  }
+                  // {
+                  //   type: "column",
+                  //   attrs: { name: "group-2", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
+                  //   children: column2Fields
+                  // }
                 ]
               },
             ]
