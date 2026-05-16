@@ -68,7 +68,7 @@ export abstract class RedisPublisher<T> implements OnModuleDestroy, QueuePublish
             const client = this.getClient();
             await client.publish(namespacedQueueName, JSON.stringify(message));
             this.logger.debug(`RedisPublisher published message ${message.messageId} to channel ${namespacedQueueName}`);
-        } catch (err) {
+        } catch (err: any) {
             this.logger.error(`RedisPublisher failed to publish message: ${(err as Error).message}`, (err as Error).stack);
         }
 

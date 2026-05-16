@@ -118,7 +118,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         if (this.channel) {
             try {
                 await this.channel.close();
-            } catch (err) {
+            } catch (err: any) {
                 this.logger.warn(
                     `RabbitMqPublisher error closing channel: ${(err as Error).message}`,
                 );
@@ -130,7 +130,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         if (this.connection) {
             try {
                 await this.connection.close();
-            } catch (err) {
+            } catch (err: any) {
                 this.logger.warn(
                     `RabbitMqPublisher error closing connection: ${(err as Error).message}`,
                 );
@@ -189,7 +189,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
             // }
             // await channel.waitForConfirms();
             // this.logger.debug('RabbitMqPublisher Message published successfully');
-        } catch (err) {
+        } catch (err: any) {
             this.logger.error(`RabbitMqPublisher Message publish failed: ${JSON.stringify(err)}`);
             if (err instanceof Error) {
                 this.logger.error(`RabbitMqPublisher Error stack: ${err.stack}`);

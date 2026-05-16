@@ -116,7 +116,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             const namespacedQueueName = buildNamespacedQueueName(queueName);
             try {
                 await this.connectAndConsume(namespacedQueueName);
-            } catch (err) {
+            } catch (err: any) {
                 this.logger.error(`Failed to connect to RabbitMQ for queue ${namespacedQueueName}: ${(err as Error).message}`, (err as Error).stack);
                 this.triggerReconnect(namespacedQueueName, 'initial connection failure');
             }
@@ -142,7 +142,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         let connection: amqp.Connection;
         try {
             connection = await this.establishConnection();
-        } catch (err) {
+        } catch (err: any) {
             this.logger.error(`Failed to connect to RabbitMQ for queue ${queueName}: ${(err as Error).message}`, (err as Error).stack);
             throw err;
         }
@@ -277,7 +277,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             channel.sendToQueue(failedQueue, body, errorMessage ? {
                 headers: { 'x-error': errorMessage }
             } : undefined);
-        } catch (err) {
+        } catch (err: any) {
             this.logger.error(`Failed to publish to failed queue ${failedQueue}: ${(err as Error).message}`);
         }
     }
@@ -302,7 +302,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 this.reconnectAttempt = 0;
                 this.logger.log(`RabbitMqSubscriber reconnected for queue ${queueName}`);
                 return;
-            } catch (err) {
+            } catch (err: any) {
                 this.reconnectAttempt += 1;
                 const delay = this.backoff();
                 this.logger.warn(`RabbitMqSubscriber reconnect failed for queue ${queueName}; retrying in ${delay}ms`);

@@ -101,7 +101,7 @@ export class SchedulerServiceImpl implements ISchedulerService {
 
                 await this.scheduledJobRepo.save(job);
                 this.logger.log(`[${now.getTime()}]: scheduler service finished running job: ${job.job}`);
-            } catch (err) {
+            } catch (err: any) {
                 this.logger.error(`[${now.getTime()}]: scheduler service failed to run job ${job.job}`, err.stack);
             } finally {
                 this.runningJobs.delete(jobKey);

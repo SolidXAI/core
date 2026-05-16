@@ -150,7 +150,7 @@ export abstract class RedisSubscriber<T> implements OnModuleInit, OnModuleDestro
             try {
                 await this.connectAndSubscribe(channel);
                 this.logger.log(`RedisSubscriber reconnected for channel ${channel}`);
-            } catch (err) {
+            } catch (err: any) {
                 this.triggerReconnect(channel, `reconnect failed: ${(err as Error).message}`);
             }
         }, delay);

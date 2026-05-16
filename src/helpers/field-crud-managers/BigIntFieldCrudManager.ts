@@ -20,7 +20,7 @@ export class BigIntFieldCrudManager implements FieldCrudManager {
                 if (typeof fieldValue === 'string' || typeof fieldValue === 'number') {
                     fieldValue = BigInt(fieldValue);
                 }
-            } catch (err) {
+            } catch (err: any) {
                 return [{ field: this.options.fieldName, error: 'Invalid numeric value' }];
             }
         }

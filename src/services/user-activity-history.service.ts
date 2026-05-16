@@ -38,7 +38,7 @@ export class UserActivityHistoryService extends CRUDService<UserActivityHistory>
         ipAddress: ip,
         userAgent,
       });
-    } catch (err) {
+    } catch (err: any) {
       this._logger.warn(`Failed to log event "${event}" for user ${user?.id}: ${err}`);
     }
   }

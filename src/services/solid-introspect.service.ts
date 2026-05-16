@@ -197,7 +197,7 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       let ds: DataSource | undefined;
       try {
         ds = this.moduleRef.get<DataSource>(token, { strict: false });
-      } catch (err) {
+      } catch (err: any) {
         this.logger.warn(`DataSource token for "${dsName ?? 'default'}" not found: ${err?.message ?? err}`);
       }
       if (!ds) {
@@ -209,7 +209,7 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
       if (!ds.isInitialized) {
         try {
           await ds.initialize(); // only if you need to initialize here; in many apps datasources are created earlier
-        } catch (err) {
+        } catch (err: any) {
           this.logger.error(`Failed to initialize DataSource "${dsName}": ${err}`);
           continue;
         }

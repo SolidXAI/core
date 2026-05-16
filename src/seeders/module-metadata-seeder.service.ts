@@ -544,7 +544,7 @@ export class ModuleMetadataSeederService {
                     moduleRoot = path.dirname(
                         require.resolve('@solidxai/core/package.json'),
                     );
-                } catch (err) {
+                } catch (err: any) {
                     this.logger.debug(
                         'Could not resolve @solidxai/core from node_modules, assuming local execution',
                     );
@@ -610,7 +610,7 @@ export class ModuleMetadataSeederService {
                     moduleRoot = path.dirname(
                         require.resolve('@solidxai/core/package.json'),
                     );
-                } catch (err) {
+                } catch (err: any) {
                     this.logger.debug(
                         'Could not resolve @solidxai/core from node_modules, assuming local execution',
                     );
