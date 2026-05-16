@@ -109,7 +109,7 @@ export class WebhookReporter extends ConsoleReporter {
       if (!response.ok) {
         console.warn(`[WebhookReporter] Webhook returned ${response.status}`);
       }
-    } catch (err) {
+    } catch (err: any) {
       console.warn(`[WebhookReporter] Failed to deliver test results: ${err}`);
     }
   }
