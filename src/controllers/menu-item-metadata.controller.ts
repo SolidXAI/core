@@ -9,7 +9,7 @@ import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 
-@ApiTags('App Builder')
+@ApiTags('Solid Core')
 @Controller('menu-item-metadata') //FIXME: Change this to the model plural name 
 export class MenuItemMetadataController {
   constructor(private readonly service: MenuItemMetadataService) { }
