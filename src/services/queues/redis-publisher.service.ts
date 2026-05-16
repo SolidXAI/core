@@ -16,7 +16,10 @@ export abstract class RedisPublisher<T> implements OnModuleDestroy, QueuePublish
         protected readonly mqMessageService: MqMessageService,
         protected readonly mqMessageQueueService: MqMessageQueueService,
     ) {
-        this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
+        this.serviceRole = process.env.QUEUES_SERVICE_ROLE || 'both';
+        if (!process.env.QUEUES_SERVICE_ROLE) {
+            this.logger.debug('QUEUES_SERVICE_ROLE is not defined. Defaulting RedisPublisher service role to "both".');
+        }
         if (!process.env.QUEUES_REDIS_URL) {
             this.logger.debug('RedisPublisher: QUEUES_REDIS_URL is not defined in the environment variables');
         }
@@ -87,7 +90,7 @@ export abstract class RedisPublisher<T> implements OnModuleDestroy, QueuePublish
                 parentEntity: message.parentEntity,
                 mqMessageQueueId: mqMessageQueue.id,
             });
-        } catch (error) {
+        } catch (error: any) {
             this.logger.error(error.message, error.stack);
         }
     }
