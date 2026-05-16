@@ -134,6 +134,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     let viewModes = [];
     const menuItemModelId = menuItem?.action?.model?.id;
     const menuItemModuleId = menuItem?.module?.id;
+    const collectionViewTypes = ['card', 'list', 'kanban', 'tree'];
     if (menuItemModelId && menuItemModuleId) {
       const actionQb = await this.actionMetadataService.repo.createSecurityRuleAwareQueryBuilder('action');
       const actionsForViewModes = await actionQb
@@ -142,16 +143,32 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
         .leftJoinAndSelect('action.view', 'view')
         .where('model.id = :modelId', { modelId: menuItemModelId })
         .andWhere('module.id = :moduleId', { moduleId: menuItemModuleId })
-        .andWhere('view.type IN (:...viewTypes)', { viewTypes: ['card', 'list', 'kanban', 'tree'] })
+        .andWhere('view.type IN (:...viewTypes)', { viewTypes: collectionViewTypes })
         .getMany();
 
-      viewModes = actionsForViewModes.map(actionItem => ({
-        type: actionItem.view?.type ?? '',
-        menuItemId: menuItem.id,
-        menuItemName: menuItem.displayName,
-        actionId: actionItem.id ?? '',
-        actionName: actionItem.displayName ?? '',
-      }));
+      const canonicalActionsByViewType = new Map();
+      for (const actionItem of actionsForViewModes) {
+        const resolvedViewType = actionItem.view?.type;
+        if (!resolvedViewType || canonicalActionsByViewType.has(resolvedViewType)) {
+          continue;
+        }
+        canonicalActionsByViewType.set(resolvedViewType, actionItem);
+      }
+
+      if (action?.view?.type && collectionViewTypes.includes(action.view.type) && action?.id) {
+        canonicalActionsByViewType.set(action.view.type, action);
+      }
+
+      viewModes = collectionViewTypes
+        .map((resolvedViewType) => canonicalActionsByViewType.get(resolvedViewType))
+        .filter(Boolean)
+        .map(actionItem => ({
+          type: actionItem.view?.type ?? '',
+          menuItemId: menuItem.id,
+          menuItemName: menuItem.displayName,
+          actionId: actionItem.id ?? '',
+          actionName: actionItem.displayName ?? '',
+        }));
     }
 
     const viewId = action?.view?.id
