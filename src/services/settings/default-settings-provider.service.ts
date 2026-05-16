@@ -724,7 +724,11 @@ const getSolidCoreSettings = (isProd: boolean) =>
       label: "Registration Validation Type",
       group: "authentication-settings",
       sortOrder: 30,
-      controlType: "shortText",
+      controlType: "selectionStatic",
+      options: [
+        { label: "Email", value: "email" },
+        { label: "Mobile", value: "mobile" },
+      ],
     },
     {
       moduleName: "solid-core",
@@ -734,7 +738,12 @@ const getSolidCoreSettings = (isProd: boolean) =>
       label: "Login Validation Type",
       group: "authentication-settings",
       sortOrder: 40,
-      controlType: "shortText",
+      controlType: "selectionStatic",
+      options: [
+        { label: "Email", value: "email" },
+        { label: "Mobile", value: "mobile" },
+        { label: "Selectable", value: "selectable" },
+      ],
     },
     {
       moduleName: "solid-core",
