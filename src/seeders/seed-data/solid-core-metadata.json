@@ -1762,6 +1762,19 @@
             "isSystem": true
           },
           {
+            "name": "failedLoginAttempts",
+            "displayName": "Failed Login Attempts",
+            "type": "int",
+            "ormType": "integer",
+            "defaultValue": "0",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
             "name": "profilePicture",
             "displayName": "Profile Picture",
             "type": "mediaSingle",
@@ -9840,6 +9853,14 @@
             "attrs": {
               "name": "active",
               "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "label" : "Blocked / Unblocked",
+              "name": "failedLoginAttempts",
+              "viewWidget": "SolidUserBlockedStatusListWidget"
             }
           }
         ]
