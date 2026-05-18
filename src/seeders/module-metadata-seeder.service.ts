@@ -238,7 +238,7 @@ export class ModuleMetadataSeederService {
 
             //FIXME: Handle displaying the created users credentials in a better way.
             // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
-        } catch (error) {
+        } catch (error: any) {
             this.logSeedFailureForCli(error, {
                 moduleName: currentModule,
                 step: currentStep,
@@ -463,7 +463,7 @@ export class ModuleMetadataSeederService {
                     await this.createPermissionIfNotExists(permissionName);
                 }
 
-            } catch (error) {
+            } catch (error: any) {
                 this.logger.error(error);
             }
         }

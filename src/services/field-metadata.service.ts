@@ -1256,7 +1256,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
             // Write the updated object back to the file
             const updatedContent = JSON.stringify(metaData, null, 2);
             await fs.writeFile(filePath, updatedContent);
-        } catch (error) {
+        } catch (error: any) {
             this.logger.error('File creation failed:', error);
             throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
         }

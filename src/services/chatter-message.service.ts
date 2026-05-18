@@ -421,7 +421,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                     if (value.id) {
                         return value.id.toString();
                     }
-                } catch (error) {
+                } catch (error: any) {
                     console.error('Error fetching related model metadata:', error);
                     return value.id ? value.id.toString() : '';
                 }

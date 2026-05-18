@@ -80,7 +80,7 @@ export class DatabaseBootstrapService implements OnModuleInit {
       await this.dataSource.query(sql);
 
       this.logger.debug(`[${this.dataSource.name}] Applied ${fileName}`);
-    } catch (error) {
+    } catch (error: any) {
       // DO NOT THROW — continue with next file
       this.logger.error(
         `[${this.dataSource.name}] Failed ${fileName}`,

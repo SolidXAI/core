@@ -108,7 +108,7 @@ export abstract class DatabaseSubscriber<T> implements OnModuleInit, QueueSubscr
                         this.logger.log(`DatabaseSubscriber for queue ${queueName} is disabled because it does not match QUEUES_QUEUE_NAME_REGEX_TO_ENABLE=${queueNameRegex}`);
                         return;
                     }
-                } catch (error) {
+                } catch (error: any) {
                     this.logger.error(`Invalid QUEUES_QUEUE_NAME_REGEX_TO_ENABLE regex "${queueNameRegex}". Subscriber for queue ${queueName} will not start.`);
                     return;
                 }

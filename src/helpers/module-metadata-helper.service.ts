@@ -23,7 +23,7 @@ export class ModuleMetadataHelperService {
             const fileContent = await fs.readFile(configFilePath, 'utf8');
             return JSON.parse(fileContent);
         }
-        catch (error) {
+        catch (error: any) {
             this.logger.error(`module metadata configuration non existent at: ${configFilePath}`);
         }
 

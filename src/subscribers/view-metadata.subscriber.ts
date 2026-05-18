@@ -43,7 +43,7 @@ export class ViewMetadataSubsciber implements EntitySubscriberInterface<ViewMeta
             const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(viewMetadata.model.module.name);
             try {
                 await fs.access(filePath);
-            } catch (error) {
+            } catch (error: any) {
                 this.logger.error(`File not found at path: ${filePath}`);
                 return;
             }

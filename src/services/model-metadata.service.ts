@@ -154,7 +154,7 @@ export class ModelMetadataService {
 
         return model
       });
-    } catch (error) {
+    } catch (error: any) {
       // console.error('Transaction failed:', error);
       this.logger.error('Transaction failed:', error);
       throw error;
@@ -189,7 +189,7 @@ export class ModelMetadataService {
 
         // return model
       });
-    } catch (error) {
+    } catch (error: any) {
       // console.error('Transaction failed:', error);
       this.logger.error('Transaction failed:', error);
       throw error;
@@ -309,7 +309,7 @@ export class ModelMetadataService {
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
       throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
@@ -490,7 +490,7 @@ export class ModelMetadataService {
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
       throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
@@ -524,7 +524,7 @@ export class ModelMetadataService {
       await this.cleanupOnDelete(entity.id);
       const r = await this.modelMetadataRepo.remove(entity);
       return r;
-    } catch (error) {
+    } catch (error: any) {
     }
   }
 
@@ -621,7 +621,7 @@ export class ModelMetadataService {
         try {
           await fs.unlink(fileToDelete);
           this.logger.log(`Deleted file: ${fileToDelete}`);
-        } catch (error) {
+        } catch (error: any) {
           this.logger.error(`Error deleting file: ${fileToDelete}`, error);
         }
       }
@@ -725,7 +725,7 @@ export class ModelMetadataService {
         );
         this.solidTsMorphService.removeModuleMembers(moduleFilePath, removedIdentifiers);
         await this.solidTsMorphService.commit();
-      } catch (error) {
+      } catch (error: any) {
         this.solidTsMorphService.rollback();
         this.logger.error(`Failed to clean up module file for model '${modelEntity.singularName}':`, error);
       }
@@ -789,7 +789,7 @@ export class ModelMetadataService {
         await this.populateVAMConfigInDb(model);
         await this.populateVAMConfigInFile(model);
       });
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('generateVAMConfig Transaction failed:', error);
       throw error;
     }
@@ -816,7 +816,7 @@ export class ModelMetadataService {
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File updation failed for View, action, menus config:', error);
       throw new Error('File updation failed for View, action, menus config'); // Trigger rollback
