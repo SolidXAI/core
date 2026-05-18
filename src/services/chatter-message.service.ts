@@ -47,6 +47,16 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         super(entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
     }
 
+    private resolveMessageUser(userId?: number | null) {
+        if (userId) {
+            return { id: userId } as any;
+        }
+
+        const activeUser = this.requestContextService.getActiveUser();
+        const activeUserId = activeUser?.sub ?? null;
+        return activeUserId ? ({ id: activeUserId } as any) : null;
+    }
+
     async markCompleted(id: number) {
         const activeUser = this.requestContextService.getActiveUser();
         if (!activeUser) {
@@ -114,7 +124,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         return savedMessage;
     }
 
-    async postAuditMessageOnInsert(entity: any, modelName: string, messageQueue: boolean = false) {
+    async postAuditMessageOnInsert(entity: any, modelName: string, messageQueue: boolean = false, userId?: number | null) {
         if (!entity) {
             return;
         }
@@ -139,8 +149,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             !(field.type === 'relation' && field.relationType === 'one-to-many')
         );
 
-        const activeUser = this.requestContextService.getActiveUser();
-
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.AUDIT;
         chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.AUDIT_INSERT;
@@ -150,13 +158,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.modelDisplayName = model?.displayName;
         chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
         chatterMessage.messageBody = `New ${model?.displayName} created`;
-
-        if (activeUser) {
-            const userId = activeUser?.sub;
-            chatterMessage.user = { id: userId } as any;
-        } else {
-            chatterMessage.user = null;
-        }
+        chatterMessage.user = this.resolveMessageUser(userId);
 
         const savedMessage = await this.repo.save(chatterMessage);
 
@@ -177,7 +179,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
     }
 
-    async postAuditMessageOnUpdate(entity: any, modelName: string, databaseEntity: any, updatedColumns: any[] = [], messageQueue: boolean = false) {
+    async postAuditMessageOnUpdate(entity: any, modelName: string, databaseEntity: any, updatedColumns: any[] = [], messageQueue: boolean = false, userId?: number | null) {
         if (!databaseEntity || !entity) {
             return;
         }
@@ -259,8 +261,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             return;
         }
 
-        const activeUser = this.requestContextService.getActiveUser();
-
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.AUDIT;
         chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.AUDIT_UPDATE;
@@ -270,13 +270,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.modelDisplayName = model.displayName;
         chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
         chatterMessage.messageBody = `${model?.displayName} updated`;
-
-        if (activeUser) {
-            const userId = activeUser?.sub;
-            chatterMessage.user = { id: userId } as any;
-        } else {
-            chatterMessage.user = null;
-        }
+        chatterMessage.user = this.resolveMessageUser(userId);
 
         const savedMessage = await this.repo.save(chatterMessage);
 
@@ -294,7 +288,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
     }
 
-    async postAuditMessageOnDelete(modelName: string, databaseEntity: any, messageQueue: boolean = false) {
+    async postAuditMessageOnDelete(modelName: string, databaseEntity: any, messageQueue: boolean = false, userId?: number | null) {
         const model = await this.modelMetadataRepo.findOne({
             where: {
                 singularName: lowerFirst(modelName)
@@ -335,14 +329,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.modelUserKey = databaseEntity[model?.userKeyField?.name];
         chatterMessage.messageBody = `${model?.displayName} deleted`;
 
-        const activeUser = this.requestContextService.getActiveUser();
-
-        if (activeUser) {
-            const userId = activeUser?.sub;
-            chatterMessage.user = { id: userId } as any;
-        } else {
-            chatterMessage.user = null;
-        }
+        chatterMessage.user = this.resolveMessageUser(userId);
 
         const savedMessage = await this.repo.save(chatterMessage);
 
