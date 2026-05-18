@@ -47,14 +47,24 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         super(entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
     }
 
-    private resolveMessageUser(userId?: number | null) {
+    private resolveMessageUserId(userId?: number | null): number | null {
         if (userId) {
-            return { id: userId } as any;
+            return userId;
         }
 
-        const activeUser = this.requestContextService.getActiveUser();
-        const activeUserId = activeUser?.sub ?? null;
-        return activeUserId ? ({ id: activeUserId } as any) : null;
+        return this.requestContextService.getActiveUser()?.sub ?? null;
+    }
+
+    private resolveMessageUser(userId?: number | null) {
+        const resolvedUserId = this.resolveMessageUserId(userId);
+        return resolvedUserId ? ({ id: resolvedUserId } as any) : null;
+    }
+
+    private stampMessageAuditFields(chatterMessage: ChatterMessage, userId?: number | null) {
+        const resolvedUserId = this.resolveMessageUserId(userId);
+        chatterMessage.user = resolvedUserId ? ({ id: resolvedUserId } as any) : null;
+        chatterMessage.createdBy = resolvedUserId;
+        chatterMessage.updatedBy = resolvedUserId;
     }
 
     async markCompleted(id: number) {
@@ -88,14 +98,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         });
         chatterMessage.modelDisplayName = model?.displayName ?? null;
 
-        const activeUser = this.requestContextService.getActiveUser();
-
-        if (activeUser) {
-            const userId = activeUser?.sub;
-            chatterMessage.user = { id: userId } as any;
-        } else {
-            chatterMessage.user = null;
-        }
+        this.stampMessageAuditFields(chatterMessage);
 
         const savedMessage = await this.repo.save(chatterMessage);
 
@@ -158,7 +161,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.modelDisplayName = model?.displayName;
         chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
         chatterMessage.messageBody = `New ${model?.displayName} created`;
-        chatterMessage.user = this.resolveMessageUser(userId);
+        this.stampMessageAuditFields(chatterMessage, userId);
 
         const savedMessage = await this.repo.save(chatterMessage);
 
@@ -270,7 +273,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.modelDisplayName = model.displayName;
         chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
         chatterMessage.messageBody = `${model?.displayName} updated`;
-        chatterMessage.user = this.resolveMessageUser(userId);
+        this.stampMessageAuditFields(chatterMessage, userId);
 
         const savedMessage = await this.repo.save(chatterMessage);
 
@@ -329,7 +332,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.modelUserKey = databaseEntity[model?.userKeyField?.name];
         chatterMessage.messageBody = `${model?.displayName} deleted`;
 
-        chatterMessage.user = this.resolveMessageUser(userId);
+        this.stampMessageAuditFields(chatterMessage, userId);
 
         const savedMessage = await this.repo.save(chatterMessage);
 
