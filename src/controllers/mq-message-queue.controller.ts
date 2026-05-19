@@ -7,7 +7,7 @@ import { MqMessageQueueService } from '../services/mq-message-queue.service';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 
-@ApiTags('Queues')
+@ApiTags('Solid Core')
 @Controller('mq-message-queue') //FIXME: Change this to the model plural name 
 export class MqMessageQueueController {
   constructor(protected readonly service: MqMessageQueueService) { }

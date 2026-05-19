@@ -1,3 +1,4 @@
+import 'multer';
 import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
 import * as express from 'express';
 import { ConfigModule, ConfigService } from '@nestjs/config';

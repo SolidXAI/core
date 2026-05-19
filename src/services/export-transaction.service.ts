@@ -90,7 +90,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
       const fileName = this.getFileName(templateName, uuid, templateFormat);
       const mimeType = this.getMimeType(templateFormat);
       return { exportStream, fileName, mimeType, exportTransaction };
-    } catch (error) {
+    } catch (error: any) {
       this.updateExportTransaction(id, ExportStatus.FAILED, error.message);
       throw error;
     }
@@ -114,7 +114,7 @@ export class ExportTransactionService extends CRUDService<ExportTransaction> {
       // Store the file using the appropriate storage provider
       await this.storeExportStream(exportStream, exportTransaction, this.getFileName(templateName, uuid, templateFormat));
       this.updateExportTransaction(id, ExportStatus.COMPLETED);
-    } catch (error) {
+    } catch (error: any) {
       this.updateExportTransaction(id, ExportStatus.FAILED, error.message);
       throw error;
 

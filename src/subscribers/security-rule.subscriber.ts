@@ -27,19 +27,19 @@ export class SecurityRuleSubscriber implements EntitySubscriberInterface<Securit
     async afterInsert(event: InsertEvent<SecurityRule>) {
         await this.saveSecurityRules(event);
     }
-    
+
     async afterUpdate(event: UpdateEvent<SecurityRule>) {
         await this.saveSecurityRules(event);
     }
 
-    async saveSecurityRules(event: UpdateEvent<SecurityRule>| InsertEvent<SecurityRule>) {
+    async saveSecurityRules(event: UpdateEvent<SecurityRule> | InsertEvent<SecurityRule>) {
         const securityRule = event.entity as SecurityRule;
         const modelMetadata = event.entity.modelMetadata;
         if (!modelMetadata) {
             this.logger.error(`Model metadata not found for security rule with id ${event.entity.id}`);
             return;
         }
-        
+
         const modelMetadataRepo = this.dataSource.getRepository(ModelMetadata);
         const populatedModelMetadata = await modelMetadataRepo.findOne({
             where: {
@@ -58,7 +58,7 @@ export class SecurityRuleSubscriber implements EntitySubscriberInterface<Securit
         const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(populatedModelMetadata.module.name);
         try {
             await fs.access(filePath);
-        } catch (error) {
+        } catch (error: any) {
             // FIXME - Should we actually delete the security rule here, if the file is not found?
             this.logger.error(`File not found at path: ${filePath}`);
             return;
@@ -67,13 +67,13 @@ export class SecurityRuleSubscriber implements EntitySubscriberInterface<Securit
 
         if (metaData.securityRules) {
             const securityRuleIndex = metaData.securityRules?.findIndex((ruleFromFile: { name: string }) => ruleFromFile.name === securityRule.name);
-            const {id, roleId, modelMetadataId, ...requiredDto} = await this.securityRuleRepo.toDto(securityRule)
-            metaData.securityRules[securityRuleIndex] = {...requiredDto, securityRuleConfig: JSON.parse(securityRule.securityRuleConfig)}
+            const { id, roleId, modelMetadataId, ...requiredDto } = await this.securityRuleRepo.toDto(securityRule)
+            metaData.securityRules[securityRuleIndex] = { ...requiredDto, securityRuleConfig: JSON.parse(securityRule.securityRuleConfig) }
         }
         else {
             const securityRules = []
-            const {id, roleId, modelMetadataId, ...requiredDto} = await this.securityRuleRepo.toDto(securityRule)
-            securityRules.push({...requiredDto, securityRuleConfig: JSON.parse(securityRule.securityRuleConfig)})
+            const { id, roleId, modelMetadataId, ...requiredDto } = await this.securityRuleRepo.toDto(securityRule)
+            securityRules.push({ ...requiredDto, securityRuleConfig: JSON.parse(securityRule.securityRuleConfig) })
             metaData.securityRules = securityRules
         }
         // Write the updated object back to the file

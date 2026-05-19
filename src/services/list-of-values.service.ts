@@ -140,7 +140,7 @@ export class ListOfValuesService extends CRUDService<ListOfValues> {
     const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
     try {
       await fs.access(filePath);
-    } catch (error) {
+    } catch (error: any) {
       throw new Error(`Configuration file not found for module: ${moduleName}`);
     }
     const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);

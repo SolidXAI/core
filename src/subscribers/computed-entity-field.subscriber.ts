@@ -142,7 +142,7 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
             const providerInstance = provider.instance as IEntityPreComputeFieldProvider<any, any, any>; // IEntityComputedFieldProvider
             const computedValue = await providerInstance.preComputeValue(entity, computedFieldMetadata); //FIXME There should some way to check/assert if the provider actually has a postComputeAndSaveValue
             return computedValue; //TODO: This line here is just for backward compatibility, once the pre compute interface is change to return void, we will get rid of it.
-        } catch (error) {
+        } catch (error: any) {
             throw new InternalServerErrorException(`Error evaluating computed field ${computedFieldMetadata.fieldName} for model ${computedFieldMetadata.modelName} for triggered entity ${entity.constructor.name}: ${error.message}`);
         }
     }

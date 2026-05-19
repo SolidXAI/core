@@ -24,7 +24,7 @@ import { UserService } from "../services/user.service";
 import type { SolidCoreSetting } from "../services/settings/default-settings-provider.service";
 
 @Auth(AuthType.None)
-@ApiTags("Iam")
+@ApiTags("Solid Core")
 @Controller("iam/microsoft")
 export class MicrosoftAuthenticationController {
   constructor(

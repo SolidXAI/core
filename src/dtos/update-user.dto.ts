@@ -161,4 +161,8 @@ export class UpdateUserDto {
     @IsOptional()
     @ApiProperty()
     userViewMetadataCommand: string;
+    @IsOptional()
+    @IsInt()
+    @ApiProperty()
+    failedLoginAttempts: number;
 }

@@ -18,7 +18,6 @@ export class ChatterMessageDetails extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     oldValueDisplay: string;
 
-    @Index()
     @Column({ type: "varchar", nullable: true })
     newValueDisplay: string;
 

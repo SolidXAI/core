@@ -57,7 +57,7 @@ export class TestingEngine {
         } else {
           await execute();
         }
-      } catch (err) {
+      } catch (err: any) {
         scenarioError = err;
       } finally {
         const durationMs = Date.now() - scenarioStart;
@@ -108,7 +108,7 @@ export class TestingEngine {
           // console.log(`Step ${resolvedStep.name} attempting to saveAs ${resolvedStep.saveAs}`, JSON.stringify(result));
           ctx.resources.set(resolvedStep.saveAs, result);
         }
-      } catch (err) {
+      } catch (err: any) {
         stepError = err;
         throw err;
       } finally {

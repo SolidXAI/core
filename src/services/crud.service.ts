@@ -129,7 +129,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
                 await this.saveMedia(model, files, savedEntity);
             }
             return savedEntity;
-        } catch (error) {
+        } catch (error: any) {
             if (error instanceof QueryFailedError && error.message.includes('duplicate key value violates unique constraint')) {
                 throw new BadRequestException(ERROR_MESSAGES.DUPLICATE_ENTRY);
             }
@@ -920,7 +920,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             );
 
             return { message: SUCCESS_MESSAGES.RECORD_RECOVERED, data: softDeletedRows };
-        } catch (error) {
+        } catch (error: any) {
             if (error instanceof QueryFailedError) {
                 if ((error as any).code === '23505') {
                     throw new Error(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
@@ -966,7 +966,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             );
 
             return { message: SUCCESS_MESSAGES.SELECTED_RECORDS_RECOVERED, recoveredIds: ids };
-        } catch (error) {
+        } catch (error: any) {
             if (error instanceof QueryFailedError) {
                 if ((error as any).code === "23505") {
                     throw new Error(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);

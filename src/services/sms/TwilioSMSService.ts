@@ -69,7 +69,7 @@ export class TwilioSMSService implements ISMS {
         try {
             const bodyTemplate = Handlebars.compile(smsTemplate.body);
             body = bodyTemplate(templateParams);
-        } catch (error) {
+        } catch (error: any) {
             throw new Error('Unable to compile sms template body');
         }
         // Finally send the email.
@@ -110,7 +110,7 @@ export class TwilioSMSService implements ISMS {
             }
 
             return r;
-        } catch (error) {
+        } catch (error: any) {
             throw new Error(error);
         }
     }

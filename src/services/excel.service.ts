@@ -93,7 +93,7 @@ export class ExcelService {
 
       workbook.commit();
       // passThrough.end(); // ✅ Properly close the stream
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`❌ Error writing Excel: ${error.message}`);
       passThrough.destroy(error); // Destroy stream
       throw error;

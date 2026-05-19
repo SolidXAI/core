@@ -16,7 +16,7 @@ import type { SolidCoreSetting } from "src/services/settings/default-settings-pr
 
 @Auth(AuthType.None)
 @Controller('iam/google')
-@ApiTags("Iam")
+@ApiTags("Solid Core")
 // @UseGuards(ThrottlerGuard)
 // @SkipThrottle({ login: false, short: false, burst: true, sustained: true }) //Enable the login throttle only 
 export class GoogleAuthenticationController {

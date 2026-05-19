@@ -15,9 +15,9 @@ export abstract class DatabasePublisher<T> implements QueuePublisher<T> {
         protected readonly mqMessageService: MqMessageService,
         protected readonly mqMessageQueueService: MqMessageQueueService,
     ) {
-        this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
-        if (!this.serviceRole) {
-            this.logger.debug('Queue service Role is not defined in the environment variables');
+        this.serviceRole = process.env.QUEUES_SERVICE_ROLE || 'both';
+        if (!process.env.QUEUES_SERVICE_ROLE) {
+            this.logger.debug('QUEUES_SERVICE_ROLE is not defined. Defaulting DatabasePublisher service role to "both".');
         }
         // this.logger.debug(`DatabasePublisher instance created with options: ${JSON.stringify(this.options())}`);
     }
@@ -74,7 +74,7 @@ export abstract class DatabasePublisher<T> implements QueuePublisher<T> {
                 mqMessageQueueId: mqMessageQueue.id,
             });
         }
-        catch (error) {
+        catch (error: any) {
             this.logger.error(error.message, error.stack);
         }
 
