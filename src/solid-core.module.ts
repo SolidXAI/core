@@ -245,6 +245,7 @@ import { TwilioSmsQueueSubscriberDatabase } from './jobs/database/twilio-sms-sub
 // import { ThrottlerModule } from '@nestjs/throttler';
 import { IngestCommand } from './commands/ingest.command';
 import { MailFactory } from './factories/mail.factory';
+import { PushNotificationFactory } from './factories/push-notification.factory';
 import { ErrorMapperService } from './helpers/error-mapper.service';
 import { SolidCoreErrorCodesProvider } from './helpers/solid-core-error-codes-provider.service';
 import { ComputedFieldEvaluationPublisherRabbitmq } from './jobs/rabbitmq/computed-field-evaluation-publisher.service';
@@ -386,6 +387,13 @@ import { CacheManagerOptions } from './config/cache.options';
 import { SolidCoreDefaultSettingsProvider } from './services/settings/default-settings-provider.service';
 import { SmsFactory } from './factories/sms.factory';
 import { WhatsAppFactory } from './factories/whatsapp.factory';
+import { AmazonSnsPushNotificationQueuePublisherDatabase } from './jobs/database/amazon-sns-push-notification-publisher-database.service';
+import { AmazonSnsPushNotificationQueueSubscriberDatabase } from './jobs/database/amazon-sns-push-notification-subscriber-database.service';
+import { AmazonSnsPushNotificationQueuePublisherRabbitmq } from './jobs/rabbitmq/amazon-sns-push-notification-publisher.service';
+import { AmazonSnsPushNotificationQueueSubscriberRabbitmq } from './jobs/rabbitmq/amazon-sns-push-notification-subscriber.service';
+import { AmazonSnsPushNotificationQueuePublisherRedis } from './jobs/redis/amazon-sns-push-notification-publisher-redis.service';
+import { AmazonSnsPushNotificationQueueSubscriberRedis } from './jobs/redis/amazon-sns-push-notification-subscriber-redis.service';
+import { AmazonSNSPushNotificationService } from './services/push/amazon-sns-push-notification.service';
 import { ImageEncodingService } from './helpers/image-encoding.helper';
 import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.service';
 import { InfoCommand } from './commands/info.command';
@@ -594,6 +602,7 @@ import { Entity } from 'typeorm';
     Msg91OTPService,
     Msg91WhatsappService,
     TwilioSMSService,
+    AmazonSNSPushNotificationService,
     SmsTemplateService,
     EmailTemplateService,
     PublisherFactory,
@@ -622,6 +631,8 @@ import { Entity } from 'typeorm';
     TwilioSmsQueueSubscriberDatabase,
     TwilioSmsQueuePublisherRabbitmq,
     TwilioSmsQueueSubscriberRabbitmq,
+    AmazonSnsPushNotificationQueuePublisherRabbitmq,
+    AmazonSnsPushNotificationQueueSubscriberRabbitmq,
     Msg91OTPQueuePublisher,
     Msg91OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
@@ -690,6 +701,8 @@ import { Entity } from 'typeorm';
     TriggerMcpClientSubscriberRedis,
     TwilioSmsQueuePublisherRedis,
     TwilioSmsQueueSubscriberRedis,
+    AmazonSnsPushNotificationQueuePublisherRedis,
+    AmazonSnsPushNotificationQueueSubscriberRedis,
     GenerateCodePublisherDatabase,
     GenerateCodeSubscriberDatabase,
     GenerateCodePublisherRabbitmq,
@@ -783,6 +796,7 @@ import { Entity } from 'typeorm';
     MailFactory,
     WhatsAppFactory,
     SmsFactory,
+    PushNotificationFactory,
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,
     AiInteractionRepository,
@@ -822,6 +836,8 @@ import { Entity } from 'typeorm';
     ImageEncodingService,
     SolidMicroserviceAdapter,
     ListOfRolesSelectionProvider,
+    AmazonSnsPushNotificationQueuePublisherDatabase,
+    AmazonSnsPushNotificationQueueSubscriberDatabase,
   ],
   exports: [
     AiInteractionService,
@@ -851,6 +867,7 @@ import { Entity } from 'typeorm';
     MailFactory,
     WhatsAppFactory,
     SmsFactory,
+    PushNotificationFactory,
     MediaService,
     MediaStorageProviderMetadataService,
     ModelMetadataHelperService,
@@ -877,6 +894,7 @@ import { Entity } from 'typeorm';
     TextractService,
     TinyUrlService,
     TwilioSMSService,
+    AmazonSNSPushNotificationService,
     TypeOrmModule,
     UserActivityHistoryService,
     ImageEncodingService,

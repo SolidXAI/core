@@ -25,6 +25,7 @@ import { DataSource } from 'typeorm';
 import { CRUDService } from './crud.service';
 import { IS_SETTINGS_PROVIDER } from 'src/decorators/settings-provider.decorator';
 import { IS_SMS_PROVIDER } from 'src/decorators/sms-provider.decorator';
+import { IS_PUSH_NOTIFICATION_PROVIDER } from 'src/decorators/push-notification-provider.decorator';
 import { SettingService } from 'src/services/setting.service';
 
 export const coreSubscriberClasses = [
@@ -137,6 +138,12 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     const smsProviders = this.discoveryService.getProviders().filter((provider) => this.isSmsProvider(provider));
     smsProviders.forEach((smsProvider) => {
       this.solidRegistry.registerSmsProvider(smsProvider);
+    });
+
+    // Register all IPushNotification implementations
+    const pushNotificationProviders = this.discoveryService.getProviders().filter((provider) => this.isPushNotificationProvider(provider));
+    pushNotificationProviders.forEach((pushNotificationProvider) => {
+      this.solidRegistry.registerPushNotificationProvider(pushNotificationProvider);
     });
 
     // Register all ISecurityRuleConfigProvider implementations
@@ -392,6 +399,18 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     );
 
     return !!isSmsProvider;
+  }
+
+  private isPushNotificationProvider(provider: InstanceWrapper) {
+    const { instance } = provider;
+    if (!instance) return false;
+
+    const isPushNotificationProvider = this.reflector.get<boolean>(
+      IS_PUSH_NOTIFICATION_PROVIDER,
+      instance.constructor,
+    );
+
+    return !!isPushNotificationProvider;
   }
 
   private isSecurityRuleConfigProvider(provider: InstanceWrapper) {
