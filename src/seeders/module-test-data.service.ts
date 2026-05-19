@@ -24,6 +24,7 @@ import { TestingRoleSpec, TestingUserSpec } from 'src/testing/contracts/testing-
 @Injectable()
 export class ModuleTestDataService {
   private readonly logger = new Logger(ModuleTestDataService.name);
+  private static readonly TEARDOWN_RETRY_ATTEMPTS = 5;
 
   constructor(
     private readonly moduleRef: ModuleRef,
@@ -665,29 +666,120 @@ export class ModuleTestDataService {
   private async dropTestDatabaseObjects(databases: Record<string, string>): Promise<void> {
     const entries = Object.entries(databases);
     for (const [dsName, dbName] of entries) {
-      const dataSource = this.resolveDataSourceByName(dsName);
-      if (!dataSource.isInitialized) {
-        await dataSource.initialize();
-      }
+      await this.dropTestDatabaseObjectsWithRetry(dsName, dbName);
+    }
+  }
 
-      console.log(`Dropping test database/schema "${dbName}" on datasource "${dsName}"...`);
+  private async dropTestDatabaseObjectsWithRetry(dsName: string, dbName: string): Promise<void> {
+    let lastError: unknown;
 
-      const queryRunner = dataSource.createQueryRunner();
+    for (let attempt = 1; attempt <= ModuleTestDataService.TEARDOWN_RETRY_ATTEMPTS; attempt += 1) {
+      console.log(`Attempting to tear down "${dbName}" on datasource "${dsName}" (${attempt}/${ModuleTestDataService.TEARDOWN_RETRY_ATTEMPTS})...`);
+
       try {
-        const type = dataSource.options.type;
-        if (type === 'postgres') {
-          await queryRunner.query(`DROP DATABASE IF EXISTS "${dbName}"`);
-        } else if (type === 'mssql') {
-          await this.dropMssqlSchema(queryRunner, dbName);
-        } else if (type === 'mysql' || type === 'mariadb') {
-          await queryRunner.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
-        } else {
-          throw new Error(`Unsupported database type for test data deletion: ${type}`);
+        await this.dropSingleTestDatabaseObject(dsName, dbName);
+        return;
+      } catch (error) {
+        lastError = error;
+        if (attempt >= ModuleTestDataService.TEARDOWN_RETRY_ATTEMPTS) {
+          throw error;
         }
+
+        await this.sleep(this.teardownRetryDelayMs(attempt));
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
+  }
+
+  private teardownRetryDelayMs(attempt: number): number {
+    const baseMs = 500;
+    const incrementMs = 350;
+    const jitterMs = Math.floor(Math.random() * 250);
+    return baseMs + ((attempt - 1) * incrementMs) + jitterMs;
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async dropSingleTestDatabaseObject(dsName: string, dbName: string): Promise<void> {
+    const dataSource = this.resolveDataSourceByName(dsName);
+
+    if (dataSource.options.type === 'postgres') {
+      await this.dropPostgresDatabase(dataSource, dbName);
+      return;
+    }
+
+    if (!dataSource.isInitialized) {
+      await dataSource.initialize();
+    }
+
+    const queryRunner = dataSource.createQueryRunner();
+    try {
+      const type = dataSource.options.type;
+      if (type === 'mssql') {
+        await this.dropMssqlSchema(queryRunner, dbName);
+      } else if (type === 'mysql' || type === 'mariadb') {
+        await queryRunner.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
+      } else {
+        throw new Error(`Unsupported database type for test data deletion: ${type}`);
+      }
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  private async dropPostgresDatabase(dataSource: DataSource, dbName: string): Promise<void> {
+    if (dataSource.isInitialized) {
+      await dataSource.destroy();
+    }
+
+    const adminDataSource = new DataSource({
+      ...(dataSource.options as any),
+      database: this.resolvePostgresMaintenanceDatabase(dataSource),
+      name: `${String(dataSource.name ?? 'default')}_teardown_admin_${Date.now()}`,
+      synchronize: false,
+      migrationsRun: false,
+      entities: [],
+      subscribers: [],
+      migrations: [],
+    });
+
+    try {
+      await adminDataSource.initialize();
+      const queryRunner = adminDataSource.createQueryRunner();
+      try {
+        await queryRunner.query(
+          `SELECT pg_terminate_backend(pid)
+             FROM pg_stat_activity
+            WHERE datname = $1
+              AND pid <> pg_backend_pid()`,
+          [dbName],
+        );
+        await queryRunner.query(`DROP DATABASE IF EXISTS "${dbName}"`);
       } finally {
         await queryRunner.release();
       }
+    } finally {
+      if (adminDataSource.isInitialized) {
+        await adminDataSource.destroy();
+      }
     }
+  }
+
+  private resolvePostgresMaintenanceDatabase(dataSource: DataSource): string {
+    const configured = process.env.POSTGRES_MAINTENANCE_DATABASE?.trim();
+    if (configured) {
+      return configured;
+    }
+
+    const currentDb = String((dataSource.options as any)?.database ?? '').trim();
+    if (currentDb && currentDb !== 'postgres') {
+      return 'postgres';
+    }
+
+    return 'template1';
   }
 
   private async dropMssqlSchema(queryRunner: ReturnType<DataSource['createQueryRunner']>, schemaName: string): Promise<void> {
