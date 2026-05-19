@@ -20,6 +20,7 @@ import { AiInteraction } from "./entities/ai-interaction.entity";
 import { ActiveUserData } from "./interfaces/active-user-data.interface";
 import { SecurityRuleConfig } from "./dtos/security-rule-config.dto";
 import { SecurityRule } from "./entities/security-rule.entity";
+import { PublishCommandOutput } from "@aws-sdk/client-sns";
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -322,12 +323,14 @@ export interface IPushNotification {
     endpointArn: string,
     payload: PushNotificationPayload,
     shouldQueuePush?: boolean,
-  ): Promise<any>;
+  ): Promise<PublishCommandOutput>;
 
-  sendPushNotificationSynchronously(message: PushQueuePayload): Promise<any>;
+  sendPushNotificationSynchronously(
+    message: PushNotificationQueuePayload,
+  ): Promise<PublishCommandOutput>;
 }
 
-export interface PushQueuePayload {
+export interface PushNotificationQueuePayload {
   endpointArn: string;
   payload: PushNotificationPayload;
 }

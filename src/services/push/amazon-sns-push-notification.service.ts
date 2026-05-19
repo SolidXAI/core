@@ -4,7 +4,7 @@ import { PushNotificationProvider } from "src/decorators/push-notification-provi
 import {
   IPushNotification,
   PushNotificationPayload,
-  PushQueuePayload,
+  PushNotificationQueuePayload,
 } from "src/interfaces";
 import { QueueMessage } from "src/interfaces/mq";
 import { PublisherFactory } from "../queues/publisher-factory.service";
@@ -32,7 +32,7 @@ export class AmazonSNSPushNotificationService implements IPushNotification {
   }
 
   constructor(
-    private readonly publisherFactory: PublisherFactory<PushQueuePayload>,
+    private readonly publisherFactory: PublisherFactory<PushNotificationQueuePayload>,
     private readonly settingService: SettingService,
   ) {}
 
@@ -41,7 +41,7 @@ export class AmazonSNSPushNotificationService implements IPushNotification {
     payload: PushNotificationPayload,
     shouldQueuePush = false,
   ): Promise<any> {
-    const message: QueueMessage<PushQueuePayload> = {
+    const message: QueueMessage<PushNotificationQueuePayload> = {
       payload: {
         endpointArn,
         payload,
@@ -65,7 +65,7 @@ export class AmazonSNSPushNotificationService implements IPushNotification {
   }
 
   private async sendPushNotificationAsynchronously(
-    message: QueueMessage<PushQueuePayload>,
+    message: QueueMessage<PushNotificationQueuePayload>,
   ): Promise<string> {
     this.logger.debug(
       `Queueing SNS push notification for endpoint ${message.payload.endpointArn}`,
@@ -78,7 +78,7 @@ export class AmazonSNSPushNotificationService implements IPushNotification {
   }
 
   async sendPushNotificationSynchronously(
-    message: PushQueuePayload,
+    message: PushNotificationQueuePayload,
   ): Promise<any> {
     const { endpointArn, payload } = message;
     if (!endpointArn) {
