@@ -123,7 +123,7 @@ export class ModuleMetadataService {
         await this.createInFile(module);
         return module
       });
-    } catch (error) {
+    } catch (error: any) {
       // console.error('Transaction failed:', error);
       this.logger.error('Transaction failed:', error);
       throw error;
@@ -181,7 +181,7 @@ export class ModuleMetadataService {
             actionUserKey: `${module?.name}-home-action`,
             moduleUserKey: module?.name,
             parentMenuItemUserKey: "",
-            iconName : "home"
+            iconName: "home"
           }
         ],
         views: [],
@@ -204,7 +204,7 @@ export class ModuleMetadataService {
       // Write the JSON to the file
       await fs.writeFile(filePath, metadataJson);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
       throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
@@ -219,7 +219,7 @@ export class ModuleMetadataService {
         await this.updateInFile(module);
         return module
       });
-    } catch (error) {
+    } catch (error: any) {
       // console.error('Transaction failed:', error);
       this.logger.error('Transaction failed:', error);
       throw error;
@@ -255,7 +255,7 @@ export class ModuleMetadataService {
       try {
         metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
-      } catch (error) {
+      } catch (error: any) {
         metaData = {
           moduleMetadata: {
             name: null,
@@ -290,7 +290,7 @@ export class ModuleMetadataService {
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
       throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
@@ -365,7 +365,7 @@ export class ModuleMetadataService {
         await fs.rm(modulePath, { recursive: true, force: true });
         await fs.rm(moduleMetadataPAth, { recursive: true, force: true });
         this.logger.log(`Deleted file: ${moduleMetadataPAth}`);
-      } catch (error) {
+      } catch (error: any) {
         this.logger.error(`Error deleting file: ${moduleMetadataPAth}`, error);
         throw new Error(ERROR_MESSAGES.FILE_DELETE_FAILED); // Trigger rollback
       }

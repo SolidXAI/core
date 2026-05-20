@@ -36,7 +36,7 @@ export class SchedulerServiceImpl implements ISchedulerService {
         if (jobsRegexToEnable && jobsRegexToEnable !== "all") {
             try {
                 jobsRegex = new RegExp(jobsRegexToEnable);
-            } catch (error) {
+            } catch (error: any) {
                 this.logger.error(`Invalid SOLID_SCHEDULER_JOBS_REGEX_TO_ENABLE regex "${jobsRegexToEnable}". Scheduler loop will skip this run.`);
                 return;
             }
@@ -101,7 +101,7 @@ export class SchedulerServiceImpl implements ISchedulerService {
 
                 await this.scheduledJobRepo.save(job);
                 this.logger.log(`[${now.getTime()}]: scheduler service finished running job: ${job.job}`);
-            } catch (err) {
+            } catch (err: any) {
                 this.logger.error(`[${now.getTime()}]: scheduler service failed to run job ${job.job}`, err.stack);
             } finally {
                 this.runningJobs.delete(jobKey);
@@ -153,7 +153,7 @@ export class SchedulerServiceImpl implements ISchedulerService {
         try {
             const parsed = JSON.parse(dayOfWeek);
             return Array.isArray(parsed) ? parsed : [];
-        } catch (error) {
+        } catch (error: any) {
             this.logger.warn(`Invalid dayOfWeek JSON '${dayOfWeek}'`, error as any);
             return [];
         }
@@ -217,10 +217,10 @@ export class SchedulerServiceImpl implements ISchedulerService {
             if (runAfterNext.getTime() - nextRun.getTime() < 60000) {
                 throw new Error('Cron expression interval must be at least 1 minute');
             }
-            
+
             this.logger.log(`Custom cron '${job.cronExpression}' next run: ${nextRun}`);
             return nextRun;
-        } catch (error) {
+        } catch (error: any) {
             this.logger.error(`Invalid cron expression for job ${job.scheduleName}: ${job.cronExpression}. Reason: ${(error as Error).message}`);
             // Fallback to daily if cron parsing fails
             return new Date(base.getTime() + 24 * 60 * 60 * 1000);

@@ -119,7 +119,7 @@ export class SelectionDynamicFieldCrudManager implements FieldCrudManager {
             }
             return false;
         }
-        catch (error) {
+        catch (error: any) {
             // Use the values method as a fallback, if the value method is not implemented
             const values = await providerInstance.values('', ctxt);
             const isValid = values.some(v => v.value === fieldValue);

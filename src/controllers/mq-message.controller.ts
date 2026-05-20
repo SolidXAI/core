@@ -7,7 +7,7 @@ import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 
-@ApiTags('Queues')
+@ApiTags('Solid Core')
 @Controller('mq-message') //FIXME: Change this to the model plural name 
 export class MqMessageController {
   constructor(protected readonly service: MqMessageService) { }

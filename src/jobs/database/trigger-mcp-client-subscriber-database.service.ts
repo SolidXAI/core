@@ -60,7 +60,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 // Fallback
                 nestedResponse = String(raw);
             }
-        } catch (err) {
+        } catch (err: any) {
             this.triggerMcpClientSubscriberLogger.error("Error processing AI response:", err);
             nestedResponse = `Error handling response: ${err?.message || String(err)}`;
         }

@@ -56,7 +56,7 @@ export class SecurityRuleRepository extends SolidBaseRepository<SecurityRule> {
 
                 evaluatedRules.push(evaluatedRule);
 
-            } catch (error) {
+            } catch (error: any) {
                 this.logger.error(`Error parsing security rule: ${rule.securityRuleConfig}`, error);
                 this.logger.error(error.stack);
                 throw error;

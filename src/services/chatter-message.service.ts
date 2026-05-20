@@ -47,6 +47,26 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         super(entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
     }
 
+    private resolveMessageUserId(userId?: number | null): number | null {
+        if (userId) {
+            return userId;
+        }
+
+        return this.requestContextService.getActiveUser()?.sub ?? null;
+    }
+
+    private resolveMessageUser(userId?: number | null) {
+        const resolvedUserId = this.resolveMessageUserId(userId);
+        return resolvedUserId ? ({ id: resolvedUserId } as any) : null;
+    }
+
+    private stampMessageAuditFields(chatterMessage: ChatterMessage, userId?: number | null) {
+        const resolvedUserId = this.resolveMessageUserId(userId);
+        chatterMessage.user = resolvedUserId ? ({ id: resolvedUserId } as any) : null;
+        chatterMessage.createdBy = resolvedUserId;
+        chatterMessage.updatedBy = resolvedUserId;
+    }
+
     async markCompleted(id: number) {
         const activeUser = this.requestContextService.getActiveUser();
         if (!activeUser) {
@@ -78,14 +98,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         });
         chatterMessage.modelDisplayName = model?.displayName ?? null;
 
-        const activeUser = this.requestContextService.getActiveUser();
-
-        if (activeUser) {
-            const userId = activeUser?.sub;
-            chatterMessage.user = { id: userId } as any;
-        } else {
-            chatterMessage.user = null;
-        }
+        this.stampMessageAuditFields(chatterMessage);
 
         const savedMessage = await this.repo.save(chatterMessage);
 
@@ -114,7 +127,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         return savedMessage;
     }
 
-    async postAuditMessageOnInsert(entity: any, modelName: string, messageQueue: boolean = false) {
+    async postAuditMessageOnInsert(entity: any, modelName: string, messageQueue: boolean = false, userId?: number | null) {
         if (!entity) {
             return;
         }
@@ -139,8 +152,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             !(field.type === 'relation' && field.relationType === 'one-to-many')
         );
 
-        const activeUser = this.requestContextService.getActiveUser();
-
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.AUDIT;
         chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.AUDIT_INSERT;
@@ -150,13 +161,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.modelDisplayName = model?.displayName;
         chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
         chatterMessage.messageBody = `New ${model?.displayName} created`;
-
-        if (activeUser) {
-            const userId = activeUser?.sub;
-            chatterMessage.user = { id: userId } as any;
-        } else {
-            chatterMessage.user = null;
-        }
+        this.stampMessageAuditFields(chatterMessage, userId);
 
         const savedMessage = await this.repo.save(chatterMessage);
 
@@ -177,7 +182,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
     }
 
-    async postAuditMessageOnUpdate(entity: any, modelName: string, databaseEntity: any, updatedColumns: any[] = [], messageQueue: boolean = false) {
+    async postAuditMessageOnUpdate(entity: any, modelName: string, databaseEntity: any, updatedColumns: any[] = [], messageQueue: boolean = false, userId?: number | null) {
         if (!databaseEntity || !entity) {
             return;
         }
@@ -259,8 +264,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             return;
         }
 
-        const activeUser = this.requestContextService.getActiveUser();
-
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.AUDIT;
         chatterMessage.messageSubType = CHATTER_MESSAGE_SUBTYPE.AUDIT_UPDATE;
@@ -270,13 +273,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.modelDisplayName = model.displayName;
         chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
         chatterMessage.messageBody = `${model?.displayName} updated`;
-
-        if (activeUser) {
-            const userId = activeUser?.sub;
-            chatterMessage.user = { id: userId } as any;
-        } else {
-            chatterMessage.user = null;
-        }
+        this.stampMessageAuditFields(chatterMessage, userId);
 
         const savedMessage = await this.repo.save(chatterMessage);
 
@@ -294,7 +291,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
     }
 
-    async postAuditMessageOnDelete(modelName: string, databaseEntity: any, messageQueue: boolean = false) {
+    async postAuditMessageOnDelete(modelName: string, databaseEntity: any, messageQueue: boolean = false, userId?: number | null) {
         const model = await this.modelMetadataRepo.findOne({
             where: {
                 singularName: lowerFirst(modelName)
@@ -335,14 +332,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.modelUserKey = databaseEntity[model?.userKeyField?.name];
         chatterMessage.messageBody = `${model?.displayName} deleted`;
 
-        const activeUser = this.requestContextService.getActiveUser();
-
-        if (activeUser) {
-            const userId = activeUser?.sub;
-            chatterMessage.user = { id: userId } as any;
-        } else {
-            chatterMessage.user = null;
-        }
+        this.stampMessageAuditFields(chatterMessage, userId);
 
         const savedMessage = await this.repo.save(chatterMessage);
 
@@ -421,7 +411,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                     if (value.id) {
                         return value.id.toString();
                     }
-                } catch (error) {
+                } catch (error: any) {
                     console.error('Error fetching related model metadata:', error);
                     return value.id ? value.id.toString() : '';
                 }

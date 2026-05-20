@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
@@ -177,6 +178,8 @@ export async function bootstrapSolidApp(
   // eslint-disable-next-line @typescript-eslint/no-var-requires
   const types = require('pg').types;
   types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val));
+
+  app.useWebSocketAdapter(new WsAdapter(app));
 
   await app.listen(port);
 }
