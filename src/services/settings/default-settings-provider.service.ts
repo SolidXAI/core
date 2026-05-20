@@ -469,6 +469,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       options: [
         { label: "SMTP Email Service", value: "SMTPEMailService" },
         { label: "Elastic Email Service", value: "ElasticEmailService" },
+        { label: "Amazon SES Service", value: "AmazonSESService" },
       ],
     },
     {
@@ -1177,6 +1178,32 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "whatsapp-settings",
       sortOrder: 30,
       controlType: "shortText",
+    },
+
+    // amazon-ses-providers
+    {
+      moduleName: "solid-core",
+      key: "awsSesAccessKeyId",
+      value: process.env.AWS_SES_ACCESS_KEY_ID,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "awsSesSecretAccessKey",
+      value: process.env.AWS_SES_SECRET_ACCESS_KEY,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "awsSesRegion",
+      value: process.env.AWS_SES_REGION,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "sesMailFrom",
+      value: process.env.SES_MAIL_FROM,
+      level: SettingLevel.SystemEnv,
     },
   ] as const satisfies SettingDefinition[];
 

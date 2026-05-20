@@ -103,6 +103,8 @@ import { Msg91SmsQueuePublisher } from './jobs/rabbitmq/msg91-sms-publisher.serv
 import { Msg91SmsQueueSubscriber } from './jobs/rabbitmq/msg91-sms-subscriber.service';
 import { SmtpEmailQueuePublisherRabbitmq } from './jobs/rabbitmq/smtp-email-publisher.service';
 import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/rabbitmq/smtp-email-subscriber.service';
+import { AmazonSesEmailQueuePublisherRabbitmq } from './jobs/rabbitmq/amazon-ses-email-publisher.service';
+import { AmazonSesEmailQueueSubscriberRabbitmq } from './jobs/rabbitmq/amazon-ses-email-subscriber.service';
 import { TestQueuePublisher } from './jobs/rabbitmq/test-queue-publisher.service';
 import { TestQueueSubscriber } from './jobs/rabbitmq/test-queue-subscriber.service';
 import { ChatterQueuePublisherRabbitmq } from './jobs/rabbitmq/chatter-queue-publisher.service';
@@ -125,6 +127,8 @@ import { Msg91WhatsappQueuePublisherRedis } from './jobs/redis/msg91-whatsapp-pu
 import { Msg91WhatsappQueueSubscriberRedis } from './jobs/redis/msg91-whatsapp-subscriber-redis.service';
 import { SmtpEmailQueuePublisherRedis } from './jobs/redis/smtp-email-publisher-redis.service';
 import { SmtpEmailQueueSubscriberRedis } from './jobs/redis/smtp-email-subscriber-redis.service';
+import { AmazonSesEmailQueuePublisherRedis } from './jobs/redis/amazon-ses-email-publisher-redis.service';
+import { AmazonSesEmailQueueSubscriberRedis } from './jobs/redis/amazon-ses-email-subscriber-redis.service';
 import { Three60WhatsappQueuePublisherRedis } from './jobs/redis/three60-whatsapp-publisher-redis.service';
 import { Three60WhatsappQueueSubscriberRedis } from './jobs/redis/three60-whatsapp-subscriber-redis.service';
 import { TriggerMcpClientPublisherRedis } from './jobs/redis/trigger-mcp-client-publisher-redis.service';
@@ -149,6 +153,7 @@ import {
 } from './services/file';
 import { HashingService } from './services/hashing.service';
 import { ElasticEmailService } from './services/mail/elastic-email.service';
+import { AmazonSESService } from './services/mail/amazon-ses.service';
 import { SMTPEMailService } from './services/mail/smtp-email.service';
 import { MenuItemMetadataService } from './services/menu-item-metadata.service';
 import { MqMessageQueueService } from './services/mq-message-queue.service';
@@ -238,6 +243,8 @@ import { Msg91SmsQueuePublisherDatabase } from './jobs/database/msg91-sms-publis
 import { Msg91SmsQueueSubscriberDatabase } from './jobs/database/msg91-sms-subscriber-database.service';
 import { SmtpEmailQueuePublisherDatabase } from './jobs/database/smtp-email-publisher-database.service';
 import { SmtpEmailQueueSubscriberDatabase } from './jobs/database/smtp-email-subscriber-database.service';
+import { AmazonSesEmailQueuePublisherDatabase } from './jobs/database/amazon-ses-email-publisher-database.service';
+import { AmazonSesEmailQueueSubscriberDatabase } from './jobs/database/amazon-ses-email-subscriber-database.service';
 
 import { TwilioSmsQueuePublisherDatabase } from './jobs/database/twilio-sms-publisher-database.service';
 import { TwilioSmsQueueSubscriberDatabase } from './jobs/database/twilio-sms-subscriber-database.service';
@@ -590,6 +597,7 @@ import { Entity } from 'typeorm';
     IngestMetadataService,
     SMTPEMailService,
     ElasticEmailService,
+    AmazonSESService,
     Msg91SMSService,
     Msg91OTPService,
     Msg91WhatsappService,
@@ -608,8 +616,12 @@ import { Entity } from 'typeorm';
 
     SmtpEmailQueuePublisherRabbitmq,
     SmtpEmailQueueSubscriberRabbitmq,
+    AmazonSesEmailQueuePublisherRabbitmq,
+    AmazonSesEmailQueueSubscriberRabbitmq,
     SmtpEmailQueuePublisherDatabase,
     SmtpEmailQueueSubscriberDatabase,
+    AmazonSesEmailQueuePublisherDatabase,
+    AmazonSesEmailQueueSubscriberDatabase,
     ApiEmailQueuePublisher,
     ApiEmailQueueSubscriber,
     ApiEmailQueuePublisherDatabase,
@@ -684,6 +696,8 @@ import { Entity } from 'typeorm';
     Msg91WhatsappQueueSubscriberRedis,
     SmtpEmailQueuePublisherRedis,
     SmtpEmailQueueSubscriberRedis,
+    AmazonSesEmailQueuePublisherRedis,
+    AmazonSesEmailQueueSubscriberRedis,
     Three60WhatsappQueuePublisherRedis,
     Three60WhatsappQueueSubscriberRedis,
     TriggerMcpClientPublisherRedis,
