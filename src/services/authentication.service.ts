@@ -336,6 +336,9 @@ export class AuthenticationService {
 
     // Send welcome notifications (email/SMS) if enabled.
     await this.notifyUserOnSignup(user);
+
+    // Emit registration event for all successful standard signups as well.
+    this.triggerRegistrationEvent(user);
   }
 
   generatePassword(length: number = 8): string {
