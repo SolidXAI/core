@@ -79,12 +79,11 @@
     "ts-morph": "^27.0.2",
     "twilio": "^5.8.0",
     "uuid": "^9.0.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "playwright": ">=1.0.0"
   },
   "peerDependenciesMeta": {
-    "playwright": {
-      "optional": true
-    }
+
   },
   "peerDependencies": {
     "@nestjs/axios": "^3.0.2",
@@ -106,7 +105,6 @@
     "nest-commander": "^3.12.5",
     "nest-winston": "^1.9.7",
     "nestjs-cls": "^5.4.3",
-    "playwright": ">=1.0.0",
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.20",
     "typeorm-naming-strategies": "^4.1.0",
