@@ -191,6 +191,7 @@ import { SavedFiltersController } from './controllers/saved-filters.controller';
 import { ScheduledJobController } from './controllers/scheduled-job.controller';
 import { AgentSessionController } from './controllers/agent-session.controller';
 import { AgentEventController } from './controllers/agent-event.controller';
+import { McpAuditLogController } from './controllers/mcp-audit-log.controller';
 import { SecurityRuleController } from './controllers/security-rule.controller';
 import { SettingController } from './controllers/setting.controller';
 import { InfoController } from './controllers/info.controller';
@@ -217,6 +218,7 @@ import { SavedFilters } from './entities/saved-filters.entity';
 import { ScheduledJob } from './entities/scheduled-job.entity';
 import { AgentSession } from './entities/agent-session.entity';
 import { AgentEvent } from './entities/agent-event.entity';
+import { McpAuditLog } from './entities/mcp-audit-log.entity';
 import { SecurityRule } from './entities/security-rule.entity';
 import { Setting } from './entities/setting.entity';
 import { UserActivityHistory } from './entities/user-activity-history.entity';
@@ -295,6 +297,7 @@ import { SavedFiltersRepository } from './repository/saved-filters.repository';
 import { ScheduledJobRepository } from './repository/scheduled-job.repository';
 import { AgentSessionRepository } from './repository/agent-session.repository';
 import { AgentEventRepository } from './repository/agent-event.repository';
+import { McpAuditLogRepository } from './repository/mcp-audit-log.repository';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
 import { SettingRepository } from './repository/setting.repository';
 import { SmsTemplateRepository } from './repository/sms-template.repository';
@@ -344,6 +347,7 @@ import { SavedFiltersService } from './services/saved-filters.service';
 import { ScheduledJobService } from './services/scheduled-job.service';
 import { AgentSessionService } from './services/agent-session.service';
 import { AgentEventService } from './services/agent-event.service';
+import { McpAuditLogService } from './services/mcp-audit-log.service';
 import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
 import { SecurityRuleService } from './services/security-rule.service';
 import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-question-providers-selection-provider.service';
@@ -427,6 +431,7 @@ import { Entity } from 'typeorm';
       ScheduledJob,
       AgentSession,
       AgentEvent,
+      McpAuditLog,
       SecurityRule,
       Setting,
       SmsTemplate,
@@ -505,6 +510,7 @@ import { Entity } from 'typeorm';
     ScheduledJobController,
     AgentSessionController,
     AgentEventController,
+    McpAuditLogController,
     SecurityRuleController,
     ServiceController,
     SettingController,
@@ -774,8 +780,10 @@ import { Entity } from 'typeorm';
     ScheduledJobRepository,
     AgentSessionRepository,
     AgentEventRepository,
+    McpAuditLogRepository,
     AgentSessionService,
     AgentEventService,
+    McpAuditLogService,
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
     ListOfValuesSubscriber,
