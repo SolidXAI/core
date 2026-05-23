@@ -4,8 +4,7 @@ import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { CommandError } from './helper';
 
 interface CommandOptions {
-  name?: string;
-  id?: number;
+  name: string;
   dryRun?: boolean;
 }
 
@@ -30,32 +29,20 @@ export class RefreshModelCommand extends CommandRunner {
     }
 
     const codeGenerationOptions = {
-      modelId: options.id,
       modelUserKey: options.name,
       dryRun: options.dryRun,
     };
     await this.modelMetadataService.handleGenerateCode(codeGenerationOptions);
   }
 
-  // Accept the model ID as an argument
   @Option({
-    flags: '-i, --id [model ID]',
-    description: 'Model ID from the ss_model_metadata table',
-  })
-  parseId(val: string): number {
-    return +val;
-  }
-
-  // Accept the module name as an argument
-  @Option({
-    flags: '-n, --name [model name]',
-    description: 'Model Name from the ss_model_metadata table',
+    flags: '-n, --name <model name>',
+    description: 'Model name (singularName) from the ss_model_metadata table',
   })
   parseName(val: string): string {
     return val;
   }
 
-  // Accept dry run as an argument
   @Option({
     flags: '-d, --dryRun [dry run]',
     description: 'Dry run the command',
@@ -65,10 +52,9 @@ export class RefreshModelCommand extends CommandRunner {
     return (val === 'false') ? false : true;
   }
 
-  // Validate the options passed
   private validate(options: CommandOptions): CommandError[] {
-    if (!options.id && !options.name) {
-      return [new CommandError('Model ID or Model Name is required')];
+    if (!options.name) {
+      return [new CommandError('Model Name is required')];
     }
     return [];
   }

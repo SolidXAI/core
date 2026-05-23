@@ -739,9 +739,10 @@ export class ModelMetadataService {
 
   @DisallowInProduction()
   async generateCodeViaCtl(modelId: number): Promise<string> {
+    const model = await this.findOne(modelId);
     return this.commandService.executeCommandWithArgs({
       command: 'npx',
-      args: ['@solixai/solidctl@latest', 'generate', 'model', `--id=${modelId}`],
+      args: ['@solixai/solidctl@latest', 'generate', 'model', `--name=${model.singularName}`],
       cwd: path.join(process.cwd(), '..'),
     });
   }
