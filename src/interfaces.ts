@@ -121,8 +121,6 @@ export interface CodeGenerationOptions {
   fieldIdsForRemoval?: number[];
   fieldNamesForRemoval?: string[];
   dryRun?: boolean;
-  fieldIdsForRefresh?: number[];
-  fieldNamesForRefresh?: string[];
 }
 
 export interface TriggerMcpClientOptions {
