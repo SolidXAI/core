@@ -22,6 +22,7 @@ import {
   ADD_MODULE_COMMAND,
   SchematicService,
 } from '../helpers/schematic.service';
+import { CommandService } from '../helpers/command.service';
 import { SolidRegistry } from '../helpers/solid-registry';
 import { CodeGenerationOptions, ModuleMetadataConfiguration } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
@@ -40,6 +41,7 @@ export class ModuleMetadataService {
     private readonly moduleMetadataRepo: ModuleMetadataRepository,
     private readonly crudHelperService: CrudHelperService,
     private readonly schematicService: SchematicService,
+    private readonly commandService: CommandService,
     private readonly fileService: DiskFileService,
     private readonly settingService: SettingService,
 
@@ -401,6 +403,15 @@ export class ModuleMetadataService {
   async refreshPermission() {
     await this.permissionsSeederService.seed();
     return true
+  }
+
+  @DisallowInProduction()
+  async generateCodeViaCtl(moduleId: number): Promise<string> {
+    return this.commandService.executeCommandWithArgs({
+      command: 'npx',
+      args: ['@solixai/solidctl@latest', 'generate', 'module', `--id=${moduleId}`],
+      cwd: path.join(process.cwd(), '..'),
+    });
   }
 
   @DisallowInProduction()

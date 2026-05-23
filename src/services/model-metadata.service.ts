@@ -27,6 +27,7 @@ import {
   REMOVE_FIELDS_COMMAND,
   SchematicService
 } from '../helpers/schematic.service';
+import { CommandService } from '../helpers/command.service';
 import { CodeGenerationOptions } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { FieldMetadataService } from './field-metadata.service';
@@ -49,6 +50,7 @@ export class ModelMetadataService {
     private readonly modelMetadataRepo: ModelMetadataRepository,
     private readonly fieldMetadataRepo: FieldMetadataRepository,
     private readonly schematicService: SchematicService,
+    private readonly commandService: CommandService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly crudHelperService: CrudHelperService,
@@ -733,6 +735,15 @@ export class ModelMetadataService {
 
     // - | Drop database table | Removes the database table from the DB, this is a very risky step. Best to review all relations to other models etc and then do this manually | Manual (X)
 
+  }
+
+  @DisallowInProduction()
+  async generateCodeViaCtl(modelId: number): Promise<string> {
+    return this.commandService.executeCommandWithArgs({
+      command: 'npx',
+      args: ['@solixai/solidctl@latest', 'generate', 'model', `--id=${modelId}`],
+      cwd: path.join(process.cwd(), '..'),
+    });
   }
 
   @DisallowInProduction()
