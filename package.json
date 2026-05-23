@@ -1,6 +1,6 @@
 {
   "name": "@solidxai/core",
-  "version": "0.1.10-beta.10",
+  "version": "0.1.10-beta.11",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -82,9 +82,7 @@
     "xlsx": "^0.18.5",
     "playwright": ">=1.0.0"
   },
-  "peerDependenciesMeta": {
-
-  },
+  "peerDependenciesMeta": {},
   "peerDependencies": {
     "@nestjs/axios": "^3.0.2",
     "@nestjs/cache-manager": "^2.2.2",
