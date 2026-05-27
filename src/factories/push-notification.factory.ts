@@ -21,11 +21,6 @@ export class PushNotificationFactory {
       this.settingService.getConfigValue<SolidCoreSetting>(
         "pushNotificationProvider",
       );
-
-    if (!pushNotificationServiceName) {
-      throw new Error("Unable to resolve push notification provider");
-    }
-
     const pushNotificationProviders =
       this.solidRegistry.getPushNotificationProviders();
 
@@ -36,12 +31,6 @@ export class PushNotificationFactory {
     const pushNotificationProvider = pushNotificationProviders.find(
       (provider) => provider.name === pushNotificationServiceName,
     );
-
-    if (!pushNotificationProvider) {
-      throw new Error(
-        `Push notification provider '${pushNotificationServiceName}' not found`,
-      );
-    }
 
     return pushNotificationProvider.instance as IPushNotification;
   }
