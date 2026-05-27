@@ -3,7 +3,6 @@ import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { Brackets, EntityManager, EntityMetadata, In } from 'typeorm';
-import * as path from 'path';
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
 import { CHATTER_MESSAGE_STATUS, CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE } from 'src/constants/chatter-message.constants';
@@ -24,9 +23,6 @@ import { ChatterMessage } from '../entities/chatter-message.entity';
 import { getMediaStorageProvider } from './mediaStorageProviders';
 import { RequestContextService } from './request-context.service';
 import { Logger } from '@nestjs/common';
-import { DiskFileService, S3FileService } from './file';
-import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from "src/services/settings/default-settings-provider.service";
-import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
@@ -50,8 +46,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         private readonly modelMetadataRepo: ModelMetadataRepository,
         readonly requestContextService: RequestContextService,
         private readonly modelMetadataHelperService: ModelMetadataHelperService,
-        private readonly diskFileService: DiskFileService,
-        private readonly s3FileService: S3FileService,
     ) {
         super(entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
     }
@@ -89,15 +83,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             .split(',')
             .map(v => Number(v.trim()))
             .filter(v => Number.isInteger(v) && v > 0);
-    }
-
-    private getFullFilePathForDisk(relativeUri: string): string {
-        const base = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
-            || DEFAULT_MEDIA_FILE_STORAGE_DIR;
-        if (path.isAbsolute(relativeUri) || relativeUri.startsWith(`${base}/`)) {
-            return relativeUri;
-        }
-        return `${base}/${relativeUri}`;
     }
 
     async markCompleted(id: number) {
@@ -183,15 +168,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
                 for (const media of mediaToRemove) {
                     const storageType = media.mediaStorageProviderMetadata?.type as MediaStorageProviderType;
-                    if (storageType === MediaStorageProviderType.AwsS3) {
-                        const bucketName = media.mediaStorageProviderMetadata?.bucketName;
-                        const region = media.mediaStorageProviderMetadata?.region;
-                        if (bucketName && media.relativeUri) {
-                            await this.s3FileService.delete(`${bucketName}:${media.relativeUri}`, { region });
-                        }
-                    } else if (media.relativeUri) {
-                        await this.diskFileService.delete(this.getFullFilePathForDisk(media.relativeUri));
-                    }
+                    const storageProvider = await getMediaStorageProvider(this.moduleRef, storageType);
+                    await storageProvider.deleteByMediaRecord(media);
                 }
 
                 if (mediaToRemove.length > 0) {
