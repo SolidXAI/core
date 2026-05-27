@@ -1144,6 +1144,18 @@ const getSolidCoreSettings = (isProd: boolean) =>
       value: process.env.AWS_SNS_REGION,
       level: SettingLevel.SystemEnv,
     },
+    {
+      moduleName: "solid-core",
+      key: "awsFcmPlatformArn",
+      value: process.env.AWS_FCM_PLATFORM_ARN,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "awsApnsPlatformArn",
+      value: process.env.AWS_APNS_PLATFORM_ARN,
+      level: SettingLevel.SystemEnv,
+    },
 
     // tiny-url-settings-provider.service.ts
     {

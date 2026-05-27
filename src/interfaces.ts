@@ -2,6 +2,7 @@ import { Repository } from "typeorm";
 import { User } from "src/entities/user.entity";
 import { CreateUserDto } from "src/dtos/create-user.dto";
 import { CreateEmailTemplateDto } from "src/dtos/create-email-template.dto";
+import { CreatePushNotificationTemplateDto } from "src/dtos/create-push-notification-template.dto";
 import { CreateSmsTemplateDto } from "src/dtos/create-sms-template.dto";
 import { SignUpDto } from "src/dtos/sign-up.dto";
 import { Readable } from "stream";
@@ -65,6 +66,7 @@ export interface ModuleMetadataConfiguration {
   views?: any[];
   emailTemplates?: CreateEmailTemplateDto[];
   smsTemplates?: CreateSmsTemplateDto[];
+  pushNotificationTemplates?: CreatePushNotificationTemplateDto[];
   mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[];
   securityRules?: CreateSecurityRuleDto[];
   dashboards?: CreateDashboardDto[];
@@ -323,11 +325,22 @@ export interface IPushNotification {
     endpointArn: string,
     payload: PushNotificationPayload,
     shouldQueuePush?: boolean,
-  ): Promise<PublishCommandOutput>;
+  ): Promise<PublishCommandOutput | string>;
+
+  sendPushNotificationUsingTemplate(
+    endpointArn: string,
+    templateName: string,
+    templateParams: any,
+    shouldQueuePush?: boolean,
+  ): Promise<PublishCommandOutput | string>;
 
   sendPushNotificationSynchronously(
     message: PushNotificationQueuePayload,
   ): Promise<PublishCommandOutput>;
+
+  registerDevice(payload: RegisterDevicePayload): Promise<string>;
+
+  unregisterDevice(userId: number, deviceId: string): Promise<void>;
 }
 
 export interface PushNotificationQueuePayload {
@@ -339,6 +352,18 @@ export interface PushNotificationPayload {
   title: string;
   body: string;
   data?: Record<string, string>;
+}
+
+export interface RegisterDevicePayload {
+  userId: number;
+  deviceId: string;
+  deviceToken: string;
+  platform: string;
+  deviceName?: string;
+  deviceType?: string;
+  osName?: string;
+  osVersion?: string;
+  appVersion?: string;
 }
 
 export interface MailAttachmentWrapper {

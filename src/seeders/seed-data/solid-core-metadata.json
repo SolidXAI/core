@@ -1279,10 +1279,7 @@
             "isSystem": true,
             "columnName": "type",
             "selectionValueType": "string",
-            "selectionStaticValues": [
-              "solid:solid",
-              "custom:custom"
-            ]
+            "selectionStaticValues": ["solid:solid", "custom:custom"]
           },
           {
             "name": "domain",
@@ -2126,9 +2123,7 @@
             "columnName": "password_scheme",
             "defaultValue": "bcrypt",
             "selectionValueType": "string",
-            "selectionStaticValues": [
-              "bcrypt:bcrypt"
-            ]
+            "selectionStaticValues": ["bcrypt:bcrypt"]
           },
           {
             "name": "passwordSchemeVersion",
@@ -3008,10 +3003,7 @@
             "isSystem": true,
             "columnName": "type",
             "selectionValueType": "string",
-            "selectionStaticValues": [
-              "system:System",
-              "user:User"
-            ]
+            "selectionStaticValues": ["system:System", "user:User"]
           },
           {
             "name": "user",
@@ -3374,10 +3366,7 @@
             "isSystem": true,
             "columnName": "type",
             "selectionValueType": "string",
-            "selectionStaticValues": [
-              "text:Text",
-              "html:HTML"
-            ]
+            "selectionStaticValues": ["text:Text", "html:HTML"]
           },
           {
             "name": "subject",
@@ -3580,10 +3569,7 @@
             "isSystem": true,
             "columnName": "type",
             "selectionValueType": "string",
-            "selectionStaticValues": [
-              "text:Text",
-              "html:HTML"
-            ]
+            "selectionStaticValues": ["text:Text", "html:HTML"]
           },
           {
             "name": "smsProviderTemplateId",
@@ -3761,10 +3747,7 @@
             "index": true,
             "isSystem": false,
             "selectionValueType": "string",
-            "selectionStaticValues": [
-              "audit:audit",
-              "custom:custom"
-            ]
+            "selectionStaticValues": ["audit:audit", "custom:custom"]
           },
           {
             "name": "messageSubType",
@@ -3830,10 +3813,7 @@
             "type": "mediaMultiple",
             "ormType": "varchar",
             "isSystem": false,
-            "mediaTypes": [
-              "image",
-              "file"
-            ],
+            "mediaTypes": ["image", "file"],
             "mediaMaxSizeKb": 102400,
             "required": false,
             "unique": false,
@@ -3904,10 +3884,7 @@
             "index": false,
             "isSystem": false,
             "selectionValueType": "string",
-            "selectionStaticValues": [
-              "pending:pending",
-              "completed:completed"
-            ]
+            "selectionStaticValues": ["pending:pending", "completed:completed"]
           }
         ]
       },
@@ -4057,10 +4034,7 @@
             "index": false,
             "isSystem": true,
             "selectionValueType": "string",
-            "selectionStaticValues": [
-              "csv:csv",
-              "excel:excel"
-            ]
+            "selectionStaticValues": ["csv:csv", "excel:excel"]
           },
           {
             "name": "notifyOnEmail",
@@ -4612,10 +4586,7 @@
             "encrypt": false,
             "isSystem": true,
             "selectionValueType": "string",
-            "selectionStaticValues": [
-              "sql:SQL",
-              "provider:Provider"
-            ]
+            "selectionStaticValues": ["sql:SQL", "provider:Provider"]
           },
           {
             "name": "selectionDynamicSQL",
@@ -4734,9 +4705,7 @@
               {
                 "modelName": "dashboardVariable",
                 "moduleName": "solid-core",
-                "operations": [
-                  "before-insert"
-                ]
+                "operations": ["before-insert"]
               }
             ],
             "computedFieldValueProvider": "ConcatEntityComputedFieldProvider",
@@ -4787,10 +4756,7 @@
             "index": true,
             "isSystem": true,
             "selectionValueType": "string",
-            "selectionStaticValues": [
-              "sql:SQL",
-              "provider:Provider"
-            ]
+            "selectionStaticValues": ["sql:SQL", "provider:Provider"]
           },
           {
             "name": "visualisedAs",
@@ -4929,9 +4895,7 @@
               {
                 "modelName": "dashboardQuestion",
                 "moduleName": "solid-core",
-                "operations": [
-                  "before-insert"
-                ]
+                "operations": ["before-insert"]
               }
             ],
             "computedFieldValueProvider": "ConcatEntityComputedFieldProvider",
@@ -5080,9 +5044,7 @@
               {
                 "modelName": "dashboardQuestionSqlDatasetConfig",
                 "moduleName": "solid-core",
-                "operations": [
-                  "before-insert"
-                ]
+                "operations": ["before-insert"]
               }
             ],
             "computedFieldValueProvider": "ConcatEntityComputedFieldProvider",
@@ -5207,9 +5169,7 @@
               {
                 "modelName": "aiInteraction",
                 "moduleName": "solid-core",
-                "operations": [
-                  "before-insert"
-                ]
+                "operations": ["before-insert"]
               }
             ],
             "computedFieldValueProvider": "AlphaNumExternalIdComputationProvider",
@@ -5635,7 +5595,12 @@
             "private": false,
             "encrypt": false,
             "isSystem": true,
-            "selectionStaticValues": ["active:Active", "completed:Completed", "failed:Failed", "cancelled:Cancelled"],
+            "selectionStaticValues": [
+              "active:Active",
+              "completed:Completed",
+              "failed:Failed",
+              "cancelled:Cancelled"
+            ],
             "selectionValueType": "string"
           },
           {
@@ -5922,11 +5887,7 @@
       }
     ]
   },
-  "permissions": [
-    "mcp:invoke",
-    "agent:invoke",
-    "settings:view_encrypted"
-  ],
+  "permissions": ["mcp:invoke", "agent:invoke", "settings:view_encrypted"],
   "roles": [
     {
       "name": "Admin"
@@ -6004,9 +5965,7 @@
       "password": "",
       "forcePasswordChange": true,
       "fullName": "Default Admin",
-      "roles": [
-        "Admin"
-      ]
+      "roles": ["Admin"]
     }
   ],
   "actions": [
@@ -6964,11 +6923,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -7146,11 +7101,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "truncateAfter": 50,
           "create": true,
@@ -7351,11 +7302,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -7547,11 +7494,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -7620,11 +7563,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -7779,11 +7718,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
@@ -7913,11 +7848,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
@@ -8065,11 +7996,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -8168,11 +8095,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -8387,11 +8310,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -8551,11 +8470,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -8798,11 +8713,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -9007,19 +8918,12 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
           "delete": true,
-          "allowedViews": [
-            "list",
-            "card"
-          ]
+          "allowedViews": ["list", "card"]
         },
         "children": [
           {
@@ -9073,19 +8977,12 @@
         "attrs": {
           "pagination": true,
           "pageSize": 24,
-          "pageSizeOptions": [
-            12,
-            24,
-            48
-          ],
+          "pageSizeOptions": [12, 24, 48],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
           "delete": true,
-          "allowedViews": [
-            "list",
-            "card"
-          ]
+          "allowedViews": ["list", "card"]
         },
         "children": [
           {
@@ -9233,11 +9130,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -9788,11 +9681,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -10054,11 +9943,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
@@ -10130,11 +10015,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -10303,11 +10184,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
@@ -10392,11 +10269,7 @@
         "type": "tree",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
@@ -10488,10 +10361,7 @@
           "delete": true,
           "groupBy": "stage",
           "draggable": false,
-          "allowedViews": [
-            "list",
-            "kanban"
-          ]
+          "allowedViews": ["list", "kanban"]
         },
         "children": [
           {
@@ -10847,11 +10717,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
@@ -10978,11 +10844,7 @@
                                     "type": "list",
                                     "attrs": {
                                       "pagination": true,
-                                      "pageSizeOptions": [
-                                        10,
-                                        25,
-                                        50
-                                      ],
+                                      "pageSizeOptions": [10, 25, 50],
                                       "enableGlobalSearch": true,
                                       "create": false,
                                       "edit": false,
@@ -11066,11 +10928,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -11370,11 +11228,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -11544,11 +11398,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -11684,11 +11534,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -11817,11 +11663,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -11949,11 +11791,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -12049,11 +11887,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -12114,11 +11948,7 @@
         "type": "tree",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -12256,11 +12086,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -12440,11 +12266,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -12589,11 +12411,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -12862,11 +12680,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -12999,11 +12813,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -13104,11 +12914,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
@@ -13421,11 +13227,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -13517,11 +13319,7 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
+          "pageSizeOptions": [10, 25, 50],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
@@ -13696,14 +13494,26 @@
           "delete": true
         },
         "children": [
-          { "type": "field", "attrs": { "name": "sessionId", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "modelName", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "status", "isSearchable": true } },
+          {
+            "type": "field",
+            "attrs": { "name": "sessionId", "isSearchable": true }
+          },
+          {
+            "type": "field",
+            "attrs": { "name": "modelName", "isSearchable": true }
+          },
+          {
+            "type": "field",
+            "attrs": { "name": "status", "isSearchable": true }
+          },
           { "type": "field", "attrs": { "name": "totalSteps" } },
           { "type": "field", "attrs": { "name": "totalCost" } },
           { "type": "field", "attrs": { "name": "totalInputTokens" } },
           { "type": "field", "attrs": { "name": "totalOutputTokens" } },
-          { "type": "field", "attrs": { "name": "projectRoot", "isSearchable": true } },
+          {
+            "type": "field",
+            "attrs": { "name": "projectRoot", "isSearchable": true }
+          },
           { "type": "field", "attrs": { "name": "createdAt" } },
           { "type": "field", "attrs": { "name": "updatedAt" } }
         ]
@@ -13734,7 +13544,11 @@
                 "children": [
                   {
                     "type": "column",
-                    "attrs": { "name": "col-1", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "attrs": {
+                      "name": "col-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
                     "children": [
                       { "type": "field", "attrs": { "name": "sessionId" } },
                       { "type": "field", "attrs": { "name": "modelName" } },
@@ -13744,12 +13558,22 @@
                   },
                   {
                     "type": "column",
-                    "attrs": { "name": "col-2", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "attrs": {
+                      "name": "col-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
                     "children": [
                       { "type": "field", "attrs": { "name": "totalSteps" } },
                       { "type": "field", "attrs": { "name": "totalCost" } },
-                      { "type": "field", "attrs": { "name": "totalInputTokens" } },
-                      { "type": "field", "attrs": { "name": "totalOutputTokens" } }
+                      {
+                        "type": "field",
+                        "attrs": { "name": "totalInputTokens" }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": { "name": "totalOutputTokens" }
+                      }
                     ]
                   }
                 ]
@@ -13760,7 +13584,11 @@
                 "children": [
                   {
                     "type": "column",
-                    "attrs": { "name": "col-summary", "label": "", "className": "col-12" },
+                    "attrs": {
+                      "name": "col-summary",
+                      "label": "",
+                      "className": "col-12"
+                    },
                     "children": [
                       { "type": "field", "attrs": { "name": "summary" } }
                     ]
@@ -13791,16 +13619,28 @@
         },
         "children": [
           { "type": "field", "attrs": { "name": "id" } },
-          { "type": "field", "attrs": { "name": "sessionId", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "eventType", "isSearchable": true } },
+          {
+            "type": "field",
+            "attrs": { "name": "sessionId", "isSearchable": true }
+          },
+          {
+            "type": "field",
+            "attrs": { "name": "eventType", "isSearchable": true }
+          },
           { "type": "field", "attrs": { "name": "turnNumber" } },
           { "type": "field", "attrs": { "name": "stepNumber" } },
-          { "type": "field", "attrs": { "name": "toolName", "isSearchable": true } },
+          {
+            "type": "field",
+            "attrs": { "name": "toolName", "isSearchable": true }
+          },
           { "type": "field", "attrs": { "name": "durationMs" } },
           { "type": "field", "attrs": { "name": "cost" } },
           { "type": "field", "attrs": { "name": "inputTokens" } },
           { "type": "field", "attrs": { "name": "outputTokens" } },
-          { "type": "field", "attrs": { "name": "modelUsed", "isSearchable": true } },
+          {
+            "type": "field",
+            "attrs": { "name": "modelUsed", "isSearchable": true }
+          },
           { "type": "field", "attrs": { "name": "createdAt" } }
         ]
       }
@@ -13830,7 +13670,11 @@
                 "children": [
                   {
                     "type": "column",
-                    "attrs": { "name": "col-1", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "attrs": {
+                      "name": "col-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
                     "children": [
                       { "type": "field", "attrs": { "name": "sessionId" } },
                       { "type": "field", "attrs": { "name": "eventType" } },
@@ -13842,7 +13686,11 @@
                   },
                   {
                     "type": "column",
-                    "attrs": { "name": "col-2", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "attrs": {
+                      "name": "col-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
                     "children": [
                       { "type": "field", "attrs": { "name": "durationMs" } },
                       { "type": "field", "attrs": { "name": "cost" } },
@@ -13859,12 +13707,34 @@
                 "children": [
                   {
                     "type": "column",
-                    "attrs": { "name": "col-content", "label": "", "className": "col-12" },
+                    "attrs": {
+                      "name": "col-content",
+                      "label": "",
+                      "className": "col-12"
+                    },
                     "children": [
                       { "type": "field", "attrs": { "name": "content" } },
-                      { "type": "field", "attrs": { "name": "toolArguments", "viewWidget": "SolidJsonFormViewWidget" } },
-                      { "type": "field", "attrs": { "name": "toolOutput", "viewWidget": "SolidJsonFormViewWidget" } },
-                      { "type": "field", "attrs": { "name": "eventData", "viewWidget": "SolidJsonFormViewWidget" } }
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "toolArguments",
+                          "viewWidget": "SolidJsonFormViewWidget"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "toolOutput",
+                          "viewWidget": "SolidJsonFormViewWidget"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "eventData",
+                          "viewWidget": "SolidJsonFormViewWidget"
+                        }
+                      }
                     ]
                   }
                 ]
@@ -13965,6 +13835,72 @@
       "body": "text-on-signup.handlebars.txt",
       "description": "Welcome SMS sent to users after signup.",
       "smsProviderTemplateId": "666bd246d6fc051047560595",
+      "active": true,
+      "type": "text"
+    }
+  ],
+  "pushNotificationTemplates": [
+    {
+      "name": "otp-on-register",
+      "displayName": "Default: Otp On Register",
+      "title": "Verify Your Account",
+      "body": "otp-on-register.handlebars.txt",
+      "dataTemplate": {
+        "type": "otp-register",
+        "otp": "{{otp}}"
+      },
+      "description": "Push template used to send OTP when a user registers.",
+      "active": true,
+      "type": "text"
+    },
+    {
+      "name": "otp-on-login",
+      "displayName": "Default: Otp On Login",
+      "title": "Your Login OTP",
+      "body": "otp-on-login.handlebars.txt",
+      "dataTemplate": {
+        "type": "otp-login",
+        "otp": "{{otp}}"
+      },
+      "description": "Push template used to send OTP when a user logs in.",
+      "active": true,
+      "type": "text"
+    },
+    {
+      "name": "forgot-password",
+      "displayName": "Default: Forgot Password",
+      "title": "Reset Password Request",
+      "body": "forgot-password.handlebars.txt",
+      "dataTemplate": {
+        "type": "forgot-password",
+        "token": "{{token}}"
+      },
+      "description": "Push template used to send reset-password verification token.",
+      "active": true,
+      "type": "text"
+    },
+    {
+      "name": "welcome-on-signup",
+      "displayName": "Default: Welcome On Signup",
+      "title": "Welcome to {{solidAppName}}",
+      "body": "welcome-on-signup.handlebars.txt",
+      "dataTemplate": {
+        "type": "welcome-signup"
+      },
+      "description": "Welcome push notification sent to users after signup.",
+      "active": true,
+      "type": "text"
+    },
+    {
+      "name": "new-login-detected",
+      "displayName": "Default: New Login Detected",
+      "title": "New Login Detected",
+      "body": "new-login-detected.handlebars.txt",
+      "dataTemplate": {
+        "type": "security-alert",
+        "device": "{{device}}"
+      },
+      "description": "Push template used when a new login is detected on the account.",
       "active": true,
       "type": "text"
     }

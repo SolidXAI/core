@@ -187,6 +187,7 @@ export class ModuleMetadataService {
         views: [],
         emailTemplates: [],
         smsTemplates: [],
+        pushNotificationTemplates: [],
         mediaStorageProviders: [],
         securityRules: [],
       };
@@ -274,6 +275,7 @@ export class ModuleMetadataService {
           views: [],
           emailTemplates: [],
           smsTemplates: [],
+          pushNotificationTemplates: [],
           mediaStorageProviders: [],
         };
       }

@@ -37,6 +37,12 @@ export class PushNotificationFactory {
       (provider) => provider.name === pushNotificationServiceName,
     );
 
-    return pushNotificationProvider?.instance as IPushNotification;
+    if (!pushNotificationProvider) {
+      throw new Error(
+        `Push notification provider '${pushNotificationServiceName}' not found`,
+      );
+    }
+
+    return pushNotificationProvider.instance as IPushNotification;
   }
 }
