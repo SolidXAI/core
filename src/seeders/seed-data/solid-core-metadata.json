@@ -6191,6 +6191,7 @@
         "ChatterMessageController.postMessage",
         "ChatterMessageController.findMany",
         "ChatterMessageController.markCompleted",
+        "ChatterMessageController.updateCustomNoteMessage",
         "ImportTransactionController.getImportTemplate",
         "ImportTransactionController.getImportInstructions",
         "ImportTransactionController.getImportMappingInfo",

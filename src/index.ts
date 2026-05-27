@@ -29,6 +29,7 @@ export * from './decorators/settings-provider.decorator'
 export * from './decorators/extension-user-creation-provider.decorator'
 
 export * from './dtos/post-chatter-message.dto'
+export * from './dtos/update-chatter-note-message.dto'
 export * from './dtos/security-rule-config.dto'
 export * from './dtos/basic-filters.dto'
 export * from './dtos/solid-request-context.dto'
