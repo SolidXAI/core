@@ -4,7 +4,6 @@ import { ModuleMetadataService } from '../services/module-metadata.service';
 import { CommandError } from './helper';
 
 interface CommandOptions {
-  id: number;
   name: string;
   dryRun: boolean;
 }
@@ -28,7 +27,6 @@ export class RefreshModuleCommand extends CommandRunner {
       return;
     }
     const codeGenerationOptions = {
-      moduleId: options.id,
       moduleUserKey: options.name,
       dryRun: options.dryRun,
     };
@@ -36,16 +34,7 @@ export class RefreshModuleCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '-i, --id [module ID]',
-    description: 'Module ID from the ss_module_metadata table',
-  })
-  parseId(val: string): number {
-    return +val;
-  }
-
-  // Accept the module name as an argument
-  @Option({
-    flags: '-n, --name [module name]',
+    flags: '-n, --name <module name>',
     description: 'Module Name from the ss_module_metadata table',
   })
   parseName(val: string): string {
@@ -61,11 +50,9 @@ export class RefreshModuleCommand extends CommandRunner {
     return (val === 'false') ? false : true;
   }
 
-
-  // Validate the options passed
   validate(options: CommandOptions): CommandError[] {
-    if (!options.id && !options.name) {
-      return [new CommandError('Module ID or Module Name is required')];
+    if (!options.name) {
+      return [new CommandError('Module Name is required')];
     }
     return [];
   }

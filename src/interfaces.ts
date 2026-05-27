@@ -48,6 +48,7 @@ export interface MediaStorageProvider<T> {
     mediaFieldMetadata: FieldMetadata,
   ): Promise<Media[]>;
   delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void>;
+  deleteByMediaRecord(media: Media): Promise<void>;
   retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
   storeStreams(
     streamPairs: [Readable, string][],
@@ -132,8 +133,6 @@ export interface CodeGenerationOptions {
   fieldIdsForRemoval?: number[];
   fieldNamesForRemoval?: string[];
   dryRun?: boolean;
-  fieldIdsForRefresh?: number[];
-  fieldNamesForRefresh?: string[];
 }
 
 export interface TriggerMcpClientOptions {

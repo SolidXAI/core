@@ -62,7 +62,7 @@ export class ModuleMetadataController {
   @ApiBearerAuth("jwt")
   @Post(':id/generate-code')
   generateCode(@Param('id', ParseIntPipe) id: number) {
-    return this.moduleMetadataService.generateCode({ moduleId: id });
+    return this.moduleMetadataService.generateCodeViaCtl(id);
   }
  
 

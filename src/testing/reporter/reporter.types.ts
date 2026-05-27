@@ -33,4 +33,11 @@ export interface Reporter {
     contentType: string;
     data: Buffer | string;
   }): void;
+  onRunEnd?(args: {
+    ok: boolean;
+    total: number;
+    passed: number;
+    failed: number;
+    durationMs: number;
+  }): void;
 }

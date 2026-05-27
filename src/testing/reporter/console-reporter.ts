@@ -146,6 +146,10 @@ function formatStepLabel(step: OpStep): string {
 }
 
 export class ConsoleReporter implements Reporter {
+  private totalScenarios = 0;
+  private passedScenarios = 0;
+  private failedScenarios = 0;
+
   onScenarioStart(scenario: { id: string; name?: string }): void {
     const label = scenario.name ? `${scenario.id} (${scenario.name})` : scenario.id;
     console.log(`\n▶ Scenario: ${label}`);
@@ -157,6 +161,12 @@ export class ConsoleReporter implements Reporter {
   ): void {
     const label = scenario.name ? `${scenario.id} (${scenario.name})` : scenario.id;
     const status = result.ok ? "✔" : "✖";
+    this.totalScenarios += 1;
+    if (result.ok) {
+      this.passedScenarios += 1;
+    } else {
+      this.failedScenarios += 1;
+    }
     console.log(`${status} Scenario: ${label} (${result.durationMs}ms)`);
   }
 
@@ -225,5 +235,22 @@ export class ConsoleReporter implements Reporter {
     const dataText = Buffer.isBuffer(args.data) ? args.data.toString("utf8") : String(args.data ?? "");
     if (!dataText.length) return;
     console.log(indentLines(dataText, `${STEP_INDENT}${INDENT}${INDENT}`));
+  }
+
+  onRunEnd(args: {
+    ok: boolean;
+    total: number;
+    passed: number;
+    failed: number;
+    durationMs: number;
+  }): void {
+    const durationSeconds = (args.durationMs / 1000).toFixed(2);
+    const finalStatus = args.ok ? "PASSED" : "FAILED";
+
+    console.log("\n════════ Test Run Summary ════════");
+    console.log(`Result: Test run ${finalStatus}`);
+    console.log(`Cases: total=${args.total}, passed=${args.passed}, failed=${args.failed}`);
+    console.log(`Duration: ${durationSeconds}s`);
+    console.log("══════════════════════════════════");
   }
 }

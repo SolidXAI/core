@@ -92,7 +92,7 @@ export class ModelMetadataController {
     @ApiBearerAuth("jwt")
     @Post(':id/generate-code')
     generateCode(@Param('id', ParseIntPipe) id: number) {
-        return this.modelMetadataService.handleGenerateCode({ modelId: id });
+        return this.modelMetadataService.generateCodeViaCtl(id);
     }
 
     @ApiBearerAuth("jwt")
