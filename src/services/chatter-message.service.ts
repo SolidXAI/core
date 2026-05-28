@@ -1,18 +1,20 @@
 import { LocalDateTimeTransformer, serializeDate } from 'src/transformers/typeorm/local-date-time-transformer';
-import { BadRequestException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { Brackets, EntityManager, EntityMetadata } from 'typeorm';
+import { Brackets, EntityManager, EntityMetadata, In } from 'typeorm';
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
 import { CHATTER_MESSAGE_STATUS, CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE } from 'src/constants/chatter-message.constants';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { PostChatterMessageDto } from 'src/dtos/post-chatter-message.dto';
+import { UpdateChatterNoteMessageDto } from 'src/dtos/update-chatter-note-message.dto';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { lowerFirst } from 'src/helpers/string.helper';
 import { ChatterMessageDetailsRepository } from 'src/repository/chatter-message-details.repository';
 import { ChatterMessageRepository } from 'src/repository/chatter-message.repository';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
+import { MediaRepository } from 'src/repository/media.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
 import { CRUDService } from 'src/services/crud.service';
 import { MediaStorageProviderType } from '../dtos/create-media-storage-provider-metadata.dto';
@@ -33,6 +35,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         readonly repo: ChatterMessageRepository,
         // @InjectRepository(ChatterMessageDetailsRepository, 'default')
         readonly chatterMessageDetailsRepo: ChatterMessageDetailsRepository,
+        readonly mediaRepository: MediaRepository,
         // @InjectRepository(FieldMetadata, 'default')
         // readonly fieldMetadataRepo: Repository<FieldMetadata>,
         readonly fieldMetadataRepo: FieldMetadataRepository,
@@ -67,6 +70,21 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.updatedBy = resolvedUserId;
     }
 
+    private isEditableCustomNoteMessage(message: ChatterMessage): boolean {
+        if (message.messageType !== CHATTER_MESSAGE_TYPE.CUSTOM) {
+            return false;
+        }
+        return [CHATTER_MESSAGE_SUBTYPE.CUSTOM, CHATTER_MESSAGE_SUBTYPE.NOTE].includes(message.messageSubType as any);
+    }
+
+    private parseAttachmentIds(value?: string): number[] {
+        if (!value || typeof value !== 'string') return [];
+        return value
+            .split(',')
+            .map(v => Number(v.trim()))
+            .filter(v => Number.isInteger(v) && v > 0);
+    }
+
     async markCompleted(id: number) {
         const activeUser = this.requestContextService.getActiveUser();
         if (!activeUser) {
@@ -80,6 +98,98 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         message.status = CHATTER_MESSAGE_STATUS.COMPLETED;
         return this.repo.save(message);
+    }
+
+    async updateCustomNoteMessage(id: number, updateDto: UpdateChatterNoteMessageDto, files: Express.Multer.File[] = []) {
+        const activeUser = this.requestContextService.getActiveUser();
+        if (!activeUser) {
+            throw new ForbiddenException(ERROR_MESSAGES.FORBIDDEN);
+        }
+
+        const message = await this.repo.findOne({ where: { id }, relations: { user: true } });
+        if (!message) {
+            throw new NotFoundException(`Entity [solid-core.chatterMessage] with id ${id} not found`);
+        }
+
+        if (!this.isEditableCustomNoteMessage(message)) {
+            throw new BadRequestException('Only custom note messages can be edited.');
+        }
+
+        if (!message.user?.id || message.user.id !== activeUser.sub) {
+            throw new ForbiddenException('You can only edit your own custom note messages.');
+        }
+
+        const removeAttachmentIds = this.parseAttachmentIds(updateDto?.removeAttachmentIds);
+        const hasMessageBody = typeof updateDto?.messageBody === 'string';
+        const trimmedMessageBody = (updateDto?.messageBody ?? '').trim();
+        const hasNewFiles = Array.isArray(files) && files.length > 0;
+
+        if (!hasMessageBody && removeAttachmentIds.length === 0 && !hasNewFiles) {
+            throw new BadRequestException('No note changes submitted.');
+        }
+
+        if (hasMessageBody && trimmedMessageBody.length === 0) {
+            throw new BadRequestException('Message body cannot be empty.');
+        }
+
+        if (hasMessageBody) {
+            message.messageBody = trimmedMessageBody;
+        }
+        message.updatedBy = activeUser.sub;
+        // Ensure updatedAt changes even for attachment-only edits.
+        message.updatedAt = new Date();
+        const savedMessage = await this.repo.save(message);
+
+        if (removeAttachmentIds.length > 0 || hasNewFiles) {
+            const model = await this.modelMetadataService.findOneBySingularName('chatterMessage', {
+                fields: {
+                    model: true,
+                    mediaStorageProvider: true,
+                },
+                module: true,
+            });
+
+            const mediaFields = model.fields.filter(field => field.type === 'mediaSingle' || field.type === 'mediaMultiple');
+            const attachmentFieldIds = mediaFields.map(field => field.id);
+
+            if (removeAttachmentIds.length > 0 && attachmentFieldIds.length > 0) {
+                const mediaToRemove = await this.mediaRepository.find({
+                    where: {
+                        id: In(removeAttachmentIds),
+                        entityId: savedMessage.id,
+                        modelMetadata: { id: model.id },
+                        fieldMetadata: { id: In(attachmentFieldIds) },
+                    },
+                    relations: {
+                        mediaStorageProviderMetadata: true,
+                        fieldMetadata: true,
+                    },
+                });
+
+                for (const media of mediaToRemove) {
+                    const storageType = media.mediaStorageProviderMetadata?.type as MediaStorageProviderType;
+                    const storageProvider = await getMediaStorageProvider(this.moduleRef, storageType);
+                    await storageProvider.deleteByMediaRecord(media);
+                }
+
+                if (mediaToRemove.length > 0) {
+                    await this.mediaRepository.remove(mediaToRemove);
+                }
+            }
+
+            for (const mediaField of mediaFields) {
+                const storageProviderMetadata = mediaField.mediaStorageProvider;
+                const storageProviderType = storageProviderMetadata.type as MediaStorageProviderType;
+                const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
+
+                const media = files.filter(multerFile => multerFile.fieldname === mediaField.name);
+                if (media.length > 0) {
+                    await storageProvider.store(media, savedMessage, mediaField);
+                }
+            }
+        }
+
+        return savedMessage;
     }
 
     async postMessage(postDto: PostChatterMessageDto, files: Express.Multer.File[] = []) {

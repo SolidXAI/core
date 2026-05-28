@@ -27,6 +27,7 @@ import {
   REMOVE_FIELDS_COMMAND,
   SchematicService
 } from '../helpers/schematic.service';
+import { CommandService } from '../helpers/command.service';
 import { CodeGenerationOptions } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { FieldMetadataService } from './field-metadata.service';
@@ -49,6 +50,7 @@ export class ModelMetadataService {
     private readonly modelMetadataRepo: ModelMetadataRepository,
     private readonly fieldMetadataRepo: FieldMetadataRepository,
     private readonly schematicService: SchematicService,
+    private readonly commandService: CommandService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly crudHelperService: CrudHelperService,
@@ -736,6 +738,16 @@ export class ModelMetadataService {
   }
 
   @DisallowInProduction()
+  async generateCodeViaCtl(modelId: number): Promise<string> {
+    const model = await this.findOne(modelId);
+    return this.commandService.executeCommandWithArgs({
+      command: 'npx',
+      args: ['@solixai/solidctl@latest', 'generate', 'model', `--name=${model.singularName}`],
+      cwd: path.join(process.cwd(), '..'),
+    });
+  }
+
+  @DisallowInProduction()
   async handleGenerateCode(options: CodeGenerationOptions): Promise<any> {
     const affectedModelIds = [], refreshModelCodeOutputLines = [], removeFieldCodeOutputLines = [];
 
@@ -1275,24 +1287,13 @@ export class ModelMetadataService {
     };
     const model = options.modelId ? await this.findOne(options.modelId, query) : await this.findOneByUserKey(options.modelUserKey, query.populate);
 
-    let fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
-
-    // If a list of field ids or field names is passed for refresh, use these fields only
-    if (options.fieldIdsForRefresh && options.fieldIdsForRefresh.length > 0) {
-      fieldsForRefresh = fieldsForRefresh.filter((field) => options.fieldIdsForRefresh.includes(+field.id));
-    } else if (options.fieldNamesForRefresh && options.fieldNamesForRefresh.length > 0) {
-      fieldsForRefresh = fieldsForRefresh.filter((field) => options.fieldNamesForRefresh.includes(field.name));
-    }
-    // const fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
-
     //Execute the schematic command to refresh the model
-    const refreshOuput = await this.executeRefreshModelCommand(model, fieldsForRefresh, options.dryRun);
+    const refreshOuput = await this.executeRefreshModelCommand(model, options.dryRun);
 
     return `${refreshOuput}`;
   }
 
-  private async executeRefreshModelCommand(model: ModelMetadata, fieldsForRefresh: FieldMetadata[], dryRun: boolean = false): Promise<string> {
-    // const fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
+  private async executeRefreshModelCommand(model: ModelMetadata, dryRun: boolean = false): Promise<string> {
     const output = await this.schematicService.executeSchematicCommand(
       REFRESH_MODEL_COMMAND,
       {

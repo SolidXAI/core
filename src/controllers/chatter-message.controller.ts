@@ -5,6 +5,7 @@ import { ChatterMessageService } from '../services/chatter-message.service';
 import { CreateChatterMessageDto } from '../dtos/create-chatter-message.dto';
 import { UpdateChatterMessageDto } from '../dtos/update-chatter-message.dto';
 import { PostChatterMessageDto } from '../dtos/post-chatter-message.dto';
+import { UpdateChatterNoteMessageDto } from '../dtos/update-chatter-note-message.dto';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { Public } from 'src/decorators/public.decorator';
@@ -126,5 +127,16 @@ export class ChatterMessageController {
   @Patch(':id/complete')
   async markCompleted(@Param('id') id: string) {
     return this.service.markCompleted(+id);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Patch(':id/note')
+  @UseInterceptors(AnyFilesInterceptor())
+  async updateCustomNoteMessage(
+    @Param('id') id: string,
+    @Body() updateDto: UpdateChatterNoteMessageDto,
+    @UploadedFiles() files: Array<Express.Multer.File>,
+  ) {
+    return this.service.updateCustomNoteMessage(+id, updateDto, files);
   }
 }
