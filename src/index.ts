@@ -318,6 +318,7 @@ export * from './services/solid-introspect.service'
 export * from './services/user.service'
 export * from './services/view-metadata.service'
 export * from './services/whatsapp/Msg91WhatsappService' //rename
+export * from './services/whatsapp/GupshupOtpWhatsappService'
 export * from './services/setting.service'
 export * from './services/encryption.service'
 export * from './services/info.service'
