@@ -19,7 +19,7 @@ import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { RoleMetadataService } from 'src/services/role-metadata.service';
 import { UserService } from 'src/services/user.service';
 import { getMediaStorageProvider } from 'src/services/mediaStorageProviders';
-import { TestingRoleSpec, TestingUserSpec } from 'src/testing/contracts/testing-metadata.types';
+import { TestingDataRecord, TestingRoleSpec, TestingUserSpec } from 'src/testing/contracts/testing-metadata.types';
 
 @Injectable()
 export class ModuleTestDataService {
@@ -48,6 +48,25 @@ export class ModuleTestDataService {
       console.log(`Processing test data for module: ${moduleName}`);
       await this.seedTestData(overallMetadata);
       console.log(`✔ Test data setup complete for module: ${moduleName}`);
+    }
+  }
+
+  async removeTestData(modulesToTest?: string[]): Promise<void> {
+    const testDataFiles = this.testDataFiles;
+    const filteredFiles = modulesToTest?.length ? testDataFiles.filter((file) => modulesToTest.includes(file.moduleMetadata?.name)) : testDataFiles;
+
+    if (filteredFiles.length === 0) {
+      this.logger.warn('No modules matched the provided modulesToTest list.');
+      console.log('No modules matched the provided modulesToTest list.');
+      return;
+    }
+
+    for (const overallMetadata of filteredFiles) {
+      const moduleName = overallMetadata?.moduleMetadata?.name ?? 'unknown';
+      this.logger.log(`Removing test data for module: ${moduleName}`);
+      console.log(`Removing test data for module: ${moduleName}`);
+      await this.unlinkTestData(overallMetadata);
+      console.log(`✔ Test data unlink complete for module: ${moduleName}`);
     }
   }
 
@@ -199,7 +218,7 @@ export class ModuleTestDataService {
 
     const testingRoles: TestingRoleSpec[] = overallMetadata?.testing?.roles ?? [];
     const testingUsers: TestingUserSpec[] = overallMetadata?.testing?.users ?? [];
-    const testingData: Array<{ modelUserKey: string; data: Record<string, any> }> = overallMetadata?.testing?.data ?? [];
+    const testingData: TestingDataRecord[] = overallMetadata?.testing?.data ?? [];
 
     if (testingRoles.length > 0) {
       await this.seedTestRoles(testingRoles);
@@ -290,16 +309,21 @@ export class ModuleTestDataService {
       // Upsert entity, capturing the saved result for post-save steps
       let savedEntity: any;
       const userKeyField = modelDef.userKeyFieldUserKey;
+      const recordUserKeyValue = entry.recUserKeyValue ?? payload[userKeyField];
+      const recordLabel = `${modelUserKey}.${userKeyField}=${recordUserKeyValue}`;
       if (userKeyField && payload[userKeyField] !== undefined) {
         const existing = await entityRepo.findOne({
           where: { [userKeyField]: payload[userKeyField] },
         });
         if (existing) {
+          console.log(`Updating test data record: ${recordLabel}`);
           savedEntity = await entityRepo.save(entityRepo.merge(existing, payload));
         } else {
+          console.log(`Creating test data record: ${recordLabel}`);
           savedEntity = await entityRepo.save(entityRepo.create(payload));
         }
       } else {
+        console.log(`Creating test data record without user key lookup: ${modelUserKey}`);
         savedEntity = await entityRepo.save(entityRepo.create(payload));
       }
 
@@ -310,6 +334,59 @@ export class ModuleTestDataService {
       if (Object.keys(mediaPayload).length > 0) {
         await this.seedEntityMedia(savedEntity.id, modelUserKey, mediaPayload);
       }
+    }
+  }
+
+  private async unlinkTestData(overallMetadata: any): Promise<void> {
+    const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
+    if (!moduleMetadata) {
+      throw new Error('Module metadata missing from test data payload.');
+    }
+
+    const testingData: TestingDataRecord[] = overallMetadata?.testing?.data ?? [];
+    if (testingData.length === 0) {
+      this.logger.debug(`No test data found for ${moduleMetadata.name}`);
+      return;
+    }
+
+    const modelsByName = new Map<string, CreateModelMetadataDto>(
+      (moduleMetadata.models ?? []).map((m) => [m.singularName, m]),
+    );
+
+    for (const entry of [...testingData].reverse()) {
+      const modelUserKey = entry.modelUserKey;
+      const modelDef = modelsByName.get(modelUserKey);
+      if (!modelDef) {
+        throw new Error(`Test data modelUserKey not found in metadata: ${modelUserKey}`);
+      }
+
+      const userKeyField = modelDef.userKeyFieldUserKey;
+      if (!userKeyField) {
+        throw new Error(`Cannot unlink test data for model ${modelUserKey} because userKeyFieldUserKey is not configured.`);
+      }
+
+      const userKeyValue = entry.data?.[userKeyField];
+      if (userKeyValue === undefined || userKeyValue === null || userKeyValue === '') {
+        throw new Error(
+          `Cannot unlink test data for model ${modelUserKey} because testing.data entry is missing the actual user key field "${userKeyField}" in data.`,
+        );
+      }
+      const recordLabel = `${modelUserKey}.${userKeyField}=${userKeyValue}`;
+
+      const entityRepo = this.resolveRepository(modelUserKey);
+      const existing = typeof entityRepo.findOneByUserKey === 'function'
+        ? await entityRepo.findOneByUserKey(userKeyValue)
+        : await entityRepo.findOne({ where: { [userKeyField]: userKeyValue } });
+
+      if (!existing) {
+        console.log(`Skipping unlink; test data record not found: ${recordLabel}`);
+        this.logger.debug(`Test data record not found for unlink: ${modelUserKey}.${userKeyField}=${userKeyValue}`);
+        continue;
+      }
+
+      console.log(`Deleting test data record: ${recordLabel}`);
+      await entityRepo.remove(existing);
+      this.logger.debug(`Removed test data record: ${modelUserKey}.${userKeyField}=${userKeyValue}`);
     }
   }
 
