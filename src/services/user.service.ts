@@ -285,7 +285,7 @@ export class UserService extends CRUDService<User> {
   }
 
   async resolveUserOnOauthFacebook(oauthUserDto: OauthUserDto): Promise<User> {
-    const normalizedEmail = oauthUserDto.email?.trim().toLowerCase();
+    const normalizedEmail = oauthUserDto.email?.trim().toLowerCase() || null;
     let user: User | null = null;
 
     if (oauthUserDto.providerId) {
