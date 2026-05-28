@@ -356,6 +356,21 @@ await runFromMetadata({
 });
 ```
 
+## CLI Workflows
+Full isolated-database workflow:
+1. `npx @solidxai/solidctl@latest test data --setup`
+2. `npx @solidxai/solidctl@latest seed`
+3. `npx @solidxai/solidctl@latest test data --load`
+4. `npx @solidxai/solidctl@latest test run --module <module-name>`
+5. `npx @solidxai/solidctl@latest test data --teardown`
+
+Lightweight existing-database workflow:
+1. `npx @solidxai/solidctl@latest test data --load`
+2. `npx @solidxai/solidctl@latest test run --module <module-name>`
+3. `npx @solidxai/solidctl@latest test data --unlink`
+
+`test data --unlink` deletes records declared in `testing.data` in reverse order using each model's `userKeyFieldUserKey` and the entry's `recUserKeyValue`. This assumes `testing.data` is authored in dependency order, with parent records appearing before dependent records.
+
 ## Add A New Step (SOP)
 1. Create a new `*.step.ts` in the right domain folder.
 2. Implement a `registerXSteps(registry)` function and `registry.register("op.name", handler)`.
