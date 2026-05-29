@@ -412,7 +412,7 @@ export class ModuleMetadataService {
     const module = await this.findOne(moduleId);
     return this.commandService.executeCommandWithArgs({
       command: 'npx',
-      args: ['@solixai/solidctl@latest', 'generate', 'module', `--name=${module.name}`],
+      args: ['@solidxai/solidctl@latest', 'generate', 'module', `--name=${module.name}`],
       cwd: path.join(process.cwd(), '..'),
     });
   }

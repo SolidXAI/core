@@ -61,6 +61,11 @@ import { MicrosoftAuthenticationController } from "./controllers/microsoft-authe
 import { FacebookOAuthStrategy } from "./passport-strategies/facebook-oauth.strategy";
 import { MicrosoftOAuthStrategy } from "./passport-strategies/microsoft-oauth.strategy";
 
+import { GupshupOtpWhatsappService } from "./services/whatsapp/GupshupOtpWhatsappService";
+import { MetaCloudWhatsappService } from "./services/whatsapp/MetaCloudWhatsappService";
+import { GupshupWebhookController } from "./controllers/gupshup-webhook.controller";
+import { MetaCloudWhatsappWebhookController } from "./controllers/meta-cloud-whatsapp-webhook.controller";
+
 import { HttpModule } from "@nestjs/axios";
 import { JwtModule } from "@nestjs/jwt";
 import { SeedCommand } from "./commands/seed.command";
@@ -520,6 +525,8 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     ModuleMetadataController,
     MqMessageController,
     MqMessageQueueController,
+    GupshupWebhookController,
+    MetaCloudWhatsappWebhookController,
     OTPAuthenticationController,
     PushNotificationTemplateController,
     PermissionMetadataController,
@@ -617,6 +624,8 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     Msg91SMSService,
     Msg91OTPService,
     Msg91WhatsappService,
+    MetaCloudWhatsappService,
+    GupshupOtpWhatsappService,
     TwilioSMSService,
     AmazonSNSPushNotificationService,
     SmsTemplateService,

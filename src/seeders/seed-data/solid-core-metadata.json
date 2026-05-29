@@ -13810,52 +13810,16 @@
                 "children": [
                   {
                     "type": "column",
-                    "attrs": {
-                      "name": "col-1",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                    },
+                    "attrs": { "name": "col-1", "label": "", "className": "col-12" },
                     "children": [
                       { "type": "field", "attrs": { "name": "sessionId" } },
                       { "type": "field", "attrs": { "name": "modelName" } },
                       { "type": "field", "attrs": { "name": "status" } },
-                      { "type": "field", "attrs": { "name": "projectRoot" } }
-                    ]
-                  },
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "col-2",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                    },
-                    "children": [
+                      { "type": "field", "attrs": { "name": "projectRoot" } },
                       { "type": "field", "attrs": { "name": "totalSteps" } },
                       { "type": "field", "attrs": { "name": "totalCost" } },
-                      {
-                        "type": "field",
-                        "attrs": { "name": "totalInputTokens" }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": { "name": "totalOutputTokens" }
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "type": "row",
-                "attrs": { "name": "row-2" },
-                "children": [
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "col-summary",
-                      "label": "",
-                      "className": "col-12"
-                    },
-                    "children": [
+                      { "type": "field", "attrs": { "name": "totalInputTokens" } },
+                      { "type": "field", "attrs": { "name": "totalOutputTokens" } },
                       { "type": "field", "attrs": { "name": "summary" } }
                     ]
                   }
@@ -13931,75 +13895,93 @@
             "attrs": { "name": "sheet-1" },
             "children": [
               {
-                "type": "row",
-                "attrs": { "name": "row-1" },
+                "type": "notebook",
+                "attrs": { "name": "notebook-1" },
                 "children": [
                   {
-                    "type": "column",
-                    "attrs": {
-                      "name": "col-1",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                    },
+                    "type": "page",
+                    "attrs": { "name": "page-general", "label": "General" },
                     "children": [
-                      { "type": "field", "attrs": { "name": "sessionId" } },
-                      { "type": "field", "attrs": { "name": "eventType" } },
-                      { "type": "field", "attrs": { "name": "turnNumber" } },
-                      { "type": "field", "attrs": { "name": "stepNumber" } },
-                      { "type": "field", "attrs": { "name": "toolName" } },
-                      { "type": "field", "attrs": { "name": "modelUsed" } }
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-general-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-general-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "sessionId" } },
+                              { "type": "field", "attrs": { "name": "eventType" } },
+                              { "type": "field", "attrs": { "name": "turnNumber" } },
+                              { "type": "field", "attrs": { "name": "stepNumber" } },
+                              { "type": "field", "attrs": { "name": "toolName" } },
+                              { "type": "field", "attrs": { "name": "modelUsed" } },
+                              { "type": "field", "attrs": { "name": "durationMs" } },
+                              { "type": "field", "attrs": { "name": "cost" } },
+                              { "type": "field", "attrs": { "name": "inputTokens" } },
+                              { "type": "field", "attrs": { "name": "outputTokens" } },
+                              { "type": "field", "attrs": { "name": "toolReturncode" } },
+                              { "type": "field", "attrs": { "name": "content" } }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
                   {
-                    "type": "column",
-                    "attrs": {
-                      "name": "col-2",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                    },
+                    "type": "page",
+                    "attrs": { "name": "page-tool-arguments", "label": "Tool Arguments" },
                     "children": [
-                      { "type": "field", "attrs": { "name": "durationMs" } },
-                      { "type": "field", "attrs": { "name": "cost" } },
-                      { "type": "field", "attrs": { "name": "inputTokens" } },
-                      { "type": "field", "attrs": { "name": "outputTokens" } },
-                      { "type": "field", "attrs": { "name": "toolReturncode" } }
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-tool-arguments-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-tool-arguments-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "toolArguments", "viewWidget": "SolidJsonFormViewWidget" } }
+                            ]
+                          }
+                        ]
+                      }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "row",
-                "attrs": { "name": "row-2" },
-                "children": [
+                  },
                   {
-                    "type": "column",
-                    "attrs": {
-                      "name": "col-content",
-                      "label": "",
-                      "className": "col-12"
-                    },
+                    "type": "page",
+                    "attrs": { "name": "page-tool-output", "label": "Tool Output" },
                     "children": [
-                      { "type": "field", "attrs": { "name": "content" } },
                       {
-                        "type": "field",
-                        "attrs": {
-                          "name": "toolArguments",
-                          "viewWidget": "SolidJsonFormViewWidget"
-                        }
-                      },
+                        "type": "row",
+                        "attrs": { "name": "page-tool-output-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-tool-output-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "toolOutput", "viewWidget": "SolidJsonFormViewWidget" } }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": { "name": "page-event-data", "label": "Event Data" },
+                    "children": [
                       {
-                        "type": "field",
-                        "attrs": {
-                          "name": "toolOutput",
-                          "viewWidget": "SolidJsonFormViewWidget"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "eventData",
-                          "viewWidget": "SolidJsonFormViewWidget"
-                        }
+                        "type": "row",
+                        "attrs": { "name": "page-event-data-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-event-data-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "eventData", "viewWidget": "SolidJsonFormViewWidget" } }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   }
@@ -14063,46 +14045,94 @@
             "attrs": { "name": "sheet-1" },
             "children": [
               {
-                "type": "row",
-                "attrs": { "name": "row-1" },
+                "type": "notebook",
+                "attrs": { "name": "notebook-1" },
                 "children": [
                   {
-                    "type": "column",
-                    "attrs": { "name": "col-1", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "type": "page",
+                    "attrs": { "name": "page-general", "label": "General" },
                     "children": [
-                      { "type": "field", "attrs": { "name": "method" } },
-                      { "type": "field", "attrs": { "name": "toolName" } },
-                      { "type": "field", "attrs": { "name": "status" } },
-                      { "type": "field", "attrs": { "name": "transport" } },
-                      { "type": "field", "attrs": { "name": "mcpSessionId" } },
-                      { "type": "field", "attrs": { "name": "requestId" } }
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-general-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-general-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "method" } },
+                              { "type": "field", "attrs": { "name": "toolName" } },
+                              { "type": "field", "attrs": { "name": "status" } },
+                              { "type": "field", "attrs": { "name": "transport" } },
+                              { "type": "field", "attrs": { "name": "mcpSessionId" } },
+                              { "type": "field", "attrs": { "name": "requestId" } },
+                              { "type": "field", "attrs": { "name": "userId" } },
+                              { "type": "field", "attrs": { "name": "apiKeyId" } },
+                              { "type": "field", "attrs": { "name": "username" } },
+                              { "type": "field", "attrs": { "name": "clientAddr" } },
+                              { "type": "field", "attrs": { "name": "durationMs" } },
+                              { "type": "field", "attrs": { "name": "errorCode" } }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
                   {
-                    "type": "column",
-                    "attrs": { "name": "col-2", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "type": "page",
+                    "attrs": { "name": "page-request-params", "label": "Request Params" },
                     "children": [
-                      { "type": "field", "attrs": { "name": "userId" } },
-                      { "type": "field", "attrs": { "name": "apiKeyId" } },
-                      { "type": "field", "attrs": { "name": "username" } },
-                      { "type": "field", "attrs": { "name": "clientAddr" } },
-                      { "type": "field", "attrs": { "name": "durationMs" } },
-                      { "type": "field", "attrs": { "name": "errorCode" } }
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-request-params-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-request-params-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "requestParams", "viewWidget": "SolidJsonFormViewWidget" } }
+                            ]
+                          }
+                        ]
+                      }
                     ]
-                  }
-                ]
-              },
-              {
-                "type": "row",
-                "attrs": { "name": "row-2" },
-                "children": [
+                  },
                   {
-                    "type": "column",
-                    "attrs": { "name": "col-payload", "label": "", "className": "col-12" },
+                    "type": "page",
+                    "attrs": { "name": "page-response-result", "label": "Response Result" },
                     "children": [
-                      { "type": "field", "attrs": { "name": "requestParams", "viewWidget": "SolidJsonFormViewWidget" } },
-                      { "type": "field", "attrs": { "name": "responseResult", "viewWidget": "SolidJsonFormViewWidget" } },
-                      { "type": "field", "attrs": { "name": "errorMessage" } }
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-response-result-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-response-result-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "responseResult", "viewWidget": "SolidJsonFormViewWidget" } }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": { "name": "page-error-message", "label": "Error Message" },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-error-message-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-error-message-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "errorMessage" } }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   }
                 ]
