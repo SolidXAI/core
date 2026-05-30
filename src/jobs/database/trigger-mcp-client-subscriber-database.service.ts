@@ -2,12 +2,10 @@ import { Injectable, Logger } from '@nestjs/common';
 import { ModelMetadataService } from '../../services/model-metadata.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { QueueMessage } from 'src/interfaces/mq';
-import { DashboardRepository } from 'src/repository/dashboard.repository';
 import { AiInteractionService } from 'src/services/ai-interaction.service';
 import { ModuleMetadataService } from 'src/services/module-metadata.service';
 import { PollerService } from 'src/services/poller.service';
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
-import { Not } from 'typeorm';
 import { McpResponse, QueuesModuleOptions, TriggerMcpClientOptions } from "../../interfaces";
 import { MqMessageQueueService } from '../../services/mq-message-queue.service';
 import { MqMessageService } from '../../services/mq-message.service';
@@ -24,9 +22,7 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
         readonly aiInteractionService: AiInteractionService,
         readonly moduleMetadataService: ModuleMetadataService,
         readonly modelMetadataService: ModelMetadataService,
-        private readonly solidRegistry: SolidRegistry,
-        // private readonly dashboardService: DashboardService
-        private readonly dashboardRepository: DashboardRepository
+        private readonly solidRegistry: SolidRegistry
 
     ) {
         super(mqMessageService, mqMessageQueueService, poller);
@@ -126,22 +122,6 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
             populate: ['module']
         });
 
-        // Get the list of dashboards
-        // TODO: Ideally we should fetch dashboard like below, but used below approach to avoid below CLS issues for now.
-        // Cannot set the key "filter". No CLS context available, please make sure that a ClsMiddleware/Guard/Interceptor has set up the context, or wrap any calls that depend on CLS with "ClsService#run"
-        // const { records: existingDashboards } = await this.dashboardService.find({
-        //     fields
-        // })
-        const existingDashboards = await this.dashboardRepository.find(
-            {
-                where: {
-                    module: {
-                        name: Not('solid-core')
-                    }
-                },
-            }
-        );
-
         const existingControllerAndTheirMethods = this.solidRegistry.getControllers();
 
 
@@ -161,14 +141,6 @@ export class TriggerMcpClientSubscriberDatabase extends DatabaseSubscriber<Trigg
                 `- singularName: ${m.singularName}`,
                 `- description: ${m.description ?? ""}`,
                 `- moduleName: ${m.module.name}`,
-            ].join('\n'))
-            .join('\n\n');
-
-        const dashboardsSection = (existingDashboards ?? [])
-            .map(d => [
-                `### ${d.displayName}`,
-                `- name: ${d.name}`,
-                `- description: ${d.description ?? ""}`,
             ].join('\n'))
             .join('\n\n');
 
@@ -212,11 +184,6 @@ Use the below list of models to infer which model the user is referring to.
 You need to pull out the singularName for the model from the user prompt to match against the below list.
 
 ${modelsSection}
-
-## LIST OF EXISTING DASHBOARDS
-Use the below list of dashboards to infer which dashboard the user is referring to.
-
-${dashboardsSection}
 
 ## LIST OF EXISTING COMPUTED FIELD PROVIDERS
 Use the below list of computed field providers to infer which provider the user is referring to.

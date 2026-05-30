@@ -6,8 +6,6 @@ import { ModelMetadataRepository } from 'src/repository/model-metadata.repositor
 import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
 import { getDataSourceToken } from '@nestjs/typeorm';
 import { IS_COMPUTED_FIELD_PROVIDER } from 'src/decorators/computed-field-provider.decorator';
-import { IS_DASHBOARD_QUESTION_DATA_PROVIDER } from 'src/decorators/dashboard-question-data-provider.decorator';
-import { IS_DASHBOARD_VARIABLE_SELECTION_PROVIDER } from 'src/decorators/dashboard-selection-provider.decorator';
 import { IS_ERROR_CODE_PROVIDER } from 'src/decorators/error-codes-provider.decorator';
 import { IS_MAIL_PROVIDER } from 'src/decorators/mail-provider.decorator';
 import { IS_SCHEDULED_JOB_PROVIDER } from 'src/decorators/scheduled-job-provider.decorator';
@@ -74,18 +72,6 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     const settingsProviders = this.discoveryService.getProviders().filter((provider) => this.isSettingsProvider(provider));
     settingsProviders.forEach((settingsProvider) => {
       this.solidRegistry.registerSettingsProvider(settingsProvider);
-    });
-
-    // Register all IDashboardSelectionProvider implementations
-    const dashboardVariableSelectionProviders = this.discoveryService.getProviders().filter((provider) => this.isDashboardVariableSelectionProvider(provider));
-    dashboardVariableSelectionProviders.forEach((dashboardSelectionProvider) => {
-      this.solidRegistry.registerDashboardVariableSelectionProvider(dashboardSelectionProvider);
-    });
-
-    // Register all IDashboardSelectionProvider implementations
-    const dashboardQuestionDataProviders = this.discoveryService.getProviders().filter((provider) => this.isDashboardQuestionDataProvider(provider));
-    dashboardQuestionDataProviders.forEach((provider) => {
-      this.solidRegistry.registerDashboardQuestionDataProvider(provider);
     });
 
     // Register all IComputedProvider implementations
@@ -250,16 +236,6 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     }
   }
 
-  isDashboardQuestionDataProvider(providerWrapper: InstanceWrapper<any>) {
-    const { instance } = providerWrapper;
-    if (!instance) return false;
-    const provider = this.reflector.get<boolean>(
-      IS_DASHBOARD_QUESTION_DATA_PROVIDER,
-      instance.constructor,
-    );
-    return !!provider;
-  }
-
   // This method identifies a provider as a seeder if it has a seed method i.e duck typing
   private isSeeder(provider: InstanceWrapper) {
     const { instance } = provider;
@@ -310,16 +286,6 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     );
 
     return !!isSettingsProvider;
-  }
-
-  private isDashboardVariableSelectionProvider(provider: InstanceWrapper) {
-    const { instance } = provider;
-    if (!instance) return false;
-    const isDashboardSelectionProvider = this.reflector.get<boolean>(
-      IS_DASHBOARD_VARIABLE_SELECTION_PROVIDER,
-      instance.constructor,
-    );
-    return !!isDashboardSelectionProvider;
   }
 
   private isComputedFieldProvider(provider: InstanceWrapper) {

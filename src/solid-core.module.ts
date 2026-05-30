@@ -179,12 +179,7 @@ import { ClsModule } from "nestjs-cls";
 import { AiInteractionController } from "./controllers/ai-interaction.controller";
 import { ChatterMessageDetailsController } from "./controllers/chatter-message-details.controller";
 import { ChatterMessageController } from "./controllers/chatter-message.controller";
-import { DashboardQuestionSqlDatasetConfigController } from "./controllers/dashboard-question-sql-dataset-config.controller";
-import { DashboardQuestionController } from "./controllers/dashboard-question.controller";
-import { DashboardVariableController } from "./controllers/dashboard-variable.controller";
-import { DashboardLayoutController } from "./controllers/dashboard-layout.controller";
 
-import { DashboardController } from './controllers/dashboard.controller';
 import { ExportTemplateController } from './controllers/export-template.controller';
 import { ExportTransactionController } from './controllers/export-transaction.controller';
 import { ImportTransactionErrorLogController } from './controllers/import-transaction-error-log.controller';
@@ -207,12 +202,7 @@ import { UserController } from './controllers/user.controller';
 import { AiInteraction } from './entities/ai-interaction.entity';
 import { ChatterMessageDetails } from './entities/chatter-message-details.entity';
 import { ChatterMessage } from './entities/chatter-message.entity';
-import { DashboardQuestionSqlDatasetConfig } from './entities/dashboard-question-sql-dataset-config.entity';
-import { DashboardQuestion } from './entities/dashboard-question.entity';
-import { DashboardVariable } from './entities/dashboard-variable.entity';
-import { DashboardLayout } from './entities/dashboard-layout.entity';
 
-import { Dashboard } from './entities/dashboard.entity';
 import { ExportTemplate } from './entities/export-template.entity';
 import { ExportTransaction } from './entities/export-transaction.entity';
 import { ImportTransactionErrorLog } from './entities/import-transaction-error-log.entity';
@@ -270,17 +260,11 @@ import { TriggerMcpClientPublisherRabbitmq } from "./jobs/rabbitmq/trigger-mcp-c
 import { TriggerMcpClientSubscriberRabbitmq } from "./jobs/rabbitmq/trigger-mcp-client-subscriber.service";
 import { TwilioSmsQueuePublisherRabbitmq } from "./jobs/rabbitmq/twilio-sms-publisher.service";
 import { TwilioSmsQueueSubscriberRabbitmq } from "./jobs/rabbitmq/twilio-sms-subscriber.service";
-import { DashboardMapper } from "./mappers/dashboard-mapper";
 import { ListOfValuesMapper } from "./mappers/list-of-values-mapper";
 import { ActionMetadataRepository } from "./repository/action-metadata.repository";
 import { AiInteractionRepository } from "./repository/ai-interaction.repository";
 import { ChatterMessageDetailsRepository } from "./repository/chatter-message-details.repository";
 import { ChatterMessageRepository } from "./repository/chatter-message.repository";
-import { DashboardQuestionSqlDatasetConfigRepository } from "./repository/dashboard-question-sql-dataset-config.repository";
-import { DashboardQuestionRepository } from "./repository/dashboard-question.repository";
-import { DashboardVariableRepository } from "./repository/dashboard-variable.repository";
-import { DashboardRepository } from "./repository/dashboard.repository";
-import { DashboardLayoutRepository } from "./repository/dashboard-layout.repository";
 
 import { EmailTemplateRepository } from './repository/email-template.repository';
 import { ExportTemplateRepository } from './repository/export-template.repository';
@@ -322,13 +306,6 @@ import { ConcatEntityComputedFieldProvider } from './services/computed-fields/en
 import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
 import { CRUDService } from './services/crud.service';
 import { CsvService } from './services/csv.service';
-import { DashboardQuestionSqlDatasetConfigService } from './services/dashboard-question-sql-dataset-config.service';
-import { DashboardQuestionService } from './services/dashboard-question.service';
-import { DashboardVariableSQLDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-sql-dynamic-provider.service';
-import { DasbhoardVariableTestDynamicProvider } from './services/dashboard-selection-providers/dashboard-variable-test-dynamic-provider.service';
-import { DashboardVariableService } from './services/dashboard-variable.service';
-import { DashboardService } from './services/dashboard.service';
-import { DashboardLayoutService } from './services/dashboard-layout.service';
 
 import { ExcelService } from './services/excel.service';
 import { ExportTemplateService } from './services/export-template.service';
@@ -342,9 +319,6 @@ import { LocaleService } from './services/locale.service';
 import { FileS3StorageProvider } from './services/mediaStorageProviders/file-s3-storage-provider';
 import { FileStorageProvider } from './services/mediaStorageProviders/file-storage-provider';
 import { PollerService } from './services/poller.service';
-import { ChartJsSqlDataProvider } from './services/question-data-providers/chartjs-sql-data-provider.service';
-import { PrimeReactDatatableSqlDataProvider } from './services/question-data-providers/prime-react-datatable-sql-data-provider.service';
-import { PrimeReactMeterGroupSqlDataProvider } from './services/question-data-providers/prime-react-meter-group-sql-data-provider.service';
 import { PublisherFactory } from './services/queues/publisher-factory.service';
 import { RequestContextService } from './services/request-context.service';
 import { RoleMetadataService } from './services/role-metadata.service';
@@ -355,14 +329,11 @@ import { AgentEventService } from './services/agent-event.service';
 import { McpAuditLogService } from './services/mcp-audit-log.service';
 import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
 import { SecurityRuleService } from './services/security-rule.service';
-import { ListOfDashboardQuestionProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-question-providers-selection-provider.service';
-import { ListOfDashboardVariableProvidersSelectionProvider } from './services/selection-providers/list-of-dashboard-variable-providers-selection-provider.service';
 import { ListOfScheduledJobsSelectionProvider } from './services/selection-providers/list-of-scheduled-jobs-selection-provider.service';
 import { LocaleListSelectionProvider } from './services/selection-providers/locale-list-selection-provider.service';
 import { SettingService } from './services/setting.service';
 import { TwilioSMSService } from './services/sms/TwilioSMSService';
 import { SolidTsMorphService } from './services/solid-ts-morph.service';
-import { SqlExpressionResolverService } from './services/sql-expression-resolver.service';
 import { TextractService } from './services/textract.service';
 import { UserActivityHistoryService } from './services/user-activity-history.service';
 import { UserViewMetadataService } from './services/user-view-metadata.service';
@@ -371,10 +342,6 @@ import { Three60WhatsappService } from './services/whatsapp/Three60WhatsappServi
 import { AuditSubscriber } from './subscribers/audit.subscriber';
 import { ComputedEntityFieldSubscriber } from './subscribers/computed-entity-field.subscriber';
 import { CreatedByUpdatedBySubscriber } from './subscribers/created-by-updated-by.subscriber';
-import { DashboardQuestionSqlDatasetConfigSubscriber } from './subscribers/dashboard-question-sql-dataset-config.subscriber';
-import { DashboardQuestionSubscriber } from './subscribers/dashboard-question.subscriber';
-import { DashboardVariableSubscriber } from './subscribers/dashboard-variable.subscriber';
-import { DashboardSubscriber } from './subscribers/dashboard.subscriber';
 import { ListOfValuesSubscriber } from './subscribers/list-of-values.subscriber';
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
@@ -409,11 +376,6 @@ import { Entity } from 'typeorm';
       AiInteraction,
       ChatterMessage,
       ChatterMessageDetails,
-      Dashboard,
-      DashboardQuestion,
-      DashboardQuestionSqlDatasetConfig,
-      DashboardVariable,
-      DashboardLayout,
       EmailAttachment,
       EmailTemplate,
       ExportTemplate,
@@ -485,11 +447,6 @@ import { Entity } from 'typeorm';
     AuthenticationController,
     ChatterMessageController,
     ChatterMessageDetailsController,
-    DashboardController,
-    DashboardQuestionController,
-    DashboardQuestionSqlDatasetConfigController,
-    DashboardVariableController,
-    DashboardLayoutController,
     EmailTemplateController,
     ExportTemplateController,
     ExportTransactionController,
@@ -753,35 +710,10 @@ import { Entity } from 'typeorm';
     ComputedFieldEvaluationSubscriberRabbitmq,
     ConcatEntityComputedFieldProvider,
     UserActivityHistoryService,
-    DashboardService,
-    DashboardVariableService,
-    DashboardLayoutService,
-    DashboardQuestionService,
-    DashboardVariableSQLDynamicProvider,
-    DasbhoardVariableTestDynamicProvider,
-    ListOfDashboardVariableProvidersSelectionProvider,
-    ListOfDashboardQuestionProvidersSelectionProvider,
-    DashboardQuestionSqlDatasetConfigService,
-    ChartJsSqlDataProvider,
-    PrimeReactMeterGroupSqlDataProvider,
-    PrimeReactDatatableSqlDataProvider,
-    SqlExpressionResolverService,
     AiInteractionService,
-    DashboardMapper,
-    DashboardRepository,
-    DashboardSubscriber,
-    DashboardVariableSubscriber,
-    DashboardQuestionSubscriber,
-    DashboardQuestionSqlDatasetConfigSubscriber,
     NoopsEntityComputedFieldProviderService,
 
     McpHandlerFactory,
-    // SolidCreateDashboardWithWidgetsMcpHandler,
-    // SolidCreateDashboardQuestionMcpHandler,
-    // SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler,
-    // SolidCreateDashboardWidgetMcpHandler,
-    // SolidAddVariableToDashboardMcpHandler,
-    // SolidAddQuestionToDashboardMcpHandler,
 
     SolidTsMorphService,
 
@@ -803,10 +735,6 @@ import { Entity } from 'typeorm';
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,
     AiInteractionRepository,
-    DashboardQuestionSqlDatasetConfigRepository,
-    DashboardQuestionRepository,
-    DashboardVariableRepository,
-    DashboardLayoutRepository,
     EmailTemplateRepository,
     ExportTemplateRepository,
     ExportTransactionRepository,
