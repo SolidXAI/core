@@ -188,7 +188,7 @@ export async function bootstrapSolidApp(
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
-  app.get(WINSTON_MODULE_NEST_PROVIDER).log(`\x1b[32mServer started on port ${port} in ${elapsed}s\x1b[0m`, 'Bootstrap');
+  process.stdout.write(`\x1b[32mServer started on port ${port} in ${elapsed}s\x1b[0m\n`);
 }
 
 // ---- CLI bootstrap ----

@@ -15,6 +15,12 @@
 {
   "testing": {
     "specs": ["path/to/register-test-specs.js"],
+    "roles": [
+      { "name": "Editor", "permissions": ["BookController.*"] }
+    ],
+    "users": [
+      { "username": "testEditor", "email": "testEditor@test.local", "password": "Test@1234", "roles": ["Editor"] }
+    ],
     "data": [
       {
         "modelUserKey": "stateMaster",
@@ -339,7 +345,6 @@ await runFromMetadata({
 
 When using `solidctl test run`, specs are loaded from `testing.specs` in module metadata.
 Use `--skip-scenario-ids` to exclude scenarios by id (comma-separated).
-Use `--print-api-logs` to print full API request/response details for `api.request` steps.
 Use `--print-api-logs` to print full API request/response details for `api.request` steps.
 
 ## Run From Metadata
