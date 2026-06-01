@@ -6338,10 +6338,10 @@
       "iconName": "low_priority"
     },
     {
-      "displayName": "Messages",
-      "name": "mqMessage-menu-item",
+      "displayName": "Queue Health",
+      "name": "solid-core-queue-health-dashboard-menu-item",
       "sequenceNumber": 1,
-      "actionUserKey": "mqMessage-list-action",
+      "actionUserKey": "solid-core-queue-health-dashboard-view",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "queues-menu-item"
     },
@@ -6350,6 +6350,14 @@
       "name": "mqMessageQueue-menu-item",
       "sequenceNumber": 2,
       "actionUserKey": "mqMessageQueue-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "queues-menu-item"
+    },
+    {
+      "displayName": "Messages",
+      "name": "mqMessage-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "mqMessage-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "queues-menu-item"
     },
@@ -6508,14 +6516,6 @@
       "actionUserKey": "mcpAuditLog-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item"
-    },
-    {
-      "displayName": "Queue Health",
-      "name": "solid-core-queue-health-dashboard-menu-item",
-      "sequenceNumber": 3,
-      "actionUserKey": "solid-core-queue-health-dashboard-view",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "queues-menu-item"
     },
     {
       "displayName": "Dashboard User Layout",
