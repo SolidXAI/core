@@ -7,7 +7,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule } from "../interfaces";
+import { IDashboardWidgetDataProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule } from "../interfaces";
 import { ObjectLiteral } from 'typeorm';
 
 type ControllerMetadata = {
@@ -71,6 +71,7 @@ export class SolidRegistry {
   private seeders: Set<InstanceWrapper> = new Set();
   private scheduledJobProviders: Set<InstanceWrapper> = new Set();
   private selectionProviders: Set<InstanceWrapper> = new Set();
+  private dashboardWidgetDataProviders: Set<InstanceWrapper> = new Set();
   private computedFieldProviders: Set<InstanceWrapper> = new Set();
   private solidDatabaseModules: Set<InstanceWrapper> = new Set();
   private controllers: Set<ControllerMetadata> = new Set();
@@ -134,6 +135,10 @@ export class SolidRegistry {
 
   registerSelectionProvider(selectionProvider: InstanceWrapper): void {
     this.selectionProviders.add(selectionProvider);
+  }
+
+  registerDashboardWidgetDataProvider(provider: InstanceWrapper): void {
+    this.dashboardWidgetDataProviders.add(provider);
   }
 
   registerComputedFieldProvider(computedFieldProvider: InstanceWrapper): void {
@@ -222,6 +227,10 @@ export class SolidRegistry {
     return Array.from(this.selectionProviders);
   }
 
+  getDashboardWidgetDataProviders(): Array<InstanceWrapper> {
+    return Array.from(this.dashboardWidgetDataProviders);
+  }
+
   getSelectionProviderInstance<T extends ISelectionProviderContext>(name: string): ISelectionProvider<T> {
     const selectionProviders = this.getSelectionProviders();
 
@@ -231,6 +240,17 @@ export class SolidRegistry {
         return selectionProvider.instance;
       }
     }
+  }
+
+  getDashboardWidgetDataProviderInstance(name: string): IDashboardWidgetDataProvider | undefined {
+    const providers = this.getDashboardWidgetDataProviders();
+    for (let i = 0; i < providers.length; i++) {
+      const provider = providers[i];
+      if (provider?.instance?.name?.() === name || provider?.name === name) {
+        return provider.instance as IDashboardWidgetDataProvider;
+      }
+    }
+    return undefined;
   }
 
   getErrorCodeProviders(): Array<InstanceWrapper> {

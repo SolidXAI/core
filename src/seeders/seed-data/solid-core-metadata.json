@@ -1230,6 +1230,92 @@
         ]
       },
       {
+        "singularName": "dashboardUserLayout",
+        "pluralName": "dashboardUserLayouts",
+        "displayName": "Dashboard User Layout",
+        "description": "Stores per-user dashboard layout overrides.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_dashboard_user_layout",
+        "userKeyFieldUserKey": "dashboardName",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "user",
+            "displayName": "User",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "user",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "isSystem": true
+          },
+          {
+            "name": "dashboardName",
+            "displayName": "Dashboard Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "columnName": "dashboard_name",
+            "isSystem": true
+          },
+          {
+            "name": "layoutJson",
+            "displayName": "Layout Json",
+            "type": "longText",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "layout_json",
+            "isSystem": true
+          },
+          {
+            "name": "version",
+            "displayName": "Version",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "defaultValue": "1",
+            "isSystem": true
+          }
+        ]
+      },
+      {
         "singularName": "actionMetadata",
         "tableName": "ss_action_metadata",
         "pluralName": "actionMetadatas",
@@ -6052,6 +6138,45 @@
       "viewUserKey": "mcpAuditLog-form-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "mcpAuditLog"
+    },
+    {
+      "displayName": "Queue Health",
+      "name": "solid-core-queue-health-dashboard-view",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/dashboard/queue-health",
+      "customIsModal": false,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessage"
+    },
+    {
+      "displayName": "Dashboard User Layout List Action",
+      "name": "dashboardUserLayout-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboardUserLayout-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardUserLayout"
+    },
+    {
+      "displayName": "Dashboard User Layout Tree View Action",
+      "name": "dashboardUserLayout-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboardUserLayout-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardUserLayout"
     }
   ],
   "menus": [
@@ -6383,6 +6508,23 @@
       "actionUserKey": "mcpAuditLog-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item"
+    },
+    {
+      "displayName": "Queue Health",
+      "name": "solid-core-queue-health-dashboard-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "solid-core-queue-health-dashboard-view",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "queues-menu-item"
+    },
+    {
+      "displayName": "Dashboard User Layout",
+      "name": "dashboardUserLayout-menu-item",
+      "sequenceNumber": 42,
+      "actionUserKey": "dashboardUserLayout-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "",
+      "iconName": ""
     }
   ],
   "views": [
@@ -13131,6 +13273,111 @@
           }
         ]
       }
+    },
+    {
+      "name": "dashboardUserLayout-list-view",
+      "displayName": "Dashboard User Layout",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardUserLayout",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardUserLayout-tree-view",
+      "displayName": "Dashboard User Layout",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardUserLayout",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardUserLayout-form-view",
+      "displayName": "Dashboard User Layout",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardUserLayout",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Dashboard User Layout",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": []
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "emailTemplates": [
@@ -13268,5 +13515,380 @@
       }
     }
   ],
-  "modelSequences": []
+  "modelSequences": [],
+  "dashboards": [
+    {
+      "dashboardSchemaVersion": 1,
+      "name": "queue-health",
+      "displayName": "Queue Health Dashboard",
+      "description": "Operational visibility for MQ queues and messages.",
+      "routeName": "queue-health",
+      "routePath": "/admin/dashboard/queue-health",
+      "moduleUserKey": "solid-core",
+      "permissions": [
+        "DashboardController.getDefinition",
+        "DashboardController.getVariableOptions",
+        "DashboardController.getWidgetData",
+        "DashboardController.getDashboardData",
+        "DashboardController.getLayout",
+        "DashboardController.saveLayout"
+      ],
+      "variables": [
+        {
+          "name": "date",
+          "label": "Created At",
+          "type": "date",
+          "required": true,
+          "defaultValue": {
+            "preset": "last_7_days"
+          }
+        },
+        {
+          "name": "queueName",
+          "label": "Queue",
+          "type": "selectionDynamic",
+          "required": false,
+          "isMultiSelect": false,
+          "selectionConfig": {
+            "providerName": "MqDashboardQueueNameVariableOptionsProvider",
+            "providerContext": {
+              "labelField": "name",
+              "valueField": "name"
+            }
+          }
+        },
+        {
+          "name": "stage",
+          "label": "Stage",
+          "type": "selectionStatic",
+          "required": false,
+          "isMultiSelect": true,
+          "selectionStaticValues": [
+            "pending:Pending",
+            "scheduled:Scheduled",
+            "started:Started",
+            "retry:Retry",
+            "retrying:Retrying",
+            "failed:Failed",
+            "succeeded:Succeeded"
+          ]
+        },
+        {
+          "name": "messageBroker",
+          "label": "Message Broker",
+          "type": "selectionDynamic",
+          "required": false,
+          "isMultiSelect": false,
+          "selectionConfig": {
+            "providerName": "MqDashboardMessageBrokerVariableOptionsProvider",
+            "providerContext": {
+              "labelField": "messageBroker",
+              "valueField": "messageBroker"
+            }
+          }
+        }
+      ],
+      "widgets": [
+        {
+          "id": "kpi-total-messages",
+          "name": "Total Messages",
+          "type": "kpi",
+          "dataProvider": "MqDashboardTotalMessagesKpiProvider",
+          "providerContext": {
+            "metric": "count_total_messages"
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 60
+          }
+        },
+        {
+          "id": "kpi-succeeded-messages",
+          "name": "Succeeded",
+          "type": "kpi",
+          "dataProvider": "MqDashboardSucceededMessagesKpiProvider",
+          "providerContext": {
+            "metric": "count_succeeded_messages"
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 60
+          }
+        },
+        {
+          "id": "kpi-failed-messages",
+          "name": "Failed",
+          "type": "kpi",
+          "dataProvider": "MqDashboardFailedMessagesKpiProvider",
+          "providerContext": {
+            "metric": "count_failed_messages"
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 60
+          }
+        },
+        {
+          "id": "kpi-in-flight-messages",
+          "name": "In Flight",
+          "type": "kpi",
+          "dataProvider": "MqDashboardInflightMessagesKpiProvider",
+          "providerContext": {
+            "metric": "count_inflight_messages"
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 60
+          }
+        },
+        {
+          "id": "kpi-success-rate",
+          "name": "Success Rate",
+          "type": "kpi",
+          "dataProvider": "MqDashboardSuccessRateKpiProvider",
+          "providerContext": {
+            "metric": "success_rate_percentage"
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 60
+          }
+        },
+        {
+          "id": "kpi-avg-elapsed-ms",
+          "name": "Avg Elapsed (ms)",
+          "type": "kpi",
+          "dataProvider": "MqDashboardAvgElapsedKpiProvider",
+          "providerContext": {
+            "metric": "average_elapsed_millis"
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 60
+          }
+        },
+        {
+          "id": "chart-messages-over-time",
+          "name": "Messages Over Time",
+          "type": "lineChart",
+          "dataProvider": "MqDashboardMessagesOverTimeProvider",
+          "providerContext": {
+            "timeField": "createdAt",
+            "bucket": "hour",
+            "series": [
+              "total",
+              "succeeded",
+              "failed",
+              "retrying"
+            ]
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 120
+          }
+        },
+        {
+          "id": "chart-stage-distribution",
+          "name": "Stage Distribution",
+          "type": "pieChart",
+          "dataProvider": "MqDashboardStageDistributionProvider",
+          "providerContext": {
+            "groupBy": "stage",
+            "metric": "count"
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 120
+          }
+        },
+        {
+          "id": "chart-queue-wise-failures",
+          "name": "Queue-wise Failures",
+          "type": "barChart",
+          "dataProvider": "MqDashboardQueueWiseFailuresProvider",
+          "providerContext": {
+            "groupBy": "mqMessageQueue.name",
+            "metric": "failed_count"
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 120
+          }
+        },
+        {
+          "id": "chart-queue-wise-avg-elapsed",
+          "name": "Queue-wise Avg Processing Time",
+          "type": "barChart",
+          "dataProvider": "MqDashboardQueueWiseAvgElapsedProvider",
+          "providerContext": {
+            "groupBy": "mqMessageQueue.name",
+            "metric": "avg_elapsed_millis"
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 120
+          }
+        },
+        {
+          "id": "chart-processing-latency-trend",
+          "name": "Processing Latency Trend",
+          "type": "lineChart",
+          "dataProvider": "MqDashboardLatencyTrendProvider",
+          "providerContext": {
+            "timeField": "createdAt",
+            "bucket": "hour",
+            "metric": "avg_elapsed_millis"
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 120
+          }
+        },
+        {
+          "id": "table-recent-failures",
+          "name": "Recent Failures",
+          "type": "table",
+          "dataProvider": "MqDashboardRecentFailuresProvider",
+          "providerContext": {
+            "stage": "failed",
+            "sort": {
+              "field": "createdAt",
+              "order": "desc"
+            },
+            "columns": [
+              "id",
+              "messageId",
+              "mqMessageQueue.name",
+              "stage",
+              "retryCount",
+              "elapsedMillis",
+              "startedAt",
+              "finishedAt",
+              "error",
+              "createdAt"
+            ],
+            "errorMaxLength": 160
+          },
+          "refreshPolicy": {
+            "mode": "interval",
+            "intervalSeconds": 60
+          }
+        }
+      ],
+      "defaultLayout": {
+        "engine": "gridstack",
+        "columns": 12,
+        "items": [
+          {
+            "widgetId": "kpi-total-messages",
+            "x": 0,
+            "y": 0,
+            "w": 2,
+            "h": 2,
+            "minW": 2,
+            "minH": 2
+          },
+          {
+            "widgetId": "kpi-succeeded-messages",
+            "x": 2,
+            "y": 0,
+            "w": 2,
+            "h": 2,
+            "minW": 2,
+            "minH": 2
+          },
+          {
+            "widgetId": "kpi-failed-messages",
+            "x": 4,
+            "y": 0,
+            "w": 2,
+            "h": 2,
+            "minW": 2,
+            "minH": 2
+          },
+          {
+            "widgetId": "kpi-in-flight-messages",
+            "x": 6,
+            "y": 0,
+            "w": 2,
+            "h": 2,
+            "minW": 2,
+            "minH": 2
+          },
+          {
+            "widgetId": "kpi-success-rate",
+            "x": 8,
+            "y": 0,
+            "w": 2,
+            "h": 2,
+            "minW": 2,
+            "minH": 2
+          },
+          {
+            "widgetId": "kpi-avg-elapsed-ms",
+            "x": 10,
+            "y": 0,
+            "w": 2,
+            "h": 2,
+            "minW": 2,
+            "minH": 2
+          },
+          {
+            "widgetId": "chart-messages-over-time",
+            "x": 0,
+            "y": 2,
+            "w": 8,
+            "h": 5,
+            "minW": 4,
+            "minH": 4
+          },
+          {
+            "widgetId": "chart-stage-distribution",
+            "x": 8,
+            "y": 2,
+            "w": 4,
+            "h": 5,
+            "minW": 3,
+            "minH": 4
+          },
+          {
+            "widgetId": "chart-queue-wise-failures",
+            "x": 0,
+            "y": 7,
+            "w": 6,
+            "h": 5,
+            "minW": 4,
+            "minH": 4
+          },
+          {
+            "widgetId": "chart-queue-wise-avg-elapsed",
+            "x": 6,
+            "y": 7,
+            "w": 6,
+            "h": 5,
+            "minW": 4,
+            "minH": 4
+          },
+          {
+            "widgetId": "chart-processing-latency-trend",
+            "x": 0,
+            "y": 12,
+            "w": 6,
+            "h": 6,
+            "minW": 4,
+            "minH": 4
+          },
+          {
+            "widgetId": "table-recent-failures",
+            "x": 6,
+            "y": 12,
+            "w": 6,
+            "h": 6,
+            "minW": 4,
+            "minH": 4
+          }
+        ]
+      }
+    }
+  ]
 }

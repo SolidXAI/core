@@ -14,6 +14,7 @@ import { MulterModule } from "@nestjs/platform-express";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { RemoveFieldsCommand } from "./commands/remove-fields.command";
 import { FieldMetadataController } from "./controllers/field-metadata.controller";
+import { DashboardController } from "./controllers/dashboard.controller";
 import { MediaStorageProviderMetadataController } from "./controllers/media-storage-provider-metadata.controller";
 import { ModelMetadataController } from "./controllers/model-metadata.controller";
 import { ModuleMetadataController } from "./controllers/module-metadata.controller";
@@ -27,11 +28,14 @@ import { ModuleMetadata } from "./entities/module-metadata.entity";
 import { CommandService } from "./helpers/command.service";
 import { SchematicService } from "./helpers/schematic.service";
 import { ListOfValuesSelectionProvider } from "./services/selection-providers/list-of-values-selection-providers.service";
+import { MqDashboardMessageBrokerVariableOptionsProvider } from "./services/selection-providers/mq-dashboard-message-broker-variable-options-provider.service";
+import { MqDashboardQueueNameVariableOptionsProvider } from "./services/selection-providers/mq-dashboard-queue-name-variable-options-provider.service";
 import { PseudoForeignKeySelectionProvider } from "./services/selection-providers/pseudo-foreign-key-selection-provider.service";
 import { ModuleMetadataSeederService } from "./seeders/module-metadata-seeder.service";
 import { ModuleTestDataService } from "./seeders/module-test-data.service";
 import { CrudHelperService } from "./services/crud-helper.service";
 import { FieldMetadataService } from "./services/field-metadata.service";
+import { DashboardRuntimeService } from "./services/dashboard-runtime.service";
 import { ListOfValuesService } from "./services/list-of-values.service";
 // import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from "./services/media-storage-provider-metadata.service";
@@ -303,6 +307,18 @@ import { ChatterMessageService } from './services/chatter-message.service';
 import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
 import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
 import { ConcatEntityComputedFieldProvider } from './services/computed-fields/entity/concat-entity-computed-field-provider.service';
+import { MqDashboardFailedMessagesKpiProvider } from './services/dashboard-providers/mq-dashboard-failed-messages-kpi-provider.service';
+import { MqDashboardInflightMessagesKpiProvider } from './services/dashboard-providers/mq-dashboard-inflight-messages-kpi-provider.service';
+import { MqDashboardLatencyTrendProvider } from './services/dashboard-providers/mq-dashboard-latency-trend-provider.service';
+import { MqDashboardMessagesOverTimeProvider } from './services/dashboard-providers/mq-dashboard-messages-over-time-provider.service';
+import { MqDashboardQueueWiseAvgElapsedProvider } from './services/dashboard-providers/mq-dashboard-queue-wise-avg-elapsed-provider.service';
+import { MqDashboardQueueWiseFailuresProvider } from './services/dashboard-providers/mq-dashboard-queue-wise-failures-provider.service';
+import { MqDashboardRecentFailuresProvider } from './services/dashboard-providers/mq-dashboard-recent-failures-provider.service';
+import { MqDashboardStageDistributionProvider } from './services/dashboard-providers/mq-dashboard-stage-distribution-provider.service';
+import { MqDashboardSucceededMessagesKpiProvider } from './services/dashboard-providers/mq-dashboard-succeeded-messages-kpi-provider.service';
+import { MqDashboardSuccessRateKpiProvider } from './services/dashboard-providers/mq-dashboard-success-rate-kpi-provider.service';
+import { MqDashboardTotalMessagesKpiProvider } from './services/dashboard-providers/mq-dashboard-total-messages-kpi-provider.service';
+import { MqDashboardAvgElapsedKpiProvider } from './services/dashboard-providers/mq-dashboard-avg-elapsed-kpi-provider.service';
 import { NoopsEntityComputedFieldProviderService } from './services/computed-fields/entity/noops-entity-computed-field-provider.service';
 import { CRUDService } from './services/crud.service';
 import { CsvService } from './services/csv.service';
@@ -367,6 +383,10 @@ import { SolidMicroserviceAdapter } from './helpers/solid-microservice-adapter.s
 import { InfoCommand } from './commands/info.command';
 import { ListOfRolesSelectionProvider } from './services/selection-providers/list-of-roles-selectionproviders.service';
 import { Entity } from 'typeorm';
+import { DashboardUserLayout } from './entities/dashboard-user-layout.entity';
+import { DashboardUserLayoutService } from './services/dashboard-user-layout.service';
+import { DashboardUserLayoutController } from './controllers/dashboard-user-layout.controller';
+import { DashboardUserLayoutRepository } from './repositories/dashboard-user-layout.repository';
 
 @Global()
 @Module({
@@ -440,6 +460,7 @@ import { Entity } from 'typeorm';
     JwtModule.register({
       global: true,
     }),
+    TypeOrmModule.forFeature([DashboardUserLayout]),
   ],
   controllers: [
     ActionMetadataController,
@@ -451,6 +472,7 @@ import { Entity } from 'typeorm';
     ExportTemplateController,
     ExportTransactionController,
     FieldMetadataController,
+    DashboardController,
     GoogleAuthenticationController,
     FacebookAuthenticationController,
     MicrosoftAuthenticationController,
@@ -487,6 +509,7 @@ import { Entity } from 'typeorm';
     UserViewMetadataController,
     ViewMetadataController,
     ModelSequenceController,
+    DashboardUserLayoutController,
   ],
   providers: [
     {
@@ -514,6 +537,7 @@ import { Entity } from 'typeorm';
     ModelMetadataService,
     ModelMetadataHelperService,
     FieldMetadataService,
+    DashboardRuntimeService,
     RemoveFieldsCommand,
     RefreshModelCommand,
     RefreshModuleCommand,
@@ -535,6 +559,8 @@ import { Entity } from 'typeorm';
     ModuleTestDataService,
     ListOfValuesService,
     ListOfValuesSelectionProvider,
+    MqDashboardQueueNameVariableOptionsProvider,
+    MqDashboardMessageBrokerVariableOptionsProvider,
     PseudoForeignKeySelectionProvider,
     ModelMetadataSubscriber,
     ViewMetadataService,
@@ -679,6 +705,18 @@ import { Entity } from 'typeorm';
     UserRepository,
     SettingService,
     ConcatComputedFieldProvider,
+    MqDashboardTotalMessagesKpiProvider,
+    MqDashboardSucceededMessagesKpiProvider,
+    MqDashboardFailedMessagesKpiProvider,
+    MqDashboardInflightMessagesKpiProvider,
+    MqDashboardSuccessRateKpiProvider,
+    MqDashboardAvgElapsedKpiProvider,
+    MqDashboardMessagesOverTimeProvider,
+    MqDashboardStageDistributionProvider,
+    MqDashboardQueueWiseFailuresProvider,
+    MqDashboardQueueWiseAvgElapsedProvider,
+    MqDashboardLatencyTrendProvider,
+    MqDashboardRecentFailuresProvider,
     FileStorageProvider,
     FileS3StorageProvider,
     MediaRepository,
@@ -698,6 +736,7 @@ import { Entity } from 'typeorm';
     ExportTransactionService,
     ExcelService,
     CsvService,
+    DashboardRuntimeService,
     ImportTransactionService,
     ImportTransactionErrorLogService,
     CreatedByUpdatedBySubscriber,
@@ -767,6 +806,8 @@ import { Entity } from 'typeorm';
     ImageEncodingService,
     SolidMicroserviceAdapter,
     ListOfRolesSelectionProvider,
+    DashboardUserLayoutService,
+    DashboardUserLayoutRepository,
   ],
   exports: [
     AiInteractionService,

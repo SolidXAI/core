@@ -163,6 +163,39 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
   values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
 }
 
+export interface IDashboardWidgetDataProviderContext<TVariables = Record<string, any>, TProviderContext = Record<string, any>> {
+  moduleName: string;
+  dashboardName: string;
+  widgetName: string;
+  variables: TVariables;
+  providerContext: TProviderContext;
+  activeUser?: ActiveUserData;
+}
+
+export interface IDashboardWidgetDataResponseEnvelope<TData = any, TUiHints = Record<string, any>> {
+  meta: {
+    providerName: string;
+    generatedAt: string;
+    widgetName: string;
+    durationMs: number;
+    [key: string]: any;
+  };
+  data: TData;
+  uiHints?: TUiHints;
+}
+
+export interface IDashboardWidgetDataProvider<
+  TContext extends IDashboardWidgetDataProviderContext = IDashboardWidgetDataProviderContext,
+  TResponse = any,
+> {
+  help(): string;
+  name(): string;
+  getData(
+    widgetDefinition: Record<string, any>,
+    ctxt: TContext,
+  ): Promise<IDashboardWidgetDataResponseEnvelope<TResponse> | any>;
+}
+
 export interface IMcpToolResponseHandler {
   apply(aiInteraction: AiInteraction);
 }
