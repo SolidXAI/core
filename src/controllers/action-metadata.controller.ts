@@ -7,7 +7,7 @@ import { UpdateActionMetadataDto } from '../dtos/update-action-metadata.dto';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 
-@ApiTags('App Builder')
+@ApiTags('Solid Core')
 @Controller('action-metadata') //FIXME: Change this to the model plural name 
 export class ActionMetadataController {
   constructor(private readonly service: ActionMetadataService) { }

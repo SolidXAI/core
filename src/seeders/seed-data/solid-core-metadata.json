@@ -1762,6 +1762,19 @@
             "isSystem": true
           },
           {
+            "name": "failedLoginAttempts",
+            "displayName": "Failed Login Attempts",
+            "type": "int",
+            "ormType": "integer",
+            "defaultValue": "0",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
             "name": "profilePicture",
             "displayName": "Profile Picture",
             "type": "mediaSingle",
@@ -5919,6 +5932,214 @@
             "isSystem": true
           }
         ]
+      },
+      {
+        "singularName": "mcpAuditLog",
+        "pluralName": "mcpAuditLogs",
+        "displayName": "MCP Audit Log",
+        "description": "Audit trail of MCP requests handled by the server",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_mcp_audit_log",
+        "isChild": false,
+        "isLegacyTable": true,
+        "isLegacyTableWithId": true,
+        "enableAuditTracking": false,
+        "enableSoftDelete": false,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "isSystem": true,
+        "userKeyFieldUserKey": "id",
+        "fields": [
+          {
+            "name": "userId",
+            "displayName": "User ID",
+            "type": "int",
+            "columnName": "user_id",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "apiKeyId",
+            "displayName": "API Key ID",
+            "type": "int",
+            "columnName": "api_key_id",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "username",
+            "displayName": "Username",
+            "type": "shortText",
+            "columnName": "username",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "transport",
+            "displayName": "Transport",
+            "type": "shortText",
+            "columnName": "transport",
+            "length": 32,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "mcpSessionId",
+            "displayName": "MCP Session ID",
+            "type": "shortText",
+            "columnName": "mcp_session_id",
+            "length": 64,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "clientAddr",
+            "displayName": "Client Address",
+            "type": "shortText",
+            "columnName": "client_addr",
+            "length": 64,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "method",
+            "displayName": "Method",
+            "type": "shortText",
+            "columnName": "method",
+            "length": 64,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "requestId",
+            "displayName": "Request ID",
+            "type": "shortText",
+            "columnName": "request_id",
+            "length": 64,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "toolName",
+            "displayName": "Tool Name",
+            "type": "shortText",
+            "columnName": "tool_name",
+            "length": 128,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "requestParams",
+            "displayName": "Request Params",
+            "type": "longText",
+            "columnName": "request_params",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "type": "shortText",
+            "columnName": "status",
+            "length": 16,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "responseResult",
+            "displayName": "Response Result",
+            "type": "longText",
+            "columnName": "response_result",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "errorCode",
+            "displayName": "Error Code",
+            "type": "int",
+            "columnName": "error_code",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "errorMessage",
+            "displayName": "Error Message",
+            "type": "longText",
+            "columnName": "error_message",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "durationMs",
+            "displayName": "Duration (ms)",
+            "type": "decimal",
+            "columnName": "duration_ms",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
       }
     ]
   },
@@ -5970,6 +6191,7 @@
         "ChatterMessageController.postMessage",
         "ChatterMessageController.findMany",
         "ChatterMessageController.markCompleted",
+        "ChatterMessageController.updateCustomNoteMessage",
         "ImportTransactionController.getImportTemplate",
         "ImportTransactionController.getImportInstructions",
         "ImportTransactionController.getImportMappingInfo",
@@ -5985,6 +6207,8 @@
         "AgentSessionController.findOne",
         "AgentEventController.findMany",
         "AgentEventController.findOne",
+        "McpAuditLogController.findMany",
+        "McpAuditLogController.findOne",
         "mcp:invoke",
         "agent:invoke"
       ]
@@ -6594,6 +6818,32 @@
       "viewUserKey": "agentEvent-form-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "agentEvent"
+    },
+    {
+      "displayName": "MCP Audit Log List Action",
+      "name": "mcpAuditLog-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "mcpAuditLog-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mcpAuditLog"
+    },
+    {
+      "displayName": "MCP Audit Log Form Action",
+      "name": "mcpAuditLog-form-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "mcpAuditLog-form-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mcpAuditLog"
     }
   ],
   "menus": [
@@ -6948,6 +7198,14 @@
       "name": "agentEvent-menu-item",
       "sequenceNumber": 2,
       "actionUserKey": "agentEvent-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "agent-menu-item"
+    },
+    {
+      "displayName": "MCP Audit Log",
+      "name": "mcpAuditLog-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "mcpAuditLog-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item"
     }
@@ -9841,6 +10099,14 @@
               "name": "active",
               "isSearchable": true
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "label" : "Blocked / Unblocked",
+              "name": "failedLoginAttempts",
+              "viewWidget": "SolidUserBlockedStatusListWidget"
+            }
           }
         ]
       }
@@ -11552,7 +11818,7 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": false
+          "delete": true
         },
         "children": [
           {
@@ -11570,7 +11836,18 @@
               "name": "name",
               "label": "Name",
               "sortable": true,
-              "filterable": true
+              "filterable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "label": "Description",
+              "sortable": true,
+              "filterable": true,
+              "isSearchable": true
             }
           }
         ]
@@ -13723,34 +14000,16 @@
                 "children": [
                   {
                     "type": "column",
-                    "attrs": { "name": "col-1", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "attrs": { "name": "col-1", "label": "", "className": "col-12" },
                     "children": [
                       { "type": "field", "attrs": { "name": "sessionId" } },
                       { "type": "field", "attrs": { "name": "modelName" } },
                       { "type": "field", "attrs": { "name": "status" } },
-                      { "type": "field", "attrs": { "name": "projectRoot" } }
-                    ]
-                  },
-                  {
-                    "type": "column",
-                    "attrs": { "name": "col-2", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
-                    "children": [
+                      { "type": "field", "attrs": { "name": "projectRoot" } },
                       { "type": "field", "attrs": { "name": "totalSteps" } },
                       { "type": "field", "attrs": { "name": "totalCost" } },
                       { "type": "field", "attrs": { "name": "totalInputTokens" } },
-                      { "type": "field", "attrs": { "name": "totalOutputTokens" } }
-                    ]
-                  }
-                ]
-              },
-              {
-                "type": "row",
-                "attrs": { "name": "row-2" },
-                "children": [
-                  {
-                    "type": "column",
-                    "attrs": { "name": "col-summary", "label": "", "className": "col-12" },
-                    "children": [
+                      { "type": "field", "attrs": { "name": "totalOutputTokens" } },
                       { "type": "field", "attrs": { "name": "summary" } }
                     ]
                   }
@@ -13814,46 +14073,244 @@
             "attrs": { "name": "sheet-1" },
             "children": [
               {
-                "type": "row",
-                "attrs": { "name": "row-1" },
+                "type": "notebook",
+                "attrs": { "name": "notebook-1" },
                 "children": [
                   {
-                    "type": "column",
-                    "attrs": { "name": "col-1", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "type": "page",
+                    "attrs": { "name": "page-general", "label": "General" },
                     "children": [
-                      { "type": "field", "attrs": { "name": "sessionId" } },
-                      { "type": "field", "attrs": { "name": "eventType" } },
-                      { "type": "field", "attrs": { "name": "turnNumber" } },
-                      { "type": "field", "attrs": { "name": "stepNumber" } },
-                      { "type": "field", "attrs": { "name": "toolName" } },
-                      { "type": "field", "attrs": { "name": "modelUsed" } }
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-general-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-general-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "sessionId" } },
+                              { "type": "field", "attrs": { "name": "eventType" } },
+                              { "type": "field", "attrs": { "name": "turnNumber" } },
+                              { "type": "field", "attrs": { "name": "stepNumber" } },
+                              { "type": "field", "attrs": { "name": "toolName" } },
+                              { "type": "field", "attrs": { "name": "modelUsed" } },
+                              { "type": "field", "attrs": { "name": "durationMs" } },
+                              { "type": "field", "attrs": { "name": "cost" } },
+                              { "type": "field", "attrs": { "name": "inputTokens" } },
+                              { "type": "field", "attrs": { "name": "outputTokens" } },
+                              { "type": "field", "attrs": { "name": "toolReturncode" } },
+                              { "type": "field", "attrs": { "name": "content" } }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   },
                   {
-                    "type": "column",
-                    "attrs": { "name": "col-2", "label": "", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                    "type": "page",
+                    "attrs": { "name": "page-tool-arguments", "label": "Tool Arguments" },
                     "children": [
-                      { "type": "field", "attrs": { "name": "durationMs" } },
-                      { "type": "field", "attrs": { "name": "cost" } },
-                      { "type": "field", "attrs": { "name": "inputTokens" } },
-                      { "type": "field", "attrs": { "name": "outputTokens" } },
-                      { "type": "field", "attrs": { "name": "toolReturncode" } }
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-tool-arguments-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-tool-arguments-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "toolArguments", "viewWidget": "SolidJsonFormViewWidget" } }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": { "name": "page-tool-output", "label": "Tool Output" },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-tool-output-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-tool-output-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "toolOutput", "viewWidget": "SolidJsonFormViewWidget" } }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": { "name": "page-event-data", "label": "Event Data" },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-event-data-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-event-data-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "eventData", "viewWidget": "SolidJsonFormViewWidget" } }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   }
                 ]
-              },
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "mcpAuditLog-list-view",
+      "displayName": "MCP Audit Logs",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mcpAuditLog",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [10, 25, 50],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          { "type": "field", "attrs": { "name": "id" } },
+          { "type": "field", "attrs": { "name": "createdAt" } },
+          { "type": "field", "attrs": { "name": "method", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "toolName", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "status", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "username", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "userId" } },
+          { "type": "field", "attrs": { "name": "transport", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "mcpSessionId", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "clientAddr", "isSearchable": true } },
+          { "type": "field", "attrs": { "name": "durationMs" } },
+          { "type": "field", "attrs": { "name": "errorCode" } }
+        ]
+      }
+    },
+    {
+      "name": "mcpAuditLog-form-view",
+      "displayName": "MCP Audit Log",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mcpAuditLog",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "MCP Audit Log",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": { "name": "sheet-1" },
+            "children": [
               {
-                "type": "row",
-                "attrs": { "name": "row-2" },
+                "type": "notebook",
+                "attrs": { "name": "notebook-1" },
                 "children": [
                   {
-                    "type": "column",
-                    "attrs": { "name": "col-content", "label": "", "className": "col-12" },
+                    "type": "page",
+                    "attrs": { "name": "page-general", "label": "General" },
                     "children": [
-                      { "type": "field", "attrs": { "name": "content" } },
-                      { "type": "field", "attrs": { "name": "toolArguments", "viewWidget": "SolidJsonFormViewWidget" } },
-                      { "type": "field", "attrs": { "name": "toolOutput", "viewWidget": "SolidJsonFormViewWidget" } },
-                      { "type": "field", "attrs": { "name": "eventData", "viewWidget": "SolidJsonFormViewWidget" } }
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-general-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-general-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "method" } },
+                              { "type": "field", "attrs": { "name": "toolName" } },
+                              { "type": "field", "attrs": { "name": "status" } },
+                              { "type": "field", "attrs": { "name": "transport" } },
+                              { "type": "field", "attrs": { "name": "mcpSessionId" } },
+                              { "type": "field", "attrs": { "name": "requestId" } },
+                              { "type": "field", "attrs": { "name": "userId" } },
+                              { "type": "field", "attrs": { "name": "apiKeyId" } },
+                              { "type": "field", "attrs": { "name": "username" } },
+                              { "type": "field", "attrs": { "name": "clientAddr" } },
+                              { "type": "field", "attrs": { "name": "durationMs" } },
+                              { "type": "field", "attrs": { "name": "errorCode" } }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": { "name": "page-request-params", "label": "Request Params" },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-request-params-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-request-params-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "requestParams", "viewWidget": "SolidJsonFormViewWidget" } }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": { "name": "page-response-result", "label": "Response Result" },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-response-result-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-response-result-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "responseResult", "viewWidget": "SolidJsonFormViewWidget" } }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": { "name": "page-error-message", "label": "Error Message" },
+                    "children": [
+                      {
+                        "type": "row",
+                        "attrs": { "name": "page-error-message-row-1" },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": { "name": "page-error-message-col-1", "label": "", "className": "col-12" },
+                            "children": [
+                              { "type": "field", "attrs": { "name": "errorMessage" } }
+                            ]
+                          }
+                        ]
+                      }
                     ]
                   }
                 ]

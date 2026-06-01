@@ -18,6 +18,10 @@ export class PlaywrightAdapter {
     this.headless = opts?.headless ?? true;
   }
 
+  isHeadless(): boolean {
+    return this.headless;
+  }
+
   async start(): Promise<void> {
     const { chromium } = await import('playwright');
     this.browser = await chromium.launch({ headless: this.headless });

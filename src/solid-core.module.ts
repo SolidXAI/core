@@ -61,6 +61,11 @@ import { MicrosoftAuthenticationController } from "./controllers/microsoft-authe
 import { FacebookOAuthStrategy } from "./passport-strategies/facebook-oauth.strategy";
 import { MicrosoftOAuthStrategy } from "./passport-strategies/microsoft-oauth.strategy";
 
+import { GupshupOtpWhatsappService } from "./services/whatsapp/GupshupOtpWhatsappService";
+import { MetaCloudWhatsappService } from "./services/whatsapp/MetaCloudWhatsappService";
+import { GupshupWebhookController } from "./controllers/gupshup-webhook.controller";
+import { MetaCloudWhatsappWebhookController } from "./controllers/meta-cloud-whatsapp-webhook.controller";
+
 import { HttpModule } from "@nestjs/axios";
 import { JwtModule } from "@nestjs/jwt";
 import { SeedCommand } from "./commands/seed.command";
@@ -429,6 +434,7 @@ import { Entity } from "typeorm";
       ScheduledJob,
       AgentSession,
       AgentEvent,
+      McpAuditLog,
       SecurityRule,
       Setting,
       SmsTemplate,
@@ -500,6 +506,8 @@ import { Entity } from "typeorm";
     ModuleMetadataController,
     MqMessageController,
     MqMessageQueueController,
+    GupshupWebhookController,
+    MetaCloudWhatsappWebhookController,
     OTPAuthenticationController,
     PermissionMetadataController,
     RoleMetadataController,
@@ -507,6 +515,7 @@ import { Entity } from "typeorm";
     ScheduledJobController,
     AgentSessionController,
     AgentEventController,
+    McpAuditLogController,
     SecurityRuleController,
     ServiceController,
     SettingController,
@@ -596,6 +605,8 @@ import { Entity } from "typeorm";
     Msg91SMSService,
     Msg91OTPService,
     Msg91WhatsappService,
+    MetaCloudWhatsappService,
+    GupshupOtpWhatsappService,
     TwilioSMSService,
     SmsTemplateService,
     EmailTemplateService,
@@ -778,8 +789,10 @@ import { Entity } from "typeorm";
     ScheduledJobRepository,
     AgentSessionRepository,
     AgentEventRepository,
+    McpAuditLogRepository,
     AgentSessionService,
     AgentEventService,
+    McpAuditLogService,
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
     ListOfValuesSubscriber,

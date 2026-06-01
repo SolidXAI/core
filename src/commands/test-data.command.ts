@@ -7,6 +7,7 @@ interface TestDataCommandOptions {
   modulesToTest?: string;
   setup?: boolean;
   teardown?: boolean;
+  unlink?: boolean;
 }
 
 @SubCommand({
@@ -25,17 +26,18 @@ export class TestDataCommand extends CommandRunner {
       const load = Boolean(options?.load);
       const setup = Boolean(options?.setup);
       const teardown = Boolean(options?.teardown);
+      const unlink = Boolean(options?.unlink);
 
-      const selectedModes = [load, setup, teardown].filter(Boolean).length;
+      const selectedModes = [load, setup, teardown, unlink].filter(Boolean).length;
       if (selectedModes > 1) {
-        this.logger.error('Please specify only one of --load, --setup, or --teardown.');
-        console.log('Please specify only one of --load, --setup, or --teardown.');
+        this.logger.error('Please specify only one of --load, --setup, --teardown, or --unlink.');
+        console.log('Please specify only one of --load, --setup, --teardown, or --unlink.');
         return;
       }
 
-      if (!load && !setup && !teardown) {
-        this.logger.error('Please specify one of --load, --setup, or --teardown.');
-        console.log('Please specify one of --load, --setup, or --teardown.');
+      if (!load && !setup && !teardown && !unlink) {
+        this.logger.error('Please specify one of --load, --setup, --teardown, or --unlink.');
+        console.log('Please specify one of --load, --setup, --teardown, or --unlink.');
         return;
       }
 
@@ -63,6 +65,19 @@ export class TestDataCommand extends CommandRunner {
           console.log('Test data setup for all modules.');
         }
         await this.testDataService.setupTestData(modulesToTest ?? undefined);
+        return;
+      }
+
+      if (unlink) {
+        const modulesToTest = options?.modulesToTest ? options.modulesToTest.split(',').map((m) => m.trim()).filter(Boolean) : null;
+        if (modulesToTest?.length) {
+          this.logger.log(`Test data unlink for modules: ${modulesToTest.join(', ')}`);
+          console.log(`Test data unlink for modules: ${modulesToTest.join(', ')}`);
+        } else {
+          this.logger.log('Test data unlink for all modules.');
+          console.log('Test data unlink for all modules.');
+        }
+        await this.testDataService.removeTestData(modulesToTest ?? undefined);
         return;
       }
     } catch (err: any) {
@@ -107,6 +122,14 @@ export class TestDataCommand extends CommandRunner {
   })
   parseModulesToTest(val: string): string {
     return val;
+  }
+
+  @Option({
+    flags: '--unlink',
+    description: 'Delete test data from testing.data sections in reverse order',
+  })
+  parseUnlink(): boolean {
+    return true;
   }
 
 }

@@ -27,6 +27,7 @@ import {
   REMOVE_FIELDS_COMMAND,
   SchematicService
 } from '../helpers/schematic.service';
+import { CommandService } from '../helpers/command.service';
 import { CodeGenerationOptions } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { FieldMetadataService } from './field-metadata.service';
@@ -49,6 +50,7 @@ export class ModelMetadataService {
     private readonly modelMetadataRepo: ModelMetadataRepository,
     private readonly fieldMetadataRepo: FieldMetadataRepository,
     private readonly schematicService: SchematicService,
+    private readonly commandService: CommandService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly crudHelperService: CrudHelperService,
@@ -154,7 +156,7 @@ export class ModelMetadataService {
 
         return model
       });
-    } catch (error) {
+    } catch (error: any) {
       // console.error('Transaction failed:', error);
       this.logger.error('Transaction failed:', error);
       throw error;
@@ -189,7 +191,7 @@ export class ModelMetadataService {
 
         // return model
       });
-    } catch (error) {
+    } catch (error: any) {
       // console.error('Transaction failed:', error);
       this.logger.error('Transaction failed:', error);
       throw error;
@@ -309,7 +311,7 @@ export class ModelMetadataService {
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
       throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
@@ -490,7 +492,7 @@ export class ModelMetadataService {
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
       throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
@@ -524,7 +526,7 @@ export class ModelMetadataService {
       await this.cleanupOnDelete(entity.id);
       const r = await this.modelMetadataRepo.remove(entity);
       return r;
-    } catch (error) {
+    } catch (error: any) {
     }
   }
 
@@ -621,7 +623,7 @@ export class ModelMetadataService {
         try {
           await fs.unlink(fileToDelete);
           this.logger.log(`Deleted file: ${fileToDelete}`);
-        } catch (error) {
+        } catch (error: any) {
           this.logger.error(`Error deleting file: ${fileToDelete}`, error);
         }
       }
@@ -725,7 +727,7 @@ export class ModelMetadataService {
         );
         this.solidTsMorphService.removeModuleMembers(moduleFilePath, removedIdentifiers);
         await this.solidTsMorphService.commit();
-      } catch (error) {
+      } catch (error: any) {
         this.solidTsMorphService.rollback();
         this.logger.error(`Failed to clean up module file for model '${modelEntity.singularName}':`, error);
       }
@@ -733,6 +735,16 @@ export class ModelMetadataService {
 
     // - | Drop database table | Removes the database table from the DB, this is a very risky step. Best to review all relations to other models etc and then do this manually | Manual (X)
 
+  }
+
+  @DisallowInProduction()
+  async generateCodeViaCtl(modelId: number): Promise<string> {
+    const model = await this.findOne(modelId);
+    return this.commandService.executeCommandWithArgs({
+      command: 'npx',
+      args: ['@solixai/solidctl@latest', 'generate', 'model', `--name=${model.singularName}`],
+      cwd: path.join(process.cwd(), '..'),
+    });
   }
 
   @DisallowInProduction()
@@ -789,7 +801,7 @@ export class ModelMetadataService {
         await this.populateVAMConfigInDb(model);
         await this.populateVAMConfigInFile(model);
       });
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('generateVAMConfig Transaction failed:', error);
       throw error;
     }
@@ -816,7 +828,7 @@ export class ModelMetadataService {
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File updation failed for View, action, menus config:', error);
       throw new Error('File updation failed for View, action, menus config'); // Trigger rollback
@@ -826,15 +838,15 @@ export class ModelMetadataService {
   // Populate the View, Actions and Menus in the config file
   private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string; }; }[], treeViewLayoutFields: { type: string; attrs: { name: string; }; }[], metaData: any) {
     const column1Fields = [];
-    const column2Fields = [];
+    // const column2Fields = [];
 
     // Distribute fields between two columns
     for (let i = 0; i < formViewLayoutFields.length; i++) {
-      if (i % 2 === 0) {
-        column1Fields.push(formViewLayoutFields[i]);
-      } else {
-        column2Fields.push(formViewLayoutFields[i]);
-      }
+      // if (i % 2 === 0) {
+      column1Fields.push(formViewLayoutFields[i]);
+      // } else {
+      // column2Fields.push(formViewLayoutFields[i]);
+      // }
     }
     const actionName = `${model.singularName}-list-action`;
     const treeViewActionName = `${model.singularName}-tree-action`;
@@ -842,6 +854,7 @@ export class ModelMetadataService {
     const treeViewName = `${model.singularName}-tree-view`;
     const formViewName = `${model.singularName}-form-view`;
     const menuName = `${model.singularName}-menu-item`;
+    const nextMenuSequenceNumber = (metaData.menus?.length ?? 0) + 1;
 
     const action = {
       displayName: `${model.displayName} List Action`,
@@ -874,7 +887,7 @@ export class ModelMetadataService {
     const menu = {
       displayName: `${model.displayName}`,
       name: menuName,
-      sequenceNumber: 1,
+      sequenceNumber: nextMenuSequenceNumber,
       actionUserKey: actionName,
       moduleUserKey: `${model.module.name}`,
       parentMenuItemUserKey: "",
@@ -955,11 +968,11 @@ export class ModelMetadataService {
                     attrs: { name: "group-1", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
                     children: column1Fields
                   },
-                  {
-                    type: "column",
-                    attrs: { name: "group-2", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
-                    children: column2Fields
-                  }
+                  // {
+                  //   type: "column",
+                  //   attrs: { name: "group-2", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
+                  //   children: column2Fields
+                  // }
                 ]
               },
             ]
@@ -1274,24 +1287,13 @@ export class ModelMetadataService {
     };
     const model = options.modelId ? await this.findOne(options.modelId, query) : await this.findOneByUserKey(options.modelUserKey, query.populate);
 
-    let fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
-
-    // If a list of field ids or field names is passed for refresh, use these fields only
-    if (options.fieldIdsForRefresh && options.fieldIdsForRefresh.length > 0) {
-      fieldsForRefresh = fieldsForRefresh.filter((field) => options.fieldIdsForRefresh.includes(+field.id));
-    } else if (options.fieldNamesForRefresh && options.fieldNamesForRefresh.length > 0) {
-      fieldsForRefresh = fieldsForRefresh.filter((field) => options.fieldNamesForRefresh.includes(field.name));
-    }
-    // const fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
-
     //Execute the schematic command to refresh the model
-    const refreshOuput = await this.executeRefreshModelCommand(model, fieldsForRefresh, options.dryRun);
+    const refreshOuput = await this.executeRefreshModelCommand(model, options.dryRun);
 
     return `${refreshOuput}`;
   }
 
-  private async executeRefreshModelCommand(model: ModelMetadata, fieldsForRefresh: FieldMetadata[], dryRun: boolean = false): Promise<string> {
-    // const fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
+  private async executeRefreshModelCommand(model: ModelMetadata, dryRun: boolean = false): Promise<string> {
     const output = await this.schematicService.executeSchematicCommand(
       REFRESH_MODEL_COMMAND,
       {

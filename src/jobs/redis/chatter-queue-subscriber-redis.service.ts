@@ -33,13 +33,20 @@ export class ChatterQueueSubscriberRedis extends RedisSubscriber<any> {
 
         switch (p.eventType) {
             case 'insert':
-                await this.chatterMessageService.postAuditMessageOnInsert(p.after, { name: p.modelName } as any);
+                await this.chatterMessageService.postAuditMessageOnInsert(p.after, p.modelName, false, p.userId);
                 break;
             case 'update':
-                await this.chatterMessageService.postAuditMessageOnUpdate(p.after, { name: p.modelName } as any, p.before, (p.updatedColumnNames || []).map(n => ({ propertyName: n })));
+                await this.chatterMessageService.postAuditMessageOnUpdate(
+                    p.after,
+                    p.modelName,
+                    p.before,
+                    (p.updatedColumnNames || []).map(n => ({ propertyName: n })),
+                    false,
+                    p.userId,
+                );
                 break;
             case 'delete':
-                await this.chatterMessageService.postAuditMessageOnDelete(p.before, { name: p.modelName } as any, p.before);
+                await this.chatterMessageService.postAuditMessageOnDelete(p.modelName, p.before, false, p.userId);
                 break;
         }
     }

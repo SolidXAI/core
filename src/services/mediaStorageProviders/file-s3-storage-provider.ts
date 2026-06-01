@@ -120,6 +120,18 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         }
     }
 
+    async deleteByMediaRecord(media: Media): Promise<void> {
+        const storageProvider = media?.mediaStorageProviderMetadata;
+        if (!storageProvider) {
+            throw new Error(`mediaStorageProviderMetadata is not populated for media id ${media?.id ?? 'unknown'}`);
+        }
+        if (!storageProvider?.bucketName || !media?.relativeUri) {
+            return;
+        }
+        const region = this.getEffectiveRegion(storageProvider.region);
+        await this.s3FileService.delete(`${storageProvider.bucketName}:${media.relativeUri}`, { region });
+    }
+
     /**
      * Get the effective region to use for S3 operations.
      * Uses the provider-specific region if configured, otherwise falls back to env variable.

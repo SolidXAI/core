@@ -53,7 +53,7 @@ export abstract class RedisSubscriber<T> implements OnModuleInit, OnModuleDestro
                         );
                         return;
                     }
-                } catch (error) {
+                } catch (error: any) {
                     this.logger.error(
                         `Invalid QUEUES_QUEUE_NAME_REGEX_TO_ENABLE regex "${queueNameRegex}". Subscriber for queue ${queueName} will not start.`,
                     );
@@ -95,7 +95,7 @@ export abstract class RedisSubscriber<T> implements OnModuleInit, OnModuleDestro
             let message: QueueMessage<T> = null;
             try {
                 message = JSON.parse(rawMessage) as QueueMessage<T>;
-            } catch (error) {
+            } catch (error: any) {
                 this.logger.error(`RedisSubscriber invalid JSON on channel ${channel}: ${(error as Error).message}`);
                 return;
             }
@@ -106,7 +106,7 @@ export abstract class RedisSubscriber<T> implements OnModuleInit, OnModuleDestro
 
             try {
                 await this.processMessage(message);
-            } catch (error) {
+            } catch (error: any) {
                 await this.handleProcessingError(message, error, channel);
             }
         });
@@ -150,7 +150,7 @@ export abstract class RedisSubscriber<T> implements OnModuleInit, OnModuleDestro
             try {
                 await this.connectAndSubscribe(channel);
                 this.logger.log(`RedisSubscriber reconnected for channel ${channel}`);
-            } catch (err) {
+            } catch (err: any) {
                 this.triggerReconnect(channel, `reconnect failed: ${(err as Error).message}`);
             }
         }, delay);

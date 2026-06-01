@@ -177,7 +177,7 @@ export class User extends CommonEntity {
     @Column({ nullable: true })
     rehashedAt: Date;
 
-    // dont send to client
+    @Expose()
     @Column({ type: "int", default: 0 })
     failedLoginAttempts: number = 0;
 

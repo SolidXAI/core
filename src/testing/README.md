@@ -227,6 +227,37 @@ Options in `with`:
 - `selector` (required)
 - `key` (required)
 
+### **Op: `ui.waitForManual`**
+Description: Pauses a headed Playwright run so a human can interact with the live browser, then resumes when Enter is pressed in the terminal.
+
+Options in `with`:
+- `message` (optional, defaults to a generic instruction)
+- `prompt` (optional, defaults to `Press Enter to continue...`)
+- `waitForSelector` (optional, waits for a visible selector after resume)
+- `waitForUrlEquals` (optional, waits until the current URL exactly matches)
+- `waitForUrlContains` (optional, waits until the current URL contains a substring)
+- `timeoutMs` (optional, timeout for post-resume waits)
+- `bringToFront` (optional, defaults to `true`)
+
+Notes:
+- Requires `--headless false`.
+- Requires an interactive terminal (TTY).
+- Useful for OTP screens or third-party verification challenges that must be completed by a human.
+
+Example:
+```json
+{
+  "then": {
+    "op": "ui.waitForManual",
+    "with": {
+      "message": "Enter the OTP in the browser, then return here to continue.",
+      "waitForSelector": "text=Dashboard",
+      "timeoutMs": 30000
+    }
+  }
+}
+```
+
 ### **Op: `ui.expectVisible`**
 Description: Waits for an element to be visible.
 
@@ -355,6 +386,23 @@ await runFromMetadata({
   ui: { baseUrl: "https://app.example.com", headless: true }
 });
 ```
+
+## CLI Workflows
+Full isolated-database workflow:
+1. `npx @solidxai/solidctl@latest test data --setup`
+2. `npx @solidxai/solidctl@latest seed`
+3. `npx @solidxai/solidctl@latest test data --load`
+4. `npx @solidxai/solidctl@latest test run --module <module-name>`
+5. `npx @solidxai/solidctl@latest test data --teardown`
+
+Lightweight existing-database workflow:
+1. `npx @solidxai/solidctl@latest test data --load`
+2. `npx @solidxai/solidctl@latest test run --module <module-name> --headless false`
+3. `npx @solidxai/solidctl@latest test data --unlink`
+
+`test data --unlink` deletes records declared in `testing.data` in reverse order using each model's actual `userKeyFieldUserKey` value from `testing.data[*].data`. This assumes `testing.data` is authored in dependency order, with parent records appearing before dependent records.
+
+For human-assisted OTP or third-party verification flows, use `ui.waitForManual` in a headed run so the browser remains interactive while the scenario is paused.
 
 ## Add A New Step (SOP)
 1. Create a new `*.step.ts` in the right domain folder.

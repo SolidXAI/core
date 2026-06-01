@@ -22,12 +22,12 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         protected readonly mqMessageQueueService: MqMessageQueueService,
     ) {
         this.url = process.env.QUEUES_RABBIT_MQ_URL;
-        this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
+        this.serviceRole = process.env.QUEUES_SERVICE_ROLE || 'both';
         if (!this.url) {
             this.logger.debug('RabbitMqPublisher url is not defined in the environment variables');
         }
-        if (!this.serviceRole) {
-            this.logger.debug('Queue service Role is not defined in the environment variables');
+        if (!process.env.QUEUES_SERVICE_ROLE) {
+            this.logger.debug('QUEUES_SERVICE_ROLE is not defined. Defaulting RabbitMqPublisher service role to "both".');
         }
         // this.logger.debug(`RabbitMqPublisher instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
     }
@@ -118,7 +118,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         if (this.channel) {
             try {
                 await this.channel.close();
-            } catch (err) {
+            } catch (err: any) {
                 this.logger.warn(
                     `RabbitMqPublisher error closing channel: ${(err as Error).message}`,
                 );
@@ -130,7 +130,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
         if (this.connection) {
             try {
                 await this.connection.close();
-            } catch (err) {
+            } catch (err: any) {
                 this.logger.warn(
                     `RabbitMqPublisher error closing connection: ${(err as Error).message}`,
                 );
@@ -189,7 +189,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
             // }
             // await channel.waitForConfirms();
             // this.logger.debug('RabbitMqPublisher Message published successfully');
-        } catch (err) {
+        } catch (err: any) {
             this.logger.error(`RabbitMqPublisher Message publish failed: ${JSON.stringify(err)}`);
             if (err instanceof Error) {
                 this.logger.error(`RabbitMqPublisher Error stack: ${err.stack}`);
@@ -224,7 +224,7 @@ export abstract class RabbitMqPublisher<T> implements OnModuleDestroy, QueuePubl
                 mqMessageQueueId: mqMessageQueue.id,
             });
         }
-        catch (error) {
+        catch (error: any) {
             this.logger.error(error.message, error.stack);
         }
 

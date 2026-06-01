@@ -1,5 +1,6 @@
 import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
+import { WsAdapter } from '@nestjs/platform-ws';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
@@ -8,7 +9,7 @@ import { existsSync } from 'fs';
 import { resolve } from 'path';
 import { WINSTON_MODULE_NEST_PROVIDER, WinstonModule } from 'nest-winston';
 import { CommandFactory } from 'nest-commander';
-import { WinstonLoggerConfig } from '../winston.logger';
+import { createWinstonLoggerConfig } from '../winston.logger';
 import { WrapResponseInterceptor } from '../interceptors/wrap-response.interceptor';
 import { buildDefaultCorsOptions } from './cors.helper';
 import { buildDefaultSecurityHeaderOptions, buildPermissionsPolicyHeader, PermissionsPolicyConfig } from './security.helper';
@@ -49,6 +50,8 @@ export interface SolidBootstrapOptions {
   swagger?: SolidSwaggerOptions | false;
   /** Permissions-Policy header overrides (merged with defaults). */
   permissionsPolicyOverrides?: Partial<PermissionsPolicyConfig>;
+  /** Show full NestJS init logs during bootstrap (route mapping, module deps, pollers). Defaults to false. */
+  verboseBootstrap?: boolean;
 }
 
 /**
@@ -69,11 +72,12 @@ export async function bootstrapSolidApp(
 ): Promise<void> {
   registerGlobalProcessHandlers();
 
-  const { globalPrefix = 'api', swagger = {}, permissionsPolicyOverrides = {} } = options;
+  const { globalPrefix = 'api', swagger = {}, permissionsPolicyOverrides = {}, verboseBootstrap = false } = options;
 
+  const startTime = Date.now();
   const appModule = await appModuleFactory();
   const app = await NestFactory.create(appModule, {
-    logger: WinstonModule.createLogger(WinstonLoggerConfig),
+    logger: WinstonModule.createLogger({ ...createWinstonLoggerConfig(), level: verboseBootstrap ? 'debug' : 'error' }),
   });
 
   const apiEnabled = parseBooleanEnv('API_ENABLED', true);
@@ -113,9 +117,6 @@ export async function bootstrapSolidApp(
     res.setHeader('Permissions-Policy', buildPermissionsPolicyHeader(permissionsPolicyOverrides));
     next();
   });
-
-  // Winston logger
-  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
 
   const port = process.env.PORT || 3000;
 
@@ -178,7 +179,16 @@ export async function bootstrapSolidApp(
   const types = require('pg').types;
   types.setTypeParser(types.builtins.INT8, (val: string) => parseInt(val));
 
+  app.useWebSocketAdapter(new WsAdapter(app));
+
   await app.listen(port);
+
+  // Wire up Winston as the runtime logger only AFTER listen — this suppresses all
+  // framework init noise (route mapping, module deps, onModuleInit) during boot.
+  app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+
+  const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
+  app.get(WINSTON_MODULE_NEST_PROVIDER).log(`\x1b[32mServer started on port ${port} in ${elapsed}s\x1b[0m`, 'Bootstrap');
 }
 
 // ---- CLI bootstrap ----

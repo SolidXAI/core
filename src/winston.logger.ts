@@ -6,8 +6,8 @@ import { WINSTON_MODULE_PROVIDER } from 'nest-winston';
 import * as winston from 'winston';
 import { Environment } from './decorators/disallow-in-production.decorator';
 
-export const WinstonLoggerConfig = {
-    level: process.env.LOG_LEVEL || (process.env.ENV === Environment.Production ? 'info' : 'debug'),
+export const createWinstonLoggerConfig = () => ({
+    level: process.env.LOG_LEVEL || (process.env.ENV === Environment.Production ? 'warn' : 'info'),
     format: winston.format.combine(
         winston.format.timestamp(),
         winston.format.errors({ stack: true }),
@@ -21,8 +21,6 @@ export const WinstonLoggerConfig = {
     transports: [
         new winston.transports.Console({
             format: winston.format.combine(
-                // winston.format.colorize(),
-                // winston.format.timestamp(),
                 winston.format.printf(({ level, message, timestamp }) => {
                     return `[${timestamp}] ${level.toUpperCase()}: ${message}`;
                 }),
@@ -30,15 +28,15 @@ export const WinstonLoggerConfig = {
         }),
         new winston.transports.File({
             filename: 'logs/application.log',
-            // format: winston.format.json(),
         }),
         new winston.transports.File({
             filename: 'logs/error.log',
             level: 'error',
-            // format: winston.format.json(),
         }),
     ],
-};
+});
+
+export const WinstonLoggerConfig = createWinstonLoggerConfig();
 
 export class WinstonTypeORMLogger implements TypeORMLogger {
     constructor(@Inject(WINSTON_MODULE_PROVIDER) private readonly logger: Logger) { }

@@ -4,6 +4,7 @@ import { spawn } from 'child_process';
 export type CommandWithArgs = {
   command: string;
   args: string[];
+  cwd?: string;
 };
 
 @Injectable()
@@ -43,6 +44,7 @@ export class CommandService {
       const child = spawn(command, spawnArgs, {
         shell: isWindows, // Use shell on Windows to handle .cmd files
         stdio: ['pipe', 'pipe', 'pipe'],
+        cwd: commandWithArgs.cwd,
       });
 
       let stdout = '';
