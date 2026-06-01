@@ -272,29 +272,40 @@ export class AmazonSNSPushNotificationService implements IPushNotification {
   private resolvePlatformApplicationArn(platform: string): string {
     const normalized = (platform || "").trim().toLowerCase();
 
-    if (normalized === "android") {
-      const arn =
-        this.settingService.getConfigValue<SolidCoreSetting>(
-          "awsFcmPlatformArn",
-        );
-      if (!arn) {
-        throw new Error("Missing setting: awsFcmPlatformArn");
+    switch (normalized) {
+      case "android": {
+        const arn =
+          this.settingService.getConfigValue<SolidCoreSetting>(
+            "awsFcmPlatformArn",
+          );
+        if (!arn) {
+          throw new Error("Missing setting: awsFcmPlatformArn");
+        }
+        return arn;
       }
-      return arn;
-    }
 
-    if (normalized === "ios") {
-      const arn =
-        this.settingService.getConfigValue<SolidCoreSetting>(
-          "awsApnsPlatformArn",
-        );
-      if (!arn) {
-        throw new Error("Missing setting: awsApnsPlatformArn");
+      case "ios": {
+        const arn =
+          this.settingService.getConfigValue<SolidCoreSetting>(
+            "awsApnsPlatformArn",
+          );
+        if (!arn) {
+          throw new Error("Missing setting: awsApnsPlatformArn");
+        }
+        return arn;
       }
-      return arn;
-    }
 
-    throw new Error(`Unsupported platform: ${platform}`);
+      case "web":
+      case "windows":
+      case "linux":
+      case "macos":
+        throw new Error(
+          `Push notifications are not configured for platform: ${normalized}`,
+        );
+
+      default:
+        throw new Error(`Invalid platform received: ${platform}`);
+    }
   }
 
   private buildPlatformPayload(
