@@ -1,60 +1,71 @@
-import { CommonEntity } from "src/entities/common.entity"
-import { Entity, Column, Index, JoinTable, ManyToMany, OneToMany, TableInheritance } from "typeorm";
-import { RoleMetadata } from 'src/entities/role-metadata.entity';
-import { UserViewMetadata } from 'src/entities/user-view-metadata.entity'
-import { UserApiKey } from 'src/entities/user-api-key.entity'
+import { CommonEntity } from "src/entities/common.entity";
+import {
+  Entity,
+  Column,
+  Index,
+  JoinTable,
+  ManyToMany,
+  OneToMany,
+  TableInheritance,
+} from "typeorm";
+import { RoleMetadata } from "src/entities/role-metadata.entity";
+import { UserViewMetadata } from "src/entities/user-view-metadata.entity";
+import { UserApiKey } from "src/entities/user-api-key.entity";
 import { Exclude, Expose } from "class-transformer";
+import { UserDeviceMetadata } from "./user-device-metadata.entity";
 
 @Entity("ss_user")
-@TableInheritance({ column: { type: "varchar", name: "type", default: "User" } })
+@TableInheritance({
+  column: { type: "varchar", name: "type", default: "User" },
+})
 @Exclude()
 export class User extends CommonEntity {
-    @Column({ type: "varchar", nullable: true })
-    @Expose()
-    fullName: string;
+  @Column({ type: "varchar", nullable: true })
+  @Expose()
+  fullName: string;
 
-    @Index({ unique: true })
-    @Column({ type: "varchar" })
-    @Expose()
-    username: string;
+  @Index({ unique: true })
+  @Column({ type: "varchar" })
+  @Expose()
+  username: string;
 
-    @Index()
-    @Column({ type: "varchar", nullable: true })
-    @Expose()
-    email: string;
+  @Index()
+  @Column({ type: "varchar", nullable: true })
+  @Expose()
+  email: string;
 
-    @Index()
-    @Column({ type: "varchar", nullable: true })
-    @Expose()
-    mobile: string;
+  @Index()
+  @Column({ type: "varchar", nullable: true })
+  @Expose()
+  mobile: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    password: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  password: string;
 
-    @Column({ nullable: true, default: true })
-    @Expose()
-    forcePasswordChange: boolean = true;
+  @Column({ nullable: true, default: true })
+  @Expose()
+  forcePasswordChange: boolean = true;
 
-    @Column({ type: "varchar", default: "local" })
-    // don't send to client
-    lastLoginProvider: string = "local";
+  @Column({ type: "varchar", default: "local" })
+  // don't send to client
+  lastLoginProvider: string = "local";
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client (test)
-    accessCode: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client (test)
+  accessCode: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    googleAccessToken: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  googleAccessToken: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    googleId: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  googleId: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    googleProfilePicture: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  googleProfilePicture: string;
 
     @Column({ type: "varchar", nullable: true })
     // don't send to client
@@ -191,5 +202,7 @@ export class User extends CommonEntity {
     @OneToMany(() => UserApiKey, key => key.user)
     @Expose()
     apiKeys: UserApiKey[];
-
+   
+    @OneToMany(() => UserDeviceMetadata, (device) => device.user)
+    devices?: UserDeviceMetadata[];
 }

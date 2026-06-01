@@ -1,25 +1,27 @@
-import { Repository } from 'typeorm';
-import { User } from 'src/entities/user.entity';
-import { CreateUserDto } from 'src/dtos/create-user.dto';
-import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
-import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
-import { SignUpDto } from 'src/dtos/sign-up.dto';
-import { Readable } from 'stream';
-import { CreateMediaStorageProviderMetadataDto } from './dtos/create-media-storage-provider-metadata.dto';
-import { DatasourceType } from './dtos/create-model-metadata.dto';
-import { CreateModuleMetadataDto } from './dtos/create-module-metadata.dto';
-import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
-import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
-import { FieldMetadata } from './entities/field-metadata.entity';
-import { Media } from './entities/media.entity';
-import { DashboardQuestion } from './entities/dashboard-question.entity';
-import { ComputedFieldMetadata } from './helpers/solid-registry';
-import { SqlExpression } from './services/question-data-providers/chartjs-sql-data-provider.service';
-import { CreateDashboardDto } from './dtos/create-dashboard.dto';
-import { AiInteraction } from './entities/ai-interaction.entity';
-import { ActiveUserData } from './interfaces/active-user-data.interface';
-import { SecurityRuleConfig } from './dtos/security-rule-config.dto';
-import { SecurityRule } from './entities/security-rule.entity';
+import { Repository } from "typeorm";
+import { User } from "src/entities/user.entity";
+import { CreateUserDto } from "src/dtos/create-user.dto";
+import { CreateEmailTemplateDto } from "src/dtos/create-email-template.dto";
+import { CreatePushNotificationTemplateDto } from "src/dtos/create-push-notification-template.dto";
+import { CreateSmsTemplateDto } from "src/dtos/create-sms-template.dto";
+import { SignUpDto } from "src/dtos/sign-up.dto";
+import { Readable } from "stream";
+import { CreateMediaStorageProviderMetadataDto } from "./dtos/create-media-storage-provider-metadata.dto";
+import { DatasourceType } from "./dtos/create-model-metadata.dto";
+import { CreateModuleMetadataDto } from "./dtos/create-module-metadata.dto";
+import { CreateRoleMetadataDto } from "./dtos/create-role-metadata.dto";
+import { CreateSecurityRuleDto } from "./dtos/create-security-rule.dto";
+import { FieldMetadata } from "./entities/field-metadata.entity";
+import { Media } from "./entities/media.entity";
+import { DashboardQuestion } from "./entities/dashboard-question.entity";
+import { ComputedFieldMetadata } from "./helpers/solid-registry";
+import { SqlExpression } from "./services/question-data-providers/chartjs-sql-data-provider.service";
+import { CreateDashboardDto } from "./dtos/create-dashboard.dto";
+import { AiInteraction } from "./entities/ai-interaction.entity";
+import { ActiveUserData } from "./interfaces/active-user-data.interface";
+import { SecurityRuleConfig } from "./dtos/security-rule-config.dto";
+import { SecurityRule } from "./entities/security-rule.entity";
+import { PublishCommandOutput } from "@aws-sdk/client-sns";
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -40,45 +42,54 @@ export interface ValidationError {
 
 // export interface MediaStorage
 export interface MediaStorageProvider<T> {
-  store(files: Express.Multer.File[], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
+  store(
+    files: Express.Multer.File[],
+    entity: T,
+    mediaFieldMetadata: FieldMetadata,
+  ): Promise<Media[]>;
   delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void>;
   deleteByMediaRecord(media: Media): Promise<void>;
   retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
-  storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
+  storeStreams(
+    streamPairs: [Readable, string][],
+    entity: T,
+    mediaFieldMetadata: FieldMetadata,
+  ): Promise<Media[]>;
   // delete(file: string): Promise<void>;
 }
 
 export interface ModuleMetadataConfiguration {
-  moduleMetadata?: CreateModuleMetadataDto,
-  roles?: CreateRoleMetadataDto[],
-  users?: SignUpDto[],
-  actions?: any[],
-  menus?: any[],
-  views?: any[],
-  emailTemplates?: CreateEmailTemplateDto[],
-  smsTemplates?: CreateSmsTemplateDto[],
-  mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[]
-  securityRules?: CreateSecurityRuleDto[],
-  dashboards?: CreateDashboardDto[],
+  moduleMetadata?: CreateModuleMetadataDto;
+  roles?: CreateRoleMetadataDto[];
+  users?: SignUpDto[];
+  actions?: any[];
+  menus?: any[];
+  views?: any[];
+  emailTemplates?: CreateEmailTemplateDto[];
+  smsTemplates?: CreateSmsTemplateDto[];
+  pushNotificationTemplates?: CreatePushNotificationTemplateDto[];
+  mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[];
+  securityRules?: CreateSecurityRuleDto[];
+  dashboards?: CreateDashboardDto[];
 }
 
 export enum SettingLevel {
-  SystemEnv = 'system-env',
-  SystemAdminReadonly = 'system-admin-readonly',
-  SystemAdminEditable = 'system-admin-editable',
-  InternalUser = "internal-user"
+  SystemEnv = "system-env",
+  SystemAdminReadonly = "system-admin-readonly",
+  SystemAdminEditable = "system-admin-editable",
+  InternalUser = "internal-user",
 }
 
 export type SettingControlType =
-  | 'shortText'
-  | 'longText'
-  | 'numeric'
-  | 'boolean'
-  | 'date'
-  | 'datetime'
-  | 'mediaSingle'
-  | 'selectionStatic'
-  | 'custom';
+  | "shortText"
+  | "longText"
+  | "numeric"
+  | "boolean"
+  | "date"
+  | "datetime"
+  | "mediaSingle"
+  | "selectionStatic"
+  | "custom";
 
 export interface SettingOption {
   label: string;
@@ -166,25 +177,29 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
   values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
 }
 
-export interface IDashboardVariableSelectionProvider<T extends ISelectionProviderContext> extends ISelectionProvider<T> {
-}
+export interface IDashboardVariableSelectionProvider<
+  T extends ISelectionProviderContext,
+> extends ISelectionProvider<T> {}
 
 export interface IMcpToolResponseHandler {
   apply(aiInteraction: AiInteraction);
 }
 
 export interface QuestionSqlDataProviderContext {
-    // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
-    // questionId: number;
-    // question: Question;
-    expressions?: SqlExpression[]
+  // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
+  // questionId: number;
+  // question: Question;
+  expressions?: SqlExpression[];
 }
 export interface IDashboardQuestionDataProvider<TContext, TData> {
   help(): string;
 
   name(): string;
 
-  getData(question: DashboardQuestion, ctxt?: TContext): Promise<TData[] | TData>;
+  getData(
+    question: DashboardQuestion,
+    ctxt?: TContext,
+  ): Promise<TData[] | TData>;
 }
 
 /**
@@ -206,12 +221,25 @@ export interface IEntityComputedFieldProvider {
   name(): string;
 }
 
-export interface IEntityPreComputeFieldProvider<TTriggerEntity, TContext, TValue = void> extends IEntityComputedFieldProvider {
-  preComputeValue(triggerEntity: TTriggerEntity, computedFieldMetadata: ComputedFieldMetadata<TContext>): Promise<TValue>;
+export interface IEntityPreComputeFieldProvider<
+  TTriggerEntity,
+  TContext,
+  TValue = void,
+> extends IEntityComputedFieldProvider {
+  preComputeValue(
+    triggerEntity: TTriggerEntity,
+    computedFieldMetadata: ComputedFieldMetadata<TContext>,
+  ): Promise<TValue>;
 }
 
-export interface IEntityPostComputeFieldProvider<TTriggerEntity, TContext> extends IEntityComputedFieldProvider {
-  postComputeAndSaveValue(triggerEntity: TTriggerEntity, computedFieldMetadata: ComputedFieldMetadata<TContext>): Promise<void>;
+export interface IEntityPostComputeFieldProvider<
+  TTriggerEntity,
+  TContext,
+> extends IEntityComputedFieldProvider {
+  postComputeAndSaveValue(
+    triggerEntity: TTriggerEntity,
+    computedFieldMetadata: ComputedFieldMetadata<TContext>,
+  ): Promise<void>;
 }
 
 export interface ISolidDatabaseModule {
@@ -221,17 +249,20 @@ export interface ISolidDatabaseModule {
 }
 
 export enum EventType {
-  USER_REGISTERED = 'user.registered',
+  USER_REGISTERED = "user.registered",
 }
 
 export class EventDetails<T> {
   constructor(
     public type: any,
     public payload: T,
-  ) { }
+  ) {}
 }
 
-export interface IExtensionUserCreationProvider<T extends User = User, TDto extends CreateUserDto = CreateUserDto> {
+export interface IExtensionUserCreationProvider<
+  T extends User = User,
+  TDto extends CreateUserDto = CreateUserDto,
+> {
   readonly repo: Repository<T>;
   buildExtensionEntity(dto: TDto): Promise<T>;
   roles(dto: TDto): string[];
@@ -284,8 +315,54 @@ export interface IWhatsAppTransport {
     templateId: string,
     parameters: any,
     parentEntity?: any,
-    parentEntityId?: any
+    parentEntityId?: any,
   ): Promise<any>;
+}
+
+export interface IPushNotification {
+  sendPushNotification(
+    endpointArn: string,
+    payload: PushNotificationPayload,
+    shouldQueuePush?: boolean,
+  ): Promise<PublishCommandOutput | string>;
+
+  sendPushNotificationUsingTemplate(
+    endpointArn: string,
+    templateName: string,
+    templateParams: any,
+    shouldQueuePush?: boolean,
+  ): Promise<PublishCommandOutput | string>;
+
+  sendPushNotificationSynchronously(
+    message: PushNotificationQueuePayload,
+  ): Promise<PublishCommandOutput>;
+
+  registerDevice(payload: RegisterDevicePayload): Promise<string>;
+
+  unregisterDevice(userId: number, deviceId: string): Promise<void>;
+}
+
+export interface PushNotificationQueuePayload {
+  endpointArn: string;
+  payload: PushNotificationPayload;
+}
+
+export interface PushNotificationPayload {
+  title: string;
+  body: string;
+  data?: Record<string, string>;
+}
+
+export interface RegisterDevicePayload {
+  userId: number;
+  deviceId: string;
+  deviceToken: string;
+  platform: string;
+  deviceName?: string;
+  deviceType?: string;
+  osName?: string;
+  osVersion?: string;
+  appVersion?: string;
 }
 
 export interface MailAttachmentWrapper {
@@ -299,13 +376,13 @@ export interface MailAttachment {
   templateParams?: any; // deprecated
   content?: string | Buffer;
   contentType?: string;
-  path?: string; //Filesystem absolute path or URL. 
+  path?: string; //Filesystem absolute path or URL.
 }
 
 export enum BrokerType {
-  RabbitMQ = 'rabbitmq',
-  Database = 'database',
-  Redis = 'redis',
+  RabbitMQ = "rabbitmq",
+  Database = "database",
+  Redis = "redis",
 }
 
 export interface QueuesModuleOptions {
@@ -319,7 +396,6 @@ export interface QueuesModuleOptions {
 export type MediaWithFullUrl = Media & {
   _full_url: string;
 };
-
 
 export type ErrorCode = string;
 
@@ -358,47 +434,54 @@ export interface IErrorCodeProvider {
 
 // MCP Tool Related
 
-export type PlanStep = CreateNewFileStep | RegisterNestProviderStep | AddMethodToExistingClassStep | RegisterSolidXExtensionComponentStep | AddListViewButtonStep | AddFormViewButtonStep | AddImportStep;
+export type PlanStep =
+  | CreateNewFileStep
+  | RegisterNestProviderStep
+  | AddMethodToExistingClassStep
+  | RegisterSolidXExtensionComponentStep
+  | AddListViewButtonStep
+  | AddFormViewButtonStep
+  | AddImportStep;
 export interface AddImportStep {
   type: "addImport";
-  path: string;                 // e.g. apps/api/src/address-master/services/address-master.service.ts
-  importStatement: string;      // e.g. import { Something } from 'somewhere';
-  overwrite?: boolean;        // default=false
-  rationale?: string;           // optional, ignored by executor
+  path: string; // e.g. apps/api/src/address-master/services/address-master.service.ts
+  importStatement: string; // e.g. import { Something } from 'somewhere';
+  overwrite?: boolean; // default=false
+  rationale?: string; // optional, ignored by executor
 }
 
 export interface CreateNewFileStep {
   type: "createNewFile";
-  path: string;         // repo-relative e.g. solid-api/api/src/computed-providers/foo.provider.ts
-  content: string;      // full file content
-  overwrite?: boolean;  // default=false
-  rationale?: string;   // optional, ignored by executor
+  path: string; // repo-relative e.g. solid-api/api/src/computed-providers/foo.provider.ts
+  content: string; // full file content
+  overwrite?: boolean; // default=false
+  rationale?: string; // optional, ignored by executor
 }
 
 export interface RegisterNestProviderStep {
   type: "registerNestProvider";
-  modulePath: string;           // e.g. apps/api/src/address-master/address-master.module.ts
-  providerClassName: string;    // e.g. StateTotalCitiesComputedFieldProvider
-  importFrom: string;           // e.g. "@/computed-providers/state-total-cities.provider"
+  modulePath: string; // e.g. apps/api/src/address-master/address-master.module.ts
+  providerClassName: string; // e.g. StateTotalCitiesComputedFieldProvider
+  importFrom: string; // e.g. "@/computed-providers/state-total-cities.provider"
   registerIn: Array<"providers" | "exports">; // which arrays to add to
-  uniqueGuard?: boolean;        // default=true
-  rationale?: string;           // optional, ignored by executor
+  uniqueGuard?: boolean; // default=true
+  rationale?: string; // optional, ignored by executor
 }
 
 export interface AddMethodToExistingClassStep {
   type: "addMethodToExistingClass";
-  path: string;                 // e.g. apps/api/src/address-master/services/address-master.service.ts
-  className: string             // e.g. CountryService
-  methodName: string            // e.g. addCountry
-  content: string               // Full Method Code
-  importStatements?: string[];  // e.g. [ "import { X } from 'y';" ]
-  rationale?: string;           // optional, ignored by executor
+  path: string; // e.g. apps/api/src/address-master/services/address-master.service.ts
+  className: string; // e.g. CountryService
+  methodName: string; // e.g. addCountry
+  content: string; // Full Method Code
+  importStatements?: string[]; // e.g. [ "import { X } from 'y';" ]
+  rationale?: string; // optional, ignored by executor
 }
 
 export interface RegisterSolidXExtensionComponentStep {
   type: "registerSolidXExtensionComponent";
-  path: string;                 // e.g. apps/api/src/address-master/services/address-master.service.ts
-  content?: string;               // Code
+  path: string; // e.g. apps/api/src/address-master/services/address-master.service.ts
+  content?: string; // Code
   importExtensionComponent?: string;
 }
 
@@ -407,7 +490,7 @@ export interface AddListViewButtonStep {
   moduleName?: string;
   modelName?: string;
   buttonType?: string;
-  content?: string;            // Code
+  content?: string; // Code
 }
 
 export interface AddFormViewButtonStep {
@@ -415,7 +498,7 @@ export interface AddFormViewButtonStep {
   moduleName?: string;
   modelName?: string;
   buttonType?: string;
-  content?: string;            // Code
+  content?: string; // Code
 }
 
 export interface McpComputedProviderResponse {
@@ -424,9 +507,11 @@ export interface McpComputedProviderResponse {
 }
 
 export interface ISecurityRuleConfigProvider {
-  securityRuleConfig(activeUser: ActiveUserData, securityRule: SecurityRule): Promise<SecurityRuleConfig>;
+  securityRuleConfig(
+    activeUser: ActiveUserData,
+    securityRule: SecurityRule,
+  ): Promise<SecurityRuleConfig>;
 }
-
 
 export interface AwsS3Config {
   S3_AWS_ACCESS_KEY: string;
@@ -437,15 +522,15 @@ export interface AwsS3Config {
 // Prevents inference so callers must provide explicit type arguments; reusable for other APIs.
 export type NoInfer<T> = [T][T extends any ? 0 : never];
 
-export type AuditEventType = 'insert' | 'update' | 'delete';
+export type AuditEventType = "insert" | "update" | "delete";
 
 export interface AuditQueuePayload {
-    eventType: AuditEventType;
-    modelName: string;
-    entityId: string | number | null;
-    occurredAt: string;
-    after?: any;
-    before?: any;
-    updatedColumnNames?: string[];
-    userId?: number | null;
+  eventType: AuditEventType;
+  modelName: string;
+  entityId: string | number | null;
+  occurredAt: string;
+  after?: any;
+  before?: any;
+  updatedColumnNames?: string[];
+  userId?: number | null;
 }

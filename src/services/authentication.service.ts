@@ -37,7 +37,7 @@ import { RefreshTokenDto } from "../dtos/refresh-token.dto";
 import { SignInDto } from "../dtos/sign-in.dto";
 import { SignUpDto } from "../dtos/sign-up.dto";
 import { User } from "../entities/user.entity";
-import { EventDetails, EventType } from "../interfaces";
+import { EventDetails, EventType, RegisterDevicePayload } from "../interfaces";
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
 import { HashingService } from "./hashing.service";
 import {
@@ -52,6 +52,8 @@ import { UserService } from "./user.service";
 import { SmsFactory } from "src/factories/sms.factory";
 import { WhatsAppFactory } from "src/factories/whatsapp.factory";
 import { SolidRegistry } from "src/helpers/solid-registry";
+import { PushNotificationFactory } from "src/factories/push-notification.factory";
+import { DeviceMetadataDto } from "src/dtos/device-metadata.dto";
 
 enum LoginProvider {
   LOCAL = "local",
@@ -80,6 +82,7 @@ export class AuthenticationService {
     private readonly mailServiceFactory: MailFactory,
     // private readonly smsService: Msg91OTPService,
     private readonly smsFactory: SmsFactory,
+    private readonly pushNotificationFactory: PushNotificationFactory,
     private readonly whatsAppFactory: WhatsAppFactory,
     private readonly eventEmitter: EventEmitter2,
     private readonly settingService: SettingService,
@@ -852,6 +855,7 @@ export class AuthenticationService {
       ));
 
     const savedUser: User = await this.userRepository.save(user);
+    await this.registerDeviceIfProvided(savedUser.id, confirmSignUpDto);
     this.triggerRegistrationEvent(savedUser);
     return {
       active: savedUser.active,
@@ -992,6 +996,7 @@ export class AuthenticationService {
     await this.resetFailedAttempts(user);
 
     const tokens = await this.generateTokens(user);
+    await this.registerDeviceIfProvided(user.id, signInDto);
 
     await this.userActivityHistoryService.logEvent("login", user);
 
@@ -1294,6 +1299,7 @@ export class AuthenticationService {
     }
 
     await this.clearLoginOtp(user, type);
+    await this.registerDeviceIfProvided(user.id, confirmSignInDto);
     await this.userActivityHistoryService.logEvent("login", user);
     await this.resetFailedAttempts(user);
     return this.buildLoginTokenResponse(user);
@@ -2072,7 +2078,7 @@ export class AuthenticationService {
   //     // Invalidate the refresh token
   //     // await this.refreshTokenIdsStorage.invalidate(user.id);
   // }
-  async logout(refreshToken: string) {
+  async logout(refreshToken: string, deviceId?: string) {
     try {
       // const activeUser = this.requestContextService.getActiveUser();
       // const userId = activeUser?.sub;
@@ -2094,6 +2100,11 @@ export class AuthenticationService {
 
       const userId = payload.sub;
       await this.refreshTokenIdsStorage.invalidate(userId);
+      if (deviceId) {
+        await this.pushNotificationFactory
+          .getPushNotificationService()
+          .unregisterDevice(userId, deviceId);
+      }
       const user = await this.userRepository.findOne({
         where: {
           id: userId,
@@ -2181,6 +2192,29 @@ export class AuthenticationService {
       throw new UnauthorizedException("User not found");
     }
     return { accessToken, refreshToken, user: this.buildUserPayload(user) };
+  }
+
+  private async registerDeviceIfProvided(
+    userId: number,
+    dto: DeviceMetadataDto,
+  ): Promise<void> {
+    if (!dto?.deviceId || !dto?.deviceToken || !dto?.platform) {
+      return;
+    }
+
+    await this.pushNotificationFactory
+      .getPushNotificationService()
+      .registerDevice({
+        userId,
+        deviceId: dto.deviceId,
+        deviceToken: dto.deviceToken,
+        platform: dto.platform,
+        deviceName: dto.deviceName,
+        deviceType: dto.deviceType,
+        osName: dto.osName,
+        osVersion: dto.osVersion,
+        appVersion: dto.appVersion,
+      });
   }
 }
 

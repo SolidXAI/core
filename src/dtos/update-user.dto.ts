@@ -1,8 +1,18 @@
-import { IsInt, IsOptional, IsString, IsNotEmpty, Matches, IsBoolean, IsDate, ValidateNested, IsArray } from 'class-validator';
-import { ApiProperty } from '@nestjs/swagger';
-import { Type } from 'class-transformer';
-import { UpdateRoleMetadataDto } from 'src/dtos/update-role-metadata.dto';
-import { UpdateUserViewMetadataDto } from 'src/dtos/update-user-view-metadata.dto';
+import {
+  IsInt,
+  IsOptional,
+  IsString,
+  IsNotEmpty,
+  Matches,
+  IsBoolean,
+  IsDate,
+  ValidateNested,
+  IsArray,
+} from "class-validator";
+import { ApiProperty } from "@nestjs/swagger";
+import { Type } from "class-transformer";
+import { UpdateRoleMetadataDto } from "src/dtos/update-role-metadata.dto";
+import { UpdateUserViewMetadataDto } from "src/dtos/update-user-view-metadata.dto";
 
 export class UpdateUserDto {
     @IsOptional()
