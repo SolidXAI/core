@@ -6145,7 +6145,7 @@
       "type": "custom",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/dashboard/queue-health",
+      "customComponent": "/admin/core/solid-core/dashboard/queue-health",
       "customIsModal": false,
       "serverEndpoint": "",
       "viewUserKey": "",
@@ -13538,10 +13538,7 @@
           "name": "date",
           "label": "Created At",
           "type": "date",
-          "required": true,
-          "defaultValue": {
-            "preset": "last_7_days"
-          }
+          "required": true
         },
         {
           "name": "queueName",
@@ -13784,108 +13781,84 @@
             "x": 0,
             "y": 0,
             "w": 2,
-            "h": 2,
-            "minW": 2,
-            "minH": 2
-          },
-          {
-            "widgetId": "kpi-succeeded-messages",
-            "x": 2,
-            "y": 0,
-            "w": 2,
-            "h": 2,
-            "minW": 2,
-            "minH": 2
-          },
-          {
-            "widgetId": "kpi-failed-messages",
-            "x": 4,
-            "y": 0,
-            "w": 2,
-            "h": 2,
-            "minW": 2,
-            "minH": 2
+            "h": 2
           },
           {
             "widgetId": "kpi-in-flight-messages",
-            "x": 6,
+            "x": 2,
             "y": 0,
             "w": 2,
-            "h": 2,
-            "minW": 2,
-            "minH": 2
+            "h": 2
+          },
+          {
+            "widgetId": "kpi-succeeded-messages",
+            "x": 4,
+            "y": 0,
+            "w": 2,
+            "h": 2
           },
           {
             "widgetId": "kpi-success-rate",
+            "x": 6,
+            "y": 0,
+            "w": 2,
+            "h": 2
+          },
+          {
+            "widgetId": "kpi-failed-messages",
             "x": 8,
             "y": 0,
             "w": 2,
-            "h": 2,
-            "minW": 2,
-            "minH": 2
+            "h": 2
           },
           {
             "widgetId": "kpi-avg-elapsed-ms",
             "x": 10,
             "y": 0,
             "w": 2,
-            "h": 2,
-            "minW": 2,
-            "minH": 2
-          },
-          {
-            "widgetId": "chart-messages-over-time",
-            "x": 0,
-            "y": 2,
-            "w": 8,
-            "h": 5,
-            "minW": 4,
-            "minH": 4
-          },
-          {
-            "widgetId": "chart-stage-distribution",
-            "x": 8,
-            "y": 2,
-            "w": 4,
-            "h": 5,
-            "minW": 3,
-            "minH": 4
+            "h": 2
           },
           {
             "widgetId": "chart-queue-wise-failures",
             "x": 0,
-            "y": 7,
-            "w": 6,
-            "h": 5,
-            "minW": 4,
-            "minH": 4
+            "y": 2,
+            "w": 4,
+            "h": 4
           },
           {
-            "widgetId": "chart-queue-wise-avg-elapsed",
-            "x": 6,
-            "y": 7,
-            "w": 6,
-            "h": 5,
-            "minW": 4,
-            "minH": 4
+            "widgetId": "chart-messages-over-time",
+            "x": 4,
+            "y": 2,
+            "w": 4,
+            "h": 4
           },
           {
             "widgetId": "chart-processing-latency-trend",
+            "x": 8,
+            "y": 2,
+            "w": 4,
+            "h": 4
+          },
+          {
+            "widgetId": "chart-queue-wise-avg-elapsed",
             "x": 0,
-            "y": 12,
+            "y": 6,
             "w": 6,
-            "h": 6,
-            "minW": 4,
-            "minH": 4
+            "h": 5
+          },
+          {
+            "widgetId": "chart-stage-distribution",
+            "x": 6,
+            "y": 6,
+            "w": 6,
+            "h": 5
           },
           {
             "widgetId": "table-recent-failures",
-            "x": 6,
-            "y": 12,
-            "w": 6,
-            "h": 6,
-            "minW": 4,
-            "minH": 4
+            "x": 0,
+            "y": 11,
+            "w": 12,
+            "h": 4
           }
         ]
       }

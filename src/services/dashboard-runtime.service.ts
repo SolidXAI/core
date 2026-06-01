@@ -145,6 +145,7 @@ export class DashboardRuntimeService {
             this.logger.warn('DashboardUserLayout entity metadata is not registered yet. Returning default layout fallback.');
         }
         const userLayout = this.parseLayoutJson(userLayoutRecord?.layoutJson);
+        const effectiveLayout = this.mergeLayouts(defaultLayout, userLayout);
 
         return {
             moduleName,
@@ -152,7 +153,7 @@ export class DashboardRuntimeService {
             userId,
             defaultLayout,
             userLayout,
-            effectiveLayout: userLayout ?? defaultLayout,
+            effectiveLayout,
             persisted: !!userLayoutRecord,
         };
     }
@@ -365,5 +366,53 @@ export class DashboardRuntimeService {
         if (dto.layoutJson !== undefined) return dto.layoutJson;
         if ((dto as any).layout !== undefined) return (dto as any).layout;
         return dto;
+    }
+
+    private mergeLayouts(defaultLayout: any, userLayout: any): any {
+        if (!defaultLayout && !userLayout) return {};
+        if (!defaultLayout) return userLayout ?? {};
+        if (!userLayout) return defaultLayout ?? {};
+
+        const defaultItems = Array.isArray(defaultLayout?.items) ? defaultLayout.items : [];
+        const userItems = Array.isArray(userLayout?.items) ? userLayout.items : [];
+
+        if (!defaultItems.length) {
+            return {
+                ...defaultLayout,
+                ...userLayout,
+                items: userItems,
+            };
+        }
+
+        const userByWidget = new Map<string, any>();
+        userItems.forEach((item: any) => {
+            const key = item?.widgetId ?? item?.id;
+            if (key) userByWidget.set(key, item);
+        });
+
+        const mergedDefaultItems = defaultItems.map((baseItem: any) => {
+            const key = baseItem?.widgetId ?? baseItem?.id;
+            if (!key) return baseItem;
+            const override = userByWidget.get(key);
+            return override ? { ...baseItem, ...override, widgetId: key } : baseItem;
+        });
+
+        const defaultKeys = new Set(
+            defaultItems
+                .map((item: any) => item?.widgetId ?? item?.id)
+                .filter((value: any) => !!value)
+        );
+
+        const userOnlyItems = userItems.filter((item: any) => {
+            const key = item?.widgetId ?? item?.id;
+            return !!key && !defaultKeys.has(key);
+        });
+
+        return {
+            ...defaultLayout,
+            ...userLayout,
+            columns: userLayout?.columns ?? defaultLayout?.columns ?? 12,
+            items: [...mergedDefaultItems, ...userOnlyItems],
+        };
     }
 }
