@@ -42,6 +42,7 @@ export interface ValidationError {
 export interface MediaStorageProvider<T> {
   store(files: Express.Multer.File[], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
   delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void>;
+  deleteByMediaRecord(media: Media): Promise<void>;
   retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
   storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]>;
   // delete(file: string): Promise<void>;
@@ -448,4 +449,3 @@ export interface AuditQueuePayload {
     updatedColumnNames?: string[];
     userId?: number | null;
 }
-

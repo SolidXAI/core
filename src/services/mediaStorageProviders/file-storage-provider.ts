@@ -110,6 +110,13 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // });
     }
 
+    async deleteByMediaRecord(media: Media): Promise<void> {
+        if (!media?.relativeUri) {
+            return;
+        }
+        await this.fileService.delete(this.getFullFilePath(media.relativeUri));
+    }
+
     private getFullFilePath(fileName: string): string {
         const base = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
             || DEFAULT_MEDIA_FILE_STORAGE_DIR;
