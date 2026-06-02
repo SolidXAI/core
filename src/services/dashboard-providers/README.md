@@ -64,7 +64,8 @@ This is the most common reason for “changes not taking effect”: the running 
 5. Backend runtime service:
 - reads metadata dashboard definition
 - resolves provider per widget from registry
-- executes providers with variables + provider context
+- checks widget permissions for the active user
+- executes providers with variables + provider context only for authorized widgets
 - returns normalized provider envelopes
 
 6. User drag/resize save:
@@ -244,6 +245,37 @@ Typical fields:
 - `items[]` each with:
   - `widgetId`, `x`, `y`, `w`, `h`, optional `minW`, `minH`
 
+### 5.5 Explicit widget permissions
+
+Dashboards use SolidX's existing explicit permission mechanism for widget-level authorization.
+
+Permission format:
+- `dashboard:<dashboard-name>:<widget-pattern>`
+
+Rules:
+- the first segment is always `dashboard`
+- the dashboard name must match exactly
+- the widget segment supports:
+  - exact widget names
+  - `*`
+  - regex-style patterns
+
+Queue-health reference example:
+- `dashboard:queue-health:kpi-.*`
+- `dashboard:queue-health:chart-queue-.*`
+- `dashboard:queue-health:chart-processing-latency-trend`
+
+What this means:
+- all KPI widgets are authorized by `kpi-.*`
+- queue-oriented chart widgets such as `chart-queue-wise-failures`, `chart-queue-wise-avg-elapsed`, and `chart-queue-sla-heatmap` are authorized by `chart-queue-.*`
+- `chart-processing-latency-trend` is authorized explicitly
+- widgets like `chart-stage-distribution`, `chart-messages-over-time`, and `table-recent-failures` remain unauthorized unless extra permissions are granted
+
+Important:
+- dashboard developers must declare these permissions explicitly in module metadata
+- they must then assign them to roles
+- users receive them through standard SolidX RBAC
+
 ---
 
 ## 6. Frontend Architecture (`solid-core-ui`)
@@ -308,7 +340,19 @@ Default registered dashboard widgets:
 - `DefaultDashboardTableWidget`
 - `DefaultDashboardUnknownWidget`
 
-### 6.6 Chart abstraction
+### 6.6 Unauthorized widget rendering
+
+Authorization is enforced on the backend first and reflected in the frontend second.
+
+Current behavior:
+- if the active user lacks widget permission, the backend does not invoke the widget provider at all
+- the backend returns a normalized unauthorized envelope
+- the frontend still renders the widget card in the dashboard grid
+- the widget body shows a compact centered `Unauthorized` state
+
+This preserves layout stability while ensuring protected widget data never leaves the server.
+
+### 6.7 Chart abstraction
 
 - baseline chart engine: Apache ECharts
 - mapper lives under:
@@ -405,6 +449,7 @@ Variables:
 Widgets include:
 - KPIs (total, succeeded, failed, in-flight, success rate, avg elapsed)
 - Charts (time series, stage distribution, queue failures, queue avg elapsed, latency trend)
+- Custom chart (Queue SLA Heatmap)
 - Table (recent failures)
 
 This RI is the baseline for future dashboards and for custom widget extension examples.
@@ -420,6 +465,11 @@ Heatmap provider response contract:
 - optional `tooltipFields`
 - optional `pointDetails`
 - optional `legendThresholds`
+
+Queue-health permission example used for validating the authorization flow:
+- `dashboard:queue-health:kpi-.*`
+- `dashboard:queue-health:chart-queue-.*`
+- `dashboard:queue-health:chart-processing-latency-trend`
 
 ---
 
@@ -460,6 +510,9 @@ Checklist:
 
 - Dashboard runtime endpoints require JWT
 - verify the authenticated user can access the module and dashboard route in the consuming app
+- verify explicit dashboard widget permissions are declared in metadata
+- verify those permissions are assigned to the correct roles
+- remember that unauthorized widgets still render their card, but the provider will not run and the body will show `Unauthorized`
 
 ---
 
