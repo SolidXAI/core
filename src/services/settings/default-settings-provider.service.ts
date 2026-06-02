@@ -1143,6 +1143,60 @@ const getSolidCoreSettings = (isProd: boolean) =>
       controlType: "shortText",
     },
 
+    // push-notification-settings-provider.service.ts
+    {
+      moduleName: "solid-core",
+      key: "pushNotificationProvider",
+      value:
+        process.env.COMMON_PUSH_NOTIFICATION_PROVIDER ??
+        "AmazonSNSPushNotificationService",
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Push Notification Provider",
+      group: "push-settings",
+      sortOrder: 10,
+      controlType: "shortText",
+    },
+    {
+      moduleName: "solid-core",
+      key: "shouldQueuePush",
+      value: (process.env.COMMON_PUSH_SHOULD_QUEUE ?? "false") === "true",
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Queue Push Notifications",
+      group: "push-settings",
+      sortOrder: 20,
+      controlType: "boolean",
+    },
+    {
+      moduleName: "solid-core",
+      key: "awsSnsAccessKeyId",
+      value: process.env.AWS_SNS_ACCESS_KEY_ID,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "awsSnsSecretAccessKey",
+      value: process.env.AWS_SNS_SECRET_ACCESS_KEY,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "awsSnsRegion",
+      value: process.env.AWS_SNS_REGION,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "awsFcmPlatformArn",
+      value: process.env.AWS_FCM_PLATFORM_ARN,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "awsApnsPlatformArn",
+      value: process.env.AWS_APNS_PLATFORM_ARN,
+      level: SettingLevel.SystemEnv,
+    },
+
     // tiny-url-settings-provider.service.ts
     {
       moduleName: "solid-core",

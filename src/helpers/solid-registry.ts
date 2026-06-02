@@ -1,14 +1,25 @@
-import { Injectable, Logger } from '@nestjs/common';
-import { InstanceWrapper } from '@nestjs/core/injector/instance-wrapper';
-import { IExtensionUserCreationProvider } from 'src/interfaces';
-import { User } from 'src/entities/user.entity';
-import { ComputedFieldTriggerConfig, ComputedFieldValueType } from 'src/dtos/create-field-metadata.dto';
-import { CommonEntity } from 'src/entities/common.entity';
-import { Locale } from 'src/entities/locale.entity';
-import { SecurityRule } from 'src/entities/security-rule.entity';
-import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { IDashboardQuestionDataProvider, IDashboardVariableSelectionProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule } from "../interfaces";
-import { ObjectLiteral } from 'typeorm';
+import { Injectable, Logger } from "@nestjs/common";
+import { InstanceWrapper } from "@nestjs/core/injector/instance-wrapper";
+import { IExtensionUserCreationProvider } from "src/interfaces";
+import { User } from "src/entities/user.entity";
+import {
+  ComputedFieldTriggerConfig,
+  ComputedFieldValueType,
+} from "src/dtos/create-field-metadata.dto";
+import { CommonEntity } from "src/entities/common.entity";
+import { Locale } from "src/entities/locale.entity";
+import { SecurityRule } from "src/entities/security-rule.entity";
+import { IScheduledJob } from "src/services/scheduled-jobs/scheduled-job.interface";
+import {
+  IDashboardQuestionDataProvider,
+  IDashboardVariableSelectionProvider,
+  IErrorCodeProvider,
+  ISecurityRuleConfigProvider,
+  ISelectionProvider,
+  ISelectionProviderContext,
+  ISolidDatabaseModule,
+} from "../interfaces";
+import { ObjectLiteral } from "typeorm";
 
 type ControllerMetadata = {
   name: string;
@@ -38,7 +49,7 @@ export enum RESERVED_SOLID_KEYWORDS {
   smsTemplate = "smsTemplate",
   userMetadata = "userMetadata",
   user = "user",
-  locale = "locale"
+  locale = "locale",
 }
 
 export interface TypeOrmEventContext {
@@ -83,6 +94,7 @@ export class SolidRegistry {
   private mailProviders: Set<InstanceWrapper> = new Set();
   private whatsappProviders: Set<InstanceWrapper> = new Set();
   private smsProviders: Set<InstanceWrapper> = new Set();
+  private pushNotificationProviders: Set<InstanceWrapper> = new Set();
   private securityRuleConfigProviders: Set<InstanceWrapper> = new Set();
   private errorCodeProviders: Set<InstanceWrapper> = new Set();
   private settingsProviders: Set<InstanceWrapper> = new Set();
@@ -98,8 +110,13 @@ export class SolidRegistry {
     this.extensionUserCreationProvider = provider;
   }
 
-  getExtensionUserCreationProvider<T extends User = User>(): IExtensionUserCreationProvider<T, any> | null {
-    return (this.extensionUserCreationProvider?.instance as IExtensionUserCreationProvider<T, any>) ?? null;
+  getExtensionUserCreationProvider<
+    T extends User = User,
+  >(): IExtensionUserCreationProvider<T, any> | null {
+    return (
+      (this.extensionUserCreationProvider
+        ?.instance as IExtensionUserCreationProvider<T, any>) ?? null
+    );
   }
 
   registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
@@ -114,12 +131,20 @@ export class SolidRegistry {
     this.smsProviders.add(smsProvider);
   }
 
-  registerSecurityRuleConfigProvider(securityRuleConfigProvider: InstanceWrapper): void {
+  registerSecurityRuleConfigProvider(
+    securityRuleConfigProvider: InstanceWrapper,
+  ): void {
     this.securityRuleConfigProviders.add(securityRuleConfigProvider);
   }
 
   registerMailProvider(mailProvider: InstanceWrapper): void {
     this.mailProviders.add(mailProvider);
+  }
+
+  registerPushNotificationProvider(
+    pushNotificationProvider: InstanceWrapper,
+  ): void {
+    this.pushNotificationProviders.add(pushNotificationProvider);
   }
 
   registerController(name: string, methodNames: string[]): void {
@@ -138,11 +163,15 @@ export class SolidRegistry {
     this.selectionProviders.add(selectionProvider);
   }
 
-  registerDashboardVariableSelectionProvider(dashboardSelectionProvider: InstanceWrapper): void {
+  registerDashboardVariableSelectionProvider(
+    dashboardSelectionProvider: InstanceWrapper,
+  ): void {
     this.dashboardVariableSelectionProviders.add(dashboardSelectionProvider);
   }
 
-  registerDashboardQuestionDataProvider(dashboardQuestionDataProvider: InstanceWrapper): void {
+  registerDashboardQuestionDataProvider(
+    dashboardQuestionDataProvider: InstanceWrapper,
+  ): void {
     this.dashboardQuestionDataProviders.add(dashboardQuestionDataProvider);
   }
 
@@ -174,7 +203,9 @@ export class SolidRegistry {
     this.locales = locales;
   }
 
-  registerComputedFieldMetadata(computedFieldMetadata: ComputedFieldMetadata[]) {
+  registerComputedFieldMetadata(
+    computedFieldMetadata: ComputedFieldMetadata[],
+  ) {
     this.computedFieldMetadata = computedFieldMetadata;
   }
 
@@ -182,7 +213,9 @@ export class SolidRegistry {
     return Array.from(this.settingsProviders);
   }
 
-  getSettingsProviderInstance<T extends ISelectionProviderContext>(name: string): ISelectionProvider<T> {
+  getSettingsProviderInstance<T extends ISelectionProviderContext>(
+    name: string,
+  ): ISelectionProvider<T> {
     const settingsProviders = this.getSettingsProviders();
 
     for (let i = 0; i < settingsProviders.length; i++) {
@@ -205,11 +238,17 @@ export class SolidRegistry {
     return Array.from(this.smsProviders);
   }
 
+  getPushNotificationProviders(): Array<InstanceWrapper> {
+    return Array.from(this.pushNotificationProviders);
+  }
+
   getSecurityRuleConfigProviders(): Array<InstanceWrapper> {
     return Array.from(this.securityRuleConfigProviders);
   }
 
-  getSecurityRuleConfigProviderInstance(name: string): ISecurityRuleConfigProvider {
+  getSecurityRuleConfigProviderInstance(
+    name: string,
+  ): ISecurityRuleConfigProvider {
     const securityRuleConfigProviders = this.getSecurityRuleConfigProviders();
 
     for (let i = 0; i < securityRuleConfigProviders.length; i++) {
@@ -232,7 +271,9 @@ export class SolidRegistry {
     return Array.from(this.selectionProviders);
   }
 
-  getSelectionProviderInstance<T extends ISelectionProviderContext>(name: string): ISelectionProvider<T> {
+  getSelectionProviderInstance<T extends ISelectionProviderContext>(
+    name: string,
+  ): ISelectionProvider<T> {
     const selectionProviders = this.getSelectionProviders();
 
     for (let i = 0; i < selectionProviders.length; i++) {
@@ -247,8 +288,11 @@ export class SolidRegistry {
     return Array.from(this.dashboardVariableSelectionProviders);
   }
 
-  getDashboardVariableSelectionProviderInstance<T extends ISelectionProviderContext>(name: string): IDashboardVariableSelectionProvider<T> {
-    const dashboardSelectionProviders = this.getDashboardVariableSelectionProviders();
+  getDashboardVariableSelectionProviderInstance<
+    T extends ISelectionProviderContext,
+  >(name: string): IDashboardVariableSelectionProvider<T> {
+    const dashboardSelectionProviders =
+      this.getDashboardVariableSelectionProviders();
 
     for (let i = 0; i < dashboardSelectionProviders.length; i++) {
       const dashboardSelectionProvider = dashboardSelectionProviders[i];
@@ -266,17 +310,21 @@ export class SolidRegistry {
     const providers = this.getErrorCodeProviders();
     for (let i = 0; i < providers.length; i++) {
       const p = providers[i];
-      if (p.instance?.name?.() === name) return p.instance as IErrorCodeProvider;
+      if (p.instance?.name?.() === name)
+        return p.instance as IErrorCodeProvider;
     }
     return undefined;
   }
 
   getDashboardQuestionDataProviders(): Array<InstanceWrapper> {
-    return Array.from(this.dashboardQuestionDataProviders)
+    return Array.from(this.dashboardQuestionDataProviders);
   }
 
-  getDashboardQuestionDataProviderInstance<TContext, TData>(name: string): IDashboardQuestionDataProvider<TContext, TData> {
-    const dashboardQuestionDataProviders = this.getDashboardQuestionDataProviders();
+  getDashboardQuestionDataProviderInstance<TContext, TData>(
+    name: string,
+  ): IDashboardQuestionDataProvider<TContext, TData> {
+    const dashboardQuestionDataProviders =
+      this.getDashboardQuestionDataProviders();
 
     for (let i = 0; i < dashboardQuestionDataProviders.length; i++) {
       const dasbhoardQuestionDataProvider = dashboardQuestionDataProviders[i];
@@ -306,11 +354,13 @@ export class SolidRegistry {
   }
 
   getComputedFieldProvider(name: string): InstanceWrapper {
-    const provider = this.getComputedFieldProviders().filter((provider) => provider.name === name).pop();
+    const provider = this.getComputedFieldProviders()
+      .filter((provider) => provider.name === name)
+      .pop();
     if (!provider) {
       throw new Error(`Computed Field Provider with name ${name} not found`);
     }
-    return provider
+    return provider;
   }
 
   getSolidDatabaseModules(): Array<InstanceWrapper> {
@@ -321,8 +371,9 @@ export class SolidRegistry {
     const solidDatabaseModulesAsArray = Array.from(this.solidDatabaseModules);
     for (let i = 0; i < solidDatabaseModulesAsArray.length; i++) {
       const solidDatabaseModule = solidDatabaseModulesAsArray[i];
-      const solidDatabaseModuleInstance: ISolidDatabaseModule = solidDatabaseModule.instance;
-      if (solidDatabaseModuleInstance.name() === 'default') {
+      const solidDatabaseModuleInstance: ISolidDatabaseModule =
+        solidDatabaseModule.instance;
+      if (solidDatabaseModuleInstance.name() === "default") {
         return solidDatabaseModuleInstance;
       }
     }
@@ -333,27 +384,37 @@ export class SolidRegistry {
   }
 
   getModule(name: string): InstanceWrapper {
-    const module = this.getModules().filter((module) => module.name === name).pop();
-    return module
+    const module = this.getModules()
+      .filter((module) => module.name === name)
+      .pop();
+    return module;
   }
 
   getComputedFieldMetadata(): ComputedFieldMetadata[] {
     return this.computedFieldMetadata;
   }
 
-  //TODO:getlocales from locale model and return default locale where isDefault:true 
+  //TODO:getlocales from locale model and return default locale where isDefault:true
   getDefaultLocale(): Locale | null {
-    return this.locales.find(locale => locale.isDefault === true) || null;
+    return this.locales.find((locale) => locale.isDefault === true) || null;
   }
 
-  getSecurityRules(modelSingularName: string, roleNames: string[] = []): SecurityRule[] {
+  getSecurityRules(
+    modelSingularName: string,
+    roleNames: string[] = [],
+  ): SecurityRule[] {
     // If no role is provided, return all security rules for the model
     if (roleNames.length === 0) {
-      return this.securityRules.filter((rule) => rule.modelMetadata.singularName === modelSingularName);
+      return this.securityRules.filter(
+        (rule) => rule.modelMetadata.singularName === modelSingularName,
+      );
     }
     // If roles are provided, filter the security rules by model and roles
     return this.securityRules.filter((rule) => {
-      return rule.modelMetadata.singularName === modelSingularName && roleNames.includes(rule.role.name);
+      return (
+        rule.modelMetadata.singularName === modelSingularName &&
+        roleNames.includes(rule.role.name)
+      );
     });
   }
 
@@ -365,13 +426,25 @@ export class SolidRegistry {
     return this.auditableModels.has(modelSingularName.toLowerCase());
   }
 
-  getCommonEntityKeys(): (keyof CommonEntity | 'createdBy' | 'updatedBy')[] {
-    return ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt'];
+  getCommonEntityKeys(): (keyof CommonEntity | "createdBy" | "updatedBy")[] {
+    return [
+      "id",
+      "createdAt",
+      "updatedAt",
+      "deletedAt",
+      "createdBy",
+      "updatedBy",
+      "deletedTracker",
+      "localeName",
+      "defaultEntityLocaleId",
+      "publishedAt",
+    ];
     // return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
   }
 
-
-  getAllSettingsProviderInstance<T extends ISelectionProviderContext>(): ISelectionProvider<T> {
+  getAllSettingsProviderInstance<
+    T extends ISelectionProviderContext,
+  >(): ISelectionProvider<T> {
     const settingsProviders = this.getSettingsProviders();
 
     for (let i = 0; i < settingsProviders.length; i++) {
@@ -380,4 +453,3 @@ export class SolidRegistry {
     }
   }
 }
-

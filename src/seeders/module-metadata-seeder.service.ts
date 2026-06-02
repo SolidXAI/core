@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from 'uuid';
 
 import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
+import { CreatePushNotificationTemplateDto } from 'src/dtos/create-push-notification-template.dto';
 import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
 import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
@@ -15,6 +16,7 @@ import { EmailTemplateService } from 'src/services/email-template.service';
 import { ListOfValuesService } from 'src/services/list-of-values.service';
 import { SettingService } from 'src/services/setting.service';
 import { SmsTemplateService } from 'src/services/sms-template.service';
+import { PushNotificationTemplateService } from 'src/services/push-notification-template.service';
 import { UserService } from 'src/services/user.service';
 import { DataSource, In } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
@@ -77,6 +79,7 @@ export class ModuleMetadataSeederService {
         private readonly solidViewService: ViewMetadataService,
         private readonly emailTemplateService: EmailTemplateService,
         private readonly smsTemplateService: SmsTemplateService,
+        private readonly pushNotificationTemplateService: PushNotificationTemplateService,
         private readonly listOfValuesService: ListOfValuesService,
         // @InjectRepository(PermissionMetadata)
         // private readonly permissionRepo: Repository<PermissionMetadata>,
@@ -196,6 +199,11 @@ export class ModuleMetadataSeederService {
                 this.logger.log(`Seeding Sms Templates`);
                 const smsTemplateCounts = await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
                 console.log(`${this.formatSeedResult(moduleMetadata.name, 'Sms Templates', smsTemplateCounts)}`);
+
+                currentStep = 'seedPushNotificationTemplates';
+                this.logger.log(`Seeding Push Notification Templates`);
+                const pushNotificationTemplateCounts = await this.seedPushNotificationTemplates(overallMetadata, moduleMetadata.name);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Push Notification Templates', pushNotificationTemplateCounts)}`);
 
                 currentStep = 'seedSecurityRules';
                 this.logger.log(`Seeding Security Rules`);
@@ -324,6 +332,14 @@ export class ModuleMetadataSeederService {
         await this.handleSeedSmsTemplates(smsTemplates, moduleName);
         this.logger.debug(`[End] Processing sms templates`);
         return { pruned: 0, upserted: smsTemplates?.length ?? 0 };
+    }
+
+    private async seedPushNotificationTemplates(overallMetadata: any, moduleName: string): Promise<{ pruned: number; upserted: number }> {
+        this.logger.debug(`[Start] Processing push notification templates`);
+        const pushNotificationTemplates: CreatePushNotificationTemplateDto[] = overallMetadata.pushNotificationTemplates;
+        await this.handleSeedPushNotificationTemplates(pushNotificationTemplates, moduleName);
+        this.logger.debug(`[End] Processing push notification templates`);
+        return { pruned: 0, upserted: pushNotificationTemplates?.length ?? 0 };
     }
 
     // OK
@@ -654,6 +670,67 @@ export class ModuleMetadataSeederService {
             // Save to DB.
             await this.smsTemplateService.removeByName(smsTemplate.name);
             await this.smsTemplateService.create(smsTemplate);
+        }
+    }
+
+    private async handleSeedPushNotificationTemplates(pushNotificationTemplates: CreatePushNotificationTemplateDto[], moduleName: string) {
+        if (!pushNotificationTemplates) {
+            return;
+        }
+
+        for (let i = 0; i < pushNotificationTemplates.length; i++) {
+            const pushNotificationTemplate = pushNotificationTemplates[i];
+
+            // We need to load the actual template contents.
+            if (moduleName === 'solid-core') {
+                let moduleRoot: string | null = null;
+
+                try {
+                    // Always resolve package.json, never the module entry
+                    moduleRoot = path.dirname(
+                        require.resolve('@solidxai/core/package.json'),
+                    );
+                } catch (err: any) {
+                    this.logger.debug(
+                        'Could not resolve @solidxai/core from node_modules, assuming local execution',
+                    );
+                }
+
+                const filePathInternal = 'src/seeders/seed-data/push-notification-templates/';
+                let filePath: string;
+                // Case 1: solid-core installed as dependency
+                if (moduleRoot) {
+                    filePath = path.join(
+                        moduleRoot,
+                        filePathInternal,
+                        pushNotificationTemplate.body,
+                    );
+                }
+                else {
+                    // Case 2: running INSIDE solid-core repo
+                    const localCoreRoot = process.cwd();
+                    filePath = path.join(
+                        localCoreRoot,
+                        filePathInternal,
+                        pushNotificationTemplate.body,
+                    );
+                }
+
+                if (fs.existsSync(filePath)) {
+                    pushNotificationTemplate.body = fs.readFileSync(filePath, 'utf-8');
+                }
+            }
+            else {
+                const pushNotificationTemplateHandlebar = `module-metadata/${moduleName}/push-notification-templates/${pushNotificationTemplate.body}`;
+                const fullPath = path.join(process.cwd(), pushNotificationTemplateHandlebar);
+                if (fs.existsSync(fullPath)) {
+                    pushNotificationTemplate.body = fs.readFileSync(fullPath, 'utf-8').toString();
+                }
+            }
+
+            // Save to DB.
+            await this.pushNotificationTemplateService.removeByName(pushNotificationTemplate.name);
+            await this.pushNotificationTemplateService.createFromSeed(pushNotificationTemplate);
         }
     }
 

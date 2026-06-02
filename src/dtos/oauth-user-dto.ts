@@ -1,5 +1,6 @@
+import { DeviceMetadataDto } from "./device-metadata.dto";
 
-export class OauthUserDto {
+export class OauthUserDto extends DeviceMetadataDto {
     provider: string;
     providerId: string;
     email: string;
