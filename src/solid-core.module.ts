@@ -1,7 +1,7 @@
-import "multer";
-import { Global, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
-import * as express from "express";
-import { ConfigModule, ConfigService } from "@nestjs/config";
+import 'multer';
+import { Global, MiddlewareConsumer, Module, NestModule } from '@nestjs/common';
+import * as express from 'express';
+import { ConfigModule, ConfigService } from '@nestjs/config';
 import {
   APP_FILTER,
   APP_GUARD,
@@ -9,141 +9,136 @@ import {
   DiscoveryService,
   MetadataScanner,
   Reflector,
-} from "@nestjs/core";
-import { MulterModule } from "@nestjs/platform-express";
-import { TypeOrmModule } from "@nestjs/typeorm";
-import { RemoveFieldsCommand } from "./commands/remove-fields.command";
-import { FieldMetadataController } from "./controllers/field-metadata.controller";
-import { MediaStorageProviderMetadataController } from "./controllers/media-storage-provider-metadata.controller";
-import { ModelMetadataController } from "./controllers/model-metadata.controller";
-import { ModuleMetadataController } from "./controllers/module-metadata.controller";
-import { TestController } from "./controllers/test.controller";
-import { FieldMetadata } from "./entities/field-metadata.entity";
-import { ListOfValues } from "./entities/list-of-values.entity";
-import { MediaStorageProviderMetadata } from "./entities/media-storage-provider-metadata.entity";
-import { Media } from "./entities/media.entity";
-import { ModelMetadata } from "./entities/model-metadata.entity";
-import { ModuleMetadata } from "./entities/module-metadata.entity";
-import { CommandService } from "./helpers/command.service";
-import { SchematicService } from "./helpers/schematic.service";
-import { ListOfValuesSelectionProvider } from "./services/selection-providers/list-of-values-selection-providers.service";
-import { PseudoForeignKeySelectionProvider } from "./services/selection-providers/pseudo-foreign-key-selection-provider.service";
-import { ModuleMetadataSeederService } from "./seeders/module-metadata-seeder.service";
-import { ModuleTestDataService } from "./seeders/module-test-data.service";
-import { CrudHelperService } from "./services/crud-helper.service";
-import { FieldMetadataService } from "./services/field-metadata.service";
-import { ListOfValuesService } from "./services/list-of-values.service";
+} from '@nestjs/core';
+import { MulterModule } from '@nestjs/platform-express';
+import { TypeOrmModule } from '@nestjs/typeorm';
+import { RemoveFieldsCommand } from './commands/remove-fields.command';
+import { FieldMetadataController } from './controllers/field-metadata.controller';
+import { MediaStorageProviderMetadataController } from './controllers/media-storage-provider-metadata.controller';
+import { ModelMetadataController } from './controllers/model-metadata.controller';
+import { ModuleMetadataController } from './controllers/module-metadata.controller';
+import { TestController } from './controllers/test.controller';
+import { FieldMetadata } from './entities/field-metadata.entity';
+import { ListOfValues } from './entities/list-of-values.entity';
+import { MediaStorageProviderMetadata } from './entities/media-storage-provider-metadata.entity';
+import { Media } from './entities/media.entity';
+import { ModelMetadata } from './entities/model-metadata.entity';
+import { ModuleMetadata } from './entities/module-metadata.entity';
+import { CommandService } from './helpers/command.service';
+import { SchematicService } from './helpers/schematic.service';
+import { ListOfValuesSelectionProvider } from './services/selection-providers/list-of-values-selection-providers.service';
+import { PseudoForeignKeySelectionProvider } from './services/selection-providers/pseudo-foreign-key-selection-provider.service';
+import { ModuleMetadataSeederService } from './seeders/module-metadata-seeder.service';
+import { ModuleTestDataService } from './seeders/module-test-data.service';
+import { CrudHelperService } from './services/crud-helper.service';
+import { FieldMetadataService } from './services/field-metadata.service';
+import { ListOfValuesService } from './services/list-of-values.service';
 // import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
-import { MediaStorageProviderMetadataService } from "./services/media-storage-provider-metadata.service";
-import { MediaService } from "./services/media.service";
-import { ModelMetadataService } from "./services/model-metadata.service";
-import { ModuleMetadataService } from "./services/module-metadata.service";
-import { SolidIntrospectService } from "./services/solid-introspect.service";
+import { MediaStorageProviderMetadataService } from './services/media-storage-provider-metadata.service';
+import { MediaService } from './services/media.service';
+import { ModelMetadataService } from './services/model-metadata.service';
+import { ModuleMetadataService } from './services/module-metadata.service';
+import { SolidIntrospectService } from './services/solid-introspect.service';
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
-import { ServeStaticModule } from "@nestjs/serve-static";
-import { join } from "path";
-import { RefreshModelCommand } from "./commands/refresh-model.command";
-import { MediaController } from "./controllers/media.controller";
+import { ServeStaticModule } from '@nestjs/serve-static';
+import { join } from 'path';
+import { RefreshModelCommand } from './commands/refresh-model.command';
+import { MediaController } from './controllers/media.controller';
 
-import { RefreshModuleCommand } from "./commands/refresh-module.command";
-import { ModelMetadataSubscriber } from "./subscribers/model-metadata.subscriber";
+import { RefreshModuleCommand } from './commands/refresh-module.command';
+import { ModelMetadataSubscriber } from './subscribers/model-metadata.subscriber';
 
-import { ViewMetadataController } from "./controllers/view-metadata.controller";
-import { ViewMetadata } from "./entities/view-metadata.entity";
-import { ViewMetadataService } from "./services/view-metadata.service";
+import { ViewMetadataController } from './controllers/view-metadata.controller';
+import { ViewMetadata } from './entities/view-metadata.entity';
+import { ViewMetadataService } from './services/view-metadata.service';
 
-import { ActionMetadataController } from "./controllers/action-metadata.controller";
-import { ActionMetadata } from "./entities/action-metadata.entity";
-import { ActionMetadataService } from "./services/action-metadata.service";
+import { ActionMetadataController } from './controllers/action-metadata.controller';
+import { ActionMetadata } from './entities/action-metadata.entity';
+import { ActionMetadataService } from './services/action-metadata.service';
 
-import { FacebookAuthenticationController } from "./controllers/facebook-authentication.controller";
-import { MicrosoftAuthenticationController } from "./controllers/microsoft-authentication.controller";
-import { FacebookOAuthStrategy } from "./passport-strategies/facebook-oauth.strategy";
-import { MicrosoftOAuthStrategy } from "./passport-strategies/microsoft-oauth.strategy";
+import { FacebookAuthenticationController } from './controllers/facebook-authentication.controller';
+import { MicrosoftAuthenticationController } from './controllers/microsoft-authentication.controller';
+import { FacebookOAuthStrategy } from './passport-strategies/facebook-oauth.strategy';
+import { MicrosoftOAuthStrategy } from './passport-strategies/microsoft-oauth.strategy';
 
-import { GupshupOtpWhatsappService } from "./services/whatsapp/GupshupOtpWhatsappService";
-import { MetaCloudWhatsappService } from "./services/whatsapp/MetaCloudWhatsappService";
-import { GupshupWebhookController } from "./controllers/gupshup-webhook.controller";
-import { MetaCloudWhatsappWebhookController } from "./controllers/meta-cloud-whatsapp-webhook.controller";
-
-import { HttpModule } from "@nestjs/axios";
-import { JwtModule } from "@nestjs/jwt";
-import { SeedCommand } from "./commands/seed.command";
-import { TestDataCommand } from "./commands/test-data.command";
-import { TestRunCommand } from "./commands/run-tests.command";
-import { TestCommand } from "./commands/test.command";
-import { AuthenticationController } from "./controllers/authentication.controller";
-import { EmailTemplateController } from "./controllers/email-template.controller";
-import { GoogleAuthenticationController } from "./controllers/google-authentication.controller";
-import { MenuItemMetadataController } from "./controllers/menu-item-metadata.controller";
-import { MqMessageQueueController } from "./controllers/mq-message-queue.controller";
-import { MqMessageController } from "./controllers/mq-message.controller";
-import { OTPAuthenticationController } from "./controllers/otp-authentication.controller";
-import { ServiceController } from "./controllers/service.controller";
-import { SmsTemplateController } from "./controllers/sms-template.controller";
-import { TestQueueController } from "./controllers/test-queue.controller";
-import { EmailAttachment } from "./entities/email-attachment.entity";
-import { EmailTemplate } from "./entities/email-template.entity";
-import { MenuItemMetadata } from "./entities/menu-item-metadata.entity";
-import { MqMessageQueue } from "./entities/mq-message-queue.entity";
-import { MqMessage } from "./entities/mq-message.entity";
-import { SmsTemplate } from "./entities/sms-template.entity";
-import { AccessTokenGuard } from "./guards/access-token.guard";
-import { ApiKeyGuard } from "./guards/api-key.guard";
-import { AuthenticationGuard } from "./guards/authentication.guard";
-import { PermissionsGuard } from "./guards/permissions.guard";
-import { SolidRegistry } from "./helpers/solid-registry";
-import { LoggingInterceptor } from "./interceptors/logging.interceptor";
-import { ApiEmailQueuePublisher } from "./jobs/rabbitmq/api-email-publisher.service";
-import { ApiEmailQueueSubscriber } from "./jobs/rabbitmq/api-email-subscriber.service";
-import { TestQueuePublisherDatabase } from "./jobs/database/test-queue-publisher-database.service";
-import { TestQueueSubscriberDatabase } from "./jobs/database/test-queue-subscriber-database.service";
-import { TestQueuePublisherRedis } from "./jobs/redis/test-queue-publisher-redis.service";
-import { TestQueueSubscriberRedis } from "./jobs/redis/test-queue-subscriber-redis.service";
-import { Msg91WhatsappQueuePublisher } from "./jobs/rabbitmq/msg91-whatsapp-publisher.service";
-import { Msg91WhatsappQueueSubscriber } from "./jobs/rabbitmq/msg91-whatsapp-subscriber.service";
-import { Msg91OTPQueuePublisher } from "./jobs/rabbitmq/msg91-otp-publisher.service";
-import { Msg91OTPQueueSubscriber } from "./jobs/rabbitmq/msg91-otp-subscriber.service";
-import { Msg91SmsQueuePublisher } from "./jobs/rabbitmq/msg91-sms-publisher.service";
-import { Msg91SmsQueueSubscriber } from "./jobs/rabbitmq/msg91-sms-subscriber.service";
-import { SmtpEmailQueuePublisherRabbitmq } from "./jobs/rabbitmq/smtp-email-publisher.service";
-import { SmtpEmailQueueSubscriberRabbitmq } from "./jobs/rabbitmq/smtp-email-subscriber.service";
-import { TestQueuePublisher } from "./jobs/rabbitmq/test-queue-publisher.service";
-import { TestQueueSubscriber } from "./jobs/rabbitmq/test-queue-subscriber.service";
-import { ChatterQueuePublisherRabbitmq } from "./jobs/rabbitmq/chatter-queue-publisher.service";
-import { ChatterQueueSubscriberRabbitmq } from "./jobs/rabbitmq/chatter-queue-subscriber.service";
-import { ChatterQueuePublisherDatabase } from "./jobs/database/chatter-queue-publisher-database.service";
-import { ChatterQueueSubscriberDatabase } from "./jobs/database/chatter-queue-subscriber-database.service";
-import { ApiEmailQueuePublisherRedis } from "./jobs/redis/api-email-publisher-redis.service";
-import { ApiEmailQueueSubscriberRedis } from "./jobs/redis/api-email-subscriber-redis.service";
-import { ChatterQueuePublisherRedis } from "./jobs/redis/chatter-queue-publisher-redis.service";
-import { ChatterQueueSubscriberRedis } from "./jobs/redis/chatter-queue-subscriber-redis.service";
-import { ComputedFieldEvaluationPublisherRedis } from "./jobs/redis/computed-field-evaluation-publisher-redis.service";
-import { ComputedFieldEvaluationSubscriberRedis } from "./jobs/redis/computed-field-evaluation-subscriber-redis.service";
-import { GenerateCodePublisherRedis } from "./jobs/redis/generate-code-publisher-redis.service";
-import { GenerateCodeSubscriberRedis } from "./jobs/redis/generate-code-subscriber-redis.service";
-import { Msg91OTPQueuePublisherRedis } from "./jobs/redis/msg91-otp-publisher-redis.service";
-import { Msg91OTPQueueSubscriberRedis } from "./jobs/redis/msg91-otp-subscriber-redis.service";
-import { Msg91SmsQueuePublisherRedis } from "./jobs/redis/msg91-sms-publisher-redis.service";
-import { Msg91SmsQueueSubscriberRedis } from "./jobs/redis/msg91-sms-subscriber-redis.service";
-import { Msg91WhatsappQueuePublisherRedis } from "./jobs/redis/msg91-whatsapp-publisher-redis.service";
-import { Msg91WhatsappQueueSubscriberRedis } from "./jobs/redis/msg91-whatsapp-subscriber-redis.service";
-import { SmtpEmailQueuePublisherRedis } from "./jobs/redis/smtp-email-publisher-redis.service";
-import { SmtpEmailQueueSubscriberRedis } from "./jobs/redis/smtp-email-subscriber-redis.service";
-import { Three60WhatsappQueuePublisherRedis } from "./jobs/redis/three60-whatsapp-publisher-redis.service";
-import { Three60WhatsappQueueSubscriberRedis } from "./jobs/redis/three60-whatsapp-subscriber-redis.service";
-import { TriggerMcpClientPublisherRedis } from "./jobs/redis/trigger-mcp-client-publisher-redis.service";
-import { TriggerMcpClientSubscriberRedis } from "./jobs/redis/trigger-mcp-client-subscriber-redis.service";
-import { TwilioSmsQueuePublisherRedis } from "./jobs/redis/twilio-sms-publisher-redis.service";
-import { TwilioSmsQueueSubscriberRedis } from "./jobs/redis/twilio-sms-subscriber-redis.service";
-import { UserRegistrationListener } from "./listeners/user-registration.listener";
-import { GoogleOauthStrategy } from "./passport-strategies/google-oauth.strategy";
-import { ApiKeyService } from "./services/api-key.service";
-import { AuthenticationService } from "./services/authentication.service";
-import { BcryptService } from "./services/bcrypt.service";
-import { UuidExternalIdEntityComputedFieldProvider } from "./services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service";
-import { UuidExternalIdComputedFieldProvider } from "./services/computed-fields/uuid-external-id-computed-field-provider.service";
-import { EmailTemplateService } from "./services/email-template.service";
+import { HttpModule } from '@nestjs/axios';
+import { JwtModule } from '@nestjs/jwt';
+import { SeedCommand } from './commands/seed.command';
+import { TestDataCommand } from './commands/test-data.command';
+import { TestRunCommand } from './commands/run-tests.command';
+import { TestCommand } from './commands/test.command';
+import { AuthenticationController } from './controllers/authentication.controller';
+import { EmailTemplateController } from './controllers/email-template.controller';
+import { GoogleAuthenticationController } from './controllers/google-authentication.controller';
+import { MenuItemMetadataController } from './controllers/menu-item-metadata.controller';
+import { MqMessageQueueController } from './controllers/mq-message-queue.controller';
+import { MqMessageController } from './controllers/mq-message.controller';
+import { OTPAuthenticationController } from './controllers/otp-authentication.controller';
+import { ServiceController } from './controllers/service.controller';
+import { SmsTemplateController } from './controllers/sms-template.controller';
+import { TestQueueController } from './controllers/test-queue.controller';
+import { EmailAttachment } from './entities/email-attachment.entity';
+import { EmailTemplate } from './entities/email-template.entity';
+import { MenuItemMetadata } from './entities/menu-item-metadata.entity';
+import { MqMessageQueue } from './entities/mq-message-queue.entity';
+import { MqMessage } from './entities/mq-message.entity';
+import { SmsTemplate } from './entities/sms-template.entity';
+import { AccessTokenGuard } from './guards/access-token.guard';
+import { ApiKeyGuard } from './guards/api-key.guard';
+import { AuthenticationGuard } from './guards/authentication.guard';
+import { PermissionsGuard } from './guards/permissions.guard';
+import { SolidRegistry } from './helpers/solid-registry';
+import { LoggingInterceptor } from './interceptors/logging.interceptor';
+import { ApiEmailQueuePublisher } from './jobs/rabbitmq/api-email-publisher.service';
+import { ApiEmailQueueSubscriber } from './jobs/rabbitmq/api-email-subscriber.service';
+import { TestQueuePublisherDatabase } from './jobs/database/test-queue-publisher-database.service';
+import { TestQueueSubscriberDatabase } from './jobs/database/test-queue-subscriber-database.service';
+import { TestQueuePublisherRedis } from './jobs/redis/test-queue-publisher-redis.service';
+import { TestQueueSubscriberRedis } from './jobs/redis/test-queue-subscriber-redis.service';
+import { Msg91WhatsappQueuePublisher } from './jobs/rabbitmq/msg91-whatsapp-publisher.service';
+import { Msg91WhatsappQueueSubscriber } from './jobs/rabbitmq/msg91-whatsapp-subscriber.service';
+import { Msg91OTPQueuePublisher } from './jobs/rabbitmq/msg91-otp-publisher.service';
+import { Msg91OTPQueueSubscriber } from './jobs/rabbitmq/msg91-otp-subscriber.service';
+import { Msg91SmsQueuePublisher } from './jobs/rabbitmq/msg91-sms-publisher.service';
+import { Msg91SmsQueueSubscriber } from './jobs/rabbitmq/msg91-sms-subscriber.service';
+import { SmtpEmailQueuePublisherRabbitmq } from './jobs/rabbitmq/smtp-email-publisher.service';
+import { SmtpEmailQueueSubscriberRabbitmq } from './jobs/rabbitmq/smtp-email-subscriber.service';
+import { TestQueuePublisher } from './jobs/rabbitmq/test-queue-publisher.service';
+import { TestQueueSubscriber } from './jobs/rabbitmq/test-queue-subscriber.service';
+import { ChatterQueuePublisherRabbitmq } from './jobs/rabbitmq/chatter-queue-publisher.service';
+import { ChatterQueueSubscriberRabbitmq } from './jobs/rabbitmq/chatter-queue-subscriber.service';
+import { ChatterQueuePublisherDatabase } from './jobs/database/chatter-queue-publisher-database.service';
+import { ChatterQueueSubscriberDatabase } from './jobs/database/chatter-queue-subscriber-database.service';
+import { ApiEmailQueuePublisherRedis } from './jobs/redis/api-email-publisher-redis.service';
+import { ApiEmailQueueSubscriberRedis } from './jobs/redis/api-email-subscriber-redis.service';
+import { ChatterQueuePublisherRedis } from './jobs/redis/chatter-queue-publisher-redis.service';
+import { ChatterQueueSubscriberRedis } from './jobs/redis/chatter-queue-subscriber-redis.service';
+import { ComputedFieldEvaluationPublisherRedis } from './jobs/redis/computed-field-evaluation-publisher-redis.service';
+import { ComputedFieldEvaluationSubscriberRedis } from './jobs/redis/computed-field-evaluation-subscriber-redis.service';
+import { GenerateCodePublisherRedis } from './jobs/redis/generate-code-publisher-redis.service';
+import { GenerateCodeSubscriberRedis } from './jobs/redis/generate-code-subscriber-redis.service';
+import { Msg91OTPQueuePublisherRedis } from './jobs/redis/msg91-otp-publisher-redis.service';
+import { Msg91OTPQueueSubscriberRedis } from './jobs/redis/msg91-otp-subscriber-redis.service';
+import { Msg91SmsQueuePublisherRedis } from './jobs/redis/msg91-sms-publisher-redis.service';
+import { Msg91SmsQueueSubscriberRedis } from './jobs/redis/msg91-sms-subscriber-redis.service';
+import { Msg91WhatsappQueuePublisherRedis } from './jobs/redis/msg91-whatsapp-publisher-redis.service';
+import { Msg91WhatsappQueueSubscriberRedis } from './jobs/redis/msg91-whatsapp-subscriber-redis.service';
+import { SmtpEmailQueuePublisherRedis } from './jobs/redis/smtp-email-publisher-redis.service';
+import { SmtpEmailQueueSubscriberRedis } from './jobs/redis/smtp-email-subscriber-redis.service';
+import { Three60WhatsappQueuePublisherRedis } from './jobs/redis/three60-whatsapp-publisher-redis.service';
+import { Three60WhatsappQueueSubscriberRedis } from './jobs/redis/three60-whatsapp-subscriber-redis.service';
+import { TriggerMcpClientPublisherRedis } from './jobs/redis/trigger-mcp-client-publisher-redis.service';
+import { TriggerMcpClientSubscriberRedis } from './jobs/redis/trigger-mcp-client-subscriber-redis.service';
+import { TwilioSmsQueuePublisherRedis } from './jobs/redis/twilio-sms-publisher-redis.service';
+import { TwilioSmsQueueSubscriberRedis } from './jobs/redis/twilio-sms-subscriber-redis.service';
+import { UserRegistrationListener } from './listeners/user-registration.listener';
+import { GoogleOauthStrategy } from './passport-strategies/google-oauth.strategy';
+import { ApiKeyService } from './services/api-key.service';
+import { AuthenticationService } from './services/authentication.service';
+import { BcryptService } from './services/bcrypt.service';
+import { UuidExternalIdEntityComputedFieldProvider } from './services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service';
+import { UuidExternalIdComputedFieldProvider } from './services/computed-fields/uuid-external-id-computed-field-provider.service';
+import { EmailTemplateService } from './services/email-template.service';
 import {
   DiskFileService,
   S3FileService,
@@ -151,38 +146,38 @@ import {
   DiskStoragePathBuilder,
   S3StoragePathBuilder,
   StoragePathBuilderFactory,
-} from "./services/file";
-import { HashingService } from "./services/hashing.service";
-import { ElasticEmailService } from "./services/mail/elastic-email.service";
-import { SMTPEMailService } from "./services/mail/smtp-email.service";
-import { MenuItemMetadataService } from "./services/menu-item-metadata.service";
-import { MqMessageQueueService } from "./services/mq-message-queue.service";
-import { MqMessageService } from "./services/mq-message.service";
-import { PdfService } from "./services/pdf.service";
-import { RefreshTokenIdsStorageService } from "./services/refresh-token-ids-storage.service";
-import { SsoCodeStorageService } from "./services/sso-code-storage.service";
-import { ListOfModelsSelectionProvider } from "./services/selection-providers/list-of-models-selection-provider.service";
-import { TinyUrlService } from "./services/short-url/tiny-url.service";
-import { SmsTemplateService } from "./services/sms-template.service";
-import { Msg91OTPService } from "./services/sms/Msg91OTPService";
-import { Msg91SMSService } from "./services/sms/Msg91SMSService";
+} from './services/file';
+import { HashingService } from './services/hashing.service';
+import { ElasticEmailService } from './services/mail/elastic-email.service';
+import { SMTPEMailService } from './services/mail/smtp-email.service';
+import { MenuItemMetadataService } from './services/menu-item-metadata.service';
+import { MqMessageQueueService } from './services/mq-message-queue.service';
+import { MqMessageService } from './services/mq-message.service';
+import { PdfService } from './services/pdf.service';
+import { RefreshTokenIdsStorageService } from './services/refresh-token-ids-storage.service';
+import { SsoCodeStorageService } from './services/sso-code-storage.service';
+import { ListOfModelsSelectionProvider } from './services/selection-providers/list-of-models-selection-provider.service';
+import { TinyUrlService } from './services/short-url/tiny-url.service';
+import { SmsTemplateService } from './services/sms-template.service';
+import { Msg91OTPService } from './services/sms/Msg91OTPService';
+import { Msg91SMSService } from './services/sms/Msg91SMSService';
 // import { UserService } from './services/user.service';
-import { Msg91WhatsappService } from "./services/whatsapp/Msg91WhatsappService";
-import { SoftDeleteAwareEventSubscriber } from "./subscribers/soft-delete-aware-event.subscriber";
+import { Msg91WhatsappService } from './services/whatsapp/Msg91WhatsappService';
+import { SoftDeleteAwareEventSubscriber } from './subscribers/soft-delete-aware-event.subscriber';
 
-import { PermissionMetadataController } from "./controllers/permission-metadata.controller";
-import { PermissionMetadata } from "./entities/permission-metadata.entity";
-import { PermissionMetadataService } from "./services/permission-metadata.service";
+import { PermissionMetadataController } from './controllers/permission-metadata.controller';
+import { PermissionMetadata } from './entities/permission-metadata.entity';
+import { PermissionMetadataService } from './services/permission-metadata.service';
 
-import { ScheduleModule } from "@nestjs/schedule";
-import { ClsModule } from "nestjs-cls";
-import { AiInteractionController } from "./controllers/ai-interaction.controller";
-import { ChatterMessageDetailsController } from "./controllers/chatter-message-details.controller";
-import { ChatterMessageController } from "./controllers/chatter-message.controller";
-import { DashboardQuestionSqlDatasetConfigController } from "./controllers/dashboard-question-sql-dataset-config.controller";
-import { DashboardQuestionController } from "./controllers/dashboard-question.controller";
-import { DashboardVariableController } from "./controllers/dashboard-variable.controller";
-import { DashboardLayoutController } from "./controllers/dashboard-layout.controller";
+import { ScheduleModule } from '@nestjs/schedule';
+import { ClsModule } from 'nestjs-cls';
+import { AiInteractionController } from './controllers/ai-interaction.controller';
+import { ChatterMessageDetailsController } from './controllers/chatter-message-details.controller';
+import { ChatterMessageController } from './controllers/chatter-message.controller';
+import { DashboardQuestionSqlDatasetConfigController } from './controllers/dashboard-question-sql-dataset-config.controller';
+import { DashboardQuestionController } from './controllers/dashboard-question.controller';
+import { DashboardVariableController } from './controllers/dashboard-variable.controller';
+import { DashboardLayoutController } from './controllers/dashboard-layout.controller';
 
 import { DashboardController } from './controllers/dashboard.controller';
 import { ExportTemplateController } from './controllers/export-template.controller';
@@ -246,41 +241,41 @@ import { Msg91SmsQueueSubscriberDatabase } from './jobs/database/msg91-sms-subsc
 import { SmtpEmailQueuePublisherDatabase } from './jobs/database/smtp-email-publisher-database.service';
 import { SmtpEmailQueueSubscriberDatabase } from './jobs/database/smtp-email-subscriber-database.service';
 
-import { TwilioSmsQueuePublisherDatabase } from "./jobs/database/twilio-sms-publisher-database.service";
-import { TwilioSmsQueueSubscriberDatabase } from "./jobs/database/twilio-sms-subscriber-database.service";
+import { TwilioSmsQueuePublisherDatabase } from './jobs/database/twilio-sms-publisher-database.service';
+import { TwilioSmsQueueSubscriberDatabase } from './jobs/database/twilio-sms-subscriber-database.service';
 
 // import { ThrottlerModule } from '@nestjs/throttler';
-import { IngestCommand } from "./commands/ingest.command";
-import { MailFactory } from "./factories/mail.factory";
-import { ErrorMapperService } from "./helpers/error-mapper.service";
-import { SolidCoreErrorCodesProvider } from "./helpers/solid-core-error-codes-provider.service";
-import { ComputedFieldEvaluationPublisherRabbitmq } from "./jobs/rabbitmq/computed-field-evaluation-publisher.service";
-import { ComputedFieldEvaluationSubscriberRabbitmq } from "./jobs/rabbitmq/computed-field-evaluation-subscriber.service";
-import { Msg91WhatsappQueuePublisherDatabase } from "./jobs/database/msg91-whatsapp-publisher-database.service";
-import { Msg91WhatsappQueueSubscriberDatabase } from "./jobs/database/msg91-whatsapp-subscriber-database.service";
-import { Three60WhatsappQueuePublisherDatabase } from "./jobs/database/three60-whatsapp-publisher-database.service";
-import { Three60WhatsappQueueSubscriberDatabase } from "./jobs/database/three60-whatsapp-subscriber-database.service";
-import { TriggerMcpClientPublisherDatabase } from "./jobs/database/trigger-mcp-client-publisher-database.service";
-import { TriggerMcpClientSubscriberDatabase } from "./jobs/database/trigger-mcp-client-subscriber-database.service";
-import { GenerateCodePublisherRabbitmq } from "./jobs/rabbitmq/generate-code-publisher.service";
-import { GenerateCodeSubscriberRabbitmq } from "./jobs/rabbitmq/generate-code-subscriber.service";
-import { Three60WhatsappQueuePublisher } from "./jobs/rabbitmq/three60-whatsapp-publisher.service";
-import { Three60WhatsappQueueSubscriber } from "./jobs/rabbitmq/three60-whatsapp-subscriber.service";
-import { TriggerMcpClientPublisherRabbitmq } from "./jobs/rabbitmq/trigger-mcp-client-publisher.service";
-import { TriggerMcpClientSubscriberRabbitmq } from "./jobs/rabbitmq/trigger-mcp-client-subscriber.service";
-import { TwilioSmsQueuePublisherRabbitmq } from "./jobs/rabbitmq/twilio-sms-publisher.service";
-import { TwilioSmsQueueSubscriberRabbitmq } from "./jobs/rabbitmq/twilio-sms-subscriber.service";
-import { DashboardMapper } from "./mappers/dashboard-mapper";
-import { ListOfValuesMapper } from "./mappers/list-of-values-mapper";
-import { ActionMetadataRepository } from "./repository/action-metadata.repository";
-import { AiInteractionRepository } from "./repository/ai-interaction.repository";
-import { ChatterMessageDetailsRepository } from "./repository/chatter-message-details.repository";
-import { ChatterMessageRepository } from "./repository/chatter-message.repository";
-import { DashboardQuestionSqlDatasetConfigRepository } from "./repository/dashboard-question-sql-dataset-config.repository";
-import { DashboardQuestionRepository } from "./repository/dashboard-question.repository";
-import { DashboardVariableRepository } from "./repository/dashboard-variable.repository";
-import { DashboardRepository } from "./repository/dashboard.repository";
-import { DashboardLayoutRepository } from "./repository/dashboard-layout.repository";
+import { IngestCommand } from './commands/ingest.command';
+import { MailFactory } from './factories/mail.factory';
+import { ErrorMapperService } from './helpers/error-mapper.service';
+import { SolidCoreErrorCodesProvider } from './helpers/solid-core-error-codes-provider.service';
+import { ComputedFieldEvaluationPublisherRabbitmq } from './jobs/rabbitmq/computed-field-evaluation-publisher.service';
+import { ComputedFieldEvaluationSubscriberRabbitmq } from './jobs/rabbitmq/computed-field-evaluation-subscriber.service';
+import { Msg91WhatsappQueuePublisherDatabase } from './jobs/database/msg91-whatsapp-publisher-database.service';
+import { Msg91WhatsappQueueSubscriberDatabase } from './jobs/database/msg91-whatsapp-subscriber-database.service';
+import { Three60WhatsappQueuePublisherDatabase } from './jobs/database/three60-whatsapp-publisher-database.service';
+import { Three60WhatsappQueueSubscriberDatabase } from './jobs/database/three60-whatsapp-subscriber-database.service';
+import { TriggerMcpClientPublisherDatabase } from './jobs/database/trigger-mcp-client-publisher-database.service';
+import { TriggerMcpClientSubscriberDatabase } from './jobs/database/trigger-mcp-client-subscriber-database.service';
+import { GenerateCodePublisherRabbitmq } from './jobs/rabbitmq/generate-code-publisher.service';
+import { GenerateCodeSubscriberRabbitmq } from './jobs/rabbitmq/generate-code-subscriber.service';
+import { Three60WhatsappQueuePublisher } from './jobs/rabbitmq/three60-whatsapp-publisher.service';
+import { Three60WhatsappQueueSubscriber } from './jobs/rabbitmq/three60-whatsapp-subscriber.service';
+import { TriggerMcpClientPublisherRabbitmq } from './jobs/rabbitmq/trigger-mcp-client-publisher.service';
+import { TriggerMcpClientSubscriberRabbitmq } from './jobs/rabbitmq/trigger-mcp-client-subscriber.service';
+import { TwilioSmsQueuePublisherRabbitmq } from './jobs/rabbitmq/twilio-sms-publisher.service';
+import { TwilioSmsQueueSubscriberRabbitmq } from './jobs/rabbitmq/twilio-sms-subscriber.service';
+import { DashboardMapper } from './mappers/dashboard-mapper';
+import { ListOfValuesMapper } from './mappers/list-of-values-mapper';
+import { ActionMetadataRepository } from './repository/action-metadata.repository';
+import { AiInteractionRepository } from './repository/ai-interaction.repository';
+import { ChatterMessageDetailsRepository } from './repository/chatter-message-details.repository';
+import { ChatterMessageRepository } from './repository/chatter-message.repository';
+import { DashboardQuestionSqlDatasetConfigRepository } from './repository/dashboard-question-sql-dataset-config.repository';
+import { DashboardQuestionRepository } from './repository/dashboard-question.repository';
+import { DashboardVariableRepository } from './repository/dashboard-variable.repository';
+import { DashboardRepository } from './repository/dashboard.repository';
+import { DashboardLayoutRepository } from './repository/dashboard-layout.repository';
 
 import { EmailTemplateRepository } from './repository/email-template.repository';
 import { ExportTemplateRepository } from './repository/export-template.repository';
@@ -451,13 +446,13 @@ import { Entity } from 'typeorm';
     CacheModule.registerAsync(CacheManagerOptions),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), "media-files-storage"),
-      serveRoot: "/media-files-storage",
+      rootPath: join(process.cwd(), 'media-files-storage'),
+      serveRoot: '/media-files-storage',
       serveStaticOptions: {
         setHeaders: (res /*, path, stat*/) => {
           // Allow use of these files from a different origin (e.g., :3000 UI)
           // Use 'same-site' if both origins are on the same site (localhost:* counts as same-site)
-          res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"); // or 'same-site'
+          res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin'); // or 'same-site'
 
           // If you need to load into <canvas> without tainting or fetch images via XHR,
           // you can also expose CORS here (not needed for simple <img>):
@@ -468,7 +463,7 @@ import { Entity } from 'typeorm';
     MulterModule.registerAsync({
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
-        dest: process.env.AB_MEDIA_UPLOAD_DIR ?? "media-uploads",
+        dest: process.env.AB_MEDIA_UPLOAD_DIR ?? 'media-uploads',
       }),
       inject: [ConfigService],
     }),
@@ -508,8 +503,6 @@ import { Entity } from 'typeorm';
     ModuleMetadataController,
     MqMessageController,
     MqMessageQueueController,
-    GupshupWebhookController,
-    MetaCloudWhatsappWebhookController,
     OTPAuthenticationController,
     PermissionMetadataController,
     RoleMetadataController,
@@ -606,8 +599,6 @@ import { Entity } from 'typeorm';
     Msg91SMSService,
     Msg91OTPService,
     Msg91WhatsappService,
-    MetaCloudWhatsappService,
-    GupshupOtpWhatsappService,
     TwilioSMSService,
     SmsTemplateService,
     EmailTemplateService,
@@ -906,9 +897,9 @@ export class SolidCoreModule implements NestModule {
   configure(consumer: MiddlewareConsumer) {
     consumer
       .apply(
-        express.json({ limit: "10mb" }),
-        express.urlencoded({ limit: "10mb", extended: true }),
+        express.json({ limit: '10mb' }),
+        express.urlencoded({ limit: '10mb', extended: true }),
       )
-      .forRoutes("*");
+      .forRoutes('*');
   }
 }
