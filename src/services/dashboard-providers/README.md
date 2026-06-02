@@ -202,10 +202,7 @@ Typical fields:
 - `name`
 - `displayName`
 - `description`
-- `routeName`
-- `routePath`
 - `moduleUserKey`
-- `permissions[]`
 - `variables[]`
 - `widgets[]`
 - `defaultLayout`
@@ -233,10 +230,9 @@ Dynamic selection:
 Typical fields:
 - `id`
 - `name`
-- `type` (`kpi`, `lineChart`, `barChart`, `pieChart`, `table`, ...)
+- `type` (`kpi`, `lineChart`, `barChart`, `pieChart`, `table`, `customChart`, ...)
 - `dataProvider`
 - `providerContext`
-- `refreshPolicy`
 - optional UI override:
   - `componentName` (or equivalent custom component key)
 
@@ -413,6 +409,18 @@ Widgets include:
 
 This RI is the baseline for future dashboards and for custom widget extension examples.
 
+It also now includes the canonical 100% custom widget example:
+- backend provider: `MqDashboardQueueSlaHeatmapProvider`
+- frontend widget: `QueueSlaHeatmapWidget`
+
+Heatmap provider response contract:
+- `xCategories`
+- `yCategories`
+- `points` (`[xIndex, yIndex, metricValue]`)
+- optional `tooltipFields`
+- optional `pointDetails`
+- optional `legendThresholds`
+
 ---
 
 ## 9. Troubleshooting Guide
@@ -451,7 +459,7 @@ Checklist:
 ### 9.5 Auth / permission issues
 
 - Dashboard runtime endpoints require JWT
-- ensure dashboard permissions include `DashboardController.*` methods in metadata
+- verify the authenticated user can access the module and dashboard route in the consuming app
 
 ---
 
@@ -540,4 +548,3 @@ Pending/next:
 - stronger runtime schema validation and guardrails
 - richer renderer pluggability contract (`chartRenderer` beyond v1)
 - additional documentation templates and automated validation helpers
-

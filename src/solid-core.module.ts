@@ -313,6 +313,7 @@ import { MqDashboardLatencyTrendProvider } from './services/dashboard-providers/
 import { MqDashboardMessagesOverTimeProvider } from './services/dashboard-providers/mq-dashboard-messages-over-time-provider.service';
 import { MqDashboardQueueWiseAvgElapsedProvider } from './services/dashboard-providers/mq-dashboard-queue-wise-avg-elapsed-provider.service';
 import { MqDashboardQueueWiseFailuresProvider } from './services/dashboard-providers/mq-dashboard-queue-wise-failures-provider.service';
+import { MqDashboardQueueSlaHeatmapProvider } from './services/dashboard-providers/mq-dashboard-queue-sla-heatmap-provider.service';
 import { MqDashboardRecentFailuresProvider } from './services/dashboard-providers/mq-dashboard-recent-failures-provider.service';
 import { MqDashboardStageDistributionProvider } from './services/dashboard-providers/mq-dashboard-stage-distribution-provider.service';
 import { MqDashboardSucceededMessagesKpiProvider } from './services/dashboard-providers/mq-dashboard-succeeded-messages-kpi-provider.service';
@@ -715,6 +716,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     MqDashboardStageDistributionProvider,
     MqDashboardQueueWiseFailuresProvider,
     MqDashboardQueueWiseAvgElapsedProvider,
+    MqDashboardQueueSlaHeatmapProvider,
     MqDashboardLatencyTrendProvider,
     MqDashboardRecentFailuresProvider,
     FileStorageProvider,

@@ -5505,7 +5505,8 @@
   "permissions": [
     "mcp:invoke",
     "agent:invoke",
-    "settings:view_encrypted"
+    "settings:view_encrypted",
+    "dashboard:queue-health.*"
   ],
   "roles": [
     {
@@ -13291,15 +13292,51 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
+          "create": false,
+          "edit": false,
           "delete": true
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id"
+              "name": "id",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dashboardName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "version",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "updatedAt",
+              "isSearchable": false
             }
           }
         ]
@@ -13322,8 +13359,8 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
+          "create": false,
+          "edit": false,
           "delete": true
         },
         "children": [
@@ -13331,6 +13368,36 @@
             "type": "field",
             "attrs": {
               "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dashboardName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "version"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "updatedAt"
             }
           }
         ]
@@ -13345,10 +13412,14 @@
       "modelUserKey": "dashboardUserLayout",
       "layout": {
         "type": "form",
+        "edit": false,
         "attrs": {
           "name": "form-1",
           "label": "Dashboard User Layout",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false,
+          "showDeleteFormButton": true
         },
         "children": [
           {
@@ -13366,11 +13437,58 @@
                   {
                     "type": "column",
                     "attrs": {
-                      "name": "group-1",
-                      "label": "",
+                      "name": "dashboard-user-layout-meta",
+                      "label": "Layout Metadata",
                       "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                     },
-                    "children": []
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "dashboardName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "module"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "user"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "version"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "updatedAt"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "dashboard-user-layout-json",
+                      "label": "Layout Payload",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "layoutJson"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -13522,17 +13640,7 @@
       "name": "queue-health",
       "displayName": "Queue Health Dashboard",
       "description": "Operational visibility for MQ queues and messages.",
-      "routeName": "queue-health",
-      "routePath": "/admin/dashboard/queue-health",
       "moduleUserKey": "solid-core",
-      "permissions": [
-        "DashboardController.getDefinition",
-        "DashboardController.getVariableOptions",
-        "DashboardController.getWidgetData",
-        "DashboardController.getDashboardData",
-        "DashboardController.getLayout",
-        "DashboardController.saveLayout"
-      ],
       "variables": [
         {
           "name": "date",
@@ -13593,10 +13701,6 @@
           "dataProvider": "MqDashboardTotalMessagesKpiProvider",
           "providerContext": {
             "metric": "count_total_messages"
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 60
           }
         },
         {
@@ -13606,10 +13710,6 @@
           "dataProvider": "MqDashboardSucceededMessagesKpiProvider",
           "providerContext": {
             "metric": "count_succeeded_messages"
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 60
           }
         },
         {
@@ -13619,10 +13719,6 @@
           "dataProvider": "MqDashboardFailedMessagesKpiProvider",
           "providerContext": {
             "metric": "count_failed_messages"
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 60
           }
         },
         {
@@ -13632,10 +13728,6 @@
           "dataProvider": "MqDashboardInflightMessagesKpiProvider",
           "providerContext": {
             "metric": "count_inflight_messages"
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 60
           }
         },
         {
@@ -13645,10 +13737,6 @@
           "dataProvider": "MqDashboardSuccessRateKpiProvider",
           "providerContext": {
             "metric": "success_rate_percentage"
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 60
           }
         },
         {
@@ -13658,10 +13746,6 @@
           "dataProvider": "MqDashboardAvgElapsedKpiProvider",
           "providerContext": {
             "metric": "average_elapsed_millis"
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 60
           }
         },
         {
@@ -13678,10 +13762,6 @@
               "failed",
               "retrying"
             ]
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 120
           }
         },
         {
@@ -13692,10 +13772,6 @@
           "providerContext": {
             "groupBy": "stage",
             "metric": "count"
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 120
           }
         },
         {
@@ -13706,10 +13782,6 @@
           "providerContext": {
             "groupBy": "mqMessageQueue.name",
             "metric": "failed_count"
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 120
           }
         },
         {
@@ -13720,10 +13792,6 @@
           "providerContext": {
             "groupBy": "mqMessageQueue.name",
             "metric": "avg_elapsed_millis"
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 120
           }
         },
         {
@@ -13735,10 +13803,45 @@
             "timeField": "createdAt",
             "bucket": "hour",
             "metric": "avg_elapsed_millis"
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 120
+          }
+        },
+        {
+          "id": "chart-queue-sla-heatmap",
+          "name": "Queue SLA Heatmap",
+          "type": "customChart",
+          "dataProvider": "MqDashboardQueueSlaHeatmapProvider",
+          "componentName": "QueueSlaHeatmapWidget",
+          "providerContext": {
+            "bucket": "hour",
+            "tooltipFields": [
+              "avgElapsedMillis",
+              "messageCount",
+              "peakElapsedMillis"
+            ],
+            "legendThresholds": [
+              {
+                "label": "0-5s",
+                "color": "#22c55e",
+                "lte": 5000
+              },
+              {
+                "label": "5-15s",
+                "color": "#f59e0b",
+                "gt": 5000,
+                "lte": 15000
+              },
+              {
+                "label": "15-30s",
+                "color": "#f97316",
+                "gt": 15000,
+                "lte": 30000
+              },
+              {
+                "label": "30s+",
+                "color": "#ef4444",
+                "gt": 30000
+              }
+            ]
           }
         },
         {
@@ -13765,10 +13868,6 @@
               "createdAt"
             ],
             "errorMaxLength": 160
-          },
-          "refreshPolicy": {
-            "mode": "interval",
-            "intervalSeconds": 60
           }
         }
       ],
@@ -13854,9 +13953,16 @@
             "h": 5
           },
           {
-            "widgetId": "table-recent-failures",
+            "widgetId": "chart-queue-sla-heatmap",
             "x": 0,
             "y": 11,
+            "w": 12,
+            "h": 5
+          },
+          {
+            "widgetId": "table-recent-failures",
+            "x": 0,
+            "y": 16,
             "w": 12,
             "h": 4
           }
