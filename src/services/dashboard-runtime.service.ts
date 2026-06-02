@@ -268,7 +268,16 @@ export class DashboardRuntimeService {
         activeUser?: ActiveUserData,
     ): Promise<any> {
         const widgetDefinition = this.findWidgetDefinition(dashboardDefinition, widgetName);
+        const resolvedWidgetName = widgetDefinition.id ?? widgetDefinition.name ?? widgetName;
         const providerName = widgetDefinition.dataProvider;
+
+        if (!this.hasDashboardWidgetPermission(activeUser, dashboardDefinition?.name ?? dashboardName, resolvedWidgetName)) {
+            return this.buildUnauthorizedWidgetResponse(
+                dashboardDefinition?.name ?? dashboardName,
+                resolvedWidgetName,
+                providerName,
+            );
+        }
 
         if (!providerName) {
             throw new NotFoundException(`Widget ${widgetName} is missing dataProvider definition.`);
@@ -287,7 +296,7 @@ export class DashboardRuntimeService {
         const runtimeContext: IDashboardWidgetDataProviderContext = {
             moduleName,
             dashboardName,
-            widgetName: widgetDefinition.id ?? widgetDefinition.name ?? widgetName,
+            widgetName: resolvedWidgetName,
             variables: request.variables ?? {},
             providerContext,
             activeUser,
@@ -349,6 +358,67 @@ export class DashboardRuntimeService {
         } catch (err) {
             return {};
         }
+    }
+
+    private hasDashboardWidgetPermission(
+        activeUser: ActiveUserData | undefined,
+        dashboardName: string,
+        widgetName: string,
+    ): boolean {
+        const permissions = Array.isArray(activeUser?.permissions) ? activeUser.permissions : [];
+        if (!dashboardName || !widgetName || permissions.length === 0) {
+            return false;
+        }
+
+        return permissions.some((permission) => this.matchesDashboardWidgetPermission(permission, dashboardName, widgetName));
+    }
+
+    private matchesDashboardWidgetPermission(permission: string, dashboardName: string, widgetName: string): boolean {
+        const match = /^dashboard:([^:]+):(.+)$/.exec(`${permission ?? ''}`.trim());
+        if (!match) {
+            return false;
+        }
+
+        const [, permissionDashboardName, widgetPattern] = match;
+        if (permissionDashboardName !== dashboardName || !widgetPattern) {
+            return false;
+        }
+
+        if (widgetPattern === '*') {
+            return true;
+        }
+
+        if (widgetPattern === widgetName) {
+            return true;
+        }
+
+        try {
+            return new RegExp(widgetPattern).test(widgetName);
+        } catch {
+            return false;
+        }
+    }
+
+    private buildUnauthorizedWidgetResponse(
+        dashboardName: string,
+        widgetName: string,
+        providerName?: string,
+    ): any {
+        return {
+            meta: {
+                providerName: providerName ?? null,
+                widgetName,
+                durationMs: 0,
+                generatedAt: new Date().toISOString(),
+                unauthorized: true,
+                permissionExpression: `dashboard:${dashboardName}:${widgetName}`,
+            },
+            data: null,
+            uiHints: {
+                state: 'unauthorized',
+                message: 'Unauthorized',
+            },
+        };
     }
 
     private parseLayoutJson(layoutJson: any): any {

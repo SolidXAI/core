@@ -5506,7 +5506,9 @@
     "mcp:invoke",
     "agent:invoke",
     "settings:view_encrypted",
-    "dashboard:queue-health.*"
+    "dashboard:queue-health:kpi-.*",
+    "dashboard:queue-health:chart-queue-.*",
+    "dashboard:queue-health:chart-processing-latency-trend"
   ],
   "roles": [
     {
