@@ -3,12 +3,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
-import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
 import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
-import { DashboardRepository } from 'src/repository/dashboard.repository';
 import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
 import { AuthenticationService } from 'src/services/authentication.service';
 import { EmailTemplateService } from 'src/services/email-template.service';
@@ -52,7 +50,6 @@ import { SavedFilters } from 'src/entities/saved-filters.entity';
 import { ScheduledJob } from 'src/entities/scheduled-job.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { ListOfValues } from 'src/entities/list-of-values.entity';
-import { Dashboard } from 'src/entities/dashboard.entity';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
@@ -88,7 +85,6 @@ export class ModuleMetadataSeederService {
         private readonly settingsRepo: SettingRepository,
         readonly securityRuleRepo: SecurityRuleRepository,
         readonly systemFieldsSeederService: SystemFieldsSeederService,
-        readonly dashboardRepo: DashboardRepository,
         readonly scheduledJobRepository: ScheduledJobRepository,
         readonly savedFiltersRepo: SavedFiltersRepository,
         readonly dataSource: DataSource,
@@ -207,11 +203,6 @@ export class ModuleMetadataSeederService {
                 const lovCounts = await this.seedListOfValues(moduleMetadata, overallMetadata);
                 console.log(`${this.formatSeedResult(moduleMetadata.name, 'List Of Values', lovCounts)}`);
 
-                currentStep = 'seedDashboards';
-                this.logger.log(`Seeding Dashboards`);
-                const dashboardCounts = await this.seedDashboards(moduleMetadata, overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Dashboards', dashboardCounts)}`);
-
                 currentStep = 'seedScheduledJobs';
                 this.logger.log(`Seeding Scheduled Jobs`);
                 const scheduledJobCounts = await this.seedScheduledJobs(moduleMetadata, overallMetadata);
@@ -269,15 +260,6 @@ export class ModuleMetadataSeederService {
         }
         this.logger.debug(`[End] Processing saved filters for ${moduleMetadata.name}`);
         return { pruned, upserted: savedFilters?.length ?? 0 };
-    }
-
-    private async seedDashboards(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing dashboards for ${moduleMetadata.name}`);
-        const dashboards: CreateDashboardDto[] = overallMetadata.dashboards;
-        const pruned = this.enablePruning ? await this.pruneDashboards(dashboards, moduleMetadata.name) : 0;
-        await this.handleSeedDashboards(dashboards);
-        this.logger.debug(`[End] Processing dashboards for ${moduleMetadata.name}`);
-        return { pruned, upserted: dashboards?.length ?? 0 };
     }
 
     private async seedListOfValues(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
@@ -923,16 +905,6 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    private async handleSeedDashboards(dashboardDtos: CreateDashboardDto[]) {
-        if (!dashboardDtos || dashboardDtos.length === 0) {
-            this.logger.debug(`No dashboards found to seed`);
-            return;
-        }
-        for (const dto of dashboardDtos) {
-            await this.dashboardRepo.upsertWithDto(dto);
-        }
-    }
-
     private async handleSeedScheduledJobs(createScheduledJobDto: CreateScheduledJobDto[]) {
         if (!createScheduledJobDto || createScheduledJobDto.length === 0) {
             this.logger.debug(`No scheduled jobs found to seed`);
@@ -1182,45 +1154,6 @@ export class ModuleMetadataSeederService {
                 .createQueryBuilder()
                 .delete()
                 .from(ListOfValues)
-                .whereInIds(ids)
-                .execute();
-            return result.affected ?? 0;
-        }
-        return 0;
-    }
-
-    private async pruneDashboards(dashboardsDto: CreateDashboardDto[] | undefined, moduleName?: string): Promise<number> {
-        if (!moduleName) {
-            this.logger.warn(`Skipping dashboards prune: missing module name in metadata.`);
-            return 0;
-        }
-        const dashboards = dashboardsDto ?? [];
-
-        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
-        if (!module) {
-            this.logger.warn(`Skipping dashboards prune: module not found for ${moduleName}.`);
-            return 0;
-        }
-
-        const dashboardNames = [...new Set(dashboards.map(dto => dto.name).filter(Boolean))];
-        const repo = this.dataSource.getRepository(Dashboard);
-        const idsToDeleteQuery = repo
-            .createQueryBuilder('db')
-            .select('db.id', 'id')
-            .innerJoin('db.module', 'module')
-            .where('module.id = :moduleId', { moduleId: module.id });
-
-        if (dashboardNames.length > 0) {
-            idsToDeleteQuery.andWhere('db.name NOT IN (:...dashboardNames)', { dashboardNames });
-        }
-
-        const rows = await idsToDeleteQuery.getRawMany();
-        const ids = rows.map((row) => row.id);
-        if (ids.length > 0) {
-            const result = await repo
-                .createQueryBuilder()
-                .delete()
-                .from(Dashboard)
                 .whereInIds(ids)
                 .execute();
             return result.affected ?? 0;

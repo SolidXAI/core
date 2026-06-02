@@ -12,10 +12,7 @@ import { CreateRoleMetadataDto } from './dtos/create-role-metadata.dto';
 import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
-import { DashboardQuestion } from './entities/dashboard-question.entity';
 import { ComputedFieldMetadata } from './helpers/solid-registry';
-import { SqlExpression } from './services/question-data-providers/chartjs-sql-data-provider.service';
-import { CreateDashboardDto } from './dtos/create-dashboard.dto';
 import { AiInteraction } from './entities/ai-interaction.entity';
 import { ActiveUserData } from './interfaces/active-user-data.interface';
 import { SecurityRuleConfig } from './dtos/security-rule-config.dto';
@@ -59,7 +56,7 @@ export interface ModuleMetadataConfiguration {
   smsTemplates?: CreateSmsTemplateDto[],
   mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[]
   securityRules?: CreateSecurityRuleDto[],
-  dashboards?: CreateDashboardDto[],
+  dashboards?: any[],
 }
 
 export enum SettingLevel {
@@ -166,25 +163,41 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
   values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
 }
 
-export interface IDashboardVariableSelectionProvider<T extends ISelectionProviderContext> extends ISelectionProvider<T> {
+export interface IDashboardWidgetDataProviderContext<TVariables = Record<string, any>, TProviderContext = Record<string, any>> {
+  moduleName: string;
+  dashboardName: string;
+  widgetName: string;
+  variables: TVariables;
+  providerContext: TProviderContext;
+  activeUser?: ActiveUserData;
+}
+
+export interface IDashboardWidgetDataResponseEnvelope<TData = any, TUiHints = Record<string, any>> {
+  meta: {
+    providerName: string;
+    generatedAt: string;
+    widgetName: string;
+    durationMs: number;
+    [key: string]: any;
+  };
+  data: TData;
+  uiHints?: TUiHints;
+}
+
+export interface IDashboardWidgetDataProvider<
+  TContext extends IDashboardWidgetDataProviderContext = IDashboardWidgetDataProviderContext,
+  TResponse = any,
+> {
+  help(): string;
+  name(): string;
+  getData(
+    widgetDefinition: Record<string, any>,
+    ctxt: TContext,
+  ): Promise<IDashboardWidgetDataResponseEnvelope<TResponse> | any>;
 }
 
 export interface IMcpToolResponseHandler {
   apply(aiInteraction: AiInteraction);
-}
-
-export interface QuestionSqlDataProviderContext {
-    // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
-    // questionId: number;
-    // question: Question;
-    expressions?: SqlExpression[]
-}
-export interface IDashboardQuestionDataProvider<TContext, TData> {
-  help(): string;
-
-  name(): string;
-
-  getData(question: DashboardQuestion, ctxt?: TContext): Promise<TData[] | TData>;
 }
 
 /**

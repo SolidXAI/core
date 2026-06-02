@@ -1230,6 +1230,92 @@
         ]
       },
       {
+        "singularName": "dashboardUserLayout",
+        "pluralName": "dashboardUserLayouts",
+        "displayName": "Dashboard User Layout",
+        "description": "Stores per-user dashboard layout overrides.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_dashboard_user_layout",
+        "userKeyFieldUserKey": "dashboardName",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "user",
+            "displayName": "User",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "user",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCreateInverse": false,
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "isSystem": true
+          },
+          {
+            "name": "dashboardName",
+            "displayName": "Dashboard Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 128,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "columnName": "dashboard_name",
+            "isSystem": true
+          },
+          {
+            "name": "layoutJson",
+            "displayName": "Layout Json",
+            "type": "longText",
+            "ormType": "text",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "layout_json",
+            "isSystem": true
+          },
+          {
+            "name": "version",
+            "displayName": "Version",
+            "type": "int",
+            "ormType": "integer",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "defaultValue": "1",
+            "isSystem": true
+          }
+        ]
+      },
+      {
         "singularName": "actionMetadata",
         "tableName": "ss_action_metadata",
         "pluralName": "actionMetadatas",
@@ -4450,738 +4536,6 @@
         ]
       },
       {
-        "singularName": "dashboard",
-        "pluralName": "dashboards",
-        "displayName": "Dashboard",
-        "description": "This is used to maintain dashboards",
-        "dataSource": "default",
-        "dataSourceType": "postgres",
-        "tableName": "ss_dashboard",
-        "userKeyFieldUserKey": "name",
-        "fields": [
-          {
-            "name": "name",
-            "displayName": "Name",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
-            "required": true,
-            "unique": true,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "isUserKey": true
-          },
-          {
-            "name": "displayName",
-            "displayName": "Display Name",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "isUserKey": false
-          },
-          {
-            "name": "description",
-            "displayName": "Description",
-            "type": "longText",
-            "ormType": "text",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "description": "This is a description of the dashboard configuration, providing context and details about the dashboard."
-          },
-          {
-            "name": "layoutJson",
-            "displayName": "Layout Json",
-            "type": "json",
-            "ormType": "simple-json",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "dashboardVariables",
-            "displayName": "Dashboard Variables",
-            "type": "relation",
-            "ormType": "",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "relationType": "one-to-many",
-            "relationCoModelFieldName": "dashboard",
-            "relationCreateInverse": true,
-            "relationCoModelSingularName": "dashboardVariable",
-            "relationModelModuleName": "solid-core",
-            "isSystem": true
-          },
-          {
-            "name": "questions",
-            "displayName": "Dashboard Questions",
-            "type": "relation",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "relationType": "one-to-many",
-            "relationCoModelFieldName": "dashboard",
-            "relationCreateInverse": true,
-            "relationCoModelSingularName": "dashboardQuestion",
-            "relationModelModuleName": "solid-core",
-            "isSystem": true
-          },
-          {
-            "name": "module",
-            "displayName": "Module",
-            "type": "relation",
-            "ormType": "integer",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "relationType": "many-to-one",
-            "relationCreateInverse": false,
-            "relationCoModelSingularName": "moduleMetadata",
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "cascade",
-            "isSystem": true
-          }
-        ]
-      },
-      {
-        "singularName": "dashboardVariable",
-        "pluralName": "dashboardVariables",
-        "displayName": "Dashboard Variable",
-        "description": "This is used to maintain dashboard variables",
-        "dataSource": "default",
-        "dataSourceType": "postgres",
-        "tableName": "ss_dashboard_variable",
-        "userKeyFieldUserKey": "externalId",
-        "fields": [
-          {
-            "name": "variableName",
-            "displayName": "Variable Name",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
-            "required": true,
-            "unique": false,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "isUserKey": false
-          },
-          {
-            "name": "variableType",
-            "displayName": "Variable Type",
-            "type": "selectionStatic",
-            "ormType": "varchar",
-            "length": 256,
-            "required": true,
-            "index": true,
-            "isSystem": true,
-            "selectionValueType": "string",
-            "selectionStaticValues": [
-              "date:Date",
-              "selectionStatic:Selection Static",
-              "selectionDynamic:Selection Dynamic"
-            ]
-          },
-          {
-            "name": "selectionStaticValues",
-            "displayName": "Selection Static Values",
-            "type": "json",
-            "ormType": "simple-json",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "selectionDynamicSourceType",
-            "displayName": "Selection Dynamic Source Type",
-            "type": "selectionStatic",
-            "ormType": "",
-            "length": 256,
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "selectionValueType": "string",
-            "selectionStaticValues": [
-              "sql:SQL",
-              "provider:Provider"
-            ]
-          },
-          {
-            "name": "selectionDynamicSQL",
-            "displayName": "Selection Dynamic SQL",
-            "type": "longText",
-            "ormType": "text",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "description": "SQL query to fetch the data for this variable when it is rendered at runtime. This is only applicable when selectionDynamicSourceType is set to SQL."
-          },
-          {
-            "name": "selectionDynamicProviderName",
-            "displayName": "Selection Dynamic Provider Name",
-            "type": "selectionDynamic",
-            "ormType": "varchar",
-            "length": 256,
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "selectionValueType": "string",
-            "selectionDynamicProvider": "ListOfDashboardVariableProvidersSelectionProvider",
-            "selectionDynamicProviderCtxt": "{}",
-            "description": "This is only applicable when selectionDynamicSourceType is set to provider. It allows the user to select any pre-existing Dashboard SelectionDynamicProvider implementation used to fetch a dynamic dropdown of values to choose from when this variable is presented to the user."
-          },
-          {
-            "name": "isMultiSelect",
-            "displayName": "Is Multi Select",
-            "type": "boolean",
-            "defaultValue": "false",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "description": "This is relevant only for variables of type \"selectionStatic\" or \"selectionDynamic\". When set to true, it allows the user to select multiple values from the dropdown."
-          },
-          {
-            "name": "dashboard",
-            "displayName": "Dashboard",
-            "description": "Related Dashboard Model",
-            "type": "relation",
-            "ormType": "integer",
-            "isSystem": true,
-            "relationType": "many-to-one",
-            "relationCoModelFieldName": "dashboardVariables",
-            "relationCreateInverse": true,
-            "relationCoModelSingularName": "dashboard",
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "cascade",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false
-          },
-          {
-            "name": "defaultValue",
-            "displayName": "Default Value",
-            "type": "longText",
-            "ormType": "text",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "description": "This is the default value for this variable when it is rendered at runtime. It can be a static value for this variable when it is rendered at runtime."
-          },
-          {
-            "name": "defaultOperator",
-            "displayName": "Default Operator",
-            "type": "selectionStatic",
-            "ormType": "varchar",
-            "length": 256,
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "selectionValueType": "string",
-            "selectionStaticValues": [
-              "$equals:Equals",
-              "$notEquals:Not Equals",
-              "$contains:Contains",
-              "$notContains:Not Contains",
-              "$startsWith:Starts With",
-              "$endsWith:Ends With",
-              "$in:In",
-              "$notIn:Not In",
-              "$between:Between",
-              "$lt:Less Than",
-              "$lte:Less Than or Equal To",
-              "$gt:Greater Than",
-              "$gte:Greater Than or Equal To"
-            ],
-            "description": "This is the default operator for this variable when it is rendered at runtime. It can be a static value for this variable when it is rendered at runtime."
-          },
-          {
-            "name": "externalId",
-            "displayName": "Dashboard Variable User KExternal IDey",
-            "description": "Concatenation of variable name and dashboard name",
-            "type": "computed",
-            "ormType": "varchar",
-            "isSystem": false,
-            "computedFieldValueType": "string",
-            "computedFieldTriggerConfig": [
-              {
-                "modelName": "dashboardVariable",
-                "moduleName": "solid-core",
-                "operations": [
-                  "before-insert"
-                ]
-              }
-            ],
-            "computedFieldValueProvider": "ConcatEntityComputedFieldProvider",
-            "computedFieldValueProviderCtxt": "{\n  \"fields\": [\n    \"variableName\",\n    \"dashboard.name\"\n  ],\n  \"separator\": \"-\",\n  \"slugify\": true\n}",
-            "required": false,
-            "unique": true,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "isUserKey": true
-          }
-        ]
-      },
-      {
-        "singularName": "dashboardQuestion",
-        "pluralName": "dashboardQuestions",
-        "displayName": "Dashboard Question",
-        "description": "This is used to maintain dashboard questions for dashboards",
-        "dataSource": "default",
-        "dataSourceType": "postgres",
-        "tableName": "ss_dashboard_question",
-        "userKeyFieldUserKey": "externalId",
-        "fields": [
-          {
-            "name": "name",
-            "displayName": "Name",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "isUserKey": true
-          },
-          {
-            "name": "sourceType",
-            "displayName": "Source Type",
-            "type": "selectionStatic",
-            "ormType": "",
-            "length": 256,
-            "required": true,
-            "index": true,
-            "isSystem": true,
-            "selectionValueType": "string",
-            "selectionStaticValues": [
-              "sql:SQL",
-              "provider:Provider"
-            ]
-          },
-          {
-            "name": "visualisedAs",
-            "displayName": "Visualised As",
-            "type": "selectionStatic",
-            "ormType": "",
-            "length": 256,
-            "required": true,
-            "index": true,
-            "isSystem": true,
-            "selectionValueType": "string",
-            "selectionStaticValues": [
-              "bar:ChartJS - Bar",
-              "line:ChartJS - Line",
-              "pie:ChartJS - Pie",
-              "donut:ChartJS - Donut",
-              "prime-meter-group:Prime - Meter Group",
-              "prime-datatable:Prime - Datatable"
-            ]
-          },
-          {
-            "name": "sequenceNumber",
-            "displayName": "Sequence Number",
-            "type": "int",
-            "ormType": "integer",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "labelSql",
-            "displayName": "Label SQL Query",
-            "type": "longText",
-            "ormType": "text",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "description": "This is the SQL query to fetch the label values for the question"
-          },
-          {
-            "name": "kpiSql",
-            "displayName": "KPI SQL Query",
-            "type": "longText",
-            "ormType": "text",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "description": "This is the SQL query to fetch the KPI value for the question"
-          },
-          {
-            "name": "providerName",
-            "displayName": "Provider Name",
-            "type": "selectionDynamic",
-            "ormType": "varchar",
-            "length": 256,
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "selectionValueType": "string",
-            "selectionDynamicProvider": "ListOfDashboardQuestionProvidersSelectionProvider",
-            "selectionDynamicProviderCtxt": "{}",
-            "description": "This is only applicable when sourceType is set to provider. It allows the user to select any pre-existing Dashboard Question Data provider implementation used to fetch a dynamic dropdown of values to choose from when this question is presented to the user."
-          },
-          {
-            "name": "chartOptions",
-            "displayName": "Bar Chart Label Options",
-            "type": "json",
-            "ormType": "simple-json",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "description": "This is a JSON object representing each labels display and color options for the bar chart"
-          },
-          {
-            "name": "dashboard",
-            "displayName": "Dashboard",
-            "description": "Related Dashboard Model",
-            "type": "relation",
-            "ormType": "integer",
-            "isSystem": true,
-            "relationType": "many-to-one",
-            "relationCoModelFieldName": "questions",
-            "relationCreateInverse": true,
-            "relationCoModelSingularName": "dashboard",
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "cascade",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false
-          },
-          {
-            "name": "questionSqlDatasetConfigs",
-            "displayName": "Related Dashboard Question SQL Dataset Config",
-            "description": "Related Question SQL Dataset Config Model",
-            "type": "relation",
-            "ormType": "integer",
-            "isSystem": true,
-            "relationType": "one-to-many",
-            "relationCoModelFieldName": "question",
-            "relationCreateInverse": true,
-            "relationCoModelSingularName": "dashboardQuestionSqlDatasetConfig",
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "cascade",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false
-          },
-          {
-            "name": "externalId",
-            "displayName": "External ID",
-            "description": "Concatenation of question name and dashboard name",
-            "type": "computed",
-            "ormType": "varchar",
-            "isSystem": false,
-            "computedFieldValueType": "string",
-            "computedFieldTriggerConfig": [
-              {
-                "modelName": "dashboardQuestion",
-                "moduleName": "solid-core",
-                "operations": [
-                  "before-insert"
-                ]
-              }
-            ],
-            "computedFieldValueProvider": "ConcatEntityComputedFieldProvider",
-            "computedFieldValueProviderCtxt": "{\n  \"fields\": [\n    \"name\",\n    \"dashboard.name\"\n  ],\n  \"separator\": \"-\",\n  \"slugify\": true\n}",
-            "required": false,
-            "unique": true,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "isUserKey": true
-          }
-        ]
-      },
-      {
-        "singularName": "dashboardQuestionSqlDatasetConfig",
-        "pluralName": "dashboardQuestionSqlDatasetConfigs",
-        "displayName": "Dashboard Question SQL Dataset Config",
-        "description": "This is used to maintain Dashboard Question SQL dataset configurations",
-        "dataSource": "default",
-        "dataSourceType": "postgres",
-        "tableName": "ss_dashboard_question_sql_dataset_config",
-        "userKeyFieldUserKey": "externalId",
-        "fields": [
-          {
-            "name": "datasetName",
-            "displayName": "Dataset Name",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "datasetDisplayName",
-            "displayName": "Dataset Display Name",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "description": "This is the display name for the dataset configuration, which can be used in UI components to represent the dataset in a user-friendly manner."
-          },
-          {
-            "name": "description",
-            "displayName": "Description",
-            "type": "longText",
-            "ormType": "text",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "description": "This is a description of the dataset configuration, providing context and details about its purpose."
-          },
-          {
-            "name": "sql",
-            "displayName": "SQL Query",
-            "type": "longText",
-            "ormType": "text",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "labelColumnName",
-            "displayName": "Label Column Name",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "valueColumnName",
-            "displayName": "Value Column Name",
-            "type": "shortText",
-            "ormType": "varchar",
-            "length": 256,
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true
-          },
-          {
-            "name": "options",
-            "displayName": "Dataset options",
-            "type": "json",
-            "ormType": "simple-json",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "description": "This allows you to set the dataset options e.g border-color, background-color, etc. This is a JSON object that can be used to customize the dataset appearance or behavior in the UI."
-          },
-          {
-            "name": "question",
-            "displayName": "Question",
-            "description": "Related Question Model",
-            "type": "relation",
-            "ormType": "integer",
-            "isSystem": true,
-            "relationType": "many-to-one",
-            "relationCoModelFieldName": "questionSqlDatasetConfigs",
-            "relationCreateInverse": true,
-            "relationCoModelSingularName": "dashboardQuestion",
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "cascade",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false
-          },
-          {
-            "name": "externalId",
-            "displayName": "External ID",
-            "description": "Concatenation of dataset name, question name and dashboard name",
-            "type": "computed",
-            "ormType": "varchar",
-            "isSystem": false,
-            "computedFieldValueType": "string",
-            "computedFieldTriggerConfig": [
-              {
-                "modelName": "dashboardQuestionSqlDatasetConfig",
-                "moduleName": "solid-core",
-                "operations": [
-                  "before-insert"
-                ]
-              }
-            ],
-            "computedFieldValueProvider": "ConcatEntityComputedFieldProvider",
-            "computedFieldValueProviderCtxt": "{\n  \"fields\": [\n    \"datasetName\",\n \"question.name\",\n  \"question.dashboard.name\"\n  ],\n  \"separator\": \"-\",\n  \"slugify\": true\n}",
-            "required": false,
-            "unique": true,
-            "index": true,
-            "private": false,
-            "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "isUserKey": true
-          }
-        ]
-      },
-      {
-        "singularName": "dashboardLayout",
-        "pluralName": "dashboardLayouts",
-        "displayName": "Dashboard Layout",
-        "description": "This is used to maintain dashboard layouts",
-        "dataSource": "default",
-        "dataSourceType": "postgres",
-        "tableName": "ss_dashboard_layout",
-        "userKeyFieldUserKey": "externalId",
-        "fields": [
-          {
-            "name": "layout",
-            "displayName": "Layout",
-            "type": "longText",
-            "ormType": "text",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "isSystem": true,
-            "description": "This stores the dashboard layout"
-          },
-          {
-            "name": "dashboard",
-            "displayName": "Dashboard",
-            "description": "Related Dashboard Model",
-            "type": "relation",
-            "ormType": "integer",
-            "isSystem": true,
-            "relationType": "many-to-one",
-            "relationCoModelFieldName": "dashboardLayouts",
-            "relationCreateInverse": true,
-            "relationCoModelSingularName": "dashboard",
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "cascade",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false
-          },
-          {
-            "name": "user",
-            "displayName": "User",
-            "description": null,
-            "type": "relation",
-            "ormType": "integer",
-            "isSystem": false,
-            "relationType": "many-to-one",
-            "relationCoModelFieldName": null,
-            "relationCreateInverse": false,
-            "relationCoModelSingularName": "user",
-            "relationCoModelColumnName": "",
-            "relationModelModuleName": "solid-core",
-            "relationCascade": "cascade",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "relationJoinTableName": "",
-            "isRelationManyToManyOwner": null
-          }
-        ]
-      },
-      {
         "singularName": "aiInteraction",
         "pluralName": "aiInteractions",
         "displayName": "AI Interaction",
@@ -5648,7 +5002,12 @@
             "private": false,
             "encrypt": false,
             "isSystem": true,
-            "selectionStaticValues": ["active:Active", "completed:Completed", "failed:Failed", "cancelled:Cancelled"],
+            "selectionStaticValues": [
+              "active:Active",
+              "completed:Completed",
+              "failed:Failed",
+              "cancelled:Cancelled"
+            ],
             "selectionValueType": "string"
           },
           {
@@ -6146,7 +5505,8 @@
   "permissions": [
     "mcp:invoke",
     "agent:invoke",
-    "settings:view_encrypted"
+    "settings:view_encrypted",
+    "dashboard:queue-health:*"
   ],
   "roles": [
     {
@@ -6664,71 +6024,6 @@
       "modelUserKey": "setting"
     },
     {
-      "displayName": "Dashboard List Action",
-      "name": "dashboard-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "dashboard-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboard"
-    },
-    {
-      "displayName": "Dashboard Variable List Action",
-      "name": "dashboardVariable-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "dashboardVariable-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardVariable"
-    },
-    {
-      "displayName": "Dashboard Question List Action",
-      "name": "dashboardQuestion-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "dashboardQuestion-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardQuestion"
-    },
-    {
-      "displayName": "Dashboard Layout List Action",
-      "name": "dashboardLayout-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "dashboardLayout-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardLayout"
-    },
-    {
-      "displayName": "Dashboard Question SQL Dataset Config List Action",
-      "name": "dashboardQuestionSqlDatasetConfig-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "dashboardQuestionSqlDatasetConfig-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardQuestionSqlDatasetConfig"
-    },
-    {
       "displayName": "AI Interactions",
       "name": "aiInteraction-list-action",
       "type": "solid",
@@ -6844,6 +6139,45 @@
       "viewUserKey": "mcpAuditLog-form-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "mcpAuditLog"
+    },
+    {
+      "displayName": "Queue Health",
+      "name": "solid-core-queue-health-dashboard-view",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/core/solid-core/dashboard/queue-health",
+      "customIsModal": false,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "mqMessage"
+    },
+    {
+      "displayName": "Dashboard User Layout List Action",
+      "name": "dashboardUserLayout-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboardUserLayout-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardUserLayout"
+    },
+    {
+      "displayName": "Dashboard User Layout Tree View Action",
+      "name": "dashboardUserLayout-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "dashboardUserLayout-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardUserLayout"
     }
   ],
   "menus": [
@@ -7005,10 +6339,10 @@
       "iconName": "low_priority"
     },
     {
-      "displayName": "Messages",
-      "name": "mqMessage-menu-item",
+      "displayName": "Queue Health",
+      "name": "solid-core-queue-health-dashboard-menu-item",
       "sequenceNumber": 1,
-      "actionUserKey": "mqMessage-list-action",
+      "actionUserKey": "solid-core-queue-health-dashboard-view",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "queues-menu-item"
     },
@@ -7017,6 +6351,14 @@
       "name": "mqMessageQueue-menu-item",
       "sequenceNumber": 2,
       "actionUserKey": "mqMessageQueue-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "queues-menu-item"
+    },
+    {
+      "displayName": "Messages",
+      "name": "mqMessage-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "mqMessage-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "queues-menu-item"
     },
@@ -7127,39 +6469,6 @@
       "parentMenuItemUserKey": "other-menu-item"
     },
     {
-      "displayName": "Dashboards",
-      "name": "dashboardManagement-menu-item",
-      "sequenceNumber": 8,
-      "actionUserKey": "",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "",
-      "iconName": "dashboard_customize"
-    },
-    {
-      "displayName": "Dashboard",
-      "name": "dashboard-menu-item",
-      "sequenceNumber": 1,
-      "actionUserKey": "dashboard-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "dashboardManagement-menu-item"
-    },
-    {
-      "displayName": "Dashboard Question",
-      "name": "dashboardQuestion-menu-item",
-      "sequenceNumber": 2,
-      "actionUserKey": "dashboardQuestion-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "dashboardManagement-menu-item"
-    },
-    {
-      "displayName": "Dashboard Layout",
-      "name": "dashboardLayout-menu-item",
-      "sequenceNumber": 3,
-      "actionUserKey": "dashboardLayout-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "dashboardManagement-menu-item"
-    },
-    {
       "displayName": "Settings",
       "name": "settings-menu-item",
       "sequenceNumber": 9,
@@ -7208,6 +6517,15 @@
       "actionUserKey": "mcpAuditLog-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item"
+    },
+    {
+      "displayName": "Dashboard User Layout",
+      "name": "dashboardUserLayout-menu-item",
+      "sequenceNumber": 42,
+      "actionUserKey": "dashboardUserLayout-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "",
+      "iconName": ""
     }
   ],
   "views": [
@@ -10103,7 +9421,7 @@
           {
             "type": "field",
             "attrs": {
-              "label" : "Blocked / Unblocked",
+              "label": "Blocked / Unblocked",
               "name": "failedLoginAttempts",
               "viewWidget": "SolidUserBlockedStatusListWidget"
             }
@@ -12512,854 +11830,6 @@
       }
     },
     {
-      "name": "dashboard-list-view",
-      "displayName": "Dashboard",
-      "type": "list",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboard",
-      "layout": {
-        "type": "list",
-        "attrs": {
-          "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
-          "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
-        },
-        "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "id"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "name"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "displayName"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "module"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "dashboard-form-view",
-      "displayName": "Dashboard",
-      "type": "form",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboard",
-      "layout": {
-        "type": "form",
-        "attrs": {
-          "name": "form-1",
-          "label": "Dashboard",
-          "className": "grid"
-        },
-        "children": [
-          {
-            "type": "sheet",
-            "attrs": {
-              "name": "sheet-1"
-            },
-            "children": [
-              {
-                "type": "notebook",
-                "attrs": {
-                  "name": "notebook-1"
-                },
-                "children": [
-                  {
-                    "type": "page",
-                    "attrs": {
-                      "name": "page-1",
-                      "label": "Dashboard"
-                    },
-                    "children": [
-                      {
-                        "type": "row",
-                        "attrs": {
-                          "name": "row-1"
-                        },
-                        "children": [
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "group-1",
-                              "label": "",
-                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                            },
-                            "children": [
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "name"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "displayName"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "description"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "module"
-                                }
-                              }
-                            ]
-                          },
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "group-2",
-                              "label": "",
-                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                            },
-                            "children": [
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "layoutJson"
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "type": "page",
-                    "attrs": {
-                      "name": "page-2",
-                      "label": "Dashboard Variables"
-                    },
-                    "children": [
-                      {
-                        "type": "row",
-                        "attrs": {
-                          "name": "row-2"
-                        },
-                        "children": [
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "group-3",
-                              "label": "",
-                              "className": "col-12"
-                            },
-                            "children": [
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "showLabel": false,
-                                  "name": "dashboardVariables"
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "dashboardVariable-list-view",
-      "displayName": "Dashboard Variable",
-      "type": "list",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardVariable",
-      "layout": {
-        "type": "list",
-        "attrs": {
-          "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
-          "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
-        },
-        "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "id"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "variableName"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "variableType"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "isMultiSelect"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "dashboardVariable-form-view",
-      "displayName": "Dashboard Variable",
-      "type": "form",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardVariable",
-      "layout": {
-        "type": "form",
-        "attrs": {
-          "name": "form-1",
-          "label": "Dashboard Variable",
-          "className": "grid"
-        },
-        "children": [
-          {
-            "type": "sheet",
-            "attrs": {
-              "name": "sheet-1"
-            },
-            "children": [
-              {
-                "type": "row",
-                "attrs": {
-                  "name": "sheet-1"
-                },
-                "children": [
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "group-1",
-                      "label": "",
-                      "className": "col-12"
-                    },
-                    "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "variableName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "variableType"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "selectionStaticValues"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "selectionDynamicSourceType"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "selectionDynamicSQL"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "selectionDynamicProviderName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "defaultValue",
-                          "editWidget": "codeEditor",
-                          "editorLanguage": "json"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "defaultOperator"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "dashboard"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "dashboardQuestion-list-view",
-      "displayName": "Dashboard Question",
-      "type": "list",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardQuestion",
-      "layout": {
-        "type": "list",
-        "attrs": {
-          "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
-          "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
-        },
-        "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "id"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "name"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "dashboard"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "visualisedAs"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "sequenceNumber"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "dashboardQuestion-form-view",
-      "displayName": "Dashboard Question",
-      "type": "form",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardQuestion",
-      "layout": {
-        "type": "form",
-        "attrs": {
-          "name": "form-1",
-          "label": "Dashboard Question",
-          "className": "grid"
-        },
-        "onFieldChange": "dashboardQuestionFieldChangeHandler",
-        "onFormLoad": "dashboardQuestionOnFormLoadHandler",
-        "children": [
-          {
-            "type": "sheet",
-            "attrs": {
-              "name": "sheet-1"
-            },
-            "children": [
-              {
-                "type": "notebook",
-                "attrs": {
-                  "name": "notebook-1"
-                },
-                "children": [
-                  {
-                    "type": "page",
-                    "attrs": {
-                      "name": "general",
-                      "label": "General"
-                    },
-                    "children": [
-                      {
-                        "type": "row",
-                        "attrs": {
-                          "name": "row-1"
-                        },
-                        "children": [
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "group-1",
-                              "label": "General Info",
-                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                            },
-                            "children": [
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "name"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "dashboard"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "visualisedAs"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "sequenceNumber"
-                                }
-                              }
-                            ]
-                          },
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "group-1",
-                              "label": "Data Source",
-                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                            },
-                            "children": [
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "sourceType"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "labelSql",
-                                  "editWidget": "codeEditor",
-                                  "editorLanguage": "sql"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "kpiSql",
-                                  "editWidget": "codeEditor",
-                                  "editorLanguage": "sql"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "providerName"
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "type": "page",
-                    "attrs": {
-                      "name": "sql-dataset-config",
-                      "label": "SQL Queries"
-                    },
-                    "children": [
-                      {
-                        "type": "row",
-                        "attrs": {
-                          "name": "row-3"
-                        },
-                        "children": [
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "group-1",
-                              "label": "",
-                              "className": "col-12"
-                            },
-                            "children": [
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "label": "Label SQL",
-                                  "name": "sql",
-                                  "editWidget": "codeEditor",
-                                  "editorLanguage": "sql"
-                                }
-                              },
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "showLabel": false,
-                                  "name": "questionSqlDatasetConfigs"
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  },
-                  {
-                    "type": "page",
-                    "attrs": {
-                      "name": "preview",
-                      "label": "Preview"
-                    },
-                    "children": [
-                      {
-                        "type": "row",
-                        "attrs": {
-                          "name": "row-2"
-                        },
-                        "children": [
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "chart-settings",
-                              "label": "Chart Settings",
-                              "className": "col-12 xl:col-3"
-                            },
-                            "children": [
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "chartOptions"
-                                }
-                              }
-                            ]
-                          },
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "chart-preview",
-                              "label": "Chart Preview",
-                              "className": "col-12 xl:col-9"
-                            },
-                            "children": [
-                              {
-                                "type": "custom",
-                                "attrs": {
-                                  "name": "page-2-chart-preview-custom",
-                                  "widget": "chart"
-                                }
-                              }
-                            ]
-                          }
-                        ]
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "dashboardQuestionSqlDatasetConfig-list-view",
-      "displayName": "Dashboard Question SQL Dataset Config",
-      "type": "list",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardQuestionSqlDatasetConfig",
-      "layout": {
-        "type": "list",
-        "attrs": {
-          "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
-          "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
-        },
-        "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "datasetDisplayName"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "labelColumnName"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "valueColumnName"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "options"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "dashboardQuestionSqlDatasetConfig-form-view",
-      "displayName": "Dashboard Question SQL Dataset Config",
-      "type": "form",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardQuestionSqlDatasetConfig",
-      "layout": {
-        "type": "form",
-        "attrs": {
-          "name": "form-1",
-          "label": "Dashboard Question SQL Dataset Config",
-          "className": "grid"
-        },
-        "children": [
-          {
-            "type": "sheet",
-            "attrs": {
-              "name": "sheet-1"
-            },
-            "children": [
-              {
-                "type": "row",
-                "attrs": {
-                  "name": "sheet-1"
-                },
-                "children": [
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "group-1",
-                      "label": "",
-                      "className": "col-12"
-                    },
-                    "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "datasetName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "datasetDisplayName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "question"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "sql",
-                          "editWidget": "codeEditor",
-                          "editorLanguage": "sql"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "labelColumnName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "valueColumnName"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "options"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
-      "name": "dashboardLayout-list-view",
-      "displayName": "Dashboard Layout",
-      "type": "list",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardLayout",
-      "layout": {
-        "type": "list",
-        "attrs": {
-          "pagination": true,
-          "pageSizeOptions": [
-            10,
-            25,
-            50
-          ],
-          "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
-        },
-        "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "id"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "dashboard"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "user"
-            }
-          }
-        ]
-      }
-    },
-    {
-      "name": "dashboardLayout-form-view",
-      "displayName": "Dashboard Layout",
-      "type": "form",
-      "context": "{}",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "dashboardLayout",
-      "layout": {
-        "type": "form",
-        "attrs": {
-          "name": "form-1",
-          "label": "Dashboard Layout",
-          "className": "grid"
-        },
-        "children": [
-          {
-            "type": "sheet",
-            "attrs": {
-              "name": "sheet-1"
-            },
-            "children": [
-              {
-                "type": "row",
-                "attrs": {
-                  "name": "sheet-1"
-                },
-                "children": [
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "group-1",
-                      "label": "",
-                      "className": "col-12"
-                    },
-                    "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "layout"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "dashboard"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "user"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              }
-            ]
-          }
-        ]
-      }
-    },
-    {
       "name": "aiInteraction-list-view",
       "displayName": "AI Interaction",
       "type": "list",
@@ -13955,23 +12425,81 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [10, 25, 50],
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
           "delete": true
         },
         "children": [
-          { "type": "field", "attrs": { "name": "sessionId", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "modelName", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "status", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "totalSteps" } },
-          { "type": "field", "attrs": { "name": "totalCost" } },
-          { "type": "field", "attrs": { "name": "totalInputTokens" } },
-          { "type": "field", "attrs": { "name": "totalOutputTokens" } },
-          { "type": "field", "attrs": { "name": "projectRoot", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "createdAt" } },
-          { "type": "field", "attrs": { "name": "updatedAt" } }
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sessionId",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "totalSteps"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "totalCost"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "totalInputTokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "totalOutputTokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "projectRoot",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "updatedAt"
+            }
+          }
         ]
       }
     },
@@ -13992,25 +12520,78 @@
         "children": [
           {
             "type": "sheet",
-            "attrs": { "name": "sheet-1" },
+            "attrs": {
+              "name": "sheet-1"
+            },
             "children": [
               {
                 "type": "row",
-                "attrs": { "name": "row-1" },
+                "attrs": {
+                  "name": "row-1"
+                },
                 "children": [
                   {
                     "type": "column",
-                    "attrs": { "name": "col-1", "label": "", "className": "col-12" },
+                    "attrs": {
+                      "name": "col-1",
+                      "label": "",
+                      "className": "col-12"
+                    },
                     "children": [
-                      { "type": "field", "attrs": { "name": "sessionId" } },
-                      { "type": "field", "attrs": { "name": "modelName" } },
-                      { "type": "field", "attrs": { "name": "status" } },
-                      { "type": "field", "attrs": { "name": "projectRoot" } },
-                      { "type": "field", "attrs": { "name": "totalSteps" } },
-                      { "type": "field", "attrs": { "name": "totalCost" } },
-                      { "type": "field", "attrs": { "name": "totalInputTokens" } },
-                      { "type": "field", "attrs": { "name": "totalOutputTokens" } },
-                      { "type": "field", "attrs": { "name": "summary" } }
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sessionId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "modelName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "status"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "projectRoot"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "totalSteps"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "totalCost"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "totalInputTokens"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "totalOutputTokens"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "summary"
+                        }
+                      }
                     ]
                   }
                 ]
@@ -14031,25 +12612,93 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [10, 25, 50],
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
           "delete": true
         },
         "children": [
-          { "type": "field", "attrs": { "name": "id" } },
-          { "type": "field", "attrs": { "name": "sessionId", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "eventType", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "turnNumber" } },
-          { "type": "field", "attrs": { "name": "stepNumber" } },
-          { "type": "field", "attrs": { "name": "toolName", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "durationMs" } },
-          { "type": "field", "attrs": { "name": "cost" } },
-          { "type": "field", "attrs": { "name": "inputTokens" } },
-          { "type": "field", "attrs": { "name": "outputTokens" } },
-          { "type": "field", "attrs": { "name": "modelUsed", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "createdAt" } }
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sessionId",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "eventType",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "turnNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "stepNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "toolName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "durationMs"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "cost"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "inputTokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "outputTokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelUsed",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdAt"
+            }
+          }
         ]
       }
     },
@@ -14070,36 +12719,109 @@
         "children": [
           {
             "type": "sheet",
-            "attrs": { "name": "sheet-1" },
+            "attrs": {
+              "name": "sheet-1"
+            },
             "children": [
               {
                 "type": "notebook",
-                "attrs": { "name": "notebook-1" },
+                "attrs": {
+                  "name": "notebook-1"
+                },
                 "children": [
                   {
                     "type": "page",
-                    "attrs": { "name": "page-general", "label": "General" },
+                    "attrs": {
+                      "name": "page-general",
+                      "label": "General"
+                    },
                     "children": [
                       {
                         "type": "row",
-                        "attrs": { "name": "page-general-row-1" },
+                        "attrs": {
+                          "name": "page-general-row-1"
+                        },
                         "children": [
                           {
                             "type": "column",
-                            "attrs": { "name": "page-general-col-1", "label": "", "className": "col-12" },
+                            "attrs": {
+                              "name": "page-general-col-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
                             "children": [
-                              { "type": "field", "attrs": { "name": "sessionId" } },
-                              { "type": "field", "attrs": { "name": "eventType" } },
-                              { "type": "field", "attrs": { "name": "turnNumber" } },
-                              { "type": "field", "attrs": { "name": "stepNumber" } },
-                              { "type": "field", "attrs": { "name": "toolName" } },
-                              { "type": "field", "attrs": { "name": "modelUsed" } },
-                              { "type": "field", "attrs": { "name": "durationMs" } },
-                              { "type": "field", "attrs": { "name": "cost" } },
-                              { "type": "field", "attrs": { "name": "inputTokens" } },
-                              { "type": "field", "attrs": { "name": "outputTokens" } },
-                              { "type": "field", "attrs": { "name": "toolReturncode" } },
-                              { "type": "field", "attrs": { "name": "content" } }
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "sessionId"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "eventType"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "turnNumber"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "stepNumber"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "toolName"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "modelUsed"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "durationMs"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "cost"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "inputTokens"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "outputTokens"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "toolReturncode"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "content"
+                                }
+                              }
                             ]
                           }
                         ]
@@ -14108,17 +12830,32 @@
                   },
                   {
                     "type": "page",
-                    "attrs": { "name": "page-tool-arguments", "label": "Tool Arguments" },
+                    "attrs": {
+                      "name": "page-tool-arguments",
+                      "label": "Tool Arguments"
+                    },
                     "children": [
                       {
                         "type": "row",
-                        "attrs": { "name": "page-tool-arguments-row-1" },
+                        "attrs": {
+                          "name": "page-tool-arguments-row-1"
+                        },
                         "children": [
                           {
                             "type": "column",
-                            "attrs": { "name": "page-tool-arguments-col-1", "label": "", "className": "col-12" },
+                            "attrs": {
+                              "name": "page-tool-arguments-col-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
                             "children": [
-                              { "type": "field", "attrs": { "name": "toolArguments", "viewWidget": "SolidJsonFormViewWidget" } }
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "toolArguments",
+                                  "viewWidget": "SolidJsonFormViewWidget"
+                                }
+                              }
                             ]
                           }
                         ]
@@ -14127,17 +12864,32 @@
                   },
                   {
                     "type": "page",
-                    "attrs": { "name": "page-tool-output", "label": "Tool Output" },
+                    "attrs": {
+                      "name": "page-tool-output",
+                      "label": "Tool Output"
+                    },
                     "children": [
                       {
                         "type": "row",
-                        "attrs": { "name": "page-tool-output-row-1" },
+                        "attrs": {
+                          "name": "page-tool-output-row-1"
+                        },
                         "children": [
                           {
                             "type": "column",
-                            "attrs": { "name": "page-tool-output-col-1", "label": "", "className": "col-12" },
+                            "attrs": {
+                              "name": "page-tool-output-col-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
                             "children": [
-                              { "type": "field", "attrs": { "name": "toolOutput", "viewWidget": "SolidJsonFormViewWidget" } }
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "toolOutput",
+                                  "viewWidget": "SolidJsonFormViewWidget"
+                                }
+                              }
                             ]
                           }
                         ]
@@ -14146,17 +12898,32 @@
                   },
                   {
                     "type": "page",
-                    "attrs": { "name": "page-event-data", "label": "Event Data" },
+                    "attrs": {
+                      "name": "page-event-data",
+                      "label": "Event Data"
+                    },
                     "children": [
                       {
                         "type": "row",
-                        "attrs": { "name": "page-event-data-row-1" },
+                        "attrs": {
+                          "name": "page-event-data-row-1"
+                        },
                         "children": [
                           {
                             "type": "column",
-                            "attrs": { "name": "page-event-data-col-1", "label": "", "className": "col-12" },
+                            "attrs": {
+                              "name": "page-event-data-col-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
                             "children": [
-                              { "type": "field", "attrs": { "name": "eventData", "viewWidget": "SolidJsonFormViewWidget" } }
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "eventData",
+                                  "viewWidget": "SolidJsonFormViewWidget"
+                                }
+                              }
                             ]
                           }
                         ]
@@ -14181,25 +12948,96 @@
         "type": "list",
         "attrs": {
           "pagination": true,
-          "pageSizeOptions": [10, 25, 50],
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
           "delete": false
         },
         "children": [
-          { "type": "field", "attrs": { "name": "id" } },
-          { "type": "field", "attrs": { "name": "createdAt" } },
-          { "type": "field", "attrs": { "name": "method", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "toolName", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "status", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "username", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "userId" } },
-          { "type": "field", "attrs": { "name": "transport", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "mcpSessionId", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "clientAddr", "isSearchable": true } },
-          { "type": "field", "attrs": { "name": "durationMs" } },
-          { "type": "field", "attrs": { "name": "errorCode" } }
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "method",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "toolName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "username",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "userId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "transport",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mcpSessionId",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "clientAddr",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "durationMs"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorCode"
+            }
+          }
         ]
       }
     },
@@ -14220,36 +13058,109 @@
         "children": [
           {
             "type": "sheet",
-            "attrs": { "name": "sheet-1" },
+            "attrs": {
+              "name": "sheet-1"
+            },
             "children": [
               {
                 "type": "notebook",
-                "attrs": { "name": "notebook-1" },
+                "attrs": {
+                  "name": "notebook-1"
+                },
                 "children": [
                   {
                     "type": "page",
-                    "attrs": { "name": "page-general", "label": "General" },
+                    "attrs": {
+                      "name": "page-general",
+                      "label": "General"
+                    },
                     "children": [
                       {
                         "type": "row",
-                        "attrs": { "name": "page-general-row-1" },
+                        "attrs": {
+                          "name": "page-general-row-1"
+                        },
                         "children": [
                           {
                             "type": "column",
-                            "attrs": { "name": "page-general-col-1", "label": "", "className": "col-12" },
+                            "attrs": {
+                              "name": "page-general-col-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
                             "children": [
-                              { "type": "field", "attrs": { "name": "method" } },
-                              { "type": "field", "attrs": { "name": "toolName" } },
-                              { "type": "field", "attrs": { "name": "status" } },
-                              { "type": "field", "attrs": { "name": "transport" } },
-                              { "type": "field", "attrs": { "name": "mcpSessionId" } },
-                              { "type": "field", "attrs": { "name": "requestId" } },
-                              { "type": "field", "attrs": { "name": "userId" } },
-                              { "type": "field", "attrs": { "name": "apiKeyId" } },
-                              { "type": "field", "attrs": { "name": "username" } },
-                              { "type": "field", "attrs": { "name": "clientAddr" } },
-                              { "type": "field", "attrs": { "name": "durationMs" } },
-                              { "type": "field", "attrs": { "name": "errorCode" } }
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "method"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "toolName"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "status"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "transport"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "mcpSessionId"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "requestId"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "userId"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "apiKeyId"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "username"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "clientAddr"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "durationMs"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "errorCode"
+                                }
+                              }
                             ]
                           }
                         ]
@@ -14258,17 +13169,32 @@
                   },
                   {
                     "type": "page",
-                    "attrs": { "name": "page-request-params", "label": "Request Params" },
+                    "attrs": {
+                      "name": "page-request-params",
+                      "label": "Request Params"
+                    },
                     "children": [
                       {
                         "type": "row",
-                        "attrs": { "name": "page-request-params-row-1" },
+                        "attrs": {
+                          "name": "page-request-params-row-1"
+                        },
                         "children": [
                           {
                             "type": "column",
-                            "attrs": { "name": "page-request-params-col-1", "label": "", "className": "col-12" },
+                            "attrs": {
+                              "name": "page-request-params-col-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
                             "children": [
-                              { "type": "field", "attrs": { "name": "requestParams", "viewWidget": "SolidJsonFormViewWidget" } }
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "requestParams",
+                                  "viewWidget": "SolidJsonFormViewWidget"
+                                }
+                              }
                             ]
                           }
                         ]
@@ -14277,17 +13203,32 @@
                   },
                   {
                     "type": "page",
-                    "attrs": { "name": "page-response-result", "label": "Response Result" },
+                    "attrs": {
+                      "name": "page-response-result",
+                      "label": "Response Result"
+                    },
                     "children": [
                       {
                         "type": "row",
-                        "attrs": { "name": "page-response-result-row-1" },
+                        "attrs": {
+                          "name": "page-response-result-row-1"
+                        },
                         "children": [
                           {
                             "type": "column",
-                            "attrs": { "name": "page-response-result-col-1", "label": "", "className": "col-12" },
+                            "attrs": {
+                              "name": "page-response-result-col-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
                             "children": [
-                              { "type": "field", "attrs": { "name": "responseResult", "viewWidget": "SolidJsonFormViewWidget" } }
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "responseResult",
+                                  "viewWidget": "SolidJsonFormViewWidget"
+                                }
+                              }
                             ]
                           }
                         ]
@@ -14296,20 +13237,256 @@
                   },
                   {
                     "type": "page",
-                    "attrs": { "name": "page-error-message", "label": "Error Message" },
+                    "attrs": {
+                      "name": "page-error-message",
+                      "label": "Error Message"
+                    },
                     "children": [
                       {
                         "type": "row",
-                        "attrs": { "name": "page-error-message-row-1" },
+                        "attrs": {
+                          "name": "page-error-message-row-1"
+                        },
                         "children": [
                           {
                             "type": "column",
-                            "attrs": { "name": "page-error-message-col-1", "label": "", "className": "col-12" },
+                            "attrs": {
+                              "name": "page-error-message-col-1",
+                              "label": "",
+                              "className": "col-12"
+                            },
                             "children": [
-                              { "type": "field", "attrs": { "name": "errorMessage" } }
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "errorMessage"
+                                }
+                              }
                             ]
                           }
                         ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardUserLayout-list-view",
+      "displayName": "Dashboard User Layout",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardUserLayout",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dashboardName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "version",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "updatedAt",
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardUserLayout-tree-view",
+      "displayName": "Dashboard User Layout",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardUserLayout",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dashboardName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "version"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "updatedAt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "dashboardUserLayout-form-view",
+      "displayName": "Dashboard User Layout",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "dashboardUserLayout",
+      "layout": {
+        "type": "form",
+        "edit": false,
+        "attrs": {
+          "name": "form-1",
+          "label": "Dashboard User Layout",
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false,
+          "showDeleteFormButton": true
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "dashboard-user-layout-meta",
+                      "label": "Layout Metadata",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "dashboardName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "module"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "user"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "version"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "updatedAt"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "dashboard-user-layout-json",
+                      "label": "Layout Payload",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "layoutJson"
+                        }
                       }
                     ]
                   }
@@ -14456,5 +13633,341 @@
       }
     }
   ],
-  "modelSequences": []
+  "modelSequences": [],
+  "dashboards": [
+    {
+      "dashboardSchemaVersion": 1,
+      "name": "queue-health",
+      "displayName": "Queue Health Dashboard",
+      "description": "Operational visibility for MQ queues and messages.",
+      "moduleUserKey": "solid-core",
+      "variables": [
+        {
+          "name": "date",
+          "label": "Created At",
+          "type": "date",
+          "required": true
+        },
+        {
+          "name": "queueName",
+          "label": "Queue",
+          "type": "selectionDynamic",
+          "required": false,
+          "isMultiSelect": false,
+          "selectionConfig": {
+            "providerName": "MqDashboardQueueNameVariableOptionsProvider",
+            "providerContext": {
+              "labelField": "name",
+              "valueField": "name"
+            }
+          }
+        },
+        {
+          "name": "stage",
+          "label": "Stage",
+          "type": "selectionStatic",
+          "required": false,
+          "isMultiSelect": true,
+          "selectionStaticValues": [
+            "pending:Pending",
+            "scheduled:Scheduled",
+            "started:Started",
+            "retry:Retry",
+            "retrying:Retrying",
+            "failed:Failed",
+            "succeeded:Succeeded"
+          ]
+        },
+        {
+          "name": "messageBroker",
+          "label": "Message Broker",
+          "type": "selectionDynamic",
+          "required": false,
+          "isMultiSelect": false,
+          "selectionConfig": {
+            "providerName": "MqDashboardMessageBrokerVariableOptionsProvider",
+            "providerContext": {
+              "labelField": "messageBroker",
+              "valueField": "messageBroker"
+            }
+          }
+        }
+      ],
+      "widgets": [
+        {
+          "id": "kpi-total-messages",
+          "name": "Total Messages",
+          "type": "kpi",
+          "dataProvider": "MqDashboardTotalMessagesKpiProvider",
+          "providerContext": {
+            "metric": "count_total_messages"
+          }
+        },
+        {
+          "id": "kpi-succeeded-messages",
+          "name": "Succeeded",
+          "type": "kpi",
+          "dataProvider": "MqDashboardSucceededMessagesKpiProvider",
+          "providerContext": {
+            "metric": "count_succeeded_messages"
+          }
+        },
+        {
+          "id": "kpi-failed-messages",
+          "name": "Failed",
+          "type": "kpi",
+          "dataProvider": "MqDashboardFailedMessagesKpiProvider",
+          "providerContext": {
+            "metric": "count_failed_messages"
+          }
+        },
+        {
+          "id": "kpi-in-flight-messages",
+          "name": "In Flight",
+          "type": "kpi",
+          "dataProvider": "MqDashboardInflightMessagesKpiProvider",
+          "providerContext": {
+            "metric": "count_inflight_messages"
+          }
+        },
+        {
+          "id": "kpi-success-rate",
+          "name": "Success Rate",
+          "type": "kpi",
+          "dataProvider": "MqDashboardSuccessRateKpiProvider",
+          "providerContext": {
+            "metric": "success_rate_percentage"
+          }
+        },
+        {
+          "id": "kpi-avg-elapsed-ms",
+          "name": "Avg Elapsed (ms)",
+          "type": "kpi",
+          "dataProvider": "MqDashboardAvgElapsedKpiProvider",
+          "providerContext": {
+            "metric": "average_elapsed_millis"
+          }
+        },
+        {
+          "id": "chart-messages-over-time",
+          "name": "Messages Over Time",
+          "type": "lineChart",
+          "dataProvider": "MqDashboardMessagesOverTimeProvider",
+          "providerContext": {
+            "timeField": "createdAt",
+            "bucket": "hour",
+            "series": [
+              "total",
+              "succeeded",
+              "failed",
+              "retrying"
+            ]
+          }
+        },
+        {
+          "id": "chart-stage-distribution",
+          "name": "Stage Distribution",
+          "type": "pieChart",
+          "dataProvider": "MqDashboardStageDistributionProvider",
+          "providerContext": {
+            "groupBy": "stage",
+            "metric": "count"
+          }
+        },
+        {
+          "id": "chart-queue-wise-failures",
+          "name": "Queue-wise Failures",
+          "type": "barChart",
+          "dataProvider": "MqDashboardQueueWiseFailuresProvider",
+          "providerContext": {
+            "groupBy": "mqMessageQueue.name",
+            "metric": "failed_count"
+          }
+        },
+        {
+          "id": "chart-queue-wise-avg-elapsed",
+          "name": "Queue-wise Avg Processing Time",
+          "type": "barChart",
+          "dataProvider": "MqDashboardQueueWiseAvgElapsedProvider",
+          "providerContext": {
+            "groupBy": "mqMessageQueue.name",
+            "metric": "avg_elapsed_millis"
+          }
+        },
+        {
+          "id": "chart-processing-latency-trend",
+          "name": "Processing Latency Trend",
+          "type": "lineChart",
+          "dataProvider": "MqDashboardLatencyTrendProvider",
+          "providerContext": {
+            "timeField": "createdAt",
+            "bucket": "hour",
+            "metric": "avg_elapsed_millis"
+          }
+        },
+        {
+          "id": "chart-queue-sla-heatmap",
+          "name": "Queue SLA Heatmap",
+          "type": "customChart",
+          "dataProvider": "MqDashboardQueueSlaHeatmapProvider",
+          "componentName": "QueueSlaHeatmapWidget",
+          "providerContext": {
+            "bucket": "hour",
+            "tooltipFields": [
+              "avgElapsedMillis",
+              "messageCount",
+              "peakElapsedMillis"
+            ],
+            "legendThresholds": [
+              {
+                "label": "0-5s",
+                "color": "#22c55e",
+                "lte": 5000
+              },
+              {
+                "label": "5-15s",
+                "color": "#f59e0b",
+                "gt": 5000,
+                "lte": 15000
+              },
+              {
+                "label": "15-30s",
+                "color": "#f97316",
+                "gt": 15000,
+                "lte": 30000
+              },
+              {
+                "label": "30s+",
+                "color": "#ef4444",
+                "gt": 30000
+              }
+            ]
+          }
+        },
+        {
+          "id": "table-recent-failures",
+          "name": "Recent Failures",
+          "type": "table",
+          "dataProvider": "MqDashboardRecentFailuresProvider",
+          "providerContext": {
+            "stage": "failed",
+            "sort": {
+              "field": "createdAt",
+              "order": "desc"
+            },
+            "columns": [
+              "id",
+              "messageId",
+              "mqMessageQueue.name",
+              "stage",
+              "retryCount",
+              "elapsedMillis",
+              "startedAt",
+              "finishedAt",
+              "error",
+              "createdAt"
+            ],
+            "errorMaxLength": 160
+          }
+        }
+      ],
+      "defaultLayout": {
+        "engine": "gridstack",
+        "columns": 12,
+        "items": [
+          {
+            "widgetId": "kpi-total-messages",
+            "x": 0,
+            "y": 0,
+            "w": 2,
+            "h": 2
+          },
+          {
+            "widgetId": "kpi-in-flight-messages",
+            "x": 2,
+            "y": 0,
+            "w": 2,
+            "h": 2
+          },
+          {
+            "widgetId": "kpi-succeeded-messages",
+            "x": 4,
+            "y": 0,
+            "w": 2,
+            "h": 2
+          },
+          {
+            "widgetId": "kpi-success-rate",
+            "x": 6,
+            "y": 0,
+            "w": 2,
+            "h": 2
+          },
+          {
+            "widgetId": "kpi-failed-messages",
+            "x": 8,
+            "y": 0,
+            "w": 2,
+            "h": 2
+          },
+          {
+            "widgetId": "kpi-avg-elapsed-ms",
+            "x": 10,
+            "y": 0,
+            "w": 2,
+            "h": 2
+          },
+          {
+            "widgetId": "chart-queue-wise-failures",
+            "x": 0,
+            "y": 2,
+            "w": 4,
+            "h": 4
+          },
+          {
+            "widgetId": "chart-messages-over-time",
+            "x": 4,
+            "y": 2,
+            "w": 4,
+            "h": 4
+          },
+          {
+            "widgetId": "chart-processing-latency-trend",
+            "x": 8,
+            "y": 2,
+            "w": 4,
+            "h": 4
+          },
+          {
+            "widgetId": "chart-queue-wise-avg-elapsed",
+            "x": 0,
+            "y": 6,
+            "w": 6,
+            "h": 5
+          },
+          {
+            "widgetId": "chart-stage-distribution",
+            "x": 6,
+            "y": 6,
+            "w": 6,
+            "h": 5
+          },
+          {
+            "widgetId": "chart-queue-sla-heatmap",
+            "x": 0,
+            "y": 11,
+            "w": 12,
+            "h": 5
+          },
+          {
+            "widgetId": "table-recent-failures",
+            "x": 0,
+            "y": 16,
+            "w": 12,
+            "h": 4
+          }
+        ]
+      }
+    }
+  ]
 }

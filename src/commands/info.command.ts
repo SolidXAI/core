@@ -53,8 +53,6 @@ export class InfoCommand extends CommandRunner {
             selectionProviders: this.getWrapperNames(this.solidRegistry.getSelectionProviders()),
             computedFieldProviders: this.getWrapperNames(this.solidRegistry.getComputedFieldProviders()),
             solidDatabaseModules: this.getWrapperNames(this.solidRegistry.getSolidDatabaseModules()),
-            dashboardVariableSelectionProviders: this.getWrapperNames(this.solidRegistry.getDashboardVariableSelectionProviders()),
-            dashboardQuestionDataProviders: this.getWrapperNames(this.solidRegistry.getDashboardQuestionDataProviders()),
             mailProviders: this.getWrapperNames(this.solidRegistry.getMailProviders()),
             whatsappProviders: this.getWrapperNames(this.solidRegistry.getWhatsappProviders()),
             smsProviders: this.getWrapperNames(this.solidRegistry.getSmsProviders()),
