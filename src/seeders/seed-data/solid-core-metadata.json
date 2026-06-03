@@ -5569,6 +5569,12 @@
         "AgentEventController.findOne",
         "McpAuditLogController.findMany",
         "McpAuditLogController.findOne",
+        "DashboardController.getDefinition",
+        "DashboardController.getWidgetData",
+        "DashboardController.getDashboardData",
+        "DashboardController.getVariableOptions",
+        "DashboardController.getLayout",
+        "DashboardController.saveLayout",
         "mcp:invoke",
         "agent:invoke"
       ]
