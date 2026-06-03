@@ -404,11 +404,18 @@ import { SmsFactory } from "./factories/sms.factory";
 import { WhatsAppFactory } from "./factories/whatsapp.factory";
 import { AmazonSnsPushNotificationQueuePublisherDatabase } from "./jobs/database/amazon-sns-push-notification-publisher-database.service";
 import { AmazonSnsPushNotificationQueueSubscriberDatabase } from "./jobs/database/amazon-sns-push-notification-subscriber-database.service";
+import { FirebasePushNotificationQueuePublisherDatabase } from "./jobs/database/firebase-push-notification-publisher-database.service";
+import { FirebasePushNotificationQueueSubscriberDatabase } from "./jobs/database/firebase-push-notification-subscriber-database.service";
 import { AmazonSnsPushNotificationQueuePublisherRabbitmq } from "./jobs/rabbitmq/amazon-sns-push-notification-publisher.service";
 import { AmazonSnsPushNotificationQueueSubscriberRabbitmq } from "./jobs/rabbitmq/amazon-sns-push-notification-subscriber.service";
+import { FirebasePushNotificationQueuePublisherRabbitmq } from "./jobs/rabbitmq/firebase-push-notification-publisher.service";
+import { FirebasePushNotificationQueueSubscriberRabbitmq } from "./jobs/rabbitmq/firebase-push-notification-subscriber.service";
 import { AmazonSnsPushNotificationQueuePublisherRedis } from "./jobs/redis/amazon-sns-push-notification-publisher-redis.service";
 import { AmazonSnsPushNotificationQueueSubscriberRedis } from "./jobs/redis/amazon-sns-push-notification-subscriber-redis.service";
+import { FirebasePushNotificationQueuePublisherRedis } from "./jobs/redis/firebase-push-notification-publisher-redis.service";
+import { FirebasePushNotificationQueueSubscriberRedis } from "./jobs/redis/firebase-push-notification-subscriber-redis.service";
 import { AmazonSNSPushNotificationService } from "./services/push/amazon-sns-push-notification.service";
+import { FirebasePushNotificationService } from "./services/push/firebase-push-notification.service";
 import { ImageEncodingService } from "./helpers/image-encoding.helper";
 import { SolidMicroserviceAdapter } from "./helpers/solid-microservice-adapter.service";
 import { InfoCommand } from "./commands/info.command";
@@ -628,6 +635,7 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     GupshupOtpWhatsappService,
     TwilioSMSService,
     AmazonSNSPushNotificationService,
+    FirebasePushNotificationService,
     SmsTemplateService,
     PushNotificationTemplateService,
     EmailTemplateService,
@@ -659,6 +667,8 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     TwilioSmsQueueSubscriberRabbitmq,
     AmazonSnsPushNotificationQueuePublisherRabbitmq,
     AmazonSnsPushNotificationQueueSubscriberRabbitmq,
+    FirebasePushNotificationQueuePublisherRabbitmq,
+    FirebasePushNotificationQueueSubscriberRabbitmq,
     Msg91OTPQueuePublisher,
     Msg91OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
@@ -729,6 +739,8 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     TwilioSmsQueueSubscriberRedis,
     AmazonSnsPushNotificationQueuePublisherRedis,
     AmazonSnsPushNotificationQueueSubscriberRedis,
+    FirebasePushNotificationQueuePublisherRedis,
+    FirebasePushNotificationQueueSubscriberRedis,
     GenerateCodePublisherDatabase,
     GenerateCodeSubscriberDatabase,
     GenerateCodePublisherRabbitmq,
@@ -869,6 +881,8 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     ListOfRolesSelectionProvider,
     AmazonSnsPushNotificationQueuePublisherDatabase,
     AmazonSnsPushNotificationQueueSubscriberDatabase,
+    FirebasePushNotificationQueuePublisherDatabase,
+    FirebasePushNotificationQueueSubscriberDatabase,
   ],
   exports: [
     AiInteractionService,
@@ -927,6 +941,7 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     TinyUrlService,
     TwilioSMSService,
     AmazonSNSPushNotificationService,
+    FirebasePushNotificationService,
     TypeOrmModule,
     UserActivityHistoryService,
     UserDeviceMetadataService,
