@@ -21,7 +21,6 @@ import { AiInteraction } from "./entities/ai-interaction.entity";
 import { ActiveUserData } from "./interfaces/active-user-data.interface";
 import { SecurityRuleConfig } from "./dtos/security-rule-config.dto";
 import { SecurityRule } from "./entities/security-rule.entity";
-import { PublishCommandOutput } from "@aws-sdk/client-sns";
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -324,18 +323,18 @@ export interface IPushNotification {
     endpointArn: string,
     payload: PushNotificationPayload,
     shouldQueuePush?: boolean,
-  ): Promise<PublishCommandOutput | string>;
+  ): Promise<any>;
 
   sendPushNotificationUsingTemplate(
     endpointArn: string,
     templateName: string,
     templateParams: any,
     shouldQueuePush?: boolean,
-  ): Promise<PublishCommandOutput | string>;
+  ): Promise<any>;
 
   sendPushNotificationSynchronously(
     message: PushNotificationQueuePayload,
-  ): Promise<PublishCommandOutput>;
+  ): Promise<any>;
 
   registerDevice(payload: RegisterDevicePayload): Promise<string>;
 

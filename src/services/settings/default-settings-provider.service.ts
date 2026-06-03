@@ -782,7 +782,8 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "otpWhatsappFallbackEnabled",
-      value: (process.env.IAM_OTP_WHATSAPP_FALLBACK_ENABLED ?? "true") === "true",
+      value:
+        (process.env.IAM_OTP_WHATSAPP_FALLBACK_ENABLED ?? "true") === "true",
       level: SettingLevel.SystemAdminEditable,
       label: "OTP WhatsApp Fallback Enabled",
       group: "authentication-settings",
@@ -802,7 +803,8 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "otpWhatsappIndependentEnabled",
-      value: (process.env.IAM_OTP_WHATSAPP_INDEPENDENT_ENABLED ?? "true") === "true",
+      value:
+        (process.env.IAM_OTP_WHATSAPP_INDEPENDENT_ENABLED ?? "true") === "true",
       level: SettingLevel.SystemAdminEditable,
       label: "OTP WhatsApp Independent Enabled",
       group: "authentication-settings",
@@ -1166,6 +1168,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       sortOrder: 20,
       controlType: "boolean",
     },
+    // aws
     {
       moduleName: "solid-core",
       key: "awsSnsAccessKeyId",
@@ -1195,6 +1198,48 @@ const getSolidCoreSettings = (isProd: boolean) =>
       key: "awsApnsPlatformArn",
       value: process.env.AWS_APNS_PLATFORM_ARN,
       level: SettingLevel.SystemEnv,
+    },
+
+    // firebase
+    {
+      moduleName: "solid-core",
+      key: "firebaseProjectId",
+      value: process.env.FIREBASE_PROJECT_ID,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "firebaseClientEmail",
+      value: process.env.FIREBASE_CLIENT_EMAIL,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "firebasePrivateKey",
+      value: process.env.FIREBASE_PRIVATE_KEY,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "firebaseUseDryRun",
+      value: (process.env.FIREBASE_USE_DRY_RUN ?? "false") === "true",
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Firebase Dry Run",
+      group: "push-settings",
+      sortOrder: 30,
+      controlType: "boolean",
+    },
+    {
+      moduleName: "solid-core",
+      key: "firebaseDefaultTtl",
+      value: process.env.FIREBASE_DEFAULT_TTL
+        ? Number(process.env.FIREBASE_DEFAULT_TTL)
+        : null,
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Firebase TTL Seconds",
+      group: "push-settings",
+      sortOrder: 40,
+      controlType: "shortText",
     },
 
     // tiny-url-settings-provider.service.ts
@@ -1275,7 +1320,9 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "metaWhatsappApiUrl",
-      value: process.env.COMMON_META_WHATSAPP_API_URL || "https://graph.facebook.com",
+      value:
+        process.env.COMMON_META_WHATSAPP_API_URL ||
+        "https://graph.facebook.com",
       level: SettingLevel.SystemAdminReadonly,
       label: "Meta WhatsApp API URL",
       group: "whatsapp-settings",
