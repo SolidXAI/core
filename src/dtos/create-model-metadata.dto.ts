@@ -1,6 +1,7 @@
 import { ApiProperty } from "@nestjs/swagger";
 import { Type } from "class-transformer";
-import { IsArray, IsBoolean, IsInt, IsOptional, IsString, Matches, ValidateNested } from "class-validator";
+import { IsArray, IsBoolean, IsEnum, IsInt, IsOptional, IsString, Matches, ValidateNested } from "class-validator";
+import { LegacyTableType } from "src/enums/legacy-table-type.enum";
 import { CreateFieldMetadataDto } from "./create-field-metadata.dto";
 import { IsNotInEnum } from "src/decorators/is-not-in-enum.decorator";
 import { RESERVED_SOLID_KEYWORDS } from "src/helpers/solid-registry";
@@ -113,13 +114,8 @@ export class CreateModelMetadataDto {
     @IsOptional()
     parentModelUserKey: string;
 
-    @ApiProperty({ description: 'Is legacy table' })
-    @IsBoolean()
+    @ApiProperty({ enum: LegacyTableType, description: 'Legacy table ID strategy' })
+    @IsEnum(LegacyTableType)
     @IsOptional()
-    isLegacyTable?: boolean;
-
-    @ApiProperty({ description: 'Is legacy table with id' })
-    @IsBoolean()
-    @IsOptional()
-    isLegacyTableWithId?: boolean;
+    legacyTableType?: LegacyTableType;
 }

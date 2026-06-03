@@ -157,6 +157,7 @@ export * from './entities/dashboard-user-layout.entity'
 export * from './entities/user-api-key.entity'
 
 export * from './enums/auth-type.enum'
+export * from './enums/legacy-table-type.enum'
 export * from './decorators/disallow-in-production.decorator'
 
 export * from './filters/http-exception.filter'

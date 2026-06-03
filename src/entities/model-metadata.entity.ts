@@ -1,4 +1,5 @@
 import { CommonEntity } from "src/entities/common.entity";
+import { LegacyTableType } from "src/enums/legacy-table-type.enum";
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { FieldMetadata } from "./field-metadata.entity";
 import { ModuleMetadata } from "./module-metadata.entity";
@@ -66,10 +67,7 @@ export class ModelMetadata extends CommonEntity {
     @ManyToOne(() => ModelMetadata, {})
     parentModel: ModelMetadata;
 
-    @Column({ default: false })
-    isLegacyTable: boolean;
-
-    @Column({ default: false })
-    isLegacyTableWithId: boolean;
+    @Column({ type: 'varchar', default: LegacyTableType.NONE })
+    legacyTableType: LegacyTableType;
 
 }
