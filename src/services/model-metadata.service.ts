@@ -2,17 +2,16 @@ import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundEx
 import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import * as path from 'path';
-import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
+import { DataSource, EntityManager, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 
 import { kebabCase } from 'lodash';
-import { classify } from '../helpers/string.helper';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
-import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
+import { NavigationDto } from 'src/dtos/navigation.dto';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
@@ -22,20 +21,20 @@ import { ActionMetadata } from '../entities/action-metadata.entity';
 import { FieldMetadata } from '../entities/field-metadata.entity';
 import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { ViewMetadata } from '../entities/view-metadata.entity';
+import { CommandService } from '../helpers/command.service';
 import {
   REFRESH_MODEL_COMMAND,
   REMOVE_FIELDS_COMMAND,
   SchematicService
 } from '../helpers/schematic.service';
-import { CommandService } from '../helpers/command.service';
+import { classify } from '../helpers/string.helper';
 import { CodeGenerationOptions } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
+import { CRUDService } from './crud.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
 import { RoleMetadataService } from './role-metadata.service';
-import { NavigationDto } from 'src/dtos/navigation.dto';
 import { SolidIntrospectService } from './solid-introspect.service';
-import { CRUDService } from './crud.service';
 import { SolidTsMorphService } from './solid-ts-morph.service';
 
 @Injectable()

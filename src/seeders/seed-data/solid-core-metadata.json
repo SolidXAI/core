@@ -6148,7 +6148,7 @@
     },
     {
       "displayName": "Queue Health",
-      "name": "solid-core-queue-health-dashboard-view",
+      "name": "solid-core-queue-health-dashboard-action",
       "type": "custom",
       "domain": "",
       "context": "",
@@ -6348,7 +6348,7 @@
       "displayName": "Queue Health",
       "name": "solid-core-queue-health-dashboard-menu-item",
       "sequenceNumber": 1,
-      "actionUserKey": "solid-core-queue-health-dashboard-view",
+      "actionUserKey": "solid-core-queue-health-dashboard-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "queues-menu-item"
     },
