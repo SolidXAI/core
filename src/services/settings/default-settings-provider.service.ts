@@ -363,6 +363,16 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "system-settings",
       sortOrder: 30,
       controlType: "shortText",
+    }, 
+    {
+      moduleName: "solid-core",
+      key: "frontendAdminBaseUrl",
+      value: process.env.FRONTEND_BASE_URL,
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Frontend Admin Base URL",
+      group: "system-settings",
+      sortOrder: 35,
+      controlType: "shortText",
     },
     {
       moduleName: "solid-core",
