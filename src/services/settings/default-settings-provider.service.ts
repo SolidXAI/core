@@ -1241,6 +1241,18 @@ const getSolidCoreSettings = (isProd: boolean) =>
       sortOrder: 40,
       controlType: "shortText",
     },
+    {
+      moduleName: "solid-core",
+      key: "oneSignalAppId",
+      value: process.env.ONESIGNAL_APP_ID,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "oneSignalApiKey",
+      value: process.env.ONESIGNAL_API_KEY,
+      level: SettingLevel.SystemEnv,
+    },
 
     // tiny-url-settings-provider.service.ts
     {

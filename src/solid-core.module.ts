@@ -406,16 +406,23 @@ import { AmazonSnsPushNotificationQueuePublisherDatabase } from "./jobs/database
 import { AmazonSnsPushNotificationQueueSubscriberDatabase } from "./jobs/database/amazon-sns-push-notification-subscriber-database.service";
 import { FirebasePushNotificationQueuePublisherDatabase } from "./jobs/database/firebase-push-notification-publisher-database.service";
 import { FirebasePushNotificationQueueSubscriberDatabase } from "./jobs/database/firebase-push-notification-subscriber-database.service";
+import { OneSignalPushNotificationQueuePublisherDatabase } from "./jobs/database/onesignal-push-notification-publisher-database.service";
+import { OneSignalPushNotificationQueueSubscriberDatabase } from "./jobs/database/onesignal-push-notification-subscriber-database.service";
 import { AmazonSnsPushNotificationQueuePublisherRabbitmq } from "./jobs/rabbitmq/amazon-sns-push-notification-publisher.service";
 import { AmazonSnsPushNotificationQueueSubscriberRabbitmq } from "./jobs/rabbitmq/amazon-sns-push-notification-subscriber.service";
 import { FirebasePushNotificationQueuePublisherRabbitmq } from "./jobs/rabbitmq/firebase-push-notification-publisher.service";
 import { FirebasePushNotificationQueueSubscriberRabbitmq } from "./jobs/rabbitmq/firebase-push-notification-subscriber.service";
+import { OneSignalPushNotificationQueuePublisherRabbitmq } from "./jobs/rabbitmq/onesignal-push-notification-publisher.service";
+import { OneSignalPushNotificationQueueSubscriberRabbitmq } from "./jobs/rabbitmq/onesignal-push-notification-subscriber.service";
 import { AmazonSnsPushNotificationQueuePublisherRedis } from "./jobs/redis/amazon-sns-push-notification-publisher-redis.service";
 import { AmazonSnsPushNotificationQueueSubscriberRedis } from "./jobs/redis/amazon-sns-push-notification-subscriber-redis.service";
 import { FirebasePushNotificationQueuePublisherRedis } from "./jobs/redis/firebase-push-notification-publisher-redis.service";
 import { FirebasePushNotificationQueueSubscriberRedis } from "./jobs/redis/firebase-push-notification-subscriber-redis.service";
+import { OneSignalPushNotificationQueuePublisherRedis } from "./jobs/redis/onesignal-push-notification-publisher-redis.service";
+import { OneSignalPushNotificationQueueSubscriberRedis } from "./jobs/redis/onesignal-push-notification-subscriber-redis.service";
 import { AmazonSNSPushNotificationService } from "./services/push/amazon-sns-push-notification.service";
 import { FirebasePushNotificationService } from "./services/push/firebase-push-notification.service";
+import { OneSignalPushNotificationService } from "./services/push/onesignal-push-notification.service";
 import { ImageEncodingService } from "./helpers/image-encoding.helper";
 import { SolidMicroserviceAdapter } from "./helpers/solid-microservice-adapter.service";
 import { InfoCommand } from "./commands/info.command";
@@ -636,6 +643,7 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     TwilioSMSService,
     AmazonSNSPushNotificationService,
     FirebasePushNotificationService,
+    OneSignalPushNotificationService,
     SmsTemplateService,
     PushNotificationTemplateService,
     EmailTemplateService,
@@ -669,6 +677,8 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     AmazonSnsPushNotificationQueueSubscriberRabbitmq,
     FirebasePushNotificationQueuePublisherRabbitmq,
     FirebasePushNotificationQueueSubscriberRabbitmq,
+    OneSignalPushNotificationQueuePublisherRabbitmq,
+    OneSignalPushNotificationQueueSubscriberRabbitmq,
     Msg91OTPQueuePublisher,
     Msg91OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
@@ -741,6 +751,8 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     AmazonSnsPushNotificationQueueSubscriberRedis,
     FirebasePushNotificationQueuePublisherRedis,
     FirebasePushNotificationQueueSubscriberRedis,
+    OneSignalPushNotificationQueuePublisherRedis,
+    OneSignalPushNotificationQueueSubscriberRedis,
     GenerateCodePublisherDatabase,
     GenerateCodeSubscriberDatabase,
     GenerateCodePublisherRabbitmq,
@@ -883,6 +895,8 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     AmazonSnsPushNotificationQueueSubscriberDatabase,
     FirebasePushNotificationQueuePublisherDatabase,
     FirebasePushNotificationQueueSubscriberDatabase,
+    OneSignalPushNotificationQueuePublisherDatabase,
+    OneSignalPushNotificationQueueSubscriberDatabase,
   ],
   exports: [
     AiInteractionService,
@@ -942,6 +956,7 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     TwilioSMSService,
     AmazonSNSPushNotificationService,
     FirebasePushNotificationService,
+    OneSignalPushNotificationService,
     TypeOrmModule,
     UserActivityHistoryService,
     UserDeviceMetadataService,

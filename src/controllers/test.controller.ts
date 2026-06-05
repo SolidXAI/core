@@ -18,6 +18,7 @@ import { IngestMetadataService } from "src/services/genai/ingest-metadata.servic
 import { Public } from "src/decorators/public.decorator";
 import { DeviceMetadataDto } from "src/dtos/device-metadata.dto";
 import { FirebasePushNotificationService } from "src/services/push/firebase-push-notification.service";
+import { OneSignalPushNotificationService } from "src/services/push/onesignal-push-notification.service";
 
 export class SeedData {
   seeder: string;
@@ -31,6 +32,7 @@ export class TestController {
     private readonly solidRegistry: SolidRegistry,
     private readonly ingestMetadataService: IngestMetadataService,
     private readonly firebasePushNotificationService: FirebasePushNotificationService,
+    private readonly oneSignalPushNotificationService: OneSignalPushNotificationService,
   ) {}
 
   @Auth(AuthType.None)
@@ -77,6 +79,6 @@ export class TestController {
       throw new Error("Device token is required");
     }
 
-    return this.firebasePushNotificationService.testPushNotification(payload);
+    return this.oneSignalPushNotificationService.testPushNotification(payload);
   }
 }
