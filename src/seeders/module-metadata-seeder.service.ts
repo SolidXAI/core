@@ -388,7 +388,7 @@ export class ModuleMetadataSeederService {
         // const enabledModules = getDynamicModuleNames();
         const enabledModules = getDynamicModuleNamesBasedOnMetadata();
         for (const enabledModule of enabledModules) {
-            const enabledModuleSeedFile = `module-metadata/${enabledModule}/${enabledModule}-metadata.json`;
+            const enabledModuleSeedFile = `src/${enabledModule}/metadata/${enabledModule}-metadata.json`;
             const fullPath = path.join(process.cwd(), enabledModuleSeedFile);
 
             if (fs.existsSync(fullPath)) {
@@ -558,7 +558,7 @@ export class ModuleMetadataSeederService {
             }
             else {
                 // Check if file exists
-                const emailTemplateHandlebar = `module-metadata/${moduleName}/email-templates/${emailTemplate.body}`
+                const emailTemplateHandlebar = `src/${moduleName}/metadata/email-templates/${emailTemplate.body}`
                 const fullPath = path.join(process.cwd(), emailTemplateHandlebar);
                 // this.logger.log(`Seeding custom email template from consuming model at path: ${fullPath}`);
                 if (fs.existsSync(fullPath)) {
@@ -624,7 +624,7 @@ export class ModuleMetadataSeederService {
             }
             else {
                 // Check if file exists
-                const emailTemplateHandlebar = `module-metadata/${moduleName}/sms-templates/${smsTemplate.body}`
+                const emailTemplateHandlebar = `src/${moduleName}/metadata/sms-templates/${smsTemplate.body}`
                 const fullPath = path.join(process.cwd(), emailTemplateHandlebar);
                 // this.logger.log(`Seeding custom sms template from consuming model at path: ${fullPath}`);
                 if (fs.existsSync(fullPath)) {

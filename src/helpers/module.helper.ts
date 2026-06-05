@@ -38,26 +38,29 @@ export const getDynamicModuleNames = (): string[] => {
 export const getDynamicModuleNamesBasedOnMetadata = (): string[] => {
   const dynamicModulesToExclude = process.env.SOLID_DYNAMIC_MODULES_TO_EXCLUDE?.split(',') || [];
 
-  // Find a path that is ../${srcPath}/module-metadata save it in a variable.
-  // const srcPath = path.join(process.cwd(), 'src');
-  const moduleMetadataPath = path.join(process.cwd(), 'module-metadata');
+  const srcPath = path.join(process.cwd(), 'src');
   const coreModuleNames = getCoreModuleNames();
   const allExcludedModules = [...new Set([...coreModuleNames, ...dynamicModulesToExclude])];
 
-  // if module-metadata path does not exist, return empty array
-  if (!fs.existsSync(moduleMetadataPath)) {
-    logger.warn(`Module metadata path does not exist: ${moduleMetadataPath}`);
+  if (!fs.existsSync(srcPath)) {
+    logger.warn(`Source path does not exist: ${srcPath}`);
     return [];
   }
 
-  const moduleMetadataDirectories = fs.readdirSync(moduleMetadataPath, { withFileTypes: true });
-  const enabledModules = moduleMetadataDirectories
+  const moduleDirectories = fs.readdirSync(srcPath, { withFileTypes: true });
+  const enabledModules = moduleDirectories
     .filter(dirent => {
       const isValidDirectory = dirent.isDirectory() && !allExcludedModules.includes(dirent.name);
 
       if (!isValidDirectory) return false;
 
-      const fullPath = path.join(moduleMetadataPath, dirent.name, `${dirent.name}-metadata.json`);
+      const moduleManifestPath = path.join(srcPath, dirent.name, `${dirent.name}.module.ts`);
+      const moduleManifestStats = fs.statSync(moduleManifestPath, { throwIfNoEntry: false });
+      if (!moduleManifestStats || !moduleManifestStats.isFile()) {
+        return false;
+      }
+
+      const fullPath = path.join(srcPath, dirent.name, 'metadata', `${dirent.name}-metadata.json`);
 
       const stats = fs.statSync(fullPath, { throwIfNoEntry: false });
       return !!stats && stats.isFile();

@@ -196,7 +196,7 @@ export class ModuleTestDataService {
     const testDataFiles = [typedSolidCoreMetadata];
     const enabledModules = getDynamicModuleNamesBasedOnMetadata();
     for (const enabledModule of enabledModules) {
-      const enabledModuleSeedFile = `module-metadata/${enabledModule}/${enabledModule}-metadata.json`;
+      const enabledModuleSeedFile = `src/${enabledModule}/metadata/${enabledModule}-metadata.json`;
       const fullPath = path.join(process.cwd(), enabledModuleSeedFile);
 
       if (fs.existsSync(fullPath)) {

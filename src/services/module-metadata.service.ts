@@ -196,9 +196,8 @@ export class ModuleMetadataService {
       // Convert the object to JSON string
       const metadataJson = JSON.stringify(moduleMetaDataJson, null, 2);
 
-      // Create the folder path inside 'module-metadata'
-      const folderPath = path.resolve(process.cwd(), 'module-metadata', module.name);
       const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(module.name);
+      const folderPath = path.dirname(filePath);
 
       // Ensure the folder exists
       await fs.mkdir(folderPath, { recursive: true });
