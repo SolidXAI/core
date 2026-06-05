@@ -282,7 +282,13 @@ export class CrudHelperService {
                 const orderOptionKeys = Object.keys(orderOptions) as Array<keyof typeof orderOptions>;
                 orderOptionKeys.forEach((key) => {
                     const value = orderOptions[key] as 'ASC' | 'DESC';
-                    qb.addOrderBy(`${entityAlias}.${key}`, value);
+                    const field = String(key);
+                    if (field.includes('.')) {
+                        const { alias, property } = this.ensureRelationPathJoined(qb, entityAlias, field.split('.'));
+                        qb.addOrderBy(`${alias}.${property}`, value);
+                    } else {
+                        qb.addOrderBy(`${entityAlias}.${field}`, value);
+                    }
                 });
             }
         }
