@@ -1,4 +1,4 @@
-import { BadRequestException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, HttpException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
 import { CommonEntity } from "../entities/common.entity";
@@ -911,7 +911,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             });
 
             if (!softDeletedRows) {
-                throw new Error(ERROR_MESSAGES.NO_SOFT_DELETED_RECORD_FOUND);
+                throw new NotFoundException(ERROR_MESSAGES.NO_SOFT_DELETED_RECORD_FOUND);
             }
 
             await this.repo.update(id, {
@@ -921,13 +921,13 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
             return { message: SUCCESS_MESSAGES.RECORD_RECOVERED, data: softDeletedRows };
         } catch (error: any) {
-            if (error instanceof QueryFailedError) {
-                if ((error as any).code === '23505') {
-                    throw new Error(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
-                }
+            if (error instanceof QueryFailedError && (error as any).code === '23505') {
+                throw new ConflictException(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
             }
-
-            throw new Error(error);
+            if (error instanceof HttpException) {
+                throw error;
+            }
+            throw new InternalServerErrorException(error?.message ?? String(error));
         }
     }
 
@@ -956,7 +956,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             });
 
             if (softDeletedRows.length === 0) {
-                throw new Error(ERROR_MESSAGES.NO_SOFT_DELETED_RECORDS_FOUND);
+                throw new NotFoundException(ERROR_MESSAGES.NO_SOFT_DELETED_RECORDS_FOUND);
             }
 
             // Recover the specific records by setting deletedAt to null
@@ -967,13 +967,13 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
             return { message: SUCCESS_MESSAGES.SELECTED_RECORDS_RECOVERED, recoveredIds: ids };
         } catch (error: any) {
-            if (error instanceof QueryFailedError) {
-                if ((error as any).code === "23505") {
-                    throw new Error(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
-                }
+            if (error instanceof QueryFailedError && (error as any).code === "23505") {
+                throw new ConflictException(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
             }
-
-            throw new Error(error);
+            if (error instanceof HttpException) {
+                throw error;
+            }
+            throw new InternalServerErrorException(error?.message ?? String(error));
         }
     }
 
