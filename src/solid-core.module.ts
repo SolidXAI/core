@@ -17,6 +17,7 @@ import { FieldMetadataController } from "./controllers/field-metadata.controller
 import { DashboardController } from "./controllers/dashboard.controller";
 import { MediaStorageProviderMetadataController } from "./controllers/media-storage-provider-metadata.controller";
 import { ModelMetadataController } from "./controllers/model-metadata.controller";
+import { ModuleMetadataExplorerController } from "./controllers/module-metadata-explorer.controller";
 import { ModuleMetadataController } from "./controllers/module-metadata.controller";
 import { TestController } from "./controllers/test.controller";
 import { FieldMetadata } from "./entities/field-metadata.entity";
@@ -41,6 +42,7 @@ import { ListOfValuesService } from "./services/list-of-values.service";
 import { MediaStorageProviderMetadataService } from "./services/media-storage-provider-metadata.service";
 import { MediaService } from "./services/media.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
+import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
@@ -485,6 +487,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     MediaStorageProviderMetadataController,
     MenuItemMetadataController,
     ModelMetadataController,
+    ModuleMetadataExplorerController,
     ModuleMetadataController,
     MqMessageController,
     MqMessageQueueController,
@@ -534,6 +537,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
       useClass: HttpExceptionFilter,
     },
     ModuleMetadataService,
+    ModuleMetadataExplorerService,
     ModuleMetadataHelperService,
     ModelMetadataService,
     ModelMetadataHelperService,
@@ -844,6 +848,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ModelMetadataHelperService,
     ModelMetadataService,
     ModuleMetadataService,
+    ModuleMetadataExplorerService,
     MqMessageQueueService,
     MqMessageService,
     Msg91OTPService,

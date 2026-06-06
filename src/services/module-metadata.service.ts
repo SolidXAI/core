@@ -405,6 +405,31 @@ export class ModuleMetadataService {
   }
 
   @DisallowInProduction()
+  async seedModuleFromMetadata(moduleId: number) {
+    const module = await this.findOne(moduleId);
+    const seeder = this.solidRegistry
+      .getSeeders()
+      .filter((registeredSeeder) => registeredSeeder.name === 'ModuleMetadataSeederService')
+      .map((registeredSeeder) => registeredSeeder.instance)
+      .pop();
+
+    if (!seeder || typeof seeder.seed !== 'function') {
+      throw new NotFoundException('ModuleMetadataSeederService not found. Cannot seed module metadata.');
+    }
+
+    await seeder.seed({
+      modulesToSeed: [module.name],
+      seedGlobalMetadata: false,
+    });
+
+    return {
+      success: true,
+      moduleName: module.name,
+      message: `Seeded metadata for module ${module.name}.`,
+    };
+  }
+
+  @DisallowInProduction()
   async generateCodeViaCtl(moduleId: number): Promise<string> {
     const module = await this.findOne(moduleId);
     return this.commandService.executeCommandWithArgs({

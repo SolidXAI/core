@@ -95,14 +95,19 @@ export class ModuleMetadataSeederService {
         let currentModule = 'global';
         let currentStep = 'bootstrap';
         let modulesToSeed: string[] | null = null;
+        const shouldSeedGlobalMetadata = conf?.seedGlobalMetadata !== false;
 
         try {
             this.enablePruning = Boolean(conf?.pruneMetadata);
             console.log(this.enablePruning ? '▶ Pruning enabled: metadata not present in JSON will be removed.' : '▶ Pruning disabled: existing metadata will be kept.');
 
             // Global seeding steps i.e across all modules
-            currentStep = 'seedGlobalMetadata';
-            await this.seedGlobalMetadata();
+            if (shouldSeedGlobalMetadata) {
+                currentStep = 'seedGlobalMetadata';
+                await this.seedGlobalMetadata();
+            } else {
+                this.logger.log(`Skipping global metadata seeding.`);
+            }
 
             // Module specific seeding steps.
             // Get all the module metadata files which needs to be seeded.
