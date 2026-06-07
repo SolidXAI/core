@@ -1142,6 +1142,54 @@ const getSolidCoreSettings = (isProd: boolean) =>
       sortOrder: 60,
       controlType: "shortText",
     },
+    {
+      moduleName: "solid-core",
+      key: "gupshupSmsApiUrl",
+      value:
+        process.env.COMMON_GUPSHUP_SMS_API_URL ||
+        "https://api.gupshup.io/sm/api/v1/msg",
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Gupshup SMS API URL",
+      group: "sms-settings",
+      sortOrder: 70,
+      controlType: "shortText",
+    },
+    {
+      moduleName: "solid-core",
+      key: "gupshupSmsApiKey",
+      value: process.env.COMMON_GUPSHUP_SMS_API_KEY,
+      level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "gupshupSmsSource",
+      value: process.env.COMMON_GUPSHUP_SMS_SOURCE,
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Gupshup SMS Source",
+      group: "sms-settings",
+      sortOrder: 80,
+      controlType: "shortText",
+    },
+    {
+      moduleName: "solid-core",
+      key: "gupshupSmsSourceName",
+      value: process.env.COMMON_GUPSHUP_SMS_SOURCE_NAME || "solidx",
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Gupshup SMS Source Name",
+      group: "sms-settings",
+      sortOrder: 90,
+      controlType: "shortText",
+    },
+    {
+      moduleName: "solid-core",
+      key: "gupshupSmsEntityId",
+      value: process.env.COMMON_GUPSHUP_SMS_ENTITY_ID,
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Gupshup SMS Entity ID",
+      group: "sms-settings",
+      sortOrder: 100,
+      controlType: "shortText",
+    },
 
     // tiny-url-settings-provider.service.ts
     {

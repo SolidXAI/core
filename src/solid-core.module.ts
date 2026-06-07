@@ -170,6 +170,7 @@ import { TinyUrlService } from "./services/short-url/tiny-url.service";
 import { SmsTemplateService } from "./services/sms-template.service";
 import { Msg91OTPService } from "./services/sms/Msg91OTPService";
 import { Msg91SMSService } from "./services/sms/Msg91SMSService";
+import { GupshupSMSService } from "./services/sms/GupshupSMSService";
 // import { UserService } from './services/user.service';
 import { Msg91WhatsappService } from "./services/whatsapp/Msg91WhatsappService";
 import { SoftDeleteAwareEventSubscriber } from "./subscribers/soft-delete-aware-event.subscriber";
@@ -589,6 +590,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ElasticEmailService,
     Msg91SMSService,
     Msg91OTPService,
+    GupshupSMSService,
     Msg91WhatsappService,
     MetaCloudWhatsappService,
     GupshupOtpWhatsappService,
@@ -848,6 +850,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     MqMessageService,
     Msg91OTPService,
     Msg91SMSService,
+    GupshupSMSService,
     Msg91WhatsappService,
     MulterModule,
     PdfService,
