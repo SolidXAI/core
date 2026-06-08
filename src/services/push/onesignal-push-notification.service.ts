@@ -187,6 +187,14 @@ export class OneSignalPushNotificationService implements IPushNotification {
   }
 
   async unregisterDevice(userId: number, deviceId: string): Promise<void> {
+    if (!userId) {
+      throw new Error("userId is required");
+    }
+
+    if (!deviceId?.trim()) {
+      throw new Error("deviceId is required");
+    }
+
     await this.userDeviceMetadataService.markDeviceInactive(userId, deviceId);
   }
 

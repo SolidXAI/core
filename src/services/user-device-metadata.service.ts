@@ -85,6 +85,9 @@ export class UserDeviceMetadataService {
     existing.isActive = false;
     existing.lastActiveAt = new Date();
 
+    existing.pushDeviceToken = null;
+    existing.pushEndpointArn = null;
+
     await this.userDeviceMetadataRepository.save(existing);
   }
 

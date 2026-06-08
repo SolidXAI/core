@@ -78,7 +78,21 @@ export class TestController {
     if (!payload.deviceToken?.trim()) {
       throw new Error("Device token is required");
     }
-
     return this.oneSignalPushNotificationService.testPushNotification(payload);
+  }
+
+  @Public()
+  @Post("unregister-device")
+  @HttpCode(HttpStatus.OK)
+  async unregisterDevice(@Body() payload: { userId; deviceId }) {
+    const { userId, deviceId } = payload;
+    await this.oneSignalPushNotificationService.unregisterDevice(
+      userId,
+      deviceId,
+    );
+
+    return {
+      success: true,
+    };
   }
 }
