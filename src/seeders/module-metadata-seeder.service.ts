@@ -144,6 +144,11 @@ export class ModuleMetadataSeederService {
                 const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
                 currentModule = moduleMetadata?.name ?? 'unknown';
 
+                if (!moduleMetadata?.name) {
+                    this.logger.warn(`Skipping seed metadata file because moduleMetadata.name is missing.`);
+                    continue;
+                }
+
                 console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
                 this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
 
@@ -247,33 +252,33 @@ export class ModuleMetadataSeederService {
 
     private async seedScheduledJobs(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing scheduled jobs for ${moduleMetadata.name}`);
-        const scheduledJobs: CreateScheduledJobDto[] = overallMetadata.scheduledJobs;
+        const scheduledJobs = this.getSeedArray<CreateScheduledJobDto>(overallMetadata?.scheduledJobs);
         const pruned = this.enablePruning ? await this.pruneScheduledJobs(scheduledJobs, moduleMetadata.name) : 0;
-        if (scheduledJobs?.length > 0) {
+        if (scheduledJobs.length > 0) {
             await this.handleSeedScheduledJobs(scheduledJobs);
         }
         this.logger.debug(`[End] Processing scheduled jobs for ${moduleMetadata.name}`);
-        return { pruned, upserted: scheduledJobs?.length ?? 0 };
+        return { pruned, upserted: scheduledJobs.length };
     }
 
     private async seedSavedFilters(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing saved filters for ${moduleMetadata.name}`);
-        const savedFilters: CreateSavedFiltersDto[] = overallMetadata.savedFilters;
+        const savedFilters = this.getSeedArray<CreateSavedFiltersDto>(overallMetadata?.savedFilters);
         const pruned = this.enablePruning ? await this.pruneSavedFilters(savedFilters, moduleMetadata.name) : 0;
-        if (savedFilters?.length > 0) {
+        if (savedFilters.length > 0) {
             await this.handleSeedSavedFilters(savedFilters);
         }
         this.logger.debug(`[End] Processing saved filters for ${moduleMetadata.name}`);
-        return { pruned, upserted: savedFilters?.length ?? 0 };
+        return { pruned, upserted: savedFilters.length };
     }
 
     private async seedListOfValues(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing List Of Values for ${moduleMetadata.name}`);
-        const listOfValues: CreateListOfValuesDto[] = overallMetadata.listOfValues;
+        const listOfValues = this.getSeedArray<CreateListOfValuesDto>(overallMetadata?.listOfValues);
         const pruned = this.enablePruning ? await this.pruneListOfValues(listOfValues, moduleMetadata.name) : 0;
         await this.handleSeedListOfValues(listOfValues);
         this.logger.debug(`[End] Processing List Of Values for ${moduleMetadata.name}`);
-        return { pruned, upserted: listOfValues?.length ?? 0 };
+        return { pruned, upserted: listOfValues.length };
     }
 
     private async setupDefaultRolesWithPermissions() {
@@ -291,11 +296,11 @@ export class ModuleMetadataSeederService {
 
     private async seedSecurityRules(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing security rules`);
-        const securityRules: CreateSecurityRuleDto[] = overallMetadata.securityRules;
+        const securityRules = this.getSeedArray<CreateSecurityRuleDto>(overallMetadata?.securityRules);
         const pruned = this.enablePruning ? await this.pruneSecurityRules(securityRules, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedSecurityRules(securityRules);
         this.logger.debug(`[End] Processing security rules`);
-        return { pruned, upserted: securityRules?.length ?? 0 };
+        return { pruned, upserted: securityRules.length };
     }
 
     // Ok
@@ -307,75 +312,85 @@ export class ModuleMetadataSeederService {
 
     private async seedSmsTemplates(overallMetadata: any, moduleName: string): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing sms templates`);
-        const smsTemplates: CreateSmsTemplateDto[] = overallMetadata.smsTemplates;
+        const smsTemplates = this.getSeedArray<CreateSmsTemplateDto>(overallMetadata?.smsTemplates);
         await this.handleSeedSmsTemplates(smsTemplates, moduleName);
         this.logger.debug(`[End] Processing sms templates`);
-        return { pruned: 0, upserted: smsTemplates?.length ?? 0 };
+        return { pruned: 0, upserted: smsTemplates.length };
     }
 
     // OK
     private async seedEmailTemplates(overallMetadata: any, moduleName: string): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing email templates`);
-        const emailTemplates: CreateEmailTemplateDto[] = overallMetadata.emailTemplates;
+        const emailTemplates = this.getSeedArray<CreateEmailTemplateDto>(overallMetadata?.emailTemplates);
         await this.handleSeedEmailTemplates(emailTemplates, moduleName);
         this.logger.debug(`[End] Processing email templates`);
-        return { pruned: 0, upserted: emailTemplates?.length ?? 0 };
+        return { pruned: 0, upserted: emailTemplates.length };
     }
 
     // Ok
     private async seedMenus(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing menus`);
-        const menus = overallMetadata.menus;
+        const menus = this.getSeedArray<any>(overallMetadata?.menus);
         const pruned = this.enablePruning ? await this.pruneMenus(menus, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedMenus(menus);
         this.logger.debug(`[End] Processing menus`);
-        return { pruned, upserted: menus?.length ?? 0 };
+        return { pruned, upserted: menus.length };
     }
 
     // Ok
     private async seedActions(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing actions`);
-        const actions = overallMetadata.actions;
+        const actions = this.getSeedArray<any>(overallMetadata?.actions);
         const pruned = this.enablePruning ? await this.pruneActions(actions, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedActions(actions);
         this.logger.debug(`[End] Processing actions`);
-        return { pruned, upserted: actions?.length ?? 0 };
+        return { pruned, upserted: actions.length };
     }
 
     // Ok
     private async seedViews(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing views`);
-        const views = overallMetadata.views;
+        const views = this.getSeedArray<any>(overallMetadata?.views);
         const pruned = this.enablePruning ? await this.pruneViews(views, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedViews(views);
         this.logger.debug(`[End] Processing views`);
-        return { pruned, upserted: views?.length ?? 0 };
+        return { pruned, upserted: views.length };
     }
 
     // Ok
     private async seedUsers(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing users`);
-        const users = overallMetadata.users;
+        const users = this.getSeedArray<SignUpDto>(overallMetadata?.users);
         // usersDetail = users;
         await this.handleSeedUsers(users);
         this.logger.debug(`[End] Processing users`);
-        return { pruned: 0, upserted: users?.length ?? 0 };
+        return { pruned: 0, upserted: users.length };
     }
 
     // OK
     private async seedRoles(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing roles`);
+        const roles = this.getSeedArray<CreateRoleMetadataDto>(overallMetadata?.roles);
         // While creating roles we are only passing the role name to be used. 
-        await this.roleService.createRolesIfNotExists(overallMetadata.roles.map(role => { return { name: role.name }; }));
+        await this.roleService.createRolesIfNotExists(
+            roles
+                .filter((role) => role?.name)
+                .map((role) => ({ name: role.name } as any)),
+        );
         // After roles are created, we iterate over all roles and attach permissions (if specified in the seeder json) to the respective role.
         // Every role configuration in the seeder json can optionally have a permissions attribute. 
-        for (const role of overallMetadata.roles) {
+        for (const role of roles) {
             if (role.permissions) {
-                await this.roleService.addPermissionsToRole(role.name, role.permissions);
+                await this.roleService.addPermissionsToRole(
+                    role.name,
+                    role.permissions
+                        .map((permission: any) => typeof permission === 'string' ? permission : permission?.name)
+                        .filter(Boolean),
+                );
             }
         }
         this.logger.debug(`[End] Processing roles`);
-        return { pruned: 0, upserted: overallMetadata.roles?.length ?? 0 };
+        return { pruned: 0, upserted: roles.length };
     }
 
     private async seedPermissions(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
@@ -494,22 +509,23 @@ export class ModuleMetadataSeederService {
     // OK
     private async seedMediaStorageProviders(mediaStorageProviders: any[]): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing Media Storage Provider`);
+        const providers = this.getSeedArray<any>(mediaStorageProviders);
 
-        for (let i = 0; i < mediaStorageProviders.length; i++) {
-            const mediaStorageProvider = mediaStorageProviders[i];
+        for (let i = 0; i < providers.length; i++) {
+            const mediaStorageProvider = providers[i];
             await this.mediaStorageProviderMetadataService.upsert(mediaStorageProvider);
         }
         this.logger.debug(`[End] Processing Media Storage Provider`);
-        return { pruned: 0, upserted: mediaStorageProviders?.length ?? 0 };
+        return { pruned: 0, upserted: providers.length };
     }
 
     private async seedModelSequences(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing model sequences`);
-        const modelSequences: CreateModelSequenceDto[] = overallMetadata.modelSequences;
+        const modelSequences = this.getSeedArray<CreateModelSequenceDto>(overallMetadata?.modelSequences);
         const pruned = this.enablePruning ? await this.pruneModelSequences(modelSequences, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedModelSequences(modelSequences);
         this.logger.debug(`[End] Processing model sequences`);
-        return { pruned, upserted: modelSequences?.length ?? 0 };
+        return { pruned, upserted: modelSequences.length };
     }
 
     // OK
@@ -832,8 +848,8 @@ export class ModuleMetadataSeederService {
         let upserted = 1;
 
         // Next create all the models. 
-        const modelsMetadata: CreateModelMetadataDto[] = moduleMetadata.models;
-        upserted += modelsMetadata?.length ?? 0;
+        const modelsMetadata = this.getSeedArray<CreateModelMetadataDto>(moduleMetadata?.models);
+        upserted += modelsMetadata.length;
         for (let j = 0; j < modelsMetadata.length; j++) {
             const modelMetadata = modelsMetadata[j];
 
@@ -885,6 +901,10 @@ export class ModuleMetadataSeederService {
         }
         this.logger.debug(`[End] Processing module metadata`);
         return { pruned, upserted };
+    }
+
+    private getSeedArray<T>(value: T[] | null | undefined): T[] {
+        return Array.isArray(value) ? value : [];
     }
 
     private async handleSeedSecurityRules(rulesDto: CreateSecurityRuleDto[]) {
