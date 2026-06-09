@@ -5616,10 +5616,10 @@
     {
       "displayName": "Model List Action",
       "name": "modelMetadata-list-action",
-      "type": "custom",
+      "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/core/solid-core/model-metadata/list",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "modelMetadata-list-view",
@@ -6184,6 +6184,19 @@
       "viewUserKey": "dashboardUserLayout-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "dashboardUserLayout"
+    },
+    {
+      "displayName": "Model Tree Action",
+      "name": "modelMetadata-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "modelMetadata-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelMetadata"
     }
   ],
   "menus": [
@@ -6739,7 +6752,7 @@
           ],
           "enableGlobalSearch": true,
           "truncateAfter": 50,
-          "create": true,
+          "create": false,
           "edit": true,
           "delete": false,
           "rowButtons": [
@@ -6767,7 +6780,11 @@
             }
           ],
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -6835,7 +6852,8 @@
         "attrs": {
           "name": "form-1",
           "label": "Model Metadata",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false
         },
         "children": [
           {
@@ -13499,6 +13517,81 @@
                 ]
               }
             ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "modelMetadata-tree-view",
+      "displayName": "Model Metadata Tree View",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelMetadata",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "singularName",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "tableName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dataSource",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "enableSoftDelete",
+              "isSearchable": true
+            }
           }
         ]
       }

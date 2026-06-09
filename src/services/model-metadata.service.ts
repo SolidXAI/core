@@ -29,7 +29,7 @@ import {
 } from '../helpers/schematic.service';
 import { classify } from '../helpers/string.helper';
 import { CodeGenerationOptions } from '../interfaces';
-import { CrudHelperService } from './crud-helper.service';
+import { CrudHelperService, FilterCombinator } from './crud-helper.service';
 import { CRUDService } from './crud.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
@@ -68,36 +68,26 @@ export class ModelMetadataService {
     return this.findMany(basicFilterDto);
   }
 
-  async findMany(basicFilterDto: BasicFilterDto) {
+  async findMany(basicFilterDto: BasicFilterDto): Promise<any> {
     const alias = 'modelMetadata';
-    // Extract the required keys from the input query
-    let { limit, offset } = basicFilterDto;
+    const { limit, offset } = basicFilterDto;
 
-    // Create above query on pincode table using query builder
-    var qb: SelectQueryBuilder<ModelMetadata> = await this.modelMetadataRepo.createSecurityRuleAwareQueryBuilder(alias)
-    qb = await this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
+    const qb: SelectQueryBuilder<ModelMetadata> = await this.modelMetadataRepo.createSecurityRuleAwareQueryBuilder(alias);
 
-    // Get the records and the count
-    const [entities, count] = await qb.getManyAndCount();
+    if (basicFilterDto.groupBy?.length) {
+      const groupFilterQb = this.crudHelperService.buildFilterQuery(
+        qb, basicFilterDto, alias, undefined, undefined, undefined,
+        FilterCombinator.AND, false, false
+      );
+      return this.crudHelperService.executeGroupPipeline(
+        groupFilterQb, basicFilterDto, alias,
+        () => this.modelMetadataRepo.createSecurityRuleAwareQueryBuilder(alias)
+      );
+    }
 
-    const currentPage = Math.floor(offset / limit) + 1;
-    const totalPages = Math.ceil(count / limit);
-
-    const nextPage = currentPage < totalPages ? currentPage + 1 : null;
-    const prevPage = currentPage > 1 ? currentPage - 1 : null;
-
-    const r = {
-      meta: {
-        totalRecords: count,
-        currentPage: currentPage,
-        nextPage: nextPage,
-        prevPage: prevPage,
-        totalPages: totalPages,
-        perPage: +limit,
-      },
-      records: entities
-    };
-    return r
+    const filteredQb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
+    const [entities, count] = await filteredQb.getManyAndCount();
+    return this.crudHelperService.pagedResponse(offset, limit, count, entities);
   }
 
   async findOne(id: any, query?: any) {
