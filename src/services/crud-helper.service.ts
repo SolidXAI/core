@@ -284,8 +284,10 @@ export class CrudHelperService {
                     const value = orderOptions[key] as 'ASC' | 'DESC';
                     const field = String(key);
                     if (field.includes('.')) {
-                        const { alias, property } = this.ensureRelationPathJoined(qb, entityAlias, field.split('.'));
-                        qb.addOrderBy(`${alias}.${property}`, value);
+                        const { alias, property, created } = this.ensureRelationPathJoined(qb, entityAlias, field.split('.'));
+                        const orderColumn = `${alias}.${property}`;
+                        qb.addOrderBy(orderColumn, value);
+                        if (created) qb.addSelect(orderColumn);
                     } else {
                         qb.addOrderBy(`${entityAlias}.${field}`, value);
                     }
@@ -347,6 +349,7 @@ export class CrudHelperService {
             qb.expressionMap?.aliases?.find(a => a.metadata)?.name ||
             qb.expressionMap?.aliases?.[0]?.name;
         let parentAlias = mainAlias || rootAlias;
+        let leafJoinCreated = false;
         for (let i = 0; i < pathParts.length - 1; i++) {
             const part = pathParts[i];
             const joinProperty = `${parentAlias}.${part}`;
@@ -354,10 +357,13 @@ export class CrudHelperService {
             const joinAlias = existingAlias ?? this.sanitizeAlias(`${parentAlias}_${part}`);
             if (!existingAlias && !this.isRelationJoined(qb, joinProperty) && !this.isAliasJoined(qb, joinAlias)) {
                 qb.leftJoin(joinProperty, joinAlias);
+                leafJoinCreated = true;
+            } else {
+                leafJoinCreated = false;
             }
             parentAlias = joinAlias;
         }
-        return { alias: parentAlias, property: pathParts[pathParts.length - 1] };
+        return { alias: parentAlias, property: pathParts[pathParts.length - 1], created: leafJoinCreated };
     }
 
     private getDriver(qb: SelectQueryBuilder<any>) {
