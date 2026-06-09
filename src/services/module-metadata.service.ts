@@ -354,9 +354,11 @@ export class ModuleMetadataService {
     this.logger.log(`Cleaning up for module: ${moduleEntity.name}.`);
 
     const modulePath = await this.moduleMetadataHelperService.getModulePath(moduleEntity.name);
+    const solidUiModulePath = await this.moduleMetadataHelperService.getSolidUiModulePath(moduleEntity.name);
     if (modulePath) {
 
       this.logger.log(`Module path: ${modulePath}`);
+      this.logger.log(`Solid UI module path: ${solidUiModulePath}`);
 
       // Metadata file to be deleted
       const moduleMetadataPAth = await this.moduleMetadataHelperService.getModuleMetadataFolderPath(moduleEntity.name)
@@ -364,6 +366,10 @@ export class ModuleMetadataService {
 
       try {
         await fs.rm(modulePath, { recursive: true, force: true });
+        if (solidUiModulePath) {
+          await fs.rm(solidUiModulePath, { recursive: true, force: true });
+          this.logger.log(`Deleted solid-ui module path: ${solidUiModulePath}`);
+        }
         await fs.rm(moduleMetadataPAth, { recursive: true, force: true });
         this.logger.log(`Deleted file: ${moduleMetadataPAth}`);
       } catch (error: any) {
@@ -390,9 +396,12 @@ export class ModuleMetadataService {
           id: id,
         }
       });
-      // if (!entity) {
-      //   throw new Error(`Entity with id ${id} not found`);
-      // }
+      if (!entity) {
+        this.logger.warn(`Module metadata with id ${id} not found. Skipping deleteMany cleanup for this id.`);
+        continue;
+      }
+
+      await this.cleanupOnDelete(entity.id);
       removedEntities.push(await this.moduleMetadataRepo.remove(entity));
     }
 

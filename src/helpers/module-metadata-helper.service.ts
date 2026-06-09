@@ -37,6 +37,15 @@ export class ModuleMetadataHelperService {
         return path.resolve(process.cwd(), 'src', moduleName);
     }
 
+    async getSolidUiModulePath(moduleName: string): Promise<string> {
+        if (!moduleName) {
+            return '';
+        }
+
+        const dashModuleName = kebabCase(moduleName);
+        return path.resolve(process.cwd(), '..', 'solid-ui', 'src', dashModuleName);
+    }
+
     private resolveModuleMetadataFolderPath(moduleName: string): string {
         const dashModuleName = kebabCase(moduleName);
         return path.resolve(process.cwd(), 'src', dashModuleName, 'metadata');
