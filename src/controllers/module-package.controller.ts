@@ -46,12 +46,26 @@ export class ModulePackageController {
     }
 
     @ApiBearerAuth('jwt')
+    @Get('import/resumable/latest')
+    async getLatestResumableImport() {
+        return this.modulePackageService.getLatestResumableImport();
+    }
+
+    @ApiBearerAuth('jwt')
     @Post('import/:id/confirm')
     async confirmImport(
         @Param('id') id: string,
         @Body() dto: ConfirmModulePackageImportDto,
     ) {
         return this.modulePackageService.confirmImport(id, dto);
+    }
+
+    @ApiBearerAuth('jwt')
+    @Post('import/:id/dismiss')
+    async dismissImport(
+        @Param('id') id: string,
+    ) {
+        return this.modulePackageService.dismissImport(id);
     }
 
     @ApiBearerAuth('jwt')

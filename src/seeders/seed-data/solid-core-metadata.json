@@ -6570,6 +6570,7 @@
       "modelUserKey": "moduleMetadata",
       "layout": {
         "type": "list",
+        "onListLoad": "moduleMetadataListOnLoad",
         "attrs": {
           "pagination": true,
           "pageSizeOptions": [
@@ -6587,6 +6588,9 @@
                 "label": "Import Module",
                 "action": "ModuleImportListHeaderAction",
                 "actionInContextMenu": false,
+                "env": [
+                  "dev"
+                ],
                 "openInPopup": true,
                 "icon": "si-upload",
                 "closable": false,

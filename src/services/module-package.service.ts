@@ -107,6 +107,11 @@ type ModulePackageExportFile = {
     mimeType: string;
 };
 
+type ModulePackageActiveTransactionFile = {
+    transactionKey: string;
+    updatedAt: string;
+};
+
 enum ModulePackageStatus {
     uploaded = 'uploaded',
     validated = 'validated',
@@ -139,6 +144,8 @@ export class ModulePackageService {
         if (!file) {
             throw new BadRequestException('A .sldx archive file is required.');
         }
+
+        await this.cleanupModulePackageTransactions();
 
         const transactionKey = uuidv4();
         const workingDir = await this.createWorkingDir(transactionKey);
@@ -183,6 +190,20 @@ export class ModulePackageService {
 
     async getStatus(transactionKey: string) {
         const transaction = await this.loadTransaction(transactionKey);
+        return this.toStatusResponse(transaction);
+    }
+
+    @DisallowInProduction()
+    async getLatestResumableImport() {
+        await this.cleanupModulePackageTransactions();
+        const transaction = await this.resolveLatestResumableTransaction();
+        return transaction ? this.toStatusResponse(transaction) : null;
+    }
+
+    @DisallowInProduction()
+    async dismissImport(transactionKey: string) {
+        const transaction = await this.loadTransaction(transactionKey);
+        await this.clearActiveTransactionIfMatches(transaction.transactionKey);
         return this.toStatusResponse(transaction);
     }
 
@@ -306,6 +327,7 @@ export class ModulePackageService {
                 `Metadata file placed at ${preview.requiredPaths.metadataPath}`,
             ].join('\n');
             await this.writeStatusFile(transactionKey, transaction);
+            await this.syncActiveTransactionPointer(transaction);
 
             return this.toStatusResponse(transaction);
         } catch (error: any) {
@@ -313,6 +335,7 @@ export class ModulePackageService {
             transaction.currentStep = 'import';
             transaction.errorMessage = error.message ?? 'Failed to import the module package.';
             await this.writeStatusFile(transactionKey, transaction);
+            await this.syncActiveTransactionPointer(transaction);
             throw error;
         }
     }
@@ -368,6 +391,7 @@ export class ModulePackageService {
                 ? `Build completed with errors in: ${failedTargets.join(', ')}`
                 : null;
             await this.writeStatusFile(transactionKey, transaction);
+            await this.syncActiveTransactionPointer(transaction);
 
             return this.toStatusResponse(transaction);
         } catch (error: any) {
@@ -376,6 +400,7 @@ export class ModulePackageService {
             transaction.errorMessage = error.message ?? 'Build failed.';
             transaction.outputs.build = error.message ?? '';
             await this.writeStatusFile(transactionKey, transaction);
+            await this.syncActiveTransactionPointer(transaction);
             throw error;
         }
     }
@@ -417,6 +442,7 @@ export class ModulePackageService {
                 `seedGlobalMetadata=${dto.seedGlobalMetadata ?? false}`,
             ].join('\n');
             await this.writeStatusFile(transactionKey, transaction);
+            await this.syncActiveTransactionPointer(transaction);
 
             return this.toStatusResponse(transaction);
         } catch (error: any) {
@@ -425,6 +451,7 @@ export class ModulePackageService {
             transaction.errorMessage = error.message ?? 'Seed failed.';
             transaction.outputs.seed = error.message ?? '';
             await this.writeStatusFile(transactionKey, transaction);
+            await this.syncActiveTransactionPointer(transaction);
             return this.toStatusResponse(transaction);
         }
     }
@@ -727,6 +754,18 @@ export class ModulePackageService {
         return JSON.parse(await fs.readFile(statusFilePath, 'utf-8')) as ModulePackageStatusFile;
     }
 
+    private isResumableStatus(status: string | null | undefined) {
+        return [
+            ModulePackageStatus.import_running,
+            ModulePackageStatus.awaiting_restart,
+            ModulePackageStatus.build_running,
+            ModulePackageStatus.build_failed,
+            ModulePackageStatus.build_succeeded,
+            ModulePackageStatus.seed_running,
+            ModulePackageStatus.seed_failed,
+        ].includes(status as ModulePackageStatus);
+    }
+
     private async createWorkingDir(transactionKey: string) {
         const baseDir = path.join(
             this.getModulePackageImportsRoot(),
@@ -810,11 +849,171 @@ export class ModulePackageService {
         return path.join(this.getModulePackageImportsRoot(), transactionKey, 'status.json');
     }
 
+    private getActiveTransactionFilePath() {
+        return path.join(this.getModulePackageImportsRoot(), 'active-transaction.json');
+    }
+
     private async writeStatusFile(transactionKey: string, payload: ModulePackageStatusFile) {
         payload.updatedAt = new Date().toISOString();
         const statusFilePath = this.getStatusFilePath(transactionKey);
         await fs.mkdir(path.dirname(statusFilePath), { recursive: true });
         await fs.writeFile(statusFilePath, JSON.stringify(payload, null, 2));
+    }
+
+    private async markActiveTransaction(transactionKey: string) {
+        const activeTransactionFilePath = this.getActiveTransactionFilePath();
+        await fs.mkdir(path.dirname(activeTransactionFilePath), { recursive: true });
+        const payload: ModulePackageActiveTransactionFile = {
+            transactionKey,
+            updatedAt: new Date().toISOString(),
+        };
+        await fs.writeFile(activeTransactionFilePath, JSON.stringify(payload, null, 2));
+    }
+
+    private async clearActiveTransactionIfMatches(transactionKey: string) {
+        const activeTransaction = await this.loadActiveTransactionPointer();
+        if (!activeTransaction || activeTransaction.transactionKey !== transactionKey) {
+            return;
+        }
+
+        await fs.rm(this.getActiveTransactionFilePath(), { force: true });
+    }
+
+    private async loadActiveTransactionPointer(): Promise<ModulePackageActiveTransactionFile | null> {
+        try {
+            return JSON.parse(await fs.readFile(this.getActiveTransactionFilePath(), 'utf-8')) as ModulePackageActiveTransactionFile;
+        } catch (error) {
+            return null;
+        }
+    }
+
+    private async syncActiveTransactionPointer(transaction: ModulePackageStatusFile) {
+        if (this.isResumableStatus(transaction.status)) {
+            await this.markActiveTransaction(transaction.transactionKey);
+            return;
+        }
+
+        await this.clearActiveTransactionIfMatches(transaction.transactionKey);
+    }
+
+    private getCompletedTransactionRetentionMs() {
+        const retentionDays = Number(process.env.SOLIDX_MODULE_PACKAGE_RETENTION_DAYS ?? 7);
+        const safeDays = Number.isFinite(retentionDays) && retentionDays > 0 ? retentionDays : 7;
+        return safeDays * 24 * 60 * 60 * 1000;
+    }
+
+    private getPendingTransactionRetentionMs() {
+        const retentionHours = Number(process.env.SOLIDX_MODULE_PACKAGE_PENDING_RETENTION_HOURS ?? 24);
+        const safeHours = Number.isFinite(retentionHours) && retentionHours > 0 ? retentionHours : 24;
+        return safeHours * 60 * 60 * 1000;
+    }
+
+    private async cleanupModulePackageTransactions() {
+        const importsRoot = this.getModulePackageImportsRoot();
+        const activePointer = await this.loadActiveTransactionPointer();
+        const now = Date.now();
+
+        try {
+            await fs.mkdir(importsRoot, { recursive: true });
+            const entries = await fs.readdir(importsRoot, { withFileTypes: true });
+
+            for (const entry of entries) {
+                if (!entry.isDirectory()) {
+                    continue;
+                }
+
+                const transactionKey = entry.name;
+                if (!/^[a-zA-Z0-9-]+$/.test(transactionKey)) {
+                    continue;
+                }
+
+                const statusFilePath = this.getStatusFilePath(transactionKey);
+                let transaction: ModulePackageStatusFile | null = null;
+
+                try {
+                    transaction = JSON.parse(await fs.readFile(statusFilePath, 'utf-8')) as ModulePackageStatusFile;
+                } catch (error) {
+                    continue;
+                }
+
+                const updatedAtMs = transaction.updatedAt ? new Date(transaction.updatedAt).getTime() : 0;
+                const ageMs = updatedAtMs > 0 ? now - updatedAtMs : Number.MAX_SAFE_INTEGER;
+                const isResumable = this.isResumableStatus(transaction.status);
+                const maxAgeMs = isResumable
+                    ? this.getPendingTransactionRetentionMs()
+                    : this.getCompletedTransactionRetentionMs();
+                const shouldDelete = ageMs > maxAgeMs;
+
+                if (!shouldDelete) {
+                    continue;
+                }
+
+                await fs.rm(path.join(importsRoot, transactionKey), { recursive: true, force: true });
+
+                if (activePointer?.transactionKey === transactionKey) {
+                    await fs.rm(this.getActiveTransactionFilePath(), { force: true });
+                }
+            }
+        } catch (error) {
+            this.logger.warn(`Failed to clean up module package transactions: ${String(error)}`);
+        }
+    }
+
+    private async resolveLatestResumableTransaction(): Promise<ModulePackageStatusFile | null> {
+        const activePointer = await this.loadActiveTransactionPointer();
+        if (activePointer?.transactionKey) {
+            try {
+                const activeTransaction = await this.loadTransaction(activePointer.transactionKey);
+                if (this.isResumableStatus(activeTransaction.status)) {
+                    return activeTransaction;
+                }
+
+                await this.clearActiveTransactionIfMatches(activePointer.transactionKey);
+            } catch (error) {
+                await this.clearActiveTransactionIfMatches(activePointer.transactionKey);
+            }
+        }
+
+        const importsRoot = this.getModulePackageImportsRoot();
+        const candidates: ModulePackageStatusFile[] = [];
+
+        try {
+            const entries = await fs.readdir(importsRoot, { withFileTypes: true });
+
+            for (const entry of entries) {
+                if (!entry.isDirectory()) {
+                    continue;
+                }
+
+                const transactionKey = entry.name;
+                if (!/^[a-zA-Z0-9-]+$/.test(transactionKey)) {
+                    continue;
+                }
+
+                try {
+                    const transaction = await this.loadTransaction(transactionKey);
+                    if (this.isResumableStatus(transaction.status)) {
+                        candidates.push(transaction);
+                    }
+                } catch (error) {
+                    continue;
+                }
+            }
+        } catch (error) {
+            return null;
+        }
+
+        candidates.sort((left, right) => {
+            const leftUpdatedAt = new Date(left.updatedAt ?? left.createdAt ?? 0).getTime();
+            const rightUpdatedAt = new Date(right.updatedAt ?? right.createdAt ?? 0).getTime();
+            return rightUpdatedAt - leftUpdatedAt;
+        });
+
+        const latest = candidates[0] ?? null;
+        if (latest) {
+            await this.markActiveTransaction(latest.transactionKey);
+        }
+        return latest;
     }
 
     private toStatusResponse(transaction: ModulePackageStatusFile) {
