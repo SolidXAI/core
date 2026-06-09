@@ -6765,27 +6765,30 @@
                 "openInPopup": true
               }
             }
-          ]
+          ],
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "singularName",
+              "name": "module",
               "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "singularName",
+              "isSearchable": true,
+              "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "tableName",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "pluralName",
               "isSearchable": true
             }
           },
@@ -6807,20 +6810,13 @@
             "type": "field",
             "attrs": {
               "name": "dataSource",
-              "isSearchable": true
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "enableSoftDelete",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "module",
               "isSearchable": true
             }
           }
