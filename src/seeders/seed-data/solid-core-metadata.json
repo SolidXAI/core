@@ -5629,13 +5629,26 @@
     {
       "displayName": "Field List Action",
       "name": "fieldMetadata-list-action",
-      "type": "custom",
+      "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/core/solid-core/field-metadata/list",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "fieldMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fieldMetadata"
+    },
+    {
+      "displayName": "Field Metadata Tree Action",
+      "name": "fieldMetadata-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "fieldMetadata-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "fieldMetadata"
     },
@@ -6853,7 +6866,8 @@
           "name": "form-1",
           "label": "Model Metadata",
           "className": "grid",
-          "showAddFormButton": false
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -8839,16 +8853,30 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "name",
+              "name": "model",
               "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
             }
           },
           {
@@ -8869,9 +8897,69 @@
             "type": "field",
             "attrs": {
               "name": "ormType",
-              "isSearchable": true
+              "isSearchable": false
             }
           },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "relationType",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "required",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "unique",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "index",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "columnName",
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "fieldMetadata-tree-view",
+      "displayName": "Field Metadata",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fieldMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
           {
             "type": "field",
             "attrs": {
@@ -8882,232 +8970,65 @@
           {
             "type": "field",
             "attrs": {
-              "name": "defaultValue",
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
               "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "regexPattern",
+              "name": "type",
               "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "regexPatternNotMatchingErrorMsg",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "required",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "unique",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "encrypt",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "encryptionType",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "decryptWhen",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "index",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "length",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "max",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "min",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "private",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "mediaTypes",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "mediaMaxSizeKb",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "mediaStorageProvider",
-              "isSearchable": true
+              "name": "ormType",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationType",
-              "isSearchable": true
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "relationCoModelSingularName",
-              "isSearchable": true
+              "name": "required",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "relationCreateInverse",
-              "isSearchable": true
+              "name": "unique",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "relationCascade",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "relationModelModuleName",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "relationCoModelFieldName",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "selectionDynamicProvider",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "selectionDynamicProviderCtxt",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "selectionStaticValues",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "selectionValueType",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "computedFieldValueProvider",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "computedFieldValueProviderCtxt",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "computedFieldValueType",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "uuid",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "isSystem",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "isMarkedForRemoval",
-              "isSearchable": true
+              "name": "index",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "columnName",
-              "isSearchable": true
+              "isSearchable": false
             }
           }
         ]
@@ -9125,7 +9046,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Field Metadata",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
