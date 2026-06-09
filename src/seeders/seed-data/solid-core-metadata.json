@@ -6581,6 +6581,20 @@
           "create": true,
           "edit": true,
           "delete": false,
+          "headerButtons": [
+            {
+              "attrs": {
+                "label": "Import Module",
+                "action": "ModuleImportListHeaderAction",
+                "actionInContextMenu": false,
+                "openInPopup": true,
+                "icon": "si-upload",
+                "closable": false,
+                "popupWidth": "min(1180px, calc(100vw - 32px))",
+                "customComponentIsSystem": true
+              }
+            }
+          ],
           "rowButtons": [
             {
               "attrs": {

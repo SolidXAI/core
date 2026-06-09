@@ -19,6 +19,7 @@ import { MediaStorageProviderMetadataController } from "./controllers/media-stor
 import { ModelMetadataController } from "./controllers/model-metadata.controller";
 import { ModuleMetadataExplorerController } from "./controllers/module-metadata-explorer.controller";
 import { ModuleMetadataController } from "./controllers/module-metadata.controller";
+import { ModulePackageController } from "./controllers/module-package.controller";
 import { TestController } from "./controllers/test.controller";
 import { FieldMetadata } from "./entities/field-metadata.entity";
 import { ListOfValues } from "./entities/list-of-values.entity";
@@ -44,6 +45,7 @@ import { MediaService } from "./services/media.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
+import { ModulePackageService } from "./services/module-package.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
@@ -489,6 +491,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ModelMetadataController,
     ModuleMetadataExplorerController,
     ModuleMetadataController,
+    ModulePackageController,
     MqMessageController,
     MqMessageQueueController,
     GupshupWebhookController,
@@ -539,6 +542,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ModuleMetadataService,
     ModuleMetadataExplorerService,
     ModuleMetadataHelperService,
+    ModulePackageService,
     ModelMetadataService,
     ModelMetadataHelperService,
     FieldMetadataService,
@@ -849,6 +853,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ModelMetadataService,
     ModuleMetadataService,
     ModuleMetadataExplorerService,
+    ModulePackageService,
     MqMessageQueueService,
     MqMessageService,
     Msg91OTPService,
