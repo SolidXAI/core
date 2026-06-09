@@ -6578,20 +6578,23 @@
                 "customComponentIsSystem": true
               }
             }
-          ]
+          ],
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "displayName",
-              "isSearchable": true
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "name",
+              "name": "displayName",
               "isSearchable": true
             }
           },
@@ -6613,7 +6616,8 @@
             "type": "field",
             "attrs": {
               "name": "menuSequenceNumber",
-              "isSearchable": true
+              "isSearchable": true,
+              "sortable": true
             }
           },
           {
