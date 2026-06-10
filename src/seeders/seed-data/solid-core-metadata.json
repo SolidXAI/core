@@ -8038,7 +8038,7 @@
               "name": "viewMetadata",
               "label": "Name",
               "coModelFieldToDisplay": "name",
-              "isSearchable": true,
+              "isSearchable": false,
               "searchField": "viewMetadata.name"
             }
           },
