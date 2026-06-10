@@ -21,8 +21,43 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         readonly mediaRepository: MediaRepository,
     ) { }
 
-    storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
-        throw new Error("Method not implemented.");
+    async storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
+        const isSupportedEntity = entity instanceof CommonEntity
+            || entity instanceof LegacyCommonEntityWithExistingId
+            || entity instanceof LegacyCommonEntityWithGeneratedId;
+        if (!isSupportedEntity) {
+            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntityWithExistingId or LegacyCommonEntityWithGeneratedId");
+        }
+        const result: Media[] = [];
+        const storageProvider = mediaFieldMetadata.mediaStorageProvider;
+        const region = this.getEffectiveRegion(storageProvider.region);
+
+        for (const [stream, fileName] of streamPairs) {
+            const bucketName = storageProvider.bucketName;
+
+            // Buffer the stream so we can get the byte count and upload in one pass
+            const chunks: Buffer[] = [];
+            for await (const chunk of stream) {
+                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+            }
+            const fileData = Buffer.concat(chunks);
+            const fileSize = fileData.length;
+
+            await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { region });
+
+            const mediaEntity = await this.mediaRepository.createMedia({
+                // @ts-ignore
+                entityId: entity.id,
+                modelMetadataId: mediaFieldMetadata.model.id,
+                relativeUri: fileName,
+                fileSize,
+                mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
+                fieldMetadataId: mediaFieldMetadata.id
+            }) as unknown as Media;
+            result.push(mediaEntity);
+            this.logger.debug(`Stored media with`, mediaEntity);
+        }
+        return result;
     }
 
     async retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {

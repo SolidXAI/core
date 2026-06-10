@@ -6262,6 +6262,19 @@
       "viewUserKey": "userViewMetadata-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "userViewMetadata"
+    },
+    {
+      "displayName": "Media Tree Action",
+      "name": "media-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "media-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "media"
     }
   ],
   "menus": [
@@ -8651,49 +8664,57 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
+          "create": false,
+          "edit": false,
           "delete": true,
           "allowedViews": [
             "list",
-            "card"
-          ]
+            "card",
+            "tree"
+          ],
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "entityId",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "relativeUri",
-              "widget": "image",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "modelMetadata",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "mediaStorageProviderMetadata",
-              "isSearchable": true
+              "isSearchable": true,
+              "sortable": true,
+              "searchField": "modelMetadata.name"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "fieldMetadata",
-              "isSearchable": true
+              "isSearchable": true,
+              "sortable": true,
+              "searchField": "fieldMetadata.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "entityId",
+              "isSearchable": true,
+              "sortable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mediaStorageProviderMetadata",
+              "isSearchable": false,
+              "sortable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "fileSize",
+              "sortable": true
             }
           }
         ]
@@ -8806,7 +8827,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Solid Media Model",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -13829,6 +13852,74 @@
             "attrs": {
               "name": "createdAt",
               "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "media-tree-view",
+      "displayName": "Media Tree View",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "media",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelMetadata",
+              "isSearchable": true,
+              "sortable": true,
+              "searchField": "modelMetadata.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "fieldMetadata",
+              "isSearchable": true,
+              "sortable": true,
+              "searchField": "fieldMetadata.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "entityId",
+              "isSearchable": true,
+              "sortable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mediaStorageProviderMetadata",
+              "isSearchable": false,
+              "sortable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "relativeUri",
+              "widget": "image",
+              "isSearchable": false,
+              "sortable": false
             }
           }
         ]
