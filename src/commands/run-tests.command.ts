@@ -1,12 +1,12 @@
-import { Logger } from '@nestjs/common';
-import { SubCommand, CommandRunner, Option } from 'nest-commander';
-import * as path from 'path';
-import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
-import { ConsoleReporter } from 'src/testing/reporter/console-reporter';
-import { WebhookReporter } from 'src/testing/reporter/webhook-reporter';
-import { runFromMetadata } from 'src/testing/runner/run-from-metadata';
-import type { TestingMetadata } from 'src/testing/contracts/testing-metadata.types';
-import { SpecRegistry } from 'src/testing/core/spec-registry';
+import { Logger } from "@nestjs/common";
+import { SubCommand, CommandRunner, Option } from "nest-commander";
+import * as path from "path";
+import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
+import { ConsoleReporter } from "src/testing/reporter/console-reporter";
+import { WebhookReporter } from "src/testing/reporter/webhook-reporter";
+import { runFromMetadata } from "src/testing/runner/run-from-metadata";
+import type { TestingMetadata } from "src/testing/contracts/testing-metadata.types";
+import { SpecRegistry } from "src/testing/core/spec-registry";
 
 interface TestRunCommandOptions {
   module?: string;
@@ -23,11 +23,12 @@ interface TestRunCommandOptions {
   listSpecs?: boolean;
   printApiLogs?: boolean;
   runName?: string;
+  mobile?: boolean;
 }
 
 @SubCommand({
-  name: 'run',
-  description: 'Run testing scenarios from module metadata.',
+  name: "run",
+  description: "Run testing scenarios from module metadata.",
 })
 export class TestRunCommand extends CommandRunner {
   private readonly logger = new Logger(TestRunCommand.name);
@@ -38,23 +39,39 @@ export class TestRunCommand extends CommandRunner {
     super();
   }
 
-  async run(passedParam: string[], options?: TestRunCommandOptions): Promise<void> {
+  async run(
+    passedParam: string[],
+    options?: TestRunCommandOptions,
+  ): Promise<void> {
     try {
-      const moduleName = options?.moduleName ?? options?.module ?? passedParam?.[0];
+      const moduleName =
+        options?.moduleName ?? options?.module ?? passedParam?.[0];
       if (!moduleName) {
-        this.logger.error('Module name is required. Use --module or pass it as the first argument.');
+        this.logger.error(
+          "Module name is required. Use --module or pass it as the first argument.",
+        );
         return;
       }
 
-      const metadataPath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
+      const metadataPath =
+        await this.moduleMetadataHelperService.getModuleMetadataFilePath(
+          moduleName,
+        );
       if (!metadataPath) {
-        this.logger.error(`Unable to resolve metadata path for module: ${moduleName}`);
+        this.logger.error(
+          `Unable to resolve metadata path for module: ${moduleName}`,
+        );
         return;
       }
 
-      const metadata = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(metadataPath);
+      const metadata =
+        await this.moduleMetadataHelperService.getModuleMetadataConfiguration(
+          metadataPath,
+        );
       if (!metadata?.testing) {
-        this.logger.error(`No testing configuration found in metadata: ${metadataPath}`);
+        this.logger.error(
+          `No testing configuration found in metadata: ${metadataPath}`,
+        );
         return;
       }
 
@@ -71,8 +88,13 @@ export class TestRunCommand extends CommandRunner {
         printSpecList(registry.list());
         return;
       }
-      if (!metadata?.testing?.scenarios || !Array.isArray(metadata.testing.scenarios)) {
-        this.logger.error(`No testing.scenarios found in metadata: ${metadataPath}`);
+      if (
+        !metadata?.testing?.scenarios ||
+        !Array.isArray(metadata.testing.scenarios)
+      ) {
+        this.logger.error(
+          `No testing.scenarios found in metadata: ${metadataPath}`,
+        );
         return;
       }
 
@@ -80,15 +102,18 @@ export class TestRunCommand extends CommandRunner {
       const includeTags = splitCsv(options?.includeTags);
       const skipScenarioIds = splitCsv(options?.skipScenarioIds);
 
-      const reporterName = options?.reporter ?? 'console';
-      if (reporterName !== 'console') {
-        this.logger.error(`Unsupported reporter: ${reporterName}. Use "console".`);
+      const reporterName = options?.reporter ?? "console";
+      if (reporterName !== "console") {
+        this.logger.error(
+          `Unsupported reporter: ${reporterName}. Use "console".`,
+        );
         return;
       }
 
       const apiBaseUrl = options?.apiBaseUrl ?? process.env.BASE_URL;
       const uiBaseUrl = options?.uiBaseUrl ?? process.env.FRONTEND_BASE_URL;
       const headless = options?.headless ?? true;
+      const mobile = options?.mobile ?? false;
       const printApiLogs = options?.printApiLogs ?? false;
 
       const webhookUrl = process.env.SOLIDCTL_WEBHOOK_URL;
@@ -105,19 +130,20 @@ export class TestRunCommand extends CommandRunner {
           skipScenarioIds,
           reporter,
           api: apiBaseUrl ? { baseUrl: apiBaseUrl } : undefined,
-          ui: { baseUrl: uiBaseUrl, headless },
+          ui: { baseUrl: uiBaseUrl, headless, mobile },
           defaults: {
             timeoutMs: options?.timeoutMs,
             retries: options?.retries,
           },
           options: { printApiLogs },
           specs: specEntries.length
-            ? (registry) => loadSpecRegistrations(specEntries, metadataPath, registry)
+            ? (registry) =>
+                loadSpecRegistrations(specEntries, metadataPath, registry)
             : undefined,
         });
       } catch (err: any) {
-        this.logger.error('Run tests command failed');
-        console.error('Run tests command failed');
+        this.logger.error("Run tests command failed");
+        console.error("Run tests command failed");
         process.exitCode = 1;
       } finally {
         if (reporter instanceof WebhookReporter) {
@@ -126,16 +152,16 @@ export class TestRunCommand extends CommandRunner {
       }
       return;
     } catch (err: any) {
-      this.logger.error('Run tests command failed');
-      console.error('Run tests command failed');
+      this.logger.error("Run tests command failed");
+      console.error("Run tests command failed");
       process.exitCode = 1;
       return;
     }
   }
 
   @Option({
-    flags: '-m, --module [module name]',
-    description: 'Module name to load metadata from.',
+    flags: "-m, --module [module name]",
+    description: "Module name to load metadata from.",
     required: false,
   })
   parseModule(val: string): string {
@@ -143,8 +169,8 @@ export class TestRunCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--scenario-ids [ids]',
-    description: 'Comma-separated list of scenario ids to run.',
+    flags: "--scenario-ids [ids]",
+    description: "Comma-separated list of scenario ids to run.",
     required: false,
   })
   parseScenarioIds(val: string): string {
@@ -152,8 +178,8 @@ export class TestRunCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--include-tags [tags]',
-    description: 'Comma-separated list of tags; scenario must include all.',
+    flags: "--include-tags [tags]",
+    description: "Comma-separated list of tags; scenario must include all.",
     required: false,
   })
   parseIncludeTags(val: string): string {
@@ -161,8 +187,8 @@ export class TestRunCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--skip-scenario-ids [ids]',
-    description: 'Comma-separated list of scenario ids to skip.',
+    flags: "--skip-scenario-ids [ids]",
+    description: "Comma-separated list of scenario ids to skip.",
     required: false,
   })
   parseSkipScenarioIds(val: string): string {
@@ -170,7 +196,7 @@ export class TestRunCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--reporter [name]',
+    flags: "--reporter [name]",
     description: 'Reporter name (currently only "console").',
     required: false,
   })
@@ -179,28 +205,28 @@ export class TestRunCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--list-specs [true|false]',
-    description: 'List registered test specs and exit.',
+    flags: "--list-specs [true|false]",
+    description: "List registered test specs and exit.",
     required: false,
   })
   parseListSpecs(val?: string): boolean {
     if (val === undefined) return true;
-    return val === 'false' ? false : true;
+    return val === "false" ? false : true;
   }
 
   @Option({
-    flags: '--print-api-logs [true|false]',
-    description: 'Print full API request/response logs for api.request steps.',
+    flags: "--print-api-logs [true|false]",
+    description: "Print full API request/response logs for api.request steps.",
     required: false,
   })
   parsePrintApiLogs(val?: string): boolean {
     if (val === undefined) return true;
-    return val === 'false' ? false : true;
+    return val === "false" ? false : true;
   }
 
   @Option({
-    flags: '--api-base-url [url]',
-    description: 'API base URL (defaults to process.env.BASE_URL).',
+    flags: "--api-base-url [url]",
+    description: "API base URL (defaults to process.env.BASE_URL).",
     required: false,
   })
   parseApiBaseUrl(val: string): string {
@@ -208,8 +234,8 @@ export class TestRunCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--ui-base-url [url]',
-    description: 'UI base URL (defaults to process.env.FRONTEND_BASE_URL).',
+    flags: "--ui-base-url [url]",
+    description: "UI base URL (defaults to process.env.FRONTEND_BASE_URL).",
     required: false,
   })
   parseUiBaseUrl(val: string): string {
@@ -217,17 +243,26 @@ export class TestRunCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--headless [true|false]',
-    description: 'Run UI browser in headless mode (default: true).',
+    flags: "--headless [true|false]",
+    description: "Run UI browser in headless mode (default: true).",
     required: false,
   })
   parseHeadless(val: string): boolean {
-    return val === 'false' ? false : true;
+    return val === "false" ? false : true;
   }
 
   @Option({
-    flags: '--timeout-ms [number]',
-    description: 'Default scenario timeout in milliseconds.',
+    flags: "--mobile [true|false]",
+    description: "Run UI browser in mobile viewport (default: false).",
+    required: false,
+  })
+  parseMobile(val: string): boolean {
+    return val === "false" ? false : true;
+  }
+
+  @Option({
+    flags: "--timeout-ms [number]",
+    description: "Default scenario timeout in milliseconds.",
     required: false,
   })
   parseTimeoutMs(val: string): number {
@@ -235,8 +270,8 @@ export class TestRunCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--retries [number]',
-    description: 'Default scenario retries.',
+    flags: "--retries [number]",
+    description: "Default scenario retries.",
     required: false,
   })
   parseRetries(val: string): number {
@@ -244,8 +279,8 @@ export class TestRunCommand extends CommandRunner {
   }
 
   @Option({
-    flags: '--run-name [name]',
-    description: 'Logical name for this test run (used by webhook reporter).',
+    flags: "--run-name [name]",
+    description: "Logical name for this test run (used by webhook reporter).",
     required: false,
   })
   parseRunName(val: string): string {
@@ -256,7 +291,7 @@ export class TestRunCommand extends CommandRunner {
 function splitCsv(value?: string): string[] | undefined {
   if (!value) return undefined;
   const items = value
-    .split(',')
+    .split(",")
     .map((item) => item.trim())
     .filter(Boolean);
   return items.length ? items : undefined;
@@ -266,13 +301,17 @@ function resolveSpecPath(entry: string, metadataPath: string): string {
   if (path.isAbsolute(entry)) {
     return entry;
   }
-  if (entry.startsWith('.')) {
+  if (entry.startsWith(".")) {
     return path.resolve(path.dirname(metadataPath), entry);
   }
   return path.resolve(process.cwd(), entry);
 }
 
-function loadSpecRegistrations(entries: string[], metadataPath: string, registry: SpecRegistry): void {
+function loadSpecRegistrations(
+  entries: string[],
+  metadataPath: string,
+  registry: SpecRegistry,
+): void {
   for (const entry of entries) {
     const resolved = resolveSpecPath(entry, metadataPath);
     let mod: any;
@@ -286,7 +325,7 @@ function loadSpecRegistrations(entries: string[], metadataPath: string, registry
       );
     }
     const register = mod?.registerTestSpecs ?? mod?.default ?? mod;
-    if (typeof register !== 'function') {
+    if (typeof register !== "function") {
       throw new Error(
         `Test spec module "${entry}" did not export a register function (expected "registerTestSpecs" or default export).`,
       );
@@ -296,10 +335,10 @@ function loadSpecRegistrations(entries: string[], metadataPath: string, registry
 }
 function printSpecList(specIds: string[]): void {
   if (!specIds.length) {
-    console.log('No test specs registered.');
+    console.log("No test specs registered.");
     return;
   }
-  console.log('Registered test specs:');
+  console.log("Registered test specs:");
   for (const id of specIds) {
     console.log(`- ${id}`);
   }
