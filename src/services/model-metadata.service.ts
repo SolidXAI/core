@@ -740,7 +740,7 @@ export class ModelMetadataService {
     const model = await this.findOne(modelId);
     return this.commandService.executeCommandWithArgs({
       command: 'npx',
-      args: ['@solixai/solidctl@latest', 'generate', 'model', `--name=${model.singularName}`],
+      args: ['@solidxai/solidctl@latest', 'generate', 'model', `--name=${model.singularName}`],
       cwd: path.join(process.cwd(), '..'),
     });
   }

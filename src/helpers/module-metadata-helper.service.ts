@@ -68,8 +68,7 @@ export class ModuleMetadataHelperService {
             }
         }
 
-        this.logger.error(`Module metadata file not found for module: ${moduleName} at path: ${filePath}`);
-        return '';
+        return filePath;
     }
 
     async getModuleMetadataFolderPath(moduleName: string): Promise<string> {
