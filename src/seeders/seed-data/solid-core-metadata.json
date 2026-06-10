@@ -6662,6 +6662,22 @@
                 "popupWidth": "min(1180px, calc(100vw - 32px))",
                 "customComponentIsSystem": true
               }
+            },
+            {
+              "attrs": {
+                "label": "Clear Package Runtime",
+                "action": "ClearModulePackageRuntimeHeaderAction",
+                "actionInContextMenu": true,
+                "env": [
+                  "dev"
+                ],
+                "openInPopup": true,
+                "icon": "pi pi-trash",
+                "closable": true,
+                "popupWidth": "min(820px, calc(100vw - 32px))",
+                "buttonClassName": "solid-header-dropdown-item-danger",
+                "customComponentIsSystem": true
+              }
             }
           ],
           "rowButtons": [

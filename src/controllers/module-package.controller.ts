@@ -52,6 +52,12 @@ export class ModulePackageController {
     }
 
     @ApiBearerAuth('jwt')
+    @Post('runtime/clear')
+    async clearPackageRuntime() {
+        return this.modulePackageService.clearPackageRuntime();
+    }
+
+    @ApiBearerAuth('jwt')
     @Post('import/:id/confirm')
     async confirmImport(
         @Param('id') id: string,

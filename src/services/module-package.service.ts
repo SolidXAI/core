@@ -108,6 +108,16 @@ type ModulePackageExportFile = {
     mimeType: string;
 };
 
+type ModulePackageRuntimeCleanupResult = {
+    runtimeRoot: string;
+    removedImportTransactions: number;
+    removedExportTransactions: number;
+    removedImportLooseEntries: number;
+    removedExportLooseEntries: number;
+    clearedActiveTransactionPointer: boolean;
+    clearedAt: string;
+};
+
 type ModulePackageActiveTransactionFile = {
     transactionKey: string;
     updatedAt: string;
@@ -205,6 +215,24 @@ export class ModulePackageService {
         const transaction = await this.loadTransaction(transactionKey);
         await this.clearActiveTransactionIfMatches(transaction.transactionKey);
         return this.toStatusResponse(transaction);
+    }
+
+    @DisallowInProduction()
+    async clearPackageRuntime(): Promise<ModulePackageRuntimeCleanupResult> {
+        const runtimeRoot = this.getModulePackageRuntimeRoot();
+        const importsRoot = this.getModulePackageImportsRoot();
+        const exportsRoot = this.getModulePackageExportsRoot();
+        const snapshot = await this.collectRuntimeCleanupSnapshot();
+
+        await fs.rm(runtimeRoot, { recursive: true, force: true });
+        await fs.mkdir(importsRoot, { recursive: true });
+        await fs.mkdir(exportsRoot, { recursive: true });
+
+        return {
+            runtimeRoot,
+            ...snapshot,
+            clearedAt: new Date().toISOString(),
+        };
     }
 
     @DisallowInProduction()
@@ -824,6 +852,14 @@ export class ModulePackageService {
         }
     }
 
+    private async readDirSafe(targetPath: string) {
+        try {
+            return await fs.readdir(targetPath, { withFileTypes: true });
+        } catch (error) {
+            return [];
+        }
+    }
+
     private assertSafeTransactionKey(transactionKey: string) {
         if (!/^[a-zA-Z0-9-]+$/.test(transactionKey)) {
             throw new BadRequestException('Invalid module package transaction key.');
@@ -880,6 +916,33 @@ export class ModulePackageService {
         }
 
         await this.clearActiveTransactionIfMatches(transaction.transactionKey);
+    }
+
+    private async collectRuntimeCleanupSnapshot() {
+        const importEntries = await this.readDirSafe(this.getModulePackageImportsRoot());
+        const exportEntries = await this.readDirSafe(this.getModulePackageExportsRoot());
+
+        const importTransactionEntries = importEntries.filter(
+            (entry) => entry.isDirectory() && /^[a-zA-Z0-9-]+$/.test(entry.name),
+        );
+        const exportTransactionEntries = exportEntries.filter(
+            (entry) => entry.isDirectory() && /^[a-zA-Z0-9-]+$/.test(entry.name),
+        );
+
+        const importLooseEntries = importEntries.filter(
+            (entry) => !(entry.isDirectory() && /^[a-zA-Z0-9-]+$/.test(entry.name)),
+        );
+        const exportLooseEntries = exportEntries.filter(
+            (entry) => !(entry.isDirectory() && /^[a-zA-Z0-9-]+$/.test(entry.name)),
+        );
+
+        return {
+            removedImportTransactions: importTransactionEntries.length,
+            removedExportTransactions: exportTransactionEntries.length,
+            removedImportLooseEntries: importLooseEntries.length,
+            removedExportLooseEntries: exportLooseEntries.length,
+            clearedActiveTransactionPointer: importEntries.some((entry) => entry.name === 'active-transaction.json'),
+        };
     }
 
     private getCompletedTransactionRetentionMs() {
