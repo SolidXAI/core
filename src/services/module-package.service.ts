@@ -5,6 +5,8 @@ import {
     NotFoundException,
 } from '@nestjs/common';
 import { createHash } from 'crypto';
+import archiver from 'archiver';
+import { createWriteStream } from 'fs';
 import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 import { ConfirmModulePackageImportDto } from 'src/dtos/confirm-module-package-import.dto';
 import { RunModulePackageBuildDto } from 'src/dtos/run-module-package-build.dto';
@@ -212,7 +214,6 @@ export class ModulePackageService {
             throw new BadRequestException('A module name is required to export a module package.');
         }
 
-        const expectedPaths = this.buildExpectedPaths(moduleName);
         const solidApiModulePath = this.getSolidApiModuleTargetPath(moduleName);
         const solidUiModulePath = this.getSolidUiModuleTargetPath(moduleName);
         const metadataFilePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
@@ -238,23 +239,19 @@ export class ModulePackageService {
         await fs.cp(solidApiModulePath, path.join(stagingDir, 'solid-api', 'src', moduleName), { recursive: true });
         await fs.cp(solidUiModulePath, path.join(stagingDir, 'solid-ui', 'src', moduleName), { recursive: true });
 
-        const manifest = await this.buildExportManifest(moduleName, metadataDocument);
+        const manifest = await this.buildExportManifest(moduleName, metadataDocument, stagingDir);
         await fs.writeFile(
             path.join(stagingDir, 'manifest.json'),
             JSON.stringify(manifest, null, 2),
             'utf-8',
         );
 
-        await this.commandService.executeCommandWithArgs({
-            command: 'zip',
-            args: ['-rq', archiveFilePath, '.'],
-            cwd: stagingDir,
-        });
+        await this.createArchiveFromDirectory(stagingDir, archiveFilePath);
 
         return {
             fileName: archiveFileName,
             filePath: archiveFilePath,
-            mimeType: 'application/octet-stream',
+            mimeType: 'application/zip',
         };
     }
 
@@ -1024,19 +1021,9 @@ export class ModulePackageService {
         };
     }
 
-    private async buildExportManifest(moduleName: string, metadataDocument: any): Promise<ModulePackageManifest> {
+    private async buildExportManifest(moduleName: string, metadataDocument: any, stagingDir: string): Promise<ModulePackageManifest> {
         const expectedPaths = this.buildExpectedPaths(moduleName);
-        const stagingPaths = [
-            expectedPaths.metadataPath,
-            expectedPaths.apiModulePath,
-            expectedPaths.uiModulePath,
-        ];
-        const checksums: Record<string, string> = {};
-
-        for (const relativePath of stagingPaths) {
-            const absolutePath = path.join(this.getSolidApiRoot(), '..', relativePath);
-            checksums[relativePath] = await this.computeSha256(absolutePath);
-        }
+        const checksums = await this.computeDirectoryChecksums(stagingDir, ['manifest.json']);
 
         return {
             schemaVersion: ModulePackageService.SUPPORTED_SCHEMA_VERSION,
@@ -1056,6 +1043,62 @@ export class ModulePackageService {
             },
             checksums,
         };
+    }
+
+    private async computeDirectoryChecksums(rootDir: string, excludedRelativePaths: string[] = []): Promise<Record<string, string>> {
+        const excludedPaths = new Set(excludedRelativePaths.map((entry) => entry.replace(/\\/g, '/')));
+        const filePaths = await this.collectFilePathsRecursively(rootDir);
+        const checksums: Record<string, string> = {};
+
+        for (const filePath of filePaths) {
+            const relativePath = path.relative(rootDir, filePath).replace(/\\/g, '/');
+            if (excludedPaths.has(relativePath)) {
+                continue;
+            }
+
+            checksums[relativePath] = await this.computeSha256(filePath);
+        }
+
+        return checksums;
+    }
+
+    private async collectFilePathsRecursively(rootDir: string): Promise<string[]> {
+        const entries = await fs.readdir(rootDir, { withFileTypes: true });
+        const nestedPaths = await Promise.all(entries.map(async (entry) => {
+            const entryPath = path.join(rootDir, entry.name);
+            if (entry.isDirectory()) {
+                return this.collectFilePathsRecursively(entryPath);
+            }
+
+            return [entryPath];
+        }));
+
+        return nestedPaths.flat();
+    }
+
+    private async createArchiveFromDirectory(sourceDir: string, archiveFilePath: string): Promise<void> {
+        await fs.mkdir(path.dirname(archiveFilePath), { recursive: true });
+
+        await new Promise<void>((resolve, reject) => {
+            const output = createWriteStream(archiveFilePath);
+            const archive = archiver('zip', {
+                zlib: { level: 9 },
+            });
+
+            const rejectOnce = (error: Error) => {
+                output.destroy();
+                reject(error);
+            };
+
+            output.on('close', () => resolve());
+            output.on('error', rejectOnce);
+            archive.on('warning', rejectOnce);
+            archive.on('error', rejectOnce);
+
+            archive.pipe(output);
+            archive.directory(sourceDir, false);
+            void archive.finalize();
+        });
     }
 
     private async computeSha256(filePath: string): Promise<string> {

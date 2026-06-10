@@ -6686,6 +6686,21 @@
                 "actionInContextMenu": true,
                 "customComponentIsSystem": true
               }
+            },
+            {
+              "attrs": {
+                "className": "p-button-text",
+                "icon": "pi pi-download",
+                "label": "Export Module",
+                "action": "ExportModulePackageRowAction",
+                "openInPopup": true,
+                "actionInContextMenu": true,
+                "customComponentIsSystem": true,
+                "env": [
+                  "dev"
+                ],
+                "popupWidth": "32vw"
+              }
             }
           ],
           "import": false,

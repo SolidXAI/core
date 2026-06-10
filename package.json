@@ -40,6 +40,7 @@
     "@nestjs/throttler": "^6.4.0",
     "@types/passport-apple": "^2.0.3",
     "amqplib": "^0.10.4",
+    "archiver": "^5.3.2",
     "axios": "^1.7.0",
     "bcrypt": "^5.1.1",
     "bson": "^6.10.1",
