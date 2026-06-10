@@ -372,7 +372,6 @@ import { McpCommand } from './commands/mcp.command';
 import { FixturesService } from './services/fixtures.service';
 import { FixturesSetupCommand } from './commands/fixtures/fixtures-setup.command';
 import { FixturesTearDownCommand } from './commands/fixtures/fixtures-tear-down.command';
-import { DatabaseBootstrapService } from './services/database/database-bootstrap.service';
 import { SequenceNumComputedFieldProvider } from './services/computed-fields/entity/sequence-num-computed-field-provider';
 import { ModelSequence } from './entities/model-sequence.entity';
 import { ModelSequenceService } from './services/model-sequence.service';
@@ -808,7 +807,6 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     FixturesService,
     FixturesSetupCommand,
     FixturesTearDownCommand,
-    DatabaseBootstrapService,
     SequenceNumComputedFieldProvider,
     ModelSequenceService,
     ModelSequenceRepository,
