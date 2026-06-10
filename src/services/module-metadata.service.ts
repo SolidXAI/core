@@ -2,8 +2,10 @@ import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundEx
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from "src/services/settings/default-settings-provider.service";
 import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
-import { DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
+import { DataSource, EntityManager, In, SelectQueryBuilder } from 'typeorm';
+import { ActionMetadata } from '../entities/action-metadata.entity';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
+import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 
 import { classify } from '../helpers/string.helper';
@@ -377,10 +379,89 @@ export class ModuleMetadataService {
         throw new Error(ERROR_MESSAGES.FILE_DELETE_FAILED); // Trigger rollback
       }
     }
-    await this.dataSource.query(
-      `CALL cleanup_module_metadata($1, $2)`,
-      [moduleEntity.name, true],
-    );
+    await this.cleanupAssociatedMenusAndActions(moduleEntity.id);
+  }
+
+  private async cleanupAssociatedMenusAndActions(moduleId: number) {
+    const actionRepo = this.dataSource.getRepository(ActionMetadata);
+    const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
+
+    const actions = await actionRepo.find({
+      where: {
+        module: { id: moduleId },
+      },
+    });
+    const actionIds = actions.map((action) => action.id);
+
+    const menus = await this.findMenusForModuleCleanup(moduleId, actionIds);
+    if (menus.length > 0) {
+      const orderedMenus = [...menus].reverse();
+      for (const menu of orderedMenus) {
+        if (menu.roles?.length) {
+          await this.dataSource
+            .createQueryBuilder()
+            .relation(MenuItemMetadata, 'roles')
+            .of(menu.id)
+            .remove(menu.roles.map((role) => role.id));
+        }
+      }
+
+      for (const menu of orderedMenus) {
+        await menuRepo.remove(menu);
+      }
+
+      this.logger.log(`Deleted ${menus.length} menu metadata record(s) for module id ${moduleId}`);
+    }
+
+    if (actions.length > 0) {
+      await actionRepo.remove(actions);
+      this.logger.log(`Deleted ${actions.length} action metadata record(s) for module id ${moduleId}`);
+    }
+  }
+
+  private async findMenusForModuleCleanup(moduleId: number, actionIds: number[]) {
+    const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
+    const menusById = new Map<number, MenuItemMetadata>();
+
+    const rootMenus = await menuRepo.find({
+      where: [
+        {
+          module: { id: moduleId },
+        },
+        ...(actionIds.length > 0
+          ? [
+            {
+              action: { id: In(actionIds) },
+            },
+          ]
+          : []),
+      ],
+      relations: ['roles', 'action', 'parentMenuItem'],
+    });
+
+    rootMenus.forEach((menu) => menusById.set(menu.id, menu));
+
+    let parentIds = rootMenus.map((menu) => menu.id);
+    while (parentIds.length > 0) {
+      const childMenus = await menuRepo.find({
+        where: {
+          parentMenuItem: { id: In(parentIds) },
+        },
+        relations: ['roles', 'action', 'parentMenuItem'],
+      });
+
+      const nextParentIds: number[] = [];
+      for (const childMenu of childMenus) {
+        if (!menusById.has(childMenu.id)) {
+          menusById.set(childMenu.id, childMenu);
+          nextParentIds.push(childMenu.id);
+        }
+      }
+
+      parentIds = nextParentIds;
+    }
+
+    return Array.from(menusById.values());
   }
 
   async deleteMany(ids: number[]): Promise<any> {
