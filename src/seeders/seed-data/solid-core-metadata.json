@@ -6249,6 +6249,19 @@
       "viewUserKey": "actionMetadata-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "actionMetadata"
+    },
+    {
+      "displayName": "User View Metadata Tree Action",
+      "name": "userViewMetadata-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "userViewMetadata-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "userViewMetadata"
     }
   ],
   "menus": [
@@ -8008,27 +8021,60 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": true,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "viewMetadata"
+              "name": "viewMetadata",
+              "label": "Name",
+              "coModelFieldToDisplay": "name",
+              "isSearchable": true,
+              "searchField": "viewMetadata.name"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "user"
+              "name": "viewMetadata",
+              "label": "Display Name",
+              "coModelFieldToDisplay": "displayName",
+              "isSearchable": true,
+              "searchField": "viewMetadata.displayName"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "layout"
+              "name": "viewMetadata",
+              "label": "Type",
+              "coModelFieldToDisplay": "type",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user",
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdAt",
+              "isSearchable": false
             }
           }
         ]
@@ -8046,7 +8092,9 @@
         "attrs": {
           "name": "form-1",
           "label": "User View Metadata",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -9385,6 +9433,12 @@
                     "type": "field",
                     "attrs": {
                       "name": "username"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "fullName"
                     }
                   },
                   {
@@ -13705,6 +13759,76 @@
             "attrs": {
               "name": "type",
               "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "userViewMetadata-tree-view",
+      "displayName": "User View Metadata Tree View",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "userViewMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "viewMetadata",
+              "label": "Name",
+              "coModelFieldToDisplay": "name",
+              "isSearchable": true,
+              "searchField": "viewMetadata.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "viewMetadata",
+              "label": "Display Name",
+              "coModelFieldToDisplay": "displayName",
+              "isSearchable": true,
+              "searchField": "viewMetadata.displayName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "viewMetadata",
+              "label": "Type",
+              "coModelFieldToDisplay": "type",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user",
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdAt",
+              "isSearchable": false
             }
           }
         ]
