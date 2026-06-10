@@ -7323,9 +7323,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
@@ -7339,35 +7341,14 @@
             "type": "field",
             "attrs": {
               "name": "type",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "region",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "bucketName",
-              "isSearchable": true
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "isPublic",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "localPath",
-              "isSearchable": true
+              "isSearchable": false
             }
           },
           {
@@ -7392,7 +7373,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Solid Media Storage Provider Metadata Model",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
