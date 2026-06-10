@@ -395,8 +395,8 @@ export class ModuleMetadataService {
 
     const menus = await this.findMenusForModuleCleanup(moduleId, actionIds);
     if (menus.length > 0) {
-      const orderedMenus = [...menus].reverse();
-      for (const menu of orderedMenus) {
+      const menuIds = menus.map((menu) => menu.id).filter(Boolean);
+      for (const menu of menus) {
         if (menu.roles?.length) {
           await this.dataSource
             .createQueryBuilder()
@@ -406,8 +406,20 @@ export class ModuleMetadataService {
         }
       }
 
-      for (const menu of orderedMenus) {
-        await menuRepo.remove(menu);
+      if (menuIds.length > 0) {
+        await menuRepo
+          .createQueryBuilder()
+          .update(MenuItemMetadata)
+          .set({ parentMenuItem: null as any })
+          .where('id IN (:...menuIds)', { menuIds })
+          .execute();
+
+        await menuRepo
+          .createQueryBuilder()
+          .delete()
+          .from(MenuItemMetadata)
+          .where('id IN (:...menuIds)', { menuIds })
+          .execute();
       }
 
       this.logger.log(`Deleted ${menus.length} menu metadata record(s) for module id ${moduleId}`);

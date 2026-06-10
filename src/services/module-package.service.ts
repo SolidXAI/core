@@ -11,7 +11,6 @@ import { RunModulePackageBuildDto } from 'src/dtos/run-module-package-build.dto'
 import { RunModulePackageSeedDto } from 'src/dtos/run-module-package-seed.dto';
 import { CommandService } from 'src/helpers/command.service';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
-import { SolidRegistry } from 'src/helpers/solid-registry';
 import * as fs from 'fs/promises';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
@@ -135,7 +134,6 @@ export class ModulePackageService {
 
     constructor(
         private readonly commandService: CommandService,
-        private readonly solidRegistry: SolidRegistry,
         private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
     ) { }
 
@@ -353,32 +351,33 @@ export class ModulePackageService {
             const buildSolidUi = dto.buildSolidUi ?? true;
             const outputs: string[] = [];
             const failedTargets: string[] = [];
+            const projectRoot = this.getProjectRoot();
 
             if (buildSolidApi) {
                 try {
                     const output = await this.commandService.executeCommandWithArgs({
-                        command: 'npm',
-                        args: ['run', 'build'],
-                        cwd: this.getSolidApiRoot(),
+                        command: 'npx',
+                        args: ['-y', '@solidxai/solidctl@latest', 'build'],
+                        cwd: projectRoot,
                     });
-                    outputs.push(`solid-api build [success]\n${output}`.trim());
+                    outputs.push(`solidctl build [success]\n${output}`.trim());
                 } catch (error: any) {
-                    failedTargets.push('solid-api');
-                    outputs.push(`solid-api build [failed]\n${error?.message ?? 'Build failed.'}`.trim());
+                    failedTargets.push('solidctl build');
+                    outputs.push(`solidctl build [failed]\n${error?.message ?? 'Build failed.'}`.trim());
                 }
             }
 
             if (buildSolidUi) {
                 try {
                     const output = await this.commandService.executeCommandWithArgs({
-                        command: 'npm',
-                        args: ['run', 'build'],
-                        cwd: this.getSolidUiRoot(),
+                        command: 'npx',
+                        args: ['-y', '@solidxai/solidctl@latest', 'build', '--ui-only'],
+                        cwd: projectRoot,
                     });
-                    outputs.push(`solid-ui build [success]\n${output}`.trim());
+                    outputs.push(`solidctl build --ui-only [success]\n${output}`.trim());
                 } catch (error: any) {
-                    failedTargets.push('solid-ui');
-                    outputs.push(`solid-ui build [failed]\n${error?.message ?? 'Build failed.'}`.trim());
+                    failedTargets.push('solidctl build --ui-only');
+                    outputs.push(`solidctl build --ui-only [failed]\n${error?.message ?? 'Build failed.'}`.trim());
                 }
             }
 
@@ -420,27 +419,17 @@ export class ModulePackageService {
         await this.writeStatusFile(transactionKey, transaction);
 
         try {
-            const seeder = this.solidRegistry
-                .getSeeders()
-                .filter((registeredSeeder) => registeredSeeder.name === 'ModuleMetadataSeederService')
-                .map((registeredSeeder) => registeredSeeder.instance)
-                .pop();
-
-            if (!seeder || typeof seeder.seed !== 'function') {
-                throw new NotFoundException('ModuleMetadataSeederService not found. Cannot seed imported module.');
-            }
-
-            await seeder.seed({
-                modulesToSeed: [moduleName],
-                seedGlobalMetadata: dto.seedGlobalMetadata ?? false,
+            const output = await this.commandService.executeCommandWithArgs({
+                command: 'npx',
+                args: ['-y', '@solidxai/solidctl@latest', 'seed', '--modules-to-seed', moduleName],
+                cwd: this.getProjectRoot(),
             });
-
             transaction.status = ModulePackageStatus.completed;
             transaction.currentStep = 'done';
             transaction.outputs.seed = [
-                `Seeded module metadata for ${moduleName}.`,
-                `seedGlobalMetadata=${dto.seedGlobalMetadata ?? false}`,
-            ].join('\n');
+                `solidctl seed --modules-to-seed ${moduleName} [success]`,
+                output,
+            ].filter(Boolean).join('\n');
             await this.writeStatusFile(transactionKey, transaction);
             await this.syncActiveTransactionPointer(transaction);
 
