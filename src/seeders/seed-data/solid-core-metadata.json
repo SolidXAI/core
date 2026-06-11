@@ -6331,6 +6331,15 @@
       "iconName": "app_registration"
     },
     {
+      "displayName": "Layout Builder",
+      "name": "layoutBuilder-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "",
+      "iconName": "space_dashboard"
+    },
+    {
       "displayName": "Module",
       "name": "moduleMetadata-menu-item",
       "sequenceNumber": 1,
