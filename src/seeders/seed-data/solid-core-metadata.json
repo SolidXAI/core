@@ -6315,6 +6315,22 @@
       "moduleUserKey": "solid-core",
       "modelUserKey": "chatterMessage",
       "viewUserKey": "chatterMessage-tree-view"
+    },
+    {
+      "name": "scheduledJob-tree-action",
+      "displayName": "Scheduled Jobs Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "scheduledJob",
+      "viewUserKey": "scheduledJob-tree-view"
+    },
+    {
+      "name": "savedFilters-tree-action",
+      "displayName": "Saved Filters Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "viewUserKey": "savedFilters-tree-view"
     }
   ],
   "menus": [
@@ -6350,15 +6366,6 @@
       "actionUserKey": "fieldMetadata-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "appBuilder-menu-item"
-    },
-    {
-      "displayName": "Layout Builder",
-      "name": "layoutBuilder-menu-item",
-      "sequenceNumber": 2,
-      "actionUserKey": "",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "",
-      "iconName": "space_dashboard"
     },
     {
       "displayName": "Menu Item",
@@ -6607,6 +6614,15 @@
       "parentMenuItemUserKey": "other-menu-item"
     },
     {
+      "displayName": "Dashboard User Layout",
+      "name": "dashboardUserLayout-menu-item",
+      "sequenceNumber": 42,
+      "actionUserKey": "dashboardUserLayout-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "",
+      "iconName": ""
+    },
+    {
       "displayName": "Agent",
       "name": "agent-menu-item",
       "sequenceNumber": 8,
@@ -6624,29 +6640,12 @@
       "parentMenuItemUserKey": "agent-menu-item"
     },
     {
-      "displayName": "Events",
-      "name": "agentEvent-menu-item",
-      "sequenceNumber": 2,
-      "actionUserKey": "agentEvent-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "agent-menu-item"
-    },
-    {
       "displayName": "MCP Audit Log",
       "name": "mcpAuditLog-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "mcpAuditLog-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item"
-    },
-    {
-      "displayName": "Dashboard User Layout",
-      "name": "dashboardUserLayout-menu-item",
-      "sequenceNumber": 42,
-      "actionUserKey": "dashboardUserLayout-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "",
-      "iconName": ""
     }
   ],
   "views": [
@@ -7113,7 +7112,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -10762,7 +10765,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -12651,9 +12658,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
@@ -12667,6 +12676,7 @@
             "type": "field",
             "attrs": {
               "name": "modelName",
+              "label": "Model",
               "isSearchable": true
             }
           },
@@ -12680,7 +12690,8 @@
           {
             "type": "field",
             "attrs": {
-              "name": "totalSteps"
+              "name": "projectRoot",
+              "isSearchable": false
             }
           },
           {
@@ -12700,25 +12711,6 @@
             "attrs": {
               "name": "totalOutputTokens"
             }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "projectRoot",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "createdAt"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "updatedAt"
-            }
           }
         ]
       }
@@ -12735,7 +12727,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Agent Session",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -12838,21 +12832,18 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "sessionId",
+              "label": "Session",
               "isSearchable": true
             }
           },
@@ -12866,18 +12857,6 @@
           {
             "type": "field",
             "attrs": {
-              "name": "turnNumber"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "stepNumber"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "toolName",
               "isSearchable": true
             }
@@ -12885,7 +12864,9 @@
           {
             "type": "field",
             "attrs": {
-              "name": "durationMs"
+              "name": "modelUsed",
+              "label": "Model Used",
+              "isSearchable": true
             }
           },
           {
@@ -12909,14 +12890,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "modelUsed",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "createdAt"
+              "name": "turnNumber"
             }
           }
         ]
@@ -12934,7 +12908,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Agent Event",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -13174,9 +13150,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": false
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
@@ -13222,20 +13200,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "userId"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "transport",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "mcpSessionId",
               "isSearchable": true
             }
           },
@@ -13273,7 +13238,9 @@
         "attrs": {
           "name": "form-1",
           "label": "MCP Audit Log",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -13514,49 +13481,40 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": true
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id",
-              "isSearchable": false
+              "name": "module",
+              "isSearchable": true,
+              "searchField": "module.name"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "dashboardName",
+              "label": "Name",
               "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "module",
-              "isSearchable": true
+              "name": "version"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "user",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "version",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "updatedAt",
-              "isSearchable": false
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           }
         ]
@@ -13581,31 +13539,25 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": true
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id"
+              "name": "module",
+              "isSearchable": true,
+              "searchField": "module.name"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "dashboardName"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "module"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "user"
+              "name": "dashboardName",
+              "label": "Name",
+              "isSearchable": true
             }
           },
           {
@@ -13617,7 +13569,10 @@
           {
             "type": "field",
             "attrs": {
-              "name": "updatedAt"
+              "name": "user",
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           }
         ]
@@ -13639,7 +13594,7 @@
           "className": "grid",
           "showAddFormButton": false,
           "showEditFormButton": false,
-          "showDeleteFormButton": true
+          "showDeleteFormButton": false
         },
         "children": [
           {
@@ -14426,6 +14381,147 @@
               "label": "User",
               "isSearchable": true,
               "searchField": "user.fullName"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "scheduledJob-tree-view",
+      "displayName": "Scheduled Jobs",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "scheduledJob",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "label": "Module",
+              "isSearchable": true,
+              "searchField": "module.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "scheduleName",
+              "label": "Schedule Name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "job",
+              "label": "Job Name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "frequency",
+              "label": "Frequency",
+              "isSearchable": false,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isActive",
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "savedFilters-tree-view",
+      "displayName": "Saved Filters",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "model.singularName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "view",
+              "label": "View",
+              "isSearchable": true,
+              "searchField": "view.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "label": "Name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isPrivate",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user",
+              "label": "User",
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           }
         ]
