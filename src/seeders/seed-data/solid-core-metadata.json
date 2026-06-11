@@ -6291,6 +6291,22 @@
       "moduleUserKey": "solid-core",
       "modelUserKey": "securityRule",
       "viewUserKey": "securityRule-tree-view"
+    },
+    {
+      "name": "modelSequence-tree-action",
+      "displayName": "Model Sequences Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelSequence",
+      "viewUserKey": "modelSequence-tree-view"
+    },
+    {
+      "name": "listOfValues-tree-action",
+      "displayName": "List Of Values Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues",
+      "viewUserKey": "listOfValues-tree-view"
     }
   ],
   "menus": [
@@ -7214,7 +7230,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Solid List of Values Model",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -7297,15 +7315,31 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
+              "name": "module",
+              "label": "Module",
+              "isSearchable": true,
+              "searchField": "module.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "type",
+              "label": "Type",
               "isSearchable": true
             }
           },
@@ -7313,6 +7347,7 @@
             "type": "field",
             "attrs": {
               "name": "value",
+              "label": "Value",
               "isSearchable": true
             }
           },
@@ -7320,6 +7355,7 @@
             "type": "field",
             "attrs": {
               "name": "display",
+              "label": "Display Value",
               "isSearchable": true
             }
           },
@@ -7327,27 +7363,24 @@
             "type": "field",
             "attrs": {
               "name": "description",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "default",
-              "isSearchable": true
+              "label": "Description",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "sequence",
-              "isSearchable": true
+              "label": "Sequence",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "module"
+              "name": "default",
+              "label": "Default",
+              "isSearchable": false
             }
           }
         ]
@@ -11321,18 +11354,36 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": false
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
               "name": "name",
-              "label": "Email",
+              "label": "Name",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "label": "Display Name",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "active",
+              "isSearchable": false
             }
           }
         ]
@@ -11352,7 +11403,9 @@
           "label": "Email",
           "className": "grid",
           "disabled": false,
-          "readonly": false
+          "readonly": false,
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "onFieldChange": "emailFormTypeChangeHandler",
         "onFormLayoutLoad": "emailFormTypeLoad",
@@ -11454,9 +11507,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": false
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
@@ -11465,7 +11520,32 @@
               "name": "name",
               "label": "Name",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "label": "Display Name",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "active",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "smsProviderTemplateId",
+              "label": "Template Provider Id",
+              "sortable": true,
+              "isSearchable": true
             }
           }
         ]
@@ -11485,7 +11565,9 @@
           "label": "Email",
           "className": "grid",
           "disabled": false,
-          "readonly": false
+          "readonly": false,
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "onFieldChange": "emailFormTypeChangeHandler",
         "children": [
@@ -12310,63 +12392,81 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id"
+              "name": "module",
+              "label": "Module",
+              "isSearchable": true,
+              "searchField": "module.name"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "sequenceName"
+              "name": "model",
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "model.name"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "currentValue"
+              "name": "field",
+              "label": "Field",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "prefix"
+              "name": "sequenceName",
+              "label": "Sequence",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "padding"
+              "name": "prefix",
+              "label": "Prefix",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "separator"
+              "name": "separator",
+              "label": "Separator",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "field"
+              "name": "padding",
+              "label": "Padding",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "model"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "module"
+              "name": "currentValue",
+              "label": "Current Value",
+              "isSearchable": false
             }
           }
         ]
@@ -12384,7 +12484,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Model Sequence",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "onFieldChange": "modelSequenceFormViewChangeHandler",
         "children": [
@@ -14068,6 +14170,135 @@
               "label": "Model",
               "isSearchable": true,
               "searchField": "modelMetadata.name"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "modelSequence-tree-view",
+      "displayName": "Model Sequences",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelSequence",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "label": "Module",
+              "isSearchable": true,
+              "searchField": "module.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "model.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "field",
+              "label": "Field",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequenceName",
+              "label": "Sequence",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "currentValue",
+              "label": "Current Value",
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "listOfValues-tree-view",
+      "displayName": "List Of Values",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "label": "Module",
+              "isSearchable": true,
+              "searchField": "module.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "label": "Type",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "value",
+              "label": "Value",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "display",
+              "label": "Display Value",
+              "isSearchable": true
             }
           }
         ]
