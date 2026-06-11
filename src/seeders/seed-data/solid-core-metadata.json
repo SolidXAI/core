@@ -7186,48 +7186,84 @@
             },
             "children": [
               {
-                "type": "group",
+                "type": "notebook",
                 "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "name"
-                    }
+                      "name": "page-general",
+                      "label": "General"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "filterQueryJson"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "view"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "model"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "user"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "isPrivate"
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "filterQueryJson"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "view"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "model"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "user"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "isPrivate"
-                    }
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "savedFilters",
+                          "itemNameField": "name"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -8098,6 +8134,25 @@
                         ]
                       }
                     ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "views",
+                          "itemNameField": "name"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -8501,6 +8556,25 @@
                         ]
                       }
                     ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "actions",
+                          "itemNameField": "name"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -8623,111 +8697,147 @@
             },
             "children": [
               {
-                "type": "group",
+                "type": "notebook",
                 "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "name"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "displayName"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "sequenceNumber"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "module"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "parentMenuItem"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "action"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "roles",
-                      "widget": "checkbox",
-                      "inlineCreateAutoSave": "true",
-                      "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
-                      "inlineCreate": "true",
-                      "inlineCreateLayout": {
-                        "type": "form",
+                      "name": "page-general",
+                      "label": "General"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
                         "attrs": {
-                          "name": "form-1",
-                          "label": "User",
-                          "className": "grid",
-                          "width": "20vw"
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                         },
                         "children": [
                           {
-                            "type": "sheet",
+                            "type": "field",
                             "attrs": {
-                              "name": "sheet-1"
-                            },
-                            "children": [
-                              {
-                                "type": "group",
+                              "name": "name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "displayName"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "sequenceNumber"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "module"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "parentMenuItem"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "action"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "roles",
+                              "widget": "checkbox",
+                              "inlineCreateAutoSave": "true",
+                              "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
+                              "inlineCreate": "true",
+                              "inlineCreateLayout": {
+                                "type": "form",
                                 "attrs": {
-                                  "name": "group-1",
-                                  "label": "",
-                                  "className": "col-12"
+                                  "name": "form-1",
+                                  "label": "User",
+                                  "className": "grid",
+                                  "width": "20vw"
                                 },
                                 "children": [
                                   {
-                                    "type": "field",
+                                    "type": "sheet",
                                     "attrs": {
-                                      "name": "name"
-                                    }
+                                      "name": "sheet-1"
+                                    },
+                                    "children": [
+                                      {
+                                        "type": "group",
+                                        "attrs": {
+                                          "name": "group-1",
+                                          "label": "",
+                                          "className": "col-12"
+                                        },
+                                        "children": [
+                                          {
+                                            "type": "field",
+                                            "attrs": {
+                                              "name": "name"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
                                   }
                                 ]
                               }
-                            ]
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "iconName",
+                              "editWidget": "SolidIconEditWidget",
+                              "viewWidget": "SolidIconViewWidget"
+                            }
                           }
                         ]
                       }
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "group",
-                "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                },
-                "children": [
+                    ]
+                  },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "iconName",
-                      "editWidget": "SolidIconEditWidget",
-                      "viewWidget": "SolidIconViewWidget"
-                    }
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "menus",
+                          "itemNameField": "name"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -10998,6 +11108,25 @@
                         ]
                       }
                     ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "scheduledJobs",
+                          "itemNameField": "scheduleName"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -11405,71 +11534,107 @@
             },
             "children": [
               {
-                "type": "group",
+                "type": "notebook",
                 "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "name",
-                      "label": "Name"
-                    }
+                      "name": "page-general",
+                      "label": "General"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "name",
+                              "label": "Name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "displayName",
+                              "label": "Display Name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "type",
+                              "label": "Type"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "body",
+                              "label": "Body"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "subject",
+                              "label": "Subject"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "description",
+                              "label": "Description"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "active",
+                              "label": "Active"
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "displayName",
-                      "label": "Display Name"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "type",
-                      "label": "Type"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "body",
-                      "label": "Body"
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "group",
-                "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                },
-                "children": [
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "subject",
-                      "label": "Subject"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "description",
-                      "label": "Description"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "active",
-                      "label": "Active"
-                    }
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "emailTemplates",
+                          "itemNameField": "name"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -11566,71 +11731,107 @@
             },
             "children": [
               {
-                "type": "group",
+                "type": "notebook",
                 "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "name",
-                      "label": "Name"
-                    }
+                      "name": "page-general",
+                      "label": "General"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "name",
+                              "label": "Name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "displayName",
+                              "label": "Display Name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "type",
+                              "label": "Type"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "body",
+                              "label": "Body"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "smsProviderTemplateId",
+                              "label": "Sms Provider Template Id"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "description",
+                              "label": "Description"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "active",
+                              "label": "Active"
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "displayName",
-                      "label": "Display Name"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "type",
-                      "label": "Type"
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "group",
-                "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                },
-                "children": [
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "body",
-                      "label": "Body"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "smsProviderTemplateId",
-                      "label": "Sms Provider Template Id"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "description",
-                      "label": "Description"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "active",
-                      "label": "Active"
-                    }
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "smsTemplates",
+                          "itemNameField": "name"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -12567,65 +12768,101 @@
             },
             "children": [
               {
-                "type": "row",
+                "type": "notebook",
                 "attrs": {
-                  "name": "sheet-1"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-1",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                      "name": "page-general",
+                      "label": "General"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "row",
                         "attrs": {
-                          "name": "sequenceName"
-                        }
-                      },
+                          "name": "sheet-1"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "",
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "sequenceName"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "prefix"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "separator"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "module"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "model"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "field"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "currentValue"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "padding"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
                       {
-                        "type": "field",
+                        "type": "custom",
                         "attrs": {
-                          "name": "prefix"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "separator"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "module"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "model"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "field"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "currentValue"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "padding"
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "modelSequences",
+                          "itemNameField": "sequenceName"
                         }
                       }
                     ]
@@ -14995,5 +15232,6 @@
         ]
       }
     }
-  ]
+  ],
+  "savedFilters": []
 }
