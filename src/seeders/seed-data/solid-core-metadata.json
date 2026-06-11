@@ -1028,7 +1028,7 @@
           },
           {
             "name": "signedUrlExpiry",
-            "displayName": "Signed Url Expiry Time",
+            "displayName": "Signed Url Expiry Time (In Minutes)",
             "type": "int",
             "ormType": "integer",
             "required": false,
@@ -6275,6 +6275,22 @@
       "viewUserKey": "media-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "media"
+    },
+    {
+      "name": "roleMetadata-tree-action",
+      "displayName": "Roles Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "roleMetadata",
+      "viewUserKey": "roleMetadata-tree-view"
+    },
+    {
+      "name": "securityRule-tree-action",
+      "displayName": "Security Rules Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule",
+      "viewUserKey": "securityRule-tree-view"
     }
   ],
   "menus": [
@@ -9660,14 +9676,17 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable": true
+              "isSearchable": true,
+              "sortable": true
             }
           }
         ]
@@ -9734,16 +9753,23 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable": true
+              "isSearchable": true,
+              "sortable": true
             }
           }
         ]
@@ -9761,7 +9787,9 @@
         "attrs": {
           "name": "form-1",
           "label": "User",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -11148,27 +11176,23 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "id",
-              "label": "Id",
-              "sortable": true,
-              "filterable": true
-            }
-          },
           {
             "type": "field",
             "attrs": {
               "name": "name",
               "label": "Name",
               "sortable": true,
-              "filterable": true,
               "isSearchable": true
             }
           },
@@ -11178,8 +11202,25 @@
               "name": "description",
               "label": "Description",
               "sortable": true,
-              "filterable": true,
               "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "role",
+              "label": "Role",
+              "isSearchable": true,
+              "searchField": "role.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelMetadata",
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "modelMetadata.singularName"
             }
           }
         ]
@@ -11197,7 +11238,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Security rules",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -11239,17 +11282,7 @@
                         "attrs": {
                           "name": "securityRuleConfig"
                         }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "group-2",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                    },
-                    "children": [
+                      },
                       {
                         "type": "field",
                         "attrs": {
@@ -11653,49 +11686,53 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id",
+              "name": "event",
+              "label": "Event",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "user",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "event",
-              "sortable": true,
-              "filterable": true
+              "label": "User",
+              "sortable": false,
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "ipAddress",
+              "label": "IP Address",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "createdAt",
+              "label": "Created At",
               "sortable": true,
-              "filterable": true
+              "isSearchable": false
             }
           }
         ]
@@ -11718,49 +11755,47 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id",
+              "name": "event",
+              "label": "Event",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "user",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "event",
-              "sortable": true,
-              "filterable": true
+              "label": "User",
+              "isSearchable": true,
+              "searchField": "user.fullName"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "ipAddress",
+              "label": "IP Address",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "createdAt",
+              "label": "Created At",
               "sortable": true,
-              "filterable": true
+              "isSearchable": false
             }
           }
         ]
@@ -11778,7 +11813,9 @@
         "attrs": {
           "name": "form-1",
           "label": "User Activity History",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -13934,6 +13971,103 @@
               "widget": "image",
               "isSearchable": false,
               "sortable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "roleMetadata-tree-view",
+      "displayName": "Roles",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "roleMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "securityRule-tree-view",
+      "displayName": "Security Rules",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "label": "Name",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "label": "Description",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "role",
+              "label": "Role",
+              "isSearchable": true,
+              "searchField": "role.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelMetadata",
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "modelMetadata.name"
             }
           }
         ]
