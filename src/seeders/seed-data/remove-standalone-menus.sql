@@ -5,7 +5,7 @@
 DELETE FROM ss_menu_item_metadata WHERE name = 'chatterMessageDetails-menu-item';
 DELETE FROM ss_action_metadata    WHERE name = 'chatterMessageDetails-list-action';
 
--- 2. Import Transaction Error Logs
+-- 2. Import Transaction Error Logs (views kept — embedded in importTransaction form)
 DELETE FROM ss_menu_item_metadata WHERE name = 'importTransactionErrorLog-menu-item';
 DELETE FROM ss_action_metadata    WHERE name = 'importTransactionErrorLog-list-action';
 

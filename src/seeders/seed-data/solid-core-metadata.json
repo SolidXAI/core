@@ -6056,19 +6056,6 @@
       "modelUserKey": "aiInteraction"
     },
     {
-      "displayName": "Import Error Logs List Action",
-      "name": "importTransactionErrorLog-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "importTransactionErrorLog-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "importTransactionErrorLog"
-    },
-    {
       "displayName": "Model Sequence List Action",
       "name": "modelSequence-list-action",
       "type": "solid",
