@@ -1028,7 +1028,7 @@
           },
           {
             "name": "signedUrlExpiry",
-            "displayName": "Signed Url Expiry Time",
+            "displayName": "Signed Url Expiry Time (In Minutes)",
             "type": "int",
             "ormType": "integer",
             "required": false,
@@ -5616,10 +5616,10 @@
     {
       "displayName": "Model List Action",
       "name": "modelMetadata-list-action",
-      "type": "custom",
+      "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/core/solid-core/model-metadata/list",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "modelMetadata-list-view",
@@ -5629,13 +5629,26 @@
     {
       "displayName": "Field List Action",
       "name": "fieldMetadata-list-action",
-      "type": "custom",
+      "type": "solid",
       "domain": "",
       "context": "",
-      "customComponent": "/admin/core/solid-core/field-metadata/list",
+      "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "fieldMetadata-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fieldMetadata"
+    },
+    {
+      "displayName": "Field Metadata Tree Action",
+      "name": "fieldMetadata-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "fieldMetadata-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "fieldMetadata"
     },
@@ -6043,19 +6056,6 @@
       "modelUserKey": "aiInteraction"
     },
     {
-      "displayName": "Import Error Logs List Action",
-      "name": "importTransactionErrorLog-list-action",
-      "type": "solid",
-      "domain": "",
-      "context": "",
-      "customComponent": "",
-      "customIsModal": true,
-      "serverEndpoint": "",
-      "viewUserKey": "importTransactionErrorLog-list-view",
-      "moduleUserKey": "solid-core",
-      "modelUserKey": "importTransactionErrorLog"
-    },
-    {
       "displayName": "Model Sequence List Action",
       "name": "modelSequence-list-action",
       "type": "solid",
@@ -6184,6 +6184,140 @@
       "viewUserKey": "dashboardUserLayout-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "dashboardUserLayout"
+    },
+    {
+      "displayName": "Model Tree Action",
+      "name": "modelMetadata-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "modelMetadata-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelMetadata"
+    },
+    {
+      "displayName": "Menu Item Metadata Tree Action",
+      "name": "menuItemMetadata-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "menuItemMetadata-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "menuItemMetadata"
+    },
+    {
+      "displayName": "View Metadata Tree Action",
+      "name": "viewMetadata-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "viewMetadata-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "viewMetadata"
+    },
+    {
+      "displayName": "Action Metadata Tree Action",
+      "name": "actionMetadata-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "actionMetadata-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "actionMetadata"
+    },
+    {
+      "displayName": "User View Metadata Tree Action",
+      "name": "userViewMetadata-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "userViewMetadata-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "userViewMetadata"
+    },
+    {
+      "displayName": "Media Tree Action",
+      "name": "media-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "media-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "media"
+    },
+    {
+      "name": "roleMetadata-tree-action",
+      "displayName": "Roles Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "roleMetadata",
+      "viewUserKey": "roleMetadata-tree-view"
+    },
+    {
+      "name": "securityRule-tree-action",
+      "displayName": "Security Rules Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule",
+      "viewUserKey": "securityRule-tree-view"
+    },
+    {
+      "name": "modelSequence-tree-action",
+      "displayName": "Model Sequences Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelSequence",
+      "viewUserKey": "modelSequence-tree-view"
+    },
+    {
+      "name": "listOfValues-tree-action",
+      "displayName": "List Of Values Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues",
+      "viewUserKey": "listOfValues-tree-view"
+    },
+    {
+      "name": "chatterMessage-tree-action",
+      "displayName": "Chatter Messages Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "chatterMessage",
+      "viewUserKey": "chatterMessage-tree-view"
+    },
+    {
+      "name": "scheduledJob-tree-action",
+      "displayName": "Scheduled Jobs Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "scheduledJob",
+      "viewUserKey": "scheduledJob-tree-view"
+    },
+    {
+      "name": "savedFilters-tree-action",
+      "displayName": "Saved Filters Tree",
+      "type": "solid",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "viewUserKey": "savedFilters-tree-view"
     }
   ],
   "menus": [
@@ -6195,6 +6329,15 @@
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
       "iconName": "app_registration"
+    },
+    {
+      "displayName": "Layout Builder",
+      "name": "layoutBuilder-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "",
+      "iconName": "space_dashboard"
     },
     {
       "displayName": "Module",
@@ -6219,15 +6362,6 @@
       "actionUserKey": "fieldMetadata-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "appBuilder-menu-item"
-    },
-    {
-      "displayName": "Layout Builder",
-      "name": "layoutBuilder-menu-item",
-      "sequenceNumber": 2,
-      "actionUserKey": "",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "",
-      "iconName": "space_dashboard"
     },
     {
       "displayName": "Menu Item",
@@ -6443,14 +6577,6 @@
       "parentMenuItemUserKey": "other-menu-item"
     },
     {
-      "displayName": "Chatter Message Details",
-      "name": "chatterMessageDetails-menu-item",
-      "sequenceNumber": 6,
-      "actionUserKey": "chatterMessageDetails-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
-    },
-    {
       "displayName": "Locale",
       "name": "locale-menu-item",
       "sequenceNumber": 7,
@@ -6463,14 +6589,6 @@
       "name": "importTransaction-menu-item",
       "sequenceNumber": 8,
       "actionUserKey": "importTransaction-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
-    },
-    {
-      "displayName": "Import Error Logs",
-      "name": "importTransactionErrorLog-menu-item",
-      "sequenceNumber": 9,
-      "actionUserKey": "importTransactionErrorLog-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "other-menu-item"
     },
@@ -6492,6 +6610,15 @@
       "parentMenuItemUserKey": "other-menu-item"
     },
     {
+      "displayName": "Dashboard User Layout",
+      "name": "dashboardUserLayout-menu-item",
+      "sequenceNumber": 42,
+      "actionUserKey": "dashboardUserLayout-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "",
+      "iconName": ""
+    },
+    {
       "displayName": "Agent",
       "name": "agent-menu-item",
       "sequenceNumber": 8,
@@ -6509,29 +6636,12 @@
       "parentMenuItemUserKey": "agent-menu-item"
     },
     {
-      "displayName": "Events",
-      "name": "agentEvent-menu-item",
-      "sequenceNumber": 2,
-      "actionUserKey": "agentEvent-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "agent-menu-item"
-    },
-    {
       "displayName": "MCP Audit Log",
       "name": "mcpAuditLog-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "mcpAuditLog-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item"
-    },
-    {
-      "displayName": "Dashboard User Layout",
-      "name": "dashboardUserLayout-menu-item",
-      "sequenceNumber": 42,
-      "actionUserKey": "dashboardUserLayout-list-action",
-      "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "",
-      "iconName": ""
     }
   ],
   "views": [
@@ -6544,6 +6654,7 @@
       "modelUserKey": "moduleMetadata",
       "layout": {
         "type": "list",
+        "onListLoad": "moduleMetadataListOnLoad",
         "attrs": {
           "pagination": true,
           "pageSizeOptions": [
@@ -6555,6 +6666,39 @@
           "create": true,
           "edit": true,
           "delete": false,
+          "headerButtons": [
+            {
+              "attrs": {
+                "label": "Import Module",
+                "action": "ModuleImportListHeaderAction",
+                "actionInContextMenu": false,
+                "env": [
+                  "dev"
+                ],
+                "openInPopup": true,
+                "icon": "si-upload",
+                "closable": false,
+                "popupWidth": "min(1180px, calc(100vw - 32px))",
+                "customComponentIsSystem": true
+              }
+            },
+            {
+              "attrs": {
+                "label": "Clear Package Runtime",
+                "action": "ClearModulePackageRuntimeHeaderAction",
+                "actionInContextMenu": true,
+                "env": [
+                  "dev"
+                ],
+                "openInPopup": true,
+                "icon": "pi pi-trash",
+                "closable": true,
+                "popupWidth": "min(820px, calc(100vw - 32px))",
+                "buttonClassName": "solid-header-dropdown-item-danger",
+                "customComponentIsSystem": true
+              }
+            }
+          ],
           "rowButtons": [
             {
               "attrs": {
@@ -6577,21 +6721,39 @@
                 "actionInContextMenu": true,
                 "customComponentIsSystem": true
               }
+            },
+            {
+              "attrs": {
+                "className": "p-button-text",
+                "icon": "pi pi-download",
+                "label": "Export Module",
+                "action": "ExportModulePackageRowAction",
+                "openInPopup": true,
+                "actionInContextMenu": true,
+                "customComponentIsSystem": true,
+                "env": [
+                  "dev"
+                ],
+                "popupWidth": "32vw"
+              }
             }
-          ]
+          ],
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "displayName",
-              "isSearchable": true
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "name",
+              "name": "displayName",
               "isSearchable": true
             }
           },
@@ -6613,7 +6775,8 @@
             "type": "field",
             "attrs": {
               "name": "menuSequenceNumber",
-              "isSearchable": true
+              "isSearchable": true,
+              "sortable": true
             }
           },
           {
@@ -6735,7 +6898,7 @@
           ],
           "enableGlobalSearch": true,
           "truncateAfter": 50,
-          "create": true,
+          "create": false,
           "edit": true,
           "delete": false,
           "rowButtons": [
@@ -6761,27 +6924,34 @@
                 "openInPopup": true
               }
             }
+          ],
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
           ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "singularName",
+              "name": "module",
               "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "singularName",
+              "isSearchable": true,
+              "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "tableName",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "pluralName",
               "isSearchable": true
             }
           },
@@ -6803,20 +6973,13 @@
             "type": "field",
             "attrs": {
               "name": "dataSource",
-              "isSearchable": true
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "enableSoftDelete",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "module",
               "isSearchable": true
             }
           }
@@ -6835,7 +6998,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Model Metadata",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -6939,30 +7104,59 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "name",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "model",
-              "isSearchable": true
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "model.singularName"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "view",
-              "isSearchable": true
+              "label": "View",
+              "isSearchable": true,
+              "searchField": "view.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "label": "Name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isPrivate",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user",
+              "label": "User",
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           }
         ]
@@ -6980,7 +7174,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Solid Saved Filter Model",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -6990,48 +7186,84 @@
             },
             "children": [
               {
-                "type": "group",
+                "type": "notebook",
                 "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "name"
-                    }
+                      "name": "page-general",
+                      "label": "General"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "filterQueryJson"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "view"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "model"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "user"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "isPrivate"
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "filterQueryJson"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "view"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "model"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "user"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "isPrivate"
-                    }
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "savedFilters",
+                          "itemNameField": "name"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -7052,7 +7284,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Solid List of Values Model",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -7135,15 +7369,31 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
+              "name": "module",
+              "label": "Module",
+              "isSearchable": true,
+              "searchField": "module.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "type",
+              "label": "Type",
               "isSearchable": true
             }
           },
@@ -7151,6 +7401,7 @@
             "type": "field",
             "attrs": {
               "name": "value",
+              "label": "Value",
               "isSearchable": true
             }
           },
@@ -7158,6 +7409,7 @@
             "type": "field",
             "attrs": {
               "name": "display",
+              "label": "Display Value",
               "isSearchable": true
             }
           },
@@ -7165,27 +7417,24 @@
             "type": "field",
             "attrs": {
               "name": "description",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "default",
-              "isSearchable": true
+              "label": "Description",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "sequence",
-              "isSearchable": true
+              "label": "Sequence",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "module"
+              "name": "default",
+              "label": "Default",
+              "isSearchable": false
             }
           }
         ]
@@ -7208,9 +7457,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
@@ -7224,35 +7475,14 @@
             "type": "field",
             "attrs": {
               "name": "type",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "region",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "bucketName",
-              "isSearchable": true
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "isPublic",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "localPath",
-              "isSearchable": true
+              "isSearchable": false
             }
           },
           {
@@ -7277,7 +7507,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Solid Media Storage Provider Metadata Model",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -7503,7 +7735,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -7537,7 +7775,9 @@
           {
             "type": "field",
             "attrs": {
-              "name": "user"
+              "name": "user",
+              "isSearchable": true,
+              "searchField": "user.fullName"
             }
           }
         ]
@@ -7756,46 +7996,17 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "name",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "displayName",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "type",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "context",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "layout",
-              "isSearchable": true
-            }
-          },
           {
             "type": "field",
             "attrs": {
@@ -7807,6 +8018,29 @@
             "type": "field",
             "attrs": {
               "name": "model",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
               "isSearchable": true
             }
           }
@@ -7825,7 +8059,9 @@
         "attrs": {
           "name": "form-1",
           "label": "View Metadata",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -7894,22 +8130,6 @@
                                 }
                               }
                             ]
-                          },
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "page-1-row-1-col-2",
-                              "label": "",
-                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                            },
-                            "children": [
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "context"
-                                }
-                              }
-                            ]
                           }
                         ]
                       }
@@ -7918,36 +8138,19 @@
                   {
                     "type": "page",
                     "attrs": {
-                      "name": "page-2",
-                      "label": "Layout"
+                      "name": "page-explorer",
+                      "label": "Explorer"
                     },
                     "children": [
                       {
-                        "type": "row",
+                        "type": "custom",
                         "attrs": {
-                          "name": "page-2-row-1",
-                          "label": "",
-                          "className": ""
-                        },
-                        "children": [
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "page-2-row-1-col-1",
-                              "label": "",
-                              "className": "col-12"
-                            },
-                            "children": [
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "layout",
-                                  "height": "80vh"
-                                }
-                              }
-                            ]
-                          }
-                        ]
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "views",
+                          "itemNameField": "name"
+                        }
                       }
                     ]
                   }
@@ -7975,27 +8178,60 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": true,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "viewMetadata"
+              "name": "viewMetadata",
+              "label": "Name",
+              "coModelFieldToDisplay": "name",
+              "isSearchable": false,
+              "searchField": "viewMetadata.name"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "user"
+              "name": "viewMetadata",
+              "label": "Display Name",
+              "coModelFieldToDisplay": "displayName",
+              "isSearchable": true,
+              "searchField": "viewMetadata.displayName"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "layout"
+              "name": "viewMetadata",
+              "label": "Type",
+              "coModelFieldToDisplay": "type",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user",
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdAt",
+              "isSearchable": false
             }
           }
         ]
@@ -8013,7 +8249,9 @@
         "attrs": {
           "name": "form-1",
           "label": "User View Metadata",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -8139,32 +8377,17 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "name",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "displayName",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "type",
-              "isSearchable": true
-            }
-          },
           {
             "type": "field",
             "attrs": {
@@ -8185,6 +8408,29 @@
               "name": "view",
               "isSearchable": true
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "isSearchable": true
+            }
           }
         ]
       }
@@ -8201,7 +8447,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Action Metadata",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -8312,53 +8560,19 @@
                   {
                     "type": "page",
                     "attrs": {
-                      "name": "page-2",
-                      "label": "Layout"
+                      "name": "page-explorer",
+                      "label": "Explorer"
                     },
                     "children": [
                       {
-                        "type": "row",
+                        "type": "custom",
                         "attrs": {
-                          "name": "page-2-row-1",
-                          "label": "",
-                          "className": ""
-                        },
-                        "children": [
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "page-2-row-1-col-1",
-                              "label": "",
-                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                            },
-                            "children": [
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "domain",
-                                  "height": "80vh"
-                                }
-                              }
-                            ]
-                          },
-                          {
-                            "type": "column",
-                            "attrs": {
-                              "name": "page-2-row-1-col-1",
-                              "label": "",
-                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                            },
-                            "children": [
-                              {
-                                "type": "field",
-                                "attrs": {
-                                  "name": "context",
-                                  "height": "80vh"
-                                }
-                              }
-                            ]
-                          }
-                        ]
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "actions",
+                          "itemNameField": "name"
+                        }
                       }
                     ]
                   }
@@ -8386,32 +8600,17 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "name",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "displayName",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "sequenceNumber",
-              "isSearchable": true
-            }
-          },
           {
             "type": "field",
             "attrs": {
@@ -8429,6 +8628,37 @@
           {
             "type": "field",
             "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequenceNumber",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "roles",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "action",
               "isSearchable": true
             }
@@ -8436,8 +8666,8 @@
           {
             "type": "field",
             "attrs": {
-              "name": "roles",
-              "isSearchable": true
+              "name": "iconName",
+              "isSearchable": false
             }
           }
         ]
@@ -8455,7 +8685,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Solid Menu Item Model",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -8465,111 +8697,147 @@
             },
             "children": [
               {
-                "type": "group",
+                "type": "notebook",
                 "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "name"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "displayName"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "sequenceNumber"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "module"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "parentMenuItem"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "action"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "roles",
-                      "widget": "checkbox",
-                      "inlineCreateAutoSave": "true",
-                      "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
-                      "inlineCreate": "true",
-                      "inlineCreateLayout": {
-                        "type": "form",
+                      "name": "page-general",
+                      "label": "General"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
                         "attrs": {
-                          "name": "form-1",
-                          "label": "User",
-                          "className": "grid",
-                          "width": "20vw"
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                         },
                         "children": [
                           {
-                            "type": "sheet",
+                            "type": "field",
                             "attrs": {
-                              "name": "sheet-1"
-                            },
-                            "children": [
-                              {
-                                "type": "group",
+                              "name": "name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "displayName"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "sequenceNumber"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "module"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "parentMenuItem"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "action"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "roles",
+                              "widget": "checkbox",
+                              "inlineCreateAutoSave": "true",
+                              "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
+                              "inlineCreate": "true",
+                              "inlineCreateLayout": {
+                                "type": "form",
                                 "attrs": {
-                                  "name": "group-1",
-                                  "label": "",
-                                  "className": "col-12"
+                                  "name": "form-1",
+                                  "label": "User",
+                                  "className": "grid",
+                                  "width": "20vw"
                                 },
                                 "children": [
                                   {
-                                    "type": "field",
+                                    "type": "sheet",
                                     "attrs": {
-                                      "name": "name"
-                                    }
+                                      "name": "sheet-1"
+                                    },
+                                    "children": [
+                                      {
+                                        "type": "group",
+                                        "attrs": {
+                                          "name": "group-1",
+                                          "label": "",
+                                          "className": "col-12"
+                                        },
+                                        "children": [
+                                          {
+                                            "type": "field",
+                                            "attrs": {
+                                              "name": "name"
+                                            }
+                                          }
+                                        ]
+                                      }
+                                    ]
                                   }
                                 ]
                               }
-                            ]
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "iconName",
+                              "editWidget": "SolidIconEditWidget",
+                              "viewWidget": "SolidIconViewWidget"
+                            }
                           }
                         ]
                       }
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "group",
-                "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                },
-                "children": [
+                    ]
+                  },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "iconName",
-                      "editWidget": "SolidIconEditWidget",
-                      "viewWidget": "SolidIconViewWidget"
-                    }
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "menus",
+                          "itemNameField": "name"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -8595,49 +8863,57 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
+          "create": false,
+          "edit": false,
           "delete": true,
           "allowedViews": [
             "list",
-            "card"
-          ]
+            "card",
+            "tree"
+          ],
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "entityId",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "relativeUri",
-              "widget": "image",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "modelMetadata",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "mediaStorageProviderMetadata",
-              "isSearchable": true
+              "isSearchable": true,
+              "sortable": true,
+              "searchField": "modelMetadata.name"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "fieldMetadata",
-              "isSearchable": true
+              "isSearchable": true,
+              "sortable": true,
+              "searchField": "fieldMetadata.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "entityId",
+              "isSearchable": true,
+              "sortable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mediaStorageProviderMetadata",
+              "isSearchable": false,
+              "sortable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "fileSize",
+              "sortable": true
             }
           }
         ]
@@ -8750,7 +9026,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Solid Media Model",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -8821,16 +9099,30 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "name",
+              "name": "model",
               "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
             }
           },
           {
@@ -8851,9 +9143,69 @@
             "type": "field",
             "attrs": {
               "name": "ormType",
-              "isSearchable": true
+              "isSearchable": false
             }
           },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "relationType",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "required",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "unique",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "index",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "columnName",
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "fieldMetadata-tree-view",
+      "displayName": "Field Metadata",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "fieldMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
           {
             "type": "field",
             "attrs": {
@@ -8864,232 +9216,65 @@
           {
             "type": "field",
             "attrs": {
-              "name": "defaultValue",
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
               "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "regexPattern",
+              "name": "type",
               "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "regexPatternNotMatchingErrorMsg",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "required",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "unique",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "encrypt",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "encryptionType",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "decryptWhen",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "index",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "length",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "max",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "min",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "private",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "mediaTypes",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "mediaMaxSizeKb",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "mediaStorageProvider",
-              "isSearchable": true
+              "name": "ormType",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "relationType",
-              "isSearchable": true
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "relationCoModelSingularName",
-              "isSearchable": true
+              "name": "required",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "relationCreateInverse",
-              "isSearchable": true
+              "name": "unique",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "relationCascade",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "relationModelModuleName",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "relationCoModelFieldName",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "selectionDynamicProvider",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "selectionDynamicProviderCtxt",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "selectionStaticValues",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "selectionValueType",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "computedFieldValueProvider",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "computedFieldValueProviderCtxt",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "computedFieldValueType",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "uuid",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "isSystem",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "isMarkedForRemoval",
-              "isSearchable": true
+              "name": "index",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "columnName",
-              "isSearchable": true
+              "isSearchable": false
             }
           }
         ]
@@ -9107,7 +9292,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Field Metadata",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -9473,6 +9660,12 @@
                   {
                     "type": "field",
                     "attrs": {
+                      "name": "fullName"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
                       "name": "email"
                     }
                   },
@@ -9652,14 +9845,17 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable": true
+              "isSearchable": true,
+              "sortable": true
             }
           }
         ]
@@ -9726,16 +9922,23 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
               "name": "name",
-              "isSearchable": true
+              "isSearchable": true,
+              "sortable": true
             }
           }
         ]
@@ -9753,7 +9956,9 @@
         "attrs": {
           "name": "form-1",
           "label": "User",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -10662,98 +10867,58 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id"
+              "name": "module",
+              "label": "Module",
+              "isSearchable": true,
+              "searchField": "module.name"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "scheduleName",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "module",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "isActive"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "frequency",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "startTime"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "endTime"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "startDate"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "endDate"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "dayOfMonth"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "lastRunAt"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "nextRunAt"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "dayOfWeek"
+              "label": "Schedule Name",
+              "isSearchable": true,
+              "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "job",
-              "sortable": true,
-              "filterable": true
+              "label": "Job Name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "frequency",
+              "label": "Frequency",
+              "isSearchable": false,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isActive",
+              "isSearchable": false
             }
           }
         ]
@@ -10771,7 +10936,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Scheduled Job",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "onFieldChange": "scheduleFrequencyOnFieldChangeHandler",
         "children": [
@@ -10939,6 +11106,25 @@
                             ]
                           }
                         ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "scheduledJobs",
+                          "itemNameField": "scheduleName"
+                        }
                       }
                     ]
                   }
@@ -11140,27 +11326,23 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
-          {
-            "type": "field",
-            "attrs": {
-              "name": "id",
-              "label": "Id",
-              "sortable": true,
-              "filterable": true
-            }
-          },
           {
             "type": "field",
             "attrs": {
               "name": "name",
               "label": "Name",
               "sortable": true,
-              "filterable": true,
               "isSearchable": true
             }
           },
@@ -11170,8 +11352,25 @@
               "name": "description",
               "label": "Description",
               "sortable": true,
-              "filterable": true,
               "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "role",
+              "label": "Role",
+              "isSearchable": true,
+              "searchField": "role.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelMetadata",
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "modelMetadata.singularName"
             }
           }
         ]
@@ -11189,7 +11388,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Security rules",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -11231,17 +11432,7 @@
                         "attrs": {
                           "name": "securityRuleConfig"
                         }
-                      }
-                    ]
-                  },
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "group-2",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                    },
-                    "children": [
+                      },
                       {
                         "type": "field",
                         "attrs": {
@@ -11280,18 +11471,36 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": false
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
               "name": "name",
-              "label": "Email",
+              "label": "Name",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "label": "Display Name",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "active",
+              "isSearchable": false
             }
           }
         ]
@@ -11311,7 +11520,9 @@
           "label": "Email",
           "className": "grid",
           "disabled": false,
-          "readonly": false
+          "readonly": false,
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "onFieldChange": "emailFormTypeChangeHandler",
         "onFormLayoutLoad": "emailFormTypeLoad",
@@ -11323,71 +11534,107 @@
             },
             "children": [
               {
-                "type": "group",
+                "type": "notebook",
                 "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "name",
-                      "label": "Name"
-                    }
+                      "name": "page-general",
+                      "label": "General"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "name",
+                              "label": "Name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "displayName",
+                              "label": "Display Name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "type",
+                              "label": "Type"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "body",
+                              "label": "Body"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "subject",
+                              "label": "Subject"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "description",
+                              "label": "Description"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "active",
+                              "label": "Active"
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "displayName",
-                      "label": "Display Name"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "type",
-                      "label": "Type"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "body",
-                      "label": "Body"
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "group",
-                "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                },
-                "children": [
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "subject",
-                      "label": "Subject"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "description",
-                      "label": "Description"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "active",
-                      "label": "Active"
-                    }
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "emailTemplates",
+                          "itemNameField": "name"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -11413,9 +11660,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": false
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
@@ -11424,7 +11673,32 @@
               "name": "name",
               "label": "Name",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "label": "Display Name",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "active",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "smsProviderTemplateId",
+              "label": "Template Provider Id",
+              "sortable": true,
+              "isSearchable": true
             }
           }
         ]
@@ -11444,7 +11718,9 @@
           "label": "Email",
           "className": "grid",
           "disabled": false,
-          "readonly": false
+          "readonly": false,
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "onFieldChange": "emailFormTypeChangeHandler",
         "children": [
@@ -11455,71 +11731,107 @@
             },
             "children": [
               {
-                "type": "group",
+                "type": "notebook",
                 "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "name",
-                      "label": "Name"
-                    }
+                      "name": "page-general",
+                      "label": "General"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "name",
+                              "label": "Name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "displayName",
+                              "label": "Display Name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "type",
+                              "label": "Type"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "body",
+                              "label": "Body"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "smsProviderTemplateId",
+                              "label": "Sms Provider Template Id"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "description",
+                              "label": "Description"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "active",
+                              "label": "Active"
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   },
                   {
-                    "type": "field",
+                    "type": "page",
                     "attrs": {
-                      "name": "displayName",
-                      "label": "Display Name"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "type",
-                      "label": "Type"
-                    }
-                  }
-                ]
-              },
-              {
-                "type": "group",
-                "attrs": {
-                  "name": "group-1",
-                  "label": "",
-                  "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                },
-                "children": [
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "body",
-                      "label": "Body"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "smsProviderTemplateId",
-                      "label": "Sms Provider Template Id"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "description",
-                      "label": "Description"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "active",
-                      "label": "Active"
-                    }
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
+                      {
+                        "type": "custom",
+                        "attrs": {
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "smsTemplates",
+                          "itemNameField": "name"
+                        }
+                      }
+                    ]
                   }
                 ]
               }
@@ -11545,25 +11857,55 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
               "name": "id",
+              "label": "ID",
               "sortable": true,
-              "filterable": true
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "importTransactionErrorLog",
-              "sortable": true,
-              "filterable": true
+              "name": "modelMetadata",
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "modelMetadata.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status",
+              "label": "Status",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdAt",
+              "label": "Created At",
+              "isSearchable": false,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdBy",
+              "label": "Created By",
+              "isSearchable": false
             }
           }
         ]
@@ -11581,7 +11923,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Import Transactions",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -11591,35 +11935,85 @@
             },
             "children": [
               {
-                "type": "row",
+                "type": "notebook",
                 "attrs": {
-                  "name": "sheet-1"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-1",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                      "name": "page-1",
+                      "label": "Details"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "group",
                         "attrs": {
-                          "name": "importTransactionErrorLog"
-                        }
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "modelMetadata"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "status"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "mapping"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "createdAt"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "createdBy"
+                            }
+                          }
+                        ]
                       }
                     ]
                   },
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-2",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                      "name": "page-2",
+                      "label": "Error Logs"
                     },
-                    "children": []
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "group-1",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "importTransactionErrorLog",
+                              "showLabel": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
                   }
                 ]
               }
@@ -11645,49 +12039,53 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id",
+              "name": "event",
+              "label": "Event",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "user",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "event",
-              "sortable": true,
-              "filterable": true
+              "label": "User",
+              "sortable": false,
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "ipAddress",
+              "label": "IP Address",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "createdAt",
+              "label": "Created At",
               "sortable": true,
-              "filterable": true
+              "isSearchable": false
             }
           }
         ]
@@ -11710,49 +12108,47 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id",
+              "name": "event",
+              "label": "Event",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "user",
-              "sortable": true,
-              "filterable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "event",
-              "sortable": true,
-              "filterable": true
+              "label": "User",
+              "isSearchable": true,
+              "searchField": "user.fullName"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "ipAddress",
+              "label": "IP Address",
               "sortable": true,
-              "filterable": true
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "createdAt",
+              "label": "Created At",
               "sortable": true,
-              "filterable": true
+              "isSearchable": false
             }
           }
         ]
@@ -11770,7 +12166,9 @@
         "attrs": {
           "name": "form-1",
           "label": "User Activity History",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -12265,63 +12663,81 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id"
+              "name": "module",
+              "label": "Module",
+              "isSearchable": true,
+              "searchField": "module.name"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "sequenceName"
+              "name": "model",
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "model.name"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "currentValue"
+              "name": "field",
+              "label": "Field",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "prefix"
+              "name": "sequenceName",
+              "label": "Sequence",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "padding"
+              "name": "prefix",
+              "label": "Prefix",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "separator"
+              "name": "separator",
+              "label": "Separator",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "field"
+              "name": "padding",
+              "label": "Padding",
+              "isSearchable": false
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "model"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "module"
+              "name": "currentValue",
+              "label": "Current Value",
+              "isSearchable": false
             }
           }
         ]
@@ -12339,7 +12755,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Model Sequence",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "onFieldChange": "modelSequenceFormViewChangeHandler",
         "children": [
@@ -12350,65 +12768,101 @@
             },
             "children": [
               {
-                "type": "row",
+                "type": "notebook",
                 "attrs": {
-                  "name": "sheet-1"
+                  "name": "notebook-1"
                 },
                 "children": [
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-1",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                      "name": "page-general",
+                      "label": "General"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "row",
                         "attrs": {
-                          "name": "sequenceName"
-                        }
-                      },
+                          "name": "sheet-1"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "",
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "sequenceName"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "prefix"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "separator"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "module"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "model"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "field"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "currentValue"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "padding"
+                                }
+                              }
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "page-explorer",
+                      "label": "Explorer"
+                    },
+                    "children": [
                       {
-                        "type": "field",
+                        "type": "custom",
                         "attrs": {
-                          "name": "prefix"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "separator"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "module"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "model"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "field"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "currentValue"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "padding"
+                          "name": "metadata-explorer-widget",
+                          "widget": "MetadataExplorerFormWidget",
+                          "moduleName": "solid-core",
+                          "arrayPath": "modelSequences",
+                          "itemNameField": "sequenceName"
                         }
                       }
                     ]
@@ -12437,9 +12891,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
@@ -12453,6 +12909,7 @@
             "type": "field",
             "attrs": {
               "name": "modelName",
+              "label": "Model",
               "isSearchable": true
             }
           },
@@ -12466,7 +12923,8 @@
           {
             "type": "field",
             "attrs": {
-              "name": "totalSteps"
+              "name": "projectRoot",
+              "isSearchable": false
             }
           },
           {
@@ -12486,25 +12944,6 @@
             "attrs": {
               "name": "totalOutputTokens"
             }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "projectRoot",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "createdAt"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "updatedAt"
-            }
           }
         ]
       }
@@ -12521,7 +12960,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Agent Session",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -12624,21 +13065,18 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "sessionId",
+              "label": "Session",
               "isSearchable": true
             }
           },
@@ -12652,18 +13090,6 @@
           {
             "type": "field",
             "attrs": {
-              "name": "turnNumber"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "stepNumber"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "toolName",
               "isSearchable": true
             }
@@ -12671,7 +13097,9 @@
           {
             "type": "field",
             "attrs": {
-              "name": "durationMs"
+              "name": "modelUsed",
+              "label": "Model Used",
+              "isSearchable": true
             }
           },
           {
@@ -12695,14 +13123,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "modelUsed",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "createdAt"
+              "name": "turnNumber"
             }
           }
         ]
@@ -12720,7 +13141,9 @@
         "attrs": {
           "name": "form-1",
           "label": "Agent Event",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -12960,9 +13383,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": false
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
@@ -13008,20 +13433,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "userId"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "transport",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "mcpSessionId",
               "isSearchable": true
             }
           },
@@ -13059,7 +13471,9 @@
         "attrs": {
           "name": "form-1",
           "label": "MCP Audit Log",
-          "className": "grid"
+          "className": "grid",
+          "showAddFormButton": false,
+          "showEditFormButton": false
         },
         "children": [
           {
@@ -13300,49 +13714,40 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": true
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id",
-              "isSearchable": false
+              "name": "module",
+              "isSearchable": true,
+              "searchField": "module.name"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "dashboardName",
+              "label": "Name",
               "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "module",
-              "isSearchable": true
+              "name": "version"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "user",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "version",
-              "isSearchable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "updatedAt",
-              "isSearchable": false
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           }
         ]
@@ -13367,31 +13772,25 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": true
+          "delete": false,
+          "import": false,
+          "export": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id"
+              "name": "module",
+              "isSearchable": true,
+              "searchField": "module.name"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "dashboardName"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "module"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "user"
+              "name": "dashboardName",
+              "label": "Name",
+              "isSearchable": true
             }
           },
           {
@@ -13403,7 +13802,10 @@
           {
             "type": "field",
             "attrs": {
-              "name": "updatedAt"
+              "name": "user",
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           }
         ]
@@ -13425,7 +13827,7 @@
           "className": "grid",
           "showAddFormButton": false,
           "showEditFormButton": false,
-          "showDeleteFormButton": true
+          "showDeleteFormButton": false
         },
         "children": [
           {
@@ -13499,6 +13901,861 @@
                 ]
               }
             ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "modelMetadata-tree-view",
+      "displayName": "Model Metadata Tree View",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelMetadata",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": true,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "singularName",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "tableName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "dataSource",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "enableSoftDelete",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "menuItemMetadata-tree-view",
+      "displayName": "Menu Item Metadata Tree View",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "menuItemMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "parentMenuItem",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequenceNumber",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "roles",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "action",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "iconName",
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "viewMetadata-tree-view",
+      "displayName": "View Metadata Tree View",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "viewMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "actionMetadata-tree-view",
+      "displayName": "Action Metadata Tree View",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "actionMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "view",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "userViewMetadata-tree-view",
+      "displayName": "User View Metadata Tree View",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "userViewMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "viewMetadata",
+              "label": "Name",
+              "coModelFieldToDisplay": "name",
+              "isSearchable": true,
+              "searchField": "viewMetadata.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "viewMetadata",
+              "label": "Display Name",
+              "coModelFieldToDisplay": "displayName",
+              "isSearchable": true,
+              "searchField": "viewMetadata.displayName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "viewMetadata",
+              "label": "Type",
+              "coModelFieldToDisplay": "type",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user",
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "createdAt",
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "media-tree-view",
+      "displayName": "Media Tree View",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "media",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelMetadata",
+              "isSearchable": true,
+              "sortable": true,
+              "searchField": "modelMetadata.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "fieldMetadata",
+              "isSearchable": true,
+              "sortable": true,
+              "searchField": "fieldMetadata.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "entityId",
+              "isSearchable": true,
+              "sortable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mediaStorageProviderMetadata",
+              "isSearchable": false,
+              "sortable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "relativeUri",
+              "widget": "image",
+              "isSearchable": false,
+              "sortable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "roleMetadata-tree-view",
+      "displayName": "Roles",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "roleMetadata",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "securityRule-tree-view",
+      "displayName": "Security Rules",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "securityRule",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "label": "Name",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "label": "Description",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "role",
+              "label": "Role",
+              "isSearchable": true,
+              "searchField": "role.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelMetadata",
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "modelMetadata.name"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "modelSequence-tree-view",
+      "displayName": "Model Sequences",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "modelSequence",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "label": "Module",
+              "isSearchable": true,
+              "searchField": "module.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "model.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "field",
+              "label": "Field",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequenceName",
+              "label": "Sequence",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "currentValue",
+              "label": "Current Value",
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "listOfValues-tree-view",
+      "displayName": "List Of Values",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "listOfValues",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "label": "Module",
+              "isSearchable": true,
+              "searchField": "module.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type",
+              "label": "Type",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "value",
+              "label": "Value",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "display",
+              "label": "Display Value",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "chatterMessage-tree-view",
+      "displayName": "Chatter Messages",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "chatterMessage",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "messageType",
+              "label": "Type",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "messageSubType",
+              "label": "Sub Type",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "modelDisplayName",
+              "label": "Model",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user",
+              "label": "User",
+              "isSearchable": true,
+              "searchField": "user.fullName"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "scheduledJob-tree-view",
+      "displayName": "Scheduled Jobs",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "scheduledJob",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "label": "Module",
+              "isSearchable": true,
+              "searchField": "module.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "scheduleName",
+              "label": "Schedule Name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "job",
+              "label": "Job Name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "frequency",
+              "label": "Frequency",
+              "isSearchable": false,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isActive",
+              "isSearchable": false
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "savedFilters-tree-view",
+      "displayName": "Saved Filters",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "savedFilters",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "import": false,
+          "export": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "model",
+              "label": "Model",
+              "isSearchable": true,
+              "searchField": "model.singularName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "view",
+              "label": "View",
+              "isSearchable": true,
+              "searchField": "view.name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "label": "Name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "isPrivate",
+              "isSearchable": false
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "user",
+              "label": "User",
+              "isSearchable": true,
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
+            }
           }
         ]
       }
@@ -13975,5 +15232,6 @@
         ]
       }
     }
-  ]
+  ],
+  "savedFilters": []
 }

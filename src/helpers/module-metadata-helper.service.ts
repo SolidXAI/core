@@ -37,21 +37,30 @@ export class ModuleMetadataHelperService {
         return path.resolve(process.cwd(), 'src', moduleName);
     }
 
+    async getSolidUiModulePath(moduleName: string): Promise<string> {
+        if (!moduleName) {
+            return '';
+        }
+
+        const dashModuleName = kebabCase(moduleName);
+        return path.resolve(process.cwd(), '..', 'solid-ui', 'src', dashModuleName);
+    }
+
+    private resolveModuleMetadataFolderPath(moduleName: string): string {
+        const dashModuleName = kebabCase(moduleName);
+        return path.resolve(process.cwd(), 'src', dashModuleName, 'metadata');
+    }
+
     async getModuleMetadataFilePath(moduleName: string): Promise<string> {
         if (!moduleName) {
             return '';
         }
         const dashModuleName = kebabCase(moduleName);
-        const folderPath = path.resolve(process.cwd(), 'module-metadata', dashModuleName);
-        const filePath = path.join(folderPath, `${dashModuleName}-metadata.json`);
+        const filePath = path.join(
+            this.resolveModuleMetadataFolderPath(dashModuleName),
+            `${dashModuleName}-metadata.json`,
+        );
 
-        // Check if filePath exists
-        const fileExists = await this.fileService.exists(filePath);
-        if (fileExists) {
-            return filePath;
-        }
-
-        // If the module is solid-core, try the fallback path, in case the current root directory is the solid core project
         if (dashModuleName === SOLID_CORE_MODULE_NAME) {
             const fallbackPath = path.resolve(process.cwd(), 'src', 'seeders', 'seed-data', `${dashModuleName}-metadata.json`);
             const fallbackExists = await this.fileService.exists(fallbackPath);
@@ -75,17 +84,7 @@ export class ModuleMetadataHelperService {
         if (!moduleName) {
             return '';
         }
-
-        const dashModuleName = kebabCase(moduleName);
-
-        const folderPath = path.resolve(
-            process.cwd(),
-            'module-metadata',
-            dashModuleName,
-        );
-
-        const exists = await this.fileService.exists(folderPath);
-        return exists ? folderPath : '';
+        return this.resolveModuleMetadataFolderPath(moduleName);
     }
 
 }

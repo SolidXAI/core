@@ -38,7 +38,7 @@ Not persisted:
 
 At runtime, metadata is read from file paths resolved by `ModuleMetadataHelperService`:
 
-1. `module-metadata/<module-name>/<module-name>-metadata.json`
+1. `src/<module-name>/metadata/<module-name>-metadata.json`
 2. fallback (solid-core local run): `src/seeders/seed-data/solid-core-metadata.json`
 3. fallback (consuming project): `node_modules/@solidxai/core/src/seeders/seed-data/solid-core-metadata.json`
 

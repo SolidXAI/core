@@ -97,14 +97,14 @@ export class IngestMetadataService {
         for (let i = 0; i < enabledModules.length; i++) {
             const enabledModule = enabledModules[i];
             const fileName = `${enabledModule}-metadata.json`;
-            const enabledModuleSeedFile = `module-metadata/${enabledModule}/${fileName}`;
+            const enabledModuleSeedFile = `src/${enabledModule}/metadata/${fileName}`;
             const fullPath = path.join(process.cwd(), enabledModuleSeedFile);
             const overallMetadata: any = JSON.parse(fs.readFileSync(fullPath, 'utf-8').toString());
 
             const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
 
             // Manage all the ingestion info file paths...
-            const enabledModulIngestionInfoFile = `module-metadata/${enabledModule}/genai/${enabledModule}-ingested-info.json`;
+            const enabledModulIngestionInfoFile = `src/${enabledModule}/metadata/genai/${enabledModule}-ingested-info.json`;
             const enabledModulIngestionInfoFullPath = path.join(process.cwd(), enabledModulIngestionInfoFile);
             const ingestionInfo: ModuleRAGIngestionInfo = fs.existsSync(enabledModulIngestionInfoFullPath) ? JSON.parse(fs.readFileSync(enabledModulIngestionInfoFullPath, 'utf-8').toString()) : {};
             const enabledModulIngestionInfoDir = path.dirname(enabledModulIngestionInfoFullPath);
