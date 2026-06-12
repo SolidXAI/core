@@ -1997,6 +1997,84 @@ export class AuthenticationService {
     };
   }
 
+  async validateUserUsingMicrosoftActiveDirectory(user: User) {
+    if (
+      !user.microsoftActiveDirectoryAccessToken ||
+      !user.microsoftActiveDirectoryId
+    ) {
+      throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+
+    try {
+      const response = await this.httpService.axiosRef.get(
+        `https://graph.microsoft.com/v1.0/me?$select=id,displayName,mail,userPrincipalName`,
+        {
+          headers: {
+            Authorization: `Bearer ${user.microsoftActiveDirectoryAccessToken}`,
+          },
+        },
+      );
+      const userProfile = response.data;
+      const profileEmail = (userProfile.mail || userProfile.userPrincipalName)
+        ?.trim()
+        .toLowerCase();
+      const userEmail = user.email?.trim().toLowerCase();
+
+      if (
+        userProfile.id === user.microsoftActiveDirectoryId &&
+        (!userEmail || profileEmail === userEmail)
+      ) {
+        return userProfile;
+      } else {
+        throw new UnauthorizedException(ERROR_MESSAGES.INVALID_USER_PROFILE);
+      }
+    } catch (error: any) {
+      if (error instanceof UnauthorizedException) {
+        throw error;
+      }
+
+      throw new UnauthorizedException(
+        ERROR_MESSAGES.MICROSOFT_ACTIVE_DIRECTORY_OAUTH_PROFILE_FETCH_FAILED,
+      );
+    }
+  }
+
+  async signInUsingMicrosoftActiveDirectory(accessCode: string) {
+    const user = await this.userRepository.findOne({
+      where: {
+        accessCode: accessCode,
+      },
+      relations: {
+        roles: true,
+      },
+    });
+
+    if (!user) {
+      throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
+    }
+    this.checkAccountBlocked(user);
+
+    try {
+      await this.validateUserUsingMicrosoftActiveDirectory(user);
+    } catch (e) {
+      await this.incrementFailedAttempts(user);
+      throw e;
+    }
+
+    await this.resetFailedAttempts(user);
+    const tokens = await this.generateTokens(user);
+    return {
+      user: {
+        email: user.email,
+        mobile: user.mobile,
+        username: user.username,
+        id: user.id,
+        roles: user.roles.map((role) => role.name),
+      },
+      ...tokens,
+    };
+  }
+
   async signInUsingApple(accessCode: string) {
     const user = await this.userRepository.findOne({
       where: {

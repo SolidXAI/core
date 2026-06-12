@@ -66,8 +66,10 @@ import { ActionMetadataService } from "./services/action-metadata.service";
 
 import { FacebookAuthenticationController } from "./controllers/facebook-authentication.controller";
 import { MicrosoftAuthenticationController } from "./controllers/microsoft-authentication.controller";
+import { MicrosoftActiveDirectoryAuthenticationController } from "./controllers/microsoft-active-directory-authentication.controller";
 import { FacebookOAuthStrategy } from "./passport-strategies/facebook-oauth.strategy";
 import { MicrosoftOAuthStrategy } from "./passport-strategies/microsoft-oauth.strategy";
+import { MicrosoftActiveDirectoryOAuthStrategy } from "./passport-strategies/microsoft-active-directory-oauth.strategy";
 
 import { GupshupOtpWhatsappService } from "./services/whatsapp/GupshupOtpWhatsappService";
 import { MetaCloudWhatsappService } from "./services/whatsapp/MetaCloudWhatsappService";
@@ -464,6 +466,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     GoogleAuthenticationController,
     FacebookAuthenticationController,
     MicrosoftAuthenticationController,
+    MicrosoftActiveDirectoryAuthenticationController,
     ImportTransactionController,
     ImportTransactionErrorLogController,
     ListOfValuesController,
@@ -637,6 +640,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     GoogleOauthStrategy,
     FacebookOAuthStrategy,
     MicrosoftOAuthStrategy,
+    MicrosoftActiveDirectoryOAuthStrategy,
     UserRegistrationListener,
     TestQueuePublisher,
     TestQueueSubscriber,
