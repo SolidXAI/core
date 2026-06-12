@@ -9,6 +9,7 @@ import { Exclude, Expose } from "class-transformer";
 @TableInheritance({ column: { type: "varchar", name: "type", default: "User" } })
 @Exclude()
 export class User extends CommonEntity {
+    @Index()
     @Column({ type: "varchar", nullable: true })
     @Expose()
     fullName: string;
@@ -88,6 +89,7 @@ export class User extends CommonEntity {
     // don't send to client
     microsoftProfilePicture: string;
 
+    @Index()
     @Column({ default: true })
     @Expose()
     active: boolean = true;

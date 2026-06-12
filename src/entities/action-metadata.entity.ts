@@ -9,6 +9,7 @@ export class ActionMetadata extends CommonEntity {
     @Column({ name: "name", type: "varchar", unique: true })
     name: string;
 
+    @Index()
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;
 

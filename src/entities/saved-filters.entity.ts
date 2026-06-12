@@ -17,14 +17,17 @@ export class SavedFilters extends CommonEntity {
     @Column({ nullable: true, default: false })
     isPrivate: boolean = false;
 
+    @Index()
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn()
     user: User;
 
+    @Index()
     @ManyToOne(() => ModelMetadata, { nullable: false })
     @JoinColumn()
     model: ModelMetadata;
 
+    @Index()
     @ManyToOne(() => ViewMetadata, { nullable: false })
     @JoinColumn()
     view: ViewMetadata;

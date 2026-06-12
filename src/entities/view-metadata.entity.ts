@@ -11,9 +11,11 @@ export class ViewMetadata extends CommonEntity {
     @Column({ name: "name", type: "varchar"})
     name: string;
 
+    @Index()
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;
 
+    @Index()
     @Column({ name: "type", type: "varchar" })
     type: string;
 
