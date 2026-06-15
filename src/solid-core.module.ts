@@ -20,6 +20,7 @@ import { ModelMetadataController } from "./controllers/model-metadata.controller
 import { ModuleMetadataExplorerController } from "./controllers/module-metadata-explorer.controller";
 import { ModuleMetadataController } from "./controllers/module-metadata.controller";
 import { ModulePackageController } from "./controllers/module-package.controller";
+import { DatasourceManagementController } from "./controllers/datasource-management.controller";
 import { TestController } from "./controllers/test.controller";
 import { FieldMetadata } from "./entities/field-metadata.entity";
 import { ListOfValues } from "./entities/list-of-values.entity";
@@ -36,6 +37,7 @@ import { PseudoForeignKeySelectionProvider } from "./services/selection-provider
 import { ModuleMetadataSeederService } from "./seeders/module-metadata-seeder.service";
 import { ModuleTestDataService } from "./seeders/module-test-data.service";
 import { CrudHelperService } from "./services/crud-helper.service";
+import { DatasourceManagementService } from "./services/datasource-management.service";
 import { FieldMetadataService } from "./services/field-metadata.service";
 import { DashboardRuntimeService } from "./services/dashboard-runtime.service";
 import { ListOfValuesService } from "./services/list-of-values.service";
@@ -477,6 +479,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ExportTransactionController,
     FieldMetadataController,
     DashboardController,
+    DatasourceManagementController,
     GoogleAuthenticationController,
     FacebookAuthenticationController,
     MicrosoftAuthenticationController,
@@ -539,6 +542,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
       useClass: HttpExceptionFilter,
     },
     ModuleMetadataService,
+    DatasourceManagementService,
     ModuleMetadataExplorerService,
     ModuleMetadataHelperService,
     ModulePackageService,
@@ -745,6 +749,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ExportTransactionService,
     ExcelService,
     CsvService,
+    DatasourceManagementService,
     DashboardRuntimeService,
     ImportTransactionService,
     ImportTransactionErrorLogService,
