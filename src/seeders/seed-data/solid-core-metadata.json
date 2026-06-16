@@ -2532,6 +2532,22 @@
             "relationModelModuleName": "solid-core",
             "isSystem": true,
             "isRelationManyToManyOwner": false
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ]
       },
@@ -6301,6 +6317,19 @@
       "moduleUserKey": "solid-core",
       "modelUserKey": "savedFilters",
       "viewUserKey": "savedFilters-tree-view"
+    },
+    {
+      "displayName": "Role Tree View Action",
+      "name": "roleMetadata-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "roleMetadata-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "roleMetadata"
     }
   ],
   "menus": [
@@ -9740,7 +9769,9 @@
                   {
                     "type": "field",
                     "attrs": {
-                      "name": "roles"
+                      "name": "roles",
+                      "editWidget": "RolesGroupedByModuleWidget",
+                      "showLabel": false
                     }
                   },
                   {
@@ -9942,11 +9973,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": false,
-          "edit": false,
-          "delete": false,
-          "import": false,
-          "export": false,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "import": true,
+          "export": true,
           "allowedViews": [
             "list",
             "tree"
@@ -9977,8 +10008,8 @@
           "name": "form-1",
           "label": "User",
           "className": "grid",
-          "showAddFormButton": false,
-          "showEditFormButton": false
+          "showAddFormButton": true,
+          "showEditFormButton": true
         },
         "children": [
           {
@@ -10013,6 +10044,14 @@
                             "attrs": {
                               "name": "name",
                               "showLabel": false
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "module",
+                              "label": "Module",
+                              "showLabel": true
                             }
                           }
                         ]
@@ -14775,6 +14814,37 @@
               "isSearchable": true,
               "searchField": "user.fullName",
               "coModelFieldToDisplay": "fullName"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "roleMetadata-tree-view",
+      "displayName": "Role",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "roleMetadata",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
             }
           }
         ]
