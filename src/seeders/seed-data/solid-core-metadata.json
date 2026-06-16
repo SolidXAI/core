@@ -7291,8 +7291,8 @@
           "name": "form-1",
           "label": "Solid List of Values Model",
           "className": "grid",
-          "showAddFormButton": false,
-          "showEditFormButton": false
+          "showAddFormButton": true,
+          "showEditFormButton": true
         },
         "children": [
           {
@@ -7375,11 +7375,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": false,
-          "edit": false,
-          "delete": false,
-          "import": false,
-          "export": false,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "import": true,
+          "export": true,
           "allowedViews": [
             "list",
             "tree"
@@ -9894,11 +9894,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": false,
-          "edit": false,
-          "delete": false,
-          "import": false,
-          "export": false
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "import": true,
+          "export": true
         },
         "children": [
           {
@@ -9926,7 +9926,9 @@
           "label": "Permission",
           "className": "grid",
           "disabled": true,
-          "readonly": true
+          "readonly": true,
+          "showAddFormButton": true,
+          "showEditFormButton": true
         },
         "children": [
           {
@@ -14581,11 +14583,11 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": false,
-          "edit": false,
-          "delete": false,
-          "import": false,
-          "export": false
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "import": true,
+          "export": true
         },
         "children": [
           {
