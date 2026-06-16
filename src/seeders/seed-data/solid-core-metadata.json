@@ -9979,8 +9979,7 @@
           "import": true,
           "export": true,
           "allowedViews": [
-            "list",
-            "tree"
+            "list"
           ]
         },
         "children": [
@@ -9990,6 +9989,13 @@
               "name": "name",
               "isSearchable": true,
               "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "isSearchable": false
             }
           }
         ]
