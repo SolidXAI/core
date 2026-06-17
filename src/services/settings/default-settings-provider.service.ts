@@ -781,6 +781,38 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
+      key: "otpWhatsappTemplateId",
+      value: process.env.COMMON_OTP_WHATSAPP_TEMPLATE_ID ?? "common_otp",
+      level: SettingLevel.SystemAdminEditable,
+      label: "OTP WhatsApp Template ID",
+      group: "authentication-settings",
+      sortOrder: 72,
+      controlType: "shortText",
+    },
+    {
+      moduleName: "solid-core",
+      key: "otpWhatsappIndependentEnabled",
+      value:
+        (process.env.IAM_OTP_WHATSAPP_INDEPENDENT_ENABLED ?? "true") ===
+        "true",
+      level: SettingLevel.SystemAdminEditable,
+      label: "Enable Independent OTP WhatsApp",
+      group: "authentication-settings",
+      sortOrder: 73,
+      controlType: "boolean",
+    },
+    {
+      moduleName: "solid-core",
+      key: "otpDefaultCountryDialCode",
+      value: process.env.IAM_OTP_DEFAULT_COUNTRY_DIAL_CODE ?? "91",
+      level: SettingLevel.SystemAdminEditable,
+      label: "OTP Default Country Dial Code",
+      group: "authentication-settings",
+      sortOrder: 74,
+      controlType: "shortText",
+    },
+    {
+      moduleName: "solid-core",
       key: "forgotPasswordVerificationTokenExpiry",
       value: parseInt(
         process.env.IAM_FORGOT_PASSWORD_VERIFICATION_TOKEN_EXPIRY ?? "10",
