@@ -140,8 +140,6 @@ import { SmtpEmailQueuePublisherRedis } from "./jobs/redis/smtp-email-publisher-
 import { SmtpEmailQueueSubscriberRedis } from "./jobs/redis/smtp-email-subscriber-redis.service";
 import { Three60WhatsappQueuePublisherRedis } from "./jobs/redis/three60-whatsapp-publisher-redis.service";
 import { Three60WhatsappQueueSubscriberRedis } from "./jobs/redis/three60-whatsapp-subscriber-redis.service";
-import { TriggerMcpClientPublisherRedis } from "./jobs/redis/trigger-mcp-client-publisher-redis.service";
-import { TriggerMcpClientSubscriberRedis } from "./jobs/redis/trigger-mcp-client-subscriber-redis.service";
 import { TwilioSmsQueuePublisherRedis } from "./jobs/redis/twilio-sms-publisher-redis.service";
 import { TwilioSmsQueueSubscriberRedis } from "./jobs/redis/twilio-sms-subscriber-redis.service";
 import { UserRegistrationListener } from "./listeners/user-registration.listener";
@@ -184,7 +182,6 @@ import { PermissionMetadataService } from "./services/permission-metadata.servic
 
 import { ScheduleModule } from "@nestjs/schedule";
 import { ClsModule } from "nestjs-cls";
-import { AiInteractionController } from "./controllers/ai-interaction.controller";
 import { ChatterMessageDetailsController } from "./controllers/chatter-message-details.controller";
 import { ChatterMessageController } from "./controllers/chatter-message.controller";
 
@@ -207,7 +204,6 @@ import { InfoService } from './services/info.service';
 import { UserActivityHistoryController } from './controllers/user-activity-history.controller';
 import { UserViewMetadataController } from './controllers/user-view-metadata.controller';
 import { UserController } from './controllers/user.controller';
-import { AiInteraction } from './entities/ai-interaction.entity';
 import { ChatterMessageDetails } from './entities/chatter-message-details.entity';
 import { ChatterMessage } from './entities/chatter-message.entity';
 
@@ -248,7 +244,6 @@ import { TwilioSmsQueuePublisherDatabase } from "./jobs/database/twilio-sms-publ
 import { TwilioSmsQueueSubscriberDatabase } from "./jobs/database/twilio-sms-subscriber-database.service";
 
 // import { ThrottlerModule } from '@nestjs/throttler';
-import { IngestCommand } from "./commands/ingest.command";
 import { MailFactory } from "./factories/mail.factory";
 import { ErrorMapperService } from "./helpers/error-mapper.service";
 import { SolidCoreErrorCodesProvider } from "./helpers/solid-core-error-codes-provider.service";
@@ -258,19 +253,14 @@ import { Msg91WhatsappQueuePublisherDatabase } from "./jobs/database/msg91-whats
 import { Msg91WhatsappQueueSubscriberDatabase } from "./jobs/database/msg91-whatsapp-subscriber-database.service";
 import { Three60WhatsappQueuePublisherDatabase } from "./jobs/database/three60-whatsapp-publisher-database.service";
 import { Three60WhatsappQueueSubscriberDatabase } from "./jobs/database/three60-whatsapp-subscriber-database.service";
-import { TriggerMcpClientPublisherDatabase } from "./jobs/database/trigger-mcp-client-publisher-database.service";
-import { TriggerMcpClientSubscriberDatabase } from "./jobs/database/trigger-mcp-client-subscriber-database.service";
 import { GenerateCodePublisherRabbitmq } from "./jobs/rabbitmq/generate-code-publisher.service";
 import { GenerateCodeSubscriberRabbitmq } from "./jobs/rabbitmq/generate-code-subscriber.service";
 import { Three60WhatsappQueuePublisher } from "./jobs/rabbitmq/three60-whatsapp-publisher.service";
 import { Three60WhatsappQueueSubscriber } from "./jobs/rabbitmq/three60-whatsapp-subscriber.service";
-import { TriggerMcpClientPublisherRabbitmq } from "./jobs/rabbitmq/trigger-mcp-client-publisher.service";
-import { TriggerMcpClientSubscriberRabbitmq } from "./jobs/rabbitmq/trigger-mcp-client-subscriber.service";
 import { TwilioSmsQueuePublisherRabbitmq } from "./jobs/rabbitmq/twilio-sms-publisher.service";
 import { TwilioSmsQueueSubscriberRabbitmq } from "./jobs/rabbitmq/twilio-sms-subscriber.service";
 import { ListOfValuesMapper } from "./mappers/list-of-values-mapper";
 import { ActionMetadataRepository } from "./repository/action-metadata.repository";
-import { AiInteractionRepository } from "./repository/ai-interaction.repository";
 import { ChatterMessageDetailsRepository } from "./repository/chatter-message-details.repository";
 import { ChatterMessageRepository } from "./repository/chatter-message.repository";
 
@@ -305,7 +295,6 @@ import { UserRepository } from './repository/user.repository';
 import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
 import { SystemFieldsSeederService } from './seeders/system-fields-seeder.service';
-import { AiInteractionService } from './services/ai-interaction.service';
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageService } from './services/chatter-message.service';
 import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
@@ -331,9 +320,6 @@ import { CsvService } from './services/csv.service';
 import { ExcelService } from './services/excel.service';
 import { ExportTemplateService } from './services/export-template.service';
 import { ExportTransactionService } from './services/export-transaction.service';
-import { IngestMetadataService } from './services/genai/ingest-metadata.service';
-import { McpHandlerFactory } from './services/genai/mcp-handlers/mcp-handler-factory.service';
-import { R2RHelperService } from './services/genai/r2r-helper.service';
 import { ImportTransactionErrorLogService } from './services/import-transaction-error-log.service';
 import { ImportTransactionService } from './services/import-transaction.service';
 import { LocaleService } from './services/locale.service';
@@ -397,7 +383,6 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
   imports: [
     TypeOrmModule.forFeature([
       ActionMetadata,
-      AiInteraction,
       ChatterMessage,
       ChatterMessageDetails,
       EmailAttachment,
@@ -468,7 +453,6 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
   ],
   controllers: [
     ActionMetadataController,
-    AiInteractionController,
     AuthenticationController,
     ChatterMessageController,
     ChatterMessageDetailsController,
@@ -553,7 +537,6 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     InfoService,
     SolidIntrospectService,
     DiscoveryService,
-    R2RHelperService,
     CrudHelperService,
     CRUDService,
     Reflector,
@@ -590,8 +573,6 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     TestDataCommand,
     TestRunCommand,
     McpCommand,
-    IngestCommand,
-    IngestMetadataService,
     SMTPEMailService,
     ElasticEmailService,
     Msg91SMSService,
@@ -606,11 +587,6 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     PollerService,
     ErrorMapperService,
     SolidCoreErrorCodesProvider,
-
-    TriggerMcpClientPublisherDatabase,
-    TriggerMcpClientSubscriberDatabase,
-    TriggerMcpClientPublisherRabbitmq,
-    TriggerMcpClientSubscriberRabbitmq,
 
     SmtpEmailQueuePublisherRabbitmq,
     SmtpEmailQueueSubscriberRabbitmq,
@@ -692,8 +668,6 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     SmtpEmailQueueSubscriberRedis,
     Three60WhatsappQueuePublisherRedis,
     Three60WhatsappQueueSubscriberRedis,
-    TriggerMcpClientPublisherRedis,
-    TriggerMcpClientSubscriberRedis,
     TwilioSmsQueuePublisherRedis,
     TwilioSmsQueueSubscriberRedis,
     GenerateCodePublisherDatabase,
@@ -758,10 +732,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ComputedFieldEvaluationSubscriberRabbitmq,
     ConcatEntityComputedFieldProvider,
     UserActivityHistoryService,
-    AiInteractionService,
     NoopsEntityComputedFieldProviderService,
-
-    McpHandlerFactory,
 
     SolidTsMorphService,
 
@@ -782,7 +753,6 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     SmsFactory,
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,
-    AiInteractionRepository,
     EmailTemplateRepository,
     ExportTemplateRepository,
     ExportTransactionRepository,
@@ -818,7 +788,6 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     DashboardUserLayoutRepository,
   ],
   exports: [
-    AiInteractionService,
     AuthenticationService,
     ChatterMessageDetailsRepository,
     ChatterMessageDetailsService,

@@ -13,7 +13,6 @@ import { CreateSecurityRuleDto } from './dtos/create-security-rule.dto';
 import { FieldMetadata } from './entities/field-metadata.entity';
 import { Media } from './entities/media.entity';
 import { ComputedFieldMetadata } from './helpers/solid-registry';
-import { AiInteraction } from './entities/ai-interaction.entity';
 import { ActiveUserData } from './interfaces/active-user-data.interface';
 import { SecurityRuleConfig } from './dtos/security-rule-config.dto';
 import { SecurityRule } from './entities/security-rule.entity';
@@ -121,10 +120,6 @@ export interface CodeGenerationOptions {
   dryRun?: boolean;
 }
 
-export interface TriggerMcpClientOptions {
-  aiInteractionId: number;
-  moduleName: string;
-}
 
 export interface McpResponse {
   success: boolean;
@@ -196,9 +191,6 @@ export interface IDashboardWidgetDataProvider<
   ): Promise<IDashboardWidgetDataResponseEnvelope<TResponse> | any>;
 }
 
-export interface IMcpToolResponseHandler {
-  apply(aiInteraction: AiInteraction);
-}
 
 /**
  * @deprecated Use `IEntityComputedFieldProvider` instead.
