@@ -4,8 +4,6 @@ import { ActiveUser } from 'src/decorators/active-user.decorator';
 import { Public } from 'src/decorators/public.decorator';
 import { ErrorMapperService } from 'src/helpers/error-mapper.service';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
-import { AiInteractionService } from 'src/services/ai-interaction.service';
-import { IngestMetadataService } from 'src/services/genai/ingest-metadata.service';
 import { MqMessageService } from 'src/services/mq-message.service';
 import { SolidRegistry } from '../helpers/solid-registry';
 
@@ -22,10 +20,8 @@ export class ServiceController {
 
     constructor(
         private readonly solidRegistry: SolidRegistry,
-        private readonly aiInteractionService: AiInteractionService,
         private readonly mqMessageService: MqMessageService,
         private readonly errorMapper: ErrorMapperService,
-        private readonly ingestMetadataService: IngestMetadataService,
     ) { }
 
     @Public()

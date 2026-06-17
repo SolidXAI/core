@@ -4,7 +4,6 @@ import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { Auth } from "src/decorators/auth.decorator";
 import { AuthType } from "src/enums/auth-type.enum";
-import { IngestMetadataService } from "src/services/genai/ingest-metadata.service";
 
 export class SeedData {
   seeder: string;
@@ -16,7 +15,6 @@ export class TestController {
   private readonly logger = new Logger(TestController.name);
   constructor(
     private readonly solidRegistry: SolidRegistry,
-    private readonly ingestMetadataService: IngestMetadataService,
   ) { }
 
   @Auth(AuthType.None)
@@ -37,11 +35,4 @@ export class TestController {
     return { filename: file.originalname };
   }
 
-  @ApiBearerAuth("jwt")
-  @Post('mcp/ingest')
-  @UseInterceptors(FileInterceptor('file'))
-  async mcpIngest(@UploadedFile() file: Express.Multer.File, @Body() body: any) {
-    await this.ingestMetadataService.ingest();
-    return { ok: true };
-  }
 }
