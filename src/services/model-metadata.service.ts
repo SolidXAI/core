@@ -1590,7 +1590,21 @@ export class ModelMetadataService {
 
     const modelService: CRUDService<any> = modelServiceInstanceWrapper.instance;
 
-    const recs = await modelService.find(basicFilterDto);
+    const navigationFilter = { ...basicFilterDto };
+
+    // If the client does not send locale explicitly, infer it from the current
+    // record so locale-specific navigation stays inside the translated page.
+    if (!navigationFilter.locale) {
+      const currentRecord = await modelService.findOne(recordId, {
+        fields: ['id', 'localeName'],
+      });
+
+      if (currentRecord?.localeName) {
+        navigationFilter.locale = currentRecord.localeName;
+      }
+    }
+
+    const recs = await modelService.find(navigationFilter);
 
     // navigation only works for paginated results
     if (!('records' in recs) || !('currentPage' in recs.meta)) {
@@ -1635,7 +1649,7 @@ export class ModelMetadataService {
       const prevOffset = (meta.prevPage - 1) * meta.perPage;
 
       const prevPage = await modelService.find({
-        ...basicFilterDto,
+        ...navigationFilter,
         offset: prevOffset,
         limit,
       });
@@ -1665,7 +1679,7 @@ export class ModelMetadataService {
       const nextOffset = (meta.nextPage - 1) * meta.perPage;
 
       const nextPage = await modelService.find({
-        ...basicFilterDto,
+        ...navigationFilter,
         offset: nextOffset,
         limit,
       });
