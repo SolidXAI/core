@@ -54,11 +54,11 @@ export const getDynamicModuleNamesBasedOnMetadata = (): string[] => {
 
       if (!isValidDirectory) return false;
 
-      const moduleManifestPath = path.join(srcPath, dirent.name, `${dirent.name}.module.ts`);
-      const moduleManifestStats = fs.statSync(moduleManifestPath, { throwIfNoEntry: false });
-      if (!moduleManifestStats || !moduleManifestStats.isFile()) {
-        return false;
-      }
+      // const moduleManifestPath = path.join(srcPath, dirent.name, `${dirent.name}.module.ts`);
+      // const moduleManifestStats = fs.statSync(moduleManifestPath, { throwIfNoEntry: false });
+      // if (!moduleManifestStats || !moduleManifestStats.isFile()) {
+      //   return false;
+      // } // Commenting this out, since we want to rely solely on the presence of metadata files and be able to load this as a dynamic module
 
       const fullPath = path.join(srcPath, dirent.name, 'metadata', `${dirent.name}-metadata.json`);
 
