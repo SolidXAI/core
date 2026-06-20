@@ -309,7 +309,7 @@ export class AuthenticationService {
     if (signUpDto.roles && signUpDto.roles.length > 0) {
       for (let i = 0; i < signUpDto.roles.length; i++) {
         const roleName = signUpDto.roles[i];
-        await this.roleMetadataService.findRoleByName(roleName);
+        await this.roleMetadataService.assertRoleExistsByName(roleName);
       }
     }
     user.username = signUpDto.username;

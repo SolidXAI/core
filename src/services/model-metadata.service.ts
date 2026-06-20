@@ -24,6 +24,7 @@ import { ImportTransaction } from '../entities/import-transaction.entity';
 import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { UserViewMetadata } from '../entities/user-view-metadata.entity';
 import { PermissionMetadata } from '../entities/permission-metadata.entity';
+import { RoleMetadata } from '../entities/role-metadata.entity';
 import { ViewMetadata } from '../entities/view-metadata.entity';
 import { CommandService } from '../helpers/command.service';
 import {
@@ -37,7 +38,6 @@ import { CrudHelperService, FilterCombinator } from './crud-helper.service';
 import { CRUDService } from './crud.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
-import { RoleMetadataService } from './role-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { SolidTsMorphService } from './solid-ts-morph.service';
 
@@ -59,7 +59,6 @@ export class ModelMetadataService {
     private readonly crudHelperService: CrudHelperService,
     private readonly mediaStorageProviderMetadataService: MediaStorageProviderMetadataService,
     private readonly fieldMetadataService: FieldMetadataService,
-    private readonly roleService: RoleMetadataService,
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
     readonly introspectService: SolidIntrospectService,
     private readonly solidTsMorphService: SolidTsMorphService,
@@ -501,6 +500,27 @@ export class ModelMetadataService {
 
     // if found
     if (existingModelMetadata) {
+      const hasChanges = Object.entries(updateDto).some(([key, value]) => {
+        if (key === 'module' || key === 'parentModel' || key === 'userKeyField') {
+          return existingModelMetadata[key]?.id !== value?.id;
+        }
+        if (key === 'fields') {
+          return JSON.stringify(existingModelMetadata.fields ?? null) !== JSON.stringify(value ?? null);
+        }
+        const currentValue = existingModelMetadata[key];
+        if (Array.isArray(currentValue) || Array.isArray(value)) {
+          return JSON.stringify(currentValue ?? null) !== JSON.stringify(value ?? null);
+        }
+        if (value && typeof value === 'object') {
+          return JSON.stringify(currentValue ?? null) !== JSON.stringify(value ?? null);
+        }
+        return currentValue !== value;
+      });
+
+      if (!hasChanges) {
+        return existingModelMetadata;
+      }
+
       const updatedModelMetadata = { ...existingModelMetadata, ...updateDto };
       const updatedModel = await this.modelMetadataRepo.save(updatedModelMetadata);
       return updatedModel
@@ -635,22 +655,27 @@ export class ModelMetadataService {
     const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
     if (metaData) {
       const moduleMetadata = metaData?.moduleMetadata ?? metaData;
+      const vamMetadata =
+        Array.isArray(metaData?.views) || Array.isArray(metaData?.actions) || Array.isArray(metaData?.menus)
+          ? metaData
+          : moduleMetadata;
       const removedActionNameSet = new Set(removedActionNames);
       const removedMenuNameSet = new Set(removedMenuNames);
       const removedViewNameSet = new Set(removedViewNames);
 
-      const existingModelIndex = metaData.moduleMetadata.models.findIndex(
+      const existingModels = Array.isArray(moduleMetadata?.models) ? moduleMetadata.models : [];
+      const existingModelIndex = existingModels.findIndex(
         (existingModel: any) => existingModel.singularName === modelEntity.singularName
       );
 
       // Remove the model to be deleted from the metadata
       if (existingModelIndex !== -1) {
-        metaData.moduleMetadata.models.splice(existingModelIndex, 1);
+        existingModels.splice(existingModelIndex, 1);
       }
 
       // Remove references to this model in the menu, action & view sections.
-      const existingViews = Array.isArray(moduleMetadata?.views) ? moduleMetadata.views : [];
-      moduleMetadata.views = existingViews.filter((view: any) => {
+      const existingViews = Array.isArray(vamMetadata?.views) ? vamMetadata.views : [];
+      vamMetadata.views = existingViews.filter((view: any) => {
         const shouldRemove = view?.modelUserKey === modelEntity.singularName || removedViewNameSet.has(view?.name);
         if (shouldRemove && view?.name) {
           removedViewNameSet.add(view.name);
@@ -658,8 +683,8 @@ export class ModelMetadataService {
         return !shouldRemove;
       });
 
-      const existingActions = Array.isArray(moduleMetadata?.actions) ? moduleMetadata.actions : [];
-      moduleMetadata.actions = existingActions.filter((action: any) => {
+      const existingActions = Array.isArray(vamMetadata?.actions) ? vamMetadata.actions : [];
+      vamMetadata.actions = existingActions.filter((action: any) => {
         const shouldRemove =
           action?.modelUserKey === modelEntity.singularName ||
           removedActionNameSet.has(action?.name) ||
@@ -671,7 +696,7 @@ export class ModelMetadataService {
         return !shouldRemove;
       });
 
-      let pendingMenus = Array.isArray(moduleMetadata?.menus) ? [...moduleMetadata.menus] : [];
+      let pendingMenus = Array.isArray(vamMetadata?.menus) ? [...vamMetadata.menus] : [];
       let menuRemovedOnPass = true;
       while (menuRemovedOnPass) {
         menuRemovedOnPass = false;
@@ -693,7 +718,7 @@ export class ModelMetadataService {
           return true;
         });
       }
-      moduleMetadata.menus = pendingMenus;
+      vamMetadata.menus = pendingMenus;
 
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
@@ -1386,7 +1411,15 @@ export class ModelMetadataService {
       existingTreeViewAction = await actionRepo.save(createdTreeViewAction);
     }
 
-    const adminRole = await this.roleService.findRoleByName('Admin');
+    const roleRepo = this.dataSource.getRepository(RoleMetadata);
+    const adminRole = await roleRepo.findOne({
+      where: { name: 'Admin' },
+      select: { id: true, name: true }
+    });
+
+    if (!adminRole) {
+      throw new NotFoundException(`Entity #Admin not found`);
+    }
 
     const menuData = {
       displayName: `${model.displayName}`,
@@ -1394,7 +1427,6 @@ export class ModelMetadataService {
       sequenceNumber: 1,
       action: existingAction,
       module: resolvedModule,
-      roles: [adminRole],
       parentMenuItemUserKey: ""
     };
 
@@ -1402,7 +1434,12 @@ export class ModelMetadataService {
 
     if (!existingMenu) {
       const createdMenu = menuRepo.create(menuData);
-      await menuRepo.save(createdMenu);
+      existingMenu = await menuRepo.save(createdMenu);
+      await menuRepo
+        .createQueryBuilder()
+        .relation(MenuItemMetadata, 'roles')
+        .of(existingMenu.id)
+        .add(adminRole.id);
     }
   }
 

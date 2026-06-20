@@ -21,6 +21,7 @@ import { ModuleMetadataExplorerController } from "./controllers/module-metadata-
 import { ModuleMetadataController } from "./controllers/module-metadata.controller";
 import { ModulePackageController } from "./controllers/module-package.controller";
 import { DatasourceManagementController } from "./controllers/datasource-management.controller";
+import { DatasourceIntrospectionController } from "./controllers/datasource-introspection.controller";
 import { TestController } from "./controllers/test.controller";
 import { FieldMetadata } from "./entities/field-metadata.entity";
 import { ListOfValues } from "./entities/list-of-values.entity";
@@ -38,6 +39,7 @@ import { ModuleMetadataSeederService } from "./seeders/module-metadata-seeder.se
 import { ModuleTestDataService } from "./seeders/module-test-data.service";
 import { CrudHelperService } from "./services/crud-helper.service";
 import { DatasourceManagementService } from "./services/datasource-management.service";
+import { DatasourceIntrospectionService } from "./services/datasource-introspection.service";
 import { FieldMetadataService } from "./services/field-metadata.service";
 import { DashboardRuntimeService } from "./services/dashboard-runtime.service";
 import { ListOfValuesService } from "./services/list-of-values.service";
@@ -393,6 +395,9 @@ import { DashboardUserLayout } from './entities/dashboard-user-layout.entity';
 import { DashboardUserLayoutService } from './services/dashboard-user-layout.service';
 import { DashboardUserLayoutController } from './controllers/dashboard-user-layout.controller';
 import { DashboardUserLayoutRepository } from './repositories/dashboard-user-layout.repository';
+import { MssqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mssql-datasource-introspection-provider.service";
+import { MysqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mysql-datasource-introspection-provider.service";
+import { PostgresDatasourceIntrospectionProviderService } from "./services/datasource-introspection/postgres-datasource-introspection-provider.service";
 
 @Global()
 @Module({
@@ -480,6 +485,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     FieldMetadataController,
     DashboardController,
     DatasourceManagementController,
+    DatasourceIntrospectionController,
     GoogleAuthenticationController,
     FacebookAuthenticationController,
     MicrosoftAuthenticationController,
@@ -543,6 +549,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     },
     ModuleMetadataService,
     DatasourceManagementService,
+    DatasourceIntrospectionService,
     ModuleMetadataExplorerService,
     ModuleMetadataHelperService,
     ModulePackageService,
@@ -751,6 +758,9 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     CsvService,
     DatasourceManagementService,
     DashboardRuntimeService,
+    MssqlDatasourceIntrospectionProviderService,
+    MysqlDatasourceIntrospectionProviderService,
+    PostgresDatasourceIntrospectionProviderService,
     ImportTransactionService,
     ImportTransactionErrorLogService,
     CreatedByUpdatedBySubscriber,
@@ -855,6 +865,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ModelMetadataHelperService,
     ModelMetadataService,
     ModuleMetadataService,
+    DatasourceIntrospectionService,
     ModuleMetadataExplorerService,
     ModulePackageService,
     MqMessageQueueService,

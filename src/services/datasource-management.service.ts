@@ -5,7 +5,7 @@ import { CreateDatasourceManagementDto } from "src/dtos/create-datasource-manage
 import { DatasourceType } from "src/dtos/create-model-metadata.dto";
 import { SolidTsMorphService } from "./solid-ts-morph.service";
 
-type DatasourceRecord = {
+export type DatasourceRecord = {
     name: string;
     displayName: string;
     type: DatasourceType;
@@ -38,17 +38,7 @@ export class DatasourceManagementService {
     ) { }
 
     findMany() {
-        const solidApiRoot = this.resolveSolidApiRoot();
-        const envFilePath = join(solidApiRoot, ".env");
-        const envMap = this.parseEnvFile(envFilePath);
-        const datasourceFiles = this.getDatasourceModuleFiles(solidApiRoot);
-        const records = datasourceFiles
-            .map((moduleFilePath) => this.readDatasourceRecord(moduleFilePath, envMap, envFilePath))
-            .sort((left, right) => {
-                if (left.isDefault && !right.isDefault) return -1;
-                if (!left.isDefault && right.isDefault) return 1;
-                return left.displayName.localeCompare(right.displayName);
-            });
+        const records = this.listRecords();
 
         return {
             data: {
@@ -58,6 +48,30 @@ export class DatasourceManagementService {
                 },
             },
         };
+    }
+
+    listRecords() {
+        const solidApiRoot = this.resolveSolidApiRoot();
+        const envFilePath = join(solidApiRoot, ".env");
+        const envMap = this.parseEnvFile(envFilePath);
+        const datasourceFiles = this.getDatasourceModuleFiles(solidApiRoot);
+
+        return datasourceFiles
+            .map((moduleFilePath) => this.readDatasourceRecord(moduleFilePath, envMap, envFilePath))
+            .sort((left, right) => {
+                if (left.isDefault && !right.isDefault) return -1;
+                if (!left.isDefault && right.isDefault) return 1;
+                return left.displayName.localeCompare(right.displayName);
+            });
+    }
+
+    findOneByName(name: string) {
+        const normalizedName = name?.trim().toLowerCase();
+        if (!normalizedName) {
+            return null;
+        }
+
+        return this.listRecords().find((record) => record.name.toLowerCase() === normalizedName) ?? null;
     }
 
     async create(createDto: CreateDatasourceManagementDto) {
