@@ -83,7 +83,7 @@ export class ScheduledJobSubscriber
       return;
     }
 
-    const moduleMetadataRepo = this.dataSource.getRepository(ModuleMetadata);
+    const moduleMetadataRepo = event.queryRunner.manager.getRepository(ModuleMetadata);
     const populatedModuleMetadata = await moduleMetadataRepo.findOne({
       where: { id: moduleMetadata.id },
     });

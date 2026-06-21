@@ -40,7 +40,7 @@ export class SecurityRuleSubscriber implements EntitySubscriberInterface<Securit
             return;
         }
 
-        const modelMetadataRepo = this.dataSource.getRepository(ModelMetadata);
+        const modelMetadataRepo = event.manager.getRepository(ModelMetadata);
         const populatedModelMetadata = await modelMetadataRepo.findOne({
             where: {
                 id: modelMetadata.id
