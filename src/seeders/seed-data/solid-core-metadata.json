@@ -5244,6 +5244,13 @@
       }
     ]
   },
+  "locales": [
+    {
+      "locale": "en",
+      "displayName": "English",
+      "isDefault": true
+    }
+  ],
   "permissions": [
     "mcp:invoke",
     "agent:invoke",
