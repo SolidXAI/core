@@ -53,7 +53,7 @@ import { SmsFactory } from "src/factories/sms.factory";
 import { WhatsAppFactory } from "src/factories/whatsapp.factory";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { UserDeviceMetadataDto } from "src/dtos/user-device-metadata.dto";
-import { PushNotificationService } from "./push-notification.service";
+import { PushNotificationService } from "./push/push-notification.service";
 
 enum LoginProvider {
   LOCAL = "local",

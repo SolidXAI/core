@@ -372,7 +372,7 @@ import { SqlExpressionResolverService } from "./services/sql-expression-resolver
 import { TextractService } from "./services/textract.service";
 import { UserActivityHistoryService } from "./services/user-activity-history.service";
 import { UserDeviceMetadataService } from "./services/user-device-metadata.service";
-import { PushNotificationService } from "./services/push-notification.service";
+import { PushNotificationService } from "./services/push/push-notification.service";
 import { UserViewMetadataService } from "./services/user-view-metadata.service";
 import { UserService } from "./services/user.service";
 import { Three60WhatsappService } from "./services/whatsapp/Three60WhatsappService";
@@ -403,13 +403,6 @@ import { CacheManagerOptions } from "./config/cache.options";
 import { SolidCoreDefaultSettingsProvider } from "./services/settings/default-settings-provider.service";
 import { SmsFactory } from "./factories/sms.factory";
 import { WhatsAppFactory } from "./factories/whatsapp.factory";
-import { AmazonSnsPushNotificationQueuePublisherDatabase } from "./jobs/database/amazon-sns-push-notification-publisher-database.service";
-import { AmazonSnsPushNotificationQueueSubscriberDatabase } from "./jobs/database/amazon-sns-push-notification-subscriber-database.service";
-import { AmazonSnsPushNotificationQueuePublisherRabbitmq } from "./jobs/rabbitmq/amazon-sns-push-notification-publisher.service";
-import { AmazonSnsPushNotificationQueueSubscriberRabbitmq } from "./jobs/rabbitmq/amazon-sns-push-notification-subscriber.service";
-import { AmazonSnsPushNotificationQueuePublisherRedis } from "./jobs/redis/amazon-sns-push-notification-publisher-redis.service";
-import { AmazonSnsPushNotificationQueueSubscriberRedis } from "./jobs/redis/amazon-sns-push-notification-subscriber-redis.service";
-import { AmazonSNSPushNotificationService } from "./services/push/amazon-sns-push-notification.service";
 import { ImageEncodingService } from "./helpers/image-encoding.helper";
 import { SolidMicroserviceAdapter } from "./helpers/solid-microservice-adapter.service";
 import { InfoCommand } from "./commands/info.command";
@@ -628,7 +621,6 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     MetaCloudWhatsappService,
     GupshupOtpWhatsappService,
     TwilioSMSService,
-    AmazonSNSPushNotificationService,
     PushNotificationService,
     SmsTemplateService,
     PushNotificationTemplateService,
@@ -659,8 +651,6 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     TwilioSmsQueueSubscriberDatabase,
     TwilioSmsQueuePublisherRabbitmq,
     TwilioSmsQueueSubscriberRabbitmq,
-    AmazonSnsPushNotificationQueuePublisherRabbitmq,
-    AmazonSnsPushNotificationQueueSubscriberRabbitmq,
     Msg91OTPQueuePublisher,
     Msg91OTPQueueSubscriber,
     OTPQueuePublisherDatabase,
@@ -729,8 +719,6 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     TriggerMcpClientSubscriberRedis,
     TwilioSmsQueuePublisherRedis,
     TwilioSmsQueueSubscriberRedis,
-    AmazonSnsPushNotificationQueuePublisherRedis,
-    AmazonSnsPushNotificationQueueSubscriberRedis,
     GenerateCodePublisherDatabase,
     GenerateCodeSubscriberDatabase,
     GenerateCodePublisherRabbitmq,
@@ -869,8 +857,6 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     ImageEncodingService,
     SolidMicroserviceAdapter,
     ListOfRolesSelectionProvider,
-    AmazonSnsPushNotificationQueuePublisherDatabase,
-    AmazonSnsPushNotificationQueueSubscriberDatabase,
   ],
   exports: [
     AiInteractionService,
@@ -928,7 +914,6 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     TextractService,
     TinyUrlService,
     TwilioSMSService,
-    AmazonSNSPushNotificationService,
     PushNotificationService,
     TypeOrmModule,
     UserActivityHistoryService,

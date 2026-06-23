@@ -274,15 +274,6 @@ export * from "./jobs/redis/trigger-mcp-client-subscriber-redis.service";
 export * from "./jobs/redis/twilio-sms-publisher-redis.service";
 export * from "./jobs/redis/twilio-sms-queue-options-redis";
 export * from "./jobs/redis/twilio-sms-subscriber-redis.service";
-export * from "./jobs/rabbitmq/amazon-sns-push-notification-publisher.service";
-export * from "./jobs/rabbitmq/amazon-sns-push-notification-queue-options";
-export * from "./jobs/rabbitmq/amazon-sns-push-notification-subscriber.service";
-export * from "./jobs/redis/amazon-sns-push-notification-publisher-redis.service";
-export * from "./jobs/redis/amazon-sns-push-notification-queue-options-redis";
-export * from "./jobs/redis/amazon-sns-push-notification-subscriber-redis.service";
-export * from "./jobs/database/amazon-sns-push-notification-publisher-database.service";
-export * from "./jobs/database/amazon-sns-push-notification-queue-options-database";
-export * from "./jobs/database/amazon-sns-push-notification-subscriber-database.service";
 
 export * from "./listeners/user-registration.listener";
 
@@ -339,8 +330,7 @@ export * from "./services/sms/Msg91BaseSMSService"; //rename
 export * from "./services/sms/Msg91OTPService"; //rename
 export * from "./services/sms/Msg91SMSService"; //rename
 export * from "./services/sms/TwilioSMSService"; //rename
-export * from "./services/push/amazon-sns-push-notification.service";
-export * from "./services/push-notification.service";
+export * from "./services/push/push-notification.service";
 export * from "./services/poller.service";
 export * from "./services/sms-template.service";
 export * from "./services/push-notification-template.service";
