@@ -1,12 +1,14 @@
 import { Injectable, Logger, Scope } from '@nestjs/common';
+import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { lowerFirst } from 'src/helpers/string.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { DataSource, EntityMetadata, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
 import { AuditQueuePayload } from 'src/interfaces';
 import { RequestContextService } from 'src/services/request-context.service';
 import { PublisherFactory } from 'src/services/queues/publisher-factory.service';
+const AUDIT_BEFORE_SNAPSHOT = '__auditBeforeSnapshot';
 
-@Injectable({scope: Scope.TRANSIENT})
+@Injectable({ scope: Scope.TRANSIENT })
 export class AuditSubscriber implements EntitySubscriberInterface {
     private readonly logger = new Logger(AuditSubscriber.name);
     private dataSource: DataSource;
@@ -14,6 +16,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         private readonly publisherFactory: PublisherFactory<AuditQueuePayload>,
         private readonly solidRegistry: SolidRegistry,
         private readonly requestContextService: RequestContextService,
+        private readonly modelMetadataHelperService: ModelMetadataHelperService,
     ) { }
 
     bindToDataSource(dataSource: DataSource) {
@@ -53,16 +56,67 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
     async afterUpdate(event: UpdateEvent<any>) {
         if (!this.shouldTrackAudit(event.metadata)) return;
+        const entityId = event.entity?.id ?? event.databaseEntity?.id ?? (event as any).entityId ?? null;
+        let before = event.databaseEntity ?? null;
+        let after = event.entity ?? null;
+        const updatedColumnNames = (event.updatedColumns ?? []).map(c => c.propertyName);
+
+        const auditRelationFields = (await this.modelMetadataHelperService.loadFieldHierarchy(lowerFirst(event.metadata.name))).filter(field =>
+            field.enableAuditTracking &&
+            field.type === 'relation' &&
+            field.relationType !== 'one-to-many'
+        );
+        if (entityId && auditRelationFields.length > 0) {
+            const relations: any = {};
+            auditRelationFields.forEach(field => relations[field.name] = true);
+            const relationBefore = event.entity?.[AUDIT_BEFORE_SNAPSHOT] ?? null;
+            const relationAfter = await event.manager.getRepository(event.metadata.target as any).findOne({
+                where: { id: entityId } as any,
+                relations: relations as any,
+            });
+
+            if (relationBefore) {
+                before = relationBefore;
+            }
+            if (relationAfter) {
+                after = relationAfter;
+            }
+
+            if (relationBefore && relationAfter) {
+                auditRelationFields.forEach(field => {
+                    if (field.relationType === 'many-to-one') {
+                        const oldId = relationBefore[field.name]?.id ?? null;
+                        const newId = relationAfter[field.name]?.id ?? null;
+                        if (oldId !== newId && !updatedColumnNames.includes(field.name)) {
+                            updatedColumnNames.push(field.name);
+                        }
+                    }
+                    else if (field.relationType === 'many-to-many') {
+                        const oldIds = Array.isArray(relationBefore[field.name])
+                            ? relationBefore[field.name].map(item => item.id).sort()
+                            : [];
+
+                        const newIds = Array.isArray(relationAfter[field.name])
+                            ? relationAfter[field.name].map(item => item.id).sort()
+                            : [];
+                        if ((oldIds.length !== newIds.length || JSON.stringify(oldIds) !== JSON.stringify(newIds)) && !updatedColumnNames.includes(field.name)) {
+                            updatedColumnNames.push(field.name);
+                        }
+                    }
+                });
+            }
+        }
+
         this.enqueue(event, {
             eventType: 'update',
             modelName: event.metadata.name,
-            entityId: event.entity?.id ?? null,
+            entityId: entityId,
             occurredAt: new Date().toISOString(),
-            after: event.entity ?? null,
+            after: after,
             // databaseEntity is only populated when the entity was fetched first (save() path).
             // QueryBuilder update() leaves this undefined; postAuditMessageOnUpdate guards for it.
-            before: event.databaseEntity ?? null,
-            updatedColumnNames: (event.updatedColumns ?? []).map(c => c.propertyName),
+            before: before,
+            updatedColumnNames: updatedColumnNames,
             userId: this.activeUserId(),
         });
     }

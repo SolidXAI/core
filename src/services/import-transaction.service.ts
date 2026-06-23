@@ -194,6 +194,11 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
 
     // Iterate through the fields and populate the standard instructions
     for (const field of allFields) {
+
+      // Skip Computed fields
+      if (field.type === SolidFieldType.computed) {
+        continue;
+      }
       // Skip system fields
       if (systemFieldNames.includes(field.name)) {
         continue;

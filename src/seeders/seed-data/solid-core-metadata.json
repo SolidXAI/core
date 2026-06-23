@@ -8987,12 +8987,15 @@
             48
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
+          "create": false,
+          "edit": false,
           "delete": true,
+          "import": false,
+          "export": false,
           "allowedViews": [
             "list",
-            "card"
+            "card",
+            "tree"
           ]
         },
         "children": [
@@ -9253,7 +9256,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -10345,15 +10354,11 @@
           "swimlanesCount": 5,
           "recordsInSwimlane": 10,
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
           "groupBy": "stage",
-          "draggable": false,
-          "allowedViews": [
-            "list",
-            "kanban"
-          ]
+          "draggable": false
         },
         "children": [
           {
@@ -12179,7 +12184,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -13991,7 +14000,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": true,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14066,7 +14081,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14150,7 +14171,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14212,7 +14239,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14281,7 +14314,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": true,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14351,7 +14390,14 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": true,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "card",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14417,11 +14463,14 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": false,
-          "edit": false,
-          "delete": false,
-          "import": false,
-          "export": false
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "import": true,
+          "export": true,
+          "allowedViews": [
+            "list"
+          ]
         },
         "children": [
           {
@@ -14456,7 +14505,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14518,7 +14571,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14587,7 +14644,11 @@
           "edit": true,
           "delete": true,
           "import": true,
-          "export": true
+          "export": true,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14647,7 +14708,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14707,7 +14772,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14777,7 +14846,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14846,7 +14919,12 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true
+          "delete": true,
+          "import": true,
+          "export": true,
+          "allowedViews": [
+            "list"
+          ]
         },
         "children": [
           {

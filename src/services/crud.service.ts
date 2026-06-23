@@ -34,6 +34,7 @@ import { SelectionDynamicFieldCrudManager } from "../helpers/field-crud-managers
 import { SelectionStaticFieldCrudManager } from "../helpers/field-crud-managers/SelectionStaticFieldCrudManager";
 import { ShortTextFieldCrudManager } from "../helpers/field-crud-managers/ShortTextFieldCrudManager";
 import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCrudManager";
+import { ModelMetadataHelperService } from "src/helpers/model-metadata-helper.service";
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
 import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper.service";
 import { HashingService } from "./hashing.service";
@@ -42,6 +43,7 @@ import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { RequestContextService } from "./request-context.service";
 
+const AUDIT_BEFORE_SNAPSHOT = '__auditBeforeSnapshot';
 
 export class CRUDService<T extends CommonEntity> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
 
@@ -211,6 +213,31 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         if (model.draftPublishWorkflow === true && entity.publishedAt) {
             throw new BadRequestException(`Cannot update a published record for model ${this.modelName}. Unpublish it first.`
             );
+        }
+
+        const modelMetadataHelperService = this.moduleRef.get(ModelMetadataHelperService, { strict: false });
+        const auditRelationFields = (await modelMetadataHelperService.loadFieldHierarchy(model.singularName)).filter(field =>
+            field.enableAuditTracking &&
+            field.type === 'relation' &&
+            field.relationType !== 'one-to-many'
+        );
+        if (auditRelationFields.length > 0) {
+            const relations: any = {};
+            auditRelationFields.forEach(field => relations[field.name] = true);
+            const auditBeforeEntity = await this.repo.findOne({
+                where: {
+                    id: id,
+                } as unknown as FindOptionsWhere<T>,
+                relations: relations as any,
+            });
+            if (auditBeforeEntity) {
+                Object.defineProperty(entity, AUDIT_BEFORE_SNAPSHOT, {
+                    configurable: true,
+                    enumerable: false,
+                    value: auditBeforeEntity,
+                    writable: true,
+                });
+            }
         }
 
         // // In some instances for legacy tables sometimes id is mapped as a bigint. 
