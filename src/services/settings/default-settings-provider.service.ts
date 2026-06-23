@@ -782,7 +782,8 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "otpWhatsappFallbackEnabled",
-      value: (process.env.IAM_OTP_WHATSAPP_FALLBACK_ENABLED ?? "true") === "true",
+      value:
+        (process.env.IAM_OTP_WHATSAPP_FALLBACK_ENABLED ?? "true") === "true",
       level: SettingLevel.SystemAdminEditable,
       label: "OTP WhatsApp Fallback Enabled",
       group: "authentication-settings",
@@ -802,7 +803,8 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "otpWhatsappIndependentEnabled",
-      value: (process.env.IAM_OTP_WHATSAPP_INDEPENDENT_ENABLED ?? "true") === "true",
+      value:
+        (process.env.IAM_OTP_WHATSAPP_INDEPENDENT_ENABLED ?? "true") === "true",
       level: SettingLevel.SystemAdminEditable,
       label: "OTP WhatsApp Independent Enabled",
       group: "authentication-settings",
@@ -1158,9 +1160,11 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
-      key: "shouldQueuePush",
-      value: (process.env.COMMON_PUSH_SHOULD_QUEUE ?? "false") === "true",
-      level: SettingLevel.SystemAdminReadonly,
+      key: "shouldQueuePushNotifications",
+      value:
+        (process.env.COMMON_PUSH_NOTIFICATION_SHOULD_QUEUE ?? "false") ===
+        "true",
+      level: SettingLevel.SystemAdminEditable,
       label: "Queue Push Notifications",
       group: "push-settings",
       sortOrder: 20,
@@ -1169,9 +1173,8 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "pushNotificationTarget",
-      value:
-        process.env.COMMON_PUSH_NOTIFICATION_TARGET ?? "latest-device",
-      level: SettingLevel.SystemAdminReadonly,
+      value: process.env.COMMON_PUSH_NOTIFICATION_TARGET ?? "latest-device",
+      level: SettingLevel.SystemAdminEditable,
       label: "Push Notification Target",
       group: "push-settings",
       sortOrder: 30,
@@ -1182,37 +1185,6 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "Primary Device", value: "primary-device" },
       ],
     },
-    {
-      moduleName: "solid-core",
-      key: "awsSnsAccessKeyId",
-      value: process.env.AWS_SNS_ACCESS_KEY_ID,
-      level: SettingLevel.SystemEnv,
-    },
-    {
-      moduleName: "solid-core",
-      key: "awsSnsSecretAccessKey",
-      value: process.env.AWS_SNS_SECRET_ACCESS_KEY,
-      level: SettingLevel.SystemEnv,
-    },
-    {
-      moduleName: "solid-core",
-      key: "awsSnsRegion",
-      value: process.env.AWS_SNS_REGION,
-      level: SettingLevel.SystemEnv,
-    },
-    {
-      moduleName: "solid-core",
-      key: "awsFcmPlatformArn",
-      value: process.env.AWS_FCM_PLATFORM_ARN,
-      level: SettingLevel.SystemEnv,
-    },
-    {
-      moduleName: "solid-core",
-      key: "awsApnsPlatformArn",
-      value: process.env.AWS_APNS_PLATFORM_ARN,
-      level: SettingLevel.SystemEnv,
-    },
-
     // tiny-url-settings-provider.service.ts
     {
       moduleName: "solid-core",
@@ -1291,7 +1263,9 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "metaWhatsappApiUrl",
-      value: process.env.COMMON_META_WHATSAPP_API_URL || "https://graph.facebook.com",
+      value:
+        process.env.COMMON_META_WHATSAPP_API_URL ||
+        "https://graph.facebook.com",
       level: SettingLevel.SystemAdminReadonly,
       label: "Meta WhatsApp API URL",
       group: "whatsapp-settings",
