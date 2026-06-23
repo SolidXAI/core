@@ -11,6 +11,7 @@ export class ChatterMessage extends CommonEntity {
     @Column({ type: "varchar" })
     messageType: string; // audit | custom 
 
+    @Index()
     @Column({ type: "varchar" })
     messageSubType: string; // audit_update | audit_insert | audit_delete | custom | note | task
 
@@ -33,6 +34,7 @@ export class ChatterMessage extends CommonEntity {
     @OneToMany(() => ChatterMessageDetails, (chatterMessageDetails) => chatterMessageDetails.chatterMessage, { cascade: true })
     chatterMessageDetails: ChatterMessageDetails[];
 
+    @Index()
     @Column({ nullable: true })
     modelDisplayName: string;
 

@@ -9,7 +9,7 @@ import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { ActiveUser } from 'src/decorators/active-user.decorator';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 
-@ApiTags('App Builder')
+@ApiTags('Solid Core')
 @Controller('view-metadata') //FIXME: Change this to the model plural name 
 export class ViewMetadataController {
   constructor(private readonly service: ViewMetadataService) { }

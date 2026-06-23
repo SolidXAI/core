@@ -21,10 +21,20 @@ export class StandardImportInstructionsResponseDto {
     })
     dateFields: string[];
     @ApiProperty({
+        type: String,
+        description: 'Expected format for date fields during import',
+    })
+    dateFieldFormat: string;
+    @ApiProperty({
         type: [String],
         description: 'List of date-time fields for import',
     })
     dateTimeFields: string[];
+    @ApiProperty({
+        type: String,
+        description: 'Expected format for date-time fields during import',
+    })
+    dateTimeFieldFormat: string;
     @ApiProperty({
         type: [String],
         description: 'List of number fields for import',

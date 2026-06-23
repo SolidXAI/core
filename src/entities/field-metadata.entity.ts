@@ -8,10 +8,11 @@ import { ERROR_MESSAGES } from "src/constants/error-messages";
 @Entity("ss_field_metadata")
 export class FieldMetadata extends CommonEntity {
 
-    // @Index({ unique: true })
+    @Index()
     @Column({ name: "name" })
     name: string;
 
+    @Index()
     @Column({ name: "display_name" })
     displayName: string;
 
@@ -19,6 +20,7 @@ export class FieldMetadata extends CommonEntity {
     description: string;
 
     /** int, char etc... */
+    @Index()
     @Column({ name: 'type' })
     type: string;
 
@@ -75,6 +77,7 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'media_max_size_kb', nullable: true })
     mediaMaxSizeKb: number;
 
+    @Index()
     @ManyToOne(() => MediaStorageProviderMetadata, { onDelete: 'SET NULL' })
     @JoinColumn({ name: 'media_storage_provider_id' })
     mediaStorageProvider: MediaStorageProviderMetadata;

@@ -25,8 +25,9 @@ import { SolidIntrospectService } from './solid-introspect.service';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { getUserExcludedFields } from 'src/helpers/user-helper';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
-import {upperFirst, camelCase} from 'lodash';
+import { upperFirst, camelCase } from 'lodash';
 import { classify } from '../helpers/string.helper';
+import type { SolidCoreSetting } from './settings/default-settings-provider.service';
 
 interface ImportTemplateFileInfo {
   stream: NodeJS.ReadableStream;
@@ -180,11 +181,20 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     // Replace modelMetadata.fields with combined (child + parent) fields
     // modelMetadata.fields = allFields;
 
+    const dateFieldFormat =
+      (this.settingService.getConfigValue<SolidCoreSetting>('dateFormat') as string | null) ??
+      'YYYY-MM-DD';
+    const dateTimeFieldFormat =
+      (this.settingService.getConfigValue<SolidCoreSetting>('dateTimeFormat') as string | null) ??
+      'YYYY-MM-DD HH:mm:ss';
+
     // Create the standard import instructions
     const standardInstructions: StandardImportInstructionsResponseDto = {
       requiredFields: [],
       dateFields: [],
+      dateFieldFormat,
       dateTimeFields: [],
+      dateTimeFieldFormat,
       numberFields: [],
       emailFields: [],
       regexFields: [],
@@ -557,7 +567,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         const createdRecord = await this.insertRecord(record, JSON.parse(importTransaction.mapping) as ImportMapping[], importTransaction.modelMetadata, modelService);
         ids.push(createdRecord.id); // Add the ID of the created record to the ids array
       }
-      catch (error) {
+      catch (error: any) {
         this.logger.debug(`Error inserting record: ${JSON.stringify(record)}. Error: ${error.message}`);
         // Get the Import transaction error log repo
         const errorLog = await this.createErrorLogEntry(importTransaction, record, error);

@@ -3,6 +3,7 @@ import { Entity, JoinColumn, ManyToOne, Column, Index } from 'typeorm';
 import { User } from 'src/entities/user.entity'
 @Entity("ss_user_activity_history")
 export class UserActivityHistory extends CommonEntity {
+    @Index()
     @ManyToOne(() => User, { nullable: true })
     @JoinColumn()
     user: User;

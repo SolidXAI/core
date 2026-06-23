@@ -19,11 +19,12 @@ import { ModelMetadataService } from 'src/services/model-metadata.service';
 import { RoleMetadataService } from 'src/services/role-metadata.service';
 import { UserService } from 'src/services/user.service';
 import { getMediaStorageProvider } from 'src/services/mediaStorageProviders';
-import { TestingRoleSpec, TestingUserSpec } from 'src/testing/contracts/testing-metadata.types';
+import { TestingDataRecord, TestingRoleSpec, TestingUserSpec } from 'src/testing/contracts/testing-metadata.types';
 
 @Injectable()
 export class ModuleTestDataService {
   private readonly logger = new Logger(ModuleTestDataService.name);
+  private static readonly TEARDOWN_RETRY_ATTEMPTS = 5;
 
   constructor(
     private readonly moduleRef: ModuleRef,
@@ -47,6 +48,25 @@ export class ModuleTestDataService {
       console.log(`Processing test data for module: ${moduleName}`);
       await this.seedTestData(overallMetadata);
       console.log(`✔ Test data setup complete for module: ${moduleName}`);
+    }
+  }
+
+  async removeTestData(modulesToTest?: string[]): Promise<void> {
+    const testDataFiles = this.testDataFiles;
+    const filteredFiles = modulesToTest?.length ? testDataFiles.filter((file) => modulesToTest.includes(file.moduleMetadata?.name)) : testDataFiles;
+
+    if (filteredFiles.length === 0) {
+      this.logger.warn('No modules matched the provided modulesToTest list.');
+      console.log('No modules matched the provided modulesToTest list.');
+      return;
+    }
+
+    for (const overallMetadata of filteredFiles) {
+      const moduleName = overallMetadata?.moduleMetadata?.name ?? 'unknown';
+      this.logger.log(`Removing test data for module: ${moduleName}`);
+      console.log(`Removing test data for module: ${moduleName}`);
+      await this.unlinkTestData(overallMetadata);
+      console.log(`✔ Test data unlink complete for module: ${moduleName}`);
     }
   }
 
@@ -176,7 +196,7 @@ export class ModuleTestDataService {
     const testDataFiles = [typedSolidCoreMetadata];
     const enabledModules = getDynamicModuleNamesBasedOnMetadata();
     for (const enabledModule of enabledModules) {
-      const enabledModuleSeedFile = `module-metadata/${enabledModule}/${enabledModule}-metadata.json`;
+      const enabledModuleSeedFile = `src/${enabledModule}/metadata/${enabledModule}-metadata.json`;
       const fullPath = path.join(process.cwd(), enabledModuleSeedFile);
 
       if (fs.existsSync(fullPath)) {
@@ -198,7 +218,7 @@ export class ModuleTestDataService {
 
     const testingRoles: TestingRoleSpec[] = overallMetadata?.testing?.roles ?? [];
     const testingUsers: TestingUserSpec[] = overallMetadata?.testing?.users ?? [];
-    const testingData: Array<{ modelUserKey: string; data: Record<string, any> }> = overallMetadata?.testing?.data ?? [];
+    const testingData: TestingDataRecord[] = overallMetadata?.testing?.data ?? [];
 
     if (testingRoles.length > 0) {
       await this.seedTestRoles(testingRoles);
@@ -289,16 +309,21 @@ export class ModuleTestDataService {
       // Upsert entity, capturing the saved result for post-save steps
       let savedEntity: any;
       const userKeyField = modelDef.userKeyFieldUserKey;
+      const recordUserKeyValue = entry.recUserKeyValue ?? payload[userKeyField];
+      const recordLabel = `${modelUserKey}.${userKeyField}=${recordUserKeyValue}`;
       if (userKeyField && payload[userKeyField] !== undefined) {
         const existing = await entityRepo.findOne({
           where: { [userKeyField]: payload[userKeyField] },
         });
         if (existing) {
+          console.log(`Updating test data record: ${recordLabel}`);
           savedEntity = await entityRepo.save(entityRepo.merge(existing, payload));
         } else {
+          console.log(`Creating test data record: ${recordLabel}`);
           savedEntity = await entityRepo.save(entityRepo.create(payload));
         }
       } else {
+        console.log(`Creating test data record without user key lookup: ${modelUserKey}`);
         savedEntity = await entityRepo.save(entityRepo.create(payload));
       }
 
@@ -309,6 +334,59 @@ export class ModuleTestDataService {
       if (Object.keys(mediaPayload).length > 0) {
         await this.seedEntityMedia(savedEntity.id, modelUserKey, mediaPayload);
       }
+    }
+  }
+
+  private async unlinkTestData(overallMetadata: any): Promise<void> {
+    const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
+    if (!moduleMetadata) {
+      throw new Error('Module metadata missing from test data payload.');
+    }
+
+    const testingData: TestingDataRecord[] = overallMetadata?.testing?.data ?? [];
+    if (testingData.length === 0) {
+      this.logger.debug(`No test data found for ${moduleMetadata.name}`);
+      return;
+    }
+
+    const modelsByName = new Map<string, CreateModelMetadataDto>(
+      (moduleMetadata.models ?? []).map((m) => [m.singularName, m]),
+    );
+
+    for (const entry of [...testingData].reverse()) {
+      const modelUserKey = entry.modelUserKey;
+      const modelDef = modelsByName.get(modelUserKey);
+      if (!modelDef) {
+        throw new Error(`Test data modelUserKey not found in metadata: ${modelUserKey}`);
+      }
+
+      const userKeyField = modelDef.userKeyFieldUserKey;
+      if (!userKeyField) {
+        throw new Error(`Cannot unlink test data for model ${modelUserKey} because userKeyFieldUserKey is not configured.`);
+      }
+
+      const userKeyValue = entry.data?.[userKeyField];
+      if (userKeyValue === undefined || userKeyValue === null || userKeyValue === '') {
+        throw new Error(
+          `Cannot unlink test data for model ${modelUserKey} because testing.data entry is missing the actual user key field "${userKeyField}" in data.`,
+        );
+      }
+      const recordLabel = `${modelUserKey}.${userKeyField}=${userKeyValue}`;
+
+      const entityRepo = this.resolveRepository(modelUserKey);
+      const existing = typeof entityRepo.findOneByUserKey === 'function'
+        ? await entityRepo.findOneByUserKey(userKeyValue)
+        : await entityRepo.findOne({ where: { [userKeyField]: userKeyValue } });
+
+      if (!existing) {
+        console.log(`Skipping unlink; test data record not found: ${recordLabel}`);
+        this.logger.debug(`Test data record not found for unlink: ${modelUserKey}.${userKeyField}=${userKeyValue}`);
+        continue;
+      }
+
+      console.log(`Deleting test data record: ${recordLabel}`);
+      await entityRepo.remove(existing);
+      this.logger.debug(`Removed test data record: ${modelUserKey}.${userKeyField}=${userKeyValue}`);
     }
   }
 
@@ -665,29 +743,120 @@ export class ModuleTestDataService {
   private async dropTestDatabaseObjects(databases: Record<string, string>): Promise<void> {
     const entries = Object.entries(databases);
     for (const [dsName, dbName] of entries) {
-      const dataSource = this.resolveDataSourceByName(dsName);
-      if (!dataSource.isInitialized) {
-        await dataSource.initialize();
-      }
+      await this.dropTestDatabaseObjectsWithRetry(dsName, dbName);
+    }
+  }
 
-      console.log(`Dropping test database/schema "${dbName}" on datasource "${dsName}"...`);
+  private async dropTestDatabaseObjectsWithRetry(dsName: string, dbName: string): Promise<void> {
+    let lastError: unknown;
 
-      const queryRunner = dataSource.createQueryRunner();
+    for (let attempt = 1; attempt <= ModuleTestDataService.TEARDOWN_RETRY_ATTEMPTS; attempt += 1) {
+      console.log(`Attempting to tear down "${dbName}" on datasource "${dsName}" (${attempt}/${ModuleTestDataService.TEARDOWN_RETRY_ATTEMPTS})...`);
+
       try {
-        const type = dataSource.options.type;
-        if (type === 'postgres') {
-          await queryRunner.query(`DROP DATABASE IF EXISTS "${dbName}"`);
-        } else if (type === 'mssql') {
-          await this.dropMssqlSchema(queryRunner, dbName);
-        } else if (type === 'mysql' || type === 'mariadb') {
-          await queryRunner.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
-        } else {
-          throw new Error(`Unsupported database type for test data deletion: ${type}`);
+        await this.dropSingleTestDatabaseObject(dsName, dbName);
+        return;
+      } catch (error) {
+        lastError = error;
+        if (attempt >= ModuleTestDataService.TEARDOWN_RETRY_ATTEMPTS) {
+          throw error;
         }
+
+        await this.sleep(this.teardownRetryDelayMs(attempt));
+      }
+    }
+
+    throw lastError instanceof Error ? lastError : new Error(String(lastError));
+  }
+
+  private teardownRetryDelayMs(attempt: number): number {
+    const baseMs = 500;
+    const incrementMs = 350;
+    const jitterMs = Math.floor(Math.random() * 250);
+    return baseMs + ((attempt - 1) * incrementMs) + jitterMs;
+  }
+
+  private async sleep(ms: number): Promise<void> {
+    await new Promise((resolve) => setTimeout(resolve, ms));
+  }
+
+  private async dropSingleTestDatabaseObject(dsName: string, dbName: string): Promise<void> {
+    const dataSource = this.resolveDataSourceByName(dsName);
+
+    if (dataSource.options.type === 'postgres') {
+      await this.dropPostgresDatabase(dataSource, dbName);
+      return;
+    }
+
+    if (!dataSource.isInitialized) {
+      await dataSource.initialize();
+    }
+
+    const queryRunner = dataSource.createQueryRunner();
+    try {
+      const type = dataSource.options.type;
+      if (type === 'mssql') {
+        await this.dropMssqlSchema(queryRunner, dbName);
+      } else if (type === 'mysql' || type === 'mariadb') {
+        await queryRunner.query(`DROP DATABASE IF EXISTS \`${dbName}\``);
+      } else {
+        throw new Error(`Unsupported database type for test data deletion: ${type}`);
+      }
+    } finally {
+      await queryRunner.release();
+    }
+  }
+
+  private async dropPostgresDatabase(dataSource: DataSource, dbName: string): Promise<void> {
+    if (dataSource.isInitialized) {
+      await dataSource.destroy();
+    }
+
+    const adminDataSource = new DataSource({
+      ...(dataSource.options as any),
+      database: this.resolvePostgresMaintenanceDatabase(dataSource),
+      name: `${String(dataSource.name ?? 'default')}_teardown_admin_${Date.now()}`,
+      synchronize: false,
+      migrationsRun: false,
+      entities: [],
+      subscribers: [],
+      migrations: [],
+    });
+
+    try {
+      await adminDataSource.initialize();
+      const queryRunner = adminDataSource.createQueryRunner();
+      try {
+        await queryRunner.query(
+          `SELECT pg_terminate_backend(pid)
+             FROM pg_stat_activity
+            WHERE datname = $1
+              AND pid <> pg_backend_pid()`,
+          [dbName],
+        );
+        await queryRunner.query(`DROP DATABASE IF EXISTS "${dbName}"`);
       } finally {
         await queryRunner.release();
       }
+    } finally {
+      if (adminDataSource.isInitialized) {
+        await adminDataSource.destroy();
+      }
     }
+  }
+
+  private resolvePostgresMaintenanceDatabase(dataSource: DataSource): string {
+    const configured = process.env.POSTGRES_MAINTENANCE_DATABASE?.trim();
+    if (configured) {
+      return configured;
+    }
+
+    const currentDb = String((dataSource.options as any)?.database ?? '').trim();
+    if (currentDb && currentDb !== 'postgres') {
+      return 'postgres';
+    }
+
+    return 'template1';
   }
 
   private async dropMssqlSchema(queryRunner: ReturnType<DataSource['createQueryRunner']>, schemaName: string): Promise<void> {

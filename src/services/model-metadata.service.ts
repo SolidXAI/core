@@ -8,11 +8,10 @@ import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 
 import { kebabCase } from 'lodash';
-import { classify } from '../helpers/string.helper';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 import { SolidFieldType } from 'src/dtos/create-field-metadata.dto';
-import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
+import { NavigationDto } from 'src/dtos/navigation.dto';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
@@ -20,21 +19,26 @@ import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { UpdateModelMetaDataDto } from '../dtos/update-model-metadata.dto';
 import { ActionMetadata } from '../entities/action-metadata.entity';
 import { FieldMetadata } from '../entities/field-metadata.entity';
+import { ImportTransactionErrorLog } from '../entities/import-transaction-error-log.entity';
+import { ImportTransaction } from '../entities/import-transaction.entity';
 import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
+import { UserViewMetadata } from '../entities/user-view-metadata.entity';
+import { PermissionMetadata } from '../entities/permission-metadata.entity';
 import { ViewMetadata } from '../entities/view-metadata.entity';
+import { CommandService } from '../helpers/command.service';
 import {
   REFRESH_MODEL_COMMAND,
   REMOVE_FIELDS_COMMAND,
   SchematicService
 } from '../helpers/schematic.service';
+import { classify } from '../helpers/string.helper';
 import { CodeGenerationOptions } from '../interfaces';
-import { CrudHelperService } from './crud-helper.service';
+import { CrudHelperService, FilterCombinator } from './crud-helper.service';
+import { CRUDService } from './crud.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
 import { RoleMetadataService } from './role-metadata.service';
-import { NavigationDto } from 'src/dtos/navigation.dto';
 import { SolidIntrospectService } from './solid-introspect.service';
-import { CRUDService } from './crud.service';
 import { SolidTsMorphService } from './solid-ts-morph.service';
 
 @Injectable()
@@ -49,6 +53,7 @@ export class ModelMetadataService {
     private readonly modelMetadataRepo: ModelMetadataRepository,
     private readonly fieldMetadataRepo: FieldMetadataRepository,
     private readonly schematicService: SchematicService,
+    private readonly commandService: CommandService,
     @InjectDataSource()
     private readonly dataSource: DataSource,
     private readonly crudHelperService: CrudHelperService,
@@ -67,36 +72,26 @@ export class ModelMetadataService {
     return this.findMany(basicFilterDto);
   }
 
-  async findMany(basicFilterDto: BasicFilterDto) {
+  async findMany(basicFilterDto: BasicFilterDto): Promise<any> {
     const alias = 'modelMetadata';
-    // Extract the required keys from the input query
-    let { limit, offset } = basicFilterDto;
+    const { limit, offset } = basicFilterDto;
 
-    // Create above query on pincode table using query builder
-    var qb: SelectQueryBuilder<ModelMetadata> = await this.modelMetadataRepo.createSecurityRuleAwareQueryBuilder(alias)
-    qb = await this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
+    const qb: SelectQueryBuilder<ModelMetadata> = await this.modelMetadataRepo.createSecurityRuleAwareQueryBuilder(alias);
 
-    // Get the records and the count
-    const [entities, count] = await qb.getManyAndCount();
+    if (basicFilterDto.groupBy?.length) {
+      const groupFilterQb = this.crudHelperService.buildFilterQuery(
+        qb, basicFilterDto, alias, undefined, undefined, undefined,
+        FilterCombinator.AND, false, false
+      );
+      return this.crudHelperService.executeGroupPipeline(
+        groupFilterQb, basicFilterDto, alias,
+        () => this.modelMetadataRepo.createSecurityRuleAwareQueryBuilder(alias)
+      );
+    }
 
-    const currentPage = Math.floor(offset / limit) + 1;
-    const totalPages = Math.ceil(count / limit);
-
-    const nextPage = currentPage < totalPages ? currentPage + 1 : null;
-    const prevPage = currentPage > 1 ? currentPage - 1 : null;
-
-    const r = {
-      meta: {
-        totalRecords: count,
-        currentPage: currentPage,
-        nextPage: nextPage,
-        prevPage: prevPage,
-        totalPages: totalPages,
-        perPage: +limit,
-      },
-      records: entities
-    };
-    return r
+    const filteredQb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
+    const [entities, count] = await filteredQb.getManyAndCount();
+    return this.crudHelperService.pagedResponse(offset, limit, count, entities);
   }
 
   async findOne(id: any, query?: any) {
@@ -154,7 +149,7 @@ export class ModelMetadataService {
 
         return model
       });
-    } catch (error) {
+    } catch (error: any) {
       // console.error('Transaction failed:', error);
       this.logger.error('Transaction failed:', error);
       throw error;
@@ -189,7 +184,7 @@ export class ModelMetadataService {
 
         // return model
       });
-    } catch (error) {
+    } catch (error: any) {
       // console.error('Transaction failed:', error);
       this.logger.error('Transaction failed:', error);
       throw error;
@@ -286,8 +281,7 @@ export class ModelMetadataService {
         tableName: model.tableName,
         userKeyFieldUserKey: model.fields.find(field => field.isUserKey)?.name,
         isChild: model?.isChild,
-        isLegacyTable: model?.isLegacyTable,
-        isLegacyTableWithId: model?.isLegacyTableWithId,
+        legacyTableType: model?.legacyTableType,
         parentModelUserKey: model?.parentModel?.singularName,
         enableAuditTracking: model?.enableAuditTracking,
         enableSoftDelete: model?.enableSoftDelete,
@@ -309,7 +303,7 @@ export class ModelMetadataService {
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
       throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
@@ -490,7 +484,7 @@ export class ModelMetadataService {
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
       throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
@@ -524,7 +518,7 @@ export class ModelMetadataService {
       await this.cleanupOnDelete(entity.id);
       const r = await this.modelMetadataRepo.remove(entity);
       return r;
-    } catch (error) {
+    } catch (error: any) {
     }
   }
 
@@ -566,7 +560,7 @@ export class ModelMetadataService {
         // @ts-ignore
         id: modelEntityId,
       },
-      relations: ['module']
+      relations: ['module', 'fields']
     });
 
     if (!modelEntity) {
@@ -621,73 +615,30 @@ export class ModelMetadataService {
         try {
           await fs.unlink(fileToDelete);
           this.logger.log(`Deleted file: ${fileToDelete}`);
-        } catch (error) {
+        } catch (error: any) {
+          if (error?.code === 'ENOENT') {
+            this.logger.warn(`File already absent, skipping delete: ${fileToDelete}`);
+            continue;
+          }
           this.logger.error(`Error deleting file: ${fileToDelete}`, error);
         }
       }
     }
 
-    await this.dataSource.query(
-      `CALL cleanup_model_metadata($1, $2)`,
-      [modelEntity.singularName, true],
-    );
-
-    // Delete the permissions, menu, actions & views related to this model.
-    // const controllerName = `${classify(modelEntity.singularName)}Controller`;
-    // const permissionNames = [
-    //   `${controllerName}.delete`,
-    //   `${controllerName}.deleteMany`,
-    //   `${controllerName}.findOne`,
-    //   `${controllerName}.findMany`,
-    //   `${controllerName}.recover`,
-    //   `${controllerName}.recoverMany`,
-    //   `${controllerName}.partialUpdate`,
-    //   `${controllerName}.update`,
-    //   `${controllerName}.insertMany`,
-    //   `${controllerName}.create`,
-    // ];
-    // const permissionsRepo = this.dataSource.getRepository(PermissionMetadata);
-    // const permissionsToDelete = await permissionsRepo.find({
-    //   where: { name: In(permissionNames) },
-    //   relations: ['roles'],
-    // });
-
-    // Remove role associations first
-    // for (const permission of permissionsToDelete) {
-    //   if (permission.roles?.length) {
-    //     await this.dataSource
-    //       .createQueryBuilder()
-    //       .relation(PermissionMetadata, 'roles')
-    //       .of(permission) // permission instance or its ID
-    //       .remove(permission.roles); // remove all linked roles
-    //   }
-    // }
-
-    // await permissionsRepo.remove(permissionsToDelete);
-
-    // Delete actions
-    // const actionRepo = this.dataSource.getRepository(ActionMetadata);
-    // const action = await actionRepo.findOne({ where: { model: { id: modelEntity.id } } });
-    // await actionRepo.delete({ model: { id: modelEntity.id } });
-
-    // // Delete menu items
-    // const menuItemRepo = this.dataSource.getRepository(MenuItemMetadata);
-    // if (action) {
-    //   const menuItems = await menuItemRepo.find({ where: { action: { id: action.id } } });
-    //   for (let i = 0; i < menuItems.length; i++) {
-    //     const menuItem = menuItems[i];
-    //     await menuItemRepo.remove(menuItem);
-    //   }
-    // }
-
-    // Delete view 
-    // const viewRepo = this.dataSource.getRepository(ViewMetadata);
-    // await viewRepo.delete({ model: { id: modelEntity.id } })
+    const { removedActionNames, removedMenuNames, removedViewNames } = await this.cleanupAssociatedViewsActionsAndMenus(modelEntity.id);
+    await this.cleanupAssociatedImports(modelEntity.id);
+    await this.cleanupAssociatedPermissions(modelEntity.singularName);
+    await this.clearModelReferencesBeforeDelete(modelEntity);
 
     // <moduleName>-metadata.json | Remove references to this model in the model metadata, menu, action & view sections. | Automatic
     const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.module?.name);
     const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
     if (metaData) {
+      const moduleMetadata = metaData?.moduleMetadata ?? metaData;
+      const removedActionNameSet = new Set(removedActionNames);
+      const removedMenuNameSet = new Set(removedMenuNames);
+      const removedViewNameSet = new Set(removedViewNames);
+
       const existingModelIndex = metaData.moduleMetadata.models.findIndex(
         (existingModel: any) => existingModel.singularName === modelEntity.singularName
       );
@@ -698,15 +649,51 @@ export class ModelMetadataService {
       }
 
       // Remove references to this model in the menu, action & view sections.
-      metaData.moduleMetadata.menus = metaData.moduleMetadata?.menus?.filter(
-        (menu: any) => menu.modelUserKey !== modelEntity.singularName
-      );
-      metaData.moduleMetadata.actions = metaData.moduleMetadata?.actions?.filter(
-        (action: any) => action.modelUserKey !== modelEntity.singularName
-      );
-      metaData.moduleMetadata.views = metaData.moduleMetadata?.views?.filter(
-        (view: any) => view.modelUserKey !== modelEntity.singularName
-      );
+      const existingViews = Array.isArray(moduleMetadata?.views) ? moduleMetadata.views : [];
+      moduleMetadata.views = existingViews.filter((view: any) => {
+        const shouldRemove = view?.modelUserKey === modelEntity.singularName || removedViewNameSet.has(view?.name);
+        if (shouldRemove && view?.name) {
+          removedViewNameSet.add(view.name);
+        }
+        return !shouldRemove;
+      });
+
+      const existingActions = Array.isArray(moduleMetadata?.actions) ? moduleMetadata.actions : [];
+      moduleMetadata.actions = existingActions.filter((action: any) => {
+        const shouldRemove =
+          action?.modelUserKey === modelEntity.singularName ||
+          removedActionNameSet.has(action?.name) ||
+          removedViewNameSet.has(action?.viewUserKey);
+
+        if (shouldRemove && action?.name) {
+          removedActionNameSet.add(action.name);
+        }
+        return !shouldRemove;
+      });
+
+      let pendingMenus = Array.isArray(moduleMetadata?.menus) ? [...moduleMetadata.menus] : [];
+      let menuRemovedOnPass = true;
+      while (menuRemovedOnPass) {
+        menuRemovedOnPass = false;
+        pendingMenus = pendingMenus.filter((menu: any) => {
+          const shouldRemove =
+            menu?.modelUserKey === modelEntity.singularName ||
+            removedMenuNameSet.has(menu?.name) ||
+            removedActionNameSet.has(menu?.actionUserKey) ||
+            removedMenuNameSet.has(menu?.parentMenuItemUserKey);
+
+          if (shouldRemove) {
+            if (menu?.name) {
+              removedMenuNameSet.add(menu.name);
+            }
+            menuRemovedOnPass = true;
+            return false;
+          }
+
+          return true;
+        });
+      }
+      moduleMetadata.menus = pendingMenus;
 
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
@@ -725,7 +712,7 @@ export class ModelMetadataService {
         );
         this.solidTsMorphService.removeModuleMembers(moduleFilePath, removedIdentifiers);
         await this.solidTsMorphService.commit();
-      } catch (error) {
+      } catch (error: any) {
         this.solidTsMorphService.rollback();
         this.logger.error(`Failed to clean up module file for model '${modelEntity.singularName}':`, error);
       }
@@ -733,6 +720,233 @@ export class ModelMetadataService {
 
     // - | Drop database table | Removes the database table from the DB, this is a very risky step. Best to review all relations to other models etc and then do this manually | Manual (X)
 
+  }
+
+  private async cleanupAssociatedViewsActionsAndMenus(modelId: number) {
+    const viewRepo = this.dataSource.getRepository(ViewMetadata);
+    const actionRepo = this.dataSource.getRepository(ActionMetadata);
+    const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
+    const userViewRepo = this.dataSource.getRepository(UserViewMetadata);
+
+    const views = await viewRepo.find({
+      where: {
+        model: { id: modelId },
+      },
+    });
+    const viewIds = views.map((view) => view.id);
+    const removedViewNames = views.map((view) => view.name).filter(Boolean);
+
+    const actions = await actionRepo.find({
+      where: [
+        {
+          model: { id: modelId },
+        },
+        ...(viewIds.length > 0
+          ? [
+            {
+              view: { id: In(viewIds) },
+            },
+          ]
+          : []),
+      ],
+      relations: ['view'],
+    });
+
+    const uniqueActions = Array.from(
+      new Map(actions.map((action) => [action.id, action])).values(),
+    );
+    const actionIds = uniqueActions.map((action) => action.id);
+    const removedActionNames = uniqueActions.map((action) => action.name).filter(Boolean);
+
+    const menus = await this.findMenusForActionIds(actionIds);
+    const removedMenuNames = menus.map((menu) => menu.name).filter(Boolean);
+
+    if (menus.length > 0) {
+      const menuIds = menus.map((menu) => menu.id).filter(Boolean);
+      for (const menu of menus) {
+        if (menu.roles?.length) {
+          await this.dataSource
+            .createQueryBuilder()
+            .relation(MenuItemMetadata, 'roles')
+            .of(menu.id)
+            .remove(menu.roles.map((role) => role.id));
+        }
+      }
+
+      if (menuIds.length > 0) {
+        await menuRepo
+          .createQueryBuilder()
+          .update(MenuItemMetadata)
+          .set({ parentMenuItem: null as any })
+          .where('id IN (:...menuIds)', { menuIds })
+          .execute();
+
+        await menuRepo
+          .createQueryBuilder()
+          .delete()
+          .from(MenuItemMetadata)
+          .where('id IN (:...menuIds)', { menuIds })
+          .execute();
+      }
+
+      this.logger.log(`Deleted ${menus.length} menu metadata record(s) for model id ${modelId}`);
+    }
+
+    if (uniqueActions.length > 0) {
+      await actionRepo.remove(uniqueActions);
+      this.logger.log(`Deleted ${uniqueActions.length} action metadata record(s) for model id ${modelId}`);
+    }
+
+    if (viewIds.length > 0) {
+      const userViews = await userViewRepo.find({
+        where: {
+          viewMetadata: { id: In(viewIds) },
+        },
+        relations: ['viewMetadata'],
+      });
+      if (userViews.length > 0) {
+        await userViewRepo.remove(userViews);
+        this.logger.log(`Deleted ${userViews.length} user view metadata record(s) for model id ${modelId}`);
+      }
+
+      await viewRepo.remove(views);
+      this.logger.log(`Deleted ${views.length} view metadata record(s) for model id ${modelId}`);
+    }
+
+    return {
+      removedActionNames,
+      removedMenuNames,
+      removedViewNames,
+    };
+  }
+
+  private async cleanupAssociatedImports(modelId: number) {
+    const importTransactionRepo = this.dataSource.getRepository(ImportTransaction);
+    const importTransactionErrorLogRepo = this.dataSource.getRepository(ImportTransactionErrorLog);
+
+    const importTransactions = await importTransactionRepo.find({
+      where: {
+        modelMetadata: { id: modelId },
+      },
+    });
+
+    if (importTransactions.length === 0) {
+      return;
+    }
+
+    const importTransactionIds = importTransactions.map((transaction) => transaction.id);
+    const importTransactionErrorLogs = await importTransactionErrorLogRepo.find({
+      where: {
+        importTransaction: { id: In(importTransactionIds) },
+      },
+      relations: ['importTransaction'],
+    });
+
+    if (importTransactionErrorLogs.length > 0) {
+      await importTransactionErrorLogRepo.remove(importTransactionErrorLogs);
+      this.logger.log(`Deleted ${importTransactionErrorLogs.length} import transaction error log record(s) for model id ${modelId}`);
+    }
+
+    await importTransactionRepo.remove(importTransactions);
+    this.logger.log(`Deleted ${importTransactions.length} import transaction record(s) for model id ${modelId}`);
+  }
+
+  private async cleanupAssociatedPermissions(modelSingularName: string) {
+    const permissionsRepo = this.dataSource.getRepository(PermissionMetadata);
+    const controllerName = `${classify(modelSingularName)}Controller`;
+    const permissions = await permissionsRepo
+      .createQueryBuilder('permission')
+      .leftJoinAndSelect('permission.roles', 'role')
+      .where('permission.name LIKE :pattern', { pattern: `${controllerName}.%` })
+      .getMany();
+
+    if (permissions.length === 0) {
+      return;
+    }
+
+    for (const permission of permissions) {
+      if (permission.roles?.length) {
+        await this.dataSource
+          .createQueryBuilder()
+          .relation(PermissionMetadata, 'roles')
+          .of(permission.id)
+          .remove(permission.roles.map((role) => role.id));
+      }
+    }
+
+    await permissionsRepo.remove(permissions);
+    this.logger.log(`Deleted ${permissions.length} permission metadata record(s) for model '${modelSingularName}'`);
+  }
+
+  private async clearModelReferencesBeforeDelete(modelEntity: ModelMetadata) {
+    const modelRepo = this.dataSource.getRepository(ModelMetadata);
+    const fieldIds = (modelEntity.fields ?? []).map((field) => field.id).filter(Boolean);
+
+    if (fieldIds.length > 0) {
+      await modelRepo
+        .createQueryBuilder()
+        .update(ModelMetadata)
+        .set({ userKeyField: null as any })
+        .where('user_key_field_id IN (:...fieldIds)', { fieldIds })
+        .execute();
+    }
+
+    await modelRepo
+      .createQueryBuilder()
+      .update(ModelMetadata)
+      .set({ parentModel: null as any })
+      .where('parent_model_id = :modelId', { modelId: modelEntity.id })
+      .execute();
+  }
+
+  private async findMenusForActionIds(actionIds: number[]) {
+    if (!actionIds?.length) {
+      return [];
+    }
+
+    const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
+    const menusById = new Map<number, MenuItemMetadata>();
+
+    const rootMenus = await menuRepo.find({
+      where: {
+        action: { id: In(actionIds) },
+      },
+      relations: ['roles', 'action', 'parentMenuItem'],
+    });
+
+    rootMenus.forEach((menu) => menusById.set(menu.id, menu));
+
+    let parentIds = rootMenus.map((menu) => menu.id);
+    while (parentIds.length > 0) {
+      const childMenus = await menuRepo.find({
+        where: {
+          parentMenuItem: { id: In(parentIds) },
+        },
+        relations: ['roles', 'action', 'parentMenuItem'],
+      });
+
+      const nextParentIds: number[] = [];
+      for (const childMenu of childMenus) {
+        if (!menusById.has(childMenu.id)) {
+          menusById.set(childMenu.id, childMenu);
+          nextParentIds.push(childMenu.id);
+        }
+      }
+
+      parentIds = nextParentIds;
+    }
+
+    return Array.from(menusById.values());
+  }
+
+  @DisallowInProduction()
+  async generateCodeViaCtl(modelId: number): Promise<string> {
+    const model = await this.findOne(modelId);
+    return this.commandService.executeCommandWithArgs({
+      command: 'npx',
+      args: ['@solidxai/solidctl@latest', 'generate', 'model', `--name=${model.singularName}`],
+      cwd: path.join(process.cwd(), '..'),
+    });
   }
 
   @DisallowInProduction()
@@ -789,7 +1003,7 @@ export class ModelMetadataService {
         await this.populateVAMConfigInDb(model);
         await this.populateVAMConfigInFile(model);
       });
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error('generateVAMConfig Transaction failed:', error);
       throw error;
     }
@@ -816,7 +1030,7 @@ export class ModelMetadataService {
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File updation failed for View, action, menus config:', error);
       throw new Error('File updation failed for View, action, menus config'); // Trigger rollback
@@ -826,15 +1040,15 @@ export class ModelMetadataService {
   // Populate the View, Actions and Menus in the config file
   private populateVAMConfigInFileInternal(formViewLayoutFields: any[], model: ModelMetadata, listViewLayoutFields: { type: string; attrs: { name: string; }; }[], treeViewLayoutFields: { type: string; attrs: { name: string; }; }[], metaData: any) {
     const column1Fields = [];
-    const column2Fields = [];
+    // const column2Fields = [];
 
     // Distribute fields between two columns
     for (let i = 0; i < formViewLayoutFields.length; i++) {
-      if (i % 2 === 0) {
-        column1Fields.push(formViewLayoutFields[i]);
-      } else {
-        column2Fields.push(formViewLayoutFields[i]);
-      }
+      // if (i % 2 === 0) {
+      column1Fields.push(formViewLayoutFields[i]);
+      // } else {
+      // column2Fields.push(formViewLayoutFields[i]);
+      // }
     }
     const actionName = `${model.singularName}-list-action`;
     const treeViewActionName = `${model.singularName}-tree-action`;
@@ -842,6 +1056,7 @@ export class ModelMetadataService {
     const treeViewName = `${model.singularName}-tree-view`;
     const formViewName = `${model.singularName}-form-view`;
     const menuName = `${model.singularName}-menu-item`;
+    const nextMenuSequenceNumber = (metaData.menus?.length ?? 0) + 1;
 
     const action = {
       displayName: `${model.displayName} List Action`,
@@ -874,7 +1089,7 @@ export class ModelMetadataService {
     const menu = {
       displayName: `${model.displayName}`,
       name: menuName,
-      sequenceNumber: 1,
+      sequenceNumber: nextMenuSequenceNumber,
       actionUserKey: actionName,
       moduleUserKey: `${model.module.name}`,
       parentMenuItemUserKey: "",
@@ -955,11 +1170,11 @@ export class ModelMetadataService {
                     attrs: { name: "group-1", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
                     children: column1Fields
                   },
-                  {
-                    type: "column",
-                    attrs: { name: "group-2", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
-                    children: column2Fields
-                  }
+                  // {
+                  //   type: "column",
+                  //   attrs: { name: "group-2", label: "", className: "col-12 sm:col-12 md:col-6 lg:col-6" },
+                  //   children: column2Fields
+                  // }
                 ]
               },
             ]
@@ -1228,11 +1443,11 @@ export class ModelMetadataService {
     const removeOutput = await this.executeRemoveFieldsCommand(model, fieldsForRemoval, options.dryRun);
 
     // Remove the fields from the database as well. This also checks, if the field is marked for removal
-    fieldsForRemoval.forEach((field: FieldMetadata) => {
+    for (const field of fieldsForRemoval) {
       if (field.isMarkedForRemoval) {
-        this.fieldMetadataService.delete(field.id);
+        await this.fieldMetadataService.delete(field.id);
       }
-    });
+    }
 
     // Remove the fields from metadata json file 
 
@@ -1274,24 +1489,13 @@ export class ModelMetadataService {
     };
     const model = options.modelId ? await this.findOne(options.modelId, query) : await this.findOneByUserKey(options.modelUserKey, query.populate);
 
-    let fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
-
-    // If a list of field ids or field names is passed for refresh, use these fields only
-    if (options.fieldIdsForRefresh && options.fieldIdsForRefresh.length > 0) {
-      fieldsForRefresh = fieldsForRefresh.filter((field) => options.fieldIdsForRefresh.includes(+field.id));
-    } else if (options.fieldNamesForRefresh && options.fieldNamesForRefresh.length > 0) {
-      fieldsForRefresh = fieldsForRefresh.filter((field) => options.fieldNamesForRefresh.includes(field.name));
-    }
-    // const fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
-
     //Execute the schematic command to refresh the model
-    const refreshOuput = await this.executeRefreshModelCommand(model, fieldsForRefresh, options.dryRun);
+    const refreshOuput = await this.executeRefreshModelCommand(model, options.dryRun);
 
     return `${refreshOuput}`;
   }
 
-  private async executeRefreshModelCommand(model: ModelMetadata, fieldsForRefresh: FieldMetadata[], dryRun: boolean = false): Promise<string> {
-    // const fieldsForRefresh = model.fields.filter((field) => !field.isMarkedForRemoval);
+  private async executeRefreshModelCommand(model: ModelMetadata, dryRun: boolean = false): Promise<string> {
     const output = await this.schematicService.executeSchematicCommand(
       REFRESH_MODEL_COMMAND,
       {

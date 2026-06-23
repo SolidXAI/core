@@ -35,7 +35,7 @@ export class ChatterQueueSubscriberDatabase extends DatabaseSubscriber<AuditQueu
 
         switch (p.eventType) {
             case 'insert':
-                await this.chatterMessageService.postAuditMessageOnInsert(p.after, p.modelName);
+                await this.chatterMessageService.postAuditMessageOnInsert(p.after, p.modelName, false, p.userId);
                 break;
             case 'update':
                 await this.chatterMessageService.postAuditMessageOnUpdate(
@@ -43,10 +43,12 @@ export class ChatterQueueSubscriberDatabase extends DatabaseSubscriber<AuditQueu
                     p.modelName,
                     p.before,
                     (p.updatedColumnNames ?? []).map(n => ({ propertyName: n })),
+                    false,
+                    p.userId,
                 );
                 break;
             case 'delete':
-                await this.chatterMessageService.postAuditMessageOnDelete(p.modelName, p.before);
+                await this.chatterMessageService.postAuditMessageOnDelete(p.modelName, p.before, false, p.userId);
                 break;
         }
     }

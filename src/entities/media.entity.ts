@@ -12,6 +12,7 @@ export class Media extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     relativeUri: string;
 
+    @Index()
     @Column({ type: "integer", nullable: true })
     fileSize: number;
 

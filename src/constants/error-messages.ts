@@ -28,6 +28,7 @@ export const ERROR_MESSAGES = {
     ACCESS_DENIED: 'Access denied',
     INVALID_USER_PROFILE: 'Invalid user profile',
     GOOGLE_OAUTH_PROFILE_FETCH_FAILED: 'Failed to fetch user profile from Google OAuth service',
+    MICROSOFT_ACTIVE_DIRECTORY_OAUTH_PROFILE_FETCH_FAILED: 'Failed to fetch user profile from Microsoft Active Directory OAuth service',
     LOGOUT_FAILED: 'Logout failed due to an unexpected error.',
 
     INVALID_CREDENTIALS: 'Invalid credentials',

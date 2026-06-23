@@ -4,6 +4,7 @@ import { ModelMetadata } from "./model-metadata.entity";
 
 @Entity("ss_module_metadata")
 export class ModuleMetadata extends CommonEntity {
+    @Index()
     @Column({ name: "display_name" })
     displayName: string;
 
@@ -17,6 +18,7 @@ export class ModuleMetadata extends CommonEntity {
     @Column({ nullable: true })
     menuIconUrl: string;
 
+    @Index()
     @Column({ nullable: true })
     menuSequenceNumber: number;
 

@@ -52,7 +52,7 @@ export class PermissionMetadataSeederService {
           }
         }
 
-      } catch (error) {
+      } catch (error: any) {
         this.logger.error(error);
       }
     }

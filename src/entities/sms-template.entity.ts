@@ -7,10 +7,12 @@ export class SmsTemplate extends CommonEntity {
     @Index({ unique: true })
     @Column({ name: "name", type: "varchar" })
     name: string;
+    @Index()
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;
     @Column({ name: "body", ...getColumnType('longText'), nullable: true })
     body: string;
+    @Index()
     @Column({ type: "varchar", nullable: true })
     smsProviderTemplateId: string;
     @Column({ name: "description", nullable: true })

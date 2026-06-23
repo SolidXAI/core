@@ -2,8 +2,10 @@ import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundEx
 import { InjectDataSource } from '@nestjs/typeorm';
 import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from "src/services/settings/default-settings-provider.service";
 import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
-import { DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
+import { DataSource, EntityManager, In, SelectQueryBuilder } from 'typeorm';
+import { ActionMetadata } from '../entities/action-metadata.entity';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
+import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 
 import { classify } from '../helpers/string.helper';
@@ -22,6 +24,7 @@ import {
   ADD_MODULE_COMMAND,
   SchematicService,
 } from '../helpers/schematic.service';
+import { CommandService } from '../helpers/command.service';
 import { SolidRegistry } from '../helpers/solid-registry';
 import { CodeGenerationOptions, ModuleMetadataConfiguration } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
@@ -40,6 +43,7 @@ export class ModuleMetadataService {
     private readonly moduleMetadataRepo: ModuleMetadataRepository,
     private readonly crudHelperService: CrudHelperService,
     private readonly schematicService: SchematicService,
+    private readonly commandService: CommandService,
     private readonly fileService: DiskFileService,
     private readonly settingService: SettingService,
 
@@ -123,7 +127,7 @@ export class ModuleMetadataService {
         await this.createInFile(module);
         return module
       });
-    } catch (error) {
+    } catch (error: any) {
       // console.error('Transaction failed:', error);
       this.logger.error('Transaction failed:', error);
       throw error;
@@ -181,7 +185,7 @@ export class ModuleMetadataService {
             actionUserKey: `${module?.name}-home-action`,
             moduleUserKey: module?.name,
             parentMenuItemUserKey: "",
-            iconName : "home"
+            iconName: "home"
           }
         ],
         views: [],
@@ -194,9 +198,8 @@ export class ModuleMetadataService {
       // Convert the object to JSON string
       const metadataJson = JSON.stringify(moduleMetaDataJson, null, 2);
 
-      // Create the folder path inside 'module-metadata'
-      const folderPath = path.resolve(process.cwd(), 'module-metadata', module.name);
       const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(module.name);
+      const folderPath = path.dirname(filePath);
 
       // Ensure the folder exists
       await fs.mkdir(folderPath, { recursive: true });
@@ -204,7 +207,7 @@ export class ModuleMetadataService {
       // Write the JSON to the file
       await fs.writeFile(filePath, metadataJson);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
       throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
@@ -219,7 +222,7 @@ export class ModuleMetadataService {
         await this.updateInFile(module);
         return module
       });
-    } catch (error) {
+    } catch (error: any) {
       // console.error('Transaction failed:', error);
       this.logger.error('Transaction failed:', error);
       throw error;
@@ -255,7 +258,7 @@ export class ModuleMetadataService {
       try {
         metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
 
-      } catch (error) {
+      } catch (error: any) {
         metaData = {
           moduleMetadata: {
             name: null,
@@ -290,7 +293,7 @@ export class ModuleMetadataService {
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
 
-    } catch (error) {
+    } catch (error: any) {
       // console.error('File creation failed:', error);
       this.logger.error('File creation failed:', error);
       throw new Error(ERROR_MESSAGES.FILE_WRITE_FAILED); // Trigger rollback
@@ -353,9 +356,11 @@ export class ModuleMetadataService {
     this.logger.log(`Cleaning up for module: ${moduleEntity.name}.`);
 
     const modulePath = await this.moduleMetadataHelperService.getModulePath(moduleEntity.name);
+    const solidUiModulePath = await this.moduleMetadataHelperService.getSolidUiModulePath(moduleEntity.name);
     if (modulePath) {
 
       this.logger.log(`Module path: ${modulePath}`);
+      this.logger.log(`Solid UI module path: ${solidUiModulePath}`);
 
       // Metadata file to be deleted
       const moduleMetadataPAth = await this.moduleMetadataHelperService.getModuleMetadataFolderPath(moduleEntity.name)
@@ -363,17 +368,112 @@ export class ModuleMetadataService {
 
       try {
         await fs.rm(modulePath, { recursive: true, force: true });
+        if (solidUiModulePath) {
+          await fs.rm(solidUiModulePath, { recursive: true, force: true });
+          this.logger.log(`Deleted solid-ui module path: ${solidUiModulePath}`);
+        }
         await fs.rm(moduleMetadataPAth, { recursive: true, force: true });
         this.logger.log(`Deleted file: ${moduleMetadataPAth}`);
-      } catch (error) {
+      } catch (error: any) {
         this.logger.error(`Error deleting file: ${moduleMetadataPAth}`, error);
         throw new Error(ERROR_MESSAGES.FILE_DELETE_FAILED); // Trigger rollback
       }
     }
-    await this.dataSource.query(
-      `CALL cleanup_module_metadata($1, $2)`,
-      [moduleEntity.name, true],
-    );
+    await this.cleanupAssociatedMenusAndActions(moduleEntity.id);
+  }
+
+  private async cleanupAssociatedMenusAndActions(moduleId: number) {
+    const actionRepo = this.dataSource.getRepository(ActionMetadata);
+    const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
+
+    const actions = await actionRepo.find({
+      where: {
+        module: { id: moduleId },
+      },
+    });
+    const actionIds = actions.map((action) => action.id);
+
+    const menus = await this.findMenusForModuleCleanup(moduleId, actionIds);
+    if (menus.length > 0) {
+      const menuIds = menus.map((menu) => menu.id).filter(Boolean);
+      for (const menu of menus) {
+        if (menu.roles?.length) {
+          await this.dataSource
+            .createQueryBuilder()
+            .relation(MenuItemMetadata, 'roles')
+            .of(menu.id)
+            .remove(menu.roles.map((role) => role.id));
+        }
+      }
+
+      if (menuIds.length > 0) {
+        await menuRepo
+          .createQueryBuilder()
+          .update(MenuItemMetadata)
+          .set({ parentMenuItem: null as any })
+          .where('id IN (:...menuIds)', { menuIds })
+          .execute();
+
+        await menuRepo
+          .createQueryBuilder()
+          .delete()
+          .from(MenuItemMetadata)
+          .where('id IN (:...menuIds)', { menuIds })
+          .execute();
+      }
+
+      this.logger.log(`Deleted ${menus.length} menu metadata record(s) for module id ${moduleId}`);
+    }
+
+    if (actions.length > 0) {
+      await actionRepo.remove(actions);
+      this.logger.log(`Deleted ${actions.length} action metadata record(s) for module id ${moduleId}`);
+    }
+  }
+
+  private async findMenusForModuleCleanup(moduleId: number, actionIds: number[]) {
+    const menuRepo = this.dataSource.getRepository(MenuItemMetadata);
+    const menusById = new Map<number, MenuItemMetadata>();
+
+    const rootMenus = await menuRepo.find({
+      where: [
+        {
+          module: { id: moduleId },
+        },
+        ...(actionIds.length > 0
+          ? [
+            {
+              action: { id: In(actionIds) },
+            },
+          ]
+          : []),
+      ],
+      relations: ['roles', 'action', 'parentMenuItem'],
+    });
+
+    rootMenus.forEach((menu) => menusById.set(menu.id, menu));
+
+    let parentIds = rootMenus.map((menu) => menu.id);
+    while (parentIds.length > 0) {
+      const childMenus = await menuRepo.find({
+        where: {
+          parentMenuItem: { id: In(parentIds) },
+        },
+        relations: ['roles', 'action', 'parentMenuItem'],
+      });
+
+      const nextParentIds: number[] = [];
+      for (const childMenu of childMenus) {
+        if (!menusById.has(childMenu.id)) {
+          menusById.set(childMenu.id, childMenu);
+          nextParentIds.push(childMenu.id);
+        }
+      }
+
+      parentIds = nextParentIds;
+    }
+
+    return Array.from(menusById.values());
   }
 
   async deleteMany(ids: number[]): Promise<any> {
@@ -389,9 +489,12 @@ export class ModuleMetadataService {
           id: id,
         }
       });
-      // if (!entity) {
-      //   throw new Error(`Entity with id ${id} not found`);
-      // }
+      if (!entity) {
+        this.logger.warn(`Module metadata with id ${id} not found. Skipping deleteMany cleanup for this id.`);
+        continue;
+      }
+
+      await this.cleanupOnDelete(entity.id);
       removedEntities.push(await this.moduleMetadataRepo.remove(entity));
     }
 
@@ -401,6 +504,41 @@ export class ModuleMetadataService {
   async refreshPermission() {
     await this.permissionsSeederService.seed();
     return true
+  }
+
+  @DisallowInProduction()
+  async seedModuleFromMetadata(moduleId: number) {
+    const module = await this.findOne(moduleId);
+    const seeder = this.solidRegistry
+      .getSeeders()
+      .filter((registeredSeeder) => registeredSeeder.name === 'ModuleMetadataSeederService')
+      .map((registeredSeeder) => registeredSeeder.instance)
+      .pop();
+
+    if (!seeder || typeof seeder.seed !== 'function') {
+      throw new NotFoundException('ModuleMetadataSeederService not found. Cannot seed module metadata.');
+    }
+
+    await seeder.seed({
+      modulesToSeed: [module.name],
+      seedGlobalMetadata: false,
+    });
+
+    return {
+      success: true,
+      moduleName: module.name,
+      message: `Seeded metadata for module ${module.name}.`,
+    };
+  }
+
+  @DisallowInProduction()
+  async generateCodeViaCtl(moduleId: number): Promise<string> {
+    const module = await this.findOne(moduleId);
+    return this.commandService.executeCommandWithArgs({
+      command: 'npx',
+      args: ['@solidxai/solidctl@latest', 'generate', 'module', `--name=${module.name}`],
+      cwd: path.join(process.cwd(), '..'),
+    });
   }
 
   @DisallowInProduction()

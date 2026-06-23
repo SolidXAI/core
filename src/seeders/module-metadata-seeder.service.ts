@@ -3,12 +3,10 @@ import * as fs from 'fs';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
-import { CreateDashboardDto } from 'src/dtos/create-dashboard.dto';
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
 import { CreateListOfValuesDto } from 'src/dtos/create-list-of-values.dto';
 import { CreateSecurityRuleDto } from 'src/dtos/create-security-rule.dto';
 import { CreateSmsTemplateDto } from 'src/dtos/create-sms-template.dto';
-import { DashboardRepository } from 'src/repository/dashboard.repository';
 import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
 import { AuthenticationService } from 'src/services/authentication.service';
 import { EmailTemplateService } from 'src/services/email-template.service';
@@ -52,7 +50,6 @@ import { SavedFilters } from 'src/entities/saved-filters.entity';
 import { ScheduledJob } from 'src/entities/scheduled-job.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { ListOfValues } from 'src/entities/list-of-values.entity';
-import { Dashboard } from 'src/entities/dashboard.entity';
 import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
@@ -88,7 +85,6 @@ export class ModuleMetadataSeederService {
         private readonly settingsRepo: SettingRepository,
         readonly securityRuleRepo: SecurityRuleRepository,
         readonly systemFieldsSeederService: SystemFieldsSeederService,
-        readonly dashboardRepo: DashboardRepository,
         readonly scheduledJobRepository: ScheduledJobRepository,
         readonly savedFiltersRepo: SavedFiltersRepository,
         readonly dataSource: DataSource,
@@ -99,14 +95,19 @@ export class ModuleMetadataSeederService {
         let currentModule = 'global';
         let currentStep = 'bootstrap';
         let modulesToSeed: string[] | null = null;
+        const shouldSeedGlobalMetadata = conf?.seedGlobalMetadata !== false;
 
         try {
             this.enablePruning = Boolean(conf?.pruneMetadata);
             console.log(this.enablePruning ? '▶ Pruning enabled: metadata not present in JSON will be removed.' : '▶ Pruning disabled: existing metadata will be kept.');
 
             // Global seeding steps i.e across all modules
-            currentStep = 'seedGlobalMetadata';
-            await this.seedGlobalMetadata();
+            if (shouldSeedGlobalMetadata) {
+                currentStep = 'seedGlobalMetadata';
+                await this.seedGlobalMetadata();
+            } else {
+                this.logger.log(`Skipping global metadata seeding.`);
+            }
 
             // Module specific seeding steps.
             // Get all the module metadata files which needs to be seeded.
@@ -142,6 +143,11 @@ export class ModuleMetadataSeederService {
                 const overallMetadata = filteredSeedDataFiles[i];
                 const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
                 currentModule = moduleMetadata?.name ?? 'unknown';
+
+                if (!moduleMetadata?.name) {
+                    this.logger.warn(`Skipping seed metadata file because moduleMetadata.name is missing.`);
+                    continue;
+                }
 
                 console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
                 this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
@@ -207,11 +213,6 @@ export class ModuleMetadataSeederService {
                 const lovCounts = await this.seedListOfValues(moduleMetadata, overallMetadata);
                 console.log(`${this.formatSeedResult(moduleMetadata.name, 'List Of Values', lovCounts)}`);
 
-                currentStep = 'seedDashboards';
-                this.logger.log(`Seeding Dashboards`);
-                const dashboardCounts = await this.seedDashboards(moduleMetadata, overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Dashboards', dashboardCounts)}`);
-
                 currentStep = 'seedScheduledJobs';
                 this.logger.log(`Seeding Scheduled Jobs`);
                 const scheduledJobCounts = await this.seedScheduledJobs(moduleMetadata, overallMetadata);
@@ -238,7 +239,7 @@ export class ModuleMetadataSeederService {
 
             //FIXME: Handle displaying the created users credentials in a better way.
             // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
-        } catch (error) {
+        } catch (error: any) {
             this.logSeedFailureForCli(error, {
                 moduleName: currentModule,
                 step: currentStep,
@@ -251,42 +252,33 @@ export class ModuleMetadataSeederService {
 
     private async seedScheduledJobs(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing scheduled jobs for ${moduleMetadata.name}`);
-        const scheduledJobs: CreateScheduledJobDto[] = overallMetadata.scheduledJobs;
+        const scheduledJobs = this.getSeedArray<CreateScheduledJobDto>(overallMetadata?.scheduledJobs);
         const pruned = this.enablePruning ? await this.pruneScheduledJobs(scheduledJobs, moduleMetadata.name) : 0;
-        if (scheduledJobs?.length > 0) {
+        if (scheduledJobs.length > 0) {
             await this.handleSeedScheduledJobs(scheduledJobs);
         }
         this.logger.debug(`[End] Processing scheduled jobs for ${moduleMetadata.name}`);
-        return { pruned, upserted: scheduledJobs?.length ?? 0 };
+        return { pruned, upserted: scheduledJobs.length };
     }
 
     private async seedSavedFilters(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing saved filters for ${moduleMetadata.name}`);
-        const savedFilters: CreateSavedFiltersDto[] = overallMetadata.savedFilters;
+        const savedFilters = this.getSeedArray<CreateSavedFiltersDto>(overallMetadata?.savedFilters);
         const pruned = this.enablePruning ? await this.pruneSavedFilters(savedFilters, moduleMetadata.name) : 0;
-        if (savedFilters?.length > 0) {
+        if (savedFilters.length > 0) {
             await this.handleSeedSavedFilters(savedFilters);
         }
         this.logger.debug(`[End] Processing saved filters for ${moduleMetadata.name}`);
-        return { pruned, upserted: savedFilters?.length ?? 0 };
-    }
-
-    private async seedDashboards(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing dashboards for ${moduleMetadata.name}`);
-        const dashboards: CreateDashboardDto[] = overallMetadata.dashboards;
-        const pruned = this.enablePruning ? await this.pruneDashboards(dashboards, moduleMetadata.name) : 0;
-        await this.handleSeedDashboards(dashboards);
-        this.logger.debug(`[End] Processing dashboards for ${moduleMetadata.name}`);
-        return { pruned, upserted: dashboards?.length ?? 0 };
+        return { pruned, upserted: savedFilters.length };
     }
 
     private async seedListOfValues(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing List Of Values for ${moduleMetadata.name}`);
-        const listOfValues: CreateListOfValuesDto[] = overallMetadata.listOfValues;
+        const listOfValues = this.getSeedArray<CreateListOfValuesDto>(overallMetadata?.listOfValues);
         const pruned = this.enablePruning ? await this.pruneListOfValues(listOfValues, moduleMetadata.name) : 0;
         await this.handleSeedListOfValues(listOfValues);
         this.logger.debug(`[End] Processing List Of Values for ${moduleMetadata.name}`);
-        return { pruned, upserted: listOfValues?.length ?? 0 };
+        return { pruned, upserted: listOfValues.length };
     }
 
     private async setupDefaultRolesWithPermissions() {
@@ -304,11 +296,11 @@ export class ModuleMetadataSeederService {
 
     private async seedSecurityRules(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing security rules`);
-        const securityRules: CreateSecurityRuleDto[] = overallMetadata.securityRules;
+        const securityRules = this.getSeedArray<CreateSecurityRuleDto>(overallMetadata?.securityRules);
         const pruned = this.enablePruning ? await this.pruneSecurityRules(securityRules, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedSecurityRules(securityRules);
         this.logger.debug(`[End] Processing security rules`);
-        return { pruned, upserted: securityRules?.length ?? 0 };
+        return { pruned, upserted: securityRules.length };
     }
 
     // Ok
@@ -320,75 +312,85 @@ export class ModuleMetadataSeederService {
 
     private async seedSmsTemplates(overallMetadata: any, moduleName: string): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing sms templates`);
-        const smsTemplates: CreateSmsTemplateDto[] = overallMetadata.smsTemplates;
+        const smsTemplates = this.getSeedArray<CreateSmsTemplateDto>(overallMetadata?.smsTemplates);
         await this.handleSeedSmsTemplates(smsTemplates, moduleName);
         this.logger.debug(`[End] Processing sms templates`);
-        return { pruned: 0, upserted: smsTemplates?.length ?? 0 };
+        return { pruned: 0, upserted: smsTemplates.length };
     }
 
     // OK
     private async seedEmailTemplates(overallMetadata: any, moduleName: string): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing email templates`);
-        const emailTemplates: CreateEmailTemplateDto[] = overallMetadata.emailTemplates;
+        const emailTemplates = this.getSeedArray<CreateEmailTemplateDto>(overallMetadata?.emailTemplates);
         await this.handleSeedEmailTemplates(emailTemplates, moduleName);
         this.logger.debug(`[End] Processing email templates`);
-        return { pruned: 0, upserted: emailTemplates?.length ?? 0 };
+        return { pruned: 0, upserted: emailTemplates.length };
     }
 
     // Ok
     private async seedMenus(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing menus`);
-        const menus = overallMetadata.menus;
+        const menus = this.getSeedArray<any>(overallMetadata?.menus);
         const pruned = this.enablePruning ? await this.pruneMenus(menus, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedMenus(menus);
         this.logger.debug(`[End] Processing menus`);
-        return { pruned, upserted: menus?.length ?? 0 };
+        return { pruned, upserted: menus.length };
     }
 
     // Ok
     private async seedActions(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing actions`);
-        const actions = overallMetadata.actions;
+        const actions = this.getSeedArray<any>(overallMetadata?.actions);
         const pruned = this.enablePruning ? await this.pruneActions(actions, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedActions(actions);
         this.logger.debug(`[End] Processing actions`);
-        return { pruned, upserted: actions?.length ?? 0 };
+        return { pruned, upserted: actions.length };
     }
 
     // Ok
     private async seedViews(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing views`);
-        const views = overallMetadata.views;
+        const views = this.getSeedArray<any>(overallMetadata?.views);
         const pruned = this.enablePruning ? await this.pruneViews(views, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedViews(views);
         this.logger.debug(`[End] Processing views`);
-        return { pruned, upserted: views?.length ?? 0 };
+        return { pruned, upserted: views.length };
     }
 
     // Ok
     private async seedUsers(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing users`);
-        const users = overallMetadata.users;
+        const users = this.getSeedArray<SignUpDto>(overallMetadata?.users);
         // usersDetail = users;
         await this.handleSeedUsers(users);
         this.logger.debug(`[End] Processing users`);
-        return { pruned: 0, upserted: users?.length ?? 0 };
+        return { pruned: 0, upserted: users.length };
     }
 
     // OK
     private async seedRoles(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing roles`);
+        const roles = this.getSeedArray<CreateRoleMetadataDto>(overallMetadata?.roles);
         // While creating roles we are only passing the role name to be used. 
-        await this.roleService.createRolesIfNotExists(overallMetadata.roles.map(role => { return { name: role.name }; }));
+        await this.roleService.createRolesIfNotExists(
+            roles
+                .filter((role) => role?.name)
+                .map((role) => ({ name: role.name } as any)),
+        );
         // After roles are created, we iterate over all roles and attach permissions (if specified in the seeder json) to the respective role.
         // Every role configuration in the seeder json can optionally have a permissions attribute. 
-        for (const role of overallMetadata.roles) {
+        for (const role of roles) {
             if (role.permissions) {
-                await this.roleService.addPermissionsToRole(role.name, role.permissions);
+                await this.roleService.addPermissionsToRole(
+                    role.name,
+                    role.permissions
+                        .map((permission: any) => typeof permission === 'string' ? permission : permission?.name)
+                        .filter(Boolean),
+                );
             }
         }
         this.logger.debug(`[End] Processing roles`);
-        return { pruned: 0, upserted: overallMetadata.roles?.length ?? 0 };
+        return { pruned: 0, upserted: roles.length };
     }
 
     private async seedPermissions(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
@@ -406,7 +408,7 @@ export class ModuleMetadataSeederService {
         // const enabledModules = getDynamicModuleNames();
         const enabledModules = getDynamicModuleNamesBasedOnMetadata();
         for (const enabledModule of enabledModules) {
-            const enabledModuleSeedFile = `module-metadata/${enabledModule}/${enabledModule}-metadata.json`;
+            const enabledModuleSeedFile = `src/${enabledModule}/metadata/${enabledModule}-metadata.json`;
             const fullPath = path.join(process.cwd(), enabledModuleSeedFile);
 
             if (fs.existsSync(fullPath)) {
@@ -463,7 +465,7 @@ export class ModuleMetadataSeederService {
                     await this.createPermissionIfNotExists(permissionName);
                 }
 
-            } catch (error) {
+            } catch (error: any) {
                 this.logger.error(error);
             }
         }
@@ -507,22 +509,23 @@ export class ModuleMetadataSeederService {
     // OK
     private async seedMediaStorageProviders(mediaStorageProviders: any[]): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing Media Storage Provider`);
+        const providers = this.getSeedArray<any>(mediaStorageProviders);
 
-        for (let i = 0; i < mediaStorageProviders.length; i++) {
-            const mediaStorageProvider = mediaStorageProviders[i];
+        for (let i = 0; i < providers.length; i++) {
+            const mediaStorageProvider = providers[i];
             await this.mediaStorageProviderMetadataService.upsert(mediaStorageProvider);
         }
         this.logger.debug(`[End] Processing Media Storage Provider`);
-        return { pruned: 0, upserted: mediaStorageProviders?.length ?? 0 };
+        return { pruned: 0, upserted: providers.length };
     }
 
     private async seedModelSequences(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         this.logger.debug(`[Start] Processing model sequences`);
-        const modelSequences: CreateModelSequenceDto[] = overallMetadata.modelSequences;
+        const modelSequences = this.getSeedArray<CreateModelSequenceDto>(overallMetadata?.modelSequences);
         const pruned = this.enablePruning ? await this.pruneModelSequences(modelSequences, overallMetadata?.moduleMetadata?.name) : 0;
         await this.handleSeedModelSequences(modelSequences);
         this.logger.debug(`[End] Processing model sequences`);
-        return { pruned, upserted: modelSequences?.length ?? 0 };
+        return { pruned, upserted: modelSequences.length };
     }
 
     // OK
@@ -544,7 +547,7 @@ export class ModuleMetadataSeederService {
                     moduleRoot = path.dirname(
                         require.resolve('@solidxai/core/package.json'),
                     );
-                } catch (err) {
+                } catch (err: any) {
                     this.logger.debug(
                         'Could not resolve @solidxai/core from node_modules, assuming local execution',
                     );
@@ -576,7 +579,7 @@ export class ModuleMetadataSeederService {
             }
             else {
                 // Check if file exists
-                const emailTemplateHandlebar = `module-metadata/${moduleName}/email-templates/${emailTemplate.body}`
+                const emailTemplateHandlebar = `src/${moduleName}/metadata/email-templates/${emailTemplate.body}`
                 const fullPath = path.join(process.cwd(), emailTemplateHandlebar);
                 // this.logger.log(`Seeding custom email template from consuming model at path: ${fullPath}`);
                 if (fs.existsSync(fullPath)) {
@@ -610,7 +613,7 @@ export class ModuleMetadataSeederService {
                     moduleRoot = path.dirname(
                         require.resolve('@solidxai/core/package.json'),
                     );
-                } catch (err) {
+                } catch (err: any) {
                     this.logger.debug(
                         'Could not resolve @solidxai/core from node_modules, assuming local execution',
                     );
@@ -642,7 +645,7 @@ export class ModuleMetadataSeederService {
             }
             else {
                 // Check if file exists
-                const emailTemplateHandlebar = `module-metadata/${moduleName}/sms-templates/${smsTemplate.body}`
+                const emailTemplateHandlebar = `src/${moduleName}/metadata/sms-templates/${smsTemplate.body}`
                 const fullPath = path.join(process.cwd(), emailTemplateHandlebar);
                 // this.logger.log(`Seeding custom sms template from consuming model at path: ${fullPath}`);
                 if (fs.existsSync(fullPath)) {
@@ -845,8 +848,8 @@ export class ModuleMetadataSeederService {
         let upserted = 1;
 
         // Next create all the models. 
-        const modelsMetadata: CreateModelMetadataDto[] = moduleMetadata.models;
-        upserted += modelsMetadata?.length ?? 0;
+        const modelsMetadata = this.getSeedArray<CreateModelMetadataDto>(moduleMetadata?.models);
+        upserted += modelsMetadata.length;
         for (let j = 0; j < modelsMetadata.length; j++) {
             const modelMetadata = modelsMetadata[j];
 
@@ -900,6 +903,10 @@ export class ModuleMetadataSeederService {
         return { pruned, upserted };
     }
 
+    private getSeedArray<T>(value: T[] | null | undefined): T[] {
+        return Array.isArray(value) ? value : [];
+    }
+
     private async handleSeedSecurityRules(rulesDto: CreateSecurityRuleDto[]) {
         if (!rulesDto || rulesDto.length === 0) {
             this.logger.debug(`No security rules found to seed`);
@@ -920,16 +927,6 @@ export class ModuleMetadataSeederService {
             const listOfValueDto = listOfValuesDto[j];
             listOfValueDto['module'] = await this.moduleMetadataService.findOneByUserKey(listOfValueDto.moduleUserKey);
             await this.listOfValuesService.upsert(listOfValuesDto[j]);
-        }
-    }
-
-    private async handleSeedDashboards(dashboardDtos: CreateDashboardDto[]) {
-        if (!dashboardDtos || dashboardDtos.length === 0) {
-            this.logger.debug(`No dashboards found to seed`);
-            return;
-        }
-        for (const dto of dashboardDtos) {
-            await this.dashboardRepo.upsertWithDto(dto);
         }
     }
 
@@ -1182,45 +1179,6 @@ export class ModuleMetadataSeederService {
                 .createQueryBuilder()
                 .delete()
                 .from(ListOfValues)
-                .whereInIds(ids)
-                .execute();
-            return result.affected ?? 0;
-        }
-        return 0;
-    }
-
-    private async pruneDashboards(dashboardsDto: CreateDashboardDto[] | undefined, moduleName?: string): Promise<number> {
-        if (!moduleName) {
-            this.logger.warn(`Skipping dashboards prune: missing module name in metadata.`);
-            return 0;
-        }
-        const dashboards = dashboardsDto ?? [];
-
-        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
-        if (!module) {
-            this.logger.warn(`Skipping dashboards prune: module not found for ${moduleName}.`);
-            return 0;
-        }
-
-        const dashboardNames = [...new Set(dashboards.map(dto => dto.name).filter(Boolean))];
-        const repo = this.dataSource.getRepository(Dashboard);
-        const idsToDeleteQuery = repo
-            .createQueryBuilder('db')
-            .select('db.id', 'id')
-            .innerJoin('db.module', 'module')
-            .where('module.id = :moduleId', { moduleId: module.id });
-
-        if (dashboardNames.length > 0) {
-            idsToDeleteQuery.andWhere('db.name NOT IN (:...dashboardNames)', { dashboardNames });
-        }
-
-        const rows = await idsToDeleteQuery.getRawMany();
-        const ids = rows.map((row) => row.id);
-        if (ids.length > 0) {
-            const result = await repo
-                .createQueryBuilder()
-                .delete()
-                .from(Dashboard)
                 .whereInIds(ids)
                 .execute();
             return result.affected ?? 0;

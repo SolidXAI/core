@@ -30,6 +30,23 @@ export class UserService extends CRUDService<User> {
     return normalized || "facebook_user";
   }
 
+  private buildMicrosoftActiveDirectoryUsernameBase(
+    email?: string,
+    providerId?: string,
+    name?: string,
+  ): string {
+    const source =
+      email ||
+      name ||
+      (providerId ? `microsoft_active_directory_${providerId}` : "");
+    const normalized = source
+      .trim()
+      .toLowerCase()
+      .replace(/[^a-z0-9@._-]+/g, "_")
+      .replace(/^_+|_+$/g, "");
+    return normalized || "microsoft_active_directory_user";
+  }
+
   private async resolveUniqueUsername(
     preferredUsername: string,
     // fallbackUsername: string,
@@ -285,7 +302,7 @@ export class UserService extends CRUDService<User> {
   }
 
   async resolveUserOnOauthFacebook(oauthUserDto: OauthUserDto): Promise<User> {
-    const normalizedEmail = oauthUserDto.email?.trim().toLowerCase() || null;
+    const normalizedEmail = oauthUserDto.email?.trim().toLowerCase();
     let user: User | null = null;
 
     if (oauthUserDto.providerId) {
@@ -390,6 +407,50 @@ export class UserService extends CRUDService<User> {
         microsoftAccessToken: oauthUserDto.accessToken,
         microsoftId: oauthUserDto.providerId,
         microsoftProfilePicture: oauthUserDto.picture,
+      });
+
+      await this.repo.save(entity);
+    }
+    return user;
+  }
+
+  async resolveUserOnOauthMicrosoftActiveDirectory(
+    oauthUserDto: OauthUserDto,
+  ): Promise<User> {
+    const user = await this.repo.findOne({
+      where: {
+        email: oauthUserDto.email,
+      },
+      relations: {
+        roles: true,
+      },
+    });
+
+    if (!user) {
+      const newUser = new User();
+      newUser.username = oauthUserDto.email;
+      newUser.email = oauthUserDto.email;
+      newUser.fullName = oauthUserDto.name;
+      newUser.lastLoginProvider = oauthUserDto.provider;
+      newUser.accessCode = oauthUserDto.accessCode;
+      newUser.microsoftActiveDirectoryAccessToken = oauthUserDto.accessToken;
+      newUser.microsoftActiveDirectoryId = oauthUserDto.providerId;
+      newUser.microsoftActiveDirectoryProfilePicture = oauthUserDto.picture;
+
+      const savedUser = await this.repo.save(newUser);
+
+      await this.initializeRolesForNewUser(
+        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        savedUser,
+      );
+    } else {
+      const entity = await this.repo.preload({
+        id: user.id,
+        lastLoginProvider: oauthUserDto.provider,
+        accessCode: oauthUserDto.accessCode,
+        microsoftActiveDirectoryAccessToken: oauthUserDto.accessToken,
+        microsoftActiveDirectoryId: oauthUserDto.providerId,
+        microsoftActiveDirectoryProfilePicture: oauthUserDto.picture,
       });
 
       await this.repo.save(entity);

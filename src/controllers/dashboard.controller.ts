@@ -1,99 +1,80 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
-import { AnyFilesInterceptor } from "@nestjs/platform-express";
-import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { DashboardVariableSelectionDynamicQueryDto } from 'src/dtos/dashboard-variable-selection-dynamic-query.dto';
-import { CreateDashboardDto } from '../dtos/create-dashboard.dto';
-import { UpdateDashboardDto } from '../dtos/update-dashboard.dto';
-import { DashboardService } from '../services/dashboard.service';
+import { Body, Controller, Get, Param, Post, Put, Query } from '@nestjs/common';
+import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { ActiveUser } from 'src/decorators/active-user.decorator';
+import { DashboardVariableOptionsQueryDto } from 'src/dtos/dashboard-variable-options-query.dto';
+import { DashboardBatchDataRequestDto, DashboardSaveLayoutDto, DashboardWidgetDataRequestDto } from 'src/dtos/dashboard-widget-data-request.dto';
+import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
+import { DashboardRuntimeService } from 'src/services/dashboard-runtime.service';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
-
-@ApiTags('Solid Core')
 @Controller('dashboard')
+@ApiTags('Solid Core')
 export class DashboardController {
-  constructor(private readonly service: DashboardService) { }
+    constructor(
+        private readonly dashboardRuntimeService: DashboardRuntimeService,
+    ) { }
 
-  @ApiBearerAuth("jwt")
-  @Post()
-  @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateDashboardDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-    return this.service.create(createDto, files);
-  }
+    @ApiBearerAuth('jwt')
+    @Get(':moduleName/:dashboardName/definition')
+    async getDefinition(
+        @Param('moduleName') moduleName: string,
+        @Param('dashboardName') dashboardName: string,
+    ) {
+        return this.dashboardRuntimeService.getDashboardDefinition(moduleName, dashboardName);
+    }
 
-  @ApiBearerAuth("jwt")
-  @Post('/bulk')
-  @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateDashboardDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
-    return this.service.insertMany(createDtos, filesArray);
-  }
+    @ApiBearerAuth('jwt')
+    @Post(':moduleName/:dashboardName/widgets/:widgetName/data')
+    async getWidgetData(
+        @Param('moduleName') moduleName: string,
+        @Param('dashboardName') dashboardName: string,
+        @Param('widgetName') widgetName: string,
+        @Body() request: DashboardWidgetDataRequestDto,
+        @ActiveUser() activeUser: ActiveUserData,
+    ) {
+        return this.dashboardRuntimeService.getWidgetData(moduleName, dashboardName, widgetName, request, activeUser);
+    }
 
+    @ApiBearerAuth('jwt')
+    @Post(':moduleName/:dashboardName/data')
+    async getDashboardData(
+        @Param('moduleName') moduleName: string,
+        @Param('dashboardName') dashboardName: string,
+        @Body() request: DashboardBatchDataRequestDto,
+        @ActiveUser() activeUser: ActiveUserData,
+    ) {
+        return this.dashboardRuntimeService.getDashboardData(moduleName, dashboardName, request, activeUser);
+    }
 
-  @ApiBearerAuth("jwt")
-  @Put(':id')
-  @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateDashboardDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-    return this.service.update(id, updateDto, files);
-  }
+    @ApiBearerAuth('jwt')
+    @Get(':moduleName/:dashboardName/variable-options/:variableName')
+    async getVariableOptions(
+        @Param('moduleName') moduleName: string,
+        @Param('dashboardName') dashboardName: string,
+        @Param('variableName') variableName: string,
+        @Query() query: DashboardVariableOptionsQueryDto,
+    ) {
+        return this.dashboardRuntimeService.getVariableOptions(moduleName, dashboardName, variableName, query);
+    }
 
-  @ApiBearerAuth("jwt")
-  @Patch(':id')
-  @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateDashboardDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-    return this.service.update(id, updateDto, files, true);
-  }
+    @ApiBearerAuth('jwt')
+    @Get(':moduleName/:dashboardName/layout')
+    async getLayout(
+        @Param('moduleName') moduleName: string,
+        @Param('dashboardName') dashboardName: string,
+        @ActiveUser() activeUser: ActiveUserData,
+    ) {
+        return this.dashboardRuntimeService.getLayout(moduleName, dashboardName, activeUser);
+    }
 
-  @ApiBearerAuth("jwt")
-  @Post('/bulk-recover')
-  async recoverMany(@Body() ids: number[]) {
-    return this.service.recoverMany(ids);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Get('/recover/:id')
-  async recover(@Param('id') id: number) {
-    return this.service.recover(id);
-  }
-
-  @ApiBearerAuth("jwt")
-  @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
-  @ApiQuery({ name: 'limit', required: false, type: Number })
-  @ApiQuery({ name: 'offset', required: false, type: Number })
-  @ApiQuery({ name: 'fields', required: false, type: Array })
-  @ApiQuery({ name: 'sort', required: false, type: Array })
-  @ApiQuery({ name: 'groupBy', required: false, type: Array })
-  @ApiQuery({ name: 'populate', required: false, type: Array })
-  @ApiQuery({ name: 'populateMedia', required: false, type: Array })
-  @ApiQuery({ name: 'filters', required: false, type: Array })
-  @Get()
-  async findMany(@Query() query: any) {
-    return this.service.find(query);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Get('/selection-dynamic-values')
-  async getSelectionDynamicValues(@Query() query: DashboardVariableSelectionDynamicQueryDto) {
-    return this.service.getSelectionDynamicValues(query);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Get(':id')
-  async findOne(@Param('id') id: string, @Query() query: any) {
-    return this.service.findOne(+id, query);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Delete('/bulk')
-  async deleteMany(@Body() ids: number[]) {
-    return this.service.deleteMany(ids);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Delete(':id')
-  async delete(@Param('id') id: number) {
-    return this.service.delete(id);
-  }
-
+    @ApiBearerAuth('jwt')
+    @Put(':moduleName/:dashboardName/layout')
+    async saveLayout(
+        @Param('moduleName') moduleName: string,
+        @Param('dashboardName') dashboardName: string,
+        @Body() body: DashboardSaveLayoutDto,
+        @ActiveUser() activeUser: ActiveUserData,
+    ) {
+        return this.dashboardRuntimeService.saveLayout(moduleName, dashboardName, body, activeUser);
+    }
 }
+

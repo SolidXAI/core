@@ -3,6 +3,7 @@
 import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
 import { _ } from "lodash";
 import { LEGACY_TABLE_FIELDS_PREFIX } from "src/entities/legacy-common.entity";
+import { LegacyTableType } from "src/enums/legacy-table-type.enum";
 import { ModelMetadataRepository } from "src/repository/model-metadata.repository";
 import { SolidRegistry } from "./solid-registry";
 
@@ -19,12 +20,12 @@ export class ModelMetadataHelperService {
     ) {
     }
 
-    getSystemFieldsMetadata(isLegacyTable: boolean=false, isLegacyTableWithId: boolean=false): any[] {
+    getSystemFieldsMetadata(legacyTableType: LegacyTableType = LegacyTableType.NONE): any[] {
         let systemFieldsMetadata: any[];
-        if (isLegacyTableWithId) {
+        if (legacyTableType === LegacyTableType.GENERATED_ID) {
             systemFieldsMetadata = this.getSystemFieldsMetadataMappingForLegacyTable(true);
         }
-        else if (isLegacyTable) {
+        else if (legacyTableType === LegacyTableType.EXISTING_ID) {
             systemFieldsMetadata = this.getSystemFieldsMetadataMappingForLegacyTable(false);
         }
         else {

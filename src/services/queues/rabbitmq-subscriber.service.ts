@@ -31,12 +31,12 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
 
     constructor(protected readonly mqMessageService: MqMessageService, protected readonly mqMessageQueueService: MqMessageQueueService) {
         this.url = process.env.QUEUES_RABBIT_MQ_URL;
-        this.serviceRole = process.env.QUEUES_SERVICE_ROLE;
+        this.serviceRole = process.env.QUEUES_SERVICE_ROLE || 'both';
         if (!this.url) {
             this.logger.debug('RabbitMqPublisher url is not defined in the environment variables');
         }
-        if (!this.serviceRole) {
-            this.logger.debug('Queue service Role is not defined in the environment variables');
+        if (!process.env.QUEUES_SERVICE_ROLE) {
+            this.logger.debug('QUEUES_SERVICE_ROLE is not defined. Defaulting RabbitMqSubscriber service role to "both".');
         }
         // this.logger.debug(`RabbitMqSubscriber instance created with options: ${JSON.stringify(this.options())} and url: ${this.url}`);
     }
@@ -85,7 +85,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
     async onModuleInit(): Promise<void> {
         // Not using SettingService here as that will necessitate all implementors of RabbitMqSubscriber to also inject SettingService which is not ideal. 
         // Instead we directly read the environment variables here.
-        const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'rabbitmq';
+        const defaultBroker = process.env.QUEUES_DEFAULT_BROKER || 'database';
         const solidCliRunning = process.env.SOLID_CLI_RUNNING || "false";
         const queueNameRegex = (process.env.QUEUES_QUEUE_NAME_REGEX_TO_ENABLE || '').trim();
         const roleAllowed = ['both', 'subscriber'].includes(this.serviceRole);
@@ -107,7 +107,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                         this.logger.log(`RabbitMqSubscriber for queue ${queueName} is disabled because it does not match QUEUES_QUEUE_NAME_REGEX_TO_ENABLE=${queueNameRegex}`);
                         return;
                     }
-                } catch (error) {
+                } catch (error: any) {
                     this.logger.error(`Invalid QUEUES_QUEUE_NAME_REGEX_TO_ENABLE regex "${queueNameRegex}". Subscriber for queue ${queueName} will not start.`);
                     return;
                 }
@@ -116,7 +116,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             const namespacedQueueName = buildNamespacedQueueName(queueName);
             try {
                 await this.connectAndConsume(namespacedQueueName);
-            } catch (err) {
+            } catch (err: any) {
                 this.logger.error(`Failed to connect to RabbitMQ for queue ${namespacedQueueName}: ${(err as Error).message}`, (err as Error).stack);
                 this.triggerReconnect(namespacedQueueName, 'initial connection failure');
             }
@@ -142,7 +142,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
         let connection: amqp.Connection;
         try {
             connection = await this.establishConnection();
-        } catch (err) {
+        } catch (err: any) {
             this.logger.error(`Failed to connect to RabbitMQ for queue ${queueName}: ${(err as Error).message}`, (err as Error).stack);
             throw err;
         }
@@ -210,7 +210,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                     const messageContentString = rawMessage.content.toString();
                     message = JSON.parse(messageContentString) as QueueMessage<T>;
                     this.logger.debug(`rabbitmq subscriber received message with id: ${message.messageId} for queue ${queueName}`);
-                } catch (error) {
+                } catch (error: any) {
                     this.logger.error(`Invalid JSON message on queue ${queueName}: ${(error as Error).message}`);
                     await this.publishToFailedQueue(queueName, rawMessage.content, channel, error);
                     channel.ack(rawMessage);
@@ -223,7 +223,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
 
                 try {
                     await this.processMessage(message, rawMessage, channel, queueName);
-                } catch (error) {
+                } catch (error: any) {
                     await this.handleProcessingError(message, rawMessage, channel, error, queueName);
                 }
             },
@@ -277,7 +277,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             channel.sendToQueue(failedQueue, body, errorMessage ? {
                 headers: { 'x-error': errorMessage }
             } : undefined);
-        } catch (err) {
+        } catch (err: any) {
             this.logger.error(`Failed to publish to failed queue ${failedQueue}: ${(err as Error).message}`);
         }
     }
@@ -302,7 +302,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 this.reconnectAttempt = 0;
                 this.logger.log(`RabbitMqSubscriber reconnected for queue ${queueName}`);
                 return;
-            } catch (err) {
+            } catch (err: any) {
                 this.reconnectAttempt += 1;
                 const delay = this.backoff();
                 this.logger.warn(`RabbitMqSubscriber reconnect failed for queue ${queueName}; retrying in ${delay}ms`);
@@ -407,7 +407,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
                 await this.mqMessageService.repo.update(mqMessage.id, updatedFields);
             }
         }
-        catch (error) {
+        catch (error: any) {
             this.logger.error(error.message, error.stack);
         }
 
@@ -485,7 +485,7 @@ export abstract class RabbitMqSubscriber<T> implements OnModuleInit, QueueSubscr
             // - If timeoutPromise rejects first, we fail fast with timeout error.
             // This ensures we mark DB status via normal error handling before broker ack-timeout.
             return await Promise.race([subscribePromise, timeoutPromise]);
-        } catch (error) {
+        } catch (error: any) {
             const errorMessage = (error as Error)?.message || String(error);
             this.logger.error(
                 `Subscriber execution failed for queue ${queueName} and messageId ${messageId}: ${errorMessage}`,

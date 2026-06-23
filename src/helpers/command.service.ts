@@ -4,6 +4,7 @@ import { spawn } from 'child_process';
 export type CommandWithArgs = {
   command: string;
   args: string[];
+  cwd?: string;
 };
 
 @Injectable()
@@ -43,6 +44,7 @@ export class CommandService {
       const child = spawn(command, spawnArgs, {
         shell: isWindows, // Use shell on Windows to handle .cmd files
         stdio: ['pipe', 'pipe', 'pipe'],
+        cwd: commandWithArgs.cwd,
       });
 
       let stdout = '';
@@ -64,7 +66,7 @@ export class CommandService {
       child.on('close', (code) => {
         if (code !== 0) {
           this.logger.error(`Command failed with code ${code}: ${command}`, stderr);
-          reject(new Error(stderr || `Command failed with exit code ${code}`));
+          reject(new Error([stderr, stdout].filter(Boolean).join('\n').trim() || `Command failed with exit code ${code}`));
           return;
         }
         resolve(stdout);

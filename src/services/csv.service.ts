@@ -68,7 +68,7 @@ export class CsvService {
       }
 
       csvStream.end(); // ✅ Ensure CSV stream is finalized
-    } catch (error) {
+    } catch (error: any) {
       this.logger.error(`❌ Error writing CSV: ${error.message}`);
       passThrough.destroy(error); // ✅ Properly destroy stream on error
       throw error;

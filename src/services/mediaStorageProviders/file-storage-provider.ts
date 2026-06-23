@@ -8,6 +8,7 @@ import { MediaRepository } from "src/repository/media.repository";
 import { DiskFileService } from "src/services/file";
 import { Readable } from "stream";
 import * as path from "path";
+import * as fs from "fs";
 import { SettingService } from "../setting.service";
 import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from "src/services/settings/default-settings-provider.service";
 import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
@@ -80,12 +81,15 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         for (const pair of streamPairs) {
             const stream = pair[0];
             const fileName = pair[1];
-            await this.fileService.writeStream(this.getFullFilePath(fileName), stream);
+            const fullPath = this.getFullFilePath(fileName);
+            await this.fileService.writeStream(fullPath, stream);
+            const { size: fileSize } = await fs.promises.stat(fullPath);
             const mediaEntity = await this.mediaRepository.createMedia({
                 //@ts-ignore
                 entityId: entity.id,
                 modelMetadataId: mediaFieldMetadata.model.id,
                 relativeUri: fileName,
+                fileSize,
                 mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
                 fieldMetadataId: mediaFieldMetadata.id
             }) as unknown as Media;
@@ -108,6 +112,13 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         }
         // existingMedia.forEach(media => {
         // });
+    }
+
+    async deleteByMediaRecord(media: Media): Promise<void> {
+        if (!media?.relativeUri) {
+            return;
+        }
+        await this.fileService.delete(this.getFullFilePath(media.relativeUri));
     }
 
     private getFullFilePath(fileName: string): string {

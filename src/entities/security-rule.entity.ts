@@ -10,6 +10,7 @@ export class SecurityRule extends CommonEntity {
     @Column({ type: "varchar" })
     name: string;
 
+    @Index()
     @Column({ type: "varchar" })
     description: string;
 

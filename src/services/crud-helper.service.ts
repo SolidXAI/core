@@ -282,7 +282,15 @@ export class CrudHelperService {
                 const orderOptionKeys = Object.keys(orderOptions) as Array<keyof typeof orderOptions>;
                 orderOptionKeys.forEach((key) => {
                     const value = orderOptions[key] as 'ASC' | 'DESC';
-                    qb.addOrderBy(`${entityAlias}.${key}`, value);
+                    const field = String(key);
+                    if (field.includes('.')) {
+                        const { alias, property, created } = this.ensureRelationPathJoined(qb, entityAlias, field.split('.'));
+                        const orderColumn = `${alias}.${property}`;
+                        qb.addOrderBy(orderColumn, value);
+                        if (created) qb.addSelect(orderColumn);
+                    } else {
+                        qb.addOrderBy(`${entityAlias}.${field}`, value);
+                    }
                 });
             }
         }
@@ -341,6 +349,7 @@ export class CrudHelperService {
             qb.expressionMap?.aliases?.find(a => a.metadata)?.name ||
             qb.expressionMap?.aliases?.[0]?.name;
         let parentAlias = mainAlias || rootAlias;
+        let leafJoinCreated = false;
         for (let i = 0; i < pathParts.length - 1; i++) {
             const part = pathParts[i];
             const joinProperty = `${parentAlias}.${part}`;
@@ -348,10 +357,13 @@ export class CrudHelperService {
             const joinAlias = existingAlias ?? this.sanitizeAlias(`${parentAlias}_${part}`);
             if (!existingAlias && !this.isRelationJoined(qb, joinProperty) && !this.isAliasJoined(qb, joinAlias)) {
                 qb.leftJoin(joinProperty, joinAlias);
+                leafJoinCreated = true;
+            } else {
+                leafJoinCreated = false;
             }
             parentAlias = joinAlias;
         }
-        return { alias: parentAlias, property: pathParts[pathParts.length - 1] };
+        return { alias: parentAlias, property: pathParts[pathParts.length - 1], created: leafJoinCreated };
     }
 
     private getDriver(qb: SelectQueryBuilder<any>) {
@@ -741,6 +753,78 @@ export class CrudHelperService {
         const permissionNames = [`${classify(modelName)}Controller.recover`, `${classify(modelName)}Controller.recoverMany`];
         const matchingPermssions = activeUser.permissions.filter((p) => permissionNames.includes(p));
         return matchingPermssions.length > 0
+    }
+
+    pagedResponse<T>(offset: number | undefined, limit: number | undefined, count: number, entities: T[]) {
+        const safeLimit = limit ?? count ?? 0;
+        const safeOffset = offset ?? 0;
+        const currentPage = safeLimit ? Math.floor(safeOffset / safeLimit) + 1 : 1;
+        const totalPages = safeLimit ? Math.ceil(count / safeLimit) : 1;
+        const nextPage = safeLimit && currentPage < totalPages ? currentPage + 1 : null;
+        const prevPage = safeLimit && currentPage > 1 ? currentPage - 1 : null;
+        return {
+            meta: {
+                totalRecords: count,
+                currentPage,
+                nextPage,
+                prevPage,
+                totalPages,
+                perPage: safeLimit ? +safeLimit : 0,
+            },
+            records: entities,
+        };
+    }
+
+    async executeGroupPipeline<T>(
+        filterQb: SelectQueryBuilder<T>,
+        basicFilterDto: BasicFilterDto,
+        alias: string,
+        createQbFn: () => Promise<SelectQueryBuilder<T>>,
+        postProcessEntities?: (entities: T[]) => Promise<void>
+    ): Promise<{ meta: { totalRecords: number }; groupMeta: any[]; groupRecords: any[] }> {
+        const groupByFields = this.normalize(basicFilterDto.groupBy);
+        if (!groupByFields.length) throw new BadRequestException(ERROR_MESSAGES.INVALID_GROUP_BY_COUNT);
+
+        if (basicFilterDto.populateGroup) {
+            const hasRelationGroup = groupByFields.some(f => f.includes('.'));
+            if (hasRelationGroup) throw new BadRequestException('populateGroup is not supported when grouping on relation fields. Fetch group metadata first and retrieve records in a separate call.');
+        }
+
+        const { aliasMap: groupAliasMap, formatMap: groupFormatMap, expressionMap: groupExpressionMap } =
+            this.applyGroupBySelections(filterQb, groupByFields, alias);
+        const aggregateAliasMap = this.applyAggregates(filterQb, basicFilterDto.aggregates, alias);
+        this.applyGroupSortingAndPagination(filterQb, basicFilterDto.sort, { ...groupAliasMap, ...aggregateAliasMap }, basicFilterDto.limit, basicFilterDto.offset);
+
+        const groupByResult = await filterQb.getRawMany();
+        const totalGroups = await this.countGroups(filterQb);
+        const aggregateAliasSet = new Set(Object.values(aggregateAliasMap));
+
+        const groupMeta = [];
+        const groupRecords = [];
+
+        for (const group of groupByResult) {
+            groupMeta.push(this.createGroupMeta(group, aggregateAliasSet, groupByFields, groupAliasMap, groupFormatMap));
+
+            if (basicFilterDto.populateGroup) {
+                let groupQb = await createQbFn();
+                const { groupBy: _gb, aggregates: _agg, ...rest } = basicFilterDto;
+                const groupFilterDto: BasicFilterDto = {
+                    ...rest,
+                    ...basicFilterDto.groupFilter,
+                    groupBy: undefined,
+                    aggregates: undefined,
+                    sort: basicFilterDto.groupFilter?.sort,
+                };
+                groupQb = this.buildFilterQuery(groupQb, groupFilterDto, alias);
+                groupQb = this.buildGroupByRecordsQuery(groupQb, group, alias, groupAliasMap, aggregateAliasMap, groupExpressionMap);
+                const [entities, count] = await groupQb.getManyAndCount();
+                if (postProcessEntities) await postProcessEntities(entities);
+                const groupData = this.pagedResponse(basicFilterDto.groupFilter?.offset, basicFilterDto.groupFilter?.limit, count, entities);
+                groupRecords.push(this.createGroupRecords(group, aggregateAliasSet, groupData, groupByFields, groupAliasMap, groupFormatMap));
+            }
+        }
+
+        return { meta: { totalRecords: totalGroups }, groupMeta, groupRecords };
     }
 
 }

@@ -9,6 +9,7 @@ import { Exclude, Expose } from "class-transformer";
 @TableInheritance({ column: { type: "varchar", name: "type", default: "User" } })
 @Exclude()
 export class User extends CommonEntity {
+    @Index()
     @Column({ type: "varchar", nullable: true })
     @Expose()
     fullName: string;
@@ -88,6 +89,19 @@ export class User extends CommonEntity {
     // don't send to client
     microsoftProfilePicture: string;
 
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    microsoftActiveDirectoryId: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    microsoftActiveDirectoryAccessToken: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    microsoftActiveDirectoryProfilePicture: string;
+
+    @Index()
     @Column({ default: true })
     @Expose()
     active: boolean = true;
@@ -177,7 +191,7 @@ export class User extends CommonEntity {
     @Column({ nullable: true })
     rehashedAt: Date;
 
-    // dont send to client
+    @Expose()
     @Column({ type: "int", default: 0 })
     failedLoginAttempts: number = 0;
 

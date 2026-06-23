@@ -44,6 +44,7 @@ export type RunnerOptions = {
 };
 
 export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
+  const startedAt = Date.now();
   const registry = new StepRegistry();
   registerApiSteps(registry);
   registerUiSteps(registry);
@@ -71,15 +72,32 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const ui = new PlaywrightAdapter(opts.ui);
   const ctxBase = { resources, reporter, api, ui, specRegistry, testData, options: opts.options };
   const uiStarted = { value: false };
+  let passed = 0;
+  let failed = 0;
+  let runError: unknown;
 
   try {
     for (const scenario of scenarios) {
       if (scenarioNeedsUi(scenario)) {
         await ensureUiStarted(ctxBase, uiStarted);
       }
-      await engine.runScenario(scenario, ctxBase);
+      try {
+        await engine.runScenario(scenario, ctxBase);
+        passed += 1;
+      } catch (error) {
+        failed += 1;
+        runError = error;
+        throw error;
+      }
     }
   } finally {
+    reporter.onRunEnd?.({
+      ok: !runError,
+      total: scenarios.length,
+      passed,
+      failed,
+      durationMs: Date.now() - startedAt,
+    });
     if (uiStarted.value) {
       await ui.stop();
     }

@@ -5,7 +5,7 @@ import { Column, CreateDateColumn, DeleteDateColumn, Index, UpdateDateColumn } f
 export const LEGACY_TABLE_FIELDS_PREFIX = 'ss';
 
 @Exclude()
-export abstract class LegacyCommonEntity {
+export abstract class LegacyCommonEntityWithExistingId {
     // @Expose()
     // @Column({ type: 'integer', name: `${LEGACY_TABLE_FIELDS_PREFIX}_id`, unique: true })
     // @Generated("increment")
