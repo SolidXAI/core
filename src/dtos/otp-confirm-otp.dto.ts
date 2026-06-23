@@ -1,19 +1,25 @@
-import { IsEmail, IsEnum, IsNotEmpty, IsString, MinLength } from 'class-validator';
-import { DeviceMetadataDto } from './device-metadata.dto';
+import {
+  IsEmail,
+  IsEnum,
+  IsNotEmpty,
+  IsString,
+  MinLength,
+} from "class-validator";
+import { UserDeviceMetadataDto } from "./user-device-metadata.dto";
 
 export enum SignInType {
-    email = 'email',
-    mobile = 'mobile',
+  email = "email",
+  mobile = "mobile",
 }
 
-export class OTPConfirmOTPDto extends DeviceMetadataDto {
-    @IsEnum(SignInType)
-    @IsNotEmpty()
-    type: string;
+export class OTPConfirmOTPDto extends UserDeviceMetadataDto {
+  @IsEnum(SignInType)
+  @IsNotEmpty()
+  type: string;
 
-    @IsNotEmpty()
-    identifier: string;
+  @IsNotEmpty()
+  identifier: string;
 
-    @IsNotEmpty()
-    otp: string;
+  @IsNotEmpty()
+  otp: string;
 }

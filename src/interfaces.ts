@@ -320,30 +320,26 @@ export interface IWhatsAppTransport {
 }
 
 export interface IPushNotification {
-  sendPushNotification(
-    endpointArn: string,
-    payload: PushNotificationPayload,
-    shouldQueuePush?: boolean,
-  ): Promise<PublishCommandOutput | string>;
-
-  sendPushNotificationUsingTemplate(
-    endpointArn: string,
-    templateName: string,
-    templateParams: any,
-    shouldQueuePush?: boolean,
-  ): Promise<PublishCommandOutput | string>;
-
-  sendPushNotificationSynchronously(
-    message: PushNotificationQueuePayload,
-  ): Promise<PublishCommandOutput>;
-
   registerDevice(payload: RegisterDevicePayload): Promise<string>;
 
-  unregisterDevice(userId: number, deviceId: string): Promise<void>;
+  unregisterDevice(providerRecipientId: string): Promise<void>;
+
+  sendPushNotification(
+    providerRecipientId: string,
+    payload: PushNotificationPayload,
+    shouldQueue?: boolean,
+  ): Promise<unknown>;
+
+  sendPushNotificationUsingTemplate(
+    providerRecipientId: string,
+    templateName: string,
+    templateParams: any,
+    shouldQueue?: boolean,
+  ): Promise<unknown>;
 }
 
 export interface PushNotificationQueuePayload {
-  endpointArn: string;
+  providerRecipientId: string;
   payload: PushNotificationPayload;
 }
 
@@ -358,6 +354,7 @@ export interface RegisterDevicePayload {
   deviceId: string;
   deviceToken: string;
   platform: string;
+  providerRecipientId?: string;
   deviceName?: string;
   deviceType?: string;
   osName?: string;

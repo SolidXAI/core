@@ -1168,6 +1168,22 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
+      key: "pushNotificationTarget",
+      value:
+        process.env.COMMON_PUSH_NOTIFICATION_TARGET ?? "latest-device",
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Push Notification Target",
+      group: "push-settings",
+      sortOrder: 30,
+      controlType: "selectionStatic",
+      options: [
+        { label: "Latest Device", value: "latest-device" },
+        { label: "All Devices", value: "all-devices" },
+        { label: "Primary Device", value: "primary-device" },
+      ],
+    },
+    {
+      moduleName: "solid-core",
       key: "awsSnsAccessKeyId",
       value: process.env.AWS_SNS_ACCESS_KEY_ID,
       level: SettingLevel.SystemEnv,

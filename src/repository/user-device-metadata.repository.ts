@@ -5,6 +5,7 @@ import { RequestContextService } from "src/services/request-context.service";
 import { SecurityRuleRepository } from "./security-rule.repository";
 import { SolidBaseRepository } from "./solid-base.repository";
 
+// for solid-core
 @Injectable()
 export class UserDeviceMetadataRepository extends SolidBaseRepository<UserDeviceMetadata> {
   constructor(

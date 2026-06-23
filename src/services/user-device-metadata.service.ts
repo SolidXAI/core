@@ -7,7 +7,7 @@ export interface UpsertUserDeviceInput {
   deviceId: string;
   deviceToken: string;
   platform: string;
-  endpointArn?: string;
+  providerRecipientId?: string;
   osName?: string;
   osVersion?: string;
   appVersion?: string;
@@ -35,7 +35,7 @@ export class UserDeviceMetadataService {
     if (existing) {
       existing.pushDeviceToken = payload.deviceToken;
       existing.platform = payload.platform;
-      existing.pushEndpointArn = payload.endpointArn;
+      existing.pushProviderRecipientId = payload.providerRecipientId;
       existing.osName = payload.osName;
       existing.osVersion = payload.osVersion;
       existing.appVersion = payload.appVersion;
@@ -47,18 +47,23 @@ export class UserDeviceMetadataService {
       return this.userDeviceMetadataRepository.save(existing);
     }
 
+    const existingDevices = await this.findActiveDevicesByUserId(
+      payload.userId,
+    );
+
     return this.userDeviceMetadataRepository.save(
       this.userDeviceMetadataRepository.create({
         user: { id: payload.userId } as any,
         deviceId: payload.deviceId,
         pushDeviceToken: payload.deviceToken,
-        pushEndpointArn: payload.endpointArn,
+        pushProviderRecipientId: payload.providerRecipientId,
         platform: payload.platform,
         osName: payload.osName,
         osVersion: payload.osVersion,
         appVersion: payload.appVersion,
         deviceName: payload.deviceName,
         deviceType: payload.deviceType,
+        isPrimary: existingDevices.length === 0,
         isActive: true,
         lastActiveAt: now,
         pushTokenUpdatedAt: now,
@@ -75,25 +80,12 @@ export class UserDeviceMetadataService {
     });
   }
 
-  async markDeviceInactive(userId: number, deviceId: string): Promise<void> {
-    const existing = await this.findActiveDevice(userId, deviceId);
-
-    if (!existing) {
-      return;
-    }
-
-    existing.isActive = false;
-    existing.lastActiveAt = new Date();
-
-    await this.userDeviceMetadataRepository.save(existing);
-  }
-
-  async resolveEndpointArnForUserDevice(
+  async resolveProviderRecipientIdForUserDevice(
     userId: number,
     deviceId: string,
   ): Promise<string | null> {
     const activeDevice = await this.findActiveDevice(userId, deviceId);
-    return activeDevice?.pushEndpointArn ?? null;
+    return activeDevice?.pushProviderRecipientId ?? null;
   }
 
   async findActiveDevicesByUserId(
@@ -101,6 +93,83 @@ export class UserDeviceMetadataService {
   ): Promise<UserDeviceMetadata[]> {
     return this.userDeviceMetadataRepository.find({
       where: { user: { id: userId }, isActive: true },
+    });
+  }
+
+  async markDeviceInactive(userId: number, deviceId: string): Promise<void> {
+    const existing = await this.findActiveDevice(userId, deviceId);
+
+    if (!existing) {
+      return;
+    }
+
+    const wasPrimary = existing.isPrimary;
+
+    existing.isActive = false;
+    existing.isPrimary = false;
+    existing.lastActiveAt = new Date();
+
+    await this.userDeviceMetadataRepository.save(existing);
+
+    if (wasPrimary) {
+      const nextDevice = await this.userDeviceMetadataRepository.findOne({
+        where: {
+          user: { id: userId },
+          isActive: true,
+        },
+        order: {
+          lastActiveAt: "DESC",
+        },
+      });
+
+      if (nextDevice) {
+        nextDevice.isPrimary = true;
+
+        await this.userDeviceMetadataRepository.save(nextDevice);
+      }
+    }
+  }
+
+  async makePrimaryDevice(userId: number, deviceId: string): Promise<void> {
+    const device = await this.findActiveDevice(userId, deviceId);
+
+    if (!device) return;
+
+    await this.userDeviceMetadataRepository.update(
+      { user: { id: userId } as any },
+      { isPrimary: false },
+    );
+
+    await this.userDeviceMetadataRepository.update(
+      {
+        user: { id: userId } as any,
+        deviceId,
+      },
+      {
+        isPrimary: true,
+        lastActiveAt: new Date(),
+      },
+    );
+  }
+
+  async findPrimaryDevice(userId: number): Promise<UserDeviceMetadata | null> {
+    return this.userDeviceMetadataRepository.findOne({
+      where: {
+        user: { id: userId },
+        isPrimary: true,
+        isActive: true,
+      },
+    });
+  }
+
+  async findDevicesByUserId(userId: number): Promise<UserDeviceMetadata[]> {
+    return this.userDeviceMetadataRepository.find({
+      where: {
+        user: { id: userId },
+      },
+      order: {
+        lastActiveAt: "DESC",
+      },
     });
   }
 }

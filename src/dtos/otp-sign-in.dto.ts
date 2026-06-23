@@ -1,12 +1,12 @@
 import { IsEnum, IsNotEmpty, IsOptional } from "class-validator";
 import { SignInType } from "./otp-confirm-otp.dto";
-import { DeviceMetadataDto } from "./device-metadata.dto";
+import { UserDeviceMetadataDto } from "./user-device-metadata.dto";
 
-export class OTPSignInDto extends DeviceMetadataDto {
-    @IsEnum(SignInType)
-    @IsOptional()
-    type?: string;
+export class OTPSignInDto extends UserDeviceMetadataDto {
+  @IsEnum(SignInType)
+  @IsOptional()
+  type?: string;
 
-    @IsNotEmpty()
-    identifier: string;
+  @IsNotEmpty()
+  identifier: string;
 }

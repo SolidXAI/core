@@ -372,6 +372,7 @@ import { SqlExpressionResolverService } from "./services/sql-expression-resolver
 import { TextractService } from "./services/textract.service";
 import { UserActivityHistoryService } from "./services/user-activity-history.service";
 import { UserDeviceMetadataService } from "./services/user-device-metadata.service";
+import { PushNotificationService } from "./services/push-notification.service";
 import { UserViewMetadataService } from "./services/user-view-metadata.service";
 import { UserService } from "./services/user.service";
 import { Three60WhatsappService } from "./services/whatsapp/Three60WhatsappService";
@@ -628,6 +629,7 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     GupshupOtpWhatsappService,
     TwilioSMSService,
     AmazonSNSPushNotificationService,
+    PushNotificationService,
     SmsTemplateService,
     PushNotificationTemplateService,
     EmailTemplateService,
@@ -927,6 +929,7 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     TinyUrlService,
     TwilioSMSService,
     AmazonSNSPushNotificationService,
+    PushNotificationService,
     TypeOrmModule,
     UserActivityHistoryService,
     UserDeviceMetadataService,

@@ -7,7 +7,9 @@ import { User } from "./user.entity";
 @Index("ss_user_device_metadata_user_device", ["user", "deviceId"], {
   unique: true,
 })
-@Index("ss_user_device_metadata_push_endpoint_arn", ["pushEndpointArn"])
+@Index("ss_user_device_metadata_push_provider_recipient_id", [
+  "pushProviderRecipientId",
+])
 @Index("ss_user_device_metadata_user_active", ["user", "isActive"])
 export class UserDeviceMetadata extends CommonEntity {
   @ManyToOne(() => User, { onDelete: "CASCADE" })
@@ -20,8 +22,8 @@ export class UserDeviceMetadata extends CommonEntity {
   @Column({ nullable: true })
   pushDeviceToken?: string;
 
-  @Column({ nullable: true })
-  pushEndpointArn?: string;
+  @Column({ name: "push_provider_recipient_id", nullable: true })
+  pushProviderRecipientId?: string;
 
   @Column({ default: "unknown" })
   platform: string;
@@ -43,6 +45,12 @@ export class UserDeviceMetadata extends CommonEntity {
 
   @Column({ default: true })
   isActive: boolean;
+
+  @Column({ default: false })
+  isPrimary: boolean;
+
+  @Column({ default: true })
+  isTrusted: boolean;
 
   @Column({ type: "timestamp", nullable: true })
   pushTokenUpdatedAt?: Date;

@@ -1,22 +1,27 @@
-import { ApiProperty } from '@nestjs/swagger';
-import { IsEmail, IsNotEmpty, IsOptional, IsString, MinLength } from 'class-validator';
-import { DeviceMetadataDto } from './device-metadata.dto';
+import { ApiProperty } from "@nestjs/swagger";
+import {
+  IsEmail,
+  IsNotEmpty,
+  IsOptional,
+  IsString,
+  MinLength,
+} from "class-validator";
+import { UserDeviceMetadataDto } from "./user-device-metadata.dto";
 
-export class SignInDto extends DeviceMetadataDto {
+export class SignInDto extends UserDeviceMetadataDto {
+  @ApiProperty({ default: "sa@solidxai.com" })
+  @IsEmail()
+  // @IsNotEmpty()
+  @IsOptional()
+  email: string;
 
-    @ApiProperty({ default: 'sa@solidxai.com' })
-    @IsEmail()
-    // @IsNotEmpty()
-    @IsOptional()
-    email: string;
-    
-    @ApiProperty({ default: 'sa' })
-    @IsString()
-    // @IsNotEmpty()
-    @IsOptional()
-    username: string;
+  @ApiProperty({ default: "sa" })
+  @IsString()
+  // @IsNotEmpty()
+  @IsOptional()
+  username: string;
 
-    @ApiProperty({ default: '' })
-    @IsOptional()
-    password: string;
+  @ApiProperty({ default: "" })
+  @IsOptional()
+  password: string;
 }

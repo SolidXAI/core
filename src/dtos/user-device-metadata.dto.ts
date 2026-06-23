@@ -1,6 +1,11 @@
-import { IsOptional, IsString } from "class-validator";
+import { IsEnum, IsOptional, IsString } from "class-validator";
 
-export class DeviceMetadataDto {
+export enum platformType {
+  Android = "android",
+  IOS = "ios",
+}
+
+export class UserDeviceMetadataDto {
   @IsOptional()
   @IsString()
   deviceId?: string;
@@ -14,7 +19,8 @@ export class DeviceMetadataDto {
 
   @IsOptional()
   @IsString()
-  platform?: string;
+  @IsEnum(platformType)
+  platform?: platformType;
 
   @IsOptional()
   @IsString()
