@@ -45,6 +45,20 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     return entity;
   }
 
+  async assertRoleExistsByName(roleName: string): Promise<void> {
+    const entity = await this.repo.findOne({
+      where: {
+        name: roleName
+      },
+      select: {
+        id: true
+      }
+    });
+    if (!entity) {
+      throw new NotFoundException(`Entity #${roleName} not found`);
+    }
+  }
+
   // OK
   async createRolesIfNotExists(roles: CreateRoleMetadataDto[]) {
     for (let id = 0; id < roles.length; id++) {

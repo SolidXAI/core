@@ -5382,6 +5382,19 @@
       "modelUserKey": "fieldMetadata"
     },
     {
+      "displayName": "Datasource Management",
+      "name": "datasource-management-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/core/solid-core/datasources",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "moduleMetadata"
+    },
+    {
       "displayName": "Field Metadata Tree Action",
       "name": "fieldMetadata-tree-action",
       "type": "solid",
@@ -6102,6 +6115,14 @@
       "name": "fieldMetadata-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "fieldMetadata-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "appBuilder-menu-item"
+    },
+    {
+      "displayName": "Datasources",
+      "name": "datasource-management-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "datasource-management-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "appBuilder-menu-item"
     },
