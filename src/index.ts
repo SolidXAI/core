@@ -269,6 +269,7 @@ export * from './listeners/user-registration.listener'
 export * from './passport-strategies/google-oauth.strategy'
 export * from './passport-strategies/facebook-oauth.strategy'
 export * from './passport-strategies/microsoft-oauth.strategy'
+export * from './passport-strategies/microsoft-active-directory-oauth.strategy'
 
 export * from './services/selection-providers/list-of-values-selection-providers.service'
 
