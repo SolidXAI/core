@@ -5,7 +5,7 @@ import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
 import { Project, Node, ObjectLiteralExpression, ArrayLiteralExpression, QuoteKind, IndentationText } from "ts-morph";
 import { MethodDeclarationStructure, StructureKind } from "ts-morph";
 
-type Bucket = "providers" | "exports";
+type Bucket = "imports" | "providers" | "exports";
 
 // interface SolidTsMorphOptions {
 //     /** Absolute path to monorepo root. Defaults to auto-detect or ENV. */

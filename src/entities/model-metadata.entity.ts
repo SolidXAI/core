@@ -1,4 +1,5 @@
 import { CommonEntity } from "src/entities/common.entity";
+import { LegacyTableType } from "src/enums/legacy-table-type.enum";
 import { Column, Entity, Index, JoinColumn, ManyToOne, OneToMany } from "typeorm";
 import { FieldMetadata } from "./field-metadata.entity";
 import { ModuleMetadata } from "./module-metadata.entity";
@@ -17,9 +18,11 @@ export class ModelMetadata extends CommonEntity {
     @Column({ name: "plural_name" })
     pluralName: string;
 
+    @Index()
     @Column({ name: "display_name" })
     displayName: string;
 
+    @Index()
     @Column({ name: "description", nullable: true })
     description: string;
 
@@ -54,6 +57,7 @@ export class ModelMetadata extends CommonEntity {
     // 1. Single field. 
     // 2. Composite field. 
     // 3. Auto generated human readable sequence. 
+    @Index()
     @ManyToOne(() => FieldMetadata, {})
     userKeyField: FieldMetadata;
 
@@ -66,10 +70,7 @@ export class ModelMetadata extends CommonEntity {
     @ManyToOne(() => ModelMetadata, {})
     parentModel: ModelMetadata;
 
-    @Column({ default: false })
-    isLegacyTable: boolean;
-
-    @Column({ default: false })
-    isLegacyTableWithId: boolean;
+    @Column({ type: 'varchar', default: LegacyTableType.NONE })
+    legacyTableType: LegacyTableType;
 
 }

@@ -20,6 +20,7 @@ import { UserDeviceMetadata } from "./user-device-metadata.entity";
 })
 @Exclude()
 export class User extends CommonEntity {
+  @Index()
   @Column({ type: "varchar", nullable: true })
   @Expose()
   fullName: string;
@@ -67,142 +68,161 @@ export class User extends CommonEntity {
   // don't send to client
   googleProfilePicture: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    facebookId: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  facebookId: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    facebookAccessToken: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  facebookAccessToken: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    facebookProfilePicture: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  facebookProfilePicture: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    appleId: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  appleId: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    appleAccessToken: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  appleAccessToken: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    microsoftId: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  microsoftId: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    microsoftAccessToken: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  microsoftAccessToken: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    microsoftProfilePicture: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  microsoftProfilePicture: string;
 
-    @Column({ default: true })
-    @Expose()
-    active: boolean = true;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  microsoftActiveDirectoryId: string;
 
-    @Column({ nullable: true })
-    // don't send to client
-    forgotPasswordConfirmedAt: Date;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  microsoftActiveDirectoryAccessToken: string;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    verificationTokenOnForgotPassword: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  microsoftActiveDirectoryProfilePicture: string;
 
-    @Column({ nullable: true })
-    // don't send to client
-    verificationTokenOnForgotPasswordExpiresAt: Date;
+  @Index()
+  @Column({ default: true })
+  @Expose()
+  active: boolean = true;
 
-    @Column({ nullable: true })
-    // don't send to client
-    emailVerifiedOnRegistrationAt: Date;
+  @Column({ nullable: true })
+  // don't send to client
+  forgotPasswordConfirmedAt: Date;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    emailVerificationTokenOnRegistration: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  verificationTokenOnForgotPassword: string;
 
-    @Column({ nullable: true })
-    // don't send to client
-    emailVerificationTokenOnRegistrationExpiresAt: Date;
+  @Column({ nullable: true })
+  // don't send to client
+  verificationTokenOnForgotPasswordExpiresAt: Date;
 
-    @Column({ nullable: true })
-    // don't send to client
-    mobileVerifiedOnRegistrationAt: Date;
+  @Column({ nullable: true })
+  // don't send to client
+  emailVerifiedOnRegistrationAt: Date;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    mobileVerificationTokenOnRegistration: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  emailVerificationTokenOnRegistration: string;
 
-    @Column({ nullable: true })
-    // don't send to client
-    mobileVerificationTokenOnRegistrationExpiresAt: Date;
+  @Column({ nullable: true })
+  // don't send to client
+  emailVerificationTokenOnRegistrationExpiresAt: Date;
 
-    @Column({ nullable: true })
-    // don't send to client
-    emailVerifiedOnLoginAt: Date;
+  @Column({ nullable: true })
+  // don't send to client
+  mobileVerifiedOnRegistrationAt: Date;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    emailVerificationTokenOnLogin: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  mobileVerificationTokenOnRegistration: string;
 
-    @Column({ nullable: true })
-    // don't send to client
-    emailVerificationTokenOnLoginExpiresAt: Date;
+  @Column({ nullable: true })
+  // don't send to client
+  mobileVerificationTokenOnRegistrationExpiresAt: Date;
 
-    @Column({ nullable: true })
-    // don't send to client
-    mobileVerifiedOnLoginAt: Date;
+  @Column({ nullable: true })
+  // don't send to client
+  emailVerifiedOnLoginAt: Date;
 
-    @Column({ type: "varchar", nullable: true })
-    // don't send to client
-    mobileVerificationTokenOnLogin: string;
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  emailVerificationTokenOnLogin: string;
 
-    @Column({ nullable: true })
-    // don't send to client
-    mobileVerificationTokenOnLoginExpiresAt: Date;
+  @Column({ nullable: true })
+  // don't send to client
+  emailVerificationTokenOnLoginExpiresAt: Date;
 
-    @Column({ type: "varchar", nullable: true })
-    @Expose()
-    customPayload: string;
+  @Column({ nullable: true })
+  // don't send to client
+  mobileVerifiedOnLoginAt: Date;
 
-    @ManyToMany(() => RoleMetadata, roleMetadata => roleMetadata.users, { cascade: true })
-    @JoinTable()
-    @Expose()
-    roles: RoleMetadata[];
+  @Column({ type: "varchar", nullable: true })
+  // don't send to client
+  mobileVerificationTokenOnLogin: string;
 
-    @OneToMany(() => UserViewMetadata, userViewMetadata => userViewMetadata.user, { cascade: true })
-    // don't send to client
-    userViewMetadata: UserViewMetadata[];
+  @Column({ nullable: true })
+  // don't send to client
+  mobileVerificationTokenOnLoginExpiresAt: Date;
 
-    // dont send to client
-    @Column({ type: "varchar", default: "bcrypt" })
-    passwordScheme: string;
+  @Column({ type: "varchar", nullable: true })
+  @Expose()
+  customPayload: string;
 
-    // dont send to client
-    @Column({ type: "int", default: 1 })
-    passwordSchemeVersion: number;
+  @ManyToMany(() => RoleMetadata, (roleMetadata) => roleMetadata.users, {
+    cascade: true,
+  })
+  @JoinTable()
+  @Expose()
+  roles: RoleMetadata[];
 
-    // dont send to client
-    @Column({ nullable: true })
-    rehashedAt: Date;
+  @OneToMany(
+    () => UserViewMetadata,
+    (userViewMetadata) => userViewMetadata.user,
+    { cascade: true },
+  )
+  // don't send to client
+  userViewMetadata: UserViewMetadata[];
 
-    @Expose()
-    @Column({ type: "int", default: 0 })
-    failedLoginAttempts: number = 0;
+  // dont send to client
+  @Column({ type: "varchar", default: "bcrypt" })
+  passwordScheme: string;
 
-    @Expose()
-    _media: any;
+  // dont send to client
+  @Column({ type: "int", default: 1 })
+  passwordSchemeVersion: number;
 
-    @Column({ default: false })
-    @Expose()
-    isAllowedToGenerateApiKeys: boolean = false;
+  // dont send to client
+  @Column({ nullable: true })
+  rehashedAt: Date;
 
-    @OneToMany(() => UserApiKey, key => key.user)
-    @Expose()
-    apiKeys: UserApiKey[];
-   
-    @OneToMany(() => UserDeviceMetadata, (device) => device.user)
-    devices?: UserDeviceMetadata[];
+  @Expose()
+  @Column({ type: "int", default: 0 })
+  failedLoginAttempts: number = 0;
+
+  @Expose()
+  _media: any;
+
+  @Column({ default: false })
+  @Expose()
+  isAllowedToGenerateApiKeys: boolean = false;
+
+  @OneToMany(() => UserApiKey, (key) => key.user)
+  @Expose()
+  apiKeys: UserApiKey[];
+
+  @OneToMany(() => UserDeviceMetadata, (device) => device.user)
+  devices?: UserDeviceMetadata[];
 }

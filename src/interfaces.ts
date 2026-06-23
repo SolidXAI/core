@@ -2,7 +2,6 @@ import { Repository } from "typeorm";
 import { User } from "src/entities/user.entity";
 import { CreateUserDto } from "src/dtos/create-user.dto";
 import { CreateEmailTemplateDto } from "src/dtos/create-email-template.dto";
-import { CreatePushNotificationTemplateDto } from "src/dtos/create-push-notification-template.dto";
 import { CreateSmsTemplateDto } from "src/dtos/create-sms-template.dto";
 import { SignUpDto } from "src/dtos/sign-up.dto";
 import { Readable } from "stream";
@@ -13,15 +12,10 @@ import { CreateRoleMetadataDto } from "./dtos/create-role-metadata.dto";
 import { CreateSecurityRuleDto } from "./dtos/create-security-rule.dto";
 import { FieldMetadata } from "./entities/field-metadata.entity";
 import { Media } from "./entities/media.entity";
-import { DashboardQuestion } from "./entities/dashboard-question.entity";
 import { ComputedFieldMetadata } from "./helpers/solid-registry";
-import { SqlExpression } from "./services/question-data-providers/chartjs-sql-data-provider.service";
-import { CreateDashboardDto } from "./dtos/create-dashboard.dto";
-import { AiInteraction } from "./entities/ai-interaction.entity";
 import { ActiveUserData } from "./interfaces/active-user-data.interface";
 import { SecurityRuleConfig } from "./dtos/security-rule-config.dto";
 import { SecurityRule } from "./entities/security-rule.entity";
-import { PublishCommandOutput } from "@aws-sdk/client-sns";
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -67,10 +61,9 @@ export interface ModuleMetadataConfiguration {
   views?: any[];
   emailTemplates?: CreateEmailTemplateDto[];
   smsTemplates?: CreateSmsTemplateDto[];
-  pushNotificationTemplates?: CreatePushNotificationTemplateDto[];
   mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[];
   securityRules?: CreateSecurityRuleDto[];
-  dashboards?: CreateDashboardDto[];
+  dashboards?: any[];
 }
 
 export enum SettingLevel {
@@ -135,11 +128,6 @@ export interface CodeGenerationOptions {
   dryRun?: boolean;
 }
 
-export interface TriggerMcpClientOptions {
-  aiInteractionId: number;
-  moduleName: string;
-}
-
 export interface McpResponse {
   success: boolean;
   request: string;
@@ -177,29 +165,44 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
   values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
 }
 
-export interface IDashboardVariableSelectionProvider<
-  T extends ISelectionProviderContext,
-> extends ISelectionProvider<T> {}
-
-export interface IMcpToolResponseHandler {
-  apply(aiInteraction: AiInteraction);
+export interface IDashboardWidgetDataProviderContext<
+  TVariables = Record<string, any>,
+  TProviderContext = Record<string, any>,
+> {
+  moduleName: string;
+  dashboardName: string;
+  widgetName: string;
+  variables: TVariables;
+  providerContext: TProviderContext;
+  activeUser?: ActiveUserData;
 }
 
-export interface QuestionSqlDataProviderContext {
-  // questionSqlDatasetConfig: QuestionSqlDatasetConfig;
-  // questionId: number;
-  // question: Question;
-  expressions?: SqlExpression[];
+export interface IDashboardWidgetDataResponseEnvelope<
+  TData = any,
+  TUiHints = Record<string, any>,
+> {
+  meta: {
+    providerName: string;
+    generatedAt: string;
+    widgetName: string;
+    durationMs: number;
+    [key: string]: any;
+  };
+  data: TData;
+  uiHints?: TUiHints;
 }
-export interface IDashboardQuestionDataProvider<TContext, TData> {
+
+export interface IDashboardWidgetDataProvider<
+  TContext extends IDashboardWidgetDataProviderContext =
+    IDashboardWidgetDataProviderContext,
+  TResponse = any,
+> {
   help(): string;
-
   name(): string;
-
   getData(
-    question: DashboardQuestion,
-    ctxt?: TContext,
-  ): Promise<TData[] | TData>;
+    widgetDefinition: Record<string, any>,
+    ctxt: TContext,
+  ): Promise<IDashboardWidgetDataResponseEnvelope<TResponse> | any>;
 }
 
 /**

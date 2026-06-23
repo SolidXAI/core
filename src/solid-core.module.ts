@@ -14,9 +14,14 @@ import { MulterModule } from "@nestjs/platform-express";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { RemoveFieldsCommand } from "./commands/remove-fields.command";
 import { FieldMetadataController } from "./controllers/field-metadata.controller";
+import { DashboardController } from "./controllers/dashboard.controller";
 import { MediaStorageProviderMetadataController } from "./controllers/media-storage-provider-metadata.controller";
 import { ModelMetadataController } from "./controllers/model-metadata.controller";
+import { ModuleMetadataExplorerController } from "./controllers/module-metadata-explorer.controller";
 import { ModuleMetadataController } from "./controllers/module-metadata.controller";
+import { ModulePackageController } from "./controllers/module-package.controller";
+import { DatasourceManagementController } from "./controllers/datasource-management.controller";
+import { DatasourceIntrospectionController } from "./controllers/datasource-introspection.controller";
 import { TestController } from "./controllers/test.controller";
 import { FieldMetadata } from "./entities/field-metadata.entity";
 import { ListOfValues } from "./entities/list-of-values.entity";
@@ -27,17 +32,24 @@ import { ModuleMetadata } from "./entities/module-metadata.entity";
 import { CommandService } from "./helpers/command.service";
 import { SchematicService } from "./helpers/schematic.service";
 import { ListOfValuesSelectionProvider } from "./services/selection-providers/list-of-values-selection-providers.service";
+import { MqDashboardMessageBrokerVariableOptionsProvider } from "./services/selection-providers/mq-dashboard-message-broker-variable-options-provider.service";
+import { MqDashboardQueueNameVariableOptionsProvider } from "./services/selection-providers/mq-dashboard-queue-name-variable-options-provider.service";
 import { PseudoForeignKeySelectionProvider } from "./services/selection-providers/pseudo-foreign-key-selection-provider.service";
 import { ModuleMetadataSeederService } from "./seeders/module-metadata-seeder.service";
 import { ModuleTestDataService } from "./seeders/module-test-data.service";
 import { CrudHelperService } from "./services/crud-helper.service";
+import { DatasourceManagementService } from "./services/datasource-management.service";
+import { DatasourceIntrospectionService } from "./services/datasource-introspection.service";
 import { FieldMetadataService } from "./services/field-metadata.service";
+import { DashboardRuntimeService } from "./services/dashboard-runtime.service";
 import { ListOfValuesService } from "./services/list-of-values.service";
 // import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from "./services/media-storage-provider-metadata.service";
 import { MediaService } from "./services/media.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
+import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
+import { ModulePackageService } from "./services/module-package.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
@@ -58,8 +70,10 @@ import { ActionMetadataService } from "./services/action-metadata.service";
 
 import { FacebookAuthenticationController } from "./controllers/facebook-authentication.controller";
 import { MicrosoftAuthenticationController } from "./controllers/microsoft-authentication.controller";
+import { MicrosoftActiveDirectoryAuthenticationController } from "./controllers/microsoft-active-directory-authentication.controller";
 import { FacebookOAuthStrategy } from "./passport-strategies/facebook-oauth.strategy";
 import { MicrosoftOAuthStrategy } from "./passport-strategies/microsoft-oauth.strategy";
+import { MicrosoftActiveDirectoryOAuthStrategy } from "./passport-strategies/microsoft-active-directory-oauth.strategy";
 
 import { GupshupOtpWhatsappService } from "./services/whatsapp/GupshupOtpWhatsappService";
 import { MetaCloudWhatsappService } from "./services/whatsapp/MetaCloudWhatsappService";
@@ -134,8 +148,6 @@ import { SmtpEmailQueuePublisherRedis } from "./jobs/redis/smtp-email-publisher-
 import { SmtpEmailQueueSubscriberRedis } from "./jobs/redis/smtp-email-subscriber-redis.service";
 import { Three60WhatsappQueuePublisherRedis } from "./jobs/redis/three60-whatsapp-publisher-redis.service";
 import { Three60WhatsappQueueSubscriberRedis } from "./jobs/redis/three60-whatsapp-subscriber-redis.service";
-import { TriggerMcpClientPublisherRedis } from "./jobs/redis/trigger-mcp-client-publisher-redis.service";
-import { TriggerMcpClientSubscriberRedis } from "./jobs/redis/trigger-mcp-client-subscriber-redis.service";
 import { TwilioSmsQueuePublisherRedis } from "./jobs/redis/twilio-sms-publisher-redis.service";
 import { TwilioSmsQueueSubscriberRedis } from "./jobs/redis/twilio-sms-subscriber-redis.service";
 import { UserRegistrationListener } from "./listeners/user-registration.listener";
@@ -179,15 +191,9 @@ import { PermissionMetadataService } from "./services/permission-metadata.servic
 
 import { ScheduleModule } from "@nestjs/schedule";
 import { ClsModule } from "nestjs-cls";
-import { AiInteractionController } from "./controllers/ai-interaction.controller";
 import { ChatterMessageDetailsController } from "./controllers/chatter-message-details.controller";
 import { ChatterMessageController } from "./controllers/chatter-message.controller";
-import { DashboardQuestionSqlDatasetConfigController } from "./controllers/dashboard-question-sql-dataset-config.controller";
-import { DashboardQuestionController } from "./controllers/dashboard-question.controller";
-import { DashboardVariableController } from "./controllers/dashboard-variable.controller";
-import { DashboardLayoutController } from "./controllers/dashboard-layout.controller";
 
-import { DashboardController } from "./controllers/dashboard.controller";
 import { ExportTemplateController } from "./controllers/export-template.controller";
 import { ExportTransactionController } from "./controllers/export-transaction.controller";
 import { ImportTransactionErrorLogController } from "./controllers/import-transaction-error-log.controller";
@@ -199,6 +205,7 @@ import { SavedFiltersController } from "./controllers/saved-filters.controller";
 import { ScheduledJobController } from "./controllers/scheduled-job.controller";
 import { AgentSessionController } from "./controllers/agent-session.controller";
 import { AgentEventController } from "./controllers/agent-event.controller";
+import { McpAuditLogController } from "./controllers/mcp-audit-log.controller";
 import { SecurityRuleController } from "./controllers/security-rule.controller";
 import { SettingController } from "./controllers/setting.controller";
 import { InfoController } from "./controllers/info.controller";
@@ -206,15 +213,9 @@ import { InfoService } from "./services/info.service";
 import { UserActivityHistoryController } from "./controllers/user-activity-history.controller";
 import { UserViewMetadataController } from "./controllers/user-view-metadata.controller";
 import { UserController } from "./controllers/user.controller";
-import { AiInteraction } from "./entities/ai-interaction.entity";
 import { ChatterMessageDetails } from "./entities/chatter-message-details.entity";
 import { ChatterMessage } from "./entities/chatter-message.entity";
-import { DashboardQuestionSqlDatasetConfig } from "./entities/dashboard-question-sql-dataset-config.entity";
-import { DashboardQuestion } from "./entities/dashboard-question.entity";
-import { DashboardVariable } from "./entities/dashboard-variable.entity";
-import { DashboardLayout } from "./entities/dashboard-layout.entity";
 
-import { Dashboard } from "./entities/dashboard.entity";
 import { ExportTemplate } from "./entities/export-template.entity";
 import { ExportTransaction } from "./entities/export-transaction.entity";
 import { ImportTransactionErrorLog } from "./entities/import-transaction-error-log.entity";
@@ -225,6 +226,7 @@ import { SavedFilters } from "./entities/saved-filters.entity";
 import { ScheduledJob } from "./entities/scheduled-job.entity";
 import { AgentSession } from "./entities/agent-session.entity";
 import { AgentEvent } from "./entities/agent-event.entity";
+import { McpAuditLog } from "./entities/mcp-audit-log.entity";
 import { SecurityRule } from "./entities/security-rule.entity";
 import { Setting } from "./entities/setting.entity";
 import { UserActivityHistory } from "./entities/user-activity-history.entity";
@@ -247,15 +249,10 @@ import { Msg91SmsQueueSubscriberDatabase } from "./jobs/database/msg91-sms-subsc
 import { SmtpEmailQueuePublisherDatabase } from "./jobs/database/smtp-email-publisher-database.service";
 import { SmtpEmailQueueSubscriberDatabase } from "./jobs/database/smtp-email-subscriber-database.service";
 
-import { McpAuditLogController } from "./controllers/mcp-audit-log.controller";
-import { McpAuditLog } from "./entities/mcp-audit-log.entity";
-import { UserDeviceMetadata } from "./entities/user-device-metadata.entity";
-
 import { TwilioSmsQueuePublisherDatabase } from "./jobs/database/twilio-sms-publisher-database.service";
 import { TwilioSmsQueueSubscriberDatabase } from "./jobs/database/twilio-sms-subscriber-database.service";
 
 // import { ThrottlerModule } from '@nestjs/throttler';
-import { IngestCommand } from "./commands/ingest.command";
 import { MailFactory } from "./factories/mail.factory";
 import { PushNotificationFactory } from "./factories/push-notification.factory";
 import { ErrorMapperService } from "./helpers/error-mapper.service";
@@ -266,27 +263,16 @@ import { Msg91WhatsappQueuePublisherDatabase } from "./jobs/database/msg91-whats
 import { Msg91WhatsappQueueSubscriberDatabase } from "./jobs/database/msg91-whatsapp-subscriber-database.service";
 import { Three60WhatsappQueuePublisherDatabase } from "./jobs/database/three60-whatsapp-publisher-database.service";
 import { Three60WhatsappQueueSubscriberDatabase } from "./jobs/database/three60-whatsapp-subscriber-database.service";
-import { TriggerMcpClientPublisherDatabase } from "./jobs/database/trigger-mcp-client-publisher-database.service";
-import { TriggerMcpClientSubscriberDatabase } from "./jobs/database/trigger-mcp-client-subscriber-database.service";
 import { GenerateCodePublisherRabbitmq } from "./jobs/rabbitmq/generate-code-publisher.service";
 import { GenerateCodeSubscriberRabbitmq } from "./jobs/rabbitmq/generate-code-subscriber.service";
 import { Three60WhatsappQueuePublisher } from "./jobs/rabbitmq/three60-whatsapp-publisher.service";
 import { Three60WhatsappQueueSubscriber } from "./jobs/rabbitmq/three60-whatsapp-subscriber.service";
-import { TriggerMcpClientPublisherRabbitmq } from "./jobs/rabbitmq/trigger-mcp-client-publisher.service";
-import { TriggerMcpClientSubscriberRabbitmq } from "./jobs/rabbitmq/trigger-mcp-client-subscriber.service";
 import { TwilioSmsQueuePublisherRabbitmq } from "./jobs/rabbitmq/twilio-sms-publisher.service";
 import { TwilioSmsQueueSubscriberRabbitmq } from "./jobs/rabbitmq/twilio-sms-subscriber.service";
-import { DashboardMapper } from "./mappers/dashboard-mapper";
 import { ListOfValuesMapper } from "./mappers/list-of-values-mapper";
 import { ActionMetadataRepository } from "./repository/action-metadata.repository";
-import { AiInteractionRepository } from "./repository/ai-interaction.repository";
 import { ChatterMessageDetailsRepository } from "./repository/chatter-message-details.repository";
 import { ChatterMessageRepository } from "./repository/chatter-message.repository";
-import { DashboardQuestionSqlDatasetConfigRepository } from "./repository/dashboard-question-sql-dataset-config.repository";
-import { DashboardQuestionRepository } from "./repository/dashboard-question.repository";
-import { DashboardVariableRepository } from "./repository/dashboard-variable.repository";
-import { DashboardRepository } from "./repository/dashboard.repository";
-import { DashboardLayoutRepository } from "./repository/dashboard-layout.repository";
 
 import { EmailTemplateRepository } from "./repository/email-template.repository";
 import { ExportTemplateRepository } from "./repository/export-template.repository";
@@ -308,50 +294,48 @@ import { SavedFiltersRepository } from "./repository/saved-filters.repository";
 import { ScheduledJobRepository } from "./repository/scheduled-job.repository";
 import { AgentSessionRepository } from "./repository/agent-session.repository";
 import { AgentEventRepository } from "./repository/agent-event.repository";
+import { McpAuditLogRepository } from "./repository/mcp-audit-log.repository";
 import { SecurityRuleRepository } from "./repository/security-rule.repository";
 import { SettingRepository } from "./repository/setting.repository";
 import { SmsTemplateRepository } from "./repository/sms-template.repository";
-import { PushNotificationTemplateRepository } from "./repository/push-notification-template.repository";
 import { UserActivityHistoryRepository } from "./repository/user-activity-history.repository";
 import { UserViewMetadataRepository } from "./repository/user-view-metadata.repository";
 import { UserApiKeyRepository } from "./repository/user-api-key.repository";
-import { UserDeviceMetadataRepository } from "./repository/user-device-metadata.repository";
 import { UserRepository } from "./repository/user.repository";
 import { ViewMetadataRepository } from "./repository/view-metadata.repository";
 import { PermissionMetadataSeederService } from "./seeders/permission-metadata-seeder.service";
 import { SystemFieldsSeederService } from "./seeders/system-fields-seeder.service";
-import { AiInteractionService } from "./services/ai-interaction.service";
 import { ChatterMessageDetailsService } from "./services/chatter-message-details.service";
 import { ChatterMessageService } from "./services/chatter-message.service";
 import { ConcatComputedFieldProvider } from "./services/computed-fields/concat-computed-field-provider.service";
 import { AlphaNumExternalIdComputationProvider } from "./services/computed-fields/entity/alpha-num-external-id-computed-field-provider";
 import { ConcatEntityComputedFieldProvider } from "./services/computed-fields/entity/concat-entity-computed-field-provider.service";
+import { MqDashboardFailedMessagesKpiProvider } from "./services/dashboard-providers/mq-dashboard-failed-messages-kpi-provider.service";
+import { MqDashboardInflightMessagesKpiProvider } from "./services/dashboard-providers/mq-dashboard-inflight-messages-kpi-provider.service";
+import { MqDashboardLatencyTrendProvider } from "./services/dashboard-providers/mq-dashboard-latency-trend-provider.service";
+import { MqDashboardMessagesOverTimeProvider } from "./services/dashboard-providers/mq-dashboard-messages-over-time-provider.service";
+import { MqDashboardQueueWiseAvgElapsedProvider } from "./services/dashboard-providers/mq-dashboard-queue-wise-avg-elapsed-provider.service";
+import { MqDashboardQueueWiseFailuresProvider } from "./services/dashboard-providers/mq-dashboard-queue-wise-failures-provider.service";
+import { MqDashboardQueueSlaHeatmapProvider } from "./services/dashboard-providers/mq-dashboard-queue-sla-heatmap-provider.service";
+import { MqDashboardRecentFailuresProvider } from "./services/dashboard-providers/mq-dashboard-recent-failures-provider.service";
+import { MqDashboardStageDistributionProvider } from "./services/dashboard-providers/mq-dashboard-stage-distribution-provider.service";
+import { MqDashboardSucceededMessagesKpiProvider } from "./services/dashboard-providers/mq-dashboard-succeeded-messages-kpi-provider.service";
+import { MqDashboardSuccessRateKpiProvider } from "./services/dashboard-providers/mq-dashboard-success-rate-kpi-provider.service";
+import { MqDashboardTotalMessagesKpiProvider } from "./services/dashboard-providers/mq-dashboard-total-messages-kpi-provider.service";
+import { MqDashboardAvgElapsedKpiProvider } from "./services/dashboard-providers/mq-dashboard-avg-elapsed-kpi-provider.service";
 import { NoopsEntityComputedFieldProviderService } from "./services/computed-fields/entity/noops-entity-computed-field-provider.service";
 import { CRUDService } from "./services/crud.service";
 import { CsvService } from "./services/csv.service";
-import { DashboardQuestionSqlDatasetConfigService } from "./services/dashboard-question-sql-dataset-config.service";
-import { DashboardQuestionService } from "./services/dashboard-question.service";
-import { DashboardVariableSQLDynamicProvider } from "./services/dashboard-selection-providers/dashboard-variable-sql-dynamic-provider.service";
-import { DasbhoardVariableTestDynamicProvider } from "./services/dashboard-selection-providers/dashboard-variable-test-dynamic-provider.service";
-import { DashboardVariableService } from "./services/dashboard-variable.service";
-import { DashboardService } from "./services/dashboard.service";
-import { DashboardLayoutService } from "./services/dashboard-layout.service";
 
 import { ExcelService } from "./services/excel.service";
 import { ExportTemplateService } from "./services/export-template.service";
 import { ExportTransactionService } from "./services/export-transaction.service";
-import { IngestMetadataService } from "./services/genai/ingest-metadata.service";
-import { McpHandlerFactory } from "./services/genai/mcp-handlers/mcp-handler-factory.service";
-import { R2RHelperService } from "./services/genai/r2r-helper.service";
 import { ImportTransactionErrorLogService } from "./services/import-transaction-error-log.service";
 import { ImportTransactionService } from "./services/import-transaction.service";
 import { LocaleService } from "./services/locale.service";
 import { FileS3StorageProvider } from "./services/mediaStorageProviders/file-s3-storage-provider";
 import { FileStorageProvider } from "./services/mediaStorageProviders/file-storage-provider";
 import { PollerService } from "./services/poller.service";
-import { ChartJsSqlDataProvider } from "./services/question-data-providers/chartjs-sql-data-provider.service";
-import { PrimeReactDatatableSqlDataProvider } from "./services/question-data-providers/prime-react-datatable-sql-data-provider.service";
-import { PrimeReactMeterGroupSqlDataProvider } from "./services/question-data-providers/prime-react-meter-group-sql-data-provider.service";
 import { PublisherFactory } from "./services/queues/publisher-factory.service";
 import { RequestContextService } from "./services/request-context.service";
 import { RoleMetadataService } from "./services/role-metadata.service";
@@ -359,30 +343,22 @@ import { SavedFiltersService } from "./services/saved-filters.service";
 import { ScheduledJobService } from "./services/scheduled-job.service";
 import { AgentSessionService } from "./services/agent-session.service";
 import { AgentEventService } from "./services/agent-event.service";
+import { McpAuditLogService } from "./services/mcp-audit-log.service";
 import { SchedulerServiceImpl } from "./services/scheduled-jobs/scheduler.service";
 import { SecurityRuleService } from "./services/security-rule.service";
-import { ListOfDashboardQuestionProvidersSelectionProvider } from "./services/selection-providers/list-of-dashboard-question-providers-selection-provider.service";
-import { ListOfDashboardVariableProvidersSelectionProvider } from "./services/selection-providers/list-of-dashboard-variable-providers-selection-provider.service";
 import { ListOfScheduledJobsSelectionProvider } from "./services/selection-providers/list-of-scheduled-jobs-selection-provider.service";
 import { LocaleListSelectionProvider } from "./services/selection-providers/locale-list-selection-provider.service";
 import { SettingService } from "./services/setting.service";
 import { TwilioSMSService } from "./services/sms/TwilioSMSService";
 import { SolidTsMorphService } from "./services/solid-ts-morph.service";
-import { SqlExpressionResolverService } from "./services/sql-expression-resolver.service";
 import { TextractService } from "./services/textract.service";
 import { UserActivityHistoryService } from "./services/user-activity-history.service";
-import { UserDeviceMetadataService } from "./services/user-device-metadata.service";
-import { PushNotificationService } from "./services/push/push-notification.service";
 import { UserViewMetadataService } from "./services/user-view-metadata.service";
 import { UserService } from "./services/user.service";
 import { Three60WhatsappService } from "./services/whatsapp/Three60WhatsappService";
 import { AuditSubscriber } from "./subscribers/audit.subscriber";
 import { ComputedEntityFieldSubscriber } from "./subscribers/computed-entity-field.subscriber";
 import { CreatedByUpdatedBySubscriber } from "./subscribers/created-by-updated-by.subscriber";
-import { DashboardQuestionSqlDatasetConfigSubscriber } from "./subscribers/dashboard-question-sql-dataset-config.subscriber";
-import { DashboardQuestionSubscriber } from "./subscribers/dashboard-question.subscriber";
-import { DashboardVariableSubscriber } from "./subscribers/dashboard-variable.subscriber";
-import { DashboardSubscriber } from "./subscribers/dashboard.subscriber";
 import { ListOfValuesSubscriber } from "./subscribers/list-of-values.subscriber";
 import { ScheduledJobSubscriber } from "./subscribers/scheduled-job.subscriber";
 import { SecurityRuleSubscriber } from "./subscribers/security-rule.subscriber";
@@ -392,7 +368,6 @@ import { McpCommand } from "./commands/mcp.command";
 import { FixturesService } from "./services/fixtures.service";
 import { FixturesSetupCommand } from "./commands/fixtures/fixtures-setup.command";
 import { FixturesTearDownCommand } from "./commands/fixtures/fixtures-tear-down.command";
-import { DatabaseBootstrapService } from "./services/database/database-bootstrap.service";
 import { SequenceNumComputedFieldProvider } from "./services/computed-fields/entity/sequence-num-computed-field-provider";
 import { ModelSequence } from "./entities/model-sequence.entity";
 import { ModelSequenceService } from "./services/model-sequence.service";
@@ -407,22 +382,22 @@ import { ImageEncodingService } from "./helpers/image-encoding.helper";
 import { SolidMicroserviceAdapter } from "./helpers/solid-microservice-adapter.service";
 import { InfoCommand } from "./commands/info.command";
 import { ListOfRolesSelectionProvider } from "./services/selection-providers/list-of-roles-selectionproviders.service";
-import { McpAuditLogRepository } from "./repository/mcp-audit-log.repository";
-import { McpAuditLogService } from "./services/mcp-audit-log.service";
+import { Entity } from "typeorm";
+import { DashboardUserLayout } from "./entities/dashboard-user-layout.entity";
+import { DashboardUserLayoutService } from "./services/dashboard-user-layout.service";
+import { DashboardUserLayoutController } from "./controllers/dashboard-user-layout.controller";
+import { DashboardUserLayoutRepository } from "./repositories/dashboard-user-layout.repository";
+import { MssqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mssql-datasource-introspection-provider.service";
+import { MysqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mysql-datasource-introspection-provider.service";
+import { PostgresDatasourceIntrospectionProviderService } from "./services/datasource-introspection/postgres-datasource-introspection-provider.service";
 
 @Global()
 @Module({
   imports: [
     TypeOrmModule.forFeature([
       ActionMetadata,
-      AiInteraction,
       ChatterMessage,
       ChatterMessageDetails,
-      Dashboard,
-      DashboardQuestion,
-      DashboardQuestionSqlDatasetConfig,
-      DashboardVariable,
-      DashboardLayout,
       EmailAttachment,
       EmailTemplate,
       ExportTemplate,
@@ -489,25 +464,24 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     JwtModule.register({
       global: true,
     }),
+    TypeOrmModule.forFeature([DashboardUserLayout]),
   ],
   controllers: [
     ActionMetadataController,
-    AiInteractionController,
     AuthenticationController,
     ChatterMessageController,
     ChatterMessageDetailsController,
-    DashboardController,
-    DashboardQuestionController,
-    DashboardQuestionSqlDatasetConfigController,
-    DashboardVariableController,
-    DashboardLayoutController,
     EmailTemplateController,
     ExportTemplateController,
     ExportTransactionController,
     FieldMetadataController,
+    DashboardController,
+    DatasourceManagementController,
+    DatasourceIntrospectionController,
     GoogleAuthenticationController,
     FacebookAuthenticationController,
     MicrosoftAuthenticationController,
+    MicrosoftActiveDirectoryAuthenticationController,
     ImportTransactionController,
     ImportTransactionErrorLogController,
     ListOfValuesController,
@@ -516,7 +490,9 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     MediaStorageProviderMetadataController,
     MenuItemMetadataController,
     ModelMetadataController,
+    ModuleMetadataExplorerController,
     ModuleMetadataController,
+    ModulePackageController,
     MqMessageController,
     MqMessageQueueController,
     GupshupWebhookController,
@@ -542,6 +518,7 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     UserViewMetadataController,
     ViewMetadataController,
     ModelSequenceController,
+    DashboardUserLayoutController,
   ],
   providers: [
     {
@@ -565,10 +542,15 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
       useClass: HttpExceptionFilter,
     },
     ModuleMetadataService,
+    DatasourceManagementService,
+    DatasourceIntrospectionService,
+    ModuleMetadataExplorerService,
     ModuleMetadataHelperService,
+    ModulePackageService,
     ModelMetadataService,
     ModelMetadataHelperService,
     FieldMetadataService,
+    DashboardRuntimeService,
     RemoveFieldsCommand,
     RefreshModelCommand,
     RefreshModuleCommand,
@@ -576,7 +558,6 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     InfoService,
     SolidIntrospectService,
     DiscoveryService,
-    R2RHelperService,
     CrudHelperService,
     CRUDService,
     Reflector,
@@ -590,6 +571,8 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     ModuleTestDataService,
     ListOfValuesService,
     ListOfValuesSelectionProvider,
+    MqDashboardQueueNameVariableOptionsProvider,
+    MqDashboardMessageBrokerVariableOptionsProvider,
     PseudoForeignKeySelectionProvider,
     ModelMetadataSubscriber,
     ViewMetadataService,
@@ -611,8 +594,6 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     TestDataCommand,
     TestRunCommand,
     McpCommand,
-    IngestCommand,
-    IngestMetadataService,
     SMTPEMailService,
     ElasticEmailService,
     Msg91SMSService,
@@ -629,11 +610,6 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     PollerService,
     ErrorMapperService,
     SolidCoreErrorCodesProvider,
-
-    TriggerMcpClientPublisherDatabase,
-    TriggerMcpClientSubscriberDatabase,
-    TriggerMcpClientPublisherRabbitmq,
-    TriggerMcpClientSubscriberRabbitmq,
 
     SmtpEmailQueuePublisherRabbitmq,
     SmtpEmailQueueSubscriberRabbitmq,
@@ -684,6 +660,7 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     GoogleOauthStrategy,
     FacebookOAuthStrategy,
     MicrosoftOAuthStrategy,
+    MicrosoftActiveDirectoryOAuthStrategy,
     UserRegistrationListener,
     TestQueuePublisher,
     TestQueueSubscriber,
@@ -715,8 +692,6 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     SmtpEmailQueueSubscriberRedis,
     Three60WhatsappQueuePublisherRedis,
     Three60WhatsappQueueSubscriberRedis,
-    TriggerMcpClientPublisherRedis,
-    TriggerMcpClientSubscriberRedis,
     TwilioSmsQueuePublisherRedis,
     TwilioSmsQueueSubscriberRedis,
     GenerateCodePublisherDatabase,
@@ -738,6 +713,19 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     UserRepository,
     SettingService,
     ConcatComputedFieldProvider,
+    MqDashboardTotalMessagesKpiProvider,
+    MqDashboardSucceededMessagesKpiProvider,
+    MqDashboardFailedMessagesKpiProvider,
+    MqDashboardInflightMessagesKpiProvider,
+    MqDashboardSuccessRateKpiProvider,
+    MqDashboardAvgElapsedKpiProvider,
+    MqDashboardMessagesOverTimeProvider,
+    MqDashboardStageDistributionProvider,
+    MqDashboardQueueWiseFailuresProvider,
+    MqDashboardQueueWiseAvgElapsedProvider,
+    MqDashboardQueueSlaHeatmapProvider,
+    MqDashboardLatencyTrendProvider,
+    MqDashboardRecentFailuresProvider,
     FileStorageProvider,
     FileS3StorageProvider,
     MediaRepository,
@@ -757,6 +745,11 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     ExportTransactionService,
     ExcelService,
     CsvService,
+    DatasourceManagementService,
+    DashboardRuntimeService,
+    MssqlDatasourceIntrospectionProviderService,
+    MysqlDatasourceIntrospectionProviderService,
+    PostgresDatasourceIntrospectionProviderService,
     ImportTransactionService,
     ImportTransactionErrorLogService,
     CreatedByUpdatedBySubscriber,
@@ -769,35 +762,7 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     ComputedFieldEvaluationSubscriberRabbitmq,
     ConcatEntityComputedFieldProvider,
     UserActivityHistoryService,
-    DashboardService,
-    DashboardVariableService,
-    DashboardLayoutService,
-    DashboardQuestionService,
-    DashboardVariableSQLDynamicProvider,
-    DasbhoardVariableTestDynamicProvider,
-    ListOfDashboardVariableProvidersSelectionProvider,
-    ListOfDashboardQuestionProvidersSelectionProvider,
-    DashboardQuestionSqlDatasetConfigService,
-    ChartJsSqlDataProvider,
-    PrimeReactMeterGroupSqlDataProvider,
-    PrimeReactDatatableSqlDataProvider,
-    SqlExpressionResolverService,
-    AiInteractionService,
-    DashboardMapper,
-    DashboardRepository,
-    DashboardSubscriber,
-    DashboardVariableSubscriber,
-    DashboardQuestionSubscriber,
-    DashboardQuestionSqlDatasetConfigSubscriber,
     NoopsEntityComputedFieldProviderService,
-
-    McpHandlerFactory,
-    // SolidCreateDashboardWithWidgetsMcpHandler,
-    // SolidCreateDashboardQuestionMcpHandler,
-    // SolidCreateDashboardQuestionSqlDatasetConfigMcpHandler,
-    // SolidCreateDashboardWidgetMcpHandler,
-    // SolidAddVariableToDashboardMcpHandler,
-    // SolidAddQuestionToDashboardMcpHandler,
 
     SolidTsMorphService,
 
@@ -819,11 +784,6 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     PushNotificationFactory,
     ChatterMessageRepository,
     ChatterMessageDetailsRepository,
-    AiInteractionRepository,
-    DashboardQuestionSqlDatasetConfigRepository,
-    DashboardQuestionRepository,
-    DashboardVariableRepository,
-    DashboardLayoutRepository,
     EmailTemplateRepository,
     ExportTemplateRepository,
     ExportTransactionRepository,
@@ -849,7 +809,6 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     FixturesService,
     FixturesSetupCommand,
     FixturesTearDownCommand,
-    DatabaseBootstrapService,
     SequenceNumComputedFieldProvider,
     ModelSequenceService,
     ModelSequenceRepository,
@@ -857,9 +816,10 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     ImageEncodingService,
     SolidMicroserviceAdapter,
     ListOfRolesSelectionProvider,
+    DashboardUserLayoutService,
+    DashboardUserLayoutRepository,
   ],
   exports: [
-    AiInteractionService,
     AuthenticationService,
     ChatterMessageDetailsRepository,
     ChatterMessageDetailsService,
@@ -892,6 +852,9 @@ import { McpAuditLogService } from "./services/mcp-audit-log.service";
     ModelMetadataHelperService,
     ModelMetadataService,
     ModuleMetadataService,
+    DatasourceIntrospectionService,
+    ModuleMetadataExplorerService,
+    ModulePackageService,
     MqMessageQueueService,
     MqMessageService,
     Msg91OTPService,

@@ -8,6 +8,7 @@ export class EmailTemplate extends CommonEntity {
     @Index({ unique: true })
     @Column({ name: "name", type: "varchar"})
     name: string;
+    @Index()
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;
     @Column({ name: "body", default: '', ...getColumnType('longText') })

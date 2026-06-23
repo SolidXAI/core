@@ -2,8 +2,8 @@ import { Injectable, Logger } from "@nestjs/common";
 import { ConfigService } from "@nestjs/config";
 import { CommonEntity } from "src/entities/common.entity";
 import { FieldMetadata } from "src/entities/field-metadata.entity";
-import { LegacyCommonEntity } from "src/entities/legacy-common.entity";
-import { LegacyCommonWithIdEntity } from "src/entities/legacy-common-with-id.entity";
+import { LegacyCommonEntityWithExistingId } from "src/entities/legacy-common.entity";
+import { LegacyCommonEntityWithGeneratedId } from "src/entities/legacy-common-with-id.entity";
 import { Media } from "src/entities/media.entity";
 import { MediaStorageProvider } from "src/interfaces";
 import { DiskFileService, S3FileService } from "src/services/file";
@@ -21,16 +21,51 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         readonly mediaRepository: MediaRepository,
     ) { }
 
-    storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
-        throw new Error("Method not implemented.");
+    async storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
+        const isSupportedEntity = entity instanceof CommonEntity
+            || entity instanceof LegacyCommonEntityWithExistingId
+            || entity instanceof LegacyCommonEntityWithGeneratedId;
+        if (!isSupportedEntity) {
+            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntityWithExistingId or LegacyCommonEntityWithGeneratedId");
+        }
+        const result: Media[] = [];
+        const storageProvider = mediaFieldMetadata.mediaStorageProvider;
+        const region = this.getEffectiveRegion(storageProvider.region);
+
+        for (const [stream, fileName] of streamPairs) {
+            const bucketName = storageProvider.bucketName;
+
+            // Buffer the stream so we can get the byte count and upload in one pass
+            const chunks: Buffer[] = [];
+            for await (const chunk of stream) {
+                chunks.push(Buffer.isBuffer(chunk) ? chunk : Buffer.from(chunk));
+            }
+            const fileData = Buffer.concat(chunks);
+            const fileSize = fileData.length;
+
+            await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { region });
+
+            const mediaEntity = await this.mediaRepository.createMedia({
+                // @ts-ignore
+                entityId: entity.id,
+                modelMetadataId: mediaFieldMetadata.model.id,
+                relativeUri: fileName,
+                fileSize,
+                mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
+                fieldMetadataId: mediaFieldMetadata.id
+            }) as unknown as Media;
+            result.push(mediaEntity);
+            this.logger.debug(`Stored media with`, mediaEntity);
+        }
+        return result;
     }
 
     async retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         const isSupportedEntity = entity instanceof CommonEntity
-            || entity instanceof LegacyCommonEntity
-            || entity instanceof LegacyCommonWithIdEntity;
+            || entity instanceof LegacyCommonEntityWithExistingId
+            || entity instanceof LegacyCommonEntityWithGeneratedId;
         if (!isSupportedEntity) {
-            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntity or LegacyCommonWithIdEntity"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
+            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntityWithExistingId or LegacyCommonEntityWithGeneratedId"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
         // @ts-ignore
         const media = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
@@ -60,10 +95,10 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
 
     async store(files: Express.Multer.File[], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
         const isSupportedEntity = entity instanceof CommonEntity
-            || entity instanceof LegacyCommonEntity
-            || entity instanceof LegacyCommonWithIdEntity;
+            || entity instanceof LegacyCommonEntityWithExistingId
+            || entity instanceof LegacyCommonEntityWithGeneratedId;
         if (!isSupportedEntity) {
-            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntity or LegacyCommonWithIdEntity"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
+            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntityWithExistingId or LegacyCommonEntityWithGeneratedId"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
         const result: Media[] = [];
         const storageProvider = mediaFieldMetadata.mediaStorageProvider;
@@ -102,10 +137,10 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
 
     async delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void> {
         const isSupportedEntity = entity instanceof CommonEntity
-            || entity instanceof LegacyCommonEntity
-            || entity instanceof LegacyCommonWithIdEntity;
+            || entity instanceof LegacyCommonEntityWithExistingId
+            || entity instanceof LegacyCommonEntityWithGeneratedId;
         if (!isSupportedEntity) {
-            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntity or LegacyCommonWithIdEntity"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
+            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntityWithExistingId or LegacyCommonEntityWithGeneratedId"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
         }
         const storageProvider = mediaFieldMetadata.mediaStorageProvider;
         const region = this.getEffectiveRegion(storageProvider.region);

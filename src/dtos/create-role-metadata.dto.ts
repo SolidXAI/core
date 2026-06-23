@@ -1,5 +1,5 @@
 import { IsString } from 'class-validator';
-import { IsNotEmpty, ValidateNested, IsArray, IsOptional } from 'class-validator';
+import { IsNotEmpty, ValidateNested, IsArray, IsOptional, IsInt } from 'class-validator';
 import { Type } from 'class-transformer';
 import { UpdatePermissionMetadataDto } from 'src/dtos/update-permission-metadata.dto';
 import { UpdateUserDto } from 'src/dtos/update-user.dto';
@@ -66,4 +66,14 @@ export class CreateRoleMetadataDto {
     @IsOptional()
     @ApiProperty()
     menuItemsCommand: string;
+
+    @IsOptional()
+    @IsInt()
+    @ApiProperty()
+    moduleId: number;
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty()
+    moduleUserKey: string;
 }

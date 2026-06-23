@@ -1,4 +1,4 @@
-import { BadRequestException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
+import { BadRequestException, ConflictException, HttpException, InternalServerErrorException, NotFoundException } from "@nestjs/common";
 import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
 import { CommonEntity } from "../entities/common.entity";
@@ -41,7 +41,6 @@ import { SolidRegistry } from "src/helpers/solid-registry";
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 import { ModelMetadataService } from "./model-metadata.service";
 import { RequestContextService } from "./request-context.service";
-import { BasicGroupFilterDto } from "src/dtos/basic-group-filters.dto";
 
 
 export class CRUDService<T extends CommonEntity> { // Add two generic value i.e Person,CreatePersonDto, so we get the proper types in our service
@@ -480,10 +479,10 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return false; // If it is not a partial update, then do not skip computation
     }
 
-    async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}) {
+    async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}): Promise<any> {
         const alias = 'entity';
         // Extract the required keys from the input query
-        let { limit, offset, populateMedia, populateGroup, groupFilter } = basicFilterDto;
+        let { limit, offset, populateMedia } = basicFilterDto;
         const populateUserIdFields = this.crudHelperService.extractUserIdFieldsFromPopulate(basicFilterDto.populate);
 
         const { singularName, internationalisation, draftPublishWorkflow } = await this.loadModel();
@@ -502,41 +501,19 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         // Create above query on pincode table using query builder
         var qb: SelectQueryBuilder<T> = await this.repo.createSecurityRuleAwareQueryBuilder(alias)
 
-        if (basicFilterDto.groupBy) {
+        if (basicFilterDto.groupBy?.length) {
             const groupFilterQb = (internationalisation && draftPublishWorkflow)
                 ? this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef, FilterCombinator.AND, false, false)
                 : this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, undefined, undefined, undefined, FilterCombinator.AND, false, false);
 
-            const groupByFields = this.crudHelperService.normalize(basicFilterDto.groupBy);
-            if (!groupByFields.length) {
-                throw new BadRequestException(ERROR_MESSAGES.INVALID_GROUP_BY_COUNT);
-            }
-
-            if (basicFilterDto.populateGroup) {
-                const hasRelationGroup = groupByFields.some(field => field.includes('.'));
-                if (hasRelationGroup) {
-                    throw new BadRequestException('populateGroup is not supported when grouping on relation fields. Fetch group metadata first and retrieve records in a separate call.');
+            return this.crudHelperService.executeGroupPipeline(
+                groupFilterQb, basicFilterDto, alias,
+                () => this.repo.createSecurityRuleAwareQueryBuilder(alias),
+                async (entities) => {
+                    if (populateUserIdFields?.length) await this.handlePopulateUserIdFields(populateUserIdFields, entities);
+                    if (populateMedia?.length) await this.handlePopulateMedia(populateMedia, entities);
                 }
-            }
-
-            const { aliasMap: groupAliasMap, formatMap: groupFormatMap, expressionMap: groupExpressionMap } = this.crudHelperService.applyGroupBySelections(groupFilterQb, groupByFields, alias);
-            const aggregateAliasMap = this.crudHelperService.applyAggregates(groupFilterQb, basicFilterDto.aggregates, alias);
-            const sortAliasMap = { ...groupAliasMap, ...aggregateAliasMap };
-            this.crudHelperService.applyGroupSortingAndPagination(groupFilterQb, basicFilterDto.sort, sortAliasMap, limit, offset);
-
-            const groupByResult = await groupFilterQb.getRawMany();
-            const totalGroups = await this.crudHelperService.countGroups(groupFilterQb);
-
-            const groupByFieldsOrdered = this.crudHelperService.normalize(basicFilterDto.groupBy || []);
-            const { groupMeta, groupRecords } = await this.handleGroupFind(groupByResult, groupFilter, populateGroup, alias, populateUserIdFields, populateMedia, basicFilterDto, groupAliasMap, aggregateAliasMap, groupByFieldsOrdered, groupFormatMap, groupExpressionMap);
-
-            return {
-                meta: {
-                    "totalRecords": totalGroups
-                },
-                groupMeta,
-                groupRecords,
-            }
+            );
         }
         else {
             qb = (internationalisation && draftPublishWorkflow)
@@ -566,78 +543,8 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return this.wrapFindResponse(offset, limit, count, entities);
     }
 
-    private async handleGroupFind(
-        groupByResult: any[],
-        groupFilter: BasicGroupFilterDto | undefined,
-        populateGroup: boolean,
-        alias: string,
-        populateUserIdFields: UserIdFields[],
-        populateMedia: string[],
-        baseFilterDto: BasicFilterDto,
-        groupAliasMap: Record<string, string>,
-        aggregateAliasMap: Record<string, string>,
-        groupByFieldsOrdered: string[],
-        groupFormatMap: Record<string, string | undefined>,
-        groupExpressionMap: Record<string, string>
-    ) {
-        const groupMeta = [];
-        const groupRecords = [];
-        const aggregateAliasSet = new Set(Object.values(aggregateAliasMap));
-        // For each group, get the records and the count
-        for (const group of groupByResult) {
-            if (populateGroup) {
-                let groupByQb: SelectQueryBuilder<T> = await this.repo.createSecurityRuleAwareQueryBuilder(alias);
-                const groupFilterDto: BasicFilterDto = {
-                    ...baseFilterDto,
-                    ...groupFilter,
-                    groupBy: undefined,
-                    aggregates: undefined,
-                    // Only use explicit groupFilter.sort for record ordering; group-level sorts can contain
-                    // group expressions (e.g. createdAt:day) that are invalid on record queries.
-                    sort: groupFilter?.sort,
-                };
-                groupByQb = this.crudHelperService.buildFilterQuery(groupByQb, groupFilterDto, alias);
-                groupByQb = this.crudHelperService.buildGroupByRecordsQuery(groupByQb, group, alias, groupAliasMap, aggregateAliasMap, groupExpressionMap);
-                const [entities, count] = await groupByQb.getManyAndCount();
-
-                // Populate the entity with the userId fields
-                if (populateUserIdFields && populateUserIdFields.length > 0) {
-                    await this.handlePopulateUserIdFields(populateUserIdFields, entities);
-                }
-
-                // Populate the entity with the media
-                if (populateMedia && populateMedia.length > 0) {
-                    await this.handlePopulateMedia(populateMedia, entities);
-                }
-                const groupData = this.wrapFindResponse(groupFilter?.offset, groupFilter?.limit, count, entities);
-                groupRecords.push(this.crudHelperService.createGroupRecords(group, aggregateAliasSet, groupData, groupByFieldsOrdered, groupAliasMap, groupFormatMap));
-            }
-            groupMeta.push(this.crudHelperService.createGroupMeta(group, aggregateAliasSet, groupByFieldsOrdered, groupAliasMap, groupFormatMap));
-        }
-        return { groupMeta, groupRecords };
-    }
-
     private wrapFindResponse(offset: number | undefined, limit: number | undefined, count: number, entities: T[]) {
-        const safeLimit = limit ?? count ?? 0;
-        const safeOffset = offset ?? 0;
-        const currentPage = safeLimit ? Math.floor(safeOffset / safeLimit) + 1 : 1;
-        const totalPages = safeLimit ? Math.ceil(count / safeLimit) : 1;
-
-        const nextPage = safeLimit && currentPage < totalPages ? currentPage + 1 : null;
-        const prevPage = safeLimit && currentPage > 1 ? currentPage - 1 : null;
-
-        const r = {
-            meta: {
-                totalRecords: count,
-                currentPage: currentPage,
-                nextPage: nextPage,
-                prevPage: prevPage,
-                totalPages: totalPages,
-                perPage: safeLimit ? +safeLimit : 0,
-            },
-            records: entities
-        };
-        return r;
+        return this.crudHelperService.pagedResponse(offset, limit, count, entities);
     }
 
     // entities is an array of T
@@ -911,7 +818,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             });
 
             if (!softDeletedRows) {
-                throw new Error(ERROR_MESSAGES.NO_SOFT_DELETED_RECORD_FOUND);
+                throw new NotFoundException(ERROR_MESSAGES.NO_SOFT_DELETED_RECORD_FOUND);
             }
 
             await this.repo.update(id, {
@@ -921,13 +828,13 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
             return { message: SUCCESS_MESSAGES.RECORD_RECOVERED, data: softDeletedRows };
         } catch (error: any) {
-            if (error instanceof QueryFailedError) {
-                if ((error as any).code === '23505') {
-                    throw new Error(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
-                }
+            if (error instanceof QueryFailedError && (error as any).code === '23505') {
+                throw new ConflictException(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
             }
-
-            throw new Error(error);
+            if (error instanceof HttpException) {
+                throw error;
+            }
+            throw new InternalServerErrorException(error?.message ?? String(error));
         }
     }
 
@@ -956,7 +863,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             });
 
             if (softDeletedRows.length === 0) {
-                throw new Error(ERROR_MESSAGES.NO_SOFT_DELETED_RECORDS_FOUND);
+                throw new NotFoundException(ERROR_MESSAGES.NO_SOFT_DELETED_RECORDS_FOUND);
             }
 
             // Recover the specific records by setting deletedAt to null
@@ -967,13 +874,13 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
             return { message: SUCCESS_MESSAGES.SELECTED_RECORDS_RECOVERED, recoveredIds: ids };
         } catch (error: any) {
-            if (error instanceof QueryFailedError) {
-                if ((error as any).code === "23505") {
-                    throw new Error(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
-                }
+            if (error instanceof QueryFailedError && (error as any).code === "23505") {
+                throw new ConflictException(ERROR_MESSAGES.CONFLICTING_RECORD_ON_UNARCHIVE);
             }
-
-            throw new Error(error);
+            if (error instanceof HttpException) {
+                throw error;
+            }
+            throw new InternalServerErrorException(error?.message ?? String(error));
         }
     }
 

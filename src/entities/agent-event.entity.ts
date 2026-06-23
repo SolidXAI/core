@@ -49,6 +49,7 @@ export class AgentEvent extends CommonEntity {
   @Column({ nullable: true })
   outputTokens: number;
 
+    @Index()
   @Column({ nullable: true })
   modelUsed: string;
 }

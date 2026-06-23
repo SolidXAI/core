@@ -10,6 +10,7 @@ export class MenuItemMetadata extends CommonEntity {
     @Column({ name: "name", type: "varchar" })
     name: string;
 
+    @Index()
     @Column({ name: "display_name", type: "varchar" })
     displayName: string;
 
@@ -32,6 +33,7 @@ export class MenuItemMetadata extends CommonEntity {
     @JoinTable()
     roles: RoleMetadata[];
 
+    @Index()
     @Column({ name: "sequence_number", type: "int", nullable: true })
     sequenceNumber: number;
 

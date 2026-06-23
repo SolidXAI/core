@@ -6,6 +6,7 @@ export class Locale extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     locale: string;
+    @Index()
     @Column({ type: "varchar" })
     displayName: string;
     @Index()

@@ -4,8 +4,6 @@ import { ActiveUser } from 'src/decorators/active-user.decorator';
 import { Public } from 'src/decorators/public.decorator';
 import { ErrorMapperService } from 'src/helpers/error-mapper.service';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
-import { AiInteractionService } from 'src/services/ai-interaction.service';
-import { IngestMetadataService } from 'src/services/genai/ingest-metadata.service';
 import { MqMessageService } from 'src/services/mq-message.service';
 import { SolidRegistry } from '../helpers/solid-registry';
 
@@ -22,10 +20,8 @@ export class ServiceController {
 
     constructor(
         private readonly solidRegistry: SolidRegistry,
-        private readonly aiInteractionService: AiInteractionService,
         private readonly mqMessageService: MqMessageService,
         private readonly errorMapper: ErrorMapperService,
-        private readonly ingestMetadataService: IngestMetadataService,
     ) { }
 
     @Public()
@@ -94,18 +90,19 @@ export class ServiceController {
     @ApiBearerAuth("jwt")
     @Post('seed')
     async seedData(@Body() seedData: any) {
+        const seederName = seedData?.seeder ?? 'ModuleMetadataSeederService';
         const seeder = this.solidRegistry
             .getSeeders()
-            .filter((seeder) => seeder.name === seedData.seeder)
+            .filter((seeder) => seeder.name === seederName)
             .map((seeder) => seeder.instance)
             .pop();
         if (!seeder) {
-            this.logger.error(`Seeder service ${seedData.seeder} not found. Does your service have a seed() method?`);
+            this.logger.error(`Seeder service ${seederName} not found. Does your service have a seed() method?`);
             return;
         }
         this.logger.log(`Running the seed() method for seeder :${seeder.constructor.name}`);
         await seeder.seed();
-        return { message: `seed data for ${seedData.seeder}` };
+        return { message: `seed data for ${seederName}` };
     }
 
     @ApiBearerAuth("jwt")

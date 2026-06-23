@@ -15,6 +15,7 @@ export class AgentSession extends CommonEntity {
   @Column({ nullable: true, ...getColumnType('longText') })
   projectRoot: string;
 
+    @Index()
   @Column({ })
   modelName: string;
 
