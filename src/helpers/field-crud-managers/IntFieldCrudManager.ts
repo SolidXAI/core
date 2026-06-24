@@ -15,7 +15,10 @@ export class IntFieldCrudManager implements FieldCrudManager {
 
     validate(createDto: any): ValidationError[] {
         const fieldValue: any = createDto[this.options.fieldName];
-        return this.applyValidations(fieldValue);
+        if (typeof fieldValue === 'string' && /^\d+$/.test(fieldValue.trim())) {
+            createDto[this.options.fieldName] = Number.parseInt(fieldValue, 10);
+        }
+        return this.applyValidations(createDto[this.options.fieldName]);
     }
 
     private applyValidations(fieldValue: any): ValidationError[] {
