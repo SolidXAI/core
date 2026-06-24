@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { SelectionProvider } from "src/decorators/selection-provider.decorator";
 import { MqMessageRepository } from "src/repository/mq-message.repository";
 import { ISelectionProvider, ISelectionProviderContext, ISelectionProviderValues } from "src/interfaces";
+import { applyCaseInsensitiveContainsFilter } from "src/services/dashboard-providers/mq-dashboard-provider-utils";
 
 @SelectionProvider()
 @Injectable()
@@ -31,9 +32,7 @@ export class MqDashboardMessageBrokerVariableOptionsProvider implements ISelecti
         qb.select("DISTINCT mqMessage.messageBroker", "value")
             .where("mqMessage.messageBroker IS NOT NULL");
 
-        if (query) {
-            qb.andWhere("mqMessage.messageBroker ILIKE :query", { query: `%${query}%` });
-        }
+        applyCaseInsensitiveContainsFilter(qb, "mqMessage.messageBroker", query, "query");
 
         const rows = await qb
             .orderBy("value", "ASC")
@@ -49,4 +48,3 @@ export class MqDashboardMessageBrokerVariableOptionsProvider implements ISelecti
             }));
     }
 }
-

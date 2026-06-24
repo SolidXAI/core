@@ -34,6 +34,71 @@ export class ScheduledJobRepository extends SolidBaseRepository<ScheduledJob> {
         super(ScheduledJob, dataSource, requestContextService, securityRuleRepository);
     }
 
+  private normalizeComparableValue(value: any): any {
+    if (value instanceof Date) {
+      return value.toISOString();
+    }
+
+    if (typeof value === "string") {
+      const trimmedValue = value.trim();
+      if (
+        (trimmedValue.startsWith("{") && trimmedValue.endsWith("}")) ||
+        (trimmedValue.startsWith("[") && trimmedValue.endsWith("]"))
+      ) {
+        try {
+          return this.normalizeComparableValue(JSON.parse(trimmedValue));
+        } catch {
+          return value;
+        }
+      }
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => this.normalizeComparableValue(item));
+    }
+
+    if (value && typeof value === "object") {
+      return Object.keys(value)
+        .sort()
+        .reduce((result, key) => {
+          result[key] = this.normalizeComparableValue(value[key]);
+          return result;
+        }, {} as Record<string, any>);
+    }
+
+    return value;
+  }
+
+  private areValuesDifferent(currentValue: any, nextValue: any): boolean {
+    const normalizedCurrentValue = this.normalizeComparableValue(currentValue);
+    const normalizedNextValue = this.normalizeComparableValue(nextValue);
+
+    if (
+      (normalizedCurrentValue && typeof normalizedCurrentValue === "object") ||
+      (normalizedNextValue && typeof normalizedNextValue === "object")
+    ) {
+      return JSON.stringify(normalizedCurrentValue ?? null) !== JSON.stringify(normalizedNextValue ?? null);
+    }
+
+    return normalizedCurrentValue !== normalizedNextValue;
+  }
+
+  private hasChanges(existing: ScheduledJob, dto: CreateScheduledJobDto, moduleEntity: ModuleMetadata): boolean {
+    return existing.scheduleName !== dto.scheduleName
+      || existing.isActive !== dto.isActive
+      || this.areValuesDifferent(existing.frequency, dto.frequency)
+      || this.areValuesDifferent(existing.startTime, dto.startTime)
+      || this.areValuesDifferent(existing.endTime, dto.endTime)
+      || this.areValuesDifferent(existing.startDate, dto.startDate)
+      || this.areValuesDifferent(existing.endDate, dto.endDate)
+      || this.areValuesDifferent(existing.dayOfMonth, dto.dayOfMonth)
+      || this.areValuesDifferent(existing.dayOfWeek, dto.dayOfWeek)
+      || this.areValuesDifferent(existing.job, dto.job)
+      || this.areValuesDifferent(existing.cronExpression, dto.cronExpression)
+      || existing.module?.id !== moduleEntity.id;
+  }
+
   /**
    * Converts an entity to a plain DTO object.
    */
@@ -91,9 +156,17 @@ export class ScheduledJobRepository extends SolidBaseRepository<ScheduledJob> {
     };
     const existing = await this.findOne({
       where: { scheduleName: dto.scheduleName },
+      relations: {
+        module: true,
+      },
     });
 
     if (existing) {
+      if (!this.hasChanges(existing, dto, moduleEntity)) {
+        this.logger.debug(`Skipping scheduled job upsert for ${dto.scheduleName}; no changes detected.`);
+        return existing;
+      }
+
       const merged = this.merge(existing, jobData);
       this.logger.debug(`Updating scheduled job: ${dto.scheduleName}`);
       return this.save(merged);

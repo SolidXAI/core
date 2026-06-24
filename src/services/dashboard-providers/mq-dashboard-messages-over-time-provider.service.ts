@@ -2,7 +2,13 @@ import { Injectable } from "@nestjs/common";
 import { DashboardWidgetDataProvider } from "src/decorators/dashboard-widget-data-provider.decorator";
 import { MqMessageRepository } from "src/repository/mq-message.repository";
 import { IDashboardWidgetDataProvider, IDashboardWidgetDataProviderContext, IDashboardWidgetDataResponseEnvelope } from "src/interfaces";
-import { applyMqDashboardFilters, normalizeBucket, toNumber } from "src/services/dashboard-providers/mq-dashboard-provider-utils";
+import {
+    applyMqDashboardFilters,
+    buildMqDashboardBucketExpression,
+    normalizeBucket,
+    normalizeMqDashboardBucketValue,
+    toNumber,
+} from "src/services/dashboard-providers/mq-dashboard-provider-utils";
 
 @DashboardWidgetDataProvider()
 @Injectable()
@@ -31,7 +37,7 @@ export class MqDashboardMessagesOverTimeProvider implements IDashboardWidgetData
         const qb = await this.mqMessageRepository.createSecurityRuleAwareQueryBuilder("mqMessage");
         applyMqDashboardFilters(qb, ctxt.variables ?? {});
 
-        const bucketExpr = `DATE_TRUNC('${bucket}', mqMessage.createdAt)`;
+        const bucketExpr = buildMqDashboardBucketExpression(qb, bucket, "mqMessage.createdAt");
         const rows = await qb
             .select(bucketExpr, "bucket")
             .addSelect("mqMessage.stage", "stage")
@@ -43,7 +49,7 @@ export class MqDashboardMessagesOverTimeProvider implements IDashboardWidgetData
 
         const bucketToStageMap = new Map<string, Record<string, number>>();
         for (const row of rows) {
-            const key = new Date(row.bucket).toISOString();
+            const key = normalizeMqDashboardBucketValue(row.bucket);
             const entry = bucketToStageMap.get(key) ?? {};
             entry[row.stage] = (entry[row.stage] ?? 0) + toNumber(row.count, 0);
             bucketToStageMap.set(key, entry);
@@ -76,4 +82,3 @@ export class MqDashboardMessagesOverTimeProvider implements IDashboardWidgetData
         };
     }
 }
-

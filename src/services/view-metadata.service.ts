@@ -21,6 +21,74 @@ import { MenuItemMetadata } from 'src/entities/menu-item-metadata.entity';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
+  private readonly comparableFields = [
+    'name',
+    'displayName',
+    'type',
+    'context',
+    'layout',
+    'module',
+    'model',
+  ] as const;
+  private readonly relationCompareFields = new Set(['module', 'model']);
+  private readonly jsonCompareFields = new Set(['layout', 'context']);
+
+  private normalizeJsonFieldValue(value: any): any {
+    if (typeof value === 'string') {
+      const trimmedValue = value.trim();
+      if (
+        (trimmedValue.startsWith('{') && trimmedValue.endsWith('}')) ||
+        (trimmedValue.startsWith('[') && trimmedValue.endsWith(']'))
+      ) {
+        try {
+          return this.normalizeJsonFieldValue(JSON.parse(trimmedValue));
+        } catch {
+          return value;
+        }
+      }
+      return value;
+    }
+
+    if (Array.isArray(value)) {
+      return value.map((item) => this.normalizeJsonFieldValue(item));
+    }
+
+    if (value && typeof value === 'object') {
+      return Object.keys(value)
+        .sort()
+        .reduce((result, key) => {
+          result[key] = this.normalizeJsonFieldValue(value[key]);
+          return result;
+        }, {} as Record<string, any>);
+    }
+
+    return value;
+  }
+
+  private getCanonicalJsonFieldString(value: any): string {
+    return JSON.stringify(this.normalizeJsonFieldValue(value) ?? null);
+  }
+
+  private hasChanges(existingSolidView: ViewMetadata, updateSolidViewDto: UpdateViewMetadataDto): boolean {
+    return this.comparableFields.some((key) => {
+      const value = (updateSolidViewDto as any)[key];
+      if (typeof value === 'undefined') {
+        return false;
+      }
+
+      if (this.relationCompareFields.has(key)) {
+        const relationValue = value as any;
+        return (existingSolidView as any)[key]?.id !== relationValue?.id;
+      }
+
+      if (this.jsonCompareFields.has(key)) {
+        return this.getCanonicalJsonFieldString((existingSolidView as any)[key]) !== this.getCanonicalJsonFieldString(value);
+      }
+
+      return (existingSolidView as any)[key] !== value;
+    });
+  }
+
   constructor(
     readonly actionMetadataService: ActionMetadataService,
     readonly menuItemMetadataService: MenuItemMetadataService,
@@ -83,15 +151,11 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       return { records: [], defaultEntityLocaleId: null };
     }
 
-    const defaultLocale = await this.entityManager.getRepository(Locale).findOne({ where: { isDefault: true } });
-
-    let defaultEntityLocaleId: string;
-    if (entityRecord.localeName === defaultLocale?.locale) {
-      defaultEntityLocaleId = entityRecord.id;
-      this.logger.debug(`Editing default locale record with id ${defaultEntityLocaleId}`);
+    const defaultEntityLocaleId = entityRecord.defaultEntityLocaleId || entityRecord.id;
+    if (entityRecord.defaultEntityLocaleId) {
+      this.logger.debug(`Editing translated locale record. Translation root id: ${defaultEntityLocaleId}`);
     } else {
-      defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
-      this.logger.debug(`Editing non-default locale record. DefaultEntityLocaleId: ${defaultEntityLocaleId}`);
+      this.logger.debug(`Editing translation root record with id ${defaultEntityLocaleId}`);
     }
 
     const records = await currentEntityRepository.find({
@@ -438,10 +502,20 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
 
   async upsert(updateSolidViewDto: UpdateViewMetadataDto) {
     // First check if module already exists using name
-    const existingSolidView = await this.findOneByUserKey(updateSolidViewDto.name);
+    const existingSolidView = await this.findOneByUserKey(updateSolidViewDto.name, {
+      module: true,
+      model: true,
+    });
 
     // if found
     if (existingSolidView) {
+      const hasChanges = this.hasChanges(existingSolidView, updateSolidViewDto);
+
+      if (!hasChanges) {
+        this.logger.debug(`Skipping view upsert for ${updateSolidViewDto.name}; no changes detected.`);
+        return existingSolidView;
+      }
+
       const updatedSolidViewDto = { ...existingSolidView, ...updateSolidViewDto };
       return this.repo.save(updatedSolidViewDto);
     }
