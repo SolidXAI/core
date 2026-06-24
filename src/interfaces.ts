@@ -16,6 +16,7 @@ import { ComputedFieldMetadata } from "./helpers/solid-registry";
 import { ActiveUserData } from "./interfaces/active-user-data.interface";
 import { SecurityRuleConfig } from "./dtos/security-rule-config.dto";
 import { SecurityRule } from "./entities/security-rule.entity";
+import { CreatePushNotificationTemplateDto } from "./dtos/create-push-notification-template.dto";
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -60,6 +61,7 @@ export interface ModuleMetadataConfiguration {
   menus?: any[];
   views?: any[];
   emailTemplates?: CreateEmailTemplateDto[];
+  pushNotificationTemplates?: CreatePushNotificationTemplateDto[];
   smsTemplates?: CreateSmsTemplateDto[];
   mediaStorageProviders?: CreateMediaStorageProviderMetadataDto[];
   securityRules?: CreateSecurityRuleDto[];

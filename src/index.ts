@@ -28,6 +28,7 @@ export * from "./decorators/security-rule-config-provider.decorator";
 export * from "./decorators/sms-provider.decorator";
 export * from "./decorators/settings-provider.decorator";
 export * from "./decorators/extension-user-creation-provider.decorator";
+export * from "./decorators/push-notification-provider.decorator";
 
 export * from "./dtos/post-chatter-message.dto";
 export * from "./dtos/update-chatter-note-message.dto";
@@ -116,6 +117,7 @@ export * from "./dtos/metadata-explorer-search-query.dto";
 export * from "./dtos/metadata-explorer-write.dto";
 export * from "./dtos/create-dashboard-user-layout.dto";
 export * from "./dtos/update-dashboard-user-layout.dto";
+export * from "./dtos/user-device-metadata.dto";
 
 export * from "./entities/action-metadata.entity";
 export * from "./entities/common.entity";
@@ -158,6 +160,9 @@ export * from "./entities/user-activity-history.entity";
 export * from "./entities/model-sequence.entity";
 export * from "./entities/dashboard-user-layout.entity";
 export * from "./entities/user-api-key.entity";
+export * from "./entities/user-device-metadata.entity";
+export * from "./";
+export * from "./entities/push-notification-template.entity";
 
 export * from "./enums/auth-type.enum";
 export * from "./enums/push-notification-target.enum";
@@ -333,6 +338,9 @@ export * from "./services/sms/Msg91SMSService"; //rename
 export * from "./services/sms/TwilioSMSService"; //rename
 export * from "./services/poller.service";
 export * from "./services/sms-template.service";
+export * from "./services/push/push-notification.service";
+export * from "./services/push-notification-template.service";
+export * from "./services/user-device-metadata.service";
 export * from "./services/solid-introspect.service";
 export * from "./services/user.service";
 export * from "./services/view-metadata.service";

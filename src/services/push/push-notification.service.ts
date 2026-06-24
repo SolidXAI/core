@@ -125,7 +125,7 @@ export class PushNotificationService {
     const devices =
       await this.userDeviceMetadataService.findActiveDevicesByUserId(userId);
     const sendableDevices = devices.filter(
-      (device) => device.pushProviderRecipientId && device.isTrusted,
+      (device) => device.pushProviderRecipientId,
     );
 
     if (!sendableDevices.length) {

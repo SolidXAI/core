@@ -390,6 +390,11 @@ import { DashboardUserLayoutRepository } from "./repositories/dashboard-user-lay
 import { MssqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mssql-datasource-introspection-provider.service";
 import { MysqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mysql-datasource-introspection-provider.service";
 import { PostgresDatasourceIntrospectionProviderService } from "./services/datasource-introspection/postgres-datasource-introspection-provider.service";
+import { UserDeviceMetadata } from "./entities/user-device-metadata.entity";
+import { PushNotificationService } from "./services/push/push-notification.service";
+import { UserDeviceMetadataService } from "./services/user-device-metadata.service";
+import { UserDeviceMetadataRepository } from "./repository/user-device-metadata.repository";
+import { PushNotificationTemplateRepository } from "./repository/push-notification-template.repository";
 
 @Global()
 @Module({

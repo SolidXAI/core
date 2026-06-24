@@ -12,7 +12,7 @@ export enum SignInType {
   mobile = "mobile",
 }
 
-export class OTPConfirmOTPDto extends UserDeviceMetadataDto {
+export class OTPConfirmOTPDto {
   @IsEnum(SignInType)
   @IsNotEmpty()
   type: string;

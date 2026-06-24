@@ -12,9 +12,11 @@ export class UserDeviceMetadataDto {
 
   userId?: number;
 
+  @IsOptional()
   @IsString()
   deviceToken?: string;
 
+  @IsOptional()
   @IsString()
   @IsEnum(PlatformType)
   platform?: PlatformType;

@@ -8,7 +8,7 @@ import {
 } from "class-validator";
 import { UserDeviceMetadataDto } from "./user-device-metadata.dto";
 
-export class SignInDto extends UserDeviceMetadataDto {
+export class SignInDto {
   @ApiProperty({ default: "sa@solidxai.com" })
   @IsEmail()
   // @IsNotEmpty()

@@ -9,7 +9,7 @@ import {
 import { PasswordlessRegistrationValidateWhatSources } from "../constants";
 import { UserDeviceMetadataDto } from "./user-device-metadata.dto";
 
-export class OTPSignUpDto extends UserDeviceMetadataDto {
+export class OTPSignUpDto {
   @IsNotEmpty()
   username: string;
 

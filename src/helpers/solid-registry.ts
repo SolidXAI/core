@@ -1,6 +1,9 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { InstanceWrapper } from "@nestjs/core/injector/instance-wrapper";
-import { IExtensionUserCreationProvider } from "src/interfaces";
+import {
+  IDashboardWidgetDataProvider,
+  IExtensionUserCreationProvider,
+} from "src/interfaces";
 import { User } from "src/entities/user.entity";
 import {
   ComputedFieldTriggerConfig,
@@ -11,8 +14,6 @@ import { Locale } from "src/entities/locale.entity";
 import { SecurityRule } from "src/entities/security-rule.entity";
 import { IScheduledJob } from "src/services/scheduled-jobs/scheduled-job.interface";
 import {
-  IDashboardQuestionDataProvider,
-  IDashboardVariableSelectionProvider,
   IErrorCodeProvider,
   ISecurityRuleConfigProvider,
   ISelectionProvider,
