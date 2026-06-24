@@ -84,24 +84,44 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         const batch = this.perTxn.get(event.queryRunner) ?? [];
         this.perTxn.delete(event.queryRunner);
 
-        // Now outside the DB transaction — safe to publish to the queue.
-        // allSettled: publish in parallel; a single failure does not block the rest.
-        const results = await Promise.allSettled(
-            batch.map(payload => this.publisherFactory.publish({ payload }, 'ChatterQueuePublisher'))
-        );
+        if (batch.length === 0) return;
 
-        results.forEach((result, i) => {
-            if (result.status === 'rejected') {
-                this.logger.error(
-                    `Failed to publish audit event for ${batch[i].modelName}#${batch[i].entityId}`,
-                    result.reason,
-                );
-            }
-        });
+        if (this.shouldDeferAuditPublish()) {
+            setImmediate(() => void this.publishAuditBatch(batch));
+            return;
+        }
+
+        await this.publishAuditBatch(batch);
     }
 
     afterTransactionRollback(event: { queryRunner: any }) {
         // Drop buffered payloads; the write never happened.
         this.perTxn.delete(event.queryRunner);
+    }
+
+    private shouldDeferAuditPublish(): boolean {
+        const driver = (process.env.DEFAULT_DATABASE_DRIVER ?? '').toLowerCase();
+        const poolMax = Number(process.env.DEFAULT_DATABASE_POOL_MAX ?? 20);
+        return driver === 'pglite' && Number.isFinite(poolMax) && poolMax <= 1;
+    }
+
+    private async publishAuditBatch(batch: AuditQueuePayload[]) {
+        try {
+            // allSettled: publish in parallel; a single failure does not block the rest.
+            const results = await Promise.allSettled(
+                batch.map(payload => this.publisherFactory.publish({ payload }, 'ChatterQueuePublisher'))
+            );
+
+            results.forEach((result, i) => {
+                if (result.status === 'rejected') {
+                    this.logger.error(
+                        `Failed to publish audit event for ${batch[i].modelName}#${batch[i].entityId}`,
+                        result.reason,
+                    );
+                }
+            });
+        } catch (error) {
+            this.logger.error('Failed to publish audit batch', error);
+        }
     }
 }
