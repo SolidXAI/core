@@ -8,6 +8,7 @@ import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
 import { RoleMetadataRepository } from 'src/repository/role-metadata.repository';
 import { CreateRoleMetadataDto } from '../dtos/create-role-metadata.dto';
+import { ModuleMetadata } from '../entities/module-metadata.entity';
 import { PermissionMetadata } from '../entities/permission-metadata.entity';
 import { RoleMetadata } from '../entities/role-metadata.entity';
 
@@ -65,13 +66,16 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     for (let id = 0; id < roles.length; id++) {
       try {
         const roleObj = roles[id];
+        const module = await this.resolveRoleModule(roleObj);
         // this.logger.log(`Resolving role: ${JSON.stringify(roleObj)}`);
 
         const existingRole = await this.repo.findOne({
           where: {
             name: roleObj.name,
           },
-          relations: {},
+          relations: {
+            module: true,
+          },
         });
 
         // Create only if not existing already.
@@ -87,9 +91,13 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
           }
 
           // const role = this.repo.create({ ...roleObj, permissions });
-          const role = this.repo.create({ ...roleObj });
+          const role = this.repo.create({ ...roleObj, ...(module ? { module } : {}) });
           await this.repo.save(role);
         } else {
+          if (module && existingRole.module?.id !== module.id) {
+            existingRole.module = module;
+            await this.repo.save(existingRole);
+          }
           /*
           this.logger.debug(`Role ${roleObj.name} already exists`);
           const existingPermissions = existingRole.permissions.map(permission => permission.name);
@@ -110,6 +118,22 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
         this.logger.error(error);
       }
     }
+  }
+
+  private async resolveRoleModule(roleObj: CreateRoleMetadataDto): Promise<ModuleMetadata | null> {
+    if (roleObj.moduleId) {
+      return await this.entityManager.getRepository(ModuleMetadata).findOne({
+        where: { id: roleObj.moduleId },
+      });
+    }
+
+    if (roleObj.moduleUserKey) {
+      return await this.entityManager.getRepository(ModuleMetadata).findOne({
+        where: { name: roleObj.moduleUserKey },
+      });
+    }
+
+    return null;
   }
 
   async addAllPermissionsToRole(roleName: string): Promise<RoleMetadata> {

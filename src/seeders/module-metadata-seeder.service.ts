@@ -592,11 +592,15 @@ export class ModuleMetadataSeederService {
     // OK
     private async seedRoles(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         const roles = this.getSeedArray<CreateRoleMetadataDto>(overallMetadata?.roles);
-        // While creating roles we are only passing the role name to be used. 
+        // Preserve module linkage metadata so RoleMetadata.module is populated from the defining module.
         await this.timeOperation('roles-create-if-not-exists', () => this.roleService.createRolesIfNotExists(
             roles
                 .filter((role) => role?.name)
-                .map((role) => ({ name: role.name } as any)),
+                .map((role) => ({
+                    name: role.name,
+                    moduleId: role.moduleId,
+                    moduleUserKey: role.moduleUserKey ?? overallMetadata?.moduleMetadata?.name,
+                } as CreateRoleMetadataDto)),
         ), {
             moduleName: overallMetadata?.moduleMetadata?.name,
             component: 'roles',
