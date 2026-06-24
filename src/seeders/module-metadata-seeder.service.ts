@@ -39,12 +39,14 @@ import { SignUpDto } from '../dtos/sign-up.dto';
 import { ADMIN_ROLE_NAME, CreateRoleMetadataDto } from 'src/dtos/create-role-metadata.dto';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
+import { CreateLocaleDto } from 'src/dtos/create-locale.dto';
 import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
 import { SavedFiltersRepository } from 'src/repository/saved-filters.repository';
 import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
 import { SettingRepository } from 'src/repository/setting.repository';
 import { CreateModelSequenceDto } from 'src/dtos/create-model-sequence.dto';
 import { ModelSequenceRepository } from 'src/repository/model-sequence.repository';
+import { LocaleRepository } from 'src/repository/locale.repository';
 import { ModelSequence } from 'src/entities/model-sequence.entity';
 import { SavedFilters } from 'src/entities/saved-filters.entity';
 import { ScheduledJob } from 'src/entities/scheduled-job.entity';
@@ -116,6 +118,7 @@ export class ModuleMetadataSeederService {
         readonly savedFiltersRepo: SavedFiltersRepository,
         readonly dataSource: DataSource,
         readonly modelSequenceRepo: ModelSequenceRepository,
+        readonly localeRepo: LocaleRepository,
     ) { }
 
     async seed(conf?: any) {
@@ -193,6 +196,11 @@ export class ModuleMetadataSeederService {
                         this.logger.log(`Seeding Module / Model / Fields`);
                         const moduleModelFieldCounts = await this.timeOperation('seed-module-model-fields', () => this.seedModuleModelFields(moduleMetadata), { moduleName: moduleMetadata.name, component: 'module-model-fields' });
                         console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
+
+                currentStep = 'seedLocales';
+                this.logger.log(`Seeding Locales`);
+                const localeCounts = await this.seedLocales(overallMetadata);
+                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Locales', localeCounts)}`);
 
                         currentStep = 'seedPermissions';
                         this.logger.log(`Seeding Permissions`);
@@ -464,6 +472,22 @@ export class ModuleMetadataSeederService {
             serviceCall: 'handleSeedListOfValues',
         });
         return { pruned, upserted: listOfValues.length };
+    }
+
+    private async seedLocales(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
+        this.logger.debug(`[Start] Processing locales`);
+        const locales = this.getSeedArray<CreateLocaleDto>(overallMetadata?.locales);
+        const existingLocales = await this.localeRepo.find();
+
+        if (existingLocales.length > 0) {
+            this.solidRegistry.registerlocales(existingLocales);
+            this.logger.debug(`[End] Skipping locale seed because locales already exist`);
+            return { pruned: 0, upserted: 0 };
+        }
+
+        await this.handleSeedLocales(locales);
+        this.logger.debug(`[End] Processing locales`);
+        return { pruned: 0, upserted: locales.length };
     }
 
     private async setupDefaultRolesWithPermissions() {
@@ -1874,6 +1898,90 @@ export class ModuleMetadataSeederService {
                 details: `filter=${dto.name}`,
             });
         }
+    }
+
+    private async handleSeedLocales(localesDto: CreateLocaleDto[]) {
+        if (!localesDto || localesDto.length === 0) {
+            this.logger.debug(`No locales found to seed`);
+            return;
+        }
+
+        for (const dto of localesDto) {
+            if (dto.isDefault) {
+                const existingDefaultLocales = await this.localeRepo.find({
+                    where: {
+                        isDefault: true,
+                    } as any,
+                });
+
+                for (const locale of existingDefaultLocales) {
+                    if (locale.locale !== dto.locale) {
+                        await this.localeRepo.save({
+                            ...locale,
+                            isDefault: false,
+                        });
+                    }
+                }
+            }
+
+            const existingLocale = await this.localeRepo.findOne({
+                where: {
+                    locale: dto.locale,
+                } as any,
+            });
+
+            await this.localeRepo.save(
+                this.localeRepo.create({
+                    ...existingLocale,
+                    ...dto,
+                })
+            );
+        }
+
+        const locales = await this.localeRepo.find();
+        this.solidRegistry.registerlocales(locales);
+    }
+
+    private async handleSeedLocales(localesDto: CreateLocaleDto[]) {
+        if (!localesDto || localesDto.length === 0) {
+            this.logger.debug(`No locales found to seed`);
+            return;
+        }
+
+        for (const dto of localesDto) {
+            if (dto.isDefault) {
+                const existingDefaultLocales = await this.localeRepo.find({
+                    where: {
+                        isDefault: true,
+                    } as any,
+                });
+
+                for (const locale of existingDefaultLocales) {
+                    if (locale.locale !== dto.locale) {
+                        await this.localeRepo.save({
+                            ...locale,
+                            isDefault: false,
+                        });
+                    }
+                }
+            }
+
+            const existingLocale = await this.localeRepo.findOne({
+                where: {
+                    locale: dto.locale,
+                } as any,
+            });
+
+            await this.localeRepo.save(
+                this.localeRepo.create({
+                    ...existingLocale,
+                    ...dto,
+                })
+            );
+        }
+
+        const locales = await this.localeRepo.find();
+        this.solidRegistry.registerlocales(locales);
     }
 
     private validateSavedFilterQueryJsonWrapper(dto: CreateSavedFiltersDto): void {

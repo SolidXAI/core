@@ -151,15 +151,11 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       return { records: [], defaultEntityLocaleId: null };
     }
 
-    const defaultLocale = await this.entityManager.getRepository(Locale).findOne({ where: { isDefault: true } });
-
-    let defaultEntityLocaleId: string;
-    if (entityRecord.localeName === defaultLocale?.locale) {
-      defaultEntityLocaleId = entityRecord.id;
-      this.logger.debug(`Editing default locale record with id ${defaultEntityLocaleId}`);
+    const defaultEntityLocaleId = entityRecord.defaultEntityLocaleId || entityRecord.id;
+    if (entityRecord.defaultEntityLocaleId) {
+      this.logger.debug(`Editing translated locale record. Translation root id: ${defaultEntityLocaleId}`);
     } else {
-      defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
-      this.logger.debug(`Editing non-default locale record. DefaultEntityLocaleId: ${defaultEntityLocaleId}`);
+      this.logger.debug(`Editing translation root record with id ${defaultEntityLocaleId}`);
     }
 
     const records = await currentEntityRepository.find({
