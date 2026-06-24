@@ -14,6 +14,7 @@ import { RoleMetadata } from '../entities/role-metadata.entity';
 @Injectable()
 export class RoleMetadataService extends CRUDService<RoleMetadata> {
   private readonly logger = new Logger(RoleMetadataService.name);
+  private readonly permissionAssignmentBatchSize = 500;
 
   constructor(
     @InjectEntityManager()
@@ -126,66 +127,47 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
   private async _addPermissionsToRole(roleName: string, permissionNames: string[]): Promise<RoleMetadata> {
     const role = await this.repo.findOne({
       where: { name: roleName },
-      relations: {
-        permissions: true
+      select: {
+        id: true,
+        name: true,
       }
     });
     if (!role) {
       throw new Error(`Role '${roleName}' not found.`);
     }
 
-    // this.logger.log(`Found role ${roleName}`);
+    const joinInfo = this.getRolePermissionJoinInfo();
+    const targetPermissions = await this.loadTargetPermissions(permissionNames);
 
-    // The new set of permissions which are to be added to this role.
-    let newPermissions: PermissionMetadata[];
+    if (!permissionNames || permissionNames.length === 0) {
+      await this.entityManager
+        .createQueryBuilder()
+        .delete()
+        .from(joinInfo.tableName)
+        .where(`${joinInfo.roleIdColumn} = :roleId`, { roleId: role.id })
+        .execute();
 
-    // Load all the specified permissions in the system. 
-    if (permissionNames && permissionNames.length != 0) {
-      // this.logger.log(`Loading specified permissions.`);
-
-      newPermissions = await this.permissionRepository.find({ where: { name: In(permissionNames) } });
-      if (newPermissions.length !== permissionNames.length) {
-        throw new Error(`One or more permissions not found.`);
-      }
+      await this.insertRolePermissionMappings(role.id, targetPermissions.map((permission) => permission.id), joinInfo);
     }
     else {
-      // this.logger.log(`Loading all permissions in system.`);
+      const existingRows = await this.entityManager
+        .createQueryBuilder()
+        .select(joinInfo.permissionIdColumn, 'permissionId')
+        .from(joinInfo.tableName, 'role_permission')
+        .where(`${joinInfo.roleIdColumn} = :roleId`, { roleId: role.id })
+        .getRawMany();
 
-      // Load all permissions in the system. 
-      // TODO: Do we want to convert this to a paginated query to avoid having to load a very large permissions table into memory?
-      newPermissions = await this.permissionRepository.find();
-      if (newPermissions.length == 0) {
-        throw new Error(`No permissions configured in the system. Did you forget to run the PermissionSeederService?`);
+      const existingPermissionIds = new Set(existingRows.map((row) => Number(row.permissionId)));
+      const missingPermissionIds = targetPermissions
+        .map((permission) => permission.id)
+        .filter((permissionId) => !existingPermissionIds.has(permissionId));
+
+      if (missingPermissionIds.length > 0) {
+        await this.insertRolePermissionMappings(role.id, missingPermissionIds, joinInfo);
       }
     }
 
-    // this.logger.log(`Adding ${newPermissions.length} permissions to role ${roleName}.`);
-
-    // if there are already permissions assigned. 
-    if (role.permissions && role.permissions.length > 0) {
-      for (let i = 0; i < newPermissions.length; i++) {
-        const newPermission = newPermissions[i];
-        let newPermissionFound = true;
-        for (let j = 0; j < role.permissions.length; j++) {
-          const existingPermission = role.permissions[j];
-          if (existingPermission.name === newPermission.name) {
-            newPermissionFound = false;
-            break;
-          }
-        }
-
-        if (newPermissionFound) {
-          role.permissions.push(newPermission);
-        }
-      }
-
-    }
-    // else we create a new permissions set. 
-    else {
-      role.permissions = newPermissions;
-    }
-
-    return await this.repo.save(role);
+    return await this.findRoleByName(roleName);
   }
 
   async removePermissionsFromRole(roleName: string, permissionNames: string[]): Promise<RoleMetadata> {
@@ -218,6 +200,63 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
       throw new NotFoundException(ERROR_MESSAGES.PERMISSION_NOT_EXIST(name));
     }
     return existingPermission;
+  }
+
+  private async loadTargetPermissions(permissionNames: string[] | null): Promise<PermissionMetadata[]> {
+    if (permissionNames && permissionNames.length !== 0) {
+      const uniquePermissionNames = [...new Set(permissionNames)];
+      const permissions = await this.permissionRepository.find({ where: { name: In(uniquePermissionNames) } });
+      if (permissions.length !== uniquePermissionNames.length) {
+        throw new Error(`One or more permissions not found.`);
+      }
+      return permissions;
+    }
+
+    const permissions = await this.permissionRepository.find();
+    if (permissions.length === 0) {
+      throw new Error(`No permissions configured in the system. Did you forget to run the PermissionSeederService?`);
+    }
+    return permissions;
+  }
+
+  private getRolePermissionJoinInfo(): { tableName: string; roleIdColumn: string; permissionIdColumn: string } {
+    const relation = this.repo.metadata.relations.find((candidate) => candidate.propertyName === 'permissions');
+    if (!relation?.junctionEntityMetadata) {
+      throw new Error('Role-permission join table metadata not found.');
+    }
+
+    const roleIdColumn = relation.joinColumns[0]?.databaseName;
+    const permissionIdColumn = relation.inverseJoinColumns[0]?.databaseName;
+    if (!roleIdColumn || !permissionIdColumn) {
+      throw new Error('Role-permission join table column metadata not found.');
+    }
+
+    return {
+      tableName: relation.junctionEntityMetadata.tableName,
+      roleIdColumn,
+      permissionIdColumn,
+    };
+  }
+
+  private async insertRolePermissionMappings(
+    roleId: number,
+    permissionIds: number[],
+    joinInfo: { tableName: string; roleIdColumn: string; permissionIdColumn: string },
+  ): Promise<void> {
+    for (let index = 0; index < permissionIds.length; index += this.permissionAssignmentBatchSize) {
+      const batch = permissionIds.slice(index, index + this.permissionAssignmentBatchSize);
+      await this.entityManager
+        .createQueryBuilder()
+        .insert()
+        .into(joinInfo.tableName)
+        .values(
+          batch.map((permissionId) => ({
+            [joinInfo.roleIdColumn]: roleId,
+            [joinInfo.permissionIdColumn]: permissionId,
+          })),
+        )
+        .execute();
+    }
   }
 
 

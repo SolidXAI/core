@@ -14,7 +14,7 @@ import { ListOfValuesService } from 'src/services/list-of-values.service';
 import { SettingService } from 'src/services/setting.service';
 import { SmsTemplateService } from 'src/services/sms-template.service';
 import { UserService } from 'src/services/user.service';
-import { DataSource, In } from 'typeorm';
+import { DataSource, In, Repository } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
 import { getDynamicModuleNamesBasedOnMetadata } from '../helpers/module.helper';
@@ -55,10 +55,37 @@ import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
 import { ViewMetadata } from 'src/entities/view-metadata.entity';
 
-
+/**
+ * Central metadata seeder for both solid-core and consuming modules.
+ *
+ * Performance notes:
+ * - This file now contains the main seed-time optimizations that were added after profiling real FRMS seed runs.
+ * - The goal of those changes was to preserve existing behavior while removing avoidable serial database work.
+ * - Verbose timing logs are intentionally emitted through Nest logger `debug()` only, so normal CLI runs stay clean.
+ * - Every timing line is tagged with `[SEED_TIMING]` and a stable `[ITEM:...]` identifier for grep-friendly analysis.
+ *
+ * High-impact optimizations currently implemented here:
+ * - Batched permission preload/insert, with case-insensitive dedupe to match MSSQL collation behavior.
+ * - Process-local lookup caches for module/model/view/provider reads during a single seed run.
+ * - Model-level field preload/diff to avoid field-level serial existence checks.
+ * - View/action preload + in-memory no-op detection so unchanged rows skip save() entirely.
+ * - Menu entity no-op detection, though menu relation lookups are still mostly serial and remain a future candidate.
+ */
 @Injectable()
 export class ModuleMetadataSeederService {
     private readonly logger = new Logger(ModuleMetadataSeederService.name);
+    // Stable tag used on all verbose seed timing logs so runs can be grepped quickly.
+    private readonly seedTimingTag = 'SEED_TIMING';
+    // Keep permission batching bounded while still collapsing thousands of serial checks into a few queries.
+    private readonly permissionSeedBatchSize = 500;
+    // Restrict no-op detection to the fields that actually matter for persistence.
+    private readonly viewComparableFields = ['name', 'displayName', 'type', 'context', 'layout', 'module', 'model'] as const;
+    private readonly actionComparableFields = ['name', 'displayName', 'type', 'domain', 'context', 'customComponent', 'customIsModal', 'serverEndpoint', 'module', 'model', 'view'] as const;
+    // These caches are intentionally process-local and are reset at the beginning of every seed run.
+    private readonly moduleLookupCache = new Map<string, ModuleMetadata | null>();
+    private readonly modelLookupCache = new Map<string, ModelMetadata | null>();
+    private readonly viewLookupCache = new Map<string, ViewMetadata | null>();
+    private readonly mediaStorageProviderLookupCache = new Map<string, any | null>();
     private enablePruning: boolean = false;
 
     constructor(
@@ -99,139 +126,145 @@ export class ModuleMetadataSeederService {
 
         try {
             this.enablePruning = Boolean(conf?.pruneMetadata);
+            // Never reuse cached entity snapshots across seed invocations in the same process.
+            this.resetLookupCaches();
             console.log(this.enablePruning ? '▶ Pruning enabled: metadata not present in JSON will be removed.' : '▶ Pruning disabled: existing metadata will be kept.');
 
-            // Global seeding steps i.e across all modules
-            if (shouldSeedGlobalMetadata) {
-                currentStep = 'seedGlobalMetadata';
-                await this.seedGlobalMetadata();
-            } else {
-                this.logger.log(`Skipping global metadata seeding.`);
-            }
-
-            // Module specific seeding steps.
-            // Get all the module metadata files which needs to be seeded.
-            const seedDataFiles = this.seedDataFiles;
-            this.logger.debug(`Found seed data for modules: ${seedDataFiles.map(s => s.moduleMetadata?.name)}`);
-
-            /** 
-             * -------------------------------------------------------------
-             * Selective module seeding via: solid seed --modules-to-seed onboarding,reports 
-             * -------------------------------------------------------------
-             */
-            currentStep = 'resolveModulesToSeed';
-            if (conf && Array.isArray(conf.modulesToSeed)) {
-                modulesToSeed = conf.modulesToSeed;
-                console.log(`▶ Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
-                this.logger.log(`Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
-            } else {
-                console.log(`▶ No modulesToSeed provided. Seeding ALL modules.`);
-                this.logger.log(`No modulesToSeed provided. Seeding ALL modules.`);
-            }
-
-            // Filter modules if needed
-            const filteredSeedDataFiles = modulesToSeed ? seedDataFiles.filter((file) => modulesToSeed.includes(file.moduleMetadata?.name)) : seedDataFiles;
-
-            if (filteredSeedDataFiles.length === 0) {
-                this.logger.warn(`No modules matched the provided modulesToSeed list.`);
-                return;
-            }
-
-            // let usersDetail;
-            // For each module metadata file, we will process the seeding steps one by one.
-            for (let i = 0; i < filteredSeedDataFiles.length; i++) {
-                const overallMetadata = filteredSeedDataFiles[i];
-                const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
-                currentModule = moduleMetadata?.name ?? 'unknown';
-
-                if (!moduleMetadata?.name) {
-                    this.logger.warn(`Skipping seed metadata file because moduleMetadata.name is missing.`);
-                    continue;
+            await this.timeOperation('seed-run', async () => {
+                // Global seeding steps i.e across all modules
+                if (shouldSeedGlobalMetadata) {
+                    currentStep = 'seedGlobalMetadata';
+                    await this.timeOperation('global-seed', () => this.seedGlobalMetadata(), { moduleName: 'global', component: 'global-metadata' });
+                } else {
+                    this.logger.log(`Skipping global metadata seeding.`);
                 }
 
-                console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
-                this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
+                // Module specific seeding steps.
+                // Get all the module metadata files which needs to be seeded.
+                const seedDataFiles = this.seedDataFiles;
+                this.logger.debug(`Found seed data for modules: ${seedDataFiles.map(s => s.moduleMetadata?.name)}`);
 
-                currentStep = 'seedMediaStorageProviders';
-                this.logger.log(`Seeding Media Storage Providers`);
-                const mediaStorageCounts = await this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Media Storage Providers', mediaStorageCounts)}`);
+                /**
+                 * -------------------------------------------------------------
+                 * Selective module seeding via: solid seed --modules-to-seed onboarding,reports
+                 * -------------------------------------------------------------
+                 */
+                currentStep = 'resolveModulesToSeed';
+                if (conf && Array.isArray(conf.modulesToSeed)) {
+                    modulesToSeed = conf.modulesToSeed;
+                    console.log(`▶ Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
+                    this.logger.log(`Selective seeding enabled. Modules to seed: ${modulesToSeed.join(', ')}`);
+                } else {
+                    console.log(`▶ No modulesToSeed provided. Seeding ALL modules.`);
+                    this.logger.log(`No modulesToSeed provided. Seeding ALL modules.`);
+                }
 
-                // Process module metadata first.
-                currentStep = 'seedModuleModelFields';
-                this.logger.log(`Seeding Module / Model / Fields`);
-                const moduleModelFieldCounts = await this.seedModuleModelFields(moduleMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
+                // Filter modules if needed
+                const filteredSeedDataFiles = modulesToSeed ? seedDataFiles.filter((file) => modulesToSeed.includes(file.moduleMetadata?.name)) : seedDataFiles;
 
-                currentStep = 'seedPermissions';
-                this.logger.log(`Seeding Permissions`);
-                const permissionCounts = await this.seedPermissions(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Permissions', permissionCounts)}`);
+                if (filteredSeedDataFiles.length === 0) {
+                    this.logger.warn(`No modules matched the provided modulesToSeed list.`);
+                    return;
+                }
 
-                currentStep = 'seedRoles';
-                this.logger.log(`Seeding Roles`);
-                const roleCounts = await this.seedRoles(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Roles', roleCounts)}`);
+                // let usersDetail;
+                // For each module metadata file, we will process the seeding steps one by one.
+                for (let i = 0; i < filteredSeedDataFiles.length; i++) {
+                    const overallMetadata = filteredSeedDataFiles[i];
+                    const moduleMetadata: CreateModuleMetadataDto = overallMetadata.moduleMetadata;
+                    currentModule = moduleMetadata?.name ?? 'unknown';
 
-                currentStep = 'seedUsers';
-                this.logger.log(`Seeding Users`);
-                const userCounts = await this.seedUsers(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Users', userCounts)}`);
+                    if (!moduleMetadata?.name) {
+                        this.logger.warn(`Skipping seed metadata file because moduleMetadata.name is missing.`);
+                        continue;
+                    }
 
-                currentStep = 'seedViews';
-                this.logger.log(`Seeding Views`);
-                const viewCounts = await this.seedViews(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Views', viewCounts)}`);
+                    console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
+                    this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
 
-                currentStep = 'seedActions';
-                this.logger.log(`Seeding Actions`);
-                const actionCounts = await this.seedActions(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Actions', actionCounts)}`);
+                    await this.timeOperation('module-total', async () => {
+                        currentStep = 'seedMediaStorageProviders';
+                        this.logger.log(`Seeding Media Storage Providers`);
+                        const mediaStorageCounts = await this.timeOperation('seed-media-storage-providers', () => this.seedMediaStorageProviders(overallMetadata.mediaStorageProviders), { moduleName: moduleMetadata.name, component: 'media-storage-providers' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Media Storage Providers', mediaStorageCounts)}`);
 
-                currentStep = 'seedMenus';
-                this.logger.log(`Seeding Menus`);
-                const menuCounts = await this.seedMenus(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Menus', menuCounts)}`);
+                        // Process module metadata first.
+                        currentStep = 'seedModuleModelFields';
+                        this.logger.log(`Seeding Module / Model / Fields`);
+                        const moduleModelFieldCounts = await this.timeOperation('seed-module-model-fields', () => this.seedModuleModelFields(moduleMetadata), { moduleName: moduleMetadata.name, component: 'module-model-fields' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
 
-                currentStep = 'seedEmailTemplates';
-                this.logger.log(`Seeding Email Templates`);
-                const emailTemplateCounts = await this.seedEmailTemplates(overallMetadata, moduleMetadata.name);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Email Templates', emailTemplateCounts)}`);
+                        currentStep = 'seedPermissions';
+                        this.logger.log(`Seeding Permissions`);
+                        const permissionCounts = await this.timeOperation('seed-permissions', () => this.seedPermissions(overallMetadata), { moduleName: moduleMetadata.name, component: 'permissions' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Permissions', permissionCounts)}`);
 
-                currentStep = 'seedSmsTemplates';
-                this.logger.log(`Seeding Sms Templates`);
-                const smsTemplateCounts = await this.seedSmsTemplates(overallMetadata, moduleMetadata.name);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Sms Templates', smsTemplateCounts)}`);
+                        currentStep = 'seedRoles';
+                        this.logger.log(`Seeding Roles`);
+                        const roleCounts = await this.timeOperation('seed-roles', () => this.seedRoles(overallMetadata), { moduleName: moduleMetadata.name, component: 'roles' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Roles', roleCounts)}`);
 
-                currentStep = 'seedSecurityRules';
-                this.logger.log(`Seeding Security Rules`);
-                const securityRuleCounts = await this.seedSecurityRules(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Security Rules', securityRuleCounts)}`);
+                        currentStep = 'seedUsers';
+                        this.logger.log(`Seeding Users`);
+                        const userCounts = await this.timeOperation('seed-users', () => this.seedUsers(overallMetadata), { moduleName: moduleMetadata.name, component: 'users' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Users', userCounts)}`);
 
-                currentStep = 'seedListOfValues';
-                this.logger.log(`Seeding List Of Values`);
-                const lovCounts = await this.seedListOfValues(moduleMetadata, overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'List Of Values', lovCounts)}`);
+                        currentStep = 'seedViews';
+                        this.logger.log(`Seeding Views`);
+                        const viewCounts = await this.timeOperation('seed-views', () => this.seedViews(overallMetadata), { moduleName: moduleMetadata.name, component: 'views' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Views', viewCounts)}`);
 
-                currentStep = 'seedScheduledJobs';
-                this.logger.log(`Seeding Scheduled Jobs`);
-                const scheduledJobCounts = await this.seedScheduledJobs(moduleMetadata, overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Scheduled Jobs', scheduledJobCounts)}`);
+                        currentStep = 'seedActions';
+                        this.logger.log(`Seeding Actions`);
+                        const actionCounts = await this.timeOperation('seed-actions', () => this.seedActions(overallMetadata), { moduleName: moduleMetadata.name, component: 'actions' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Actions', actionCounts)}`);
 
-                currentStep = 'seedSavedFilters';
-                this.logger.log(`Seeding Saved Filters`);
-                const savedFilterCounts = await this.seedSavedFilters(moduleMetadata, overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Saved Filters', savedFilterCounts)}`);
+                        currentStep = 'seedMenus';
+                        this.logger.log(`Seeding Menus`);
+                        const menuCounts = await this.timeOperation('seed-menus', () => this.seedMenus(overallMetadata), { moduleName: moduleMetadata.name, component: 'menus' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Menus', menuCounts)}`);
 
-                currentStep = 'seedModelSequences';
-                this.logger.log(`Seeding Model Sequences`);
-                const modelSequenceCounts = await this.seedModelSequences(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Model Sequences', modelSequenceCounts)}`);
-            }
+                        currentStep = 'seedEmailTemplates';
+                        this.logger.log(`Seeding Email Templates`);
+                        const emailTemplateCounts = await this.timeOperation('seed-email-templates', () => this.seedEmailTemplates(overallMetadata, moduleMetadata.name), { moduleName: moduleMetadata.name, component: 'email-templates' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Email Templates', emailTemplateCounts)}`);
 
-            currentModule = 'global';
-            currentStep = 'setupDefaultRolesWithPermissions';
-            await this.setupDefaultRolesWithPermissions();
+                        currentStep = 'seedSmsTemplates';
+                        this.logger.log(`Seeding Sms Templates`);
+                        const smsTemplateCounts = await this.timeOperation('seed-sms-templates', () => this.seedSmsTemplates(overallMetadata, moduleMetadata.name), { moduleName: moduleMetadata.name, component: 'sms-templates' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Sms Templates', smsTemplateCounts)}`);
+
+                        currentStep = 'seedSecurityRules';
+                        this.logger.log(`Seeding Security Rules`);
+                        const securityRuleCounts = await this.timeOperation('seed-security-rules', () => this.seedSecurityRules(overallMetadata), { moduleName: moduleMetadata.name, component: 'security-rules' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Security Rules', securityRuleCounts)}`);
+
+                        currentStep = 'seedListOfValues';
+                        this.logger.log(`Seeding List Of Values`);
+                        const lovCounts = await this.timeOperation('seed-list-of-values', () => this.seedListOfValues(moduleMetadata, overallMetadata), { moduleName: moduleMetadata.name, component: 'list-of-values' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'List Of Values', lovCounts)}`);
+
+                        currentStep = 'seedScheduledJobs';
+                        this.logger.log(`Seeding Scheduled Jobs`);
+                        const scheduledJobCounts = await this.timeOperation('seed-scheduled-jobs', () => this.seedScheduledJobs(moduleMetadata, overallMetadata), { moduleName: moduleMetadata.name, component: 'scheduled-jobs' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Scheduled Jobs', scheduledJobCounts)}`);
+
+                        currentStep = 'seedSavedFilters';
+                        this.logger.log(`Seeding Saved Filters`);
+                        const savedFilterCounts = await this.timeOperation('seed-saved-filters', () => this.seedSavedFilters(moduleMetadata, overallMetadata), { moduleName: moduleMetadata.name, component: 'saved-filters' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Saved Filters', savedFilterCounts)}`);
+
+                        currentStep = 'seedModelSequences';
+                        this.logger.log(`Seeding Model Sequences`);
+                        const modelSequenceCounts = await this.timeOperation('seed-model-sequences', () => this.seedModelSequences(overallMetadata), { moduleName: moduleMetadata.name, component: 'model-sequences' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Model Sequences', modelSequenceCounts)}`);
+                    }, { moduleName: moduleMetadata.name, component: 'module-seed' });
+                }
+
+                currentModule = 'global';
+                currentStep = 'setupDefaultRolesWithPermissions';
+                await this.timeOperation('setup-default-roles-with-permissions', () => this.setupDefaultRolesWithPermissions(), { moduleName: 'global', component: 'default-roles' });
+            }, { moduleName: 'global', component: 'seed-run' });
 
             // Add a console log indicating seeding is finished. This needs to be console.log so that it looks proper when this code is run via CLI.
             console.log(`✔ Seeding completed.`);
@@ -250,40 +283,197 @@ export class ModuleMetadataSeederService {
         }
     }
 
-    private async seedScheduledJobs(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing scheduled jobs for ${moduleMetadata.name}`);
-        const scheduledJobs = this.getSeedArray<CreateScheduledJobDto>(overallMetadata?.scheduledJobs);
-        const pruned = this.enablePruning ? await this.pruneScheduledJobs(scheduledJobs, moduleMetadata.name) : 0;
-        if (scheduledJobs.length > 0) {
-            await this.handleSeedScheduledJobs(scheduledJobs);
+    private buildTimingPrefix(itemTag: string, options?: { moduleName?: string; component?: string; serviceCall?: string }): string {
+        const parts = [`[${this.seedTimingTag}]`, `[ITEM:${itemTag}]`];
+        if (options?.moduleName) {
+            parts.push(`[MODULE:${options.moduleName}]`);
         }
-        this.logger.debug(`[End] Processing scheduled jobs for ${moduleMetadata.name}`);
+        if (options?.component) {
+            parts.push(`[COMPONENT:${options.component}]`);
+        }
+        if (options?.serviceCall) {
+            parts.push(`[CALL:${options.serviceCall}]`);
+        }
+        return parts.join(' ');
+    }
+
+    private formatDuration(durationMs: number): string {
+        return durationMs >= 1000
+            ? `${(durationMs / 1000).toFixed(2)} s (${durationMs.toFixed(2)} ms)`
+            : `${durationMs.toFixed(2)} ms`;
+    }
+
+    private resetLookupCaches(): void {
+        this.moduleLookupCache.clear();
+        this.modelLookupCache.clear();
+        this.viewLookupCache.clear();
+        this.mediaStorageProviderLookupCache.clear();
+    }
+
+    // These cache-backed helpers now log only cache misses. Earlier versions also logged cache hits and operation
+    // starts, but that produced too much verbose noise relative to the debugging value.
+    private async getModuleByUserKeyCached(
+        moduleUserKey: string,
+        options?: { moduleName?: string; component?: string; details?: string },
+    ): Promise<ModuleMetadata | null> {
+        if (!moduleUserKey) {
+            return null;
+        }
+        if (this.moduleLookupCache.has(moduleUserKey)) {
+            return this.moduleLookupCache.get(moduleUserKey) ?? null;
+        }
+
+        const module = await this.timeOperation('module-find-by-user-key-cache-miss', () => this.moduleMetadataService.findOneByUserKey(moduleUserKey), {
+            moduleName: options?.moduleName ?? moduleUserKey,
+            component: options?.component,
+            serviceCall: 'moduleMetadataService.findOneByUserKey',
+            details: options?.details ?? `module=${moduleUserKey}`,
+        });
+        this.moduleLookupCache.set(moduleUserKey, module ?? null);
+        return module ?? null;
+    }
+
+    private async getModelByUserKeyCached(
+        modelUserKey: string,
+        options?: { moduleName?: string; component?: string; details?: string },
+    ): Promise<ModelMetadata | null> {
+        if (!modelUserKey) {
+            return null;
+        }
+        if (this.modelLookupCache.has(modelUserKey)) {
+            return this.modelLookupCache.get(modelUserKey) ?? null;
+        }
+
+        const model = await this.timeOperation('model-find-by-user-key-cache-miss', () => this.modelMetadataService.findOneByUserKey(modelUserKey), {
+            moduleName: options?.moduleName,
+            component: options?.component,
+            serviceCall: 'modelMetadataService.findOneByUserKey',
+            details: options?.details ?? `model=${modelUserKey}`,
+        });
+        this.modelLookupCache.set(modelUserKey, model ?? null);
+        return model ?? null;
+    }
+
+    private async getViewByUserKeyCached(
+        viewUserKey: string,
+        options?: { moduleName?: string; component?: string; details?: string },
+    ): Promise<ViewMetadata | null> {
+        if (!viewUserKey) {
+            return null;
+        }
+        if (this.viewLookupCache.has(viewUserKey)) {
+            return this.viewLookupCache.get(viewUserKey) ?? null;
+        }
+
+        const view = await this.timeOperation('view-find-by-user-key-cache-miss', () => this.solidViewService.findOneByUserKey(viewUserKey), {
+            moduleName: options?.moduleName,
+            component: options?.component,
+            serviceCall: 'solidViewService.findOneByUserKey',
+            details: options?.details ?? `view=${viewUserKey}`,
+        });
+        this.viewLookupCache.set(viewUserKey, view ?? null);
+        return view ?? null;
+    }
+
+    private async getMediaStorageProviderByUserKeyCached(
+        mediaStorageProviderUserKey: string,
+        options?: { moduleName?: string; component?: string; details?: string },
+    ): Promise<any | null> {
+        if (!mediaStorageProviderUserKey) {
+            return null;
+        }
+        if (this.mediaStorageProviderLookupCache.has(mediaStorageProviderUserKey)) {
+            return this.mediaStorageProviderLookupCache.get(mediaStorageProviderUserKey) ?? null;
+        }
+
+        const mediaStorageProvider = await this.timeOperation('media-storage-provider-find-by-user-key-cache-miss', () => this.mediaStorageProviderMetadataService.findOneByUserKey(mediaStorageProviderUserKey), {
+            moduleName: options?.moduleName,
+            component: options?.component,
+            serviceCall: 'mediaStorageProviderMetadataService.findOneByUserKey',
+            details: options?.details ?? `provider=${mediaStorageProviderUserKey}`,
+        });
+        this.mediaStorageProviderLookupCache.set(mediaStorageProviderUserKey, mediaStorageProvider ?? null);
+        return mediaStorageProvider ?? null;
+    }
+
+    private async timeOperation<T>(
+        itemTag: string,
+        operation: () => Promise<T>,
+        options?: { moduleName?: string; component?: string; serviceCall?: string; details?: string },
+    ): Promise<T> {
+        const prefix = this.buildTimingPrefix(itemTag, options);
+        const detailSuffix = options?.details ? ` ${options.details}` : '';
+        const start = process.hrtime.bigint();
+
+        try {
+            const result = await operation();
+            const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
+            this.logger.debug(`${prefix} done in ${this.formatDuration(durationMs)}${detailSuffix}`);
+            return result;
+        } catch (error) {
+            const durationMs = Number(process.hrtime.bigint() - start) / 1_000_000;
+            this.logger.debug(`${prefix} failed after ${this.formatDuration(durationMs)}${detailSuffix}`);
+            throw error;
+        }
+    }
+
+    private async seedScheduledJobs(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
+        const scheduledJobs = this.getSeedArray<CreateScheduledJobDto>(overallMetadata?.scheduledJobs);
+        const pruned = this.enablePruning ? await this.timeOperation('prune-scheduled-jobs', () => this.pruneScheduledJobs(scheduledJobs, moduleMetadata.name), {
+            moduleName: moduleMetadata.name,
+            component: 'scheduled-jobs',
+            serviceCall: 'pruneScheduledJobs',
+        }) : 0;
+        if (scheduledJobs.length > 0) {
+            await this.timeOperation('handle-scheduled-jobs', () => this.handleSeedScheduledJobs(scheduledJobs), {
+                moduleName: moduleMetadata.name,
+                component: 'scheduled-jobs',
+                serviceCall: 'handleSeedScheduledJobs',
+            });
+        }
         return { pruned, upserted: scheduledJobs.length };
     }
 
     private async seedSavedFilters(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing saved filters for ${moduleMetadata.name}`);
         const savedFilters = this.getSeedArray<CreateSavedFiltersDto>(overallMetadata?.savedFilters);
-        const pruned = this.enablePruning ? await this.pruneSavedFilters(savedFilters, moduleMetadata.name) : 0;
+        const pruned = this.enablePruning ? await this.timeOperation('prune-saved-filters', () => this.pruneSavedFilters(savedFilters, moduleMetadata.name), {
+            moduleName: moduleMetadata.name,
+            component: 'saved-filters',
+            serviceCall: 'pruneSavedFilters',
+        }) : 0;
         if (savedFilters.length > 0) {
-            await this.handleSeedSavedFilters(savedFilters);
+            await this.timeOperation('handle-saved-filters', () => this.handleSeedSavedFilters(savedFilters), {
+                moduleName: moduleMetadata.name,
+                component: 'saved-filters',
+                serviceCall: 'handleSeedSavedFilters',
+            });
         }
-        this.logger.debug(`[End] Processing saved filters for ${moduleMetadata.name}`);
         return { pruned, upserted: savedFilters.length };
     }
 
     private async seedListOfValues(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing List Of Values for ${moduleMetadata.name}`);
         const listOfValues = this.getSeedArray<CreateListOfValuesDto>(overallMetadata?.listOfValues);
-        const pruned = this.enablePruning ? await this.pruneListOfValues(listOfValues, moduleMetadata.name) : 0;
-        await this.handleSeedListOfValues(listOfValues);
-        this.logger.debug(`[End] Processing List Of Values for ${moduleMetadata.name}`);
+        const pruned = this.enablePruning ? await this.timeOperation('prune-list-of-values', () => this.pruneListOfValues(listOfValues, moduleMetadata.name), {
+            moduleName: moduleMetadata.name,
+            component: 'list-of-values',
+            serviceCall: 'pruneListOfValues',
+        }) : 0;
+        await this.timeOperation('handle-list-of-values', () => this.handleSeedListOfValues(listOfValues), {
+            moduleName: moduleMetadata.name,
+            component: 'list-of-values',
+            serviceCall: 'handleSeedListOfValues',
+        });
         return { pruned, upserted: listOfValues.length };
     }
 
     private async setupDefaultRolesWithPermissions() {
         this.logger.debug(`About to add all permissions to the Admin role`);
-        await this.roleService.addAllPermissionsToRole(ADMIN_ROLE_NAME);
+        await this.timeOperation('role-add-all-permissions', () => this.roleService.addAllPermissionsToRole(ADMIN_ROLE_NAME), {
+            moduleName: 'global',
+            component: 'default-roles',
+            serviceCall: 'roleService.addAllPermissionsToRole',
+            details: `role=${ADMIN_ROLE_NAME}`,
+        });
 
         // The below code is commented out for now as we are including permissions for these roles from the seeder json for the Internal and Public role. 
         // 2. Give  permissions to the Internal / Public role.
@@ -295,109 +485,151 @@ export class ModuleMetadataSeederService {
     }
 
     private async seedSecurityRules(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing security rules`);
         const securityRules = this.getSeedArray<CreateSecurityRuleDto>(overallMetadata?.securityRules);
-        const pruned = this.enablePruning ? await this.pruneSecurityRules(securityRules, overallMetadata?.moduleMetadata?.name) : 0;
-        await this.handleSeedSecurityRules(securityRules);
-        this.logger.debug(`[End] Processing security rules`);
+        const pruned = this.enablePruning ? await this.timeOperation('prune-security-rules', () => this.pruneSecurityRules(securityRules, overallMetadata?.moduleMetadata?.name), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'security-rules',
+            serviceCall: 'pruneSecurityRules',
+        }) : 0;
+        await this.timeOperation('handle-security-rules', () => this.handleSeedSecurityRules(securityRules), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'security-rules',
+            serviceCall: 'handleSeedSecurityRules',
+        });
         return { pruned, upserted: securityRules.length };
     }
 
     // Ok
     private async seedDefaultSettings() {
-        this.logger.debug(`[Start] Processing settings`);
-        await this.settingService.seedSystemAdminEditableAndAboveSettings();
-        this.logger.debug(`[End] Processing settings`);
+        await this.timeOperation('seed-default-settings-call', () => this.settingService.seedSystemAdminEditableAndAboveSettings(), {
+            moduleName: 'global',
+            component: 'settings',
+            serviceCall: 'settingService.seedSystemAdminEditableAndAboveSettings',
+        });
     }
 
     private async seedSmsTemplates(overallMetadata: any, moduleName: string): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing sms templates`);
         const smsTemplates = this.getSeedArray<CreateSmsTemplateDto>(overallMetadata?.smsTemplates);
-        await this.handleSeedSmsTemplates(smsTemplates, moduleName);
-        this.logger.debug(`[End] Processing sms templates`);
+        await this.timeOperation('handle-sms-templates', () => this.handleSeedSmsTemplates(smsTemplates, moduleName), {
+            moduleName,
+            component: 'sms-templates',
+            serviceCall: 'handleSeedSmsTemplates',
+        });
         return { pruned: 0, upserted: smsTemplates.length };
     }
 
     // OK
     private async seedEmailTemplates(overallMetadata: any, moduleName: string): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing email templates`);
         const emailTemplates = this.getSeedArray<CreateEmailTemplateDto>(overallMetadata?.emailTemplates);
-        await this.handleSeedEmailTemplates(emailTemplates, moduleName);
-        this.logger.debug(`[End] Processing email templates`);
+        await this.timeOperation('handle-email-templates', () => this.handleSeedEmailTemplates(emailTemplates, moduleName), {
+            moduleName,
+            component: 'email-templates',
+            serviceCall: 'handleSeedEmailTemplates',
+        });
         return { pruned: 0, upserted: emailTemplates.length };
     }
 
     // Ok
     private async seedMenus(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing menus`);
         const menus = this.getSeedArray<any>(overallMetadata?.menus);
-        const pruned = this.enablePruning ? await this.pruneMenus(menus, overallMetadata?.moduleMetadata?.name) : 0;
-        await this.handleSeedMenus(menus);
-        this.logger.debug(`[End] Processing menus`);
+        const pruned = this.enablePruning ? await this.timeOperation('prune-menus', () => this.pruneMenus(menus, overallMetadata?.moduleMetadata?.name), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'menus',
+            serviceCall: 'pruneMenus',
+        }) : 0;
+        await this.timeOperation('handle-menus', () => this.handleSeedMenus(menus), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'menus',
+            serviceCall: 'handleSeedMenus',
+        });
         return { pruned, upserted: menus.length };
     }
 
     // Ok
     private async seedActions(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing actions`);
         const actions = this.getSeedArray<any>(overallMetadata?.actions);
-        const pruned = this.enablePruning ? await this.pruneActions(actions, overallMetadata?.moduleMetadata?.name) : 0;
-        await this.handleSeedActions(actions);
-        this.logger.debug(`[End] Processing actions`);
+        const pruned = this.enablePruning ? await this.timeOperation('prune-actions', () => this.pruneActions(actions, overallMetadata?.moduleMetadata?.name), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'actions',
+            serviceCall: 'pruneActions',
+        }) : 0;
+        await this.timeOperation('handle-actions', () => this.handleSeedActions(actions), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'actions',
+            serviceCall: 'handleSeedActions',
+        });
         return { pruned, upserted: actions.length };
     }
 
     // Ok
     private async seedViews(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing views`);
         const views = this.getSeedArray<any>(overallMetadata?.views);
-        const pruned = this.enablePruning ? await this.pruneViews(views, overallMetadata?.moduleMetadata?.name) : 0;
-        await this.handleSeedViews(views);
-        this.logger.debug(`[End] Processing views`);
+        const pruned = this.enablePruning ? await this.timeOperation('prune-views', () => this.pruneViews(views, overallMetadata?.moduleMetadata?.name), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'views',
+            serviceCall: 'pruneViews',
+        }) : 0;
+        await this.timeOperation('handle-views', () => this.handleSeedViews(views), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'views',
+            serviceCall: 'handleSeedViews',
+        });
         return { pruned, upserted: views.length };
     }
 
     // Ok
     private async seedUsers(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing users`);
         const users = this.getSeedArray<SignUpDto>(overallMetadata?.users);
         // usersDetail = users;
-        await this.handleSeedUsers(users);
-        this.logger.debug(`[End] Processing users`);
+        await this.timeOperation('handle-users', () => this.handleSeedUsers(users), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'users',
+            serviceCall: 'handleSeedUsers',
+        });
         return { pruned: 0, upserted: users.length };
     }
 
     // OK
     private async seedRoles(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing roles`);
         const roles = this.getSeedArray<CreateRoleMetadataDto>(overallMetadata?.roles);
         // While creating roles we are only passing the role name to be used. 
-        await this.roleService.createRolesIfNotExists(
+        await this.timeOperation('roles-create-if-not-exists', () => this.roleService.createRolesIfNotExists(
             roles
                 .filter((role) => role?.name)
                 .map((role) => ({ name: role.name } as any)),
-        );
+        ), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'roles',
+            serviceCall: 'roleService.createRolesIfNotExists',
+            details: `roleCount=${roles.length}`,
+        });
         // After roles are created, we iterate over all roles and attach permissions (if specified in the seeder json) to the respective role.
         // Every role configuration in the seeder json can optionally have a permissions attribute. 
         for (const role of roles) {
             if (role.permissions) {
-                await this.roleService.addPermissionsToRole(
+                await this.timeOperation('role-add-permissions', () => this.roleService.addPermissionsToRole(
                     role.name,
                     role.permissions
                         .map((permission: any) => typeof permission === 'string' ? permission : permission?.name)
                         .filter(Boolean),
-                );
+                ), {
+                    moduleName: overallMetadata?.moduleMetadata?.name,
+                    component: 'roles',
+                    serviceCall: 'roleService.addPermissionsToRole',
+                    details: `role=${role.name} permissionCount=${role.permissions.length}`,
+                });
             }
         }
-        this.logger.debug(`[End] Processing roles`);
         return { pruned: 0, upserted: roles.length };
     }
 
     private async seedPermissions(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing permissions`);
         const permissions = overallMetadata.permissions ?? [];
-        await this.handleSeedPermissions(permissions);
-        this.logger.debug(`[End] Processing permissions`);
+        await this.timeOperation('handle-permissions', () => this.handleSeedPermissions(permissions), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'permissions',
+            serviceCall: 'handleSeedPermissions',
+        });
         return { pruned: 0, upserted: permissions?.length ?? 0 };
     }
 
@@ -423,24 +655,37 @@ export class ModuleMetadataSeederService {
     // OK
     private async seedGlobalMetadata() {
         this.logger.log(`Seeding Permissions`);
-        await this.seedControllerPermissions();
+        await this.timeOperation('seed-controller-permissions', () => this.seedControllerPermissions(), {
+            moduleName: 'global',
+            component: 'controller-permissions',
+        });
 
         // this.logger.log(`Seeding Default Media Storage Providers`);
         // await this.seedDefaultMediaStorageProviders();
 
         this.logger.log(`Seeding System Fields Metadata`);
-        await this.seedDefaultSystemFields();
+        await this.timeOperation('seed-default-system-fields', () => this.seedDefaultSystemFields(), {
+            moduleName: 'global',
+            component: 'system-fields',
+        });
 
         // Settings
         this.logger.log(`Seeding Default Settings`);
-        await this.seedDefaultSettings();
+        await this.timeOperation('seed-default-settings', () => this.seedDefaultSettings(), {
+            moduleName: 'global',
+            component: 'settings',
+        });
 
 
         this.logger.debug(`Global metadata seeding completed`);
     }
 
     private async seedDefaultSystemFields() {
-        await this.systemFieldsSeederService.seed();
+        await this.timeOperation('system-fields-seed', () => this.systemFieldsSeederService.seed(), {
+            moduleName: 'global',
+            component: 'system-fields',
+            serviceCall: 'systemFieldsSeederService.seed',
+        });
     }
 
     // OK
@@ -461,8 +706,6 @@ export class ModuleMetadataSeederService {
                     const methodName = methods[mId];
                     const permissionName = `${controller.name}.${methodName}`;
                     permissionNames.push(permissionName);
-
-                    await this.createPermissionIfNotExists(permissionName);
                 }
 
             } catch (error: any) {
@@ -470,35 +713,112 @@ export class ModuleMetadataSeederService {
             }
         }
 
-        if (this.enablePruning) {
-            await this.prunePermissions(permissionNames);
-        }
-    }
-
-    private async createPermissionIfNotExists(permissionName: string): Promise<void> {
-        const existingPermission = await this.permissionRepo.findOne({
-            where: {
-                name: permissionName
-            }
+        await this.timeOperation('seed-controller-permissions-bulk', () => this.seedPermissionsInBatches(permissionNames, {
+            moduleName: 'global',
+            component: 'controller-permissions',
+        }), {
+            moduleName: 'global',
+            component: 'controller-permissions',
+            serviceCall: 'seedPermissionsInBatches',
+            details: `permissionCount=${permissionNames.length} batchSize=${this.permissionSeedBatchSize}`,
         });
 
-        if (!existingPermission) {
-            this.logger.log(`Permission ${permissionName} does not exist, creating new.`);
-
-            const newPermission = this.permissionRepo.create({
-                name: permissionName
+        if (this.enablePruning) {
+            await this.timeOperation('prune-controller-permissions', () => this.prunePermissions(permissionNames), {
+                moduleName: 'global',
+                component: 'controller-permissions',
+                serviceCall: 'prunePermissions',
             });
-            await this.permissionRepo.save(newPermission);
         }
     }
 
     private async handleSeedPermissions(permissions: any[]): Promise<void> {
-        for (const permission of permissions) {
-            const permissionName = typeof permission === 'string' ? permission : permission?.name;
-            if (permissionName) {
-                await this.createPermissionIfNotExists(permissionName);
-            }
+        const permissionNames = permissions
+            .map((permission) => typeof permission === 'string' ? permission : permission?.name)
+            .filter(Boolean);
+
+        // This path replaced the old "check one permission at a time" approach that was responsible for one of the
+        // biggest seed-time regressions. We now normalize upfront and let the batch helper do set-based existence work.
+        await this.seedPermissionsInBatches(permissionNames, {
+            component: 'permissions',
+        });
+    }
+
+    private async seedPermissionsInBatches(
+        permissionNames: string[],
+        options?: { moduleName?: string; component?: string },
+    ): Promise<void> {
+        const uniquePermissionNames = this.getUniquePermissionNames(permissionNames);
+        if (uniquePermissionNames.length === 0) {
+            return;
         }
+
+        // We intentionally process in bounded chunks so we get the performance benefit of set-based reads/writes
+        // without loading an unbounded permission list into a single query or save payload.
+        for (let index = 0; index < uniquePermissionNames.length; index += this.permissionSeedBatchSize) {
+            const batch = uniquePermissionNames.slice(index, index + this.permissionSeedBatchSize);
+            const batchNumber = Math.floor(index / this.permissionSeedBatchSize) + 1;
+
+            const existingPermissions = await this.timeOperation('permission-batch-find', () => this.permissionRepo.find({
+                where: {
+                    name: In(batch),
+                }
+            }), {
+                moduleName: options?.moduleName,
+                component: options?.component ?? 'permissions',
+                serviceCall: 'permissionRepo.find',
+                details: `batch=${batchNumber} batchSize=${batch.length}`,
+            });
+
+            const existingPermissionNames = new Set(
+                existingPermissions.map((permission) => this.normalizePermissionName(permission.name)),
+            );
+            const missingPermissionNames = batch.filter(
+                (name) => !existingPermissionNames.has(this.normalizePermissionName(name)),
+            );
+
+            if (missingPermissionNames.length === 0) {
+                continue;
+            }
+
+            this.logger.log(`Creating ${missingPermissionNames.length} missing permissions in batch ${batchNumber}.`);
+            await this.timeOperation('permission-batch-save', () => this.permissionRepo.save(
+                missingPermissionNames.map((name) => this.permissionRepo.create({ name })),
+            ), {
+                moduleName: options?.moduleName,
+                component: options?.component ?? 'permissions',
+                serviceCall: 'permissionRepo.save',
+                details: `batch=${batchNumber} createCount=${missingPermissionNames.length}`,
+            });
+        }
+    }
+
+    private getUniquePermissionNames(permissionNames: string[]): string[] {
+        const normalizedPermissionNames = new Set<string>();
+        const uniquePermissionNames: string[] = [];
+
+        for (const permissionName of permissionNames) {
+            if (!permissionName) {
+                continue;
+            }
+
+            // Deduping is intentionally case-insensitive because MSSQL commonly compares these names using a
+            // case-insensitive collation. Without that, a batch can think `Foo.Bar` is missing even when
+            // `foo.bar` already exists in the database.
+            const normalizedPermissionName = this.normalizePermissionName(permissionName);
+            if (normalizedPermissionNames.has(normalizedPermissionName)) {
+                continue;
+            }
+
+            normalizedPermissionNames.add(normalizedPermissionName);
+            uniquePermissionNames.push(permissionName.trim());
+        }
+
+        return uniquePermissionNames;
+    }
+
+    private normalizePermissionName(permissionName: string): string {
+        return permissionName.trim().toLowerCase();
     }
 
     // OK
@@ -508,23 +828,31 @@ export class ModuleMetadataSeederService {
 
     // OK
     private async seedMediaStorageProviders(mediaStorageProviders: any[]): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing Media Storage Provider`);
         const providers = this.getSeedArray<any>(mediaStorageProviders);
 
         for (let i = 0; i < providers.length; i++) {
             const mediaStorageProvider = providers[i];
-            await this.mediaStorageProviderMetadataService.upsert(mediaStorageProvider);
+            await this.timeOperation('media-storage-provider-upsert', () => this.mediaStorageProviderMetadataService.upsert(mediaStorageProvider), {
+                component: 'media-storage-providers',
+                serviceCall: 'mediaStorageProviderMetadataService.upsert',
+                details: `provider=${mediaStorageProvider?.name ?? mediaStorageProvider?.userKey ?? i}`,
+            });
         }
-        this.logger.debug(`[End] Processing Media Storage Provider`);
         return { pruned: 0, upserted: providers.length };
     }
 
     private async seedModelSequences(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing model sequences`);
         const modelSequences = this.getSeedArray<CreateModelSequenceDto>(overallMetadata?.modelSequences);
-        const pruned = this.enablePruning ? await this.pruneModelSequences(modelSequences, overallMetadata?.moduleMetadata?.name) : 0;
-        await this.handleSeedModelSequences(modelSequences);
-        this.logger.debug(`[End] Processing model sequences`);
+        const pruned = this.enablePruning ? await this.timeOperation('prune-model-sequences', () => this.pruneModelSequences(modelSequences, overallMetadata?.moduleMetadata?.name), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'model-sequences',
+            serviceCall: 'pruneModelSequences',
+        }) : 0;
+        await this.timeOperation('handle-model-sequences', () => this.handleSeedModelSequences(modelSequences), {
+            moduleName: overallMetadata?.moduleMetadata?.name,
+            component: 'model-sequences',
+            serviceCall: 'handleSeedModelSequences',
+        });
         return { pruned, upserted: modelSequences.length };
     }
 
@@ -588,8 +916,18 @@ export class ModuleMetadataSeederService {
             }
 
             // Save to DB.
-            await this.emailTemplateService.removeByName(emailTemplate.name);
-            await this.emailTemplateService.create(emailTemplate);
+            await this.timeOperation('email-template-remove', () => this.emailTemplateService.removeByName(emailTemplate.name), {
+                moduleName,
+                component: 'email-templates',
+                serviceCall: 'emailTemplateService.removeByName',
+                details: `template=${emailTemplate.name}`,
+            });
+            await this.timeOperation('email-template-create', () => this.emailTemplateService.create(emailTemplate), {
+                moduleName,
+                component: 'email-templates',
+                serviceCall: 'emailTemplateService.create',
+                details: `template=${emailTemplate.name}`,
+            });
         }
 
     }
@@ -655,8 +993,18 @@ export class ModuleMetadataSeederService {
 
 
             // Save to DB.
-            await this.smsTemplateService.removeByName(smsTemplate.name);
-            await this.smsTemplateService.create(smsTemplate);
+            await this.timeOperation('sms-template-remove', () => this.smsTemplateService.removeByName(smsTemplate.name), {
+                moduleName,
+                component: 'sms-templates',
+                serviceCall: 'smsTemplateService.removeByName',
+                details: `template=${smsTemplate.name}`,
+            });
+            await this.timeOperation('sms-template-create', () => this.smsTemplateService.create(smsTemplate), {
+                moduleName,
+                component: 'sms-templates',
+                serviceCall: 'smsTemplateService.create',
+                details: `template=${smsTemplate.name}`,
+            });
         }
     }
 
@@ -666,7 +1014,10 @@ export class ModuleMetadataSeederService {
             return;
         }
 
-        await this.dataSource.transaction(async (trx) => {
+        // Menu writes are now no-op aware, but this block still performs several serial relation lookups per menu.
+        // That tradeoff is acceptable for now because the highest-value wins were elsewhere, but if menu seeding
+        // becomes the next hotspot the natural next step is bulk-preloading actions/modules/existing menus here too.
+        await this.timeOperation('menus-transaction', () => this.dataSource.transaction(async (trx) => {
             const menuRepo = trx.getRepository(MenuItemMetadata);
             const roleRepo = trx.getRepository(RoleMetadata);
             const actionRepo = trx.getRepository(ActionMetadata);
@@ -675,21 +1026,41 @@ export class ModuleMetadataSeederService {
             // 1) Upsert menus WITHOUT roles (manual upsert)
             for (const m of menus) {
                 const action = m.actionUserKey
-                    ? await actionRepo.findOne({ where: { name: m.actionUserKey }, select: ["id"] })
+                    ? await this.timeOperation('menu-action-find-one', () => actionRepo.findOne({ where: { name: m.actionUserKey }, select: ["id"] }), {
+                        component: 'menus',
+                        serviceCall: 'actionRepo.findOne',
+                        details: `action=${m.actionUserKey}`,
+                    })
                     : null;
 
                 const module = m.moduleUserKey
-                    ? await moduleRepo.findOne({ where: { name: m.moduleUserKey }, select: ["id"] })
+                    ? await this.timeOperation('menu-module-find-one', () => moduleRepo.findOne({ where: { name: m.moduleUserKey }, select: ["id"] }), {
+                        component: 'menus',
+                        serviceCall: 'moduleRepo.findOne',
+                        details: `module=${m.moduleUserKey}`,
+                    })
                     : null;
 
                 const parentMenuItem = m.parentMenuItemUserKey
-                    ? await menuRepo.findOne({ where: { name: m.parentMenuItemUserKey }, select: ["id"] })
+                    ? await this.timeOperation('menu-parent-find-one', () => menuRepo.findOne({ where: { name: m.parentMenuItemUserKey }, select: ["id"] }), {
+                        component: 'menus',
+                        serviceCall: 'menuRepo.findOne',
+                        details: `parent=${m.parentMenuItemUserKey}`,
+                    })
                     : null;
 
                 // Check if a menu with this name already exists
-                const existing = await menuRepo.findOne({
+                const existing = await this.timeOperation('menu-existing-find-one', () => menuRepo.findOne({
                     where: { name: m.name },
-                    select: ["id"],
+                    relations: {
+                        action: true,
+                        module: true,
+                        parentMenuItem: true,
+                    },
+                }), {
+                    component: 'menus',
+                    serviceCall: 'menuRepo.findOne',
+                    details: `menu=${m.name}`,
                 });
 
                 // Build the entity data (without id)
@@ -703,30 +1074,60 @@ export class ModuleMetadataSeederService {
                     iconName: m.iconName,
                 };
 
+                const hasChanges = existing
+                    ? existing.displayName !== base.displayName
+                    || existing.sequenceNumber !== base.sequenceNumber
+                    || existing.iconName !== base.iconName
+                    || existing.action?.id !== base.action?.id
+                    || existing.module?.id !== base.module?.id
+                    || existing.parentMenuItem?.id !== base.parentMenuItem?.id
+                    : true;
+
+                if (existing && !hasChanges) {
+                    this.logger.debug(`Skipping menu upsert for ${m.name}; no changes detected.`);
+                    continue;
+                }
+
                 // If existing, set its id so save() will perform an update, otherwise insert
                 const entity = menuRepo.create(
                     existing ? { id: existing.id, ...base } : base,
                 );
 
-                await menuRepo.save(entity);
+                await this.timeOperation('menu-save', () => menuRepo.save(entity), {
+                    component: 'menus',
+                    serviceCall: 'menuRepo.save',
+                    details: `menu=${m.name}`,
+                });
             }
 
             // 2) Fetch ids for batching
-            const seeded = await menuRepo.find({
+            const seeded = await this.timeOperation('menu-seeded-find', () => menuRepo.find({
                 where: { name: In(menus.map((m: any) => m.name)) },
                 select: ["id", "name"],
+            }), {
+                component: 'menus',
+                serviceCall: 'menuRepo.find',
+                details: `count=${menus.length}`,
             });
             const idByName = new Map(seeded.map(s => [s.name, s.id]));
 
             // 3) Build desired join rows once
-            const admin = await roleRepo.findOne({ where: { name: ADMIN_ROLE_NAME }, select: ["id", "name"] });
+            const admin = await this.timeOperation('menu-admin-role-find-one', () => roleRepo.findOne({ where: { name: ADMIN_ROLE_NAME }, select: ["id", "name"] }), {
+                component: 'menus',
+                serviceCall: 'roleRepo.findOne',
+                details: `role=${ADMIN_ROLE_NAME}`,
+            });
             const allRoleNames = new Set<string>();
             for (const m of menus) (m.roles ?? []).forEach((r: string) => allRoleNames.add(r));
             if (admin) allRoleNames.add(admin.name);
 
-            const roles = await roleRepo.find({
+            const roles = await this.timeOperation('menu-roles-find', () => roleRepo.find({
                 where: { name: In([...allRoleNames]) },
                 select: ["id", "name"],
+            }), {
+                component: 'menus',
+                serviceCall: 'roleRepo.find',
+                details: `roleCount=${allRoleNames.size}`,
             });
             const roleByName = new Map(roles.map(r => [r.name, r]));
 
@@ -744,12 +1145,16 @@ export class ModuleMetadataSeederService {
             // 4a) delete existing for affected menus
             const menuIds = [...new Set(joinRows.map(r => r.menuId))];
             if (menuIds.length) {
-                await trx
+                await this.timeOperation('menu-role-joins-delete', () => trx
                     .createQueryBuilder()
                     .delete()
                     .from(MENU_ROLE_JOIN_TABLE_NAME) // string table name is fine
                     .where(`${MENU_ROLE_JOIN_TABLE_NAME_MENU_COL} IN (:...ids)`, { ids: menuIds })
-                    .execute();
+                    .execute(), {
+                    component: 'menus',
+                    serviceCall: 'trx.delete.menuRoleJoins',
+                    details: `menuCount=${menuIds.length}`,
+                });
             }
 
             // 4b) bulk insert all pairs
@@ -759,15 +1164,19 @@ export class ModuleMetadataSeederService {
                     [MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL]: r.roleId,
                 }));
 
-                await trx
+                await this.timeOperation('menu-role-joins-insert', () => trx
                     .createQueryBuilder()
                     .insert()
                     .into(MENU_ROLE_JOIN_TABLE_NAME)
                     .values(values)
                     // .orIgnore()  // ❌ remove this – it triggers unsupported onUpdate path
-                    .execute();
+                    .execute(), {
+                    component: 'menus',
+                    serviceCall: 'trx.insert.menuRoleJoins',
+                    details: `rowCount=${values.length}`,
+                });
             }
-        });
+        }), { component: 'menus', serviceCall: 'dataSource.transaction' });
     }
 
     // Ok
@@ -776,20 +1185,81 @@ export class ModuleMetadataSeederService {
             return;
         }
 
+        const actionRepo = this.dataSource.getRepository(ActionMetadata);
+        // Prime related-entity caches once before iterating so we do not pay repeated user-key lookups per row.
+        await this.timeOperation('action-prime-module-cache', () => this.primeModuleLookupCache(
+            actions.map((action: any) => action?.moduleUserKey),
+        ), {
+            component: 'actions',
+            serviceCall: 'primeModuleLookupCache',
+            details: `count=${actions.length}`,
+        });
+        await this.timeOperation('action-prime-model-cache', () => this.primeModelLookupCache(
+            actions.map((action: any) => action?.modelUserKey),
+        ), {
+            component: 'actions',
+            serviceCall: 'primeModelLookupCache',
+            details: `count=${actions.length}`,
+        });
+        await this.timeOperation('action-prime-view-cache', () => this.primeViewLookupCache(
+            actions.map((action: any) => action?.viewUserKey),
+        ), {
+            component: 'actions',
+            serviceCall: 'primeViewLookupCache',
+            details: `count=${actions.length}`,
+        });
+        const existingActionsByName = await this.timeOperation('action-preload-existing', () => this.loadExistingActionsByName(
+            actionRepo,
+            actions.map((action: any) => action?.name).filter(Boolean),
+        ), {
+            component: 'actions',
+            serviceCall: 'loadExistingActionsByName',
+            details: `count=${actions.length}`,
+        });
+        // Keep the verbose output summarized rather than emitting forty separate "skip" lines.
+        let created = 0;
+        let updated = 0;
+        let skipped = 0;
+
         for (let j = 0; j < actions.length; j++) {
             const actionData = actions[j];
-            actionData['module'] = await this.moduleMetadataService.findOneByUserKey(actionData.moduleUserKey);
+            actionData['module'] = await this.getModuleByUserKeyCached(actionData.moduleUserKey, {
+                moduleName: actionData.moduleUserKey,
+                component: 'actions',
+                details: `module=${actionData.moduleUserKey}`,
+            });
             if (actionData.type === 'solid') {
-                actionData['model'] = await this.modelMetadataService.findOneByUserKey(actionData.modelUserKey);
-                actionData['view'] = await this.solidViewService.findOneByUserKey(actionData.viewUserKey);
+                actionData['model'] = await this.getModelByUserKeyCached(actionData.modelUserKey, {
+                    moduleName: actionData.moduleUserKey,
+                    component: 'actions',
+                    details: `model=${actionData.modelUserKey}`,
+                });
+                actionData['view'] = await this.getViewByUserKeyCached(actionData.viewUserKey, {
+                    moduleName: actionData.moduleUserKey,
+                    component: 'actions',
+                    details: `view=${actionData.viewUserKey}`,
+                });
             }
             else {
                 if (actionData.modelUserKey) {
-                    actionData['model'] = await this.modelMetadataService.findOneByUserKey(actionData.modelUserKey);
+                    actionData['model'] = await this.getModelByUserKeyCached(actionData.modelUserKey, {
+                        moduleName: actionData.moduleUserKey,
+                        component: 'actions',
+                        details: `model=${actionData.modelUserKey}`,
+                    });
                 }
             }
-            await this.solidActionService.upsert(actionData);
+            const result = await this.upsertActionMetadataWithPreloadedExisting(actionRepo, existingActionsByName, actionData);
+            if (result.outcome === 'created') {
+                created += 1;
+            } else if (result.outcome === 'updated') {
+                updated += 1;
+            } else {
+                skipped += 1;
+            }
         }
+
+        this.logger.debug(`Action seed summary: created=${created}, updated=${updated}, skipped=${skipped}.`);
     }
 
     // Ok
@@ -798,18 +1268,64 @@ export class ModuleMetadataSeederService {
             return;
         }
 
+        const viewRepo = this.dataSource.getRepository(ViewMetadata);
+        // Same preload/diff strategy as actions: resolve relation references in bulk, load existing rows once,
+        // then do the rest of the work in memory so unchanged views never fall through to save().
+        await this.timeOperation('view-prime-module-cache', () => this.primeModuleLookupCache(
+            views.map((view: any) => view?.moduleUserKey),
+        ), {
+            component: 'views',
+            serviceCall: 'primeModuleLookupCache',
+            details: `count=${views.length}`,
+        });
+        await this.timeOperation('view-prime-model-cache', () => this.primeModelLookupCache(
+            views.map((view: any) => view?.modelUserKey),
+        ), {
+            component: 'views',
+            serviceCall: 'primeModelLookupCache',
+            details: `count=${views.length}`,
+        });
+        const existingViewsByName = await this.timeOperation('view-preload-existing', () => this.loadExistingViewsByName(
+            viewRepo,
+            views.map((view: any) => view?.name).filter(Boolean),
+        ), {
+            component: 'views',
+            serviceCall: 'loadExistingViewsByName',
+            details: `count=${views.length}`,
+        });
+        let created = 0;
+        let updated = 0;
+        let skipped = 0;
+
         for (let j = 0; j < views.length; j++) {
             const viewData = views[j];
 
             // preety format the layout & context. 
             viewData['layout'] = JSON.stringify(viewData['layout'], null, 2);
 
-            viewData['module'] = await this.moduleMetadataService.findOneByUserKey(viewData.moduleUserKey);
-            viewData['model'] = await this.modelMetadataService.findOneByUserKey(viewData.modelUserKey);
+            viewData['module'] = await this.getModuleByUserKeyCached(viewData.moduleUserKey, {
+                moduleName: viewData.moduleUserKey,
+                component: 'views',
+                details: `module=${viewData.moduleUserKey}`,
+            });
+            viewData['model'] = await this.getModelByUserKeyCached(viewData.modelUserKey, {
+                moduleName: viewData.moduleUserKey,
+                component: 'views',
+                details: `model=${viewData.modelUserKey}`,
+            });
 
-            // Changed the below to upsert as now we are saving modifications to the view json to file system also.
-            await this.solidViewService.upsert(viewData);
+            const result = await this.upsertViewMetadataWithPreloadedExisting(viewRepo, existingViewsByName, viewData);
+            this.viewLookupCache.set(viewData.name, result.entity ?? null);
+            if (result.outcome === 'created') {
+                created += 1;
+            } else if (result.outcome === 'updated') {
+                updated += 1;
+            } else {
+                skipped += 1;
+            }
         }
+
+        this.logger.debug(`View seed summary: created=${created}, updated=${updated}, skipped=${skipped}.`);
     }
 
     // OK
@@ -820,13 +1336,21 @@ export class ModuleMetadataSeederService {
 
         for (let l = 0; l < users.length; l++) {
             const user: SignUpDto = users[l];
-            let exisitingUser = await this.userService.findOneByUsername(user.username);
+            let exisitingUser = await this.timeOperation('user-find-by-username', () => this.userService.findOneByUsername(user.username), {
+                component: 'users',
+                serviceCall: 'userService.findOneByUsername',
+                details: `username=${user.username}`,
+            });
             if (!exisitingUser) {
                 if (user.username === 'sa') {
                     user.password = DEFAULT_SA_PASSWORD;
                 }
 
-                exisitingUser = await this.authenticationService.signUp(user);
+                exisitingUser = await this.timeOperation('user-sign-up', () => this.authenticationService.signUp(user), {
+                    component: 'users',
+                    serviceCall: 'authenticationService.signUp',
+                    details: `username=${user.username}`,
+                });
                 this.logger.log(`Newly created user ${user.username}`);
             }
             //FIXME: Create the user roles assignment logic here.
@@ -840,10 +1364,16 @@ export class ModuleMetadataSeederService {
 
     // OK
     private async seedModuleModelFields(moduleMetadata: CreateModuleMetadataDto): Promise<{ pruned: number; upserted: number }> {
-        this.logger.debug(`[Start] Processing module metadata`);
+        const fieldMetadataRepo = this.dataSource.getRepository(FieldMetadata);
 
         // First we create the module. 
-        const module = await this.moduleMetadataService.upsert(moduleMetadata);
+        const module = await this.timeOperation('module-upsert', () => this.moduleMetadataService.upsert(moduleMetadata), {
+            moduleName: moduleMetadata.name,
+            component: 'module-model-fields',
+            serviceCall: 'moduleMetadataService.upsert',
+            details: `module=${moduleMetadata.name}`,
+        });
+        this.moduleLookupCache.set(moduleMetadata.name, module ?? null);
         let pruned = 0;
         let upserted = 1;
 
@@ -859,19 +1389,47 @@ export class ModuleMetadataSeederService {
 
             // Load and set the parent model if it exists.
             if (modelMetadata.isChild && modelMetadata.parentModelUserKey) {
-                const parentModel = await this.modelMetadataService.findOneByUserKey(modelMetadata.parentModelUserKey);
+                const parentModel = await this.getModelByUserKeyCached(modelMetadata.parentModelUserKey, {
+                    moduleName: moduleMetadata.name,
+                    component: 'module-model-fields',
+                    details: `parentModel=${modelMetadata.parentModelUserKey}`,
+                });
                 modelMetaDataWithoutFields['parentModel'] = parentModel;
             }
 
-            await this.modelMetadataService.upsert(modelMetaDataWithoutFields);
-            const model = await this.modelMetadataService.findOneBySingularName(modelMetadata.singularName)
+            const upsertedModel = await this.timeOperation('model-upsert', () => this.modelMetadataService.upsert(modelMetaDataWithoutFields), {
+                moduleName: moduleMetadata.name,
+                component: 'module-model-fields',
+                serviceCall: 'modelMetadataService.upsert',
+                details: `model=${modelMetadata.singularName}`,
+            });
+            this.modelLookupCache.set(modelMetadata.singularName, upsertedModel ?? null);
+            const model = await this.timeOperation('model-find-by-singular-name', () => this.modelMetadataService.findOneBySingularName(modelMetadata.singularName), {
+                moduleName: moduleMetadata.name,
+                component: 'module-model-fields',
+                serviceCall: 'modelMetadataService.findOneBySingularName',
+                details: `model=${modelMetadata.singularName}`,
+            });
 
             // iterate over all fields and upsert. 
             if (this.enablePruning) {
-                pruned += await this.pruneFieldsForModel(model, fieldsMetadata);
+                pruned += await this.timeOperation('prune-fields-for-model', () => this.pruneFieldsForModel(model, fieldsMetadata), {
+                    moduleName: moduleMetadata.name,
+                    component: 'module-model-fields',
+                    serviceCall: 'pruneFieldsForModel',
+                    details: `model=${modelMetadata.singularName}`,
+                });
             }
             let userKeyField = null;
             const userKeyFieldName = modelMetadata.userKeyFieldUserKey;
+            // Preload all existing fields for the model once. This is why field upserts are now effectively cheap:
+            // we no longer do row-by-row existence checks for every field in steady-state runs.
+            const existingFieldsByName = await this.timeOperation('field-preload-for-model', () => this.loadExistingFieldsByName(fieldMetadataRepo, model.id), {
+                moduleName: moduleMetadata.name,
+                component: 'module-model-fields',
+                serviceCall: 'loadExistingFieldsByName',
+                details: `model=${modelMetadata.singularName}`,
+            });
             upserted += fieldsMetadata?.length ?? 0;
             for (let k = 0; k < fieldsMetadata.length; k++) {
                 const fieldMetadata = fieldsMetadata[k];
@@ -879,11 +1437,20 @@ export class ModuleMetadataSeederService {
                 // Link model & mediaStorageProvider. 
                 fieldMetadata['model'] = model;
                 if (fieldMetadata.mediaStorageProviderUserKey) {
-                    fieldMetadata['mediaStorageProvider'] = await this.mediaStorageProviderMetadataService.findOneByUserKey(fieldMetadata.mediaStorageProviderUserKey);
+                    fieldMetadata['mediaStorageProvider'] = await this.getMediaStorageProviderByUserKeyCached(fieldMetadata.mediaStorageProviderUserKey, {
+                        moduleName: moduleMetadata.name,
+                        component: 'module-model-fields',
+                        details: `provider=${fieldMetadata.mediaStorageProviderUserKey}`,
+                    });
                 }
                 // console.log(fieldMetadata.displayName);
 
-                const affectedField = await this.fieldMetadataService.upsert(fieldMetadata);
+                const affectedField = await this.timeOperation('field-upsert', () => this.upsertFieldMetadataWithPreloadedExisting(fieldMetadataRepo, existingFieldsByName, fieldMetadata), {
+                    moduleName: moduleMetadata.name,
+                    component: 'module-model-fields',
+                    serviceCall: 'upsertFieldMetadataWithPreloadedExisting',
+                    details: `field=${fieldMetadata.name} model=${modelMetadata.singularName}`,
+                });
                 if (fieldMetadata.name === userKeyFieldName || fieldMetadata.isUserKey) {
                     const { model, ...fieldData } = affectedField;
                     userKeyField = fieldData;
@@ -893,18 +1460,352 @@ export class ModuleMetadataSeederService {
             // Now that we have created fields & model update the model to stamp the userKeyField. 
             if (userKeyField) {
                 modelMetaDataWithoutFields['userKeyField'] = userKeyField;
-                await this.modelMetadataService.upsert(modelMetaDataWithoutFields);
+                await this.timeOperation('model-user-key-field-upsert', () => this.modelMetadataService.upsert(modelMetaDataWithoutFields), {
+                    moduleName: moduleMetadata.name,
+                    component: 'module-model-fields',
+                    serviceCall: 'modelMetadataService.upsert',
+                    details: `model=${modelMetadata.singularName} userKeyField=${userKeyField?.name ?? 'unknown'}`,
+                });
             }
         }
         if (this.enablePruning) {
-            pruned += await this.pruneModels(modelsMetadata, moduleMetadata.name);
+            pruned += await this.timeOperation('prune-models', () => this.pruneModels(modelsMetadata, moduleMetadata.name), {
+                moduleName: moduleMetadata.name,
+                component: 'module-model-fields',
+                serviceCall: 'pruneModels',
+            });
         }
-        this.logger.debug(`[End] Processing module metadata`);
         return { pruned, upserted };
     }
 
     private getSeedArray<T>(value: T[] | null | undefined): T[] {
         return Array.isArray(value) ? value : [];
+    }
+
+    private async loadExistingFieldsByName(fieldMetadataRepo: Repository<FieldMetadata>, modelId: number): Promise<Map<string, FieldMetadata>> {
+        const existingFields = await fieldMetadataRepo.find({
+            where: {
+                model: { id: modelId },
+            },
+            relations: {
+                model: true,
+                mediaStorageProvider: true,
+            },
+        });
+
+        return new Map(existingFields.map((field) => [field.name, field]));
+    }
+
+    private async primeModuleLookupCache(moduleUserKeys: Array<string | null | undefined>): Promise<void> {
+        const missingModuleUserKeys = [...new Set(moduleUserKeys.filter((moduleUserKey): moduleUserKey is string =>
+            Boolean(moduleUserKey) && !this.moduleLookupCache.has(moduleUserKey),
+        ))];
+
+        if (missingModuleUserKeys.length === 0) {
+            return;
+        }
+
+        // Only bulk-load keys that are still missing from the process-local cache.
+        const moduleRepo = this.dataSource.getRepository(ModuleMetadata);
+        const existingModules = await moduleRepo.find({
+            where: {
+                name: In(missingModuleUserKeys),
+            },
+        });
+
+        const moduleByName = new Map(existingModules.map((module) => [module.name, module]));
+        for (const moduleUserKey of missingModuleUserKeys) {
+            this.moduleLookupCache.set(moduleUserKey, moduleByName.get(moduleUserKey) ?? null);
+        }
+    }
+
+    private async primeModelLookupCache(modelUserKeys: Array<string | null | undefined>): Promise<void> {
+        const missingModelUserKeys = [...new Set(modelUserKeys.filter((modelUserKey): modelUserKey is string =>
+            Boolean(modelUserKey) && !this.modelLookupCache.has(modelUserKey),
+        ))];
+
+        if (missingModelUserKeys.length === 0) {
+            return;
+        }
+
+        const modelRepo = this.dataSource.getRepository(ModelMetadata);
+        const existingModels = await modelRepo.find({
+            where: {
+                singularName: In(missingModelUserKeys),
+            },
+            relations: {
+                module: true,
+                userKeyField: true,
+            },
+        });
+
+        const modelBySingularName = new Map(existingModels.map((model) => [model.singularName, model]));
+        for (const modelUserKey of missingModelUserKeys) {
+            this.modelLookupCache.set(modelUserKey, modelBySingularName.get(modelUserKey) ?? null);
+        }
+    }
+
+    private async primeViewLookupCache(viewUserKeys: Array<string | null | undefined>): Promise<void> {
+        const missingViewUserKeys = [...new Set(viewUserKeys.filter((viewUserKey): viewUserKey is string =>
+            Boolean(viewUserKey) && !this.viewLookupCache.has(viewUserKey),
+        ))];
+
+        if (missingViewUserKeys.length === 0) {
+            return;
+        }
+
+        const viewRepo = this.dataSource.getRepository(ViewMetadata);
+        const existingViews = await viewRepo.find({
+            where: {
+                name: In(missingViewUserKeys),
+            },
+            relations: {
+                module: true,
+                model: true,
+            },
+        });
+
+        const viewByName = new Map(existingViews.map((view) => [view.name, view]));
+        for (const viewUserKey of missingViewUserKeys) {
+            this.viewLookupCache.set(viewUserKey, viewByName.get(viewUserKey) ?? null);
+        }
+    }
+
+    private async loadExistingViewsByName(viewRepo: Repository<ViewMetadata>, viewNames: string[]): Promise<Map<string, ViewMetadata>> {
+        const uniqueViewNames = [...new Set(viewNames.filter(Boolean))];
+        if (uniqueViewNames.length === 0) {
+            return new Map();
+        }
+
+        // Load relation ids needed for no-op detection. If module/model are not present here, unchanged rows look
+        // dirty and every view falls through to save().
+        const existingViews = await viewRepo.find({
+            where: {
+                name: In(uniqueViewNames),
+            },
+            relations: {
+                module: true,
+                model: true,
+            },
+        });
+
+        return new Map(existingViews.map((view) => [view.name, view]));
+    }
+
+    private async loadExistingActionsByName(actionRepo: Repository<ActionMetadata>, actionNames: string[]): Promise<Map<string, ActionMetadata>> {
+        const uniqueActionNames = [...new Set(actionNames.filter(Boolean))];
+        if (uniqueActionNames.length === 0) {
+            return new Map();
+        }
+
+        // Same reason as views: the diff logic compares relation ids, so those relations must be loaded here.
+        const existingActions = await actionRepo.find({
+            where: {
+                name: In(uniqueActionNames),
+            },
+            relations: {
+                module: true,
+                model: true,
+                view: true,
+            },
+        });
+
+        return new Map(existingActions.map((action) => [action.name, action]));
+    }
+
+    private normalizeJsonFieldValue(value: any): any {
+        // Normalize persisted JSON strings and in-memory objects/arrays into the same canonical shape before compare.
+        if (typeof value === 'string') {
+            const trimmedValue = value.trim();
+            if (
+                (trimmedValue.startsWith('{') && trimmedValue.endsWith('}'))
+                || (trimmedValue.startsWith('[') && trimmedValue.endsWith(']'))
+            ) {
+                try {
+                    return this.normalizeJsonFieldValue(JSON.parse(trimmedValue));
+                } catch {
+                    return value;
+                }
+            }
+
+            return value;
+        }
+
+        if (Array.isArray(value)) {
+            return value.map((item) => this.normalizeJsonFieldValue(item));
+        }
+
+        if (value && typeof value === 'object') {
+            return Object.keys(value)
+                .sort()
+                .reduce((result, key) => {
+                    result[key] = this.normalizeJsonFieldValue(value[key]);
+                    return result;
+                }, {} as Record<string, any>);
+        }
+
+        return value;
+    }
+
+    private getCanonicalJsonFieldString(value: any): string {
+        return JSON.stringify(this.normalizeJsonFieldValue(value) ?? null);
+    }
+
+    private hasViewMetadataChanges(existingView: ViewMetadata, updateDto: any): boolean {
+        const relationFields = new Set(['module', 'model']);
+        const jsonFields = new Set(['layout', 'context']);
+
+        // Compare only the persisted fields we explicitly care about. Generic object-wide diffing became fragile once
+        // seeding DTOs started carrying transient helper properties that should not trigger writes.
+        return this.viewComparableFields.some((key) => {
+            const value = updateDto[key];
+            if (typeof value === 'undefined') {
+                return false;
+            }
+
+            if (relationFields.has(key)) {
+                const relationValue = value as any;
+                return (existingView as any)[key]?.id !== relationValue?.id;
+            }
+
+            if (jsonFields.has(key)) {
+                return this.getCanonicalJsonFieldString((existingView as any)[key]) !== this.getCanonicalJsonFieldString(value);
+            }
+
+            return (existingView as any)[key] !== value;
+        });
+    }
+
+    private hasActionMetadataChanges(existingAction: ActionMetadata, updateDto: any): boolean {
+        const relationFields = new Set(['module', 'model', 'view']);
+        const jsonFields = new Set(['domain', 'context']);
+
+        return this.actionComparableFields.some((key) => {
+            const value = updateDto[key];
+            if (typeof value === 'undefined') {
+                return false;
+            }
+
+            if (relationFields.has(key)) {
+                const relationValue = value as any;
+                return (existingAction as any)[key]?.id !== relationValue?.id;
+            }
+
+            if (jsonFields.has(key)) {
+                return this.getCanonicalJsonFieldString((existingAction as any)[key]) !== this.getCanonicalJsonFieldString(value);
+            }
+
+            return (existingAction as any)[key] !== value;
+        });
+    }
+
+    private async upsertViewMetadataWithPreloadedExisting(
+        viewRepo: Repository<ViewMetadata>,
+        existingViewsByName: Map<string, ViewMetadata>,
+        updateDto: any,
+    ): Promise<{ entity: ViewMetadata; outcome: 'created' | 'updated' | 'skipped' }> {
+        const existingView = existingViewsByName.get(updateDto.name);
+
+        if (existingView) {
+            // In the steady-state case we want to return fast here and avoid save() entirely.
+            if (!this.hasViewMetadataChanges(existingView, updateDto)) {
+                return { entity: existingView, outcome: 'skipped' };
+            }
+
+            const updatedView = { ...existingView, ...updateDto };
+            const savedView = await this.timeOperation('view-save', () => viewRepo.save(updatedView as ViewMetadata), {
+                component: 'views',
+                serviceCall: 'viewRepo.save',
+                details: `view=${updateDto.name}`,
+            }) as ViewMetadata;
+            existingViewsByName.set(updateDto.name, savedView);
+            return { entity: savedView, outcome: 'updated' };
+        }
+
+        const view = viewRepo.create(updateDto as Partial<ViewMetadata>);
+        const savedView = await this.timeOperation('view-save', () => viewRepo.save(view as ViewMetadata), {
+            component: 'views',
+            serviceCall: 'viewRepo.save',
+            details: `view=${updateDto.name}`,
+        }) as ViewMetadata;
+        existingViewsByName.set(updateDto.name, savedView);
+        return { entity: savedView, outcome: 'created' };
+    }
+
+    private async upsertActionMetadataWithPreloadedExisting(
+        actionRepo: Repository<ActionMetadata>,
+        existingActionsByName: Map<string, ActionMetadata>,
+        updateDto: any,
+    ): Promise<{ entity: ActionMetadata; outcome: 'created' | 'updated' | 'skipped' }> {
+        const existingAction = existingActionsByName.get(updateDto.name);
+
+        if (existingAction) {
+            if (!this.hasActionMetadataChanges(existingAction, updateDto)) {
+                return { entity: existingAction, outcome: 'skipped' };
+            }
+
+            const updatedAction = { ...existingAction, ...updateDto };
+            const savedAction = await this.timeOperation('action-save', () => actionRepo.save(updatedAction as ActionMetadata), {
+                component: 'actions',
+                serviceCall: 'actionRepo.save',
+                details: `action=${updateDto.name}`,
+            }) as ActionMetadata;
+            existingActionsByName.set(updateDto.name, savedAction);
+            return { entity: savedAction, outcome: 'updated' };
+        }
+
+        const action = actionRepo.create(updateDto as Partial<ActionMetadata>);
+        const savedAction = await this.timeOperation('action-save', () => actionRepo.save(action as ActionMetadata), {
+            component: 'actions',
+            serviceCall: 'actionRepo.save',
+            details: `action=${updateDto.name}`,
+        }) as ActionMetadata;
+        existingActionsByName.set(updateDto.name, savedAction);
+        return { entity: savedAction, outcome: 'created' };
+    }
+
+    private async upsertFieldMetadataWithPreloadedExisting(
+        fieldMetadataRepo: Repository<FieldMetadata>,
+        existingFieldsByName: Map<string, FieldMetadata>,
+        updateDto: any,
+    ): Promise<FieldMetadata> {
+        const existingFieldMetadata = existingFieldsByName.get(updateDto.name);
+
+        if (existingFieldMetadata) {
+            // Field metadata still uses a broad DTO diff because the major performance problem here was query volume,
+            // not the in-memory comparison itself.
+            const hasChanges = Object.entries(updateDto).some(([key, value]) => {
+                const relationValue = value as any;
+                if (key === 'model') {
+                    return existingFieldMetadata.model?.id !== relationValue?.id;
+                }
+                if (key === 'mediaStorageProvider') {
+                    return existingFieldMetadata.mediaStorageProvider?.id !== relationValue?.id;
+                }
+                const currentValue = (existingFieldMetadata as any)[key];
+                if (Array.isArray(currentValue) || Array.isArray(value)) {
+                    return JSON.stringify(currentValue ?? null) !== JSON.stringify(value ?? null);
+                }
+                if (value && typeof value === 'object') {
+                    return JSON.stringify(currentValue ?? null) !== JSON.stringify(value ?? null);
+                }
+                return currentValue !== value;
+            });
+
+            if (!hasChanges) {
+                return existingFieldMetadata;
+            }
+
+            const updatedFieldMetadata = { ...existingFieldMetadata, ...updateDto };
+            const savedFieldMetadata = await fieldMetadataRepo.save(updatedFieldMetadata as FieldMetadata) as FieldMetadata;
+            existingFieldsByName.set(updateDto.name, savedFieldMetadata);
+            return savedFieldMetadata;
+        }
+
+        const fieldMetadata = fieldMetadataRepo.create(updateDto as Partial<FieldMetadata>);
+        const savedFieldMetadata = await fieldMetadataRepo.save(fieldMetadata as FieldMetadata) as FieldMetadata;
+        existingFieldsByName.set(updateDto.name, savedFieldMetadata);
+        return savedFieldMetadata;
     }
 
     private async handleSeedSecurityRules(rulesDto: CreateSecurityRuleDto[]) {
@@ -913,7 +1814,11 @@ export class ModuleMetadataSeederService {
             return;
         }
         for (const dto of rulesDto) {
-            await this.securityRuleRepo.upsertWithDto({ ...dto, securityRuleConfig: JSON.stringify(dto.securityRuleConfig) });
+            await this.timeOperation('security-rule-upsert', () => this.securityRuleRepo.upsertWithDto({ ...dto, securityRuleConfig: JSON.stringify(dto.securityRuleConfig) }), {
+                component: 'security-rules',
+                serviceCall: 'securityRuleRepo.upsertWithDto',
+                details: `rule=${dto.name}`,
+            });
         }
     }
 
@@ -925,8 +1830,16 @@ export class ModuleMetadataSeederService {
         }
         for (let j = 0; j < listOfValuesDto.length; j++) {
             const listOfValueDto = listOfValuesDto[j];
-            listOfValueDto['module'] = await this.moduleMetadataService.findOneByUserKey(listOfValueDto.moduleUserKey);
-            await this.listOfValuesService.upsert(listOfValuesDto[j]);
+            listOfValueDto['module'] = await this.getModuleByUserKeyCached(listOfValueDto.moduleUserKey, {
+                moduleName: listOfValueDto.moduleUserKey,
+                component: 'list-of-values',
+                details: `module=${listOfValueDto.moduleUserKey}`,
+            });
+            await this.timeOperation('lov-upsert', () => this.listOfValuesService.upsert(listOfValuesDto[j]), {
+                component: 'list-of-values',
+                serviceCall: 'listOfValuesService.upsert',
+                details: `type=${listOfValueDto.type} value=${listOfValueDto.value}`,
+            });
         }
     }
 
@@ -936,7 +1849,11 @@ export class ModuleMetadataSeederService {
             return;
         }
         for (const dto of createScheduledJobDto) {
-            await this.scheduledJobRepository.upsertWithDto(dto);
+            await this.timeOperation('scheduled-job-upsert', () => this.scheduledJobRepository.upsertWithDto(dto), {
+                component: 'scheduled-jobs',
+                serviceCall: 'scheduledJobRepository.upsertWithDto',
+                details: `schedule=${dto.scheduleName}`,
+            });
         }
     }
 
@@ -947,7 +1864,11 @@ export class ModuleMetadataSeederService {
         }
         for (const dto of createSavedFilterDto) {
             this.validateSavedFilterQueryJsonWrapper(dto);
-            await this.savedFiltersRepo.upsertWithDto({ ...dto, filterQueryJson: JSON.stringify(dto.filterQueryJson), isSeeded: true });
+            await this.timeOperation('saved-filter-upsert', () => this.savedFiltersRepo.upsertWithDto({ ...dto, filterQueryJson: JSON.stringify(dto.filterQueryJson), isSeeded: true }), {
+                component: 'saved-filters',
+                serviceCall: 'savedFiltersRepo.upsertWithDto',
+                details: `filter=${dto.name}`,
+            });
         }
     }
 
@@ -976,7 +1897,11 @@ export class ModuleMetadataSeederService {
             return;
         }
         for (const dto of modelSequencesDto) {
-            await this.modelSequenceRepo.upsertWithDto(dto);
+            await this.timeOperation('model-sequence-upsert', () => this.modelSequenceRepo.upsertWithDto(dto), {
+                component: 'model-sequences',
+                serviceCall: 'modelSequenceRepo.upsertWithDto',
+                details: `sequence=${dto.sequenceName}`,
+            });
         }
     }
 
@@ -987,7 +1912,11 @@ export class ModuleMetadataSeederService {
         }
         const sequences = modelSequencesDto ?? [];
 
-        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        const module = await this.getModuleByUserKeyCached(moduleName, {
+            moduleName,
+            component: 'model-sequences',
+            details: `module=${moduleName}`,
+        });
         if (!module) {
             this.logger.warn(`Skipping model sequence prune: module not found for ${moduleName}.`);
             return 0;
@@ -1026,7 +1955,11 @@ export class ModuleMetadataSeederService {
         }
         const savedFilters = savedFiltersDto ?? [];
 
-        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        const module = await this.getModuleByUserKeyCached(moduleName, {
+            moduleName,
+            component: 'saved-filters',
+            details: `module=${moduleName}`,
+        });
         if (!module) {
             this.logger.warn(`Skipping saved filters prune: module not found for ${moduleName}.`);
             return 0;
@@ -1066,7 +1999,11 @@ export class ModuleMetadataSeederService {
         }
         const scheduledJobs = scheduledJobsDto ?? [];
 
-        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        const module = await this.getModuleByUserKeyCached(moduleName, {
+            moduleName,
+            component: 'scheduled-jobs',
+            details: `module=${moduleName}`,
+        });
         if (!module) {
             this.logger.warn(`Skipping scheduled jobs prune: module not found for ${moduleName}.`);
             return 0;
@@ -1105,7 +2042,11 @@ export class ModuleMetadataSeederService {
         }
         const securityRules = securityRulesDto ?? [];
 
-        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        const module = await this.getModuleByUserKeyCached(moduleName, {
+            moduleName,
+            component: 'security-rules',
+            details: `module=${moduleName}`,
+        });
         if (!module) {
             this.logger.warn(`Skipping security rules prune: module not found for ${moduleName}.`);
             return 0;
@@ -1145,7 +2086,11 @@ export class ModuleMetadataSeederService {
         }
         const listOfValues = listOfValuesDto ?? [];
 
-        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        const module = await this.getModuleByUserKeyCached(moduleName, {
+            moduleName,
+            component: 'list-of-values',
+            details: `module=${moduleName}`,
+        });
         if (!module) {
             this.logger.warn(`Skipping list of values prune: module not found for ${moduleName}.`);
             return 0;
@@ -1193,7 +2138,11 @@ export class ModuleMetadataSeederService {
         }
         const menus = menusDto ?? [];
 
-        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        const module = await this.getModuleByUserKeyCached(moduleName, {
+            moduleName,
+            component: 'menus',
+            details: `module=${moduleName}`,
+        });
         if (!module) {
             this.logger.warn(`Skipping menus prune: module not found for ${moduleName}.`);
             return 0;
@@ -1240,7 +2189,11 @@ export class ModuleMetadataSeederService {
         }
         const views = viewsDto ?? [];
 
-        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        const module = await this.getModuleByUserKeyCached(moduleName, {
+            moduleName,
+            component: 'views',
+            details: `module=${moduleName}`,
+        });
         if (!module) {
             this.logger.warn(`Skipping views prune: module not found for ${moduleName}.`);
             return 0;
@@ -1300,7 +2253,11 @@ export class ModuleMetadataSeederService {
         }
         const actions = actionsDto ?? [];
 
-        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        const module = await this.getModuleByUserKeyCached(moduleName, {
+            moduleName,
+            component: 'actions',
+            details: `module=${moduleName}`,
+        });
         if (!module) {
             this.logger.warn(`Skipping actions prune: module not found for ${moduleName}.`);
             return 0;
@@ -1398,7 +2355,11 @@ export class ModuleMetadataSeederService {
         }
         const models = modelsMetadata ?? [];
 
-        const module = await this.moduleMetadataService.findOneByUserKey(moduleName);
+        const module = await this.getModuleByUserKeyCached(moduleName, {
+            moduleName,
+            component: 'module-model-fields',
+            details: `module=${moduleName}`,
+        });
         if (!module) {
             this.logger.warn(`Skipping models prune: module not found for ${moduleName}.`);
             return 0;
