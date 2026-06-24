@@ -8,7 +8,7 @@ import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
 import { IDashboardWidgetDataProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule } from "../interfaces";
-import { ObjectLiteral } from 'typeorm';
+import { EntityManager, ObjectLiteral } from 'typeorm';
 
 type ControllerMetadata = {
   name: string;
@@ -49,6 +49,12 @@ export interface TypeOrmEventContext {
   metadataName?: string;
   updatedColumns?: string[];
   updatedRelations?: string[];
+  // Transaction-bound EntityManager from the originating TypeORM event. Providers that
+  // need to query the DB during a pre-compute hook must use this (not an injected
+  // DataSource/EntityManager) so the query runs on the active transaction's connection.
+  // On single-threaded embedded engines (PGlite), a second connection mid-transaction
+  // can deadlock.
+  manager?: EntityManager;
 }
 
 export interface ComputedFieldMetadata<TContext = any> {

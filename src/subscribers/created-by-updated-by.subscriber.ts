@@ -38,6 +38,9 @@ export class CreatedByUpdatedBySubscriber implements EntitySubscriberInterface {
             return;
         }
 
+        // NOTE: If re-enabling loadUser below, query via `event.queryRunner.manager`, NOT
+        // `this.defaultDataSource.getRepository(...)`. A second connection opened mid-transaction
+        // deadlocks single-threaded engines (PGlite).
         // const loadedUser = await this.loadUser(activeUserOrUndefined as unknown as ActiveUserData);
         // if (isInsert) {
         //     event.entity.createdBy = loadedUser?.id;

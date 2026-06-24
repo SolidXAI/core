@@ -21,6 +21,9 @@ export class FieldMetadataSubscriber implements EntitySubscriberInterface<FieldM
   }
 
   async afterUpdate(event: UpdateEvent<FieldMetadata>): Promise<void> {
+    // NOTE: If re-enabling the block below, use `event.queryRunner.manager` (the active
+    // transaction's connection), NOT `this.dataSource.getRepository(...)`. A second
+    // connection opened here mid-transaction deadlocks single-threaded engines (PGlite).
     // If a field of type relation.many-to-one is marked for removal, and this field had an inverse relation created 
     // It means there is a field of type relation.one-to-many in the co-model, which needs to be removed
     // if (event.entity && event.entity.isMarkedForRemoval && event.entity.type === 'relation' && event.entity.relationType === 'many-to-one' && event.entity.relationCreateInverse === true) {

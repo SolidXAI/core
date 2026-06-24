@@ -45,7 +45,12 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
       }
     }
 
-    const uniqueCode = await this.generateUniqueExternalId(resolvedPrefix, codeLength, computedFieldMetadata.fieldName, entityName);
+    // Use the originating transaction's EntityManager so the uniqueness check runs on the
+    // active connection. Falls back to the injected manager only when no event context is
+    // available (e.g. direct invocation outside a TypeORM lifecycle event).
+    const manager = eventContext?.manager ?? this.entityManager;
+
+    const uniqueCode = await this.generateUniqueExternalId(manager, resolvedPrefix, codeLength, computedFieldMetadata.fieldName, entityName);
     const finalExternalId = resolvedPrefix ? `${resolvedPrefix}-${uniqueCode}` : uniqueCode;
 
     triggerEntity[computedFieldMetadata.fieldName] = finalExternalId;
@@ -60,8 +65,8 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
     return result;
   }
 
-  private async isExternalIdUnique(externalId: string, fieldName: string, entityName: string): Promise<boolean> {
-    const count = await this.entityManager.count(entityName as any,
+  private async isExternalIdUnique(manager: EntityManager, externalId: string, fieldName: string, entityName: string): Promise<boolean> {
+    const count = await manager.count(entityName as any,
       {
         where: { [fieldName]: externalId },
       }
@@ -69,7 +74,7 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
     return count === 0;
   }
 
-  private async generateUniqueExternalId(resolvedPrefix: string, codeLength: number, fieldName: string, entityName: string): Promise<string> {
+  private async generateUniqueExternalId(manager: EntityManager, resolvedPrefix: string, codeLength: number, fieldName: string, entityName: string): Promise<string> {
     const maxAttempts = 10;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
@@ -78,7 +83,7 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
 
       const fullId = resolvedPrefix ? `${resolvedPrefix}-${newId}` : newId;
 
-      const isUnique = await this.isExternalIdUnique(fullId, fieldName, entityName);
+      const isUnique = await this.isExternalIdUnique(manager, fullId, fieldName, entityName);
 
       if (isUnique) {
         return newId;

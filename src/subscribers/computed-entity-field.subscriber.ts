@@ -175,6 +175,7 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         const base: TypeOrmEventContext = {
             metadataName: event.metadata?.name,
             eventType: eventType,
+            manager: event.manager,
         };
         if ("entityId" in event && event.entityId) {
             base.entityId = event.entityId;
