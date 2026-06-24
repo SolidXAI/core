@@ -1942,48 +1942,6 @@ export class ModuleMetadataSeederService {
         this.solidRegistry.registerlocales(locales);
     }
 
-    private async handleSeedLocales(localesDto: CreateLocaleDto[]) {
-        if (!localesDto || localesDto.length === 0) {
-            this.logger.debug(`No locales found to seed`);
-            return;
-        }
-
-        for (const dto of localesDto) {
-            if (dto.isDefault) {
-                const existingDefaultLocales = await this.localeRepo.find({
-                    where: {
-                        isDefault: true,
-                    } as any,
-                });
-
-                for (const locale of existingDefaultLocales) {
-                    if (locale.locale !== dto.locale) {
-                        await this.localeRepo.save({
-                            ...locale,
-                            isDefault: false,
-                        });
-                    }
-                }
-            }
-
-            const existingLocale = await this.localeRepo.findOne({
-                where: {
-                    locale: dto.locale,
-                } as any,
-            });
-
-            await this.localeRepo.save(
-                this.localeRepo.create({
-                    ...existingLocale,
-                    ...dto,
-                })
-            );
-        }
-
-        const locales = await this.localeRepo.find();
-        this.solidRegistry.registerlocales(locales);
-    }
-
     private validateSavedFilterQueryJsonWrapper(dto: CreateSavedFiltersDto): void {
         const filterName = dto?.name ?? '<unnamed>';
         const filterQueryJson = dto?.filterQueryJson;
