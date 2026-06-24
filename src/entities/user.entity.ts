@@ -89,6 +89,18 @@ export class User extends CommonEntity {
     // don't send to client
     microsoftProfilePicture: string;
 
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    microsoftActiveDirectoryId: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    microsoftActiveDirectoryAccessToken: string;
+
+    @Column({ type: "varchar", nullable: true })
+    // don't send to client
+    microsoftActiveDirectoryProfilePicture: string;
+
     @Index()
     @Column({ default: true })
     @Expose()

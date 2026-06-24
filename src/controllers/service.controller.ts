@@ -10,6 +10,7 @@ import { SolidRegistry } from '../helpers/solid-registry';
 export interface PostProcessCodeGenConfig {
     runModuleMetadataSeeder?: boolean; // If true, regenerate module metadata
     runSolidIngestion?: boolean; // If true, run solid ingestion command
+    modulesToSeed?: string[]; // If provided, only seed these specific modules
 }
 @Controller('')
 @ApiTags("Solid Core")
@@ -101,7 +102,7 @@ export class ServiceController {
             return;
         }
         this.logger.log(`Running the seed() method for seeder :${seeder.constructor.name}`);
-        await seeder.seed();
+        await seeder.seed({ modulesToSeed: seedData?.modulesToSeed });
         return { message: `seed data for ${seederName}` };
     }
 
@@ -123,7 +124,7 @@ export class ServiceController {
             if (!seeder) {
                 this.logger.error(`Seeder service ModuleMetadataSeederService not found. Does your service have a seed() method?`);
             } else {
-                await seeder.seed();
+                await seeder.seed({ modulesToSeed: config.modulesToSeed });
             }
         } else {
             this.logger.debug(`Skipping the Module Metadata Seeder Service as part of post-process code generation`);
