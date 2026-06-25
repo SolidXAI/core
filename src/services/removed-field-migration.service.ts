@@ -14,12 +14,6 @@ import { FieldMetadataRepository } from "src/repository/field-metadata.repositor
 import { ModelMetadataRepository } from "src/repository/model-metadata.repository";
 import { DataSource, EntityMetadata, QueryRunner, Table } from "typeorm";
 
-interface MetadataFileUpdate {
-    filePath: string;
-    originalContent: string;
-    updatedContent: string;
-}
-
 export interface RemovedFieldMigrationResult {
     dryRun: boolean;
     modelName: string;
@@ -68,7 +62,6 @@ export class RemovedFieldMigrationService {
             };
         }
 
-        const metadataFileUpdate = dryRun ? null : await this.prepareMetadataFileUpdate(model, fieldsForRemoval);
         const dataSource = await this.resolveDataSource(model.dataSource);
         const entityMetadata = this.resolveEntityMetadata(dataSource, model);
         const queryRunner = dataSource.createQueryRunner();
@@ -101,24 +94,6 @@ export class RemovedFieldMigrationService {
             throw error;
         } finally {
             await queryRunner.release();
-        }
-
-        if (!dryRun && metadataFileUpdate) {
-            await fs.writeFile(metadataFileUpdate.filePath, metadataFileUpdate.updatedContent, "utf8");
-
-            try {
-                await this.fieldMetadataRepo.manager.transaction(async (manager) => {
-                    await manager.remove(FieldMetadata, fieldsForRemoval);
-                });
-            } catch (error) {
-                await fs.writeFile(metadataFileUpdate.filePath, metadataFileUpdate.originalContent, "utf8");
-                throw error;
-            }
-
-            operations.push(`Updated metadata file at ${metadataFileUpdate.filePath}`);
-            operations.push(`Removed ${fieldsForRemoval.length} field metadata record(s) from ss_field_metadata`);
-        } else if (dryRun) {
-            operations.push(`Would update module metadata for model "${model.singularName}" and remove ${fieldsForRemoval.length} field metadata record(s).`);
         }
 
         return {
@@ -276,33 +251,6 @@ export class RemovedFieldMigrationService {
         }
 
         return [...columnCandidates].filter(Boolean);
-    }
-
-    private async prepareMetadataFileUpdate(model: ModelMetadata, fieldsForRemoval: FieldMetadata[]): Promise<MetadataFileUpdate> {
-        const filePath = await this.resolveMetadataFilePath(model.module.name);
-        const originalContent = await fs.readFile(filePath, "utf8");
-        const metadata = JSON.parse(originalContent);
-        const models = metadata?.moduleMetadata?.models;
-
-        if (!Array.isArray(models)) {
-            throw new BadRequestException(`Invalid module metadata structure in ${filePath}`);
-        }
-
-        const existingModelIndex = models.findIndex((existingModel: any) => existingModel.singularName === model.singularName);
-        if (existingModelIndex === -1) {
-            throw new NotFoundException(`Model "${model.singularName}" not found in metadata file ${filePath}`);
-        }
-
-        const fieldNamesForRemoval = new Set(fieldsForRemoval.map((field) => field.name));
-        const existingModel = models[existingModelIndex];
-        existingModel.fields = (existingModel.fields || []).filter((field: any) => !fieldNamesForRemoval.has(field.name));
-        models[existingModelIndex] = existingModel;
-
-        return {
-            filePath,
-            originalContent,
-            updatedContent: JSON.stringify(metadata, null, 2),
-        };
     }
 
     private async resolveDataSource(dataSourceName?: string): Promise<DataSource> {

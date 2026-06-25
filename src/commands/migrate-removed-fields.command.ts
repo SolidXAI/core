@@ -2,6 +2,7 @@ import { Logger } from "@nestjs/common";
 import { Command, CommandRunner, Option } from "nest-commander";
 import { RemovedFieldMigrationService } from "src/services/removed-field-migration.service";
 import { CommandError } from "./helper";
+import { ModelMetadataService } from "src/services/model-metadata.service";
 
 interface CommandOptions {
     name: string;
@@ -15,6 +16,8 @@ interface CommandOptions {
 export class MigrateRemovedFieldsCommand extends CommandRunner {
     constructor(
         private readonly removedFieldMigrationService: RemovedFieldMigrationService,
+        private readonly modelMetadataService: ModelMetadataService,
+
     ) {
         super();
     }
@@ -29,9 +32,27 @@ export class MigrateRemovedFieldsCommand extends CommandRunner {
         }
 
         const dryRun = options?.dryRun ?? true;
-        const result = await this.removedFieldMigrationService.migrateMarkedFields(options.name, dryRun);
+
+        // STEP 1: Capture fields BEFORE migration deletes metadata
+        // const model = await this.modelMetadataService.findOneByUserKey(
+        //     options.name,
+        //     ["module", "fields"],
+        // );
+
+        // const fieldsForRemoval = model.fields.filter(
+        //     field => field.isMarkedForRemoval,
+        // );
+
+        // // STEP 2: Run remove-fields schematic first
+        // if (!dryRun && fieldsForRemoval.length > 0) {
+        //     // await this.modelMetadataService.executeRemoveFieldsOnly(options.name,fieldsForRemoval.map(f => f.name),false,);
+        //     await this.modelMetadataService.executeRemoveFieldsWithModel(model,                                    fieldsForRemoval.map(f => f.name),false,);
+        // }
+
+        // STEP 3: Then perform DB + metadata cleanup
+        const result = await this.removedFieldMigrationService.migrateMarkedFields(options.name, dryRun,);
+
         result.operations.forEach((operation) => this.logger.log(operation));
-        this.logger.log(`Processed ${result.removedFieldNames.length} field(s) for model "${result.modelName}".`);
     }
 
     @Option({

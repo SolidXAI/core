@@ -187,7 +187,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         }));
     }
 
-    //TODO: Will the updates be partial i.e PATCH or full i.e PUT
+ //TODO: Will the updates be partial i.e PATCH or full i.e PUT
     async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate: boolean = false, solidRequestContext: any = {}, isUpdate: boolean = false): Promise<T> {
         if (!id) {
             throw new Error(ERROR_MESSAGES.ID_REQUIRED_FOR_UPDATE);
@@ -215,41 +215,8 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             );
         }
 
-        const modelMetadataHelperService = this.moduleRef.get(ModelMetadataHelperService, { strict: false });
-        const auditRelationFields = (await modelMetadataHelperService.loadFieldHierarchy(model.singularName)).filter(field =>
-            field.enableAuditTracking &&
-            field.type === 'relation' &&
-            field.relationType !== 'one-to-many'
-        );
-        if (auditRelationFields.length > 0) {
-            const relations: any = {};
-            auditRelationFields.forEach(field => relations[field.name] = true);
-            const auditBeforeEntity = await this.repo.findOne({
-                where: {
-                    id: id,
-                } as unknown as FindOptionsWhere<T>,
-                relations: relations as any,
-            });
-            if (auditBeforeEntity) {
-                Object.defineProperty(entity, AUDIT_BEFORE_SNAPSHOT, {
-                    configurable: true,
-                    enumerable: false,
-                    value: auditBeforeEntity,
-                    writable: true,
-                });
-            }
-        }
-
-        // // In some instances for legacy tables sometimes id is mapped as a bigint. 
-        // // in these cases the update method ends up attempting to insert records due to some type orm type mismatch issue.
-        // const idFieldMetadata = model.fields.find(f => f.name === 'id');
-        // updateDto.id = idFieldMetadata?.type === 'bigint' ? BigInt(id) : id;
-
-        // This class will be extended by the generated service class i.e PersonService
-        // The data required to identify the model and module name will be passed from the generate CrudService subclass
-        //TODO: Algorithm to create the entity
-        // 1. Fire a query and load all the fields in the provided model name for a particular module
-        // FIXME This can be optimized to take in module name i.e (handle scenario wherein same model exists in multiple modules)
+        // Capture pre-update many-to-many relation state for audit tracking
+        await this.prepareManyToManyAuditSnapshot(entity,id,model.singularName);
         let hasMediaFields = false;
 
         const fieldsToProcess = [...model.fields];
@@ -276,6 +243,37 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return savedEntity;
     }
 
+/**
+ * Captures the current state of audit-enabled many-to-many relations
+ * before the entity is updated. The snapshot is attached to the entity
+ * and can be used later for audit comparison.
+ */
+private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularName: string): Promise<void> {
+   const modelMetadataHelperService = this.moduleRef.get(ModelMetadataHelperService, { strict: false });
+        const auditRelationFields = (await modelMetadataHelperService.loadFieldHierarchy(modelSingularName)).filter(field =>
+            field.enableAuditTracking &&
+            field.type === 'relation' &&
+            field.relationType !== 'one-to-many'
+        );
+        if (auditRelationFields.length > 0) {
+            const relations: any = {};
+            auditRelationFields.forEach(field => relations[field.name] = true);
+            const auditBeforeEntity = await this.repo.findOne({
+                where: {
+                    id: id,
+                } as unknown as FindOptionsWhere<T>,
+                relations: relations as any,
+            });
+            if (auditBeforeEntity) {
+                Object.defineProperty(entity, AUDIT_BEFORE_SNAPSHOT, {
+                    configurable: true,
+                    enumerable: false,
+                    value: auditBeforeEntity,
+                    writable: true,
+                });
+            }
+        }
+    }
     //TODO: Will the updates be partial i.e PATCH or full i.e PUT
     async delete(id: number, solidRequestContext: any = {}) {
         if (!id) {

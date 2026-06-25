@@ -61,50 +61,11 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         let after = event.entity ?? null;
         const updatedColumnNames = (event.updatedColumns ?? []).map(c => c.propertyName);
 
-        const auditRelationFields = (await this.modelMetadataHelperService.loadFieldHierarchy(lowerFirst(event.metadata.name))).filter(field =>
-            field.enableAuditTracking &&
-            field.type === 'relation' &&
-            field.relationType !== 'one-to-many'
-        );
-        if (entityId && auditRelationFields.length > 0) {
-            const relations: any = {};
-            auditRelationFields.forEach(field => relations[field.name] = true);
-            const relationBefore = event.entity?.[AUDIT_BEFORE_SNAPSHOT] ?? null;
-            const relationAfter = await event.manager.getRepository(event.metadata.target as any).findOne({
-                where: { id: entityId } as any,
-                relations: relations as any,
-            });
+        const auditResult = await this.prepareManyToManyAuditUpdateSnapshot(event, entityId, updatedColumnNames);
 
-            if (relationBefore) {
-                before = relationBefore;
-            }
-            if (relationAfter) {
-                after = relationAfter;
-            }
-
-            if (relationBefore && relationAfter) {
-                auditRelationFields.forEach(field => {
-                    if (field.relationType === 'many-to-one') {
-                        const oldId = relationBefore[field.name]?.id ?? null;
-                        const newId = relationAfter[field.name]?.id ?? null;
-                        if (oldId !== newId && !updatedColumnNames.includes(field.name)) {
-                            updatedColumnNames.push(field.name);
-                        }
-                    }
-                    else if (field.relationType === 'many-to-many') {
-                        const oldIds = Array.isArray(relationBefore[field.name])
-                            ? relationBefore[field.name].map(item => item.id).sort()
-                            : [];
-
-                        const newIds = Array.isArray(relationAfter[field.name])
-                            ? relationAfter[field.name].map(item => item.id).sort()
-                            : [];
-                        if ((oldIds.length !== newIds.length || JSON.stringify(oldIds) !== JSON.stringify(newIds)) && !updatedColumnNames.includes(field.name)) {
-                            updatedColumnNames.push(field.name);
-                        }
-                    }
-                });
-            }
+        if (auditResult) {
+            before = auditResult.before;
+            after = auditResult.after;
         }
 
         this.enqueue(event, {
@@ -121,6 +82,56 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         });
     }
 
+    /**
+     * Resolves before/after snapshots for audit-enabled many-to-many relations
+     * and updates changed relation field names for audit tracking.
+     */
+    private async prepareManyToManyAuditUpdateSnapshot(event: UpdateEvent<any>, entityId: number | null, updatedColumnNames: string[]): Promise<{ before: any; after: any } | null> {
+
+        const auditRelationFields = (await this.modelMetadataHelperService.loadFieldHierarchy(lowerFirst(event.metadata.name))).filter(field =>
+            field.enableAuditTracking &&
+            field.type === 'relation' &&
+            field.relationType !== 'one-to-many'
+        );
+
+        if (!entityId || auditRelationFields.length === 0) {
+            return null;
+        }
+
+        const relations: Record<string, boolean> = {};
+
+        auditRelationFields.forEach(field => {
+            relations[field.name] = true;
+        });
+
+        const relationBefore = event.entity?.[AUDIT_BEFORE_SNAPSHOT] ?? null;
+
+        const relationAfter = await event.manager.getRepository(event.metadata.target as any).findOne({
+            where: { id: entityId } as any,
+            relations: relations as any,
+        });
+
+        if (relationBefore && relationAfter) {
+            auditRelationFields.forEach(field => {
+                const oldIds = Array.isArray(relationBefore[field.name])
+                    ? relationBefore[field.name].map(item => item.id).sort()
+                    : [];
+
+                const newIds = Array.isArray(relationAfter[field.name])
+                    ? relationAfter[field.name].map(item => item.id).sort()
+                    : [];
+
+                if ((oldIds.length !== newIds.length || JSON.stringify(oldIds) !== JSON.stringify(newIds))
+                    && !updatedColumnNames.includes(field.name)) {
+                    updatedColumnNames.push(field.name);
+                }
+            });
+        }
+        return {
+            before: relationBefore ?? event.databaseEntity ?? null,
+            after: relationAfter ?? event.entity ?? null,
+        };
+    }
     async afterRemove(event: RemoveEvent<any>) {
         if (!this.shouldTrackAudit(event.metadata)) return;
         this.enqueue(event, {
