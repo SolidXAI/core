@@ -1,6 +1,6 @@
 {
   "name": "@solidxai/core",
-  "version": "0.1.11-beta.1",
+  "version": "0.1.11-beta.2",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
