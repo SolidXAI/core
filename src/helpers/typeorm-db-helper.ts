@@ -45,6 +45,20 @@ const solidCoreDbType: DatasourceType =
         ? (process.env.SOLID_CORE_DB_TYPE as DatasourceType)
         : DatasourceType.postgres;
 
+export function buildCastToText(driver: string, colExpr: string): string {
+    switch (driver) {
+        case DatasourceType.postgres:
+            return `${colExpr}::text`;
+        case DatasourceType.mssql:
+            return `CAST(${colExpr} AS NVARCHAR(MAX))`;
+        case DatasourceType.mysql:
+        case DatasourceType.mariadb:
+            return `CAST(${colExpr} AS CHAR)`;
+        default:
+            return `CAST(${colExpr} AS TEXT)`;
+    }
+}
+
 export function getColumnType(solidType: string): ColumnOptions {
     switch (solidType) {
         case "longText":

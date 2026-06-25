@@ -5,6 +5,7 @@ import { ActiveUserData } from "src/interfaces/active-user-data.interface";
 import { SolidRegistry } from "src/helpers/solid-registry";
 import { BadRequestException, Logger } from "@nestjs/common";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
+import { buildCastToText } from "src/helpers/typeorm-db-helper";
 
 export enum FilterCombinator {
     AND = '$and',
@@ -101,15 +102,19 @@ export class CrudHelperService {
             case '$eq':
                 qb.andWhere(`${colExpr} = :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$eq });
                 break;
-            case '$eqi':
-                qb.andWhere(`LOWER(${colExpr}) = :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$eqi.toLowerCase() });
+            case '$eqi': {
+                const castExpr = buildCastToText(this.getDriver(qb), colExpr);
+                qb.andWhere(`LOWER(${castExpr}) = :${uniqueFieldAlias}`, { [uniqueFieldAlias]: String(normalizedPrimaryOperatorObj.$eqi).toLowerCase() });
                 break;
+            }
             case '$ne':
                 qb.andWhere(`${colExpr} != :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$ne });
                 break;
-            case '$nei':
-                qb.andWhere(`LOWER(${colExpr}) != :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$nei.toLowerCase() });
+            case '$nei': {
+                const castExpr = buildCastToText(this.getDriver(qb), colExpr);
+                qb.andWhere(`LOWER(${castExpr}) != :${uniqueFieldAlias}`, { [uniqueFieldAlias]: String(normalizedPrimaryOperatorObj.$nei).toLowerCase() });
                 break;
+            }
             case '$gt':
                 qb.andWhere(`${colExpr} > :${uniqueFieldAlias}`, { [uniqueFieldAlias]: normalizedPrimaryOperatorObj.$gt });
                 break;
@@ -134,12 +139,16 @@ export class CrudHelperService {
             case '$notContains':
                 qb.andWhere(`${colExpr} NOT LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$notContains}%` });
                 break;
-            case '$containsi':
-                qb.andWhere(`LOWER(${colExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$containsi.toLowerCase()}%` });
+            case '$containsi': {
+                const castExpr = buildCastToText(this.getDriver(qb), colExpr);
+                qb.andWhere(`LOWER(${castExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${String(normalizedPrimaryOperatorObj.$containsi).toLowerCase()}%` });
                 break;
-            case '$notContainsi':
-                qb.andWhere(`LOWER(${colExpr}) NOT LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$notContainsi.toLowerCase()}%` });
+            }
+            case '$notContainsi': {
+                const castExpr = buildCastToText(this.getDriver(qb), colExpr);
+                qb.andWhere(`LOWER(${castExpr}) NOT LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${String(normalizedPrimaryOperatorObj.$notContainsi).toLowerCase()}%` });
                 break;
+            }
             case '$null':
                 qb.andWhere(`${colExpr} IS NULL`);
                 break;
@@ -152,15 +161,19 @@ export class CrudHelperService {
             case '$startsWith':
                 qb.andWhere(`${colExpr} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `${normalizedPrimaryOperatorObj.$startsWith}%` });
                 break;
-            case '$startsWithi':
-                qb.andWhere(`LOWER(${colExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `${normalizedPrimaryOperatorObj.$startsWithi.toLowerCase()}%` });
+            case '$startsWithi': {
+                const castExpr = buildCastToText(this.getDriver(qb), colExpr);
+                qb.andWhere(`LOWER(${castExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `${String(normalizedPrimaryOperatorObj.$startsWithi).toLowerCase()}%` });
                 break;
+            }
             case '$endsWith':
                 qb.andWhere(`${colExpr} LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$endsWith}` });
                 break;
-            case '$endsWithi':
-                qb.andWhere(`LOWER(${colExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${normalizedPrimaryOperatorObj.$endsWithi.toLowerCase()}` });
+            case '$endsWithi': {
+                const castExpr = buildCastToText(this.getDriver(qb), colExpr);
+                qb.andWhere(`LOWER(${castExpr}) LIKE :${uniqueFieldAlias}`, { [uniqueFieldAlias]: `%${String(normalizedPrimaryOperatorObj.$endsWithi).toLowerCase()}` });
                 break;
+            }
             default:
                 throw new Error(`Operator ${operator} is not supported`);
         }
