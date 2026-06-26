@@ -440,21 +440,52 @@ export class DatasourceIntrospectionService {
     }
 
     async runMigration(moduleId: number, datasourceName: string) {
-        await this.loadModule(moduleId);
+        const module = await this.loadModule(moduleId);
         const datasource = this.requireDatasource(datasourceName);
-        const output = await this.commandService.executeCommandWithArgs({
+        const cwd = path.join(process.cwd(), "..");
+        const outputs: string[] = [];
+
+        const migrationOutput = await this.commandService.executeCommandWithArgs({
             command: "npx",
-            args: ["@solidxai/solidctl@latest", "migration", "-d", datasource.name, "run"],
-            cwd: path.join(process.cwd(), ".."),
+            args: ["-y", "@solidxai/solidctl@latest", "migration", "-d", datasource.name, "run"],
+            cwd,
         });
+        outputs.push([
+            `npx @solidxai/solidctl@latest migration -d ${datasource.name} run`,
+            migrationOutput,
+        ].filter(Boolean).join("\n"));
+
+        const buildOutput = await this.commandService.executeCommandWithArgs({
+            command: "npx",
+            args: ["-y", "@solidxai/solidctl@latest", "build"],
+            cwd,
+        });
+        outputs.push([
+            "npx @solidxai/solidctl@latest build",
+            buildOutput,
+        ].filter(Boolean).join("\n"));
+
+        const seedOutput = await this.commandService.executeCommandWithArgs({
+            command: "npx",
+            args: ["-y", "@solidxai/solidctl@latest", "seed", "--modules-to-seed", module.name],
+            cwd,
+        });
+        outputs.push([
+            `npx @solidxai/solidctl@latest seed --modules-to-seed ${module.name}`,
+            seedOutput,
+        ].filter(Boolean).join("\n"));
 
         return {
             data: {
                 moduleId,
                 datasource: datasource.name,
-                output,
-                command: `npx @solidxai/solidctl@latest migration -d ${datasource.name} run`,
-                message: `Migrations ran successfully for datasource "${datasource.name}".`,
+                output: outputs.join("\n\n"),
+                command: [
+                    `npx @solidxai/solidctl@latest migration -d ${datasource.name} run`,
+                    "npx @solidxai/solidctl@latest build",
+                    `npx @solidxai/solidctl@latest seed --modules-to-seed ${module.name}`,
+                ].join("\n"),
+                message: `Migration, build, and seed completed successfully for datasource "${datasource.name}".`,
             },
         };
     }
