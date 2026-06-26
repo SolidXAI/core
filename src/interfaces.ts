@@ -351,6 +351,14 @@ export interface PushNotificationQueuePayload {
 export interface PushNotificationPayload {
   title: string;
   body: string;
+
+  media?: {
+    imageUrl?: string;
+    iconUrl?: string;
+  };
+
+  deepLink?: string;
+
   data?: Record<string, string>;
 }
 
