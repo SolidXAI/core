@@ -1077,15 +1077,24 @@
           {
             "name": "type",
             "displayName": "Type",
-            "type": "shortText",
+            "type": "selectionStatic",
             "ormType": "varchar",
+            "length": 256,
             "required": true,
             "unique": false,
             "index": true,
             "private": false,
             "encrypt": false,
             "columnName": "type",
-            "isSystem": true
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "list:List",
+              "form:Form",
+              "tree:Tree",
+              "kanban:Kanban",
+              "card:Card"
+            ]
           },
           {
             "name": "context",
@@ -1584,7 +1593,7 @@
             "name": "roles",
             "displayName": "Roles",
             "type": "relation",
-            "required": true,
+            "required": false,
             "unique": false,
             "index": true,
             "private": false,
