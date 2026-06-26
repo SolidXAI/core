@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, ParseIntPipe, Post, Query } from "@nestjs/common";
 import { ApiBearerAuth, ApiTags } from "@nestjs/swagger";
-import { DatasourceIntrospectionMappingDto } from "../dtos/datasource-introspection-mapping.dto";
+import { DatasourceIntrospectionMappingDto, DatasourceIntrospectionRunMigrationDto } from "../dtos/datasource-introspection-mapping.dto";
 import { DatasourceIntrospectionService } from "../services/datasource-introspection.service";
 
 @Controller("datasource-introspection")
@@ -54,5 +54,31 @@ export class DatasourceIntrospectionController {
         @Body() mappingDto: DatasourceIntrospectionMappingDto,
     ) {
         return this.datasourceIntrospectionService.applyMapping(moduleId, mappingDto);
+    }
+
+    @ApiBearerAuth("jwt")
+    @Post("modules/:moduleId/create-migration-artifacts")
+    createMigrationArtifacts(
+        @Param("moduleId", ParseIntPipe) moduleId: number,
+        @Body() mappingDto: DatasourceIntrospectionMappingDto,
+    ) {
+        return this.datasourceIntrospectionService.createMigrationArtifacts(moduleId, mappingDto);
+    }
+
+    @ApiBearerAuth("jwt")
+    @Post("modules/:moduleId/generate-code")
+    generateCode(
+        @Param("moduleId", ParseIntPipe) moduleId: number,
+    ) {
+        return this.datasourceIntrospectionService.generateCode(moduleId);
+    }
+
+    @ApiBearerAuth("jwt")
+    @Post("modules/:moduleId/run-migration")
+    runMigration(
+        @Param("moduleId", ParseIntPipe) moduleId: number,
+        @Body() payload: DatasourceIntrospectionRunMigrationDto,
+    ) {
+        return this.datasourceIntrospectionService.runMigration(moduleId, payload.datasource);
     }
 }

@@ -24,6 +24,10 @@ export class DatasourceIntrospectionMappingColumnDto {
 
     @ApiProperty()
     @IsString()
+    displayName: string;
+
+    @ApiProperty()
+    @IsString()
     dataType: string;
 
     @ApiProperty({ enum: SolidFieldType })
@@ -179,4 +183,10 @@ export class DatasourceIntrospectionMappingDto {
     @IsOptional()
     @IsObject()
     reviewedModel?: Record<string, any>;
+}
+
+export class DatasourceIntrospectionRunMigrationDto {
+    @ApiProperty()
+    @IsString()
+    datasource: string;
 }
