@@ -95,6 +95,11 @@ export class DatasourceIntrospectionMappingColumnDto {
     @ApiProperty()
     @IsBoolean()
     isPrimaryKey: boolean;
+
+    @ApiProperty({ required: false, type: "object", additionalProperties: true })
+    @IsOptional()
+    @IsObject()
+    fieldConfig?: Record<string, any>;
 }
 
 export class DatasourceIntrospectionMappingDto {

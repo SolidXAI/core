@@ -157,7 +157,7 @@ const DATASOURCE_TYPE_FAMILY_ALIASES: Record<DatasourceTypeFamily, string[]> = {
     int: ["int", "integer", "smallint", "tinyint"],
     numeric: ["numeric"],
     decimal: ["decimal", "money", "smallmoney"],
-    float: ["float", "double", "real"],
+    float: ["float", "double", "double precision", "real", "float4", "float8"],
     date: ["date"],
     time: ["time", "time without time zone", "time with time zone"],
     datetime: ["datetime", "datetime2", "smalldatetime", "timestamp", "timestamp without time zone"],
@@ -818,6 +818,14 @@ export class DatasourceIntrospectionService {
         return rest;
     }
 
+    private sanitizeConfiguredFieldPayload(fieldConfig: Record<string, any> | undefined) {
+        if (!fieldConfig || typeof fieldConfig !== "object" || Array.isArray(fieldConfig)) {
+            return {};
+        }
+
+        return this.sanitizeExistingFieldPayload(fieldConfig);
+    }
+
     private normalizeReviewedMetadataModel(
         reviewedModel: Record<string, any> | undefined,
         mappingDto: DatasourceIntrospectionMappingDto,
@@ -972,34 +980,39 @@ export class DatasourceIntrospectionService {
         existingField?: any,
     ) {
         const preserved = existingField ? this.sanitizeExistingFieldPayload(existingField) : {};
+        const configured = this.sanitizeConfiguredFieldPayload(column.fieldConfig);
+        const merged = {
+            ...preserved,
+            ...configured,
+        };
         const maxLength =
             column.characterMaximumLength && ["shortText", "longText"].includes(column.solidFieldType)
                 ? column.characterMaximumLength
-                : preserved.max;
+                : merged.max;
 
         return {
-            ...preserved,
+            ...merged,
             ...(column.fieldId ? { id: column.fieldId } : {}),
             name: column.fieldName,
-            displayName: column.displayName?.trim() || preserved.displayName || startCase(column.fieldName),
-            description: preserved.description ?? "",
+            displayName: column.displayName?.trim() || merged.displayName || startCase(column.fieldName),
+            description: merged.description ?? "",
             type: column.solidFieldType,
             ormType: column.ormType,
-            length: preserved.length ?? column.characterMaximumLength ?? undefined,
-            defaultValue: preserved.defaultValue ?? column.defaultValue ?? undefined,
-            required: preserved.required ?? (!column.nullable || column.isPrimaryKey),
-            unique: preserved.unique ?? false,
-            encrypt: preserved.encrypt ?? false,
-            index: preserved.index ?? false,
+            length: merged.length ?? column.characterMaximumLength ?? undefined,
+            defaultValue: merged.defaultValue ?? column.defaultValue ?? undefined,
+            required: merged.required ?? (!column.nullable || column.isPrimaryKey),
+            unique: merged.unique ?? false,
+            encrypt: merged.encrypt ?? false,
+            index: merged.index ?? false,
             max: maxLength ?? undefined,
-            min: preserved.min ?? undefined,
-            private: preserved.private ?? false,
-            isSystem: preserved.isSystem ?? false,
+            min: merged.min ?? undefined,
+            private: merged.private ?? false,
+            isSystem: merged.isSystem ?? false,
             isMarkedForRemoval: false,
             columnName: column.columnName,
             isUserKey: mappingDto.userKeyField === column.fieldName,
-            enableAuditTracking: preserved.enableAuditTracking ?? mappingDto.enableAuditTracking,
-            isMultiSelect: preserved.isMultiSelect ?? false,
+            enableAuditTracking: merged.enableAuditTracking ?? mappingDto.enableAuditTracking,
+            isMultiSelect: merged.isMultiSelect ?? false,
             isPrimaryKey: column.isPrimaryKey,
         };
     }
