@@ -13,6 +13,7 @@ import {
 import { MulterModule } from "@nestjs/platform-express";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { RemoveFieldsCommand } from "./commands/remove-fields.command";
+import { MigrateRemovedFieldsCommand } from "./commands/migrate-removed-fields.command";
 import { FieldMetadataController } from "./controllers/field-metadata.controller";
 import { DashboardController } from "./controllers/dashboard.controller";
 import { MediaStorageProviderMetadataController } from "./controllers/media-storage-provider-metadata.controller";
@@ -47,6 +48,7 @@ import { ListOfValuesService } from "./services/list-of-values.service";
 import { MediaStorageProviderMetadataService } from "./services/media-storage-provider-metadata.service";
 import { MediaService } from "./services/media.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
+import { RemovedFieldMigrationService } from "./services/removed-field-migration.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
 import { ModulePackageService } from "./services/module-package.service";
@@ -545,6 +547,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     FieldMetadataService,
     DashboardRuntimeService,
     RemoveFieldsCommand,
+    MigrateRemovedFieldsCommand,
     RefreshModelCommand,
     RefreshModuleCommand,
     InfoCommand,
@@ -791,6 +794,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     UserViewMetadataRepository,
     ModelMetadataRepository,
     ModuleMetadataRepository,
+    RemovedFieldMigrationService,
     ActionMetadataRepository,
     MediaStorageProviderMetadataRepository,
     FixturesService,

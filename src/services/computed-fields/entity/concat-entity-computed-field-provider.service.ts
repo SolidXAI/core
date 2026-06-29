@@ -1,20 +1,28 @@
+import dayjs from "dayjs";
 import { Injectable } from "@nestjs/common";
 import { kebabCase, get } from "lodash";
 import { ComputedFieldProvider } from "src/decorators/computed-field-provider.decorator";
 import { CommonEntity } from "src/entities/common.entity";
 import { ComputedFieldMetadata } from "src/helpers/solid-registry";
 import { IEntityPreComputeFieldProvider } from "src/interfaces";
+import { SettingService } from "src/services/setting.service";
+import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
 
 export interface ConcatComputedFieldContext {
     separator: string; // The separator to use between concatenated values
     fields: string[]; // The fields to concatenate
     slugify?: boolean; // Optional: if true, slugify each field value before concatenation
+    dateFormat?: string; // Optional: format to use for Date values. Defaults to the configured dateFormat setting
 }
 
 @ComputedFieldProvider()
 @Injectable()
 export class ConcatEntityComputedFieldProvider<T extends CommonEntity> implements IEntityPreComputeFieldProvider<T, ConcatComputedFieldContext> {
+
+    constructor(
+        private readonly settingService: SettingService,
+    ) { }
 
     name(): string {
         return "ConcatEntityComputedFieldProvider";
@@ -29,6 +37,8 @@ export class ConcatEntityComputedFieldProvider<T extends CommonEntity> implement
         const separator = computedFieldValueProviderCtxt.separator ?? ' ';
         const fields: string[] = computedFieldValueProviderCtxt.fields ?? [];
         const slugify = computedFieldValueProviderCtxt.slugify ?? false;
+        const dateFormat = computedFieldValueProviderCtxt.dateFormat
+            ?? this.settingService.getConfigValue<SolidCoreSetting>("dateFormat");
 
         const parts: string[] = [];
 
@@ -37,6 +47,10 @@ export class ConcatEntityComputedFieldProvider<T extends CommonEntity> implement
 
             // normalize to string (skip null/undefined)
             if (val == null) continue;
+
+            if (val instanceof Date) {
+                val = dayjs(val).format(dateFormat);
+            }
 
             if (typeof val !== 'string') {
                 val = String(val);
