@@ -30,6 +30,7 @@ export interface TestContext {
   reporter: Reporter;
   specRegistry?: SpecRegistry;
   testData?: Record<string, Record<string, any>>;
+  env?: Record<string, string>;
   options?: {
     printApiLogs?: boolean;
   };

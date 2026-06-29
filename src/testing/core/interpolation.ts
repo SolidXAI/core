@@ -100,7 +100,7 @@ function resolveToken(token: string, ctx: TestContext): TokenResolution {
     if (!name) {
       throw new Error('Invalid interpolation token: "env:"');
     }
-    const value = process.env[name];
+    const value = ctx.env?.[name] ?? process.env[name];
     if (value === undefined) {
       throw new Error(`Missing env var for token: "${token}"`);
     }
