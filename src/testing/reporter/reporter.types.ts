@@ -5,6 +5,8 @@ import type { SolidTestSpecResult } from "../contracts/test-spec.types";
 export interface Reporter {
   onRunStart?(args: {
     total: number;
+    startedAt: string;
+    scenarioIds: string[];
   }): void;
   onScenarioStart(scenario: ScenarioSpec): void;
   onScenarioEnd(

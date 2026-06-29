@@ -1,5 +1,5 @@
 import type { Reporter } from "../reporter/reporter.types";
-import type { TestingMetadata, TestingDataRecord } from "../contracts/testing-metadata.types";
+import type { TestingMetadata, TestingDataRecord, ScenarioSpec } from "../contracts/testing-metadata.types";
 import type { ApiAdapterOptions } from "../adapters/api/api.types";
 import type { PlaywrightAdapterOptions } from "../adapters/ui/ui.types";
 import { ApiAdapter } from "../adapters/api/api-adapter";
@@ -31,7 +31,11 @@ function buildTestDataIndex(data?: TestingDataRecord[]): Record<string, Record<s
 }
 
 export type RunnerOptions = {
-  metadata: TestingMetadata;
+  metadata?: TestingMetadata;
+  scenarios?: ScenarioSpec[];
+  data?: TestingDataRecord[];
+  externalRunId?: string;
+  env?: Record<string, string>;
   scenarioIds?: string[];
   includeTags?: string[];
   skipScenarioIds?: string[];
@@ -53,29 +57,35 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   registerTestSteps(registry);
 
   const engine = new TestingEngine(registry, opts.defaults);
-  const scenarios = filterScenarios(opts.metadata.testing.scenarios, {
+  const allScenarios = opts.scenarios ?? opts.metadata?.testing?.scenarios ?? [];
+  const scenarios = filterScenarios(allScenarios, {
     scenarioIds: opts.scenarioIds,
     includeTags: opts.includeTags,
     skipScenarioIds: opts.skipScenarioIds,
   });
 
   const specRegistry = new SpecRegistry();
-  const testData = buildTestDataIndex(opts.metadata.testing?.data);
+  const testData = buildTestDataIndex(opts.data ?? opts.metadata?.testing?.data);
   if (opts.specs) {
     opts.specs(specRegistry);
   }
 
   const resources = new SimpleResourceStore();
-  const reporter = opts.reporter ?? new ConsoleReporter();
-  reporter.onRunStart?.({ total: scenarios.length });
+  const reporter: Reporter = opts.reporter ?? new ConsoleReporter();
   const api = new ApiAdapter(opts.api);
   const { PlaywrightAdapter } = await import("../adapters/ui/playwright-adapter");
   const ui = new PlaywrightAdapter(opts.ui);
-  const ctxBase = { resources, reporter, api, ui, specRegistry, testData, options: opts.options };
+  const ctxBase = { resources, reporter, api, ui, specRegistry, testData, env: opts.env, options: opts.options };
   const uiStarted = { value: false };
   let passed = 0;
   let failed = 0;
   let runError: unknown;
+
+  reporter.onRunStart?.({
+    total: scenarios.length,
+    startedAt: new Date(startedAt).toISOString(),
+    scenarioIds: scenarios.map((s) => s.id),
+  });
 
   try {
     for (const scenario of scenarios) {
