@@ -35,6 +35,7 @@ import { ActionMetadata } from '../entities/action-metadata.entity';
 import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 import { RoleMetadata } from '../entities/role-metadata.entity';
+import { User } from '../entities/user.entity';
 import { MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL } from '../dtos/create-menu-item-metadata.dto';
 import { DEFAULT_SA_PASSWORD } from '../dtos/create-user.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
@@ -46,6 +47,7 @@ import { PermissionMetadataRepository } from 'src/repository/permission-metadata
 import { SavedFiltersRepository } from 'src/repository/saved-filters.repository';
 import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
 import { SettingRepository } from 'src/repository/setting.repository';
+import { UserApiKeyRepository } from 'src/repository/user-api-key.repository';
 import { CreateModelSequenceDto } from 'src/dtos/create-model-sequence.dto';
 import { ModelSequenceRepository } from 'src/repository/model-sequence.repository';
 import { LocaleRepository } from 'src/repository/locale.repository';
@@ -107,6 +109,7 @@ export class ModuleMetadataSeederService {
         private readonly emailTemplateService: EmailTemplateService,
         private readonly smsTemplateService: SmsTemplateService,
         private readonly listOfValuesService: ListOfValuesService,
+        private readonly userApiKeyRepository: UserApiKeyRepository,
         // @InjectRepository(PermissionMetadata)
         // private readonly permissionRepo: Repository<PermissionMetadata>,
         private readonly permissionRepo: PermissionMetadataRepository,
@@ -1367,13 +1370,13 @@ export class ModuleMetadataSeederService {
 
         for (let l = 0; l < users.length; l++) {
             const user: SignUpDto = users[l];
+            const isSystemAdminUser = user.username === 'sa';
             let exisitingUser = await this.timeOperation('user-find-by-username', () => this.userService.findOneByUsername(user.username), {
                 component: 'users',
                 serviceCall: 'userService.findOneByUsername',
                 details: `username=${user.username}`,
             });
             if (!exisitingUser) {
-                const isSystemAdminUser = user.username === 'sa';
                 if (user.username === 'sa') {
                     user.password = DEFAULT_SA_PASSWORD;
                 }
@@ -1400,6 +1403,9 @@ export class ModuleMetadataSeederService {
                 }
                 this.logger.log(`Newly created user ${user.username}`);
             }
+            if (isSystemAdminUser) {
+                await this.ensureSystemAdminApiKey(exisitingUser);
+            }
             //FIXME: Create the user roles assignment logic here.
             // now add Roles to user.
             // for (let m = 0; m < roles.length; m++) {
@@ -1407,6 +1413,52 @@ export class ModuleMetadataSeederService {
             //     await this.userService.addRoleToUser(user.email, role.name);
             // }
         }
+    }
+
+    private async ensureSystemAdminApiKey(existingUser: { id: number; username: string; isAllowedToGenerateApiKeys?: boolean }) {
+        if (!existingUser?.id) {
+            return;
+        }
+
+        if (!existingUser.isAllowedToGenerateApiKeys) {
+            await this.timeOperation('enable-sa-api-key-generation', () => this.userApiKeyRepository.manager.update(User, { id: existingUser.id }, {
+                isAllowedToGenerateApiKeys: true,
+            }), {
+                component: 'users',
+                serviceCall: 'userRepository.update',
+                details: `username=${existingUser.username}`,
+            });
+            existingUser.isAllowedToGenerateApiKeys = true;
+        }
+
+        const existingDefaultKey = await this.timeOperation('find-sa-default-api-key', () => this.userApiKeyRepository.findOne({
+            where: {
+                user: { id: existingUser.id },
+                name: 'Default SA API Key',
+            },
+            relations: {
+                user: true,
+            },
+        }), {
+            component: 'users',
+            serviceCall: 'userApiKeyRepository.findOne',
+            details: `username=${existingUser.username}`,
+        });
+
+        if (existingDefaultKey) {
+            return;
+        }
+
+        await this.timeOperation('seed-sa-api-key', async () => {
+            const generatedApiKey = await this.apiKeyService.generate(existingUser.id, {
+                name: 'Default SA API Key',
+            });
+            await this.writeSolidxAdminApiKeyConfig(generatedApiKey);
+        }, {
+            component: 'users',
+            serviceCall: 'apiKeyService.generate',
+            details: `username=${existingUser.username}`,
+        });
     }
 
     private async writeSolidxAdminApiKeyConfig(generatedApiKey: {
