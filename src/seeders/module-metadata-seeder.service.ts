@@ -1,5 +1,6 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,6 +21,7 @@ import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
 import { getDynamicModuleNamesBasedOnMetadata } from '../helpers/module.helper';
 import { SolidRegistry } from '../helpers/solid-registry';
 import { ActionMetadataService } from '../services/action-metadata.service';
+import { ApiKeyService } from '../services/api-key.service';
 import { FieldMetadataService } from '../services/field-metadata.service';
 import { MediaStorageProviderMetadataService } from '../services/media-storage-provider-metadata.service';
 import { ModelMetadataService } from '../services/model-metadata.service';
@@ -99,6 +101,7 @@ export class ModuleMetadataSeederService {
         private readonly roleService: RoleMetadataService,
         private readonly userService: UserService,
         private readonly authenticationService: AuthenticationService,
+        private readonly apiKeyService: ApiKeyService,
         private readonly solidActionService: ActionMetadataService,
         private readonly solidViewService: ViewMetadataService,
         private readonly emailTemplateService: EmailTemplateService,
@@ -1370,8 +1373,12 @@ export class ModuleMetadataSeederService {
                 details: `username=${user.username}`,
             });
             if (!exisitingUser) {
+                const isSystemAdminUser = user.username === 'sa';
                 if (user.username === 'sa') {
                     user.password = DEFAULT_SA_PASSWORD;
+                }
+                if (isSystemAdminUser) {
+                    (user as SignUpDto & { isAllowedToGenerateApiKeys?: boolean }).isAllowedToGenerateApiKeys = true;
                 }
 
                 exisitingUser = await this.timeOperation('user-sign-up', () => this.authenticationService.signUp(user), {
@@ -1379,6 +1386,18 @@ export class ModuleMetadataSeederService {
                     serviceCall: 'authenticationService.signUp',
                     details: `username=${user.username}`,
                 });
+                if (isSystemAdminUser) {
+                    await this.timeOperation('seed-sa-api-key', async () => {
+                        const generatedApiKey = await this.apiKeyService.generate(exisitingUser.id, {
+                            name: 'Default SA API Key',
+                        });
+                        await this.writeSolidxAdminApiKeyConfig(generatedApiKey);
+                    }, {
+                        component: 'users',
+                        serviceCall: 'apiKeyService.generate',
+                        details: `username=${user.username}`,
+                    });
+                }
                 this.logger.log(`Newly created user ${user.username}`);
             }
             //FIXME: Create the user roles assignment logic here.
@@ -1388,6 +1407,53 @@ export class ModuleMetadataSeederService {
             //     await this.userService.addRoleToUser(user.email, role.name);
             // }
         }
+    }
+
+    private async writeSolidxAdminApiKeyConfig(generatedApiKey: {
+        apiKey: string;
+        record: {
+            id: number;
+            name: string;
+            maskedKey: string;
+            isActive: boolean;
+            expiresAt: Date | null;
+            createdAt?: Date;
+            updatedAt?: Date;
+        };
+    }) {
+        const solidxDir = path.join(os.homedir(), '.solidx');
+        const configPath = path.join(solidxDir, 'mcp.json');
+        await fs.promises.mkdir(solidxDir, { recursive: true });
+
+        let existingConfig: Record<string, any> = {};
+
+        if (fs.existsSync(configPath)) {
+            const rawConfig = await fs.promises.readFile(configPath, 'utf8');
+            if (rawConfig.trim()) {
+                const parsedConfig = JSON.parse(rawConfig);
+                if (parsedConfig && typeof parsedConfig === 'object' && !Array.isArray(parsedConfig)) {
+                    existingConfig = parsedConfig;
+                } else {
+                    this.logger.warn(`Expected ${configPath} to contain a JSON object. Overwriting with a new object.`);
+                }
+            }
+        }
+
+        const nextConfig = {
+            ...existingConfig,
+            solidxAdminApiKey: {
+                id: generatedApiKey.record.id,
+                name: generatedApiKey.record.name,
+                apiKey: generatedApiKey.apiKey,
+                maskedKey: generatedApiKey.record.maskedKey,
+                isActive: generatedApiKey.record.isActive,
+                expiresAt: generatedApiKey.record.expiresAt,
+                createdAt: generatedApiKey.record.createdAt,
+                updatedAt: generatedApiKey.record.updatedAt,
+            },
+        };
+
+        await fs.promises.writeFile(configPath, `${JSON.stringify(nextConfig, null, 2)}\n`, 'utf8');
     }
 
     // OK
