@@ -119,7 +119,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       key: "rowClickAction",
       value: "edit",
       level: SettingLevel.SystemAdminEditable,
-      label: "Form Mode On Row Click",
+      label: "Row Click Action",
       group: "app-settings",
       sortOrder: 45,
       controlType: "selectionStatic",
