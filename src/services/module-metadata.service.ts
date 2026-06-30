@@ -26,6 +26,7 @@ import {
 } from '../helpers/schematic.service';
 import { CommandService } from '../helpers/command.service';
 import { SolidRegistry } from '../helpers/solid-registry';
+import { startNodemonHeartbeat } from '../helpers/nodemon-heartbeat';
 import { CodeGenerationOptions, ModuleMetadataConfiguration } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
 import { ModelMetadataService } from './model-metadata.service';
@@ -534,6 +535,40 @@ export class ModuleMetadataService {
   @DisallowInProduction()
   async generateCodeViaCtl(moduleId: number): Promise<string> {
     const module = await this.findOne(moduleId);
+    const isEmbedded = process.env.DEFAULT_DATABASE_DRIVER === 'pglite';
+
+    // When using an embedded PGlite database, the single-connection limit means
+    // a spawned `solid refresh-module` subprocess cannot get its own DB connection
+    // while the API server is already holding it. Fall back to in-process code
+    // generation (which reuses the existing connection) and only spawn solidctl
+    // for the UI module scaffold (which does not need a database connection).
+    if (isEmbedded) {
+      this.logger.log('Embedded database detected — generating API code in-process');
+      // Prevent nodemon from restarting the server while schematics write files.
+      // The heartbeat touches a watched file every 1.5 s (nodemon delay is 2 s),
+      // keeping the delay from expiring during DB queries between schematic runs.
+      const heartbeat = startNodemonHeartbeat(path.join(process.cwd(), 'src'));
+      try {
+        const apiOutput = await this.generateCode({
+          moduleUserKey: module.name,
+          dryRun: false,
+        });
+        let uiOutput = '';
+        try {
+          uiOutput = await this.commandService.executeCommandWithArgs({
+            command: 'npx',
+            args: ['@solidxai/solidctl@latest', 'generate', 'ui-module', `--name=${module.name}`],
+            cwd: path.join(process.cwd(), '..'),
+          });
+        } catch (error) {
+          this.logger.warn('UI module scaffold failed (solidctl may be outdated); API code was generated successfully.');
+        }
+        return `${apiOutput}\n${uiOutput}`;
+      } finally {
+        heartbeat.stop();
+      }
+    }
+
     return this.commandService.executeCommandWithArgs({
       command: 'npx',
       args: ['@solidxai/solidctl@latest', 'generate', 'module', `--name=${module.name}`],

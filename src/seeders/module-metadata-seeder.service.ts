@@ -1,5 +1,6 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
 import * as fs from 'fs';
+import * as os from 'os';
 import * as path from 'path';
 import { v4 as uuidv4 } from 'uuid';
 
@@ -20,6 +21,7 @@ import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
 import { getDynamicModuleNamesBasedOnMetadata } from '../helpers/module.helper';
 import { SolidRegistry } from '../helpers/solid-registry';
 import { ActionMetadataService } from '../services/action-metadata.service';
+import { ApiKeyService } from '../services/api-key.service';
 import { FieldMetadataService } from '../services/field-metadata.service';
 import { MediaStorageProviderMetadataService } from '../services/media-storage-provider-metadata.service';
 import { ModelMetadataService } from '../services/model-metadata.service';
@@ -33,6 +35,7 @@ import { ActionMetadata } from '../entities/action-metadata.entity';
 import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 import { RoleMetadata } from '../entities/role-metadata.entity';
+import { User } from '../entities/user.entity';
 import { MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL } from '../dtos/create-menu-item-metadata.dto';
 import { DEFAULT_SA_PASSWORD } from '../dtos/create-user.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
@@ -44,6 +47,7 @@ import { PermissionMetadataRepository } from 'src/repository/permission-metadata
 import { SavedFiltersRepository } from 'src/repository/saved-filters.repository';
 import { ScheduledJobRepository } from 'src/repository/scheduled-job.repository';
 import { SettingRepository } from 'src/repository/setting.repository';
+import { UserApiKeyRepository } from 'src/repository/user-api-key.repository';
 import { CreateModelSequenceDto } from 'src/dtos/create-model-sequence.dto';
 import { ModelSequenceRepository } from 'src/repository/model-sequence.repository';
 import { LocaleRepository } from 'src/repository/locale.repository';
@@ -99,11 +103,13 @@ export class ModuleMetadataSeederService {
         private readonly roleService: RoleMetadataService,
         private readonly userService: UserService,
         private readonly authenticationService: AuthenticationService,
+        private readonly apiKeyService: ApiKeyService,
         private readonly solidActionService: ActionMetadataService,
         private readonly solidViewService: ViewMetadataService,
         private readonly emailTemplateService: EmailTemplateService,
         private readonly smsTemplateService: SmsTemplateService,
         private readonly listOfValuesService: ListOfValuesService,
+        private readonly userApiKeyRepository: UserApiKeyRepository,
         // @InjectRepository(PermissionMetadata)
         // private readonly permissionRepo: Repository<PermissionMetadata>,
         private readonly permissionRepo: PermissionMetadataRepository,
@@ -1364,6 +1370,7 @@ export class ModuleMetadataSeederService {
 
         for (let l = 0; l < users.length; l++) {
             const user: SignUpDto = users[l];
+            const isSystemAdminUser = user.username === 'sa';
             let exisitingUser = await this.timeOperation('user-find-by-username', () => this.userService.findOneByUsername(user.username), {
                 component: 'users',
                 serviceCall: 'userService.findOneByUsername',
@@ -1373,13 +1380,31 @@ export class ModuleMetadataSeederService {
                 if (user.username === 'sa') {
                     user.password = DEFAULT_SA_PASSWORD;
                 }
+                if (isSystemAdminUser) {
+                    (user as SignUpDto & { isAllowedToGenerateApiKeys?: boolean }).isAllowedToGenerateApiKeys = true;
+                }
 
                 exisitingUser = await this.timeOperation('user-sign-up', () => this.authenticationService.signUp(user), {
                     component: 'users',
                     serviceCall: 'authenticationService.signUp',
                     details: `username=${user.username}`,
                 });
+                if (isSystemAdminUser) {
+                    await this.timeOperation('seed-sa-api-key', async () => {
+                        const generatedApiKey = await this.apiKeyService.generate(exisitingUser.id, {
+                            name: 'Default SA API Key',
+                        });
+                        await this.writeSolidxAdminApiKeyConfig(generatedApiKey);
+                    }, {
+                        component: 'users',
+                        serviceCall: 'apiKeyService.generate',
+                        details: `username=${user.username}`,
+                    });
+                }
                 this.logger.log(`Newly created user ${user.username}`);
+            }
+            if (isSystemAdminUser) {
+                await this.ensureSystemAdminApiKey(exisitingUser);
             }
             //FIXME: Create the user roles assignment logic here.
             // now add Roles to user.
@@ -1388,6 +1413,99 @@ export class ModuleMetadataSeederService {
             //     await this.userService.addRoleToUser(user.email, role.name);
             // }
         }
+    }
+
+    private async ensureSystemAdminApiKey(existingUser: { id: number; username: string; isAllowedToGenerateApiKeys?: boolean }) {
+        if (!existingUser?.id) {
+            return;
+        }
+
+        if (!existingUser.isAllowedToGenerateApiKeys) {
+            await this.timeOperation('enable-sa-api-key-generation', () => this.userApiKeyRepository.manager.update(User, { id: existingUser.id }, {
+                isAllowedToGenerateApiKeys: true,
+            }), {
+                component: 'users',
+                serviceCall: 'userRepository.update',
+                details: `username=${existingUser.username}`,
+            });
+            existingUser.isAllowedToGenerateApiKeys = true;
+        }
+
+        const existingDefaultKey = await this.timeOperation('find-sa-default-api-key', () => this.userApiKeyRepository.findOne({
+            where: {
+                user: { id: existingUser.id },
+                name: 'Default SA API Key',
+            },
+            relations: {
+                user: true,
+            },
+        }), {
+            component: 'users',
+            serviceCall: 'userApiKeyRepository.findOne',
+            details: `username=${existingUser.username}`,
+        });
+
+        if (existingDefaultKey) {
+            return;
+        }
+
+        await this.timeOperation('seed-sa-api-key', async () => {
+            const generatedApiKey = await this.apiKeyService.generate(existingUser.id, {
+                name: 'Default SA API Key',
+            });
+            await this.writeSolidxAdminApiKeyConfig(generatedApiKey);
+        }, {
+            component: 'users',
+            serviceCall: 'apiKeyService.generate',
+            details: `username=${existingUser.username}`,
+        });
+    }
+
+    private async writeSolidxAdminApiKeyConfig(generatedApiKey: {
+        apiKey: string;
+        record: {
+            id: number;
+            name: string;
+            maskedKey: string;
+            isActive: boolean;
+            expiresAt: Date | null;
+            createdAt?: Date;
+            updatedAt?: Date;
+        };
+    }) {
+        const solidxDir = path.join(os.homedir(), '.solidx');
+        const configPath = path.join(solidxDir, 'mcp.json');
+        await fs.promises.mkdir(solidxDir, { recursive: true });
+
+        let existingConfig: Record<string, any> = {};
+
+        if (fs.existsSync(configPath)) {
+            const rawConfig = await fs.promises.readFile(configPath, 'utf8');
+            if (rawConfig.trim()) {
+                const parsedConfig = JSON.parse(rawConfig);
+                if (parsedConfig && typeof parsedConfig === 'object' && !Array.isArray(parsedConfig)) {
+                    existingConfig = parsedConfig;
+                } else {
+                    this.logger.warn(`Expected ${configPath} to contain a JSON object. Overwriting with a new object.`);
+                }
+            }
+        }
+
+        const nextConfig = {
+            ...existingConfig,
+            solidxAdminApiKey: {
+                id: generatedApiKey.record.id,
+                name: generatedApiKey.record.name,
+                apiKey: generatedApiKey.apiKey,
+                maskedKey: generatedApiKey.record.maskedKey,
+                isActive: generatedApiKey.record.isActive,
+                expiresAt: generatedApiKey.record.expiresAt,
+                createdAt: generatedApiKey.record.createdAt,
+                updatedAt: generatedApiKey.record.updatedAt,
+            },
+        };
+
+        await fs.promises.writeFile(configPath, `${JSON.stringify(nextConfig, null, 2)}\n`, 'utf8');
     }
 
     // OK
