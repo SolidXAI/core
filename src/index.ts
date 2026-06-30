@@ -171,6 +171,7 @@ export * from './guards/permissions.guard'
 export * from './guards/roles.guard'
 
 export * from './helpers/command.service'
+export * from './helpers/nodemon-heartbeat'
 export * from './helpers/module.helper'
 export * from './helpers/schematic.service'
 export * from './helpers/solid-registry'
