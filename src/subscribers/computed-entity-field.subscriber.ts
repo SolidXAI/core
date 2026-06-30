@@ -148,10 +148,11 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
     }
 
     private enqueueComputedFieldEvaluationJob(computedField: ComputedFieldMetadata<any>, databaseEntity: any, eventContext?: any) {
+        const { manager: _manager, ...serializableEventContext } = computedField.eventContext ?? {};
         const payload = {
             ...computedField,
+            eventContext: serializableEventContext,
             databaseEntity,
-            // eventContext,
         };
         this.publisherFactory.publish({ payload }, 'ComputedFieldEvaluationPublisher')
         // this.computedFieldPublisher.publish({
