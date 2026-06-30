@@ -116,7 +116,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
-      key: "formModeOnRowClick",
+      key: "rowClickAction",
       value: "edit",
       level: SettingLevel.SystemAdminEditable,
       label: "Form Mode On Row Click",
