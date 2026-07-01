@@ -4,6 +4,7 @@ import * as fs from 'fs/promises'; // Use the Promise-based version of fs for as
 import { SOLID_CORE_MODULE_NAME } from 'src/constants';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
+import { isEmbeddedDb } from "src/helpers/environment.helper";
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
 import { SecurityRuleRepository } from 'src/repository/security-rule.repository';
 import { DataSource, EntitySubscriberInterface, InsertEvent, UpdateEvent } from "typeorm";
@@ -40,7 +41,11 @@ export class SecurityRuleSubscriber implements EntitySubscriberInterface<Securit
             return;
         }
 
-        const modelMetadataRepo = event.manager.getRepository(ModelMetadata);
+        // On embedded PGlite, use the transaction's connection to avoid a
+        // second pooled connection mid-transaction. On regular Postgres, use
+        // the default DataSource (original behaviour).
+        const mgr = isEmbeddedDb() ? event.manager : this.dataSource;
+        const modelMetadataRepo = mgr.getRepository(ModelMetadata);
         const populatedModelMetadata = await modelMetadataRepo.findOne({
             where: {
                 id: modelMetadata.id
@@ -67,12 +72,12 @@ export class SecurityRuleSubscriber implements EntitySubscriberInterface<Securit
 
         if (metaData.securityRules) {
             const securityRuleIndex = metaData.securityRules?.findIndex((ruleFromFile: { name: string }) => ruleFromFile.name === securityRule.name);
-            const { id, roleId, modelMetadataId, ...requiredDto } = await this.securityRuleRepo.toDto(securityRule)
+            const { id, roleId, modelMetadataId, ...requiredDto } = await this.securityRuleRepo.toDto(securityRule, isEmbeddedDb() ? event.manager : undefined)
             metaData.securityRules[securityRuleIndex] = { ...requiredDto, securityRuleConfig: JSON.parse(securityRule.securityRuleConfig) }
         }
         else {
             const securityRules = []
-            const { id, roleId, modelMetadataId, ...requiredDto } = await this.securityRuleRepo.toDto(securityRule)
+            const { id, roleId, modelMetadataId, ...requiredDto } = await this.securityRuleRepo.toDto(securityRule, isEmbeddedDb() ? event.manager : undefined)
             securityRules.push({ ...requiredDto, securityRuleConfig: JSON.parse(securityRule.securityRuleConfig) })
             metaData.securityRules = securityRules
         }

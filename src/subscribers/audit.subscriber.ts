@@ -4,6 +4,7 @@ import { lowerFirst } from 'src/helpers/string.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { DataSource, EntityMetadata, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
 import { AuditQueuePayload } from 'src/interfaces';
+import { isEmbeddedDb } from 'src/helpers/environment.helper';
 import { RequestContextService } from 'src/services/request-context.service';
 import { PublisherFactory } from 'src/services/queues/publisher-factory.service';
 const AUDIT_BEFORE_SNAPSHOT = '__auditBeforeSnapshot';
@@ -88,7 +89,10 @@ export class AuditSubscriber implements EntitySubscriberInterface {
      */
     private async prepareManyToManyAuditUpdateSnapshot(event: UpdateEvent<any>, entityId: number | null, updatedColumnNames: string[]): Promise<{ before: any; after: any } | null> {
 
-        const auditRelationFields = (await this.modelMetadataHelperService.loadFieldHierarchy(lowerFirst(event.metadata.name))).filter(field =>
+        // On embedded PGlite, pass the transaction's manager so the query runs
+        // on the active connection. On regular Postgres, use the default DataSource.
+        const mgr = isEmbeddedDb() ? event.manager : this.dataSource;
+        const auditRelationFields = (await this.modelMetadataHelperService.loadFieldHierarchy(lowerFirst(event.metadata.name), isEmbeddedDb() ? event.manager : undefined)).filter(field =>
             field.enableAuditTracking &&
             field.type === 'relation' &&
             field.relationType !== 'one-to-many'
@@ -106,7 +110,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
         const relationBefore = event.entity?.[AUDIT_BEFORE_SNAPSHOT] ?? null;
 
-        const relationAfter = await event.manager.getRepository(event.metadata.target as any).findOne({
+        const relationAfter = await mgr.getRepository(event.metadata.target as any).findOne({
             where: { id: entityId } as any,
             relations: relations as any,
         });
@@ -151,7 +155,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
         if (batch.length === 0) return;
 
-        if (this.shouldDeferAuditPublish()) {
+        if (isEmbeddedDb()) {
             setImmediate(() => void this.publishAuditBatch(batch));
             return;
         }
@@ -162,12 +166,6 @@ export class AuditSubscriber implements EntitySubscriberInterface {
     afterTransactionRollback(event: { queryRunner: any }) {
         // Drop buffered payloads; the write never happened.
         this.perTxn.delete(event.queryRunner);
-    }
-
-    private shouldDeferAuditPublish(): boolean {
-        const driver = (process.env.DEFAULT_DATABASE_DRIVER ?? '').toLowerCase();
-        const poolMax = Number(process.env.DEFAULT_DATABASE_POOL_MAX ?? 20);
-        return driver === 'pglite' && Number.isFinite(poolMax) && poolMax <= 1;
     }
 
     private async publishAuditBatch(batch: AuditQueuePayload[]) {

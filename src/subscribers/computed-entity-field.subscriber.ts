@@ -1,8 +1,7 @@
 import { camelCase } from 'lodash';
-import { Delete } from "@aws-sdk/client-s3";
 import { forwardRef, Inject, Injectable, InternalServerErrorException, Logger, Scope } from "@nestjs/common";
-import { model } from "mongoose";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
+import { isEmbeddedDb } from "src/helpers/environment.helper";
 import { ComputedFieldMetadata, SolidRegistry, TypeOrmEventContext } from "src/helpers/solid-registry";
 import { IEntityPreComputeFieldProvider } from "src/interfaces";
 import { PublisherFactory } from "src/services/queues/publisher-factory.service";
@@ -14,19 +13,22 @@ export interface ComputedFieldEvaluationPayload extends ComputedFieldMetadata {
 }
 
 @Injectable({ scope: Scope.TRANSIENT })
-// @EventSubscriber()
 export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface {
     private readonly logger = new Logger(this.constructor.name);
     private dataSource: DataSource;
+
+    // Per-transaction buffer for post-event evaluation jobs. Entries are
+    // flushed in afterTransactionCommit so the publish (which uses the
+    // default DataSource) never races the in-flight transaction's connection.
+    // On PGlite (pool size 1), the flush is deferred via setImmediate to
+    // ensure the transaction's connection has been released first.
+    private perTxn = new WeakMap<any, { computedField: ComputedFieldMetadata<any>; databaseEntity: any }[]>();
+
     constructor(
-        // @InjectDataSource()
-        // private readonly dataSource: DataSource,
         private readonly solidRegistry: SolidRegistry,
         @Inject(forwardRef(() => PublisherFactory))
         private readonly publisherFactory: PublisherFactory<ComputedFieldEvaluationPayload>
-        // private readonly computedFieldPublisher: ComputedFieldEvaluationPublisherDatabase,
     ) {
-        // this.dataSource.subscribers.push(this);
     }
 
     bindToDataSource(dataSource: DataSource) {
@@ -43,30 +45,95 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
     async beforeUpdate(event: UpdateEvent<any>): Promise<any> {
         const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'beforeUpdate');
-        // await this.handleComputedFieldEvaluation(event.databaseEntity, ComputedFieldTriggerOperation.beforeUpdate, modelName, eventContext);
         await this.handleComputedFieldEvaluation(event.entity, ComputedFieldTriggerOperation.beforeUpdate, modelName, eventContext);
     }
 
     afterInsert(event: InsertEvent<any>) {
         const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'afterInsert');
-        this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterInsert, modelName, eventContext);
+        this.handlePostEventJobs(event, event.entity, ComputedFieldTriggerOperation.afterInsert, modelName, eventContext);
     }
 
     afterUpdate(event: UpdateEvent<any>) {
         const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? event.databaseEntity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'afterUpdate');
-        // this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterUpdate, modelName, eventContext);
-        this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterUpdate, modelName, eventContext);
+        this.handlePostEventJobs(event, event.entity, ComputedFieldTriggerOperation.afterUpdate, modelName, eventContext);
     }
 
     afterRemove(event: RemoveEvent<any>) {
         const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? event.databaseEntity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'afterRemove');
-        this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterRemove, modelName, eventContext);
+        this.handlePostEventJobs(event, event.databaseEntity, ComputedFieldTriggerOperation.afterRemove, modelName, eventContext);
     }
 
     //FIXME: Need to add support for beforeRemove, beforeSoftRemove, afterSoftRemove, beforeRecover, afterRecover
+
+    // --------- post-event dispatch (pglite vs non-pglite) ----------
+
+    /**
+     * On embedded PGlite (pool size 1): buffer payloads on the queryRunner and
+     * flush in afterTransactionCommit (deferred via setImmediate) so the publish
+     * never tries to get a second connection while the transaction is active.
+     *
+     * On regular Postgres: fire-and-forget publish immediately (original behaviour),
+     * since the pool has spare connections.
+     */
+    private handlePostEventJobs(
+        event: InsertEvent<any> | UpdateEvent<any> | RemoveEvent<any>,
+        entity: any,
+        currentOperation: ComputedFieldTriggerOperation,
+        modelName: string,
+        eventContext?: TypeOrmEventContext,
+    ) {
+        if (!entity) return;
+
+        const computedFieldsTobeEvaluated = this.getComputedFieldsForEvaluation(
+            this.solidRegistry.getComputedFieldMetadata(),
+            currentOperation,
+            modelName
+        );
+        if (computedFieldsTobeEvaluated.length === 0) return;
+
+        if (isEmbeddedDb()) {
+            const qr = event.queryRunner;
+            const arr = this.perTxn.get(qr) ?? [];
+            for (const computedField of computedFieldsTobeEvaluated) {
+                arr.push({
+                    computedField: this.attachContext(computedField, eventContext),
+                    databaseEntity: entity,
+                });
+            }
+            this.perTxn.set(qr, arr);
+        } else {
+            for (const computedField of computedFieldsTobeEvaluated) {
+                this.enqueueComputedFieldEvaluationJob(
+                    this.attachContext(computedField, eventContext),
+                    entity,
+                );
+            }
+        }
+    }
+
+    // --------- transaction lifecycle (pglite only) ----------
+    async afterTransactionCommit(event: { queryRunner: any }) {
+        const batch = this.perTxn.get(event.queryRunner) ?? [];
+        this.perTxn.delete(event.queryRunner);
+        if (batch.length === 0) return;
+
+        // Deferred via setImmediate so the transaction's connection is released
+        // back to the (size-1) pool before the publish tries to acquire it.
+        setImmediate(() => void this.flushBatch(batch));
+    }
+
+    afterTransactionRollback(event: { queryRunner: any }) {
+        this.perTxn.delete(event.queryRunner);
+    }
+
+    private async flushBatch(batch: { computedField: ComputedFieldMetadata<any>; databaseEntity: any }[]) {
+        for (const { computedField, databaseEntity } of batch) {
+            this.enqueueComputedFieldEvaluationJob(computedField, databaseEntity);
+        }
+    }
 
     private async handleComputedFieldEvaluation(entity: any, currentOperation: ComputedFieldTriggerOperation, modelName: string, eventContext?: TypeOrmEventContext): Promise<void> {
         if (!entity) {
@@ -77,24 +144,8 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
             currentOperation,
             modelName
         );
-        //TODO: We can add a feature i.e dependsOn, where we can check if the computed field depends on other computed fields and evaluate them first
         for (const computedField of computedFieldsTobeEvaluated) {
             await this.evaluateComputedField(this.attachContext(computedField, eventContext), entity, currentOperation);
-        }
-    }
-
-    private handleComputedFieldEvaluationJob(entity: any, currentOperation: ComputedFieldTriggerOperation, modelName: string, eventContext?: TypeOrmEventContext) {
-        if (!entity) {
-            return;
-        }
-        const computedFieldsTobeEvaluated = this.getComputedFieldsForEvaluation(
-            this.solidRegistry.getComputedFieldMetadata(),
-            currentOperation,
-            modelName
-        );
-        //TODO: We can add a feature i.e dependsOn, where we can check if the computed field depends on other computed fields and evaluate them first
-        for (const computedField of computedFieldsTobeEvaluated) {
-            this.enqueueComputedFieldEvaluationJob(this.attachContext(computedField, eventContext), entity, eventContext);
         }
     }
 
@@ -147,17 +198,14 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         }
     }
 
-    private enqueueComputedFieldEvaluationJob(computedField: ComputedFieldMetadata<any>, databaseEntity: any, eventContext?: any) {
+    private enqueueComputedFieldEvaluationJob(computedField: ComputedFieldMetadata<any>, databaseEntity: any) {
         const { manager: _manager, ...serializableEventContext } = computedField.eventContext ?? {};
         const payload = {
             ...computedField,
             eventContext: serializableEventContext,
             databaseEntity,
         };
-        this.publisherFactory.publish({ payload }, 'ComputedFieldEvaluationPublisher')
-        // this.computedFieldPublisher.publish({
-        //     payload
-        // });
+        this.publisherFactory.publish({ payload }, 'ComputedFieldEvaluationPublisher');
     }
 
     private attachContext<T extends ComputedFieldMetadata<any>>(computedField: T, eventContext?: any): T {
@@ -176,7 +224,10 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         const base: TypeOrmEventContext = {
             metadataName: event.metadata?.name,
             eventType: eventType,
-            manager: event.manager,
+            // Only pass the transaction's EntityManager for embedded DB (PGlite),
+            // where a second pooled connection mid-transaction would deadlock.
+            // On regular Postgres, providers use their injected EntityManager.
+            ...(isEmbeddedDb() ? { manager: event.manager } : {}),
         };
         if ("entityId" in event && event.entityId) {
             base.entityId = event.entityId;

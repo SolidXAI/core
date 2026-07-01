@@ -3,7 +3,7 @@ import { CreateScheduledJobDto } from "src/dtos/create-scheduled-job.dto";
 import { ModuleMetadata } from "src/entities/module-metadata.entity";
 import { ScheduledJob } from "src/entities/scheduled-job.entity";
 import { RequestContextService } from "src/services/request-context.service";
-import { DataSource } from "typeorm";
+import { DataSource, EntityManager } from "typeorm";
 import { SecurityRuleRepository } from "./security-rule.repository";
 import { SolidBaseRepository } from "./solid-base.repository";
 
@@ -101,19 +101,25 @@ export class ScheduledJobRepository extends SolidBaseRepository<ScheduledJob> {
 
   /**
    * Converts an entity to a plain DTO object.
+   * When manager is provided (e.g. from a TypeORM subscriber event), the
+   * fallback relation load uses it so the query runs on the active
+   * transaction's connection instead of the default DataSource pool.
    */
-  async toDto(scheduledJob: ScheduledJob): Promise<CreateScheduledJobDto> {
+  async toDto(scheduledJob: ScheduledJob, manager?: EntityManager): Promise<CreateScheduledJobDto> {
     let populatedScheduledJob: ScheduledJob = scheduledJob;
     // If the scheduled job does not have the module relation loaded, load it
     if (!scheduledJob.module) {
-        populatedScheduledJob = await this.findOne({
+        const repo = manager
+            ? manager.getRepository(ScheduledJob)
+            : this;
+        populatedScheduledJob = await repo.findOne({
             where: {
                 id: scheduledJob.id,
             },
             relations: {
                 module: true,
             },
-        });
+        }) ?? scheduledJob;
     }
 
     if (!populatedScheduledJob.module) {

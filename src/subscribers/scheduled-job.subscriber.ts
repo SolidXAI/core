@@ -4,6 +4,7 @@ import * as fs from "fs/promises";
 import { CreateScheduledJobDto } from "src/dtos/create-scheduled-job.dto";
 import { ModuleMetadata } from "src/entities/module-metadata.entity";
 import { ScheduledJob } from "src/entities/scheduled-job.entity";
+import { isEmbeddedDb } from "src/helpers/environment.helper";
 import { ModuleMetadataHelperService } from "src/helpers/module-metadata-helper.service";
 import { ScheduledJobRepository } from "src/repository/scheduled-job.repository";
 import {
@@ -83,7 +84,7 @@ export class ScheduledJobSubscriber
       return;
     }
 
-    const moduleMetadataRepo = event.queryRunner.manager.getRepository(ModuleMetadata);
+    const moduleMetadataRepo = (isEmbeddedDb() ? event.queryRunner.manager : this.dataSource).getRepository(ModuleMetadata);
     const populatedModuleMetadata = await moduleMetadataRepo.findOne({
       where: { id: moduleMetadata.id },
     });
@@ -160,7 +161,7 @@ export class ScheduledJobSubscriber
       (job) => job.scheduleName === jobName
     );
     // Insert or update job in metadata
-    const jobDto: CreateScheduledJobDto = await this.scheduledJobRepo.toDto(populatedScheduleJob as ScheduledJob);
+    const jobDto: CreateScheduledJobDto = await this.scheduledJobRepo.toDto(populatedScheduleJob as ScheduledJob, isEmbeddedDb() ? entityManager : undefined);
     // Strip out bookkeeping/runtime fields before persisting to metadata JSON.
     const {
       moduleId,
