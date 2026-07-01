@@ -116,6 +116,20 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
+      key: "rowClickAction",
+      value: "edit",
+      level: SettingLevel.SystemAdminEditable,
+      label: "Row Click Action",
+      group: "app-settings",
+      sortOrder: 45,
+      controlType: "selectionStatic",
+      options: [
+        { label: "Edit", value: "edit" },
+        { label: "View", value: "view" },
+      ],
+    },
+    {
+      moduleName: "solid-core",
       key: "showAuthContent",
       value: false,
       level: SettingLevel.SystemAdminEditable,
