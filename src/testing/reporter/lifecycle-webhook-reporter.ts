@@ -6,6 +6,8 @@ import type {
   ArtifactRef,
   LifecycleEnvelope,
   LifecycleEventType,
+  PrepareEndData,
+  PrepareStartData,
   ScenarioEndData,
   StepResultData,
 } from "./lifecycle-events.types";
@@ -108,6 +110,16 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
     return this.runId;
   }
 
+  /** Emitted when the runner begins the client prepare-hook (before any scenario). */
+  onPrepareStart(data: PrepareStartData): void {
+    this.emit("prepare.start", data);
+  }
+
+  /** Emitted when the client prepare-hook completes (or fails). */
+  onPrepareEnd(data: PrepareEndData): void {
+    this.emit("prepare.end", data);
+  }
+
   onRunStart(args: {
     total: number;
     startedAt: string;
@@ -200,7 +212,9 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
   /** Emit run.end and wait for all queued deliveries to complete. */
   async flushPending(exitCode?: number): Promise<void> {
     this.emit("run.end", {
-      ok: this.failed === 0,
+      // A non-zero exitCode (e.g. a failed prepare-hook before any scenario ran)
+      // must mark the run failed even when failed === 0.
+      ok: this.failed === 0 && (exitCode === undefined || exitCode === 0),
       total: this.total || this.passed + this.failed,
       passed: this.passed,
       failed: this.failed,
