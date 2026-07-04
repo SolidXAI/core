@@ -154,7 +154,7 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
           if (!i.parentMenuItem) {
             return true
           } else {
-            if(i.action.type === 'custom'){
+            if (i.action.type === 'custom') {
               return true;
             }
             return this.crudHelperService.hasReadPermissionOnModel(activeUser, i.action.model.singularName)
@@ -203,6 +203,7 @@ export class MenuItemMetadataService extends CRUDService<MenuItemMetadata> {
           key: rootItem.name.toLowerCase().replace(/\s+/g, '-'),
           icon: rootItem.iconName,
           // iconVariant : rootItem.iconVariant
+          isSystem: (rootItem.action?.model?.isSystem ?? false) || rootItem.module?.name === "solid-core",
         }
         if (children.length > 0) {
           data["children"] = await this.buildMenuTree(children, allMenuItems, activeUser);

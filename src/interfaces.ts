@@ -89,6 +89,7 @@ export interface SettingDefinition<T = any> {
   encrypted?: boolean;
   label?: string;
   description?: string;
+  helpText?: string;
   placeholder?: string;
   group?: string;
   sortOrder?: number;
