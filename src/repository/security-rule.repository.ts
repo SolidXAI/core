@@ -9,7 +9,7 @@ import { SecurityRule } from 'src/entities/security-rule.entity';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { CrudHelperService } from 'src/services/crud-helper.service';
-import { Brackets, DataSource, SelectQueryBuilder } from 'typeorm';
+import { Brackets, DataSource, EntityManager, SelectQueryBuilder } from 'typeorm';
 import { SolidBaseRepository } from './solid-base.repository';
 
 @Injectable()
@@ -84,12 +84,18 @@ export class SecurityRuleRepository extends SolidBaseRepository<SecurityRule> {
         return configString.replace('$activeUserId', activeUser.sub.toString());
     }
 
-    async toDto(securityRule: SecurityRule): Promise<UpdateSecurityRuleDto> {
+    async toDto(securityRule: SecurityRule, manager?: EntityManager): Promise<UpdateSecurityRuleDto> {
         // load the role and model relations for the security rule
         let populatedSecurityRule: SecurityRule = securityRule;
         // If the security rule does not have the role and model relations loaded, load them
         if (!securityRule.role || !securityRule.modelMetadata) {
-            populatedSecurityRule = await this.findOne({
+            // When a manager is provided (e.g. from a TypeORM subscriber event),
+            // use it so the query runs on the active transaction's connection
+            // instead of trying to acquire a second connection from the pool.
+            const repo = manager
+                ? manager.getRepository(SecurityRule)
+                : this;
+            populatedSecurityRule = await repo.findOne({
                 where: {
                     id: securityRule.id,
                 },
@@ -97,7 +103,7 @@ export class SecurityRuleRepository extends SolidBaseRepository<SecurityRule> {
                     role: true,
                     modelMetadata: true,
                 },
-            });
+            }) ?? securityRule;
         }
 
         return {

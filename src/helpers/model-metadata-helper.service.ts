@@ -4,8 +4,10 @@ import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
 import { _ } from "lodash";
 import { LEGACY_TABLE_FIELDS_PREFIX } from "src/entities/legacy-common.entity-with-existing-id.entity";
 import { LegacyTableType } from "src/enums/legacy-table-type.enum";
+import { ModelMetadata } from "src/entities/model-metadata.entity";
 import { ModelMetadataRepository } from "src/repository/model-metadata.repository";
 import { SolidRegistry } from "./solid-registry";
+import { EntityManager } from "typeorm";
 
 @Injectable()
 export class ModelMetadataHelperService {
@@ -143,8 +145,11 @@ export class ModelMetadataHelperService {
         return systemFieldsMetadata;
     }
 
-    async loadFieldHierarchy(modelName: any) {
-        const model = await this.modelMetadataRepo.findOne({
+    async loadFieldHierarchy(modelName: any, manager?: EntityManager) {
+        const repo = manager
+            ? manager.getRepository(ModelMetadata)
+            : this.modelMetadataRepo;
+        const model = await repo.findOne({
             where: {
                 singularName: modelName,
             },

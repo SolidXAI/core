@@ -27,6 +27,7 @@ import { PermissionMetadata } from '../entities/permission-metadata.entity';
 import { RoleMetadata } from '../entities/role-metadata.entity';
 import { ViewMetadata } from '../entities/view-metadata.entity';
 import { CommandService } from '../helpers/command.service';
+import { isEmbeddedDb } from '../helpers/environment.helper';
 import { startNodemonHeartbeat } from '../helpers/nodemon-heartbeat';
 import {
   REFRESH_MODEL_COMMAND,
@@ -968,7 +969,7 @@ export class ModelMetadataService {
   @DisallowInProduction()
   async generateCodeViaCtl(modelId: number): Promise<string> {
     const model = await this.findOne(modelId);
-    const isEmbedded = process.env.DEFAULT_DATABASE_DRIVER === 'pglite';
+    const isEmbedded = isEmbeddedDb();
 
     // When using an embedded PGlite database, the single-connection limit means
     // a spawned `solid refresh-model` subprocess cannot get its own DB connection

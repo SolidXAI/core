@@ -1473,7 +1473,8 @@ export class ModuleMetadataSeederService {
             updatedAt?: Date;
         };
     }) {
-        const consumingProjectName = path.basename(process.cwd());
+        const consumingProjectRoot = path.resolve(process.cwd(), '..');
+        const consumingProjectName = path.basename(consumingProjectRoot);
         const solidxDir = path.join(os.homedir(), '.solidx', consumingProjectName);
         const configPath = path.join(solidxDir, 'mcp.json');
         await fs.promises.mkdir(solidxDir, { recursive: true });

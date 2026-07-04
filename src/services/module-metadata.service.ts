@@ -26,6 +26,7 @@ import {
 } from '../helpers/schematic.service';
 import { CommandService } from '../helpers/command.service';
 import { SolidRegistry } from '../helpers/solid-registry';
+import { isEmbeddedDb } from '../helpers/environment.helper';
 import { startNodemonHeartbeat } from '../helpers/nodemon-heartbeat';
 import { CodeGenerationOptions, ModuleMetadataConfiguration } from '../interfaces';
 import { CrudHelperService } from './crud-helper.service';
@@ -535,7 +536,7 @@ export class ModuleMetadataService {
   @DisallowInProduction()
   async generateCodeViaCtl(moduleId: number): Promise<string> {
     const module = await this.findOne(moduleId);
-    const isEmbedded = process.env.DEFAULT_DATABASE_DRIVER === 'pglite';
+    const isEmbedded = isEmbeddedDb();
 
     // When using an embedded PGlite database, the single-connection limit means
     // a spawned `solid refresh-module` subprocess cannot get its own DB connection

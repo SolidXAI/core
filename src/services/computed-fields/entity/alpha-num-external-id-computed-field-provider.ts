@@ -2,6 +2,7 @@ import { Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ComputedFieldProvider } from 'src/decorators/computed-field-provider.decorator';
 import { CommonEntity } from 'src/entities/common.entity';
+import { isEmbeddedDb } from 'src/helpers/environment.helper';
 import { ComputedFieldMetadata } from 'src/helpers/solid-registry';
 import { IEntityPreComputeFieldProvider } from 'src/interfaces';
 import { EntityManager } from 'typeorm';
@@ -45,10 +46,10 @@ export class AlphaNumExternalIdComputationProvider<T extends CommonEntity> imple
       }
     }
 
-    // Use the originating transaction's EntityManager so the uniqueness check runs on the
-    // active connection. Falls back to the injected manager only when no event context is
-    // available (e.g. direct invocation outside a TypeORM lifecycle event).
-    const manager = eventContext?.manager ?? this.entityManager;
+    // On embedded PGlite (pool size 1), use the originating transaction's EntityManager
+    // so the uniqueness check runs on the active connection. On regular Postgres, use the
+    // injected EntityManager (original behaviour).
+    const manager = isEmbeddedDb() ? (eventContext?.manager ?? this.entityManager) : this.entityManager;
 
     const uniqueCode = await this.generateUniqueExternalId(manager, resolvedPrefix, codeLength, computedFieldMetadata.fieldName, entityName);
     const finalExternalId = resolvedPrefix ? `${resolvedPrefix}-${uniqueCode}` : uniqueCode;
