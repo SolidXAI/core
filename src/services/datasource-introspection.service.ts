@@ -405,10 +405,7 @@ export class DatasourceIntrospectionService {
             throw new BadRequestException("Persist the model mapping first so the generated entity can be registered before creating migration artifacts.");
         }
 
-        if (plan.migration.willGenerate && plan.migration.content && plan.migration.filePath) {
-            await fs.mkdir(path.dirname(plan.migration.filePath), { recursive: true });
-            await fs.writeFile(plan.migration.filePath, plan.migration.content, "utf8");
-        }
+        const migrationWritten = await this.writeMigrationFile(plan.migration);
 
         const datasourceFile = await this.syncTypeormDatasourceFile(
             module.name,
@@ -422,7 +419,7 @@ export class DatasourceIntrospectionService {
                 operation: plan.operation,
                 migration: {
                     ...plan.migration,
-                    written: Boolean(plan.migration.willGenerate && plan.migration.filePath),
+                    written: migrationWritten,
                 },
                 datasourceFile,
                 summary: plan.summary,
@@ -1916,6 +1913,22 @@ export class DatasourceIntrospectionService {
             entityRegistered: true,
             migrationGlobRegistered: true,
         };
+    }
+
+    private async writeMigrationFile(migration: MappingPreviewRecord["migration"]) {
+        if (!migration.willGenerate || !migration.content || !migration.filePath) {
+            return false;
+        }
+
+        await fs.mkdir(path.dirname(migration.filePath), { recursive: true });
+        await fs.writeFile(migration.filePath, migration.content, "utf8");
+
+        const writtenContent = await fs.readFile(migration.filePath, "utf8").catch(() => null);
+        if (writtenContent !== migration.content) {
+            throw new BadRequestException(`Migration file could not be verified after writing: ${migration.filePath}`);
+        }
+
+        return true;
     }
 
     private renderTypeormDatasourceTemplate(input: {
