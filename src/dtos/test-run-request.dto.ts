@@ -28,24 +28,6 @@ export interface CaptureOptionsInput {
 }
 
 /**
- * Pre-run test-environment preparation. The worker POSTs `hookUrl` (the prepare-hook —
- * Solid's built-in `/test-lifecycle/prepare` or a client's own endpoint) before any
- * scenario, with `{ steps, modules, externalRunId }` and an optional secret header.
- */
-export interface PrepareConfig {
-  /** URL to POST before the run. When absent, no prepare step runs. */
-  hookUrl: string;
-  /** Shared secret sent as `X-Test-Prepare-Secret` (matches the client's SOLID_TEST_LIFECYCLE_SECRET). */
-  secret?: string;
-  /** Steps to run, in order. Default on the hook side: ["reset","seed","load"]. */
-  steps?: string[];
-  /** Restrict seed/load to specific modules (default: all). */
-  modules?: string[];
-  /** Max time to wait for prep before failing the run (ms). Default 120000. */
-  timeoutMs?: number;
-}
-
-/**
  * Body of `POST /test-runs`. Carries the FULL test definition inline (scenarios +
  * optional data/roles/users — the `testing` block minus `specs`), so the runner is
  * location-agnostic and never reads a fixed module/path. `specs` (custom step code)
@@ -118,15 +100,6 @@ export class TestRunRequestDto {
   @IsOptional()
   @IsObject()
   variables?: Record<string, string>;
-
-  /**
-   * Optional pre-run preparation. When `prepare.hookUrl` is set, the worker POSTs it
-   * BEFORE any scenario to reset + seed + load the app's test DB, and fails the run if
-   * prep fails. Omit for apps that self-seed via setup scenarios (2B) or need no prep.
-   */
-  @IsOptional()
-  @IsObject()
-  prepare?: PrepareConfig;
 
   @IsOptional()
   @IsObject()

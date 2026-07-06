@@ -6,8 +6,6 @@ import type { ScenarioType } from "../contracts/testing-metadata.types";
  * only receiving a single final payload (as the legacy WebhookReporter does).
  */
 export type LifecycleEventType =
-  | "prepare.start"
-  | "prepare.end"
   | "run.start"
   | "scenario.start"
   | "scenario.end"
@@ -38,21 +36,6 @@ export interface StepResultData {
   name?: string;
   ok: boolean;
   durationMs: number;
-  error?: string;
-}
-
-/** Emitted when the runner begins calling the client's prepare-hook (Scenario 1/2A). */
-export interface PrepareStartData {
-  hookUrl?: string;
-  steps?: string[];
-  startedAt: string;
-}
-
-/** Emitted when the prepare-hook finishes (or fails). One per-step entry mirrors the hook's response. */
-export interface PrepareEndData {
-  ok: boolean;
-  durationMs: number;
-  steps?: Array<{ name: string; ok: boolean; ms?: number; error?: string }>;
   error?: string;
 }
 

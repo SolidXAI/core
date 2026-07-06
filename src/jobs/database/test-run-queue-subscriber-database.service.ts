@@ -13,7 +13,7 @@ import {
   LifecycleWebhookReporter,
   WebhookPostFn,
 } from '../../testing/reporter/lifecycle-webhook-reporter';
-import { PrepareConfig, TestRunJobPayload } from '../../dtos/test-run-request.dto';
+import { TestRunJobPayload } from '../../dtos/test-run-request.dto';
 
 /**
  * Executes a queued test run on the worker tier (QUEUES_SERVICE_ROLE=subscriber).
@@ -65,11 +65,6 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
 
         let exitCode = 0;
         try {
-            // Scenario 1/2A: prepare the client's test DB BEFORE any scenario. A failed
-            // prepare aborts the run (no scenarios execute) and is surfaced over the webhook.
-            if (p.prepare?.hookUrl) {
-                await this.runPrepare(p.prepare, reporter, p.externalRunId);
-            }
             await runFromMetadata({
                 scenarios: p.scenarios,
                 data: p.data,
@@ -79,7 +74,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 reporter,
                 env: p.variables,
                 api: { baseUrl: p.baseUrl },
-                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true },
+                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture },
                 options: { printApiLogs: p.printApiLogs ?? true },
                 externalRunId: p.externalRunId,
             });
@@ -92,55 +87,5 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
         }
 
         return { runId: p.runId, exitCode };
-    }
-
-    /**
-     * POST the client's prepare-hook and wait for it to bring the test DB to a clean,
-     * seeded state. Emits prepare.start/prepare.end over the lifecycle webhook and
-     * THROWS on failure so the caller aborts the run before any scenario.
-     */
-    private async runPrepare(
-        prepare: PrepareConfig,
-        reporter: LifecycleWebhookReporter,
-        externalRunId?: string,
-    ): Promise<void> {
-        const startedAt = Date.now();
-        reporter.onPrepareStart({
-            hookUrl: prepare.hookUrl,
-            steps: prepare.steps,
-            startedAt: new Date(startedAt).toISOString(),
-        });
-
-        let ok = false;
-        let error: string | undefined;
-        let steps: any;
-        try {
-            const res = await this.httpService.axiosRef.post(
-                prepare.hookUrl,
-                { steps: prepare.steps, modules: prepare.modules, externalRunId },
-                {
-                    headers: {
-                        'Content-Type': 'application/json',
-                        ...(prepare.secret ? { 'X-Test-Prepare-Secret': prepare.secret } : {}),
-                    },
-                    timeout: prepare.timeoutMs ?? 120_000,
-                    validateStatus: () => true,
-                },
-            );
-            const body = res?.data ?? {};
-            steps = body?.steps;
-            ok = res.status >= 200 && res.status < 300 && body?.ok !== false;
-            if (!ok) {
-                error = body?.error ?? `prepare hook returned HTTP ${res.status}`;
-            }
-        } catch (err: any) {
-            ok = false;
-            error = err?.message ?? String(err);
-        }
-
-        reporter.onPrepareEnd({ ok, durationMs: Date.now() - startedAt, steps, error });
-        if (!ok) {
-            throw new Error(`Test environment prepare failed: ${error}`);
-        }
     }
 }
