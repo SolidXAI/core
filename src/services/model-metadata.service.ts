@@ -1,6 +1,7 @@
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
+import { existsSync } from 'fs';
 import * as path from 'path';
 import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
@@ -745,8 +746,70 @@ export class ModelMetadataService {
       }
     }
 
+    await this.cleanupAssociatedTypeormDatasourceFiles(modelEntity, modulePath);
+
     // - | Drop database table | Removes the database table from the DB, this is a very risky step. Best to review all relations to other models etc and then do this manually | Manual (X)
 
+  }
+
+  private resolveSolidApiRoot(): string | null {
+    const cwd = process.cwd();
+    const candidates = [
+      cwd,
+      path.join(cwd, 'solid-api'),
+    ];
+
+    for (const candidate of candidates) {
+      const srcRoot = path.join(candidate, 'src');
+      if (existsSync(srcRoot)) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  private async cleanupAssociatedTypeormDatasourceFiles(modelEntity: ModelMetadata, modulePath?: string | null) {
+    if (!modulePath) {
+      return;
+    }
+
+    const solidApiRoot = this.resolveSolidApiRoot();
+    if (!solidApiRoot) {
+      this.logger.warn(`Unable to locate consuming solid-api workspace while cleaning datasource files for model '${modelEntity.singularName}'`);
+      return;
+    }
+
+    const srcRoot = path.join(solidApiRoot, 'src');
+    const srcEntries = await fs.readdir(srcRoot).catch(() => []);
+    const datasourceFiles = srcEntries
+      .filter((entry) => /^typeorm-.*-datasource\.ts$/.test(entry))
+      .map((entry) => path.join(srcRoot, entry));
+
+    if (datasourceFiles.length === 0) {
+      return;
+    }
+
+    const moduleDirName = path.basename(modulePath);
+    const entityClassName = classify(modelEntity.singularName);
+    const entityImportPath = `./${moduleDirName}/entities/${kebabCase(modelEntity.singularName)}.entity`;
+
+    this.logger.log(`Scanning ${datasourceFiles.length} TypeORM datasource file(s) for model '${modelEntity.singularName}' cleanup`);
+
+    try {
+      this.solidTsMorphService.begin();
+      for (const datasourceFile of datasourceFiles) {
+        this.solidTsMorphService.cleanupTypeormDatasourceEntity(
+          datasourceFile,
+          entityImportPath,
+          entityClassName,
+        );
+      }
+      await this.solidTsMorphService.commit();
+    } catch (error: any) {
+      this.solidTsMorphService.rollback();
+      this.logger.error(`Failed to clean datasource files for model '${modelEntity.singularName}':`, error);
+    }
   }
 
   private async cleanupAssociatedViewsActionsAndMenus(modelId: number) {

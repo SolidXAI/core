@@ -2,7 +2,7 @@
 import { Injectable, Logger } from "@nestjs/common";
 import { join, dirname, normalize, isAbsolute, basename } from "node:path";
 import { existsSync, mkdirSync, readFileSync, writeFileSync } from "node:fs";
-import { Project, Node, ObjectLiteralExpression, ArrayLiteralExpression, QuoteKind, IndentationText } from "ts-morph";
+import { Project, Node, ObjectLiteralExpression, ArrayLiteralExpression, QuoteKind, IndentationText, SyntaxKind } from "ts-morph";
 import { MethodDeclarationStructure, StructureKind } from "ts-morph";
 
 type Bucket = "imports" | "providers" | "exports";
@@ -466,6 +466,66 @@ export class SolidTsMorphService {
         this.dirtySourceFiles.add(abs);
         this.logger.log(`Staged import in ${this.rel(abs)}: ${importLine}`);
         return { staged: true, overwritten: false, skipped: false };
+    }
+
+    cleanupTypeormDatasourceEntity(
+        filePath: string,
+        entityImportPath: string,
+        entityClassName: string,
+    ): { staged: boolean; skipped: boolean; removedImport: boolean; removedEntity: boolean } {
+        const abs = this.resolveRepoPath(filePath);
+        if (!existsSync(abs)) {
+            this.logger.warn(`cleanupTypeormDatasourceEntity: file not found at ${filePath}, skipping.`);
+            return { staged: false, skipped: true, removedImport: false, removedEntity: false };
+        }
+
+        const existing = this.project.getSourceFile(abs);
+        const sourceFile = existing
+            ? existing
+            : this.project.createSourceFile(abs, readFileSync(abs, "utf8"), { overwrite: true });
+
+        let removedImport = false;
+        let removedEntity = false;
+
+        const importDeclaration = sourceFile.getImportDeclarations().find((declaration) =>
+            declaration.getModuleSpecifierValue().replace(/\\/g, "/") === entityImportPath.replace(/\\/g, "/"),
+        );
+
+        if (importDeclaration) {
+            const namedImport = importDeclaration.getNamedImports().find((named) => named.getName() === entityClassName);
+            if (namedImport) {
+                namedImport.remove();
+                removedImport = true;
+            }
+
+            if (
+                importDeclaration.getNamedImports().length === 0 &&
+                !importDeclaration.getDefaultImport() &&
+                !importDeclaration.getNamespaceImport()
+            ) {
+                importDeclaration.remove();
+            }
+        }
+
+        const entitiesDeclaration = sourceFile.getVariableDeclaration("entities");
+        const entitiesArray = entitiesDeclaration?.getInitializerIfKind(SyntaxKind.ArrayLiteralExpression);
+        if (entitiesArray) {
+            const elements = entitiesArray.getElements();
+            for (let i = elements.length - 1; i >= 0; i--) {
+                if (elements[i].getText().replace(/\s+/g, "") === entityClassName) {
+                    entitiesArray.removeElement(i);
+                    removedEntity = true;
+                }
+            }
+        }
+
+        if (!removedImport && !removedEntity) {
+            return { staged: false, skipped: true, removedImport, removedEntity };
+        }
+
+        this.dirtySourceFiles.add(abs);
+        this.logger.log(`Staged datasource cleanup in ${this.rel(abs)} for entity ${entityClassName}`);
+        return { staged: true, skipped: false, removedImport, removedEntity };
     }
 
 
