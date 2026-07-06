@@ -43,6 +43,10 @@ type TableInventoryRecord = {
     suggestedUserKeyField: string;
     columnCount: number;
     physicalColumnCount: number;
+    hasPrimaryKey: boolean;
+    primaryKeyColumnCount: number;
+    primaryKeyColumnNames: string[];
+    mappingBlockedReason: string | null;
 };
 
 type TableDetailColumnRecord = {
@@ -504,6 +508,8 @@ export class DatasourceIntrospectionService {
         if (!tableRecord) {
             throw new NotFoundException(`Table "${mappingDto.tableName}" was not found on datasource "${datasource.name}".`);
         }
+        const tableColumns = inventory.columnsByKey.get(tableKey) ?? [];
+        this.validateTablePrimaryKeyForMapping(tableRecord, tableColumns, mappingDto);
 
         const existingModel = mappingDto.mapped && mappingDto.modelId
             ? await this.modelMetadataRepository.findOne({
@@ -521,14 +527,14 @@ export class DatasourceIntrospectionService {
             throw new NotFoundException(`Mapped model "${mappingDto.modelId}" was not found.`);
         }
 
-        const reviewedModel = this.normalizeReviewedMetadataModel(mappingDto.reviewedModel, mappingDto);
+        const reviewedModel = this.normalizeReviewedMetadataModel(mappingDto.reviewedModel, mappingDto, tableColumns);
         const modelPayload = reviewedModel
             ? this.buildModelPayloadFromReviewedModel(moduleId, mappingDto, existingModel, reviewedModel)
             : this.buildModelPayload(moduleId, mappingDto, existingModel);
         const metadataJson = reviewedModel
             ? await this.buildMetadataJsonPreviewFromReviewedModel(module.name, reviewedModel)
             : await this.buildMetadataJsonPreview(module.name, mappingDto, existingModel);
-        const migration = await this.buildMigrationPreview(module.name, datasource, mappingDto, inventory.columnsByKey.get(tableKey) ?? []);
+        const migration = await this.buildMigrationPreview(module.name, datasource, mappingDto, tableColumns);
         const includedColumnNames = mappingDto.columns
             .filter((column) => !column.handledBySuperclass && column.include)
             .map((column) => column.columnName);
@@ -609,6 +615,11 @@ export class DatasourceIntrospectionService {
         existingModel: ModelMetadata | null,
         reviewedModel: ReviewedMetadataModel,
     ): CreateModelMetadataDto | UpdateModelMetaDataDto {
+        const resolvedUserKeyFieldName = this.resolveReviewedUserKeyFieldName(
+            reviewedModel.fields,
+            reviewedModel.userKeyFieldUserKey,
+            mappingDto.userKeyField,
+        );
         const systemFieldPayloads = existingModel
             ? existingModel.fields
                 .filter((field) => field.isSystem)
@@ -620,7 +631,7 @@ export class DatasourceIntrospectionService {
             return {
                 ...field,
                 ...(matchedExistingField?.id ? { id: matchedExistingField.id } : {}),
-                isUserKey: field.name === reviewedModel.userKeyFieldUserKey,
+                isUserKey: field.name === resolvedUserKeyFieldName,
                 isSystem: field.isSystem ?? false,
             };
         });
@@ -654,6 +665,11 @@ export class DatasourceIntrospectionService {
     ) {
         const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(moduleName);
         const previewFields = await this.buildMetadataPreviewFields(mappingDto, existingModel);
+        const resolvedUserKeyFieldName = this.resolveReviewedUserKeyFieldName(
+            previewFields,
+            mappingDto.userKeyField,
+            mappingDto.userKeyField,
+        ) ?? mappingDto.userKeyField;
 
         return {
             filePath,
@@ -665,7 +681,7 @@ export class DatasourceIntrospectionService {
                 dataSource: mappingDto.dataSource,
                 dataSourceType: mappingDto.dataSourceType,
                 tableName: mappingDto.tableName,
-                userKeyFieldUserKey: mappingDto.userKeyField,
+                userKeyFieldUserKey: resolvedUserKeyFieldName,
                 isChild: false,
                 legacyTableType: mappingDto.legacyTableType,
                 parentModelUserKey: "",
@@ -733,10 +749,6 @@ export class DatasourceIntrospectionService {
 
         const serialized = Array.from(finalFields.values())
             .filter((field) => !field.isSystem)
-            .map((field) => ({
-                ...field,
-                isUserKey: field.name === mappingDto.userKeyField,
-            }))
             .sort((left, right) => {
                 const leftOrder = typeof left.id === "number" ? left.id : Number.MAX_SAFE_INTEGER;
                 const rightOrder = typeof right.id === "number" ? right.id : Number.MAX_SAFE_INTEGER;
@@ -750,6 +762,16 @@ export class DatasourceIntrospectionService {
         const previewFields: Record<string, any>[] = [];
         for (const field of serialized) {
             previewFields.push(await this.fieldMetadataService.createFieldConfig(field as any));
+        }
+
+        const resolvedUserKeyFieldName = this.resolveReviewedUserKeyFieldName(
+            previewFields,
+            mappingDto.userKeyField,
+            mappingDto.userKeyField,
+        );
+
+        for (const field of previewFields) {
+            field.isUserKey = field.name === resolvedUserKeyFieldName;
         }
 
         return previewFields;
@@ -829,6 +851,7 @@ export class DatasourceIntrospectionService {
     private normalizeReviewedMetadataModel(
         reviewedModel: Record<string, any> | undefined,
         mappingDto: DatasourceIntrospectionMappingDto,
+        tableColumns: DatasourceIntrospectionColumn[],
     ): ReviewedMetadataModel | null {
         if (!reviewedModel) {
             return null;
@@ -888,10 +911,23 @@ export class DatasourceIntrospectionService {
             fieldNames.add(loweredName);
         }
 
-        const userKeyFieldUserKey = readString("userKeyFieldUserKey");
-        if (!normalizedFields.some((field) => field.name === userKeyFieldUserKey && !field.isMarkedForRemoval)) {
+        const requestedUserKeyFieldUserKey = readString("userKeyFieldUserKey");
+        const resolvedUserKeyFieldName = this.resolveReviewedUserKeyFieldName(
+            normalizedFields,
+            requestedUserKeyFieldUserKey,
+            mappingDto.userKeyField,
+        );
+        const inheritedGeneratedIdUserKey = this.isGeneratedIdInheritedUserKey(
+            mappingDto.legacyTableType,
+            requestedUserKeyFieldUserKey,
+        );
+        if (!resolvedUserKeyFieldName && !inheritedGeneratedIdUserKey) {
             throw new BadRequestException("Reviewed metadata JSON must keep the selected userKeyFieldUserKey in the fields array.");
         }
+
+        this.validateReviewedPrimaryKeyFields(normalizedFields, tableColumns);
+
+        const userKeyFieldUserKey = resolvedUserKeyFieldName ?? requestedUserKeyFieldUserKey;
 
         return {
             singularName: readString("singularName"),
@@ -911,9 +947,52 @@ export class DatasourceIntrospectionService {
             internationalisation: readBoolean("internationalisation"),
             fields: normalizedFields.map((field) => ({
                 ...field,
-                isUserKey: field.name === userKeyFieldUserKey,
+                isUserKey: field.name === resolvedUserKeyFieldName,
             })),
         };
+    }
+
+    private resolveReviewedUserKeyFieldName(
+        reviewedFields: Array<Record<string, any>>,
+        requestedUserKeyFieldName: string,
+        fallbackUserKeyFieldName?: string,
+    ) {
+        const activeFields = reviewedFields.filter((field) => !field.isMarkedForRemoval);
+        const normalizedRequested = `${requestedUserKeyFieldName ?? ""}`.trim().toLowerCase();
+        const normalizedFallback = `${fallbackUserKeyFieldName ?? ""}`.trim().toLowerCase();
+
+        const byExactRequested = activeFields.find((field) => field.name?.toLowerCase?.() === normalizedRequested);
+        if (byExactRequested) {
+            return byExactRequested.name;
+        }
+
+        const byExistingUserKeyFlag = activeFields.find((field) => field.isUserKey);
+        if (byExistingUserKeyFlag) {
+            return byExistingUserKeyFlag.name;
+        }
+
+        const byPrimaryKeyFallback = activeFields.find((field) => {
+            if (!field.isPrimaryKey) {
+                return false;
+            }
+
+            const normalizedName = `${field.name ?? ""}`.trim().toLowerCase();
+            return normalizedName === normalizedFallback || normalizedName === "id" || normalizedName === "legacyid";
+        });
+        if (byPrimaryKeyFallback) {
+            return byPrimaryKeyFallback.name;
+        }
+
+        const byFallbackFieldName = activeFields.find((field) => field.name?.toLowerCase?.() === normalizedFallback);
+        return byFallbackFieldName?.name ?? null;
+    }
+
+    private isGeneratedIdInheritedUserKey(
+        legacyTableType: LegacyTableType,
+        requestedUserKeyFieldName: string | null | undefined,
+    ) {
+        return legacyTableType === LegacyTableType.GENERATED_ID
+            && `${requestedUserKeyFieldName ?? ""}`.trim().toLowerCase() === "id";
     }
 
     private normalizeReviewedField(field: any, index: number) {
@@ -1309,6 +1388,8 @@ export class DatasourceIntrospectionService {
                 const suggestedIdColumn = this.getSuggestedIdColumn(datasource.type, tableColumns, suggestedLegacyTableType);
                 const mappedModel = this.resolveMappedModel(modelLookup, datasource.name, tableName);
                 const physicalColumns = tableColumns.filter((column) => !this.isHandledBySuperclass(column.columnName, suggestedLegacyTableType));
+                const primaryKeyColumns = tableColumns.filter((column) => column.isPrimaryKey);
+                const hasPrimaryKey = primaryKeyColumns.length > 0;
 
                 return {
                     schema,
@@ -1326,6 +1407,12 @@ export class DatasourceIntrospectionService {
                     suggestedUserKeyField: this.buildUserKeyCandidates(tableColumns)[0]?.name ?? "id",
                     columnCount: tableColumns.length,
                     physicalColumnCount: physicalColumns.length,
+                    hasPrimaryKey,
+                    primaryKeyColumnCount: primaryKeyColumns.length,
+                    primaryKeyColumnNames: primaryKeyColumns.map((column) => column.columnName),
+                    mappingBlockedReason: hasPrimaryKey
+                        ? null
+                        : this.buildMissingPrimaryKeyMessage(tableName),
                 } satisfies TableInventoryRecord;
             })
             .filter((record): record is TableInventoryRecord => Boolean(record))
@@ -1528,6 +1615,66 @@ export class DatasourceIntrospectionService {
             handledBySuperclass: Boolean(superclassFieldName),
             superclassFieldName,
         };
+    }
+
+    private validateTablePrimaryKeyForMapping(
+        tableRecord: TableInventoryRecord,
+        tableColumns: DatasourceIntrospectionColumn[],
+        mappingDto: DatasourceIntrospectionMappingDto,
+    ) {
+        const detectedPrimaryKeyColumns = tableColumns.filter((column) => column.isPrimaryKey);
+        if (!detectedPrimaryKeyColumns.length) {
+            throw new BadRequestException(tableRecord.mappingBlockedReason ?? this.buildMissingPrimaryKeyMessage(tableRecord.tableName));
+        }
+
+        const requestColumnsByName = new Map(
+            mappingDto.columns.map((column) => [column.columnName.trim().toLowerCase(), column]),
+        );
+
+        for (const primaryKeyColumn of detectedPrimaryKeyColumns) {
+            const matchingRequestColumn = requestColumnsByName.get(primaryKeyColumn.columnName.trim().toLowerCase());
+            if (!matchingRequestColumn) {
+                throw new BadRequestException(`Primary key column "${primaryKeyColumn.columnName}" must remain present in the mapping request for table "${tableRecord.tableName}".`);
+            }
+
+            if (!matchingRequestColumn.include) {
+                throw new BadRequestException(`Primary key column "${primaryKeyColumn.columnName}" cannot be excluded from the mapping for table "${tableRecord.tableName}".`);
+            }
+
+            if (!matchingRequestColumn.isPrimaryKey) {
+                throw new BadRequestException(`Primary key column "${primaryKeyColumn.columnName}" must stay marked as isPrimaryKey for table "${tableRecord.tableName}".`);
+            }
+        }
+    }
+
+    private validateReviewedPrimaryKeyFields(
+        reviewedFields: Array<Record<string, any>>,
+        tableColumns: DatasourceIntrospectionColumn[],
+    ) {
+        const detectedPrimaryKeyColumns = tableColumns.filter((column) => column.isPrimaryKey);
+        if (!detectedPrimaryKeyColumns.length) {
+            return;
+        }
+
+        const activeReviewedFields = reviewedFields.filter((field) => !field.isMarkedForRemoval);
+
+        for (const primaryKeyColumn of detectedPrimaryKeyColumns) {
+            const matchingReviewedField = activeReviewedFields.find((field) =>
+                `${field.columnName ?? ""}`.trim().toLowerCase() === primaryKeyColumn.columnName.trim().toLowerCase(),
+            );
+
+            if (!matchingReviewedField) {
+                throw new BadRequestException(`Reviewed metadata JSON must keep datasource primary key column "${primaryKeyColumn.columnName}" in the fields array.`);
+            }
+
+            if (!matchingReviewedField.isPrimaryKey) {
+                throw new BadRequestException(`Reviewed metadata JSON must keep datasource primary key column "${primaryKeyColumn.columnName}" marked with isPrimaryKey: true.`);
+            }
+        }
+    }
+
+    private buildMissingPrimaryKeyMessage(tableName: string) {
+        return `Table "${tableName}" cannot be mapped because the datasource table does not define any primary key. Add a real primary key to the table before continuing with SolidX mapping.`;
     }
 
     private getSuperclassFieldName(columnName: string, legacyTableType: LegacyTableType) {
