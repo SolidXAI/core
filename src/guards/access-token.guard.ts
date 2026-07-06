@@ -2,16 +2,17 @@ import type { SolidCoreSetting } from "src/services/settings/default-settings-pr
 import {
   CanActivate,
   ExecutionContext,
-  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { REQUEST_USER_KEY } from "../constants";
 import { PermissionMetadataService } from '../services/permission-metadata.service';
 import { ClsService } from 'nestjs-cls';
+import { ActiveSessionStorageService } from "../services/active-session-storage.service";
 import { SettingService } from '../services/setting.service';
 
 @Injectable()
@@ -19,6 +20,7 @@ export class AccessTokenGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly permissionsService: PermissionMetadataService,
+    private readonly activeSessionStorage: ActiveSessionStorageService,
     private readonly settingService: SettingService,
     private readonly cls: ClsService
   ) { }
@@ -44,6 +46,23 @@ export class AccessTokenGuard implements CanActivate {
         jwtConfiguration
       );
 
+      if (
+        this.settingService.getConfigValue<SolidCoreSetting>(
+          "preventConcurrentLogins",
+        )
+      ) {
+        const activeSessionId = await this.activeSessionStorage.getActiveSession(
+          payload.sub,
+        );
+        if (
+          !payload.sessionId ||
+          !activeSessionId ||
+          payload.sessionId !== activeSessionId
+        ) {
+          throw new UnauthorizedException(ERROR_MESSAGES.SESSION_INVALID);
+        }
+      }
+
       // Load permissions given the user. 
       const permissions = await this.permissionsService.findAllUsingRoles(payload.roles);
       payload.permissions = permissions.map((permission) => permission.name);
@@ -52,8 +71,10 @@ export class AccessTokenGuard implements CanActivate {
       this.cls.set(REQUEST_USER_KEY, payload);
       // console.log(`About to set payload in the request user key:`);
       // console.log(payload);
-    } catch {
-      throw new UnauthorizedException();
+    } catch (err) {
+      throw err instanceof UnauthorizedException
+        ? err
+        : new UnauthorizedException();
     }
     return true;
   }
