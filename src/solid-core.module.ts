@@ -103,8 +103,6 @@ import { ServiceController } from "./controllers/service.controller";
 import { SmsTemplateController } from "./controllers/sms-template.controller";
 import { TestQueueController } from "./controllers/test-queue.controller";
 import { TestRunController } from "./controllers/test-run.controller";
-import { TestLifecycleController } from "./controllers/test-lifecycle.controller";
-import { TestLifecycleService } from "./services/test-lifecycle.service";
 import { EmailAttachment } from "./entities/email-attachment.entity";
 import { EmailTemplate } from "./entities/email-template.entity";
 import { MenuItemMetadata } from "./entities/menu-item-metadata.entity";
@@ -616,7 +614,6 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     TestController,
     TestQueueController,
     TestRunController,
-    TestLifecycleController,
     UserActivityHistoryController,
     UserController,
     UserViewMetadataController,
@@ -685,7 +682,6 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
     ModuleTestDataService,
-    TestLifecycleService,
     ListOfValuesService,
     ListOfValuesSelectionProvider,
     MqDashboardQueueNameVariableOptionsProvider,

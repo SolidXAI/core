@@ -6,8 +6,6 @@ import type {
   ArtifactRef,
   LifecycleEnvelope,
   LifecycleEventType,
-  PrepareEndData,
-  PrepareStartData,
   ScenarioEndData,
   StepResultData,
 } from "./lifecycle-events.types";
@@ -58,13 +56,19 @@ const defaultPost: WebhookPostFn = async (url, body, opts) => {
   return { ok: res.ok, status: res.status };
 };
 
-/** Map an `attach()` payload to an ArtifactRef. Phase 1: API request/response logs. */
+/** Map an `attach()` payload to an ArtifactRef. Covers API/console/network + screenshots. */
 function classifyAttachment(name: string, contentType: string): ArtifactRef["kind"] {
   const hint = `${name} ${contentType}`.toLowerCase();
-  if (hint.includes("api")) return "api-log";
+  if (hint.includes("screenshot") || contentType.startsWith("image/")) return "screenshot";
   if (hint.includes("console")) return "console";
   if (hint.includes("network") || hint.includes("har")) return "network";
+  if (hint.includes("api")) return "api-log";
   return "api-log";
+}
+
+function isBinaryContentType(contentType: string): boolean {
+  const ct = contentType.toLowerCase();
+  return ct.startsWith("image/") || ct.startsWith("video/") || ct === "application/octet-stream";
 }
 
 /**
@@ -108,16 +112,6 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
 
   getRunId(): string {
     return this.runId;
-  }
-
-  /** Emitted when the runner begins the client prepare-hook (before any scenario). */
-  onPrepareStart(data: PrepareStartData): void {
-    this.emit("prepare.start", data);
-  }
-
-  /** Emitted when the client prepare-hook completes (or fails). */
-  onPrepareEnd(data: PrepareEndData): void {
-    this.emit("prepare.end", data);
   }
 
   onRunStart(args: {
@@ -174,11 +168,32 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
     data: Buffer | string;
   }): void {
     super.attach(args);
+    const kind = classifyAttachment(args.name, args.contentType);
+
+    if (Buffer.isBuffer(args.data) && isBinaryContentType(args.contentType)) {
+      // Binary (e.g. a screenshot JPEG): base64-encode — a utf8 decode would corrupt the
+      // bytes. Truncating base64 also corrupts it, so if it somehow exceeds the inline cap
+      // we drop the payload rather than ship a broken image (viewport JPEGs stay well under).
+      const base64 = args.data.toString("base64");
+      const artifact: ArtifactRef = {
+        kind,
+        name: args.name,
+        contentType: args.contentType,
+        transport: "inline",
+        sizeBytes: args.data.byteLength,
+      };
+      if (base64.length <= INLINE_TEXT_CAP) {
+        artifact.inlineData = base64;
+      }
+      this.currentArtifacts.push(artifact);
+      return;
+    }
+
     const text = Buffer.isBuffer(args.data)
       ? args.data.toString("utf8")
       : String(args.data ?? "");
     this.currentArtifacts.push({
-      kind: classifyAttachment(args.name, args.contentType),
+      kind,
       name: args.name,
       contentType: args.contentType,
       transport: "inline",
@@ -212,8 +227,8 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
   /** Emit run.end and wait for all queued deliveries to complete. */
   async flushPending(exitCode?: number): Promise<void> {
     this.emit("run.end", {
-      // A non-zero exitCode (e.g. a failed prepare-hook before any scenario ran)
-      // must mark the run failed even when failed === 0.
+      // A non-zero exitCode (e.g. the runner threw before any scenario ran) must
+      // mark the run failed even when failed === 0.
       ok: this.failed === 0 && (exitCode === undefined || exitCode === 0),
       total: this.total || this.passed + this.failed,
       passed: this.passed,
