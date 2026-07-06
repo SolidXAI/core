@@ -6116,7 +6116,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "moduleMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "appBuilder-menu-item"
+      "parentMenuItemUserKey": "appBuilder-menu-item",
+      "iconName": "view_module"
     },
     {
       "displayName": "Model",
@@ -6124,7 +6125,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "modelMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "appBuilder-menu-item"
+      "parentMenuItemUserKey": "appBuilder-menu-item",
+      "iconName": "table_view"
     },
     {
       "displayName": "Field",
@@ -6132,7 +6134,8 @@
       "sequenceNumber": 3,
       "actionUserKey": "fieldMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "appBuilder-menu-item"
+      "parentMenuItemUserKey": "appBuilder-menu-item",
+      "iconName": "view_list"
     },
     {
       "displayName": "Datasources",
@@ -6140,7 +6143,8 @@
       "sequenceNumber": 4,
       "actionUserKey": "datasource-management-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "appBuilder-menu-item"
+      "parentMenuItemUserKey": "appBuilder-menu-item",
+      "iconName": "storage"
     },
     {
       "displayName": "Menu Item",
@@ -6148,7 +6152,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "menuItemMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item",
+      "iconName": "menu"
     },
     {
       "displayName": "View",
@@ -6156,7 +6161,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "viewMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item",
+      "iconName": "view_compact_alt"
     },
     {
       "displayName": "Action",
@@ -6164,7 +6170,8 @@
       "sequenceNumber": 3,
       "actionUserKey": "actionMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item",
+      "iconName": "bolt"
     },
     {
       "displayName": "User View",
@@ -6172,7 +6179,8 @@
       "sequenceNumber": 5,
       "actionUserKey": "userViewMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item",
+      "iconName": "person"
     },
     {
       "displayName": "Media Management",
@@ -6189,7 +6197,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "media-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "mediaManagement-menu-item"
+      "parentMenuItemUserKey": "mediaManagement-menu-item",
+      "iconName": "perm_media"
     },
     {
       "displayName": "Media Storage Provider",
@@ -6197,7 +6206,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "mediaStorageProviderMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "mediaManagement-menu-item"
+      "parentMenuItemUserKey": "mediaManagement-menu-item",
+      "iconName": "storage"
     },
     {
       "displayName": "IAM",
@@ -6206,7 +6216,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName": "person_shield"
+      "iconName": "security"
     },
     {
       "displayName": "User",
@@ -6214,7 +6224,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "user-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "iam-menu-item"
+      "parentMenuItemUserKey": "iam-menu-item",
+      "iconName": "person"
     },
     {
       "displayName": "Role",
@@ -6222,7 +6233,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "roleMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "iam-menu-item"
+      "parentMenuItemUserKey": "iam-menu-item",
+      "iconName": "admin_panel_settings"
     },
     {
       "displayName": "Permission",
@@ -6230,7 +6242,8 @@
       "sequenceNumber": 3,
       "actionUserKey": "permissionMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "iam-menu-item"
+      "parentMenuItemUserKey": "iam-menu-item",
+      "iconName": "lock"
     },
     {
       "displayName": "Security rules",
@@ -6238,7 +6251,8 @@
       "sequenceNumber": 4,
       "actionUserKey": "securityRule-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "iam-menu-item"
+      "parentMenuItemUserKey": "iam-menu-item",
+      "iconName": "gavel"
     },
     {
       "displayName": "User Activity History",
@@ -6246,7 +6260,8 @@
       "sequenceNumber": 5,
       "actionUserKey": "userActivityHistory-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "iam-menu-item"
+      "parentMenuItemUserKey": "iam-menu-item",
+      "iconName": "history"
     },
     {
       "displayName": "Queues",
@@ -6263,7 +6278,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "solid-core-queue-health-dashboard-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "queues-menu-item"
+      "parentMenuItemUserKey": "queues-menu-item",
+      "iconName": "dashboard"
     },
     {
       "displayName": "Queues",
@@ -6271,7 +6287,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "mqMessageQueue-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "queues-menu-item"
+      "parentMenuItemUserKey": "queues-menu-item",
+      "iconName": "queue"
     },
     {
       "displayName": "Messages",
@@ -6279,7 +6296,8 @@
       "sequenceNumber": 3,
       "actionUserKey": "mqMessage-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "queues-menu-item"
+      "parentMenuItemUserKey": "queues-menu-item",
+      "iconName": "message"
     },
     {
       "displayName": "Notification",
@@ -6288,7 +6306,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName": "notification_settings"
+      "iconName": "notifications"
     },
     {
       "displayName": "Email",
@@ -6296,7 +6314,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "emailTemplate-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "notification-menu-item"
+      "parentMenuItemUserKey": "notification-menu-item",
+      "iconName": "email"
     },
     {
       "displayName": "SMS",
@@ -6304,7 +6323,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "smsTemplate-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "notification-menu-item"
+      "parentMenuItemUserKey": "notification-menu-item",
+      "iconName": "sms"
     },
     {
       "displayName": "Other",
@@ -6313,7 +6333,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName": "other_admission"
+      "iconName": "more_horiz"
     },
     {
       "displayName": "List of Values",
@@ -6321,7 +6341,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "listOfValues-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "list"
     },
     {
       "displayName": "Scheduled Jobs",
@@ -6329,7 +6350,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "scheduledJob-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "schedule"
     },
     {
       "displayName": "Saved Filters",
@@ -6337,7 +6359,8 @@
       "sequenceNumber": 4,
       "actionUserKey": "savedFilters-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "filter_alt"
     },
     {
       "displayName": "Chatter Message",
@@ -6345,7 +6368,8 @@
       "sequenceNumber": 5,
       "actionUserKey": "chatterMessage-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "chat"
     },
     {
       "displayName": "Locale",
@@ -6353,7 +6377,8 @@
       "sequenceNumber": 7,
       "actionUserKey": "locale-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "language"
     },
     {
       "displayName": "Import Transactions",
@@ -6361,7 +6386,8 @@
       "sequenceNumber": 8,
       "actionUserKey": "importTransaction-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "file_upload"
     },
     {
       "displayName": "Settings",
@@ -6378,7 +6404,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "modelSequence-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "format_list_numbered"
     },
     {
       "displayName": "Dashboard User Layout",
@@ -6387,7 +6414,7 @@
       "actionUserKey": "dashboardUserLayout-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName": ""
+      "iconName": "dashboard_customize"
     },
     {
       "displayName": "Agent",
@@ -6404,7 +6431,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "agentSession-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "agent-menu-item"
+      "parentMenuItemUserKey": "agent-menu-item",
+      "iconName": "login"
     },
     {
       "displayName": "MCP Audit Log",
@@ -6412,7 +6440,8 @@
       "sequenceNumber": 3,
       "actionUserKey": "mcpAuditLog-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "agent-menu-item"
+      "parentMenuItemUserKey": "agent-menu-item",
+      "iconName": "history_toggle_off"
     }
   ],
   "views": [
