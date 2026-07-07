@@ -47,7 +47,7 @@ export class MediaController {
     return this.service.update(id, updateDto, files, true);
   }
 
-  @Public()
+  // @Public()
   // @SkipThrottle({ short: false, login: true, burst: true, sustained: true }) //Enable the short throttle only
   @ApiBearerAuth("jwt")
   @Post('/upload')
