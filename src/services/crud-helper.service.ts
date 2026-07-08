@@ -293,9 +293,13 @@ export class CrudHelperService {
             const orderOptions = this.orderOptions(normalizedSort);
             if (orderOptions) {
                 const orderOptionKeys = Object.keys(orderOptions) as Array<keyof typeof orderOptions>;
+                let hasExplicitIdSort = false;
                 orderOptionKeys.forEach((key) => {
                     const value = orderOptions[key] as 'ASC' | 'DESC';
                     const field = String(key);
+                    if (field === 'id') {
+                        hasExplicitIdSort = true;
+                    }
                     if (field.includes('.')) {
                         const { alias, property, created } = this.ensureRelationPathJoined(qb, entityAlias, field.split('.'));
                         const orderColumn = `${alias}.${property}`;
@@ -305,6 +309,9 @@ export class CrudHelperService {
                         qb.addOrderBy(`${entityAlias}.${field}`, value);
                     }
                 });
+                if (!hasExplicitIdSort) {
+                    qb.addOrderBy(`${entityAlias}.id`, 'DESC');
+                }
             }
         }
 
