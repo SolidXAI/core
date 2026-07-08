@@ -4,7 +4,6 @@ import { lowerFirst } from 'src/helpers/string.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { DataSource, EntityMetadata, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
 import { AuditQueuePayload } from 'src/interfaces';
-import { isEmbeddedDb } from 'src/helpers/environment.helper';
 import { RequestContextService } from 'src/services/request-context.service';
 import { PublisherFactory } from 'src/services/queues/publisher-factory.service';
 const AUDIT_BEFORE_SNAPSHOT = '__auditBeforeSnapshot';
@@ -89,10 +88,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
      */
     private async prepareManyToManyAuditUpdateSnapshot(event: UpdateEvent<any>, entityId: number | null, updatedColumnNames: string[]): Promise<{ before: any; after: any } | null> {
 
-        // On embedded PGlite, pass the transaction's manager so the query runs
-        // on the active connection. On regular Postgres, use the default DataSource.
-        const mgr = isEmbeddedDb() ? event.manager : this.dataSource;
-        const auditRelationFields = (await this.modelMetadataHelperService.loadFieldHierarchy(lowerFirst(event.metadata.name), isEmbeddedDb() ? event.manager : undefined)).filter(field =>
+        const auditRelationFields = (await this.modelMetadataHelperService.loadFieldHierarchy(lowerFirst(event.metadata.name))).filter(field =>
             field.enableAuditTracking &&
             field.type === 'relation' &&
             field.relationType !== 'one-to-many'
@@ -110,7 +106,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
         const relationBefore = event.entity?.[AUDIT_BEFORE_SNAPSHOT] ?? null;
 
-        const relationAfter = await mgr.getRepository(event.metadata.target as any).findOne({
+        const relationAfter = await this.dataSource.getRepository(event.metadata.target as any).findOne({
             where: { id: entityId } as any,
             relations: relations as any,
         });
@@ -154,11 +150,6 @@ export class AuditSubscriber implements EntitySubscriberInterface {
         this.perTxn.delete(event.queryRunner);
 
         if (batch.length === 0) return;
-
-        if (isEmbeddedDb()) {
-            setImmediate(() => void this.publishAuditBatch(batch));
-            return;
-        }
 
         await this.publishAuditBatch(batch);
     }
