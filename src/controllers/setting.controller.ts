@@ -1,4 +1,4 @@
-import { BadRequestException, Body, Controller, Get, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Get, Param, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public.decorator';
@@ -43,6 +43,12 @@ export class SettingController {
   @Get()
   async getAllSettings() {
     return this.service.getNonEncryptedSystemAdminReadonlyAndAboveSettings();
+  }
+
+  @ApiBearerAuth("jwt")
+  @Get('/by-key/:key')
+  getSettingByKey(@Param('key') key: string) {
+    return this.service.getSettingByKey(key);
   }
 
   @ApiBearerAuth("jwt")

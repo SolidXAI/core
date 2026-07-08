@@ -1,4 +1,4 @@
-import { BadRequestException, ForbiddenException, Inject, Injectable } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Inject, Injectable, NotFoundException } from '@nestjs/common';
 import { InjectRepository } from '@nestjs/typeorm';
 import { Repository } from 'typeorm';
 import * as fsPromises from 'fs/promises';
@@ -447,6 +447,37 @@ export class SettingService {
    * @param settingKey 
    * @returns 
    */
+  /**
+   * Returns the (decrypted) value of a single setting by key.
+   *
+   * Encrypted settings require the `settings:view_encrypted` permission (the
+   * same gate used by `getNonEncryptedSystemAdminReadonlyAndAboveSettings`).
+   * `system-env` level settings are never returned over this route to avoid
+   * leaking process-environment secrets.
+   *
+   * Used by the agent/MCP in embedded (PGlite) mode to read config (e.g. the
+   * LLM builder API key) without opening its own DB connection.
+   */
+  getSettingByKey(key: string): { key: string; value: any } {
+    const activeUser = this.requestContextService.getActiveUser();
+    const hasViewEncryptedPermission = !!activeUser?.permissions?.includes('settings:view_encrypted');
+
+    const setting = this.settingsByKey.get(key);
+    if (!setting) {
+      throw new NotFoundException(`Setting "${key}" was not found`);
+    }
+
+    if (setting.level === SettingLevel.SystemEnv) {
+      throw new ForbiddenException(`Setting "${key}" is not readable via this endpoint`);
+    }
+
+    if (setting.encrypted && !hasViewEncryptedPermission) {
+      throw new ForbiddenException(`Setting "${key}" is encrypted and requires the "settings:view_encrypted" permission`);
+    }
+
+    return { key: setting.key, value: setting.value };
+  }
+
   getConfigValue<T = never>(settingKey: NoInfer<T>) {
     const cachedSetting = this.settingsByKey.get(settingKey as string);
     if (cachedSetting) {

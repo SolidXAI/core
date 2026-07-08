@@ -205,6 +205,7 @@ import { ScheduledJobController } from './controllers/scheduled-job.controller';
 import { AgentSessionController } from './controllers/agent-session.controller';
 import { AgentEventController } from './controllers/agent-event.controller';
 import { McpAuditLogController } from './controllers/mcp-audit-log.controller';
+import { AgentController } from './controllers/agent.controller';
 import { SecurityRuleController } from './controllers/security-rule.controller';
 import { SettingController } from './controllers/setting.controller';
 import { InfoController } from './controllers/info.controller';
@@ -342,6 +343,7 @@ import { ScheduledJobService } from './services/scheduled-job.service';
 import { AgentSessionService } from './services/agent-session.service';
 import { AgentEventService } from './services/agent-event.service';
 import { McpAuditLogService } from './services/mcp-audit-log.service';
+import { AgentService } from './services/agent.service';
 import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
 import { SecurityRuleService } from './services/security-rule.service';
 import { ListOfScheduledJobsSelectionProvider } from './services/selection-providers/list-of-scheduled-jobs-selection-provider.service';
@@ -501,6 +503,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     AgentSessionController,
     AgentEventController,
     McpAuditLogController,
+    AgentController,
     SecurityRuleController,
     ServiceController,
     SettingController,
@@ -766,6 +769,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     AgentSessionService,
     AgentEventService,
     McpAuditLogService,
+    AgentService,
     ScheduledJobSubscriber,
     AlphaNumExternalIdComputationProvider,
     ListOfValuesSubscriber,

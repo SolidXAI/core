@@ -131,6 +131,9 @@ export class ApiKeyService {
 
         const user = apiKeyRecord.user;
 
+        const roles = (user.roles ?? []).map((role) => role.name);
+        const permissions = await this.permissionMetadataService.findAllUsingRoles(roles);
+
         const tokens = await this.authenticationService.generateTokens(user);
 
 
@@ -141,7 +144,8 @@ export class ApiKeyService {
                 username: user.username,
                 forcePasswordChange: user.forcePasswordChange,
                 id: user.id,
-                roles: user.roles.map((role) => role.name)
+                roles,
+                permissions: permissions.map((p) => p.name),
             },
             ...tokens
         }
