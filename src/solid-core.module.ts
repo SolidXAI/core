@@ -388,6 +388,40 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
 import { MssqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mssql-datasource-introspection-provider.service";
 import { MysqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mysql-datasource-introspection-provider.service";
 import { PostgresDatasourceIntrospectionProviderService } from "./services/datasource-introspection/postgres-datasource-introspection-provider.service";
+import { WorkflowDefinition } from './entities/workflow-definition.entity';
+import { WorkflowExecution } from './entities/workflow-execution.entity';
+import { WorkflowStepExecution } from './entities/workflow-step-execution.entity';
+import { WorkflowExecutionLog } from './entities/workflow-execution-log.entity';
+import { WorkflowExecutionArtifact } from './entities/workflow-execution-artifact.entity';
+import { WorkflowTriggerExecution } from './entities/workflow-trigger-execution.entity';
+import { WorkflowDefinitionController } from './controllers/workflow-definition.controller';
+import { WorkflowExecutionController } from './controllers/workflow-execution.controller';
+import { WorkflowStepExecutionController } from './controllers/workflow-step-execution.controller';
+import { WorkflowExecutionLogController } from './controllers/workflow-execution-log.controller';
+import { WorkflowExecutionArtifactController } from './controllers/workflow-execution-artifact.controller';
+import { WorkflowTriggerExecutionController } from './controllers/workflow-trigger-execution.controller';
+import { WorkflowDefinitionService } from './services/workflow-definition.service';
+import { WorkflowExecutionService } from './services/workflow-execution.service';
+import { WorkflowStepExecutionService } from './services/workflow-step-execution.service';
+import { WorkflowExecutionLogService } from './services/workflow-execution-log.service';
+import { WorkflowExecutionArtifactService } from './services/workflow-execution-artifact.service';
+import { WorkflowTriggerExecutionService } from './services/workflow-trigger-execution.service';
+import { WorkflowDefinitionRepository } from './repository/workflow-definition.repository';
+import { WorkflowExecutionRepository } from './repository/workflow-execution.repository';
+import { WorkflowStepExecutionRepository } from './repository/workflow-step-execution.repository';
+import { WorkflowExecutionLogRepository } from './repository/workflow-execution-log.repository';
+import { WorkflowExecutionArtifactRepository } from './repository/workflow-execution-artifact.repository';
+import { WorkflowTriggerExecutionRepository } from './repository/workflow-trigger-execution.repository';
+import { WorkflowDefinitionValidatorService } from './services/workflow/workflow-definition-validator.service';
+import { WorkflowExecutionWriterService } from './services/workflow/workflow-execution-writer.service';
+import { WorkflowExpressionService } from './services/workflow/workflow-expression.service';
+import { WorkflowNodeRegistryService } from './services/workflow/workflow-node-registry.service';
+import { WorkflowRuntimeService } from './services/workflow/workflow-runtime.service';
+import { ForEachNode } from './services/workflow/nodes/for-each.node';
+import { HttpRequestNode } from './services/workflow/nodes/http-request.node';
+import { IfNode } from './services/workflow/nodes/if.node';
+import { LogWriteNode } from './services/workflow/nodes/log-write.node';
+import { ParallelNode } from './services/workflow/nodes/parallel.node';
 
 @Global()
 @Module({
@@ -428,6 +462,12 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
       UserViewMetadata,
       ViewMetadata,
       ModelSequence,
+      WorkflowDefinition,
+      WorkflowExecution,
+      WorkflowStepExecution,
+      WorkflowExecutionLog,
+      WorkflowExecutionArtifact,
+      WorkflowTriggerExecution,
     ]),
 
     CacheModule.registerAsync(CacheManagerOptions),
@@ -514,6 +554,12 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ViewMetadataController,
     ModelSequenceController,
     DashboardUserLayoutController,
+    WorkflowDefinitionController,
+    WorkflowExecutionController,
+    WorkflowStepExecutionController,
+    WorkflowExecutionLogController,
+    WorkflowExecutionArtifactController,
+    WorkflowTriggerExecutionController,
   ],
   providers: [
     {
@@ -809,6 +855,28 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ListOfRolesSelectionProvider,
     DashboardUserLayoutService,
     DashboardUserLayoutRepository,
+    WorkflowDefinitionService,
+    WorkflowDefinitionRepository,
+    WorkflowExecutionService,
+    WorkflowExecutionRepository,
+    WorkflowStepExecutionService,
+    WorkflowStepExecutionRepository,
+    WorkflowExecutionLogService,
+    WorkflowExecutionLogRepository,
+    WorkflowExecutionArtifactService,
+    WorkflowExecutionArtifactRepository,
+    WorkflowTriggerExecutionService,
+    WorkflowTriggerExecutionRepository,
+    WorkflowRuntimeService,
+    WorkflowExecutionWriterService,
+    WorkflowExpressionService,
+    WorkflowDefinitionValidatorService,
+    WorkflowNodeRegistryService,
+    LogWriteNode,
+    HttpRequestNode,
+    IfNode,
+    ForEachNode,
+    ParallelNode,
   ],
   exports: [
     AuthenticationService,
@@ -872,6 +940,9 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     SolidMicroserviceAdapter,
     UserService,
     SettingService,
+    WorkflowRuntimeService,
+    WorkflowNodeRegistryService,
+    WorkflowExpressionService,
   ],
 })
 export class SolidCoreModule implements NestModule {
