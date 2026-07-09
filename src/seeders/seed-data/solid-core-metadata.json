@@ -5304,7 +5304,6 @@
         "SavedFiltersController.update",
         "SavedFiltersController.insertMany",
         "SavedFiltersController.create",
-        "ChatterMessageController.create",
         "ChatterMessageController.getChatterMessages",
         "ChatterMessageController.postMessage",
         "ChatterMessageController.findMany",
