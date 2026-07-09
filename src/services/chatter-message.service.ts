@@ -711,6 +711,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         const { limit = 25, offset = 0, populate = [], populateMedia = [], filters } = query;
         this.logHeapUsed('getChatterMessages-start');
 
+        await this.assertRecordAccess(lowerFirst(entityName), entityId);
+
         const model = await this.modelMetadataRepo.findOne({
             where: {
                 singularName: entityName
