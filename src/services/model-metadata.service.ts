@@ -1,6 +1,7 @@
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
+import { existsSync } from 'fs';
 import * as path from 'path';
 import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
@@ -24,6 +25,7 @@ import { ImportTransaction } from '../entities/import-transaction.entity';
 import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { UserViewMetadata } from '../entities/user-view-metadata.entity';
 import { PermissionMetadata } from '../entities/permission-metadata.entity';
+import { RoleMetadata } from '../entities/role-metadata.entity';
 import { ViewMetadata } from '../entities/view-metadata.entity';
 import { CommandService } from '../helpers/command.service';
 import {
@@ -37,7 +39,6 @@ import { CrudHelperService, FilterCombinator } from './crud-helper.service';
 import { CRUDService } from './crud.service';
 import { FieldMetadataService } from './field-metadata.service';
 import { MediaStorageProviderMetadataService } from './media-storage-provider-metadata.service';
-import { RoleMetadataService } from './role-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { SolidTsMorphService } from './solid-ts-morph.service';
 
@@ -59,7 +60,6 @@ export class ModelMetadataService {
     private readonly crudHelperService: CrudHelperService,
     private readonly mediaStorageProviderMetadataService: MediaStorageProviderMetadataService,
     private readonly fieldMetadataService: FieldMetadataService,
-    private readonly roleService: RoleMetadataService,
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
     readonly introspectService: SolidIntrospectService,
     private readonly solidTsMorphService: SolidTsMorphService,
@@ -501,6 +501,27 @@ export class ModelMetadataService {
 
     // if found
     if (existingModelMetadata) {
+      const hasChanges = Object.entries(updateDto).some(([key, value]) => {
+        if (key === 'module' || key === 'parentModel' || key === 'userKeyField') {
+          return existingModelMetadata[key]?.id !== value?.id;
+        }
+        if (key === 'fields') {
+          return JSON.stringify(existingModelMetadata.fields ?? null) !== JSON.stringify(value ?? null);
+        }
+        const currentValue = existingModelMetadata[key];
+        if (Array.isArray(currentValue) || Array.isArray(value)) {
+          return JSON.stringify(currentValue ?? null) !== JSON.stringify(value ?? null);
+        }
+        if (value && typeof value === 'object') {
+          return JSON.stringify(currentValue ?? null) !== JSON.stringify(value ?? null);
+        }
+        return currentValue !== value;
+      });
+
+      if (!hasChanges) {
+        return existingModelMetadata;
+      }
+
       const updatedModelMetadata = { ...existingModelMetadata, ...updateDto };
       const updatedModel = await this.modelMetadataRepo.save(updatedModelMetadata);
       return updatedModel
@@ -635,22 +656,27 @@ export class ModelMetadataService {
     const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
     if (metaData) {
       const moduleMetadata = metaData?.moduleMetadata ?? metaData;
+      const vamMetadata =
+        Array.isArray(metaData?.views) || Array.isArray(metaData?.actions) || Array.isArray(metaData?.menus)
+          ? metaData
+          : moduleMetadata;
       const removedActionNameSet = new Set(removedActionNames);
       const removedMenuNameSet = new Set(removedMenuNames);
       const removedViewNameSet = new Set(removedViewNames);
 
-      const existingModelIndex = metaData.moduleMetadata.models.findIndex(
+      const existingModels = Array.isArray(moduleMetadata?.models) ? moduleMetadata.models : [];
+      const existingModelIndex = existingModels.findIndex(
         (existingModel: any) => existingModel.singularName === modelEntity.singularName
       );
 
       // Remove the model to be deleted from the metadata
       if (existingModelIndex !== -1) {
-        metaData.moduleMetadata.models.splice(existingModelIndex, 1);
+        existingModels.splice(existingModelIndex, 1);
       }
 
       // Remove references to this model in the menu, action & view sections.
-      const existingViews = Array.isArray(moduleMetadata?.views) ? moduleMetadata.views : [];
-      moduleMetadata.views = existingViews.filter((view: any) => {
+      const existingViews = Array.isArray(vamMetadata?.views) ? vamMetadata.views : [];
+      vamMetadata.views = existingViews.filter((view: any) => {
         const shouldRemove = view?.modelUserKey === modelEntity.singularName || removedViewNameSet.has(view?.name);
         if (shouldRemove && view?.name) {
           removedViewNameSet.add(view.name);
@@ -658,8 +684,8 @@ export class ModelMetadataService {
         return !shouldRemove;
       });
 
-      const existingActions = Array.isArray(moduleMetadata?.actions) ? moduleMetadata.actions : [];
-      moduleMetadata.actions = existingActions.filter((action: any) => {
+      const existingActions = Array.isArray(vamMetadata?.actions) ? vamMetadata.actions : [];
+      vamMetadata.actions = existingActions.filter((action: any) => {
         const shouldRemove =
           action?.modelUserKey === modelEntity.singularName ||
           removedActionNameSet.has(action?.name) ||
@@ -671,7 +697,7 @@ export class ModelMetadataService {
         return !shouldRemove;
       });
 
-      let pendingMenus = Array.isArray(moduleMetadata?.menus) ? [...moduleMetadata.menus] : [];
+      let pendingMenus = Array.isArray(vamMetadata?.menus) ? [...vamMetadata.menus] : [];
       let menuRemovedOnPass = true;
       while (menuRemovedOnPass) {
         menuRemovedOnPass = false;
@@ -693,7 +719,7 @@ export class ModelMetadataService {
           return true;
         });
       }
-      moduleMetadata.menus = pendingMenus;
+      vamMetadata.menus = pendingMenus;
 
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
@@ -718,8 +744,70 @@ export class ModelMetadataService {
       }
     }
 
+    await this.cleanupAssociatedTypeormDatasourceFiles(modelEntity, modulePath);
+
     // - | Drop database table | Removes the database table from the DB, this is a very risky step. Best to review all relations to other models etc and then do this manually | Manual (X)
 
+  }
+
+  private resolveSolidApiRoot(): string | null {
+    const cwd = process.cwd();
+    const candidates = [
+      cwd,
+      path.join(cwd, 'solid-api'),
+    ];
+
+    for (const candidate of candidates) {
+      const srcRoot = path.join(candidate, 'src');
+      if (existsSync(srcRoot)) {
+        return candidate;
+      }
+    }
+
+    return null;
+  }
+
+  private async cleanupAssociatedTypeormDatasourceFiles(modelEntity: ModelMetadata, modulePath?: string | null) {
+    if (!modulePath) {
+      return;
+    }
+
+    const solidApiRoot = this.resolveSolidApiRoot();
+    if (!solidApiRoot) {
+      this.logger.warn(`Unable to locate consuming solid-api workspace while cleaning datasource files for model '${modelEntity.singularName}'`);
+      return;
+    }
+
+    const srcRoot = path.join(solidApiRoot, 'src');
+    const srcEntries = await fs.readdir(srcRoot).catch(() => []);
+    const datasourceFiles = srcEntries
+      .filter((entry) => /^typeorm-.*-datasource\.ts$/.test(entry))
+      .map((entry) => path.join(srcRoot, entry));
+
+    if (datasourceFiles.length === 0) {
+      return;
+    }
+
+    const moduleDirName = path.basename(modulePath);
+    const entityClassName = classify(modelEntity.singularName);
+    const entityImportPath = `./${moduleDirName}/entities/${kebabCase(modelEntity.singularName)}.entity`;
+
+    this.logger.log(`Scanning ${datasourceFiles.length} TypeORM datasource file(s) for model '${modelEntity.singularName}' cleanup`);
+
+    try {
+      this.solidTsMorphService.begin();
+      for (const datasourceFile of datasourceFiles) {
+        this.solidTsMorphService.cleanupTypeormDatasourceEntity(
+          datasourceFile,
+          entityImportPath,
+          entityClassName,
+        );
+      }
+      await this.solidTsMorphService.commit();
+    } catch (error: any) {
+      this.solidTsMorphService.rollback();
+      this.logger.error(`Failed to clean datasource files for model '${modelEntity.singularName}':`, error);
+    }
   }
 
   private async cleanupAssociatedViewsActionsAndMenus(modelId: number) {
@@ -1386,7 +1474,15 @@ export class ModelMetadataService {
       existingTreeViewAction = await actionRepo.save(createdTreeViewAction);
     }
 
-    const adminRole = await this.roleService.findRoleByName('Admin');
+    const roleRepo = this.dataSource.getRepository(RoleMetadata);
+    const adminRole = await roleRepo.findOne({
+      where: { name: 'Admin' },
+      select: { id: true, name: true }
+    });
+
+    if (!adminRole) {
+      throw new NotFoundException(`Entity #Admin not found`);
+    }
 
     const menuData = {
       displayName: `${model.displayName}`,
@@ -1394,7 +1490,6 @@ export class ModelMetadataService {
       sequenceNumber: 1,
       action: existingAction,
       module: resolvedModule,
-      roles: [adminRole],
       parentMenuItemUserKey: ""
     };
 
@@ -1402,7 +1497,12 @@ export class ModelMetadataService {
 
     if (!existingMenu) {
       const createdMenu = menuRepo.create(menuData);
-      await menuRepo.save(createdMenu);
+      existingMenu = await menuRepo.save(createdMenu);
+      await menuRepo
+        .createQueryBuilder()
+        .relation(MenuItemMetadata, 'roles')
+        .of(existingMenu.id)
+        .add(adminRole.id);
     }
   }
 
@@ -1441,7 +1541,7 @@ export class ModelMetadataService {
     //Filter out the fields by id
     const fieldsForRemoval = model.fields.filter((field) => options.fieldIdsForRemoval.includes(+field.id));
     const removeOutput = await this.executeRemoveFieldsCommand(model, fieldsForRemoval, options.dryRun);
-
+    const migrationOutput = await this.executeMigrationRemoveFieldsCommand(model, fieldsForRemoval, options.dryRun);
     // Remove the fields from the database as well. This also checks, if the field is marked for removal
     for (const field of fieldsForRemoval) {
       if (field.isMarkedForRemoval) {
@@ -1478,6 +1578,13 @@ export class ModelMetadataService {
 
     return removeOutput;
   }
+  // model-metadata.service.ts mein naya method add karo
+  // async executeRemoveFieldsWithModel(model: ModelMetadata, fieldNames: string[], dryRun = false,) {
+  //   const fieldsForRemoval = model.fields.filter(
+  //     field => fieldNames.includes(field.name)
+  //   );
+  //   return this.executeRemoveFieldsCommand(model, fieldsForRemoval, dryRun);
+  // }
 
   async generateModelCode(options: CodeGenerationOptions): Promise<string> {
     if (!options.modelId && !options.modelUserKey) {
@@ -1525,6 +1632,22 @@ export class ModelMetadataService {
     this.logger.debug(`Schematic output : ${output}`);
     return output;
   }
+
+  private async executeMigrationRemoveFieldsCommand(model: ModelMetadata, fieldsForRemoval: FieldMetadata[], dryRun: boolean = false,): Promise<string> {
+    if (!fieldsForRemoval || fieldsForRemoval.length === 0) {
+      return "";
+    }
+
+    const output = await this.commandService.executeCommandWithArgs({
+      command: 'npx',
+      args: ['@solidxai/solidctl@latest', 'migration', '-n', model.singularName, 'remove-field', ...(dryRun ? [] : ['--apply'])],
+      cwd: path.join(process.cwd(), '..'),
+    });
+
+    this.logger.debug(`Schematic output : ${output}`);
+    return output;
+  }
+
 
   async updateUserKey(data: any) {
     const { modelName, fieldName } = data;

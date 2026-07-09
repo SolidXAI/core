@@ -13,6 +13,7 @@ import {
 import { MulterModule } from "@nestjs/platform-express";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { RemoveFieldsCommand } from "./commands/remove-fields.command";
+import { MigrateRemovedFieldsCommand } from "./commands/migrate-removed-fields.command";
 import { FieldMetadataController } from "./controllers/field-metadata.controller";
 import { DashboardController } from "./controllers/dashboard.controller";
 import { MediaStorageProviderMetadataController } from "./controllers/media-storage-provider-metadata.controller";
@@ -20,6 +21,8 @@ import { ModelMetadataController } from "./controllers/model-metadata.controller
 import { ModuleMetadataExplorerController } from "./controllers/module-metadata-explorer.controller";
 import { ModuleMetadataController } from "./controllers/module-metadata.controller";
 import { ModulePackageController } from "./controllers/module-package.controller";
+import { DatasourceManagementController } from "./controllers/datasource-management.controller";
+import { DatasourceIntrospectionController } from "./controllers/datasource-introspection.controller";
 import { TestController } from "./controllers/test.controller";
 import { FieldMetadata } from "./entities/field-metadata.entity";
 import { ListOfValues } from "./entities/list-of-values.entity";
@@ -36,6 +39,8 @@ import { PseudoForeignKeySelectionProvider } from "./services/selection-provider
 import { ModuleMetadataSeederService } from "./seeders/module-metadata-seeder.service";
 import { ModuleTestDataService } from "./seeders/module-test-data.service";
 import { CrudHelperService } from "./services/crud-helper.service";
+import { DatasourceManagementService } from "./services/datasource-management.service";
+import { DatasourceIntrospectionService } from "./services/datasource-introspection.service";
 import { FieldMetadataService } from "./services/field-metadata.service";
 import { DashboardRuntimeService } from "./services/dashboard-runtime.service";
 import { ListOfValuesService } from "./services/list-of-values.service";
@@ -43,6 +48,7 @@ import { ListOfValuesService } from "./services/list-of-values.service";
 import { MediaStorageProviderMetadataService } from "./services/media-storage-provider-metadata.service";
 import { MediaService } from "./services/media.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
+import { RemovedFieldMigrationService } from "./services/removed-field-migration.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
 import { ModulePackageService } from "./services/module-package.service";
@@ -379,6 +385,9 @@ import { DashboardUserLayout } from './entities/dashboard-user-layout.entity';
 import { DashboardUserLayoutService } from './services/dashboard-user-layout.service';
 import { DashboardUserLayoutController } from './controllers/dashboard-user-layout.controller';
 import { DashboardUserLayoutRepository } from './repositories/dashboard-user-layout.repository';
+import { MssqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mssql-datasource-introspection-provider.service";
+import { MysqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mysql-datasource-introspection-provider.service";
+import { PostgresDatasourceIntrospectionProviderService } from "./services/datasource-introspection/postgres-datasource-introspection-provider.service";
 
 @Global()
 @Module({
@@ -463,6 +472,8 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ExportTransactionController,
     FieldMetadataController,
     DashboardController,
+    DatasourceManagementController,
+    DatasourceIntrospectionController,
     GoogleAuthenticationController,
     FacebookAuthenticationController,
     MicrosoftAuthenticationController,
@@ -526,6 +537,8 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
       useClass: HttpExceptionFilter,
     },
     ModuleMetadataService,
+    DatasourceManagementService,
+    DatasourceIntrospectionService,
     ModuleMetadataExplorerService,
     ModuleMetadataHelperService,
     ModulePackageService,
@@ -534,6 +547,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     FieldMetadataService,
     DashboardRuntimeService,
     RemoveFieldsCommand,
+    MigrateRemovedFieldsCommand,
     RefreshModelCommand,
     RefreshModuleCommand,
     InfoCommand,
@@ -723,7 +737,11 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ExportTransactionService,
     ExcelService,
     CsvService,
+    DatasourceManagementService,
     DashboardRuntimeService,
+    MssqlDatasourceIntrospectionProviderService,
+    MysqlDatasourceIntrospectionProviderService,
+    PostgresDatasourceIntrospectionProviderService,
     ImportTransactionService,
     ImportTransactionErrorLogService,
     CreatedByUpdatedBySubscriber,
@@ -776,6 +794,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     UserViewMetadataRepository,
     ModelMetadataRepository,
     ModuleMetadataRepository,
+    RemovedFieldMigrationService,
     ActionMetadataRepository,
     MediaStorageProviderMetadataRepository,
     FixturesService,
@@ -823,6 +842,7 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
     ModelMetadataHelperService,
     ModelMetadataService,
     ModuleMetadataService,
+    DatasourceIntrospectionService,
     ModuleMetadataExplorerService,
     ModulePackageService,
     MqMessageQueueService,

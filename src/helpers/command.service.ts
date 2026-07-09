@@ -10,6 +10,10 @@ export type CommandWithArgs = {
 @Injectable()
 export class CommandService {
   private readonly logger = new Logger(CommandService.name);
+  private readonly ansiEscapePattern =
+    // Covers standard ANSI CSI, OSC, and related terminal escape sequences.
+    // eslint-disable-next-line no-control-regex
+    /[\u001B\u009B][[\]()#;?]*(?:(?:[0-9]{1,4}(?:;[0-9]{0,4})*)?[0-9A-ORZcf-nqry=><~]|(?:][^\u0007]*(?:\u0007|\u001B\\)))/g;
 
   /**
    * Escape an argument for Windows CMD shell
@@ -51,11 +55,11 @@ export class CommandService {
       let stderr = '';
 
       child.stdout.on('data', (data) => {
-        stdout += data.toString();
+        stdout += this.stripAnsi(data.toString());
       });
 
       child.stderr.on('data', (data) => {
-        stderr += data.toString();
+        stderr += this.stripAnsi(data.toString());
       });
 
       child.on('error', (error) => {
@@ -72,5 +76,9 @@ export class CommandService {
         resolve(stdout);
       });
     });
+  }
+
+  private stripAnsi(value: string): string {
+    return value.replace(this.ansiEscapePattern, '');
   }
 }

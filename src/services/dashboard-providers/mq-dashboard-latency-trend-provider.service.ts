@@ -2,7 +2,13 @@ import { Injectable } from "@nestjs/common";
 import { DashboardWidgetDataProvider } from "src/decorators/dashboard-widget-data-provider.decorator";
 import { MqMessageRepository } from "src/repository/mq-message.repository";
 import { IDashboardWidgetDataProvider, IDashboardWidgetDataProviderContext, IDashboardWidgetDataResponseEnvelope } from "src/interfaces";
-import { applyMqDashboardFilters, normalizeBucket, toNumber } from "src/services/dashboard-providers/mq-dashboard-provider-utils";
+import {
+    applyMqDashboardFilters,
+    buildMqDashboardBucketExpression,
+    normalizeBucket,
+    normalizeMqDashboardBucketValue,
+    toNumber,
+} from "src/services/dashboard-providers/mq-dashboard-provider-utils";
 
 @DashboardWidgetDataProvider()
 @Injectable()
@@ -29,7 +35,7 @@ export class MqDashboardLatencyTrendProvider implements IDashboardWidgetDataProv
         applyMqDashboardFilters(qb, ctxt.variables ?? {});
         qb.andWhere("mqMessage.elapsedMillis IS NOT NULL");
 
-        const bucketExpr = `DATE_TRUNC('${bucket}', mqMessage.createdAt)`;
+        const bucketExpr = buildMqDashboardBucketExpression(qb, bucket, "mqMessage.createdAt");
         const rows = await qb
             .select(bucketExpr, "bucket")
             .addSelect("AVG(mqMessage.elapsedMillis)", "value")
@@ -37,7 +43,7 @@ export class MqDashboardLatencyTrendProvider implements IDashboardWidgetDataProv
             .orderBy("bucket", "ASC")
             .getRawMany<{ bucket: string; value: string | number }>();
 
-        const categories = rows.map((r) => new Date(r.bucket).toISOString());
+        const categories = rows.map((r) => normalizeMqDashboardBucketValue(r.bucket));
         const values = rows.map((r) => Number(toNumber(r.value).toFixed(2)));
 
         return {
@@ -55,4 +61,3 @@ export class MqDashboardLatencyTrendProvider implements IDashboardWidgetDataProv
         };
     }
 }
-

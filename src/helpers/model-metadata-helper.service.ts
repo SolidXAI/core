@@ -2,7 +2,7 @@
 
 import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
 import { _ } from "lodash";
-import { LEGACY_TABLE_FIELDS_PREFIX } from "src/entities/legacy-common.entity";
+import { LEGACY_TABLE_FIELDS_PREFIX } from "src/entities/legacy-common.entity-with-existing-id.entity";
 import { LegacyTableType } from "src/enums/legacy-table-type.enum";
 import { ModelMetadataRepository } from "src/repository/model-metadata.repository";
 import { SolidRegistry } from "./solid-registry";

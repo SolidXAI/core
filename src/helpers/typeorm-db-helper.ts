@@ -45,6 +45,21 @@ const solidCoreDbType: DatasourceType =
         ? (process.env.SOLID_CORE_DB_TYPE as DatasourceType)
         : DatasourceType.postgres;
 
+// Must use ANSI CAST() syntax — not Postgres-specific `::text` — because TypeORM's
+// replacePropertyNamesForTheWholeQuery regex treats ':' as part of the property name,
+// so `alias.col::text` is parsed as property `col::text` (no match → no column substitution).
+export function buildCastToText(driver: string, colExpr: string): string {
+    switch (driver) {
+        case DatasourceType.mssql:
+            return `CAST(${colExpr} AS NVARCHAR(MAX))`;
+        case DatasourceType.mysql:
+        case DatasourceType.mariadb:
+            return `CAST(${colExpr} AS CHAR)`;
+        default:
+            return `CAST(${colExpr} AS TEXT)`;
+    }
+}
+
 export function getColumnType(solidType: string): ColumnOptions {
     switch (solidType) {
         case "longText":

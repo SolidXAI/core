@@ -2,6 +2,7 @@ import { Injectable } from "@nestjs/common";
 import { SelectionProvider } from "src/decorators/selection-provider.decorator";
 import { MqMessageQueueRepository } from "src/repository/mq-message-queue.repository";
 import { ISelectionProvider, ISelectionProviderContext, ISelectionProviderValues } from "src/interfaces";
+import { applyCaseInsensitiveContainsFilter } from "src/services/dashboard-providers/mq-dashboard-provider-utils";
 
 @SelectionProvider()
 @Injectable()
@@ -32,9 +33,7 @@ export class MqDashboardQueueNameVariableOptionsProvider implements ISelectionPr
         const limit = Math.min(Math.max(ctxt?.limit ?? 25, 1), 200);
         const offset = Math.max(ctxt?.offset ?? 0, 0);
 
-        if (query) {
-            qb.andWhere("mqMessageQueue.name ILIKE :query", { query: `%${query}%` });
-        }
+        applyCaseInsensitiveContainsFilter(qb, "mqMessageQueue.name", query, "query");
 
         const records = await qb
             .select(["mqMessageQueue.name"])
@@ -48,4 +47,3 @@ export class MqDashboardQueueNameVariableOptionsProvider implements ISelectionPr
             .map((r) => ({ label: r.name, value: r.name }));
     }
 }
-

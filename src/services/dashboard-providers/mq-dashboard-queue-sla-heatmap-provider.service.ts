@@ -2,7 +2,13 @@ import { Injectable } from "@nestjs/common";
 import { DashboardWidgetDataProvider } from "src/decorators/dashboard-widget-data-provider.decorator";
 import { IDashboardWidgetDataProvider, IDashboardWidgetDataProviderContext, IDashboardWidgetDataResponseEnvelope } from "src/interfaces";
 import { MqMessageRepository } from "src/repository/mq-message.repository";
-import { applyMqDashboardFilters, normalizeBucket, toNumber } from "src/services/dashboard-providers/mq-dashboard-provider-utils";
+import {
+    applyMqDashboardFilters,
+    buildMqDashboardBucketExpression,
+    normalizeBucket,
+    normalizeMqDashboardBucketValue,
+    toNumber,
+} from "src/services/dashboard-providers/mq-dashboard-provider-utils";
 
 type HeatmapLegendThreshold = {
     label: string;
@@ -71,7 +77,7 @@ export class MqDashboardQueueSlaHeatmapProvider implements IDashboardWidgetDataP
         applyMqDashboardFilters(qb, ctxt.variables ?? {}, { ensureQueueJoin: true });
         qb.andWhere("mqMessage.elapsedMillis IS NOT NULL");
 
-        const bucketExpr = `DATE_TRUNC('${bucket}', mqMessage.createdAt)`;
+        const bucketExpr = buildMqDashboardBucketExpression(qb, bucket, "mqMessage.createdAt");
         const rows = await qb
             .select(bucketExpr, "bucket")
             .addSelect("mqMessageQueue.name", "queueName")
@@ -93,7 +99,7 @@ export class MqDashboardQueueSlaHeatmapProvider implements IDashboardWidgetDataP
         const xCategories = Array.from(
             new Set(
                 rows
-                    .map((row) => row?.bucket ? new Date(row.bucket).toISOString() : "")
+                    .map((row) => normalizeMqDashboardBucketValue(row?.bucket))
                     .filter((bucketValue) => !!bucketValue)
             )
         ).sort();
@@ -108,7 +114,7 @@ export class MqDashboardQueueSlaHeatmapProvider implements IDashboardWidgetDataP
         const pointDetails: HeatmapPointDetail[] = [];
 
         for (const row of rows) {
-            const bucketValue = row?.bucket ? new Date(row.bucket).toISOString() : "";
+            const bucketValue = normalizeMqDashboardBucketValue(row?.bucket);
             const queueName = `${row?.queueName ?? ""}`.trim();
             const xIndex = xIndexMap.get(bucketValue);
             const yIndex = yIndexMap.get(queueName);

@@ -1077,15 +1077,24 @@
           {
             "name": "type",
             "displayName": "Type",
-            "type": "shortText",
+            "type": "selectionStatic",
             "ormType": "varchar",
+            "length": 256,
             "required": true,
             "unique": false,
             "index": true,
             "private": false,
             "encrypt": false,
             "columnName": "type",
-            "isSystem": true
+            "isSystem": true,
+            "selectionValueType": "string",
+            "selectionStaticValues": [
+              "list:List",
+              "form:Form",
+              "tree:Tree",
+              "kanban:Kanban",
+              "card:Card"
+            ]
           },
           {
             "name": "context",
@@ -1584,7 +1593,7 @@
             "name": "roles",
             "displayName": "Roles",
             "type": "relation",
-            "required": true,
+            "required": false,
             "unique": false,
             "index": true,
             "private": false,
@@ -5244,6 +5253,13 @@
       }
     ]
   },
+  "locales": [
+    {
+      "locale": "en",
+      "displayName": "English",
+      "isDefault": true
+    }
+  ],
   "permissions": [
     "mcp:invoke",
     "agent:invoke",
@@ -5380,6 +5396,19 @@
       "viewUserKey": "fieldMetadata-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "fieldMetadata"
+    },
+    {
+      "displayName": "Datasource Management",
+      "name": "datasource-management-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/core/solid-core/datasources",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "moduleMetadata"
     },
     {
       "displayName": "Field Metadata Tree Action",
@@ -6087,7 +6116,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "moduleMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "appBuilder-menu-item"
+      "parentMenuItemUserKey": "appBuilder-menu-item",
+      "iconName": "view_module"
     },
     {
       "displayName": "Model",
@@ -6095,7 +6125,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "modelMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "appBuilder-menu-item"
+      "parentMenuItemUserKey": "appBuilder-menu-item",
+      "iconName": "table_rows"
     },
     {
       "displayName": "Field",
@@ -6103,7 +6134,17 @@
       "sequenceNumber": 3,
       "actionUserKey": "fieldMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "appBuilder-menu-item"
+      "parentMenuItemUserKey": "appBuilder-menu-item",
+      "iconName": "label"
+    },
+    {
+      "displayName": "Datasources",
+      "name": "datasource-management-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "datasource-management-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "appBuilder-menu-item",
+      "iconName": "storage"
     },
     {
       "displayName": "Menu Item",
@@ -6111,7 +6152,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "menuItemMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item",
+      "iconName": "menu"
     },
     {
       "displayName": "View",
@@ -6119,7 +6161,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "viewMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item",
+      "iconName": "pageview"
     },
     {
       "displayName": "Action",
@@ -6127,7 +6170,8 @@
       "sequenceNumber": 3,
       "actionUserKey": "actionMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item",
+      "iconName": "bolt"
     },
     {
       "displayName": "User View",
@@ -6135,7 +6179,8 @@
       "sequenceNumber": 5,
       "actionUserKey": "userViewMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "layoutBuilder-menu-item"
+      "parentMenuItemUserKey": "layoutBuilder-menu-item",
+      "iconName": "person"
     },
     {
       "displayName": "Media Management",
@@ -6152,7 +6197,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "media-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "mediaManagement-menu-item"
+      "parentMenuItemUserKey": "mediaManagement-menu-item",
+      "iconName": "perm_media"
     },
     {
       "displayName": "Media Storage Provider",
@@ -6160,7 +6206,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "mediaStorageProviderMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "mediaManagement-menu-item"
+      "parentMenuItemUserKey": "mediaManagement-menu-item",
+      "iconName": "cloud"
     },
     {
       "displayName": "IAM",
@@ -6169,7 +6216,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName": "person_shield"
+      "iconName": "manage_accounts"
     },
     {
       "displayName": "User",
@@ -6177,7 +6224,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "user-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "iam-menu-item"
+      "parentMenuItemUserKey": "iam-menu-item",
+      "iconName": "person"
     },
     {
       "displayName": "Role",
@@ -6185,7 +6233,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "roleMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "iam-menu-item"
+      "parentMenuItemUserKey": "iam-menu-item",
+      "iconName": "admin_panel_settings"
     },
     {
       "displayName": "Permission",
@@ -6193,7 +6242,8 @@
       "sequenceNumber": 3,
       "actionUserKey": "permissionMetadata-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "iam-menu-item"
+      "parentMenuItemUserKey": "iam-menu-item",
+      "iconName": "key"
     },
     {
       "displayName": "Security rules",
@@ -6201,7 +6251,8 @@
       "sequenceNumber": 4,
       "actionUserKey": "securityRule-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "iam-menu-item"
+      "parentMenuItemUserKey": "iam-menu-item",
+      "iconName": "gavel"
     },
     {
       "displayName": "User Activity History",
@@ -6209,7 +6260,8 @@
       "sequenceNumber": 5,
       "actionUserKey": "userActivityHistory-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "iam-menu-item"
+      "parentMenuItemUserKey": "iam-menu-item",
+      "iconName": "history"
     },
     {
       "displayName": "Queues",
@@ -6226,7 +6278,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "solid-core-queue-health-dashboard-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "queues-menu-item"
+      "parentMenuItemUserKey": "queues-menu-item",
+      "iconName": "analytics"
     },
     {
       "displayName": "Queues",
@@ -6234,7 +6287,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "mqMessageQueue-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "queues-menu-item"
+      "parentMenuItemUserKey": "queues-menu-item",
+      "iconName": "dns"
     },
     {
       "displayName": "Messages",
@@ -6242,7 +6296,8 @@
       "sequenceNumber": 3,
       "actionUserKey": "mqMessage-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "queues-menu-item"
+      "parentMenuItemUserKey": "queues-menu-item",
+      "iconName": "message"
     },
     {
       "displayName": "Notification",
@@ -6251,7 +6306,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName": "notification_settings"
+      "iconName": "notification_add"
     },
     {
       "displayName": "Email",
@@ -6259,7 +6314,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "emailTemplate-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "notification-menu-item"
+      "parentMenuItemUserKey": "notification-menu-item",
+      "iconName": "email"
     },
     {
       "displayName": "SMS",
@@ -6267,7 +6323,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "smsTemplate-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "notification-menu-item"
+      "parentMenuItemUserKey": "notification-menu-item",
+      "iconName": "sms"
     },
     {
       "displayName": "Other",
@@ -6276,7 +6333,7 @@
       "actionUserKey": "",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName": "other_admission"
+      "iconName": "more_horiz"
     },
     {
       "displayName": "List of Values",
@@ -6284,7 +6341,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "listOfValues-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "list"
     },
     {
       "displayName": "Scheduled Jobs",
@@ -6292,7 +6350,8 @@
       "sequenceNumber": 2,
       "actionUserKey": "scheduledJob-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "event_repeat"
     },
     {
       "displayName": "Saved Filters",
@@ -6300,7 +6359,8 @@
       "sequenceNumber": 4,
       "actionUserKey": "savedFilters-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "filter_list_alt"
     },
     {
       "displayName": "Chatter Message",
@@ -6308,7 +6368,8 @@
       "sequenceNumber": 5,
       "actionUserKey": "chatterMessage-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "forum"
     },
     {
       "displayName": "Locale",
@@ -6316,7 +6377,8 @@
       "sequenceNumber": 7,
       "actionUserKey": "locale-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "language"
     },
     {
       "displayName": "Import Transactions",
@@ -6324,7 +6386,8 @@
       "sequenceNumber": 8,
       "actionUserKey": "importTransaction-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "upload_file"
     },
     {
       "displayName": "Settings",
@@ -6341,7 +6404,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "modelSequence-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item"
+      "parentMenuItemUserKey": "other-menu-item",
+      "iconName": "format_list_numbered"
     },
     {
       "displayName": "Dashboard User Layout",
@@ -6350,7 +6414,7 @@
       "actionUserKey": "dashboardUserLayout-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "",
-      "iconName": ""
+      "iconName": "dashboard_customize"
     },
     {
       "displayName": "Agent",
@@ -6367,7 +6431,8 @@
       "sequenceNumber": 1,
       "actionUserKey": "agentSession-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "agent-menu-item"
+      "parentMenuItemUserKey": "agent-menu-item",
+      "iconName": "chat"
     },
     {
       "displayName": "MCP Audit Log",
@@ -6375,7 +6440,8 @@
       "sequenceNumber": 3,
       "actionUserKey": "mcpAuditLog-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "agent-menu-item"
+      "parentMenuItemUserKey": "agent-menu-item",
+      "iconName": "fact_check"
     }
   ],
   "views": [
@@ -8709,12 +8775,15 @@
             48
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
+          "create": false,
+          "edit": false,
           "delete": true,
+          "import": false,
+          "export": false,
           "allowedViews": [
             "list",
-            "card"
+            "card",
+            "tree"
           ]
         },
         "children": [
@@ -8975,7 +9044,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -10067,15 +10142,11 @@
           "swimlanesCount": 5,
           "recordsInSwimlane": 10,
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true,
+          "create": false,
+          "edit": false,
+          "delete": false,
           "groupBy": "stage",
-          "draggable": false,
-          "allowedViews": [
-            "list",
-            "kanban"
-          ]
+          "draggable": false
         },
         "children": [
           {
@@ -11901,7 +11972,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -13396,7 +13471,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": true,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -13471,7 +13552,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -13555,7 +13642,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -13617,7 +13710,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -13686,7 +13785,13 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": true,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -13756,7 +13861,14 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": true,
+          "import": false,
+          "export": false,
+          "allowedViews": [
+            "list",
+            "card",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -13822,11 +13934,14 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": false,
-          "edit": false,
-          "delete": false,
-          "import": false,
-          "export": false
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "import": true,
+          "export": true,
+          "allowedViews": [
+            "list"
+          ]
         },
         "children": [
           {
@@ -13861,7 +13976,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -13923,7 +14042,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -13992,7 +14115,11 @@
           "edit": true,
           "delete": true,
           "import": true,
-          "export": true
+          "export": true,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14052,7 +14179,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14112,7 +14243,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14182,7 +14317,11 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false
+          "export": false,
+          "allowedViews": [
+            "list",
+            "tree"
+          ]
         },
         "children": [
           {
@@ -14251,7 +14390,12 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true
+          "delete": true,
+          "import": true,
+          "export": true,
+          "allowedViews": [
+            "list"
+          ]
         },
         "children": [
           {

@@ -309,7 +309,7 @@ export class AuthenticationService {
     if (signUpDto.roles && signUpDto.roles.length > 0) {
       for (let i = 0; i < signUpDto.roles.length; i++) {
         const roleName = signUpDto.roles[i];
-        await this.roleMetadataService.findRoleByName(roleName);
+        await this.roleMetadataService.assertRoleExistsByName(roleName);
       }
     }
     user.username = signUpDto.username;
@@ -1042,13 +1042,15 @@ export class AuthenticationService {
     }
 
     const type = this.resolveLoginType(signInDto);
-    const user = await this.findUserForLogin(type, signInDto.identifier);
-    const dummyOtp = this.getDummyOtpForUser(user);
-    if (!dummyOtp) {
-      await this.assignLoginOtp(user, type);
-      await this.notifyUserOnOtpInititateLogin(user, type);
+    const user = await this.findUserForLoginOrNull(type, signInDto.identifier);
+    if (user) {
+      const dummyOtp = this.getDummyOtpForUser(user);
+      if (!dummyOtp) {
+        await this.assignLoginOtp(user, type);
+        await this.notifyUserOnOtpInititateLogin(user, type);
+      }
     }
-    return this.buildLoginOtpResponse(user, type);
+    return this.buildLoginOtpResponse(type, signInDto.identifier, user);
   }
 
   private resolveLoginType(
@@ -1100,6 +1102,25 @@ export class AuthenticationService {
     return user;
   }
 
+  private async findUserForLoginOrNull(
+    type: PasswordlessLoginValidateWhatSources,
+    identifier: string,
+    options: { withRoles?: boolean } = {},
+  ): Promise<User | null> {
+    try {
+      return await this.findUserForLogin(type, identifier, options);
+    } catch (error) {
+      if (
+        error instanceof UnauthorizedException &&
+        (error.message === ERROR_MESSAGES.USER_NOT_FOUND ||
+          error.message === ERROR_MESSAGES.USER_INACTIVE)
+      ) {
+        return null;
+      }
+      throw error;
+    }
+  }
+
   private async assignLoginOtp(
     user: User,
     type: PasswordlessLoginValidateWhatSources,
@@ -1123,17 +1144,27 @@ export class AuthenticationService {
   }
 
   private buildLoginOtpResponse(
-    user: User,
     type: PasswordlessLoginValidateWhatSources,
+    identifier: string,
+    user?: User | null,
   ) {
-    const maskedIdentifier =
-      type === PasswordlessLoginValidateWhatSources.EMAIL
-        ? { email: this.maskEmail(user.email) }
-        : { mobile: this.maskMobile(user.mobile) };
+    const maskedIdentifier = this.buildMaskedLoginIdentifier(
+      type,
+      user?.email ?? user?.mobile ?? identifier,
+    );
     return {
       message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_LOGIN,
       user: maskedIdentifier,
     };
+  }
+
+  private buildMaskedLoginIdentifier(
+    type: PasswordlessLoginValidateWhatSources,
+    identifier: string,
+  ) {
+    return type === PasswordlessLoginValidateWhatSources.EMAIL
+      ? { email: this.maskEmail(identifier) }
+      : { mobile: this.maskMobile(identifier) };
   }
 
   private async notifyUserOnOtpInititateLogin(
@@ -1273,9 +1304,12 @@ export class AuthenticationService {
       throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
     }
 
-    const user = await this.findUserForLogin(type, identifier, {
+    const user = await this.findUserForLoginOrNull(type, identifier, {
       withRoles: true,
     });
+    if (!user) {
+      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
+    }
     this.checkAccountBlocked(user);
     const dummyOtp = this.getDummyOtpForUser(user);
 

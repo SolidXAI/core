@@ -51,6 +51,10 @@ export class SettingService {
     return settings;
   }
 
+  private async getSettingsFromDbForSeeding(): Promise<Setting[]> {
+    return this.repo.find({ relations: ['moduleMetadata'] });
+  }
+
   private parseSettingValue(value: string, key: string): any {
     try {
       return JSON.parse(value);
@@ -194,15 +198,30 @@ export class SettingService {
     const saEditableAndAbove = this.getAllSettingsFromProviders().filter(i => [SettingLevel.SystemAdminEditable, SettingLevel.InternalUser].includes(i.level));
 
     // Get hold of the current values from the database.
-    const existingSettingsFromDb: Setting[] = await this.getSettingsFromDb();
+    const existingSettingsFromDb: Setting[] = await this.getSettingsFromDbForSeeding();
 
     // const existingKeysFromDb = new Set(existingSettingsFromDb.map(s => s.key));
     const existingSettingsFromDbByKey = new Map(existingSettingsFromDb.map(setting => [setting.key, setting]));
-    const settingsToMutate: Setting[] = [];
-    // const settingsToUpdate: Setting[] = [];
+    const settingsToCreate: Setting[] = [];
+    const settingsToUpdate: Setting[] = [];
+    const moduleNames = Array.from(
+      new Set(
+        saEditableAndAbove
+          .map(setting => setting.moduleName)
+          .filter((moduleName): moduleName is string => !!moduleName)
+      )
+    );
+    const moduleMetadataByName = new Map<string, Awaited<ReturnType<ModuleMetadataRepository['findOneBy']>>>();
+
+    await Promise.all(
+      moduleNames.map(async (moduleName) => {
+        const moduleMetadata = await this.moduleMetadataRepo.findOneBy({ name: moduleName });
+        moduleMetadataByName.set(moduleName, moduleMetadata);
+      })
+    );
 
     for (const { key, value, level, moduleName, encrypted } of saEditableAndAbove) {
-      const moduleMetadata = await this.moduleMetadataRepo.findOneBy({ name: moduleName });
+      const moduleMetadata = moduleName ? moduleMetadataByName.get(moduleName) : null;
       if (!existingSettingsFromDbByKey.has(key)) {
         const setting = new Setting();
         setting.key = key;
@@ -227,24 +246,36 @@ export class SettingService {
         }
         setting.value = rawValue;
 
-        settingsToMutate.push(setting);
+        settingsToCreate.push(setting);
       }
       else {
         const setting = existingSettingsFromDbByKey.get(key);
+        const existingModuleMetadataId = setting.moduleMetadata?.id ?? null;
+        const nextModuleMetadataId = moduleMetadata?.id ?? null;
+        const levelChanged = setting.level !== level;
+        const encryptedChanged = setting.encrypted !== !!encrypted;
+        const moduleChanged = !!moduleMetadata && existingModuleMetadataId !== nextModuleMetadataId;
+
+        if (!levelChanged && !encryptedChanged && !moduleChanged) {
+          continue;
+        }
+
         setting.level = level;
         setting.encrypted = !!encrypted;
-        if (moduleMetadata)
+        if (moduleMetadata) {
           setting.moduleMetadata = moduleMetadata;
-        settingsToMutate.push(setting);
+        }
+        settingsToUpdate.push(setting);
       }
     }
 
-    if (settingsToMutate.length > 0) {
-      await this.repo.save(settingsToMutate);
+    if (settingsToCreate.length > 0) {
+      await this.repo.save(settingsToCreate);
     }
-    // if (settingsToUpdate.length > 0) {
-    //   await this.repo.save(settingsToUpdate);
-    // }
+
+    if (settingsToUpdate.length > 0) {
+      await this.repo.save(settingsToUpdate);
+    }
   }
 
   /**

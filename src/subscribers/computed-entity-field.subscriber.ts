@@ -1,7 +1,5 @@
 import { camelCase } from 'lodash';
-import { Delete } from "@aws-sdk/client-s3";
 import { forwardRef, Inject, Injectable, InternalServerErrorException, Logger, Scope } from "@nestjs/common";
-import { model } from "mongoose";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
 import { ComputedFieldMetadata, SolidRegistry, TypeOrmEventContext } from "src/helpers/solid-registry";
 import { IEntityPreComputeFieldProvider } from "src/interfaces";
@@ -14,19 +12,15 @@ export interface ComputedFieldEvaluationPayload extends ComputedFieldMetadata {
 }
 
 @Injectable({ scope: Scope.TRANSIENT })
-// @EventSubscriber()
 export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface {
     private readonly logger = new Logger(this.constructor.name);
     private dataSource: DataSource;
+
     constructor(
-        // @InjectDataSource()
-        // private readonly dataSource: DataSource,
         private readonly solidRegistry: SolidRegistry,
         @Inject(forwardRef(() => PublisherFactory))
         private readonly publisherFactory: PublisherFactory<ComputedFieldEvaluationPayload>
-        // private readonly computedFieldPublisher: ComputedFieldEvaluationPublisherDatabase,
     ) {
-        // this.dataSource.subscribers.push(this);
     }
 
     bindToDataSource(dataSource: DataSource) {
@@ -43,30 +37,52 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
     async beforeUpdate(event: UpdateEvent<any>): Promise<any> {
         const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'beforeUpdate');
-        // await this.handleComputedFieldEvaluation(event.databaseEntity, ComputedFieldTriggerOperation.beforeUpdate, modelName, eventContext);
         await this.handleComputedFieldEvaluation(event.entity, ComputedFieldTriggerOperation.beforeUpdate, modelName, eventContext);
     }
 
     afterInsert(event: InsertEvent<any>) {
         const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'afterInsert');
-        this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterInsert, modelName, eventContext);
+        this.handlePostEventJobs(event, event.entity, ComputedFieldTriggerOperation.afterInsert, modelName, eventContext);
     }
 
     afterUpdate(event: UpdateEvent<any>) {
         const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? event.databaseEntity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'afterUpdate');
-        // this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterUpdate, modelName, eventContext);
-        this.handleComputedFieldEvaluationJob(event.entity, ComputedFieldTriggerOperation.afterUpdate, modelName, eventContext);
+        this.handlePostEventJobs(event, event.entity, ComputedFieldTriggerOperation.afterUpdate, modelName, eventContext);
     }
 
     afterRemove(event: RemoveEvent<any>) {
         const modelName = camelCase(event.metadata?.name ?? event.entity?.constructor?.name ?? event.databaseEntity?.constructor?.name ?? '');
         const eventContext = this.sanitizeEventContext(event, 'afterRemove');
-        this.handleComputedFieldEvaluationJob(event.databaseEntity, ComputedFieldTriggerOperation.afterRemove, modelName, eventContext);
+        this.handlePostEventJobs(event, event.databaseEntity, ComputedFieldTriggerOperation.afterRemove, modelName, eventContext);
     }
 
     //FIXME: Need to add support for beforeRemove, beforeSoftRemove, afterSoftRemove, beforeRecover, afterRecover
+
+    private handlePostEventJobs(
+        _event: InsertEvent<any> | UpdateEvent<any> | RemoveEvent<any>,
+        entity: any,
+        currentOperation: ComputedFieldTriggerOperation,
+        modelName: string,
+        eventContext?: TypeOrmEventContext,
+    ) {
+        if (!entity) return;
+
+        const computedFieldsTobeEvaluated = this.getComputedFieldsForEvaluation(
+            this.solidRegistry.getComputedFieldMetadata(),
+            currentOperation,
+            modelName
+        );
+        if (computedFieldsTobeEvaluated.length === 0) return;
+
+        for (const computedField of computedFieldsTobeEvaluated) {
+            this.enqueueComputedFieldEvaluationJob(
+                this.attachContext(computedField, eventContext),
+                entity,
+            );
+        }
+    }
 
     private async handleComputedFieldEvaluation(entity: any, currentOperation: ComputedFieldTriggerOperation, modelName: string, eventContext?: TypeOrmEventContext): Promise<void> {
         if (!entity) {
@@ -77,24 +93,8 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
             currentOperation,
             modelName
         );
-        //TODO: We can add a feature i.e dependsOn, where we can check if the computed field depends on other computed fields and evaluate them first
         for (const computedField of computedFieldsTobeEvaluated) {
             await this.evaluateComputedField(this.attachContext(computedField, eventContext), entity, currentOperation);
-        }
-    }
-
-    private handleComputedFieldEvaluationJob(entity: any, currentOperation: ComputedFieldTriggerOperation, modelName: string, eventContext?: TypeOrmEventContext) {
-        if (!entity) {
-            return;
-        }
-        const computedFieldsTobeEvaluated = this.getComputedFieldsForEvaluation(
-            this.solidRegistry.getComputedFieldMetadata(),
-            currentOperation,
-            modelName
-        );
-        //TODO: We can add a feature i.e dependsOn, where we can check if the computed field depends on other computed fields and evaluate them first
-        for (const computedField of computedFieldsTobeEvaluated) {
-            this.enqueueComputedFieldEvaluationJob(this.attachContext(computedField, eventContext), entity, eventContext);
         }
     }
 
@@ -147,16 +147,12 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         }
     }
 
-    private enqueueComputedFieldEvaluationJob(computedField: ComputedFieldMetadata<any>, databaseEntity: any, eventContext?: any) {
+    private enqueueComputedFieldEvaluationJob(computedField: ComputedFieldMetadata<any>, databaseEntity: any) {
         const payload = {
             ...computedField,
             databaseEntity,
-            // eventContext,
         };
-        this.publisherFactory.publish({ payload }, 'ComputedFieldEvaluationPublisher')
-        // this.computedFieldPublisher.publish({
-        //     payload
-        // });
+        this.publisherFactory.publish({ payload }, 'ComputedFieldEvaluationPublisher');
     }
 
     private attachContext<T extends ComputedFieldMetadata<any>>(computedField: T, eventContext?: any): T {

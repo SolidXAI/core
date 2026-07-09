@@ -54,6 +54,59 @@ export function toNumber(value: any, fallback = 0): number {
     return Number.isFinite(n) ? n : fallback;
 }
 
+export function buildMqDashboardBucketExpression(
+    qb: SelectQueryBuilder<MqMessage>,
+    bucket: 'hour' | 'day' | 'week' | 'month',
+    columnExpr: string,
+): string {
+    const driver = `${qb.connection.options.type ?? ''}`.toLowerCase();
+
+    switch (driver) {
+        case 'postgres':
+        case 'cockroachdb':
+            return `DATE_TRUNC('${bucket}', ${columnExpr})`;
+        case 'mysql':
+        case 'mariadb':
+            switch (bucket) {
+                case 'hour':
+                    return `DATE_FORMAT(${columnExpr}, '%Y-%m-%d %H:00:00')`;
+                case 'day':
+                    return `DATE_FORMAT(${columnExpr}, '%Y-%m-%d 00:00:00')`;
+                case 'week':
+                    return `STR_TO_DATE(DATE_FORMAT(${columnExpr}, '%x-%v-1'), '%x-%v-%w')`;
+                case 'month':
+                    return `DATE_FORMAT(${columnExpr}, '%Y-%m-01 00:00:00')`;
+                default:
+                    throw new Error(`Unsupported bucket ${bucket} for driver ${driver}`);
+            }
+        case 'mssql':
+        case 'sqlserver':
+            switch (bucket) {
+                case 'hour':
+                    return `DATEADD(hour, DATEDIFF(hour, 0, ${columnExpr}), 0)`;
+                case 'day':
+                    return `DATEADD(day, DATEDIFF(day, 0, ${columnExpr}), 0)`;
+                case 'week':
+                    return `DATEADD(week, DATEDIFF(week, 0, ${columnExpr}), 0)`;
+                case 'month':
+                    return `DATEFROMPARTS(YEAR(${columnExpr}), MONTH(${columnExpr}), 1)`;
+                default:
+                    throw new Error(`Unsupported bucket ${bucket} for driver ${driver}`);
+            }
+        default:
+            throw new Error(`Unsupported driver ${driver} for mq dashboard bucket expressions.`);
+    }
+}
+
+export function normalizeMqDashboardBucketValue(value: any): string {
+    if (!value) return '';
+    const parsed = value instanceof Date ? value : new Date(value);
+    if (Number.isNaN(parsed.getTime())) {
+        return `${value}`;
+    }
+    return parsed.toISOString();
+}
+
 
 function applyDateFilter(qb: SelectQueryBuilder<MqMessage>, dateVariable: any): void {
     const range = resolveDateRange(dateVariable);
@@ -86,6 +139,35 @@ function applyStringOrArrayFilter(
     }
 
     qb.andWhere(`${qualifiedColumn} IN (:...${paramKey})`, { [paramKey]: values });
+}
+
+export function applyCaseInsensitiveContainsFilter<T>(
+    qb: SelectQueryBuilder<T>,
+    qualifiedColumn: string,
+    query: string | undefined,
+    paramKey: string,
+) {
+    if (!query) {
+        return;
+    }
+
+    const driver = `${qb.connection.options.type ?? ''}`.toLowerCase();
+    const value = `%${query}%`;
+
+    switch (driver) {
+        case 'postgres':
+        case 'cockroachdb':
+            qb.andWhere(`${qualifiedColumn} ILIKE :${paramKey}`, { [paramKey]: value });
+            return;
+        case 'mysql':
+        case 'mariadb':
+        case 'mssql':
+        case 'sqlserver':
+            qb.andWhere(`LOWER(${qualifiedColumn}) LIKE LOWER(:${paramKey})`, { [paramKey]: value });
+            return;
+        default:
+            qb.andWhere(`${qualifiedColumn} LIKE :${paramKey}`, { [paramKey]: value });
+    }
 }
 
 function resolveDateRange(dateVariable: any): { from?: Date; to?: Date } {

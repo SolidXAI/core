@@ -1161,6 +1161,27 @@ export class FieldMetadataService implements OnApplicationBootstrap {
 
         // if found
         if (existingFieldMetadata) {
+            const hasChanges = Object.entries(updateDto).some(([key, value]) => {
+                if (key === 'model') {
+                    return existingFieldMetadata.model?.id !== value?.id;
+                }
+                if (key === 'mediaStorageProvider') {
+                    return existingFieldMetadata.mediaStorageProvider?.id !== value?.id;
+                }
+                const currentValue = existingFieldMetadata[key];
+                if (Array.isArray(currentValue) || Array.isArray(value)) {
+                    return JSON.stringify(currentValue ?? null) !== JSON.stringify(value ?? null);
+                }
+                if (value && typeof value === 'object') {
+                    return JSON.stringify(currentValue ?? null) !== JSON.stringify(value ?? null);
+                }
+                return currentValue !== value;
+            });
+
+            if (!hasChanges) {
+                return existingFieldMetadata;
+            }
+
             const updatedFieldMetadata = { ...existingFieldMetadata, ...updateDto };
             return this.fieldMetadataRepo.save(updatedFieldMetadata);
         }
@@ -1322,4 +1343,3 @@ export class FieldMetadataService implements OnApplicationBootstrap {
         }
     }
 }
-
