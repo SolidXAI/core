@@ -61,7 +61,6 @@ export class ChatterMessageController {
   //   return this.service.recover(id);
   // }
 
-  @Public()
   @Get('/getChatterMessages/:entityId/:entityName')
   @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
   @ApiQuery({ name: 'limit', required: false, type: Number })
