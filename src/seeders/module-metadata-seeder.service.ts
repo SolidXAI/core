@@ -1536,8 +1536,9 @@ export class ModuleMetadataSeederService {
             const { fields: fieldsMetadata, ...modelMetaDataWithoutFields } = modelMetadata;
 
             // Load and set the parent model if it exists.
+            let parentModel: ModelMetadata | null = null;
             if (modelMetadata.isChild && modelMetadata.parentModelUserKey) {
-                const parentModel = await this.getModelByUserKeyCached(modelMetadata.parentModelUserKey, {
+                parentModel = await this.getModelByUserKeyCached(modelMetadata.parentModelUserKey, {
                     moduleName: moduleMetadata.name,
                     component: 'module-model-fields',
                     details: `parentModel=${modelMetadata.parentModelUserKey}`,
@@ -1605,7 +1606,27 @@ export class ModuleMetadataSeederService {
                 }
             }
 
-            // Now that we have created fields & model update the model to stamp the userKeyField. 
+            // If userKeyField wasn't found among this model's own fields (e.g. STI "extension" models
+            // whose userKeyField is a column inherited from the parent entity), look it up on the
+            // parent model by the same name.
+            if (!userKeyField && modelMetadata.isChild && parentModel && userKeyFieldName) {
+                const inheritedUserKeyField = await this.timeOperation('field-find-inherited-user-key', () => fieldMetadataRepo.findOne({
+                    where: {
+                        model: { id: parentModel.id },
+                        name: userKeyFieldName,
+                    },
+                }), {
+                    moduleName: moduleMetadata.name,
+                    component: 'module-model-fields',
+                    serviceCall: 'fieldMetadataRepo.findOne',
+                    details: `model=${modelMetadata.singularName} parentModel=${modelMetadata.parentModelUserKey} field=${userKeyFieldName}`,
+                });
+                if (inheritedUserKeyField) {
+                    userKeyField = inheritedUserKeyField;
+                }
+            }
+
+            // Now that we have created fields & model update the model to stamp the userKeyField.
             if (userKeyField) {
                 modelMetaDataWithoutFields['userKeyField'] = userKeyField;
                 await this.timeOperation('model-user-key-field-upsert', () => this.modelMetadataService.upsert(modelMetaDataWithoutFields), {
