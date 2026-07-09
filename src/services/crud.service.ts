@@ -232,6 +232,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         // 5. Save the entity
         // For media, we need to use a storage provider and save the media, then save the associated uri against the entity or media table
         const mergedEntity = this.repo.merge(entity, updateDto);
+        delete mergedEntity.updatedAt;
         const savedEntity = await this.repo.save(mergedEntity) as T;
 
         //FIXME: Skip the many-to-many, and instead fire differential updates and avoid loading the entire association graph for the ids
