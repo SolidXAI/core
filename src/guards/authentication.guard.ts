@@ -32,6 +32,22 @@ export class AuthenticationGuard implements CanActivate {
     private readonly cls: ClsService,
   ) { }
 
+  private isGenericUnauthorizedError(error: unknown): boolean {
+    if (!(error instanceof UnauthorizedException)) {
+      return false;
+    }
+
+    const response = error.getResponse();
+    const message =
+      typeof response === 'string'
+        ? response
+        : Array.isArray((response as any)?.message)
+          ? (response as any).message[0]
+          : (response as any)?.message;
+
+    return !message || message === 'Unauthorized';
+  }
+
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // If method marked as public, then we return with true, else go ahead and apply the access token guard. 
     const contextLog = context.getHandler();
@@ -72,7 +88,12 @@ export class AuthenticationGuard implements CanActivate {
       const canActivate = await Promise.resolve(
         instance.canActivate(context),
       ).catch((err) => {
-        error = err;
+        if (
+          this.isGenericUnauthorizedError(error) ||
+          !this.isGenericUnauthorizedError(err)
+        ) {
+          error = err;
+        }
       });
 
       if (canActivate) {

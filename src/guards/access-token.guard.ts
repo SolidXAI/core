@@ -54,11 +54,11 @@ export class AccessTokenGuard implements CanActivate {
         const activeSessionId = await this.activeSessionStorage.getActiveSession(
           payload.sub,
         );
-        if (
-          !payload.sessionId ||
-          !activeSessionId ||
-          payload.sessionId !== activeSessionId
-        ) {
+
+        // Tokens issued before concurrent-login prevention was enabled do not
+        // carry a sessionId. Keep them valid until a newer login establishes
+        // an active session to compare against.
+        if (activeSessionId && payload.sessionId !== activeSessionId) {
           throw new UnauthorizedException(ERROR_MESSAGES.SESSION_INVALID);
         }
       }
