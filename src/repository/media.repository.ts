@@ -44,6 +44,9 @@ export class MediaRepository extends SolidBaseRepository<Media> {
                 id: createDto['mediaStorageProviderMetadataId']
             },
         });
+        if (createDto['isPublic'] === undefined) {
+            createDto['isPublic'] = createDto['mediaStorageProviderMetadata']?.isPublic !== false;
+        }
         const media = this.create(createDto);
         return this.save(media);
     }
