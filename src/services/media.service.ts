@@ -162,7 +162,7 @@ export class MediaService extends CRUDService<Media> {
     return this.repo.remove(media);
   }
 
-  async fileDownloadStream(media: Media): Promise<{ stream: Readable | null, fileName: string, mimeType: string, redirectUrl?: string }> {
+  async getDownloadStream(media: Media): Promise<{ stream: Readable | null, fileName: string, mimeType: string, redirectUrl?: string }> {
     const loadedMedia = await this.repo.findOne({
       where: { id: media.id },
       relations: ['mediaStorageProviderMetadata'],
@@ -183,6 +183,22 @@ export class MediaService extends CRUDService<Media> {
           ),
           fileName,
           mimeType,
+        };
+      case MediaStorageProviderType.AwsS3:
+        const expiresIn = loadedMedia.mediaStorageProviderMetadata.isPublic === false
+          ? (loadedMedia.mediaStorageProviderMetadata.signedUrlExpiry ?? 60) * 60
+          : 0;
+        return {
+          stream: null,
+          fileName,
+          mimeType,
+          redirectUrl: await this.s3FileService.getUrl(
+            `${loadedMedia.mediaStorageProviderMetadata.bucketName}:${loadedMedia.relativeUri}`,
+            {
+              region: this.getEffectiveRegion(loadedMedia.mediaStorageProviderMetadata.region),
+              expiresIn,
+            },
+          ),
         };
       default:
         throw new Error(`Unsupported media storage provider type ${loadedMedia.mediaStorageProviderMetadata.type}`);
