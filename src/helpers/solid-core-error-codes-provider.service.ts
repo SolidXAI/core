@@ -44,6 +44,15 @@ export class SolidCoreErrorCodesProvider implements IErrorCodeProvider {
                 },
             },
             {
+                code: 'solidx-resource-not-found',
+                priority: 95,
+                match: (txt) => txt.includes('enoent') && txt.includes('no such file or directory'),
+                meta: {
+                    message: ERROR_MESSAGES.RESOURCE_NOT_FOUND,
+                    httpStatus: 404,
+                },
+            },
+            {
                 code: 'solidx-db-duplicate-key',
                 priority: 90,
                 match: (txt) => txt.includes('unique constraint') || txt.includes('duplicate key'),
