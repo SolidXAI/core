@@ -23,6 +23,7 @@ import { ChatterMessage } from '../entities/chatter-message.entity';
 import { getMediaStorageProvider } from './mediaStorageProviders';
 import { RequestContextService } from './request-context.service';
 import { Logger } from '@nestjs/common';
+import { SolidIntrospectService } from './solid-introspect.service';
 
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
@@ -48,6 +49,26 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         private readonly modelMetadataHelperService: ModelMetadataHelperService,
     ) {
         super(entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
+    }
+
+    private getCoModelService(coModelName: string): CRUDService<any> {
+        const introspectService = this.moduleRef.get(SolidIntrospectService, { strict: false });
+        const modelSingularName = lowerFirst(coModelName);
+        const coModelService = introspectService?.getCRUDService(modelSingularName);
+        if (!coModelService) {
+            throw new BadRequestException(ERROR_MESSAGES.MODEL_SERVICE_NOT_FOUND(modelSingularName));
+        }
+        return coModelService;
+    }
+
+    private async assertRecordAccess(coModelName: string, coModelEntityId: number) {
+        const activeUser = this.requestContextService.getActiveUser();
+        if (!activeUser) {
+            throw new ForbiddenException(ERROR_MESSAGES.FORBIDDEN);
+        }
+
+        const coModelService = this.getCoModelService(coModelName);
+        await coModelService.findOne(coModelEntityId, {}, { activeUser });
     }
 
     private resolveMessageUserId(userId?: number | null): number | null {
@@ -96,6 +117,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             throw new NotFoundException(`Entity [solid-core.chatterMessage] with id ${id} not found`);
         }
 
+        await this.assertRecordAccess(message.coModelName, message.coModelEntityId);
+
         message.status = CHATTER_MESSAGE_STATUS.COMPLETED;
         return this.repo.save(message);
     }
@@ -110,6 +133,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         if (!message) {
             throw new NotFoundException(`Entity [solid-core.chatterMessage] with id ${id} not found`);
         }
+
+        await this.assertRecordAccess(message.coModelName, message.coModelEntityId);
 
         if (!this.isEditableCustomNoteMessage(message)) {
             throw new BadRequestException('Only custom note messages can be edited.');
@@ -193,17 +218,20 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
     }
 
     async postMessage(postDto: PostChatterMessageDto, files: Express.Multer.File[] = []) {
+        const coModelName = lowerFirst(postDto.coModelName);
+        await this.assertRecordAccess(coModelName, postDto.coModelEntityId);
+
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.CUSTOM;
         chatterMessage.messageSubType = postDto.messageSubType || CHATTER_MESSAGE_SUBTYPE.CUSTOM;
         chatterMessage.status = postDto.status ?? CHATTER_MESSAGE_STATUS.PENDING;
         chatterMessage.messageBody = postDto.messageBody;
         chatterMessage.coModelEntityId = postDto.coModelEntityId;
-        chatterMessage.coModelName = postDto.coModelName;
+        chatterMessage.coModelName = coModelName;
         chatterMessage.modelUserKey = postDto.modelUserKey ?? null;
 
         const model = await this.modelMetadataRepo.findOne({
-            where: { singularName: lowerFirst(postDto.coModelName) },
+            where: { singularName: coModelName },
             relations: { userKeyField: true }
         });
         chatterMessage.modelDisplayName = model?.displayName ?? null;
@@ -682,6 +710,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
     async getChatterMessages(entityId: number, entityName: string, query: any) {
         const { limit = 25, offset = 0, populate = [], populateMedia = [], filters } = query;
         this.logHeapUsed('getChatterMessages-start');
+
+        await this.assertRecordAccess(lowerFirst(entityName), entityId);
 
         const model = await this.modelMetadataRepo.findOne({
             where: {
