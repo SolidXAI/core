@@ -1705,6 +1705,18 @@
             "isSystem": true
           },
           {
+            "name": "isPublic",
+            "displayName": "Is Public",
+            "type": "boolean",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": "is_public",
+            "isSystem": true
+          },
+          {
             "name": "modelMetadata",
             "displayName": "Model Metadata",
             "type": "relation",
@@ -5294,6 +5306,9 @@
         "FieldMetadataController.getSelectionDynamicValues",
         "FieldMetadataController.getSelectionDynamicValue",
         "FieldMetadataController.findFieldDefaultMetaData",
+        "MediaController.findMany",
+        "MediaController.findOne",
+        "MediaController.download",
         "SavedFiltersController.delete",
         "SavedFiltersController.deleteMany",
         "SavedFiltersController.findOne",
@@ -8749,6 +8764,13 @@
           {
             "type": "field",
             "attrs": {
+              "name": "isPublic",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "fileSize",
               "sortable": true
             }
@@ -8844,6 +8866,14 @@
               {
                 "type": "field",
                 "attrs": {
+                  "name": "isPublic",
+                  "label": "isPublic",
+                  "isSearchable": true
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
                   "name": "fieldMetadata",
                   "label": "fieldMetadata",
                   "isSearchable": true
@@ -8907,6 +8937,12 @@
                     "type": "field",
                     "attrs": {
                       "name": "mediaStorageProviderMetadata"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "isPublic"
                     }
                   },
                   {
@@ -14504,7 +14540,15 @@
   "mediaStorageProviders": [
     {
       "name": "default-filesystem",
-      "type": "filesystem"
+      "type": "filesystem",
+      "isPublic": true,
+      "localPath": "media-files-storage"
+    },
+    {
+      "name": "private-filesystem",
+      "type": "filesystem",
+      "isPublic": false,
+      "localPath": "media-private-files-storage"
     },
     {
       "name": "default-aws-s3",
@@ -14533,6 +14577,47 @@
       "description": "Show All User records",
       "roleUserKey": "Admin",
       "modelMetadataUserKey": "user",
+      "securityRuleConfig": {
+        "filters": {
+          "id": {
+            "$ne": "0"
+          }
+        }
+      }
+    },
+    {
+      "name": "model:Media-role:Internal User-own",
+      "description": "Show Media records owned by the current user",
+      "roleUserKey": "Internal User",
+      "modelMetadataUserKey": "media",
+      "securityRuleConfig": {
+        "filters": {
+          "createdBy": {
+            "$eq": "$activeUserId"
+          }
+        }
+      }
+    },
+    {
+      "name": "model:Media-role:Internal User-public",
+      "description": "Show public Media records",
+      "roleUserKey": "Internal User",
+      "modelMetadataUserKey": "media",
+      "securityRuleConfig": {
+        "filters": {
+          "mediaStorageProviderMetadata": {
+            "isPublic": {
+              "$eq": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "model:Media-role:Admin",
+      "description": "Show All Media records",
+      "roleUserKey": "Admin",
+      "modelMetadataUserKey": "media",
       "securityRuleConfig": {
         "filters": {
           "id": {

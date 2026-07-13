@@ -54,6 +54,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
                 mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
                 fieldMetadataId: mediaFieldMetadata.id
             }) as unknown as Media;
+            mediaEntity.isPublic = this.resolveStoredIsPublic(mediaEntity.isPublic, storageProvider);
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         }
@@ -75,15 +76,11 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         // Add the full URL to the media
         for (const m of media) {
             const storageMeta = m.mediaStorageProviderMetadata;
-            const region = this.getEffectiveRegion(storageMeta.region);
-            if (storageMeta.isPublic === false) {
-                // Generate signed URL
-                const expiryInSeconds = (storageMeta.signedUrlExpiry ?? 60) * 60;
-                m['_full_url'] = await this.s3FileService.getUrl(`${storageMeta?.bucketName}:${m.relativeUri}`, { expiresIn: expiryInSeconds, region });
-            } else {
-                // Public S3 or local filesystem: use normal URL
-                m['_full_url'] = this.getFullFilePath(m);
-            }
+            const isPublic = this.resolveStoredIsPublic(m.isPublic, storageMeta);
+            m.isPublic = isPublic;
+            m['_full_url'] = isPublic === false
+                ? this.getDownloadPath(m.id)
+                : this.getFullFilePath(m);
         }
 
         return media;
@@ -129,6 +126,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
                 mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
                 fieldMetadataId: mediaFieldMetadata.id
             }) as unknown as Media;
+            mediaEntity.isPublic = this.resolveStoredIsPublic(mediaEntity.isPublic, storageProvider);
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         };
@@ -182,7 +180,25 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         return `https://${media.mediaStorageProviderMetadata.bucketName}.s3.${region}.amazonaws.com/${media.relativeUri}`;
     }
 
+    private getDownloadPath(id: number): string {
+        return `/media/${id}/download`;
+    }
+
     private getFileName(file: Express.Multer.File): string {
         return `${file.filename}-${file.originalname}`;
+    }
+
+    private resolveIsPublic(storageProvider?: Media['mediaStorageProviderMetadata']): boolean | undefined {
+        if (!storageProvider) {
+            return undefined;
+        }
+        return storageProvider.isPublic !== false;
+    }
+
+    private resolveStoredIsPublic(currentValue: boolean | undefined, storageProvider?: Media['mediaStorageProviderMetadata']): boolean | undefined {
+        if (typeof currentValue === 'boolean') {
+            return currentValue;
+        }
+        return this.resolveIsPublic(storageProvider);
     }
 }
