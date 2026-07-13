@@ -1,12 +1,10 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Res, UploadedFiles, UseInterceptors } from '@nestjs/common';
+import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Public } from 'src/decorators/public.decorator';
 import { CreateMediaDto } from 'src/dtos/create-media.dto';
-import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
-import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { UpdateMediaDto } from 'src/dtos/update-media.dto';
 import { MediaService } from 'src/services/media.service';
-import { Response } from 'express';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -23,30 +21,30 @@ export class MediaController {
   @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateMediaDto, @UploadedFiles() files: Array<Express.Multer.File>, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
-    return this.service.create(createDto, files, solidRequestContext);
+  create(@Body() createDto: CreateMediaDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+    return this.service.create(createDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateMediaDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = [], @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
-    return this.service.insertMany(createDtos, filesArray, solidRequestContext);
+  insertMany(@Body() createDtos: CreateMediaDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+    return this.service.insertMany(createDtos, filesArray);
   }
 
 
   @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateMediaDto, @UploadedFiles() files: Array<Express.Multer.File>, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
-    return this.service.update(id, updateDto, files, false, solidRequestContext);
+  update(@Param('id') id: number, @Body() updateDto: UpdateMediaDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+    return this.service.update(id, updateDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Patch(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateMediaDto, @UploadedFiles() files: Array<Express.Multer.File>, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
-    return this.service.update(id, updateDto, files, true, solidRequestContext);
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateMediaDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+    return this.service.update(id, updateDto, files, true);
   }
 
   // @Public()
@@ -54,22 +52,22 @@ export class MediaController {
   @ApiBearerAuth("jwt")
   @Post('/upload')
   @UseInterceptors(AnyFilesInterceptor())
-  upload(@UploadedFiles() files: Array<Express.Multer.File>, @Body() createDto: CreateMediaDto, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
+  upload(@UploadedFiles() files: Array<Express.Multer.File>, @Body() createDto: CreateMediaDto, ) {
       // this.logger.log(`Creating a new model: ${JSON.stringify(createDto)}`);
-      return this.service.upload(createDto, files, solidRequestContext);
+      return this.service.upload(createDto, files);
   }
 
 
   @ApiBearerAuth("jwt")
   @Post('/bulk-recover')
-  async recoverMany(@Body() ids: number[], @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
-    return this.service.recoverMany(ids, solidRequestContext);
+  async recoverMany(@Body() ids: number[]) {
+    return this.service.recoverMany(ids);
   }
 
   @ApiBearerAuth("jwt")
   @Get('/recover/:id')
-  async recover(@Param('id') id: number, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
-    return this.service.recover(id, solidRequestContext);
+  async recover(@Param('id') id: number) {
+    return this.service.recover(id);
   }
     
   @ApiBearerAuth("jwt")
@@ -83,42 +81,26 @@ export class MediaController {
   @ApiQuery({ name: 'populateMedia', required: false, type: Array })
   @ApiQuery({ name: 'filters', required: false, type: Array })
   @Get()
-  async findMany(@Query() query: any, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
-    return this.service.find(query, solidRequestContext);
-  }
-
-  @ApiBearerAuth("jwt")
-  @Get(':id/download')
-  async download(@Param('id') id: string, @Res() res: Response, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
-    const media = await this.service.findOne(+id, {}, solidRequestContext);
-    const { stream, fileName, mimeType, redirectUrl } = await this.service.getDownloadStream(media);
-
-    if (redirectUrl) {
-      return res.redirect(302, redirectUrl);
-    }
-
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
-    stream.pipe(res);
+  async findMany(@Query() query: any) { 
+    return this.service.find(query);  
   }
 
   @ApiBearerAuth("jwt")
   @Get(':id')
-  async findOne(@Param('id') id: string, @Query() query: any, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
-    return this.service.findOne(+id, query, solidRequestContext);
+  async findOne(@Param('id') id: string, @Query() query: any) {
+    return this.service.findOne(+id, query);
   }
 
   @ApiBearerAuth("jwt")
   @Delete('/bulk')
-  async deleteMany(@Body() ids: number[], @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
-    return this.service.deleteMany(ids, solidRequestContext);
+  async deleteMany(@Body() ids: number[]) {
+    return this.service.deleteMany(ids);
   }
 
   @ApiBearerAuth("jwt")
   @Delete(':id')
-  async delete(@Param('id') id: number, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
-    return this.service.delete(id, solidRequestContext);
+  async delete(@Param('id') id: number) {
+    return this.service.delete(id);
   }
 
 

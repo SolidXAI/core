@@ -3,7 +3,6 @@ import { ConfigService } from "@nestjs/config";
 import { CommonEntity } from "src/entities/common.entity";
 import { FieldMetadata } from "src/entities/field-metadata.entity";
 import { Media } from "src/entities/media.entity";
-import { MediaStorageProviderMetadata } from "src/entities/media-storage-provider-metadata.entity";
 import { MediaStorageProvider } from "src/interfaces";
 import { MediaRepository } from "src/repository/media.repository";
 import { DiskFileService } from "src/services/file";
@@ -11,10 +10,8 @@ import { Readable } from "stream";
 import * as path from "path";
 import * as fs from "fs";
 import { SettingService } from "../setting.service";
-import { DEFAULT_MEDIA_FILE_STORAGE_DIR} from "src/services/settings/default-settings-provider.service";
+import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from "src/services/settings/default-settings-provider.service";
 import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
-
-const DEFAULT_PRIVATE_MEDIA_STORAGE_DIR = "media-private-files-storage";
 
 @Injectable()
 export class FileStorageProvider<T> implements MediaStorageProvider<T> {
@@ -40,12 +37,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // media.forEach(m => {
         // });
         for (const m of media) {
-            const storageProvider = this.resolveMediaStorageProvider(m, mediaFieldMetadata);
-            const isPublic = this.resolveStoredIsPublic(m.isPublic, storageProvider);
-            m.isPublic = isPublic;
-            m['_full_url'] = isPublic === false
-                ? this.getDownloadPath(m.id)
-                : await this.fileService.getUrl(this.getFullFilePath(m.relativeUri, storageProvider));
+            m['_full_url'] = `${this.settingService.getConfigValue<SolidCoreSetting>("baseUrl")}/${this.getFullFilePath(m.relativeUri)}`;
         }
 
 
@@ -57,10 +49,9 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         //     throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         // }
         const result: Media[] = [];
-        const storageProvider = mediaFieldMetadata.mediaStorageProvider;
         for (const file of files) {
             // Store the file in the configured file storage directory
-            const fileStoragePath = this.getFullFilePath(this.getFileName(file), storageProvider);
+            const fileStoragePath = this.getFullFilePath(this.getFileName(file));
             await this.fileService.copy(file.path, fileStoragePath);
             await this.fileService.delete(file.path);
 
@@ -73,10 +64,9 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
                 mimeType: file.mimetype,
                 fileSize: file.size,
                 originalFileName: file.originalname,
-                mediaStorageProviderMetadataId: storageProvider.id,
+                mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
                 fieldMetadataId: mediaFieldMetadata.id
             }) as unknown as Media;
-            mediaEntity.isPublic = this.resolveStoredIsPublic(mediaEntity.isPublic, storageProvider);
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         };
@@ -88,11 +78,10 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         //     throw new Error("Entity must be an instance of CommonEntity"); //FIXME This needs to be handled through generics. e.g T extends CommonEntity
         // }
         const result: Media[] = [];
-        const storageProvider = mediaFieldMetadata.mediaStorageProvider;
         for (const pair of streamPairs) {
             const stream = pair[0];
             const fileName = pair[1];
-            const fullPath = this.getFullFilePath(fileName, storageProvider);
+            const fullPath = this.getFullFilePath(fileName);
             await this.fileService.writeStream(fullPath, stream);
             const { size: fileSize } = await fs.promises.stat(fullPath);
             const mediaEntity = await this.mediaRepository.createMedia({
@@ -101,11 +90,9 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
                 modelMetadataId: mediaFieldMetadata.model.id,
                 relativeUri: fileName,
                 fileSize,
-                mediaStorageProviderMetadataId: storageProvider.id,
+                mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
                 fieldMetadataId: mediaFieldMetadata.id
             }) as unknown as Media;
-            mediaEntity.isPublic = this.resolveStoredIsPublic(mediaEntity.isPublic, storageProvider);
-            result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         };
         return result;
@@ -118,11 +105,10 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         //@ts-ignore
         const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         //@ts-ignore
-        await this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
+        this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
 
         for (const media of existingMedia) {
-            const storageProvider = this.resolveMediaStorageProvider(media, mediaFieldMetadata);
-            await this.fileService.delete(this.getFullFilePath(media.relativeUri, storageProvider));
+            await this.fileService.delete(this.getFullFilePath(media.relativeUri));
         }
         // existingMedia.forEach(media => {
         // });
@@ -132,42 +118,19 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         if (!media?.relativeUri) {
             return;
         }
-        await this.fileService.delete(this.getFullFilePath(media.relativeUri, media.mediaStorageProviderMetadata));
+        await this.fileService.delete(this.getFullFilePath(media.relativeUri));
     }
 
-    private getFullFilePath(fileName: string, storageProvider?: MediaStorageProviderMetadata): string {
-        const publicBase = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir") || DEFAULT_MEDIA_FILE_STORAGE_DIR;
-        const privateBase = DEFAULT_PRIVATE_MEDIA_STORAGE_DIR;
-        const providerBase = storageProvider?.localPath || (storageProvider?.isPublic === false ? privateBase : publicBase);
-        if (path.isAbsolute(fileName) || fileName.startsWith(`${publicBase}/`) || fileName.startsWith(`${privateBase}/`) || (!!storageProvider?.localPath && fileName.startsWith(`${storageProvider.localPath}/`))) {
+    private getFullFilePath(fileName: string): string {
+        const base = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
+            || DEFAULT_MEDIA_FILE_STORAGE_DIR;
+        if (path.isAbsolute(fileName) || fileName.startsWith(`${base}/`)) {
             return fileName;
         }
-        return `${providerBase}/${fileName}`;
-    }
-
-    private getDownloadPath(id: number): string {
-        return `/media/${id}/download`;
+        return `${base}/${fileName}`;
     }
 
     private getFileName(file: Express.Multer.File): string {
         return `${file.filename}-${file.originalname}`;
-    }
-
-    private resolveMediaStorageProvider(media: Media, mediaFieldMetadata?: FieldMetadata): MediaStorageProviderMetadata | undefined {
-        return media.mediaStorageProviderMetadata || mediaFieldMetadata?.mediaStorageProvider;
-    }
-
-    private resolveIsPublic(storageProvider?: MediaStorageProviderMetadata): boolean | undefined {
-        if (!storageProvider) {
-            return undefined;
-        }
-        return storageProvider.isPublic !== false;
-    }
-
-    private resolveStoredIsPublic(currentValue: boolean | undefined, storageProvider?: MediaStorageProviderMetadata): boolean | undefined {
-        if (typeof currentValue === 'boolean') {
-            return currentValue;
-        }
-        return this.resolveIsPublic(storageProvider);
     }
 }
