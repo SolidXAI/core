@@ -153,6 +153,7 @@ import { TwilioSmsQueueSubscriberRedis } from "./jobs/redis/twilio-sms-subscribe
 import { UserRegistrationListener } from "./listeners/user-registration.listener";
 import { GoogleOauthStrategy } from "./passport-strategies/google-oauth.strategy";
 import { ApiKeyService } from "./services/api-key.service";
+import { ActiveSessionStorageService } from "./services/active-session-storage.service";
 import { AuthenticationService } from "./services/authentication.service";
 import { BcryptService } from "./services/bcrypt.service";
 import { UuidExternalIdEntityComputedFieldProvider } from "./services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service";
@@ -647,6 +648,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     AccessTokenGuard,
     ApiKeyGuard,
     ApiKeyService,
+    ActiveSessionStorageService,
     AuthenticationService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,

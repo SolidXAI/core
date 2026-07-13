@@ -17,6 +17,12 @@ export interface ActiveUserData {
   email: string;
 
   /**
+   * Logical login session identifier used to invalidate older sessions when
+   * concurrent logins are disabled.
+   */
+  sessionId?: string;
+
+  /**
    * The subject's (user) roles.
    * These are part of the JWT token, we simply decode them.
    */

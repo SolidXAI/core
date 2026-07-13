@@ -39,6 +39,7 @@ import { SignUpDto } from "../dtos/sign-up.dto";
 import { User } from "../entities/user.entity";
 import { EventDetails, EventType } from "../interfaces";
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
+import { ActiveSessionStorageService } from "./active-session-storage.service";
 import { HashingService } from "./hashing.service";
 import {
   InvalidatedRefreshTokenError,
@@ -74,6 +75,7 @@ export class AuthenticationService {
     private readonly userRepository: UserRepository,
     private readonly hashingService: HashingService,
     private readonly jwtService: JwtService,
+    private readonly activeSessionStorage: ActiveSessionStorageService,
     private readonly refreshTokenIdsStorage: RefreshTokenIdsStorageService,
     private readonly httpService: HttpService,
     // private readonly mailService: SMTPEMailService,
@@ -1711,8 +1713,16 @@ export class AuthenticationService {
   }
 
   async generateTokens(user: User) {
+    const sessionId = this.shouldPreventConcurrentLogins()
+      ? randomUUID()
+      : undefined;
+    if (sessionId) {
+      await this.activeSessionStorage.setActiveSession(user.id, sessionId);
+    } else {
+      await this.activeSessionStorage.clearActiveSession(user.id);
+    }
     const [accessToken, refreshToken] = await Promise.all([
-      await this.generateAccessToken(user),
+      await this.generateAccessToken(user, sessionId),
       await this.generateRefreshToken(user),
     ]);
 
@@ -1722,16 +1732,24 @@ export class AuthenticationService {
     };
   }
 
-  async generateAccessToken(user: User) {
+  async generateAccessToken(user: User, sessionId?: string) {
     // const userRoleNames = user.roles.map((role) => role.name).join(';')
     const userRoleNames = user.roles.map((role) => role.name);
+    const resolvedSessionId = this.shouldPreventConcurrentLogins()
+      ? sessionId ?? (await this.activeSessionStorage.getActiveSession(user.id))
+      : undefined;
 
     const accessTokenTtl =
       this.settingService.getConfigValue<SolidCoreSetting>("accessTokenTtl");
     const accessToken = await this.signToken<Partial<ActiveUserData>>(
       user.id,
       accessTokenTtl,
-      { username: user.username, email: user.email, roles: userRoleNames },
+      {
+        username: user.username,
+        email: user.email,
+        roles: userRoleNames,
+        ...(resolvedSessionId ? { sessionId: resolvedSessionId } : {}),
+      },
     );
 
     return accessToken;
@@ -2150,6 +2168,14 @@ export class AuthenticationService {
     );
   }
 
+  private shouldPreventConcurrentLogins(): boolean {
+    return (
+      this.settingService.getConfigValue<SolidCoreSetting>(
+        "preventConcurrentLogins",
+      ) === true
+    );
+  }
+
   private checkAccountBlocked(user: User): void {
     const maxFailedAttempts =
       this.settingService.getConfigValue<SolidCoreSetting>(
@@ -2206,6 +2232,7 @@ export class AuthenticationService {
 
       const userId = payload.sub;
       await this.refreshTokenIdsStorage.invalidate(userId);
+      await this.activeSessionStorage.clearActiveSession(userId);
       const user = await this.userRepository.findOne({
         where: {
           id: userId,

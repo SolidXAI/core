@@ -6,6 +6,11 @@ import { AuthenticationService } from './authentication.service';
 // TODO: Ideally this should be in a separate file - putting this here for brevity
 export class InvalidatedRefreshTokenError extends Error { }
 
+type RefreshTokenState = {
+    currentRefreshToken: string;
+    previousRefreshToken: string;
+};
+
 @Injectable()
 // export class RefreshTokenIdsStorageService implements OnApplicationBootstrap, OnApplicationShutdown {
 export class RefreshTokenIdsStorageService {
@@ -29,10 +34,7 @@ export class RefreshTokenIdsStorageService {
     ) { }
 
     async insert(userId: number, refreshToken: string, previousRefreshToken?: string): Promise<void> {
-        // TODO: save a refresh token object with this shape {"currentRefreshToken": "", "previousRefreshToken": ""}
-        // Save a refresh token object with the shape: { currentRefreshToken: string, previousRefreshToken: string }
-        const existing = (await this.cacheManager.get(this.getKey(userId))) as { currentRefreshToken?: string, previousRefreshToken?: string } | undefined;
-        const refreshTokenState = {
+        const refreshTokenState: RefreshTokenState = {
             currentRefreshToken: refreshToken,
             previousRefreshToken: previousRefreshToken ?? "",
         };
@@ -58,8 +60,7 @@ export class RefreshTokenIdsStorageService {
 
         // TODO: Assume you get this shape out of the cache {"currentRefreshToken": "", "previousRefreshToken": ""}
         // Then you will compare against the currentRefreshToken.
-        const refreshTokenState = await this.cacheManager.get(this.getKey(user.id));
-        console.log("refreshTokenState", refreshTokenState);
+        const refreshTokenState = await this.cacheManager.get(this.getKey(user.id)) as RefreshTokenState | undefined;
 
         // Use the authentication service to generate a new refresh token, set it in the currentRefreshToken in scenario 1 and return.
 
@@ -108,7 +109,7 @@ export class RefreshTokenIdsStorageService {
                 valid = true;
                 // Do not modify cache
                 // Generate new refresh token based on currentRefreshToken
-                const existingRefreshTokenState = (await this.cacheManager.get(this.getKey(user.id))) as { currentRefreshToken?: string, previousRefreshToken?: string } | undefined;
+                const existingRefreshTokenState = (await this.cacheManager.get(this.getKey(user.id))) as RefreshTokenState | undefined;
                 newRefreshToken = existingRefreshTokenState?.currentRefreshToken;
             }
         }
@@ -126,7 +127,7 @@ export class RefreshTokenIdsStorageService {
         return `user-${userId}`;
     }
 
-    getCurrentRefreshTokenState(userId: number): Promise<any> {
+    getCurrentRefreshTokenState(userId: number): Promise<RefreshTokenState | undefined> {
         return this.cacheManager.get(this.getKey(userId));
     }
 }

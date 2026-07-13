@@ -1,5 +1,6 @@
 // src/common/errors/providers/solidcore-error-code.provider.ts
 import { Injectable } from '@nestjs/common';
+import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { ErrorCodeProvider } from 'src/decorators/error-codes-provider.decorator';
 import { ErrorMeta, ErrorRule, IErrorCodeProvider } from 'src/interfaces';
 
@@ -13,6 +14,24 @@ export class SolidCoreErrorCodesProvider implements IErrorCodeProvider {
 
     rules(): ReadonlyArray<ErrorRule> {
         return [
+            {
+                code: 'solidx-session-invalid',
+                priority: 110,
+                match: (txt) => txt.includes(ERROR_MESSAGES.SESSION_INVALID.toLowerCase()),
+                meta: {
+                    message: ERROR_MESSAGES.SESSION_INVALID,
+                    httpStatus: 401,
+                },
+            },
+            {
+                code: 'solidx-session-expired',
+                priority: 110,
+                match: (txt) => txt.includes(ERROR_MESSAGES.SESSION_EXPIRED.toLowerCase()),
+                meta: {
+                    message: ERROR_MESSAGES.SESSION_EXPIRED,
+                    httpStatus: 401,
+                },
+            },
             {
                 code: 'solidx-mcp-server-unavailable',
                 priority: 100,
