@@ -162,10 +162,6 @@ export function getCoreThemes(): AppThemeDefinition[] {
   return getThemes();
 }
 
-export function registerAppThemes(_themes: AppThemeDefinition[] = []): void {
-  // Theme registration is now path-based. Keep this as a no-op for backwards compatibility.
-}
-
 export function getRegisteredThemes(): AppThemeDefinition[] {
   return getThemes();
 }
