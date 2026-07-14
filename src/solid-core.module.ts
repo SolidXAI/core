@@ -55,9 +55,10 @@ import { ModulePackageService } from "./services/module-package.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { join } from "path";
+import { extname, join } from "path";
 import { RefreshModelCommand } from "./commands/refresh-model.command";
 import { MediaController } from "./controllers/media.controller";
+import { INLINE_SAFE_EXTENSIONS } from "./constants/media-file-types";
 
 import { RefreshModuleCommand } from "./commands/refresh-module.command";
 import { ModelMetadataSubscriber } from "./subscribers/model-metadata.subscriber";
@@ -437,7 +438,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
       rootPath: join(process.cwd(), "media-files-storage"),
       serveRoot: "/media-files-storage",
       serveStaticOptions: {
-        setHeaders: (res /*, path, stat*/) => {
+        setHeaders: (res, path) => {
           // Allow use of these files from a different origin (e.g., :3000 UI)
           // Use 'same-site' if both origins are on the same site (localhost:* counts as same-site)
           res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"); // or 'same-site'
@@ -445,6 +446,20 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
           // If you need to load into <canvas> without tainting or fetch images via XHR,
           // you can also expose CORS here (not needed for simple <img>):
           // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+          // Prevent the browser from ever content-sniffing a served file into something
+          // more dangerous than its declared Content-Type (e.g. rendering a mislabeled
+          // upload as HTML and executing embedded script).
+          res.setHeader("X-Content-Type-Options", "nosniff");
+
+          // Only a small allowlist of media types is ever safe to render inline. Everything
+          // else (including svg, html, and any other uploaded file) is forced to download
+          // rather than be displayed/executed by the browser, regardless of what mimetype or
+          // extension it was uploaded with.
+          if (!INLINE_SAFE_EXTENSIONS.has(extname(path).toLowerCase().replace(/^\./, ''))) {
+            res.setHeader("Content-Type", "application/octet-stream");
+            res.setHeader("Content-Disposition", "attachment");
+          }
         },
       },
     }),

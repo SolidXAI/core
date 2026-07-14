@@ -1,4 +1,5 @@
 import { FieldCrudManager, ValidationError } from "src/interfaces";
+import { DANGEROUS_EXTENSIONS, EXT_TO_MEDIA_TYPE, MediaCategory } from "src/constants/media-file-types";
 
 export enum SolidMediaType {
     mediaSingle = 'mediaSingle',
@@ -14,7 +15,7 @@ export interface MediaFieldOptions {
     isUpdate: boolean | undefined | null;
 }
 
-type MediaType = 'image' | 'audio' | 'video' | 'file' | 'pdf';
+type MediaType = MediaCategory;
 
 const MIME_TO_MEDIA_TYPE: Record<string, MediaType> = {
     // Images
@@ -25,7 +26,6 @@ const MIME_TO_MEDIA_TYPE: Record<string, MediaType> = {
     'image/gif': 'image',
     'image/bmp': 'image',
     'image/tiff': 'image',
-    'image/svg+xml': 'image',
     'image/heic': 'image',
     'image/heif': 'image',
 
@@ -72,27 +72,7 @@ const MIME_TO_MEDIA_TYPE: Record<string, MediaType> = {
     'application/x-zip-compressed': 'file',
     'application/x-rar-compressed': 'file',
     'application/x-7z-compressed': 'file',
-
-    // Common binary fallback category
-    'application/octet-stream': 'file',
 };
-
-const EXT_TO_MEDIA_TYPE: Record<string, MediaType> = {
-    // Images
-    png: 'image', jpg: 'image', jpeg: 'image', webp: 'image', gif: 'image', bmp: 'image', tiff: 'image', svg: 'image', heic: 'image', heif: 'image',
-
-    // Audio
-    mp3: 'audio', wav: 'audio', ogg: 'audio', aac: 'audio', m4a: 'audio', flac: 'audio',
-
-    // Video
-    mp4: 'video', mov: 'video', avi: 'video', mkv: 'video', mpeg: 'video', mpg: 'video', '3gp': 'video', '3g2': 'video',
-
-    // Files
-    pdf: 'file', txt: 'file', md: 'file', csv: 'file', json: 'file',
-    doc: 'file', docx: 'file', xls: 'file', xlsx: 'file', ppt: 'file', pptx: 'file',
-    zip: 'file', rar: 'file', '7z': 'file',
-};
-
 
 export class MediaFieldCrudManager implements FieldCrudManager {
 
@@ -100,7 +80,15 @@ export class MediaFieldCrudManager implements FieldCrudManager {
     }
 
     private resolveMediaType(mimetype?: string, filename?: string): MediaType | null {
+        const ext = (filename || '').split('.').pop()?.toLowerCase();
+        if (ext && DANGEROUS_EXTENSIONS.has(ext)) {
+            return null;
+        }
+
         const mt = (mimetype || '').toLowerCase().trim();
+        if (mt === 'image/svg+xml' || mt === 'text/html' || mt === 'application/xhtml+xml') {
+            return null;
+        }
         if (mt && MIME_TO_MEDIA_TYPE[mt]) {
             return MIME_TO_MEDIA_TYPE[mt];
         }
@@ -110,8 +98,8 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         if (mt.startsWith('audio/')) return 'audio';
         if (mt.startsWith('video/')) return 'video';
 
-        // Fallback to extension if provided
-        const ext = (filename || '').split('.').pop()?.toLowerCase();
+        // Fallback to extension if provided (also covers generic/unrecognized
+        // mimetypes such as application/octet-stream).
         if (ext && EXT_TO_MEDIA_TYPE[ext]) {
             return EXT_TO_MEDIA_TYPE[ext];
         }
