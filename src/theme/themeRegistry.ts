@@ -103,13 +103,10 @@ function pickDefaultThemeKey(themes: AppThemeDefinition[], mode: ThemeMode): str
 }
 
 function resolveThemeDirectory(): string | null {
-  const configuredDirectory = process.env.SOLID_THEME_DIRECTORY?.trim() || process.env.SOLIDX_THEME_DIRECTORY?.trim();
-  const fallbackDirectory = path.resolve(process.cwd(), "..", "solid-ui", "public", "themes");
-  const candidateDirectory = configuredDirectory || fallbackDirectory;
-
+  const themeDirectory = path.resolve(process.cwd(), "..", "solid-ui", "public", "themes");
   try {
-    if (fs.existsSync(candidateDirectory) && fs.statSync(candidateDirectory).isDirectory()) {
-      return path.resolve(candidateDirectory);
+    if (fs.existsSync(themeDirectory) && fs.statSync(themeDirectory).isDirectory()) {
+      return path.resolve(themeDirectory);
     }
   } catch {
     return null;
