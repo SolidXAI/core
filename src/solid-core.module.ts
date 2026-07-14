@@ -47,6 +47,7 @@ import { ListOfValuesService } from "./services/list-of-values.service";
 // import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from "./services/media-storage-provider-metadata.service";
 import { MediaService } from "./services/media.service";
+import { MediaDownloadUrlService } from "./services/media-download-url.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
 import { RemovedFieldMigrationService } from "./services/removed-field-migration.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
@@ -106,6 +107,7 @@ import { MqMessage } from "./entities/mq-message.entity";
 import { SmsTemplate } from "./entities/sms-template.entity";
 import { AccessTokenGuard } from "./guards/access-token.guard";
 import { ApiKeyGuard } from "./guards/api-key.guard";
+import { MediaSignedUrlGuard } from "./guards/media-signed-url.guard";
 import { AuthenticationGuard } from "./guards/authentication.guard";
 import { PermissionsGuard } from "./guards/permissions.guard";
 import { SolidRegistry } from "./helpers/solid-registry";
@@ -563,6 +565,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     SchematicService,
     MediaStorageProviderMetadataService,
     MediaService,
+    MediaDownloadUrlService,
     // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
     ModuleTestDataService,
@@ -647,6 +650,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     SoftDeleteAwareEventSubscriber,
     AccessTokenGuard,
     ApiKeyGuard,
+    MediaSignedUrlGuard,
     ApiKeyService,
     ActiveSessionStorageService,
     AuthenticationService,

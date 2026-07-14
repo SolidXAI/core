@@ -1,6 +1,8 @@
 import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, Res, UploadedFiles, UseInterceptors } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
+import { Auth } from 'src/decorators/auth.decorator';
+import { AuthType } from 'src/enums/auth-type.enum';
 import { CreateMediaDto } from 'src/dtos/create-media.dto';
 import { SolidRequestContextDecorator } from 'src/decorators/solid-request-context.decorator';
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
@@ -87,7 +89,8 @@ export class MediaController {
     return this.service.find(query, solidRequestContext);
   }
 
-  @ApiBearerAuth("jwt")
+  @Auth(AuthType.MediaSignedUrl)
+  @ApiQuery({ name: 'token', required: true, type: String, description: "Short-lived signed token obtained from a private Media record's URL - not entered manually." })
   @Get(':id/download')
   async download(@Param('id') id: string, @Res() res: Response, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
     const media = await this.service.findOne(+id, {}, solidRequestContext);

@@ -11,6 +11,7 @@ import { Readable } from "stream";
 import * as path from "path";
 import * as fs from "fs";
 import { SettingService } from "../setting.service";
+import { MediaDownloadUrlService } from "src/services/media-download-url.service";
 import { DEFAULT_MEDIA_FILE_STORAGE_DIR} from "src/services/settings/default-settings-provider.service";
 import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
 
@@ -26,7 +27,8 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         private readonly configService: ConfigService,
         readonly fileService: DiskFileService,
         readonly mediaRepository: MediaRepository,
-        private readonly settingService: SettingService
+        private readonly settingService: SettingService,
+        private readonly mediaDownloadUrlService: MediaDownloadUrlService,
 
     ) { }
 
@@ -44,7 +46,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
             const isPublic = this.resolveStoredIsPublic(m.isPublic, storageProvider);
             m.isPublic = isPublic;
             m['_full_url'] = isPublic === false
-                ? this.getDownloadPath(m.id)
+                ? await this.mediaDownloadUrlService.resolveDownloadUrl(m.id, m.relativeUri, storageProvider)
                 : await this.fileService.getUrl(this.getFullFilePath(m.relativeUri, storageProvider));
         }
 
@@ -143,10 +145,6 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
             return fileName;
         }
         return `${providerBase}/${fileName}`;
-    }
-
-    private getDownloadPath(id: number): string {
-        return `/media/${id}/download`;
     }
 
     private getFileName(file: Express.Multer.File): string {

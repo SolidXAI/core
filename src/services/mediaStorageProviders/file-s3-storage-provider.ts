@@ -9,6 +9,7 @@ import { MediaStorageProvider } from "src/interfaces";
 import { DiskFileService, S3FileService } from "src/services/file";
 import { Readable } from "stream";
 import { MediaRepository } from "src/repository/media.repository";
+import { MediaDownloadUrlService } from "src/services/media-download-url.service";
 
 @Injectable()
 export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
@@ -19,6 +20,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         readonly diskFileService: DiskFileService,
         readonly s3FileService: S3FileService,
         readonly mediaRepository: MediaRepository,
+        private readonly mediaDownloadUrlService: MediaDownloadUrlService,
     ) { }
 
     async storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
@@ -79,7 +81,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             const isPublic = this.resolveStoredIsPublic(m.isPublic, storageMeta);
             m.isPublic = isPublic;
             m['_full_url'] = isPublic === false
-                ? this.getDownloadPath(m.id)
+                ? await this.mediaDownloadUrlService.resolveDownloadUrl(m.id, m.relativeUri, storageMeta)
                 : this.getFullFilePath(m);
         }
 
@@ -178,10 +180,6 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         const region = this.getEffectiveRegion(media.mediaStorageProviderMetadata.region);
         // https://lunarismedia.s3.ap-south-1.amazonaws.com/LUNARIS_CP_REGISTRATION_CREATIVE.jpg
         return `https://${media.mediaStorageProviderMetadata.bucketName}.s3.${region}.amazonaws.com/${media.relativeUri}`;
-    }
-
-    private getDownloadPath(id: number): string {
-        return `/media/${id}/download`;
     }
 
     private getFileName(file: Express.Multer.File): string {

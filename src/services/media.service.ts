@@ -10,6 +10,7 @@ import type { SolidCoreSetting } from "src/services/settings/default-settings-pr
 import { ConfigService } from '@nestjs/config';
 import { CRUDService } from 'src/services/crud.service';
 import { DiskFileService, S3FileService } from 'src/services/file';
+import { MediaDownloadUrlService } from 'src/services/media-download-url.service';
 
 
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
@@ -33,6 +34,7 @@ export class MediaService extends CRUDService<Media> {
     readonly configService: ConfigService,
     readonly diskFileService: DiskFileService,
     readonly s3FileService: S3FileService,
+    private readonly mediaDownloadUrlService: MediaDownloadUrlService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(Media, 'default')
@@ -238,7 +240,7 @@ export class MediaService extends CRUDService<Media> {
     const isPublic = this.resolveStoredIsPublic(media.isPublic, resolvedMediaStorageProvider);
 
     if (isPublic === false) {
-      return this.getDownloadPath(media.id);
+      return this.mediaDownloadUrlService.resolveDownloadUrl(media.id, media.relativeUri, resolvedMediaStorageProvider);
     }
 
     if (resolvedMediaStorageProvider?.type === MediaStorageProviderType.Filesystem) {
@@ -293,10 +295,6 @@ export class MediaService extends CRUDService<Media> {
       return fileName;
     }
     return `${providerBase}/${fileName}`;
-  }
-
-  private getDownloadPath(id: number): string {
-    return `/media/${id}/download`;
   }
 
   private getFileName(file: Express.Multer.File): string {
