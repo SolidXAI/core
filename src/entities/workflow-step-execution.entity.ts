@@ -9,7 +9,7 @@ export class WorkflowStepExecution extends CommonEntity {
     stepExecutionKey: string;
 
     @Index()
-    @ManyToOne(() => WorkflowExecution, { onDelete: "RESTRICT", nullable: false })
+    @ManyToOne(() => WorkflowExecution, { onDelete: "CASCADE", nullable: false })
     @JoinColumn()
     workflowExecution: WorkflowExecution;
 

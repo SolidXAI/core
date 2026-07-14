@@ -1,6 +1,6 @@
 import { BadRequestException, Injectable } from '@nestjs/common';
 import {
-  WorkflowDefinitionJson,
+  WorkflowDefinitionDsl,
   WorkflowNodeDefinition,
 } from '../../types/workflow-dsl.types';
 import { WorkflowNodeRegistryService } from './workflow-node-registry.service';
@@ -9,10 +9,10 @@ import { WorkflowNodeRegistryService } from './workflow-node-registry.service';
 export class WorkflowDefinitionValidatorService {
   constructor(private readonly registry: WorkflowNodeRegistryService) {}
 
-  validate(definition: WorkflowDefinitionJson) {
+  validate(definition: WorkflowDefinitionDsl) {
     if (!definition || !Array.isArray(definition.nodes)) {
       throw new BadRequestException(
-        'Workflow definition JSON must include a nodes array.',
+        'Workflow definition YAML must include a nodes array.',
       );
     }
 

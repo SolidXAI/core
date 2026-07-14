@@ -12,6 +12,45 @@ import {
   category: 'control-flow',
   label: 'For Each',
   description: 'Runs child nodes once for every item in an array.',
+  tags: ['loop', 'iteration'],
+  authoring: {
+    defaultConfiguration: {
+      items: [],
+    },
+    configurationFields: [
+      {
+        key: 'items',
+        label: 'Items',
+        description: 'Array or expression resolving to an array to iterate over.',
+        valueType: 'array',
+        required: true,
+        expressionAllowed: true,
+        widgetHint: 'yaml-editor',
+        group: 'General',
+      },
+    ],
+    childSlots: [
+      {
+        key: 'children',
+        label: 'Loop Body',
+        description: 'Nodes that run once for each item.',
+        kind: 'sequence',
+        required: true,
+      },
+    ],
+    supportsDescription: true,
+    supportsName: true,
+  },
+  documentation: {
+    summary: 'Iterates over an array and runs the loop body once for each item.',
+  },
+  ui: {
+    icon: 'si-refresh',
+    modalSize: 'lg',
+    layoutHints: {
+      groupOrder: ['General'],
+    },
+  },
 })
 export class ForEachNode implements WorkflowNodeHandler {
   async execute(

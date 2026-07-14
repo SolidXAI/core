@@ -9,7 +9,7 @@ export class WorkflowDefinition extends CommonEntity {
     key: string;
 
     @Index()
-    @ManyToOne(() => ModuleMetadata, { onDelete: "RESTRICT", nullable: false })
+    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
     @JoinColumn()
     moduleMetadata: ModuleMetadata;
 
@@ -35,8 +35,8 @@ export class WorkflowDefinition extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     definitionChecksum: string;
 
-    @Column({ type: "simple-json" })
-    definitionJson: any;
+    @Column({ name: "definition_yaml", type: "text", nullable: true})
+    definitionYaml: string;
 
     @Column({ type: "simple-json", nullable: true })
     tags: any;

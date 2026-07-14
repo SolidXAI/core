@@ -85,9 +85,9 @@ export class UpdateWorkflowExecutionDto {
 
     @IsNotEmpty()
     @IsOptional()
-    @IsJSON()
-    @ApiProperty({ description: "Exact workflow JSON definition used for this execution." })
-    definitionSnapshot: any;
+    @IsString()
+    @ApiProperty({ description: "Exact workflow YAML definition used for this execution." })
+    definitionSnapshot: string;
 
     @IsOptional()
     @IsString()

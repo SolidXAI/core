@@ -45,13 +45,13 @@ export class CreateWorkflowDefinitionDto {
 
     @IsOptional()
     @IsString()
-    @ApiProperty({ description: "Checksum of the canonical definition JSON for change detection and execution traceability." })
+    @ApiProperty({ description: "Checksum of the canonical definition YAML for change detection and execution traceability." })
     definitionChecksum: string;
 
     @IsNotEmpty()
-    @IsJSON()
-    @ApiProperty({ description: "Canonical workflow DSL JSON used for sharing, seeding, validation, and execution." })
-    definitionJson: any;
+    @IsString()
+    @ApiProperty({ description: "Canonical workflow DSL YAML used for sharing, seeding, validation, and execution." })
+    definitionYaml: string;
 
     @IsOptional()
     @IsJSON()

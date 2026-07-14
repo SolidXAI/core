@@ -37,7 +37,7 @@ export class WorkflowExecutionWriterService {
       inputPayload: request.input ?? {},
       definitionVersion: definition.definitionVersion,
       definitionChecksum: definition.definitionChecksum,
-      definitionSnapshot: definition.definitionJson,
+      definitionSnapshot: definition.definitionYaml,
       requestedByUserId: request.requestedByUserId as any,
     });
 

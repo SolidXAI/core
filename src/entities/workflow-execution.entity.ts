@@ -12,7 +12,7 @@ export class WorkflowExecution extends CommonEntity {
     executionIdentifier: string;
 
     @Index()
-    @ManyToOne(() => WorkflowDefinition, { onDelete: "RESTRICT", nullable: false })
+    @ManyToOne(() => WorkflowDefinition, { onDelete: "CASCADE", nullable: false })
     @JoinColumn()
     workflowDefinition: WorkflowDefinition;
 
@@ -55,8 +55,8 @@ export class WorkflowExecution extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     definitionChecksum: string;
 
-    @Column({ type: "simple-json" })
-    definitionSnapshot: any;
+    @Column({ name: "definition_snapshot", type: "text", nullable: true})
+    definitionSnapshot: string;
 
     @Column({ type: "text", nullable: true })
     errorSummary: string;

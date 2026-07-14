@@ -3202,7 +3202,7 @@
             "relationCoModelSingularName": "user",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": false,
             "unique": false,
             "index": true,
@@ -3227,7 +3227,7 @@
             "relationCoModelSingularName": "modelMetadata",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": true,
             "unique": false,
             "index": true,
@@ -3252,7 +3252,7 @@
             "relationCoModelSingularName": "viewMetadata",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": true,
             "unique": false,
             "index": true,
@@ -5306,7 +5306,7 @@
             "relationCoModelSingularName": "moduleMetadata",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": true,
             "unique": false,
             "index": true,
@@ -5463,11 +5463,11 @@
             "isPrimaryKey": false
           },
           {
-            "name": "definitionJson",
-            "displayName": "Definition JSON",
-            "description": "Canonical workflow DSL JSON used for sharing, seeding, validation, and execution.",
-            "type": "json",
-            "ormType": "simple-json",
+            "name": "definitionYaml",
+            "displayName": "Definition YAML",
+            "description": "Canonical workflow DSL YAML used for sharing, seeding, validation, and execution.",
+            "type": "longText",
+            "ormType": "text",
             "isSystem": false,
             "required": true,
             "unique": false,
@@ -5545,7 +5545,7 @@
             "relationCoModelSingularName": "workflowDefinition",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": true,
             "unique": false,
             "index": true,
@@ -5801,8 +5801,8 @@
             "name": "definitionSnapshot",
             "displayName": "Definition Snapshot",
             "description": "Exact workflow JSON definition used for this execution.",
-            "type": "json",
-            "ormType": "simple-json",
+            "type": "longText",
+            "ormType": "text",
             "isSystem": false,
             "required": true,
             "unique": false,
@@ -5980,7 +5980,7 @@
             "relationCoModelSingularName": "workflowExecution",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": true,
             "unique": false,
             "index": true,
@@ -6485,7 +6485,7 @@
             "relationCoModelSingularName": "workflowExecution",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": true,
             "unique": false,
             "index": true,
@@ -6512,7 +6512,7 @@
             "relationCoModelSingularName": "workflowStepExecution",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": false,
             "unique": false,
             "index": true,
@@ -6798,7 +6798,7 @@
             "relationCoModelSingularName": "workflowExecution",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": true,
             "unique": false,
             "index": true,
@@ -6825,7 +6825,7 @@
             "relationCoModelSingularName": "workflowStepExecution",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": false,
             "unique": false,
             "index": true,
@@ -7202,7 +7202,7 @@
             "relationCoModelSingularName": "workflowDefinition",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": true,
             "unique": false,
             "index": true,
@@ -7229,7 +7229,7 @@
             "relationCoModelSingularName": "workflowExecution",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": false,
             "unique": false,
             "index": true,
@@ -8450,12 +8450,12 @@
       "modelUserKey": ""
     },
     {
-      "displayName": "Workflow Definition List Action",
+      "displayName": "Workflow Definitions",
       "name": "workflowDefinition-list-action",
-      "type": "solid",
+      "type": "custom",
       "domain": "",
       "context": "",
-      "customComponent": "",
+      "customComponent": "/admin/core/solid-core/workflow-definition/list",
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "workflowDefinition-list-view",
@@ -16985,7 +16985,30 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true
+          "delete": true,
+          "headerButtons": [
+            {
+              "attrs": {
+                "label": "Open Workflow Editor",
+                "action": "openWorkflowDefinitionEditorHeaderAction",
+                "actionInContextMenu": false,
+                "openInPopup": false,
+                "icon": "si-sparkles"
+              }
+            }
+          ],
+          "rowButtons": [
+            {
+              "attrs": {
+                "className": "p-button-text",
+                "icon": "si-pencil",
+                "label": "Open Editor",
+                "action": "openWorkflowDefinitionEditorRowAction",
+                "openInPopup": false,
+                "actionInContextMenu": true
+              }
+            }
+          ]
         },
         "children": [
           {
@@ -17045,7 +17068,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "definitionJson"
+              "name": "definitionYaml"
             }
           },
           {
@@ -17170,14 +17193,14 @@
                   {
                     "type": "page",
                     "attrs": {
-                      "name": "workflow-definition-json",
-                      "label": "Definition JSON"
+                      "name": "workflow-definition-yaml",
+                      "label": "Definition YAML"
                     },
                     "children": [
                       {
                         "type": "group",
                         "attrs": {
-                          "name": "workflow-definition-json-group",
+                          "name": "workflow-definition-yaml-group",
                           "label": "",
                           "className": "col-12 sm:col-12 md:col-12 lg:col-12 min-h-0 h-full"
                         },
@@ -17185,7 +17208,7 @@
                           {
                             "type": "field",
                             "attrs": {
-                              "name": "definitionJson",
+                              "name": "definitionYaml",
                               "showLabel": false,
                               "className": "field w-full px-2 pt-2 min-h-0 h-full",
                               "height": "calc(100vh - 260px)"
@@ -17888,7 +17911,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "definitionJson"
+              "name": "definitionYaml"
             }
           },
           {

@@ -477,6 +477,7 @@ export class ModuleMetadataSeederService {
             .map((definition) => ({
                 ...definition,
                 moduleUserKey: definition.moduleUserKey ?? moduleMetadata.name,
+                definitionYaml: this.resolveSeedFileBackedWorkflowDefinitionYaml(definition.definitionYaml, overallMetadata?.__seedFilePath),
             }));
         const pruned = this.enablePruning ? await this.timeOperation('prune-workflow-definitions', () => this.pruneWorkflowDefinitions(workflowDefinitions, moduleMetadata.name), {
             moduleName: moduleMetadata.name,
@@ -707,11 +708,34 @@ export class ModuleMetadataSeederService {
 
             if (fs.existsSync(fullPath)) {
                 const overallMetadata = JSON.parse(fs.readFileSync(fullPath, 'utf-8'));
+                overallMetadata.__seedFilePath = fullPath;
                 seedDataFiles.push(overallMetadata);
             }
         }
 
         return seedDataFiles;
+    }
+
+    private resolveSeedFileBackedWorkflowDefinitionYaml(definitionYaml: string, seedFilePath?: string): string {
+        if (typeof definitionYaml !== 'string' || !definitionYaml.startsWith('file:')) {
+            return definitionYaml;
+        }
+
+        if (!seedFilePath) {
+            throw new Error(`Cannot resolve workflow definition YAML file reference "${definitionYaml}" because the seed file path is unavailable.`);
+        }
+
+        const relativePath = definitionYaml.slice('file:'.length).trim();
+        if (!relativePath) {
+            throw new Error(`Cannot resolve workflow definition YAML file reference "${definitionYaml}" because no relative path was provided.`);
+        }
+
+        const resolvedPath = path.resolve(path.dirname(seedFilePath), relativePath);
+        if (!fs.existsSync(resolvedPath)) {
+            throw new Error(`Workflow definition YAML file "${resolvedPath}" referenced from "${seedFilePath}" does not exist.`);
+        }
+
+        return fs.readFileSync(resolvedPath, 'utf-8');
     }
 
     // OK
@@ -2101,8 +2125,8 @@ export class ModuleMetadataSeederService {
                 description: definition.description,
                 status: definition.status ?? 'active',
                 definitionVersion: definition.definitionVersion,
-                definitionChecksum: this.workflowDefinitionChecksum(definition.definitionJson),
-                definitionJson: definition.definitionJson,
+                definitionChecksum: this.workflowDefinitionChecksum(definition.definitionYaml),
+                definitionYaml: definition.definitionYaml,
                 tags: definition.tags,
             });
 
@@ -2837,7 +2861,7 @@ export class ModuleMetadataSeederService {
 
     private workflowDefinitionChecksum(value: any): string {
         return createHash('sha256')
-            .update(this.stableStringify(value))
+            .update(typeof value === 'string' ? value : this.stableStringify(value))
             .digest('hex');
     }
 

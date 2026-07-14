@@ -10,7 +10,10 @@ import {
   WORKFLOW_NODE_PROVIDER_METADATA,
 } from '../../decorators/workflow-node-provider.decorator';
 import { WorkflowNodeHandler } from '../../interfaces/workflow-node-handler.interface';
-import { WorkflowNodeProviderMetadata } from '../../types/workflow-dsl.types';
+import {
+  WorkflowNodeMetadataResponse,
+  WorkflowNodeProviderMetadata,
+} from '../../types/workflow-dsl.types';
 
 interface RegisteredWorkflowNodeProvider {
   metadata: WorkflowNodeProviderMetadata;
@@ -50,8 +53,18 @@ export class WorkflowNodeRegistryService implements OnModuleInit {
     return provider.handler;
   }
 
-  list(): WorkflowNodeProviderMetadata[] {
-    return Array.from(this.providers.values()).map(({ metadata }) => metadata);
+  list(): WorkflowNodeMetadataResponse[] {
+    return Array.from(this.providers.values())
+      .map(({ metadata }) => this.toMetadataResponse(metadata))
+      .sort((left, right) => {
+        const leftCategory = left.category ?? '';
+        const rightCategory = right.category ?? '';
+        if (leftCategory !== rightCategory) {
+          return leftCategory.localeCompare(rightCategory);
+        }
+
+        return (left.label ?? left.type).localeCompare(right.label ?? right.type);
+      });
   }
 
   has(type: string): boolean {
@@ -89,5 +102,40 @@ export class WorkflowNodeRegistryService implements OnModuleInit {
     }
 
     this.providers.set(metadata.type, { metadata, handler: instance });
+  }
+
+  private toMetadataResponse(
+    metadata: WorkflowNodeProviderMetadata,
+  ): WorkflowNodeMetadataResponse {
+    const resolvedIcon = metadata.ui?.icon ?? metadata.icon;
+
+    return {
+      type: metadata.type,
+      kind: metadata.kind,
+      version: metadata.version,
+      category: metadata.category,
+      subcategory: metadata.subcategory,
+      label: metadata.label,
+      description: metadata.description,
+      icon: resolvedIcon,
+      tags: metadata.tags,
+      configSchema: metadata.configSchema,
+      uiSchema: metadata.uiSchema,
+      outputSchema: metadata.outputSchema,
+      examples: metadata.examples,
+      metrics: metadata.metrics,
+      definitions: metadata.definitions,
+      authoring: metadata.authoring,
+      runtime: metadata.runtime,
+      documentation: metadata.documentation,
+      ui: metadata.ui
+        ? {
+            ...metadata.ui,
+            icon: metadata.ui.icon ?? resolvedIcon,
+          }
+        : resolvedIcon
+          ? { icon: resolvedIcon }
+          : undefined,
+    };
   }
 }

@@ -5,7 +5,7 @@ import { WorkflowDefinition } from '../../entities/workflow-definition.entity';
 import { WorkflowExecution } from '../../entities/workflow-execution.entity';
 import { WorkflowStepExecution } from '../../entities/workflow-step-execution.entity';
 import {
-  WorkflowDefinitionJson,
+  WorkflowDefinitionDsl,
   WorkflowExecutionRequest,
   WorkflowExecutionResponse,
   WorkflowNodeDefinition,
@@ -15,6 +15,7 @@ import { WorkflowExecutionWriterService } from './workflow-execution-writer.serv
 import { WorkflowExpressionService } from './workflow-expression.service';
 import { WorkflowDefinitionValidatorService } from './workflow-definition-validator.service';
 import { WorkflowNodeRegistryService } from './workflow-node-registry.service';
+import YAML from 'yaml';
 
 @Injectable()
 export class WorkflowRuntimeService {
@@ -57,15 +58,15 @@ export class WorkflowRuntimeService {
       throw new BadRequestException('Workflow definition not found.');
     }
 
-    const definitionJson = this.assertDefinitionJson(definition.definitionJson);
-    this.validator.validate(definitionJson);
+    const definitionDsl = this.assertDefinitionYaml(definition.definitionYaml);
+    this.validator.validate(definitionDsl);
     const execution = await this.writer.createExecution(definition, request);
     const outputs: Record<string, any> = {};
     const runtimeContext: WorkflowRuntimeContext = {
       execution,
       input: request.input ?? {},
       variables: {
-        ...(definitionJson.variables ?? {}),
+        ...(definitionDsl.variables ?? {}),
         ...(request.variables ?? {}),
       },
       outputs,
@@ -82,7 +83,7 @@ export class WorkflowRuntimeService {
         message: `Workflow execution started for ${definition.key}.`,
       }, this.nextLogSequence(runtimeContext));
 
-      await this.runNodes(definitionJson.nodes, runtimeContext);
+      await this.runNodes(definitionDsl.nodes, runtimeContext);
 
       const completed = await this.writer.completeExecution(execution, outputs);
 
@@ -204,14 +205,35 @@ export class WorkflowRuntimeService {
     }
   }
 
-  private assertDefinitionJson(value: any): WorkflowDefinitionJson {
-    if (!value || !Array.isArray(value.nodes)) {
+  private assertDefinitionYaml(value: any): WorkflowDefinitionDsl {
+    if (!value || typeof value !== 'string') {
       throw new BadRequestException(
-        'Workflow definition JSON must include a nodes array.',
+        'Workflow definition YAML must be stored as a string.',
       );
     }
 
-    return value;
+    let parsed: unknown;
+    try {
+      parsed = YAML.parse(value);
+    } catch (error: any) {
+      throw new BadRequestException(
+        error?.message ?? 'Workflow definition YAML could not be parsed.',
+      );
+    }
+
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      throw new BadRequestException(
+        'Workflow definition YAML must resolve to an object with a nodes array.',
+      );
+    }
+
+    if (!Array.isArray((parsed as WorkflowDefinitionDsl).nodes)) {
+      throw new BadRequestException(
+        'Workflow definition YAML must include a nodes array.',
+      );
+    }
+
+    return parsed as WorkflowDefinitionDsl;
   }
 
   private toResponse(execution: WorkflowExecution): WorkflowExecutionResponse {

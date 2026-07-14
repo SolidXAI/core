@@ -10,12 +10,12 @@ export class WorkflowTriggerExecution extends CommonEntity {
     triggerExecutionKey: string;
 
     @Index()
-    @ManyToOne(() => WorkflowDefinition, { onDelete: "RESTRICT", nullable: false })
+    @ManyToOne(() => WorkflowDefinition, { onDelete: "CASCADE", nullable: false })
     @JoinColumn()
     workflowDefinition: WorkflowDefinition;
 
     @Index()
-    @ManyToOne(() => WorkflowExecution, { onDelete: "RESTRICT", nullable: true })
+    @ManyToOne(() => WorkflowExecution, { onDelete: "CASCADE", nullable: true })
     @JoinColumn()
     workflowExecution: WorkflowExecution;
 

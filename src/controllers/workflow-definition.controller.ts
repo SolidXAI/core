@@ -5,6 +5,8 @@ import { WorkflowDefinitionService } from '../services/workflow-definition.servi
 import { CreateWorkflowDefinitionDto } from '../dtos/create-workflow-definition.dto';
 import { UpdateWorkflowDefinitionDto } from '../dtos/update-workflow-definition.dto';
 import { ExecuteWorkflowDto } from '../dtos/execute-workflow.dto';
+import { WorkflowNodeRegistryService } from '../services/workflow/workflow-node-registry.service';
+import { ValidateWorkflowDefinitionDto } from '../dtos/validate-workflow-definition.dto';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -14,7 +16,10 @@ enum ShowSoftDeleted {
 @ApiTags('Solid Core')
 @Controller('workflow-definition')
 export class WorkflowDefinitionController {
-  constructor(private readonly service: WorkflowDefinitionService) {}
+  constructor(
+    private readonly service: WorkflowDefinitionService,
+    private readonly workflowNodeRegistry: WorkflowNodeRegistryService,
+  ) {}
 
   @ApiBearerAuth("jwt")
   @Post()
@@ -40,6 +45,18 @@ export class WorkflowDefinitionController {
   @Post(':id/execute')
   execute(@Param('id') id: string, @Body() executeDto: ExecuteWorkflowDto) {
     return this.service.executeWorkflow(+id, executeDto);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Get('node-types')
+  listNodeTypes() {
+    return this.workflowNodeRegistry.list();
+  }
+
+  @ApiBearerAuth("jwt")
+  @Post('validate')
+  validate(@Body() validateDto: ValidateWorkflowDefinitionDto) {
+    return this.service.validateWorkflowDefinition(validateDto.definitionYaml);
   }
 
 

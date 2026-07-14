@@ -10,12 +10,12 @@ export class WorkflowExecutionArtifact extends CommonEntity {
     artifactKey: string;
 
     @Index()
-    @ManyToOne(() => WorkflowExecution, { onDelete: "RESTRICT", nullable: false })
+    @ManyToOne(() => WorkflowExecution, { onDelete: "CASCADE", nullable: false })
     @JoinColumn()
     workflowExecution: WorkflowExecution;
 
     @Index()
-    @ManyToOne(() => WorkflowStepExecution, { onDelete: "RESTRICT", nullable: true })
+    @ManyToOne(() => WorkflowStepExecution, { onDelete: "CASCADE", nullable: true })
     @JoinColumn()
     workflowStepExecution: WorkflowStepExecution;
 

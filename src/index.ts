@@ -130,6 +130,7 @@ export * from './dtos/update-workflow-execution-artifact.dto'
 export * from './dtos/create-workflow-trigger-execution.dto'
 export * from './dtos/update-workflow-trigger-execution.dto'
 export * from './dtos/execute-workflow.dto'
+export * from './dtos/validate-workflow-definition.dto'
 
 export * from './entities/action-metadata.entity'
 export * from './entities/common.entity'
