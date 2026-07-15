@@ -226,6 +226,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.messageSubType = postDto.messageSubType || CHATTER_MESSAGE_SUBTYPE.CUSTOM;
         chatterMessage.status = postDto.status ?? CHATTER_MESSAGE_STATUS.PENDING;
         chatterMessage.messageBody = postDto.messageBody;
+        chatterMessage.messageBodyMentions = postDto.messageBodyMentions;
         chatterMessage.coModelEntityId = postDto.coModelEntityId;
         chatterMessage.coModelName = coModelName;
         chatterMessage.modelUserKey = postDto.modelUserKey ?? null;

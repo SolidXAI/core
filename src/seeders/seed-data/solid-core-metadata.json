@@ -3912,6 +3912,18 @@
             "isSystem": false
           },
           {
+            "name": "messageBodyMentions",
+            "displayName": "Message Body Mentions",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
             "name": "coModelEntityId",
             "displayName": "CoModel Entity Id",
             "type": "int",
