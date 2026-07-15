@@ -18,6 +18,9 @@ export class ChatterMessage extends CommonEntity {
     @Column({ nullable: true, ...getColumnType('longText') })
     messageBody: string;
 
+    @Column({ nullable: true, ...getColumnType('longText') })
+    messageBodyMentions: string;
+
     @Index()
     @Column({ type: "integer" })
     coModelEntityId: number;
