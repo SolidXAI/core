@@ -14473,6 +14473,15 @@
       "description": "Welcome email sent to users after signup.",
       "active": true,
       "type": "text"
+    },
+    {
+      "name": "chatter-mention-notification",
+      "displayName": "Default: Chatter Mention Notification",
+      "body": "chatter-mention-notification.handlebars.html",
+      "subject": "{{mentionedByDisplayName}} mentioned you in {{entityDisplayName}}",
+      "description": "This template notifies users when they are mentioned in a custom chatter note.",
+      "active": true,
+      "type": "text"
     }
   ],
   "smsTemplates": [

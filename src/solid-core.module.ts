@@ -130,10 +130,17 @@ import { ChatterQueuePublisherRabbitmq } from "./jobs/rabbitmq/chatter-queue-pub
 import { ChatterQueueSubscriberRabbitmq } from "./jobs/rabbitmq/chatter-queue-subscriber.service";
 import { ChatterQueuePublisherDatabase } from "./jobs/database/chatter-queue-publisher-database.service";
 import { ChatterQueueSubscriberDatabase } from "./jobs/database/chatter-queue-subscriber-database.service";
+import { ChatterMentionNotificationEmailQueueHandler } from "./jobs/chatter-mention-notification-email-queue-handler.service";
+import { ChatterMentionNotificationEmailQueuePublisherDatabase } from "./jobs/database/chatter-mention-notification-email-publisher-database.service";
+import { ChatterMentionNotificationEmailQueueSubscriberDatabase } from "./jobs/database/chatter-mention-notification-email-subscriber-database.service";
+import { ChatterMentionNotificationEmailQueuePublisherRabbitmq } from "./jobs/rabbitmq/chatter-mention-notification-email-publisher.service";
+import { ChatterMentionNotificationEmailQueueSubscriberRabbitmq } from "./jobs/rabbitmq/chatter-mention-notification-email-subscriber.service";
 import { ApiEmailQueuePublisherRedis } from "./jobs/redis/api-email-publisher-redis.service";
 import { ApiEmailQueueSubscriberRedis } from "./jobs/redis/api-email-subscriber-redis.service";
 import { ChatterQueuePublisherRedis } from "./jobs/redis/chatter-queue-publisher-redis.service";
 import { ChatterQueueSubscriberRedis } from "./jobs/redis/chatter-queue-subscriber-redis.service";
+import { ChatterMentionNotificationEmailQueuePublisherRedis } from "./jobs/redis/chatter-mention-notification-email-publisher-redis.service";
+import { ChatterMentionNotificationEmailQueueSubscriberRedis } from "./jobs/redis/chatter-mention-notification-email-subscriber-redis.service";
 import { ComputedFieldEvaluationPublisherRedis } from "./jobs/redis/computed-field-evaluation-publisher-redis.service";
 import { ComputedFieldEvaluationSubscriberRedis } from "./jobs/redis/computed-field-evaluation-subscriber-redis.service";
 import { GenerateCodePublisherRedis } from "./jobs/redis/generate-code-publisher-redis.service";
@@ -665,6 +672,11 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ChatterQueueSubscriberRabbitmq,
     ChatterQueuePublisherDatabase,
     ChatterQueueSubscriberDatabase,
+    ChatterMentionNotificationEmailQueueHandler,
+    ChatterMentionNotificationEmailQueuePublisherRabbitmq,
+    ChatterMentionNotificationEmailQueueSubscriberRabbitmq,
+    ChatterMentionNotificationEmailQueuePublisherDatabase,
+    ChatterMentionNotificationEmailQueueSubscriberDatabase,
 
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,
@@ -674,6 +686,8 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ApiEmailQueueSubscriberRedis,
     ChatterQueuePublisherRedis,
     ChatterQueueSubscriberRedis,
+    ChatterMentionNotificationEmailQueuePublisherRedis,
+    ChatterMentionNotificationEmailQueueSubscriberRedis,
     ComputedFieldEvaluationPublisherRedis,
     ComputedFieldEvaluationSubscriberRedis,
     GenerateCodePublisherRedis,
