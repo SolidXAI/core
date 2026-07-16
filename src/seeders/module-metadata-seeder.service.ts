@@ -40,7 +40,12 @@ import { User } from '../entities/user.entity';
 import { MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL } from '../dtos/create-menu-item-metadata.dto';
 import { DEFAULT_SA_PASSWORD } from '../dtos/create-user.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
-import { ADMIN_ROLE_NAME, CreateRoleMetadataDto } from 'src/dtos/create-role-metadata.dto';
+import {
+    ADMIN_ROLE_NAME,
+    ALLOWED_TO_EXPORT_ROLE_NAME,
+    ALLOWED_TO_IMPORT_ROLE_NAME,
+    CreateRoleMetadataDto,
+} from 'src/dtos/create-role-metadata.dto';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { CreateLocaleDto } from 'src/dtos/create-locale.dto';
@@ -585,6 +590,13 @@ export class ModuleMetadataSeederService {
             details: `role=${ADMIN_ROLE_NAME}`,
         });
 
+        await this.timeOperation('attach-capability-roles-to-admin-users', () => this.attachCapabilityRolesToAdminUsers(), {
+            moduleName: 'global',
+            component: 'default-roles',
+            serviceCall: 'attachCapabilityRolesToAdminUsers',
+            details: `role=${ADMIN_ROLE_NAME}`,
+        });
+
         // The below code is commented out for now as we are including permissions for these roles from the seeder json for the Internal and Public role. 
         // 2. Give  permissions to the Internal / Public role.
         // this.logger.debug(`About to add all permissions to the Internal role`);
@@ -592,6 +604,18 @@ export class ModuleMetadataSeederService {
 
         // this.logger.debug(`About to add all permissions to the Public role`);
         // await this.roleService.addPermissionToRole(PUBLIC_ROLE_NAME, ['SettingController.wrapSettings', 'AuthenticationController.logout']);
+    }
+
+    private async attachCapabilityRolesToAdminUsers(): Promise<void> {
+        const adminUsers = await this.userService.findUsersByRole(ADMIN_ROLE_NAME, {});
+        if (!adminUsers?.length) {
+            return;
+        }
+
+        const capabilityRoles = [ALLOWED_TO_IMPORT_ROLE_NAME, ALLOWED_TO_EXPORT_ROLE_NAME];
+        for (const adminUser of adminUsers) {
+            await this.userService.addRolesToUser(adminUser.username, capabilityRoles);
+        }
     }
 
     private async seedSecurityRules(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
