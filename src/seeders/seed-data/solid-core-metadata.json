@@ -8607,9 +8607,9 @@
                             "attrs": {
                               "name": "roles",
                               "widget": "checkbox",
-                              "inlineCreateAutoSave": "true",
+                              "inlineCreateAutoSave": "false",
                               "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
-                              "inlineCreate": "true",
+                              "inlineCreate": "false",
                               "inlineCreateLayout": {
                                 "type": "form",
                                 "attrs": {
