@@ -44,7 +44,9 @@ export class MediaDownloadUrlService {
     // the request (see MediaSignedUrlGuard), so it works in a plain <img src> with no
     // Authorization header needed.
     const token = await this.mintDownloadToken(mediaId, expiryMinutes);
-    return `/media/${mediaId}/download?token=${token}`;
+    const downloadPath = `/api/media/${mediaId}/download?token=${token}`;
+    const baseUrl = this.settingService.getConfigValue<SolidCoreSetting>('baseUrl');
+    return `${String(baseUrl).replace(/\/+$/, '')}${downloadPath}`;
   }
 
   async verifyDownloadToken(token: string): Promise<MediaDownloadTokenPayload> {
