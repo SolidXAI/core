@@ -1,4 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -60,6 +61,7 @@ import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
 import { ViewMetadata } from 'src/entities/view-metadata.entity';
+import { EventDetails, EventType, ModuleMetadataSeederEventPayload } from 'src/interfaces';
 
 /**
  * Central metadata seeder for both solid-core and consuming modules.
@@ -103,6 +105,7 @@ export class ModuleMetadataSeederService {
         private readonly moduleMetadataService: ModuleMetadataService,
         @Inject(forwardRef(() => ModelMetadataService))
         private readonly modelMetadataService: ModelMetadataService,
+        private readonly eventEmitter: EventEmitter2,
         private readonly fieldMetadataService: FieldMetadataService,
         private readonly mediaStorageProviderMetadataService: MediaStorageProviderMetadataService,
         private readonly roleService: RoleMetadataService,
@@ -136,7 +139,26 @@ export class ModuleMetadataSeederService {
         let currentModule = 'global';
         let currentStep = 'bootstrap';
         let modulesToSeed: string[] | null = null;
+        const requestedModulesToSeed = Array.isArray(conf?.modulesToSeed) ? [...conf.modulesToSeed] : null;
         const shouldSeedGlobalMetadata = conf?.seedGlobalMetadata !== false;
+        const seedOptions: ModuleMetadataSeederEventPayload['options'] = {
+            modulesToSeed: requestedModulesToSeed,
+            pruneMetadata: Boolean(conf?.pruneMetadata),
+            seedGlobalMetadata: shouldSeedGlobalMetadata,
+        };
+        const seedRunId = uuidv4();
+        const startedAt = new Date();
+        const seededModuleNames: string[] = [];
+
+        this.emitModuleMetadataSeederEvent(
+            EventType.MODULE_METADATA_SEEDER_STARTED,
+            {
+                seedRunId,
+                options: seedOptions,
+                startedAt: startedAt.toISOString(),
+                currentStep,
+            },
+        );
 
         try {
             this.enablePruning = Boolean(conf?.pruneMetadata);
@@ -195,6 +217,7 @@ export class ModuleMetadataSeederService {
 
                     console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
                     this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
+                    seededModuleNames.push(moduleMetadata.name);
 
                     await this.timeOperation('module-total', async () => {
                         currentStep = 'seedMediaStorageProviders';
@@ -288,10 +311,37 @@ export class ModuleMetadataSeederService {
             // Add a console log indicating seeding is finished. This needs to be console.log so that it looks proper when this code is run via CLI.
             console.log(`✔ Seeding completed.`);
             //this.logger.log(`All Seeders finished`);
+            await this.emitModuleMetadataSeederFinishedEvent(
+                EventType.MODULE_METADATA_SEEDER_FINISHED,
+                {
+                    seedRunId,
+                    options: seedOptions,
+                    startedAt: startedAt.toISOString(),
+                    finishedAt: new Date().toISOString(),
+                    durationMs: Date.now() - startedAt.getTime(),
+                    success: true,
+                    seededModuleNames,
+                    currentStep,
+                },
+            );
 
             //FIXME: Handle displaying the created users credentials in a better way.
             // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
         } catch (error: any) {
+            await this.emitModuleMetadataSeederFinishedEvent(
+                EventType.MODULE_METADATA_SEEDER_FINISHED,
+                {
+                    seedRunId,
+                    options: seedOptions,
+                    startedAt: startedAt.toISOString(),
+                    finishedAt: new Date().toISOString(),
+                    durationMs: Date.now() - startedAt.getTime(),
+                    success: false,
+                    seededModuleNames,
+                    currentStep,
+                    errorMessage: error?.message,
+                },
+            );
             this.logSeedFailureForCli(error, {
                 moduleName: currentModule,
                 step: currentStep,
@@ -299,6 +349,31 @@ export class ModuleMetadataSeederService {
                 modulesToSeed,
             });
             throw error;
+        }
+    }
+
+    private emitModuleMetadataSeederEvent(
+        type: EventType.MODULE_METADATA_SEEDER_STARTED | EventType.MODULE_METADATA_SEEDER_FINISHED,
+        payload: ModuleMetadataSeederEventPayload,
+    ): void {
+        try {
+            this.eventEmitter.emit(type, new EventDetails<ModuleMetadataSeederEventPayload>(type, payload));
+        } catch (error: any) {
+            this.logger.warn(`Failed to emit ${type}: ${error?.message ?? error}`);
+        }
+    }
+
+    private async emitModuleMetadataSeederFinishedEvent(
+        type: EventType.MODULE_METADATA_SEEDER_FINISHED,
+        payload: ModuleMetadataSeederEventPayload,
+    ): Promise<void> {
+        try {
+            console.log(`▶ Running post-seed hooks for runId=${payload.seedRunId}`);
+            await this.eventEmitter.emitAsync(type, new EventDetails<ModuleMetadataSeederEventPayload>(type, payload));
+            console.log(`✔ Post-seed hooks completed for runId=${payload.seedRunId}`);
+        } catch (error: any) {
+            console.log(`✖ Post-seed hooks failed for runId=${payload.seedRunId}: ${error?.message ?? error}`);
+            this.logger.warn(`Failed to emit ${type}: ${error?.message ?? error}`);
         }
     }
 
