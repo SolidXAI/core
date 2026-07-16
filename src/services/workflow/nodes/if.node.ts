@@ -67,7 +67,7 @@ export class IfNode implements WorkflowNodeHandler {
       context.node.configuration?.expression;
     const matched = context.expression.evaluateCondition(condition, context);
     const selectedNodes = matched
-      ? context.node.then ?? context.node.children ?? []
+      ? context.node.then ?? []
       : context.node.else ?? [];
 
     await context.emitLog({

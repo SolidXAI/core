@@ -31,10 +31,11 @@ import {
     ],
     childSlots: [
       {
-        key: 'children',
+        key: 'tasks',
         label: 'Loop Body',
         description: 'Nodes that run once for each item.',
         kind: 'sequence',
+        layout: 'sequential',
         required: true,
       },
     ],
@@ -63,7 +64,7 @@ export class ForEachNode implements WorkflowNodeHandler {
       throw new BadRequestException('forEach requires configuration.items array.');
     }
 
-    const childNodes = context.node.children ?? context.node.nodes ?? [];
+    const childNodes = context.node.tasks ?? [];
     const iterations = [];
 
     for (let index = 0; index < items.length; index++) {

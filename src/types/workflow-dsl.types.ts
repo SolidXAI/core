@@ -48,17 +48,11 @@ export interface WorkflowNodeDefinition {
   onError?: 'fail' | 'continue';
   configuration?: Record<string, any>;
   metadata?: Record<string, any>;
-  children?: WorkflowNodeDefinition[];
-  nodes?: WorkflowNodeDefinition[];
+  tasks?: WorkflowNodeDefinition[];
   then?: WorkflowNodeDefinition[];
   else?: WorkflowNodeDefinition[];
-  branches?: WorkflowBranchDefinition[];
-}
-
-export interface WorkflowBranchDefinition {
-  id: string;
-  name?: string;
-  nodes: WorkflowNodeDefinition[];
+  defaults?: WorkflowNodeDefinition[];
+  cases?: Record<string, WorkflowNodeDefinition[]>;
 }
 
 export interface WorkflowTriggerDefinition {
@@ -107,7 +101,8 @@ export interface WorkflowNodeChildSlotDefinition {
   key: string;
   label?: string;
   description?: string;
-  kind: 'sequence' | 'branch-collection';
+  kind: 'sequence' | 'case-collection';
+  layout?: 'sequential' | 'parallel';
   required?: boolean;
   minItems?: number;
   maxItems?: number;

@@ -422,6 +422,8 @@ import { HttpRequestNode } from './services/workflow/nodes/http-request.node';
 import { IfNode } from './services/workflow/nodes/if.node';
 import { LogWriteNode } from './services/workflow/nodes/log-write.node';
 import { ParallelNode } from './services/workflow/nodes/parallel.node';
+import { SequentialNode } from './services/workflow/nodes/sequential.node';
+import { SwitchNode } from './services/workflow/nodes/switch.node';
 
 @Global()
 @Module({
@@ -877,6 +879,8 @@ import { ParallelNode } from './services/workflow/nodes/parallel.node';
     IfNode,
     ForEachNode,
     ParallelNode,
+    SequentialNode,
+    SwitchNode,
   ],
   exports: [
     AuthenticationService,

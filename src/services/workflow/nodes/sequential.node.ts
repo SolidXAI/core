@@ -6,21 +6,21 @@ import {
 } from '../../../types/workflow-dsl.types';
 
 @WorkflowNodeProvider({
-  type: 'parallel',
+  type: 'sequential',
   kind: 'control',
   category: 'control-flow',
-  label: 'Parallel',
-  description: 'Runs child tasks concurrently and returns task outputs.',
-  tags: ['parallel', 'concurrency'],
+  label: 'Sequential',
+  description: 'Runs child tasks in order and returns their outputs.',
+  tags: ['sequential', 'flowable', 'ordered'],
   authoring: {
     defaultConfiguration: {},
     childSlots: [
       {
         key: 'tasks',
         label: 'Tasks',
-        description: 'Child tasks that run concurrently.',
+        description: 'Child tasks that run one after another.',
         kind: 'sequence',
-        layout: 'parallel',
+        layout: 'sequential',
         required: true,
       },
     ],
@@ -28,38 +28,27 @@ import {
     supportsName: true,
   },
   documentation: {
-    summary: 'Runs child tasks concurrently and returns their outputs.',
+    summary: 'Runs child tasks one after another in the order they are defined.',
   },
   ui: {
-    icon: 'si-objects-column',
+    icon: 'si-list-numbers',
     modalSize: 'lg',
   },
 })
-export class ParallelNode implements WorkflowNodeHandler {
+export class SequentialNode implements WorkflowNodeHandler {
   async execute(
     context: WorkflowNodeExecutionContext,
   ): Promise<WorkflowNodeHandlerResult> {
     const childTasks = context.node.tasks ?? [];
+    const outputs = {};
 
-    const taskResults = await Promise.all(
-      childTasks.map(async (task) => {
-        const outputs = {};
-
-        await context.runNodes([task], {
-          outputs,
-        });
-
-        return {
-          id: task.id,
-          name: task.name,
-          outputs,
-        };
-      }),
-    );
+    await context.runNodes(childTasks, {
+      outputs,
+    });
 
     return {
       output: {
-        tasks: taskResults,
+        tasks: outputs,
       },
     };
   }
