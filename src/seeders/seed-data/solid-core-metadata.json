@@ -5321,14 +5321,6 @@
         "ChatterMessageController.findMany",
         "ChatterMessageController.markCompleted",
         "ChatterMessageController.updateCustomNoteMessage",
-        "ImportTransactionController.getImportTemplate",
-        "ImportTransactionController.getImportInstructions",
-        "ImportTransactionController.getImportMappingInfo",
-        "ImportTransactionController.startImportSync",
-        "ImportTransactionController.startImportAsync",
-        "ImportTransactionController.exportFailedImportedImports",
-        "ExportTemplateController.startExportSync",
-        "ExportTemplateController.startExportAsync",
         "ListOfValuesController.findMany",
         "ListOfValuesController.findOne",
         "SettingController.getAllSettings",
@@ -5346,6 +5338,24 @@
         "DashboardController.saveLayout",
         "mcp:invoke",
         "agent:invoke"
+      ]
+    },
+    {
+      "name": "Allowed To Import",
+      "permissions": [
+        "ImportTransactionController.getImportTemplate",
+        "ImportTransactionController.getImportInstructions",
+        "ImportTransactionController.getImportMappingInfo",
+        "ImportTransactionController.startImportSync",
+        "ImportTransactionController.startImportAsync",
+        "ImportTransactionController.exportFailedImportedImports"
+      ]
+    },
+    {
+      "name": "Allowed To Export",
+      "permissions": [
+        "ExportTemplateController.startExportSync",
+        "ExportTemplateController.startExportAsync"
       ]
     },
     {

@@ -79,6 +79,11 @@ import { ViewMetadata } from 'src/entities/view-metadata.entity';
  */
 @Injectable()
 export class ModuleMetadataSeederService {
+    private readonly adminPermissionExclusionPrefixes = [
+        'ImportTransactionController.',
+        'ExportTemplateController.',
+        'ExportTransactionController.',
+    ];
     private readonly logger = new Logger(ModuleMetadataSeederService.name);
     // Stable tag used on all verbose seed timing logs so runs can be grepped quickly.
     private readonly seedTimingTag = 'SEED_TIMING';
@@ -498,10 +503,10 @@ export class ModuleMetadataSeederService {
 
     private async setupDefaultRolesWithPermissions() {
         this.logger.debug(`About to add all permissions to the Admin role`);
-        await this.timeOperation('role-add-all-permissions', () => this.roleService.addAllPermissionsToRole(ADMIN_ROLE_NAME), {
+        await this.timeOperation('role-add-all-permissions', () => this.roleService.addAllPermissionsToRoleExceptPrefixes(ADMIN_ROLE_NAME, this.adminPermissionExclusionPrefixes), {
             moduleName: 'global',
             component: 'default-roles',
-            serviceCall: 'roleService.addAllPermissionsToRole',
+            serviceCall: 'roleService.addAllPermissionsToRoleExceptPrefixes',
             details: `role=${ADMIN_ROLE_NAME}`,
         });
 
