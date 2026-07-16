@@ -9,6 +9,11 @@ export class UpdateChatterNoteMessageDto {
 
     @IsString()
     @IsOptional()
+    @ApiProperty()
+    messageBodyMentions?: string;
+
+    @IsString()
+    @IsOptional()
     @ApiProperty({ required: false, description: 'Comma-separated media IDs to remove from this note.' })
     removeAttachmentIds?: string;
 }

@@ -3924,6 +3924,18 @@
             "isSystem": false
           },
           {
+            "name": "messageBodyMentions",
+            "displayName": "Message Body Mentions",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
             "name": "coModelEntityId",
             "displayName": "CoModel Entity Id",
             "type": "int",
@@ -8610,9 +8622,9 @@
                             "attrs": {
                               "name": "roles",
                               "widget": "checkbox",
-                              "inlineCreateAutoSave": "true",
+                              "inlineCreateAutoSave": "false",
                               "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
-                              "inlineCreate": "true",
+                              "inlineCreate": "false",
                               "inlineCreateLayout": {
                                 "type": "form",
                                 "attrs": {
@@ -14495,6 +14507,15 @@
       "body": "email-on-signup.handlebars.html",
       "subject": "Welcome to {{solidAppName}}",
       "description": "Welcome email sent to users after signup.",
+      "active": true,
+      "type": "text"
+    },
+    {
+      "name": "chatter-mention-notification",
+      "displayName": "Default: Chatter Mention Notification",
+      "body": "chatter-mention-notification.handlebars.html",
+      "subject": "{{mentionedByDisplayName}} mentioned you in {{entityDisplayName}}",
+      "description": "This template notifies users when they are mentioned in a custom chatter note.",
       "active": true,
       "type": "text"
     }
