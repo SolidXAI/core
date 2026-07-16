@@ -1,4 +1,4 @@
-import { IsInt,IsOptional, IsNotEmpty, IsString } from 'class-validator';
+import { IsBoolean, IsInt,IsOptional, IsNotEmpty, IsString } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 export class UpdateMediaDto {
     @IsOptional()
@@ -10,6 +10,11 @@ export class UpdateMediaDto {
 @IsInt()
 @ApiProperty()
 entityId: number;
+
+@IsOptional()
+@IsBoolean()
+@ApiProperty()
+isPublic: boolean;
 
 @IsOptional()
 @IsString()

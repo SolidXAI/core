@@ -9,6 +9,7 @@ import { AUTH_TYPE_KEY } from '../decorators/auth.decorator';
 import { AuthType } from '../enums/auth-type.enum';
 import { AccessTokenGuard } from './access-token.guard';
 import { ApiKeyGuard } from './api-key.guard';
+import { MediaSignedUrlGuard } from './media-signed-url.guard';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { PermissionMetadataService } from '../services/permission-metadata.service';
 import { ClsService } from 'nestjs-cls';
@@ -22,12 +23,14 @@ export class AuthenticationGuard implements CanActivate {
       [AuthType.Bearer]: this.accessTokenGuard,
       [AuthType.ApiKey]: this.apiKeyGuard,
       [AuthType.None]: { canActivate: () => true },
+      [AuthType.MediaSignedUrl]: this.mediaSignedUrlGuard,
     };
 
   constructor(
     private readonly reflector: Reflector,
     private readonly accessTokenGuard: AccessTokenGuard,
     private readonly apiKeyGuard: ApiKeyGuard,
+    private readonly mediaSignedUrlGuard: MediaSignedUrlGuard,
     private readonly permissionService: PermissionMetadataService,
     private readonly cls: ClsService,
   ) { }

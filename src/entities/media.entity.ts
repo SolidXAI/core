@@ -9,6 +9,9 @@ export class Media extends CommonEntity {
     @Column({ type: "integer" })
     entityId: number;
 
+    @Column({ name: "is_public", nullable: true })
+    isPublic: boolean;
+
     @Column({ type: "varchar", nullable: true })
     relativeUri: string;
 
