@@ -447,16 +447,10 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
       rootPath: join(process.cwd(), "media-files-storage"),
       serveRoot: "/media-files-storage",
       serveStaticOptions: {
-        setHeaders: (res, path /*, stat*/) => {
+        setHeaders: (res, path) => {
           // Allow use of these files from a different origin (e.g., :3000 UI)
           // Use 'same-site' if both origins are on the same site (localhost:* counts as same-site)
           res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"); // or 'same-site'
-
-          // if (res.req?.query?.disposition === "attachment") {
-          //   const fileName = basename(filePath).replace(/"/g, '\\"');
-          //   res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
-          //   res.setHeader("Access-Control-Expose-Headers", "Content-Disposition, Content-Type");
-          // }
 
           // If you need to load into <canvas> without tainting or fetch images via XHR,
           // you can also expose CORS here (not needed for simple <img>):
