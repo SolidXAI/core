@@ -63,9 +63,9 @@ export class TestingEngine {
       } catch (err: any) {
         scenarioError = err;
       } finally {
-        // On failure, flush the UI adapter's captured artifacts (screenshot + console +
-        // network) BEFORE onScenarioEnd — the lifecycle reporter snapshots the attached
-        // artifacts inside onScenarioEnd. No page (e.g. API scenarios) → nothing captured.
+        // On failure, flush the UI adapter's captured artifacts (console + network) BEFORE
+        // onScenarioEnd — the lifecycle reporter snapshots the attached artifacts inside
+        // onScenarioEnd. No page (e.g. API scenarios) → nothing captured.
         if (scenarioError && ctx.ui?.page && reporter.attach) {
           try {
             const artifacts = await ctx.ui.collectFailureArtifacts();

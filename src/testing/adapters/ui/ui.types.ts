@@ -1,13 +1,13 @@
 /**
  * Per-run capture toggles for the Playwright adapter. Console/network events are
  * buffered while a scenario runs and only flushed (attached to the reporter) when the
- * scenario FAILS; passing scenarios discard them. `screenshotOnFailure` grabs a viewport
- * JPEG at the moment of failure. API scenarios never open a page, so nothing is captured.
+ * scenario FAILS; passing scenarios discard them. API scenarios never open a page, so
+ * nothing is captured. The whole-run video may be enabled per run and is kept only when
+ * the run fails.
  */
 export interface CaptureOptions {
   console?: boolean;
   network?: boolean;
-  screenshotOnFailure?: boolean;
 }
 
 export interface PlaywrightAdapterOptions {
@@ -16,4 +16,5 @@ export interface PlaywrightAdapterOptions {
   defaultTimeoutMs?: number;
   navigationTimeoutMs?: number;
   capture?: CaptureOptions;
+  recordVideo?: boolean;
 }

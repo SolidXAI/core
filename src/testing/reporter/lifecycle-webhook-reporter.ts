@@ -56,9 +56,10 @@ const defaultPost: WebhookPostFn = async (url, body, opts) => {
   return { ok: res.ok, status: res.status };
 };
 
-/** Map an `attach()` payload to an ArtifactRef. Covers API/console/network + screenshots. */
+/** Map an `attach()` payload to an ArtifactRef. Covers API/console/network + video/screenshots. */
 function classifyAttachment(name: string, contentType: string): ArtifactRef["kind"] {
   const hint = `${name} ${contentType}`.toLowerCase();
+  if (contentType.startsWith("video/") || hint.includes("video")) return "video";
   if (hint.includes("screenshot") || contentType.startsWith("image/")) return "screenshot";
   if (hint.includes("console")) return "console";
   if (hint.includes("network") || hint.includes("har")) return "network";
@@ -96,6 +97,8 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
   private failed = 0;
   private currentSteps: StepResultData[] = [];
   private currentArtifacts: ArtifactRef[] = [];
+  /** Run-level artifacts (e.g. the whole-run video); emitted on run.end. */
+  private runArtifacts: ArtifactRef[] = [];
   /** Serializes webhook deliveries to preserve order. */
   private chain: Promise<void> = Promise.resolve();
 
@@ -169,18 +172,54 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
   }): void {
     super.attach(args);
     const kind = classifyAttachment(args.name, args.contentType);
+    const binary = Buffer.isBuffer(args.data) && isBinaryContentType(args.contentType);
 
-    if (Buffer.isBuffer(args.data) && isBinaryContentType(args.contentType)) {
+    // Binary artifacts (screenshots, video): when a storage sink is configured, upload the bytes
+    // to shared storage and reference them by storageKey/url — never ship blobs inline (the
+    // inline cap would silently drop anything large, e.g. a video). The ref is mutated in place
+    // by an upload queued onto the delivery chain, so it resolves before scenario.end is posted.
+    if (binary && this.artifactSink) {
+      const buf = args.data as Buffer;
+      const artifact: ArtifactRef = {
+        kind,
+        name: args.name,
+        contentType: args.contentType,
+        transport: "storage",
+        sizeBytes: buf.byteLength,
+      };
+      this.currentArtifacts.push(artifact);
+      const runId = this.externalRunId ?? this.runId;
+      const scenarioId = args.scenarioId;
+      this.chain = this.chain
+        .then(async () => {
+          const ref = await this.artifactSink!.put({
+            runId,
+            scenarioId,
+            name: args.name,
+            contentType: args.contentType,
+            data: buf,
+          });
+          artifact.storageKey = ref.storageKey;
+          artifact.url = ref.url;
+        })
+        .catch(() => {
+          /* upload failed — leave the ref without a key; the ingest side skips empty refs */
+        });
+      return;
+    }
+
+    if (binary) {
       // Binary (e.g. a screenshot JPEG): base64-encode — a utf8 decode would corrupt the
       // bytes. Truncating base64 also corrupts it, so if it somehow exceeds the inline cap
       // we drop the payload rather than ship a broken image (viewport JPEGs stay well under).
-      const base64 = args.data.toString("base64");
+      const bytes = args.data as Buffer;
+      const base64 = bytes.toString("base64");
       const artifact: ArtifactRef = {
         kind,
         name: args.name,
         contentType: args.contentType,
         transport: "inline",
-        sizeBytes: args.data.byteLength,
+        sizeBytes: bytes.byteLength,
       };
       if (base64.length <= INLINE_TEXT_CAP) {
         artifact.inlineData = base64;
@@ -224,6 +263,71 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
     this.emit("scenario.end", data);
   }
 
+  /**
+   * Attach a run-level binary artifact (e.g. the whole-run video). Uploaded to shared storage
+   * via the sink (never inline for a video) and referenced by storageKey/url on run.end. Must
+   * be called before {@link flushPending} so the upload is queued ahead of the run.end delivery.
+   */
+  attachRunArtifact(args: { name: string; contentType: string; data: Buffer | string }): void {
+    const kind = classifyAttachment(args.name, args.contentType);
+    const binary = Buffer.isBuffer(args.data) && isBinaryContentType(args.contentType);
+
+    if (binary && this.artifactSink) {
+      const buf = args.data as Buffer;
+      const artifact: ArtifactRef = {
+        kind,
+        name: args.name,
+        contentType: args.contentType,
+        transport: "storage",
+        sizeBytes: buf.byteLength,
+      };
+      this.runArtifacts.push(artifact);
+      const runId = this.externalRunId ?? this.runId;
+      this.chain = this.chain
+        .then(async () => {
+          const ref = await this.artifactSink!.put({
+            runId,
+            scenarioId: "run",
+            name: args.name,
+            contentType: args.contentType,
+            data: buf,
+          });
+          artifact.storageKey = ref.storageKey;
+          artifact.url = ref.url;
+        })
+        .catch(() => {
+          /* upload failed — leave the ref without a key; ingest skips empty refs */
+        });
+      return;
+    }
+
+    // No sink: fall back to inline (a large video base64 that exceeds the cap is dropped).
+    if (binary) {
+      const bytes = args.data as Buffer;
+      const base64 = bytes.toString("base64");
+      const artifact: ArtifactRef = {
+        kind,
+        name: args.name,
+        contentType: args.contentType,
+        transport: "inline",
+        sizeBytes: bytes.byteLength,
+      };
+      if (base64.length <= INLINE_TEXT_CAP) artifact.inlineData = base64;
+      this.runArtifacts.push(artifact);
+      return;
+    }
+
+    const text = Buffer.isBuffer(args.data) ? args.data.toString("utf8") : String(args.data ?? "");
+    this.runArtifacts.push({
+      kind,
+      name: args.name,
+      contentType: args.contentType,
+      transport: "inline",
+      inlineData: text.length > INLINE_TEXT_CAP ? text.slice(0, INLINE_TEXT_CAP) : text,
+      sizeBytes: Buffer.byteLength(text),
+    });
+  }
+
   /** Emit run.end and wait for all queued deliveries to complete. */
   async flushPending(exitCode?: number): Promise<void> {
     this.emit("run.end", {
@@ -235,6 +339,7 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
       failed: this.failed,
       durationMs: Date.now() - this.startedAtMs,
       exitCode,
+      artifacts: this.runArtifacts.length ? [...this.runArtifacts] : undefined,
     });
     await this.chain;
   }

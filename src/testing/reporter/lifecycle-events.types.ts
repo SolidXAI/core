@@ -71,6 +71,8 @@ export interface RunEndData {
   failed: number;
   durationMs: number;
   exitCode?: number;
+  /** run-level artifacts (e.g. the whole-run video). */
+  artifacts?: ArtifactRef[];
 }
 
 /**
