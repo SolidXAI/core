@@ -56,7 +56,7 @@ import { ModulePackageService } from "./services/module-package.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { join } from "path";
+import { basename, join } from "path";
 import { RefreshModelCommand } from "./commands/refresh-model.command";
 import { MediaController } from "./controllers/media.controller";
 
@@ -439,10 +439,16 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
       rootPath: join(process.cwd(), "media-files-storage"),
       serveRoot: "/media-files-storage",
       serveStaticOptions: {
-        setHeaders: (res /*, path, stat*/) => {
+        setHeaders: (res, filePath /*, stat*/) => {
           // Allow use of these files from a different origin (e.g., :3000 UI)
           // Use 'same-site' if both origins are on the same site (localhost:* counts as same-site)
           res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"); // or 'same-site'
+
+          if (res.req?.query?.disposition === "attachment") {
+            const fileName = basename(filePath).replace(/"/g, '\\"');
+            res.setHeader("Content-Disposition", `attachment; filename="${fileName}"`);
+            res.setHeader("Access-Control-Expose-Headers", "Content-Disposition, Content-Type");
+          }
 
           // If you need to load into <canvas> without tainting or fetch images via XHR,
           // you can also expose CORS here (not needed for simple <img>):
