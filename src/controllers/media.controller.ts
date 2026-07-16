@@ -91,12 +91,14 @@ export class MediaController {
 
   @Auth(AuthType.MediaSignedUrl)
   @ApiQuery({ name: 'token', required: true, type: String, description: "Short-lived signed token obtained from a private Media record's URL - not entered manually." })
+  @ApiQuery({ name: 'disposition', required: false, enum: ['inline', 'attachment'], description: "'inline' (default) renders/previews in the browser, matching public media. Pass 'attachment' to force a browser download (e.g. from a download button)." })
   @Get(':id/download')
-  async download(@Param('id') id: string, @Res() res: Response, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
+  async download(@Param('id') id: string, @Query('disposition') disposition: string, @Res() res: Response, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
     const media = await this.service.findOne(+id, {}, solidRequestContext);
     const { stream, fileName, mimeType } = await this.service.fileDownloadStream(media);
 
-    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
+    const contentDisposition = disposition === 'attachment' ? 'attachment' : 'inline';
+    res.setHeader('Content-Disposition', `${contentDisposition}; filename="${fileName}"`);
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
