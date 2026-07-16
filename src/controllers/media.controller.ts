@@ -100,8 +100,9 @@ export class MediaController {
       return res.redirect(302, redirectUrl);
     }
 
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
     res.setHeader('Content-Type', mimeType);
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
     stream.pipe(res);
   }
