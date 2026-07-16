@@ -10,6 +10,12 @@ import { DiskFileService, S3FileService } from "src/services/file";
 import { Readable } from "stream";
 import { MediaRepository } from "src/repository/media.repository";
 import { MediaDownloadUrlService } from "src/services/media-download-url.service";
+import {
+    buildMediaRecordCreateInput,
+    buildStoredMediaFileName,
+    getEffectiveS3Region,
+    resolveStoredMediaIsPublic,
+} from "src/services/media-storage.utils";
 
 @Injectable()
 export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
@@ -24,15 +30,10 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
     ) { }
 
     async storeStreams(streamPairs: [Readable, string][], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
-        const isSupportedEntity = entity instanceof CommonEntity
-            || entity instanceof LegacyCommonEntityWithExistingId
-            || entity instanceof LegacyCommonEntityWithGeneratedId;
-        if (!isSupportedEntity) {
-            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntityWithExistingId or LegacyCommonEntityWithGeneratedId");
-        }
+        const entityId = this.getSupportedEntityId(entity);
         const result: Media[] = [];
         const storageProvider = mediaFieldMetadata.mediaStorageProvider;
-        const region = this.getEffectiveRegion(storageProvider.region);
+        const region = getEffectiveS3Region(this.configService, storageProvider.region);
 
         for (const [stream, fileName] of streamPairs) {
             const bucketName = storageProvider.bucketName;
@@ -47,16 +48,13 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
 
             await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { region });
 
-            const mediaEntity = await this.mediaRepository.createMedia({
-                // @ts-ignore
-                entityId: entity.id,
-                modelMetadataId: mediaFieldMetadata.model.id,
-                relativeUri: fileName,
-                fileSize,
-                mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
-                fieldMetadataId: mediaFieldMetadata.id
-            }) as unknown as Media;
-            mediaEntity.isPublic = this.resolveStoredIsPublic(mediaEntity.isPublic, storageProvider);
+            const mediaEntity = await this.mediaRepository.createMedia(
+                buildMediaRecordCreateInput(entityId, mediaFieldMetadata, storageProvider, {
+                    relativeUri: fileName,
+                    fileSize,
+                })
+            ) as unknown as Media;
+            mediaEntity.isPublic = resolveStoredMediaIsPublic(mediaEntity.isPublic, storageProvider);
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         }
@@ -64,25 +62,23 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
     }
 
     async retrieve(entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
-        const isSupportedEntity = entity instanceof CommonEntity
-            || entity instanceof LegacyCommonEntityWithExistingId
-            || entity instanceof LegacyCommonEntityWithGeneratedId;
-        if (!isSupportedEntity) {
-            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntityWithExistingId or LegacyCommonEntityWithGeneratedId"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
-        }
+        const entityId = this.getSupportedEntityId(entity);
         // @ts-ignore
-        const media = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
+        const media = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entityId, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
 
         // TODO: Check if the mediaStorageProvider (s3 in this case) is configured with a public bucket or not.
         // If private bucket then we need to return a "signed-url", the timeout for the signed url can be configured in the media storage provider entity and modified using the CRUD interface.
         // Add the full URL to the media
         for (const m of media) {
             const storageMeta = m.mediaStorageProviderMetadata;
-            const isPublic = this.resolveStoredIsPublic(m.isPublic, storageMeta);
+            const isPublic = resolveStoredMediaIsPublic(m.isPublic, storageMeta);
             m.isPublic = isPublic;
             m['_full_url'] = isPublic === false
                 ? await this.mediaDownloadUrlService.resolveDownloadUrl(m.id, m.relativeUri, storageMeta)
-                : this.getFullFilePath(m);
+                : await this.s3FileService.getUrl(
+                    `${storageMeta.bucketName}:${m.relativeUri}`,
+                    { region: getEffectiveS3Region(this.configService, storageMeta.region), expiresIn: 0 },
+                );
         }
 
         return media;
@@ -93,18 +89,13 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
     }
 
     async store(files: Express.Multer.File[], entity: T, mediaFieldMetadata: FieldMetadata): Promise<Media[]> {
-        const isSupportedEntity = entity instanceof CommonEntity
-            || entity instanceof LegacyCommonEntityWithExistingId
-            || entity instanceof LegacyCommonEntityWithGeneratedId;
-        if (!isSupportedEntity) {
-            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntityWithExistingId or LegacyCommonEntityWithGeneratedId"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
-        }
+        const entityId = this.getSupportedEntityId(entity);
         const result: Media[] = [];
         const storageProvider = mediaFieldMetadata.mediaStorageProvider;
-        const region = this.getEffectiveRegion(storageProvider.region);
+        const region = getEffectiveS3Region(this.configService, storageProvider.region);
 
         for (const file of files) {
-            const fileName = this.getFileName(file);
+            const fileName = buildStoredMediaFileName(file);
             const bucketName = storageProvider.bucketName;
 
             // Read file from disk and upload to S3
@@ -117,18 +108,15 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             const awsFileUrl = fileName;
 
             // Create an entry in the media table
-            const mediaEntity = await this.mediaRepository.createMedia({
-                // @ts-ignore
-                entityId: entity.id,
-                modelMetadataId: mediaFieldMetadata.model.id,
-                relativeUri: awsFileUrl,
-                mimeType: file.mimetype,
-                fileSize: file.size,
-                originalFileName: file.originalname,
-                mediaStorageProviderMetadataId: mediaFieldMetadata.mediaStorageProvider.id,
-                fieldMetadataId: mediaFieldMetadata.id
-            }) as unknown as Media;
-            mediaEntity.isPublic = this.resolveStoredIsPublic(mediaEntity.isPublic, storageProvider);
+            const mediaEntity = await this.mediaRepository.createMedia(
+                buildMediaRecordCreateInput(entityId, mediaFieldMetadata, storageProvider, {
+                    relativeUri: awsFileUrl,
+                    mimeType: file.mimetype,
+                    fileSize: file.size,
+                    originalFileName: file.originalname,
+                })
+            ) as unknown as Media;
+            mediaEntity.isPublic = resolveStoredMediaIsPublic(mediaEntity.isPublic, storageProvider);
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         };
@@ -136,19 +124,14 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
     }
 
     async delete(entity: T, mediaFieldMetadata: FieldMetadata): Promise<void> {
-        const isSupportedEntity = entity instanceof CommonEntity
-            || entity instanceof LegacyCommonEntityWithExistingId
-            || entity instanceof LegacyCommonEntityWithGeneratedId;
-        if (!isSupportedEntity) {
-            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntityWithExistingId or LegacyCommonEntityWithGeneratedId"); // FIXME This needs to be handled through generics. e.g T extends CommonEntity
-        }
+        const entityId = this.getSupportedEntityId(entity);
         const storageProvider = mediaFieldMetadata.mediaStorageProvider;
-        const region = this.getEffectiveRegion(storageProvider.region);
+        const region = getEffectiveS3Region(this.configService, storageProvider.region);
 
         // @ts-ignore
-        const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
+        const existingMedia = await this.mediaRepository.findByEntityIdAndFieldIdAndModelMetadataId(entityId, mediaFieldMetadata.id, mediaFieldMetadata.model.id, ['mediaStorageProviderMetadata']);
         // @ts-ignore
-        this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entity.id, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
+        this.mediaRepository.deleteByEntityIdAndFieldIdAndModelMetadataId(entityId, mediaFieldMetadata.id, mediaFieldMetadata.model.id);
         for (const media of existingMedia) {
             const bucketName = storageProvider.bucketName;
             await this.s3FileService.delete(`${bucketName}:${media.relativeUri}`, { region });
@@ -163,40 +146,19 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         if (!storageProvider?.bucketName || !media?.relativeUri) {
             return;
         }
-        const region = this.getEffectiveRegion(storageProvider.region);
+        const region = getEffectiveS3Region(this.configService, storageProvider.region);
         await this.s3FileService.delete(`${storageProvider.bucketName}:${media.relativeUri}`, { region });
     }
 
-    /**
-     * Get the effective region to use for S3 operations.
-     * Uses the provider-specific region if configured, otherwise falls back to env variable.
-     */
-    private getEffectiveRegion(providerRegion?: string): string | undefined {
-        return providerRegion || this.configService.get('S3_AWS_REGION_NAME');
-    }
+    private getSupportedEntityId(entity: T): number {
+        const isSupportedEntity = entity instanceof CommonEntity
+            || entity instanceof LegacyCommonEntityWithExistingId
+            || entity instanceof LegacyCommonEntityWithGeneratedId;
 
-    private getFullFilePath(media: Media): string {
-        // Use provider region if available, fallback to env variable
-        const region = this.getEffectiveRegion(media.mediaStorageProviderMetadata.region);
-        // https://lunarismedia.s3.ap-south-1.amazonaws.com/LUNARIS_CP_REGISTRATION_CREATIVE.jpg
-        return `https://${media.mediaStorageProviderMetadata.bucketName}.s3.${region}.amazonaws.com/${media.relativeUri}`;
-    }
-
-    private getFileName(file: Express.Multer.File): string {
-        return `${file.filename}-${file.originalname}`;
-    }
-
-    private resolveIsPublic(storageProvider?: Media['mediaStorageProviderMetadata']): boolean | undefined {
-        if (!storageProvider) {
-            return undefined;
+        if (!isSupportedEntity) {
+            throw new Error("Entity must be an instance of CommonEntity, LegacyCommonEntityWithExistingId or LegacyCommonEntityWithGeneratedId");
         }
-        return storageProvider.isPublic !== false;
-    }
 
-    private resolveStoredIsPublic(currentValue: boolean | undefined, storageProvider?: Media['mediaStorageProviderMetadata']): boolean | undefined {
-        if (typeof currentValue === 'boolean') {
-            return currentValue;
-        }
-        return this.resolveIsPublic(storageProvider);
+        return (entity as any).id;
     }
 }

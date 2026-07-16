@@ -4,6 +4,7 @@ import { JwtService } from '@nestjs/jwt';
 import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
 import { S3FileService } from 'src/services/file';
+import { getEffectiveS3Region } from 'src/services/media-storage.utils';
 import { SettingService } from 'src/services/setting.service';
 import type { SolidCoreSetting } from 'src/services/settings/default-settings-provider.service';
 
@@ -32,7 +33,7 @@ export class MediaDownloadUrlService {
       if (storageProvider?.bucketName) {
         return this.s3FileService.getUrl(
           `${storageProvider.bucketName}:${relativeUri}`,
-          { region: this.getEffectiveRegion(storageProvider.region), expiresIn: expiryMinutes * 60 },
+          { region: getEffectiveS3Region(this.configService, storageProvider.region), expiresIn: expiryMinutes * 60 },
         );
       }
       this.logger.warn(`Media id ${mediaId}: AwsS3 provider missing bucketName; falling back to app-hosted token URL`);
@@ -60,9 +61,5 @@ export class MediaDownloadUrlService {
       audience: MEDIA_DOWNLOAD_TOKEN_AUDIENCE,
       expiresIn: expiryMinutes * 60,
     });
-  }
-
-  private getEffectiveRegion(providerRegion?: string): string | undefined {
-    return providerRegion || this.configService.get('S3_AWS_REGION_NAME');
   }
 }
