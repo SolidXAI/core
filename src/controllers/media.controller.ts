@@ -94,14 +94,11 @@ export class MediaController {
   @Get(':id/download')
   async download(@Param('id') id: string, @Res() res: Response, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
     const media = await this.service.findOne(+id, {}, solidRequestContext);
-    const { stream, fileName, mimeType, redirectUrl } = await this.service.fileDownloadStream(media);
+    const { stream, fileName, mimeType } = await this.service.fileDownloadStream(media);
 
-    if (redirectUrl) {
-      return res.redirect(302, redirectUrl);
-    }
-
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
+    res.setHeader('Content-Disposition', `inline; filename="${fileName}"`);
     res.setHeader('Content-Type', mimeType);
+    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
     stream.pipe(res);
   }
