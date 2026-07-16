@@ -38,6 +38,12 @@ export interface Reporter {
     contentType: string;
     data: Buffer | string;
   }): void;
+  /** Attach a run-level artifact (e.g. the whole-run video), emitted on run.end. */
+  attachRunArtifact?(args: {
+    name: string;
+    contentType: string;
+    data: Buffer | string;
+  }): void;
   onRunEnd?(args: {
     ok: boolean;
     total: number;

@@ -110,7 +110,17 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
       durationMs: Date.now() - startedAt,
     });
     if (uiStarted.value) {
-      await ui.stop();
+      // Only KEEP the whole-run video when the run FAILED — passing runs discard it unread.
+      const keepVideo = !!runError;
+      await ui.stop({ keepVideo });
+      // Video bytes are only finalized after ui.stop(); attach it as a run-level artifact so
+      // the reporter uploads it and references it on run.end (queued before flushPending runs).
+      if (keepVideo) {
+        const video = ui.getRunVideo?.();
+        if (video && reporter.attachRunArtifact) {
+          reporter.attachRunArtifact({ name: video.name, contentType: video.contentType, data: video.data });
+        }
+      }
     }
   }
 }

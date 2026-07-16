@@ -10,6 +10,8 @@ export const DEFAULT_UI_TIMEOUT_MS = 30_000;
 /** Keep the buffers bounded so a chatty page can't grow memory without limit. */
 const MAX_CONSOLE_ENTRIES = 500;
 const MAX_NETWORK_ENTRIES = 500;
+const MAX_NETWORK_BODY_CHARS = 16_000;
+const STATIC_EXT_RE = /\.(?:css|js|mjs|cjs|map|png|jpe?g|gif|svg|ico|webp|avif|woff2?|ttf|eot|otf|mp4|webm|mp3|wav|pdf|zip)$/i;
 
 export interface ConsoleLogEntry {
   type: string;
@@ -20,8 +22,14 @@ export interface ConsoleLogEntry {
 export interface NetworkLogEntry {
   method: string;
   url: string;
+  resourceType?: string;
+  requestHeaders?: Record<string, string>;
+  requestBody?: string;
   status?: number;
   ok?: boolean;
+  responseHeaders?: Record<string, string>;
+  responseBody?: string;
+  durationMs?: number;
   failure?: string;
 }
 
@@ -38,6 +46,7 @@ export class PlaywrightAdapter {
   private readonly defaultTimeoutMs: number;
   private readonly navigationTimeoutMs: number;
   private readonly capture: CaptureOptions;
+  private readonly recordVideo: boolean;
   private browser?: Browser;
   private context?: BrowserContext;
   public page?: Page;
@@ -46,6 +55,11 @@ export class PlaywrightAdapter {
   private consoleBuf: ConsoleLogEntry[] = [];
   private networkBuf: NetworkLogEntry[] = [];
 
+  /** Whole-run video: temp dir Playwright writes the webm into, and the finalized bytes. */
+  private videoDir?: string;
+  private runVideo?: FailureArtifact;
+  private readonly requestStartedAt = new Map<Request, number>();
+
   constructor(opts?: PlaywrightAdapterOptions) {
     this.baseUrl = opts?.baseUrl;
     this.headless = opts?.headless ?? true;
@@ -53,6 +67,7 @@ export class PlaywrightAdapter {
     this.navigationTimeoutMs =
       opts?.navigationTimeoutMs ?? this.defaultTimeoutMs;
     this.capture = opts?.capture ?? {};
+    this.recordVideo = opts?.recordVideo ?? true;
   }
 
   isHeadless(): boolean {
@@ -81,8 +96,24 @@ export class PlaywrightAdapter {
     this.context = await this.browser.newContext();
     this.context.setDefaultTimeout(this.defaultTimeoutMs);
     this.context.setDefaultNavigationTimeout(this.navigationTimeoutMs);
+    // Record a whole-run video only when this run enables it; it is still only KEPT when
+    // the run fails (see stop({ keepVideo }) / the runner).
+    if (this.recordVideo) {
+      const os = await import('os');
+      const path = await import('path');
+      const fs = await import('fs');
+      this.videoDir = fs.mkdtempSync(path.join(os.tmpdir(), 'solid-run-video-'));
+    }
+    this.context = await this.browser.newContext(
+      this.videoDir ? { recordVideo: { dir: this.videoDir } } : {},
+    );
     this.page = await this.context.newPage();
     this.attachCaptureListeners(this.page);
+  }
+
+  /** Whole-run video, available after {@link stop} has finalized the recording. */
+  getRunVideo(): FailureArtifact | undefined {
+    return this.runVideo;
   }
 
   /**
@@ -108,22 +139,44 @@ export class PlaywrightAdapter {
     }
 
     if (this.capture.network) {
-      page.on("response", (res: Response) => {
+      page.on("request", (req: Request) => {
+        this.requestStartedAt.set(req, Date.now());
+      });
+      page.on("response", async (res: Response) => {
         if (this.networkBuf.length >= MAX_NETWORK_ENTRIES) return;
         const req = res.request();
+        const captureDetail = shouldCaptureDetailedNetworkEntry(req);
+        const requestHeaders = captureDetail ? await req.allHeaders().catch(() => undefined) : undefined;
+        const responseHeaders = captureDetail ? await res.allHeaders().catch(() => undefined) : undefined;
+        const responseBody = captureDetail ? await this.readResponseBody(res, responseHeaders) : undefined;
+        const startedAt = this.requestStartedAt.get(req);
+        this.requestStartedAt.delete(req);
         this.networkBuf.push({
           method: req.method(),
           url: res.url(),
+          resourceType: req.resourceType(),
+          requestHeaders,
+          requestBody: captureDetail ? truncateText(req.postData() ?? undefined) : undefined,
           status: res.status(),
           ok: res.ok(),
+          responseHeaders,
+          responseBody,
+          durationMs: startedAt != null ? Date.now() - startedAt : undefined,
         });
       });
-      page.on("requestfailed", (req: Request) => {
+      page.on("requestfailed", async (req: Request) => {
         if (this.networkBuf.length >= MAX_NETWORK_ENTRIES) return;
+        const startedAt = this.requestStartedAt.get(req);
+        this.requestStartedAt.delete(req);
+        const captureDetail = shouldCaptureDetailedNetworkEntry(req);
         this.networkBuf.push({
           method: req.method(),
           url: req.url(),
+          resourceType: req.resourceType(),
+          requestHeaders: captureDetail ? await req.allHeaders().catch(() => undefined) : undefined,
+          requestBody: captureDetail ? truncateText(req.postData() ?? undefined) : undefined,
           failure: req.failure()?.errorText ?? "request failed",
+          durationMs: startedAt != null ? Date.now() - startedAt : undefined,
         });
       });
     }
@@ -133,6 +186,7 @@ export class PlaywrightAdapter {
   resetCapture(): void {
     this.consoleBuf = [];
     this.networkBuf = [];
+    this.requestStartedAt.clear();
   }
 
   getConsoleLog(): ConsoleLogEntry[] {
@@ -143,25 +197,29 @@ export class PlaywrightAdapter {
     return this.networkBuf;
   }
 
+  private async readResponseBody(res: Response, headers?: Record<string, string>): Promise<string | undefined> {
+    const contentType = String(headers?.["content-type"] ?? headers?.["Content-Type"] ?? "").toLowerCase();
+    const contentLength = Number(headers?.["content-length"] ?? headers?.["Content-Length"] ?? 0);
+    if (contentLength && contentLength > MAX_NETWORK_BODY_CHARS) {
+      return `[body omitted: ${contentLength} bytes]`;
+    }
+    if (!isTextLikeContentType(contentType)) return undefined;
+    try {
+      return truncateText(await res.text());
+    } catch {
+      return undefined;
+    }
+  }
+
   /**
-   * Build the artifacts to attach when the current scenario has FAILED. Honors this
-   * adapter's capture flags. Returns an empty list when no page is open (e.g. an API
-   * scenario) so screenshots are correctly skipped.
+   * Build the text artifacts to attach when the current scenario has FAILED (console +
+   * network logs). Honors this adapter's capture flags. Returns an empty list when no page
+   * is open (e.g. an API scenario). Failure screenshots were removed — the whole-run video
+   * (kept only on failure) is the visual failure artifact now.
    */
   async collectFailureArtifacts(): Promise<FailureArtifact[]> {
     if (!this.page) return [];
     const artifacts: FailureArtifact[] = [];
-
-    if (this.capture.screenshotOnFailure) {
-      try {
-        // Viewport JPEG (not fullPage): captures the on-screen state at the failure point
-        // and stays small enough to travel inline (base64) under the reporter's 1MB cap.
-        const shot = await this.page.screenshot({ type: "jpeg", quality: 70 });
-        artifacts.push({ name: "screenshot.jpg", contentType: "image/jpeg", data: shot });
-      } catch {
-        // A screenshot failure (e.g. page already closed) must never mask the real error.
-      }
-    }
 
     if (this.capture.console && this.consoleBuf.length) {
       artifacts.push({
@@ -182,7 +240,11 @@ export class PlaywrightAdapter {
     return artifacts;
   }
 
-  async stop(): Promise<void> {
+  async stop(opts?: { keepVideo?: boolean }): Promise<void> {
+    const keepVideo = opts?.keepVideo ?? false;
+    // Grab the video handle before the context closes; its file is only finalized on close().
+    const video = this.videoDir ? this.page?.video() : undefined;
+
     try {
       if (this.context) {
         await this.context.close();
@@ -190,6 +252,25 @@ export class PlaywrightAdapter {
     } finally {
       this.context = undefined;
       this.page = undefined;
+    }
+
+    if (video && this.videoDir) {
+      try {
+        const fs = await import('fs');
+        // Only read the recording into memory when the caller wants to keep it (i.e. the
+        // run FAILED). Passing runs discard the webm unread — no wasted IO/memory.
+        if (keepVideo) {
+          const videoPath = await video.path();
+          const data = await fs.promises.readFile(videoPath);
+          this.runVideo = { name: 'run.webm', contentType: 'video/webm', data };
+        }
+        // Clean up the temp recording directory either way.
+        await fs.promises.rm(this.videoDir, { recursive: true, force: true }).catch(() => {});
+      } catch {
+        // A video read failure must never mask the real run result.
+      } finally {
+        this.videoDir = undefined;
+      }
     }
 
     try {
@@ -208,4 +289,40 @@ export class PlaywrightAdapter {
     }
     return url;
   }
+}
+
+function truncateText(value?: string): string | undefined {
+  if (!value) return undefined;
+  if (value.length <= MAX_NETWORK_BODY_CHARS) return value;
+  return `${value.slice(0, MAX_NETWORK_BODY_CHARS)}\n… [truncated ${value.length - MAX_NETWORK_BODY_CHARS} chars]`;
+}
+
+function isTextLikeContentType(contentType: string): boolean {
+  if (!contentType) return true;
+  return (
+    contentType.includes("json") ||
+    contentType.includes("text/") ||
+    contentType.includes("javascript") ||
+    contentType.includes("xml") ||
+    contentType.includes("html") ||
+    contentType.includes("x-www-form-urlencoded")
+  );
+}
+
+function shouldCaptureDetailedNetworkEntry(req: Request): boolean {
+  const resourceType = req.resourceType().toLowerCase();
+  if (resourceType === "xhr" || resourceType === "fetch") return true;
+
+  const method = req.method().toUpperCase();
+  if (method !== "GET" && method !== "HEAD") return true;
+
+  const url = req.url().toLowerCase();
+  try {
+    const pathname = new URL(url).pathname.toLowerCase();
+    if (STATIC_EXT_RE.test(pathname)) return false;
+  } catch {
+    if (STATIC_EXT_RE.test(url)) return false;
+  }
+
+  return resourceType === "document";
 }

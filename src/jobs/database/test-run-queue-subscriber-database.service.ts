@@ -1,4 +1,4 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Inject, Injectable, Logger } from '@nestjs/common';
 import { HttpService } from '@nestjs/axios';
 
 import { QueueMessage } from 'src/interfaces/mq';
@@ -13,6 +13,8 @@ import {
   LifecycleWebhookReporter,
   WebhookPostFn,
 } from '../../testing/reporter/lifecycle-webhook-reporter';
+import { FileServiceArtifactSink } from '../../testing/reporter/file-service-artifact-sink';
+import { FILE_SERVICE, IFileService } from '../../services/file/file-service.interface';
 import { TestRunJobPayload } from '../../dtos/test-run-request.dto';
 
 /**
@@ -32,6 +34,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
         readonly mqMessageQueueService: MqMessageQueueService,
         readonly poller: PollerService,
         private readonly httpService: HttpService,
+        @Inject(FILE_SERVICE) private readonly fileService: IFileService,
     ) {
         super(mqMessageService, mqMessageQueueService, poller);
     }
@@ -55,12 +58,18 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
             return { ok: res.status >= 200 && res.status < 300, status: res.status };
         };
 
+        // Persist binary artifacts (screenshots, whole-run video) to shared storage via the
+        // core FILE_SERVICE (disk by default, S3 when DEFAULT_FILE_SERVICE=s3) instead of
+        // shipping them inline / storing blobs in the DB.
+        const artifactSink = new FileServiceArtifactSink(this.fileService, { prefix: 'testing-hub' });
+
         const reporter = new LifecycleWebhookReporter({
             webhookUrl: p.webhookUrl,
             runName: p.externalRunId ?? p.runId,
             externalRunId: p.externalRunId,
             runId: p.runId,
             post,
+            artifactSink,
         });
 
         let exitCode = 0;
@@ -74,7 +83,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 reporter,
                 env: p.variables,
                 api: { baseUrl: p.baseUrl },
-                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture },
+                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true },
                 options: { printApiLogs: p.printApiLogs ?? true },
                 externalRunId: p.externalRunId,
             });
