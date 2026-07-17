@@ -201,6 +201,52 @@ export class CrudHelperService {
         return queryBuilder.expressionMap.joinAttributes.length > 0;
     }
 
+    private normalizeBooleanFilterValue(value: boolean | string | undefined): boolean | undefined {
+        if (value === undefined || value === null || value === '') return undefined;
+        if (typeof value === 'boolean') return value;
+        if (typeof value === 'string') {
+            const normalized = value.toLowerCase();
+            if (normalized === 'true') return true;
+            if (normalized === 'false') return false;
+        }
+        return undefined;
+    }
+
+    private filtersContainField(filters: any, fieldName: string): boolean {
+        if (!filters || typeof filters !== 'object') return false;
+        const normalizedFilters = this.normalizeObjectKeys(filters);
+        return Object.keys(normalizedFilters).some(key => {
+            const [rawField] = key.split(':');
+            if (rawField === fieldName) return true;
+            const value = normalizedFilters[key];
+            if (key === '$and' || key === '$or') {
+                return Array.isArray(value) && value.some((nestedFilter: any) => this.filtersContainField(nestedFilter, fieldName));
+            }
+            return value && typeof value === 'object' && this.filtersContainField(value, fieldName);
+        });
+    }
+
+    private applyCurrentPublishedVersionFilter(qb: SelectQueryBuilder<any>, entityAlias: string) {
+        const entityTarget = qb.expressionMap.mainAlias?.target;
+        if (!entityTarget) return;
+
+        const newerPublishedVersionExists = qb.subQuery()
+            .select('1')
+            .from(entityTarget, 'newerPublishedVersion')
+            .where('newerPublishedVersion.isPublished = :currentPublishedVersionIsPublished', { currentPublishedVersionIsPublished: true })
+            .andWhere('newerPublishedVersion.publishedAt IS NOT NULL')
+            .andWhere(`COALESCE(newerPublishedVersion.initialEntityVersionId, newerPublishedVersion.id) = COALESCE(${entityAlias}.initialEntityVersionId, ${entityAlias}.id)`)
+            .andWhere(new Brackets(subQb => {
+                subQb.where(`newerPublishedVersion.publishedAt > ${entityAlias}.publishedAt`)
+                    .orWhere(`newerPublishedVersion.publishedAt = ${entityAlias}.publishedAt AND newerPublishedVersion.id > ${entityAlias}.id`);
+            }))
+            .getQuery();
+
+        qb.andWhere(`${entityAlias}.isPublished = :currentPublishedVersionIsPublished`, { currentPublishedVersionIsPublished: true });
+        qb.andWhere(`${entityAlias}.publishedAt IS NOT NULL`);
+        qb.andWhere(`NOT EXISTS ${newerPublishedVersionExists}`);
+    }
+
     buildFilterQuery(
         qb: SelectQueryBuilder<any>,
         basicFilterDto: BasicFilterDto,
@@ -213,7 +259,7 @@ export class CrudHelperService {
         applySorting: boolean = true
     ): SelectQueryBuilder<any> { // TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
-        const { fields, sort, populate = [], populateMedia = [], locale, status } = basicFilterDto;
+        const { fields, sort, populate = [], populateMedia = [], locale, status, initialEntityVersionId } = basicFilterDto;
 
         // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
         const normalizedFields = this.normalize(fields);
@@ -262,9 +308,33 @@ export class CrudHelperService {
 
         if (draftPublishWorkflow && status) {
             if (basicFilterDto.status === 'published') {
-                qb.andWhere(`${entityAlias}.publishedAt IS NOT NULL`);
+                qb.andWhere(`${entityAlias}.isPublished = :statusIsPublished`, { statusIsPublished: true });
             } else if (basicFilterDto.status === 'draft') {
-                qb.andWhere(`${entityAlias}.publishedAt IS NULL`);
+                qb.andWhere(`${entityAlias}.isPublished = :statusIsPublished`, { statusIsPublished: false });
+            }
+        }
+
+        if (draftPublishWorkflow) {
+            const explicitIsLatest = this.normalizeBooleanFilterValue(basicFilterDto.isLatest);
+            const explicitIsPublished = this.normalizeBooleanFilterValue(basicFilterDto.isPublished);
+            const hasIsLatestFilter = explicitIsLatest !== undefined || this.filtersContainField(filters, 'isLatest');
+            const hasInitialVersionFilter = initialEntityVersionId !== undefined || this.filtersContainField(filters, 'initialEntityVersionId');
+            const shouldUseCurrentPublishedVersion = explicitIsPublished === true && !hasIsLatestFilter && !hasInitialVersionFilter;
+
+            if (explicitIsLatest !== undefined) {
+                qb.andWhere(`${entityAlias}.isLatest = :isLatest`, { isLatest: explicitIsLatest });
+            } else if (!shouldUseCurrentPublishedVersion && !hasIsLatestFilter && !hasInitialVersionFilter) {
+                qb.andWhere(`${entityAlias}.isLatest = :defaultIsLatest`, { defaultIsLatest: true });
+            }
+
+            if (shouldUseCurrentPublishedVersion) {
+                this.applyCurrentPublishedVersionFilter(qb, entityAlias);
+            } else if (explicitIsPublished !== undefined) {
+                qb.andWhere(`${entityAlias}.isPublished = :isPublished`, { isPublished: explicitIsPublished });
+            }
+
+            if (initialEntityVersionId !== undefined && initialEntityVersionId !== null && initialEntityVersionId !== '') {
+                qb.andWhere(`${entityAlias}.initialEntityVersionId = :initialEntityVersionId`, { initialEntityVersionId: Number(initialEntityVersionId) });
             }
         }
         // Depending upon the select option, apply the select clause

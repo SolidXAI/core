@@ -88,6 +88,32 @@ export class ModelMetadataHelperService {
                 enableAuditTracking:true
             },
             {
+                name: "isPublished",
+                displayName: "Is Published",
+                type: "boolean",
+                isSystem: true,
+                enableAuditTracking: true
+            },
+            {
+                name: "isLatest",
+                displayName: "Is Latest",
+                type: "boolean",
+                isSystem: true,
+                enableAuditTracking: true
+            },
+            {
+                name: "initialEntityVersionId",
+                displayName: "Initial Entity Version Id",
+                type: "int",
+                isSystem: true,
+            },
+            {
+                name: "publishedTracker",
+                displayName: "Published Tracker",
+                type: "shortText",
+                isSystem: true,
+            },
+            {
                 name: "localeName",
                 displayName: "Locale",
                 type: "shortText",

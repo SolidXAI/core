@@ -1032,6 +1032,11 @@ export class DatasourceIntrospectionService {
             ? "timestamp"
             : "datetime";
         const integerType = normalizedDatasourceType === "postgres" ? "integer" : "int";
+        const booleanType = normalizedDatasourceType === "postgres"
+            ? "boolean"
+            : normalizedDatasourceType === "mysql"
+                ? "tinyint"
+                : "bit";
         const varcharType = normalizedDatasourceType === "mssql" ? "nvarchar" : "varchar";
         const currentTimestampDefault = normalizedDatasourceType === "postgres"
             ? "now()"
@@ -1077,6 +1082,34 @@ export class DatasourceIntrospectionService {
                             columnName: field.columnName,
                             type: publishedAtType,
                             isNullable: true,
+                        } satisfies SystemColumnDefinition;
+                    case "isPublished":
+                        return {
+                            columnName: field.columnName,
+                            type: booleanType,
+                            isNullable: false,
+                            defaultExpression: normalizedDatasourceType === "postgres" ? "false" : "0",
+                        } satisfies SystemColumnDefinition;
+                    case "isLatest":
+                        return {
+                            columnName: field.columnName,
+                            type: booleanType,
+                            isNullable: false,
+                            defaultExpression: normalizedDatasourceType === "postgres" ? "true" : "1",
+                        } satisfies SystemColumnDefinition;
+                    case "initialEntityVersionId":
+                        return {
+                            columnName: field.columnName,
+                            type: integerType,
+                            isNullable: true,
+                        } satisfies SystemColumnDefinition;
+                    case "publishedTracker":
+                        return {
+                            columnName: field.columnName,
+                            type: varcharType,
+                            length: "255",
+                            isNullable: false,
+                            defaultExpression: "'na'",
                         } satisfies SystemColumnDefinition;
                     case "localeName":
                         return {
@@ -1542,6 +1575,10 @@ export class DatasourceIntrospectionService {
             ss_deleted_at: "deletedAt",
             ss_deleted_tracker: "deletedTracker",
             ss_published_at: "publishedAt",
+            ss_is_published: "isPublished",
+            ss_is_latest: "isLatest",
+            ss_initial_entity_version_id: "initialEntityVersionId",
+            ss_published_tracker: "publishedTracker",
             ss_locale_name: "localeName",
             ss_default_entity_locale_id: "defaultEntityLocaleId",
             ss_created_by_id: "createdBy",

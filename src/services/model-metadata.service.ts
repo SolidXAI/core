@@ -1687,7 +1687,10 @@ export class ModelMetadataService {
     // --------------------
     // Find record index in page
     // --------------------
-    const index = records.findIndex(r => String(r.id) === String(recordId));
+    const index = records.findIndex(r =>
+      String(r.id) === String(recordId) ||
+      (r.initialEntityVersionId && String(r.initialEntityVersionId) === String(recordId))
+    );
 
     if (index === -1) {
       throw new BadRequestException(`Record not found in current page`);

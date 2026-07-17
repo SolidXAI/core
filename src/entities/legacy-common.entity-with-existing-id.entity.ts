@@ -29,6 +29,26 @@ export abstract class LegacyCommonEntityWithExistingId {
     publishedAt: Date | null;
 
     @Expose()
+    @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_is_published`, default: false, nullable: true })
+    @Index()
+    isPublished: boolean | null;
+
+    @Expose()
+    @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_is_latest`, default: true, nullable: true })
+    @Index()
+    isLatest: boolean | null;
+
+    @Expose()
+    @Column({ type: "int", name: `${LEGACY_TABLE_FIELDS_PREFIX}_initial_entity_version_id`, default: null, nullable: true })
+    @Index()
+    initialEntityVersionId: number | null;
+
+    @Expose()
+    @Column({ name: `${LEGACY_TABLE_FIELDS_PREFIX}_published_tracker`, default: "na", nullable: true })
+    @Index()
+    publishedTracker: string | null;
+
+    @Expose()
     @Column({ type: "varchar", name: `${LEGACY_TABLE_FIELDS_PREFIX}_locale_name`, default: null, nullable: true })
     localeName: string | null;
 

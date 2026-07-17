@@ -26,6 +26,26 @@ export abstract class CommonEntity {
     publishedAt: Date;
 
     @Expose()
+    @Column({ name: 'is_published', default: false })
+    @Index()
+    isPublished: boolean;
+
+    @Expose()
+    @Column({ name: 'is_latest', default: true })
+    @Index()
+    isLatest: boolean;
+
+    @Expose()
+    @Column({ type: "int", name: 'initial_entity_version_id', default: null, nullable: true })
+    @Index()
+    initialEntityVersionId: number;
+
+    @Expose()
+    @Column({ name: 'published_tracker', default: "na" })
+    @Index()
+    publishedTracker: string;
+
+    @Expose()
     @Column({ type: "varchar", name: 'locale_name', default: null })
     localeName: string;
 

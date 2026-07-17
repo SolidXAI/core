@@ -135,7 +135,8 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       const records = await currentEntityRepository.find({
         where: [
           { defaultEntityLocaleId: defaultEntityLocaleIdFromQuery },
-          { id: defaultEntityLocaleIdFromQuery }
+          { id: defaultEntityLocaleIdFromQuery },
+          { initialEntityVersionId: defaultEntityLocaleIdFromQuery }
         ]
       });
 
@@ -151,7 +152,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       return { records: [], defaultEntityLocaleId: null };
     }
 
-    const defaultEntityLocaleId = entityRecord.defaultEntityLocaleId || entityRecord.id;
+    const defaultEntityLocaleId = entityRecord.defaultEntityLocaleId || entityRecord.initialEntityVersionId || entityRecord.id;
     if (entityRecord.defaultEntityLocaleId) {
       this.logger.debug(`Editing translated locale record. Translation root id: ${defaultEntityLocaleId}`);
     } else {
@@ -161,13 +162,29 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     const records = await currentEntityRepository.find({
       where: [
         { defaultEntityLocaleId: defaultEntityLocaleId },
-        { id: defaultEntityLocaleId }
+        { id: defaultEntityLocaleId },
+        { initialEntityVersionId: defaultEntityLocaleId }
       ]
     });
 
     this.logger.debug(`Found ${records.length} records in all locales for existing entity.`);
 
     return { records, defaultEntityLocaleId };
+  }
+
+  private pickCurrentLocaleRecord(records: any[], localeName: string): any | null {
+    const localeRecords = records.filter(record => record.localeName === localeName);
+    if (localeRecords.length === 0) return null;
+
+    return localeRecords.sort((a, b) => {
+      if (Boolean(a.isLatest) !== Boolean(b.isLatest)) return a.isLatest ? -1 : 1;
+
+      const aPublishedAt = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
+      const bPublishedAt = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
+      if (aPublishedAt !== bPublishedAt) return bPublishedAt - aPublishedAt;
+
+      return Number(b.id ?? 0) - Number(a.id ?? 0);
+    })[0];
   }
 
   // START: Custom Service Methods
@@ -443,7 +460,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
         await this.getEntityRecordsInAllLocales(modelName, id, defaultEntityLocaleIdFromQuery);
       const allLocales = await this.entityManager.getRepository(Locale).find({});
       for (const locale of allLocales) {
-        const matchingRecord = entityRecordsInAllLocales.find(record => record.localeName === locale.locale);
+        const matchingRecord = this.pickCurrentLocaleRecord(entityRecordsInAllLocales, locale.locale);
         applicableLocales.push({
           locale: locale.locale,
           displayName: locale.displayName,
