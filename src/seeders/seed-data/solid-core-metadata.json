@@ -5344,6 +5344,8 @@
       "name": "Allowed To Import",
       "permissions": [
         "ImportTransactionController.create",
+        "ImportTransactionController.delete",
+        "ImportTransactionController.deleteMany",
         "ImportTransactionController.getImportTemplate",
         "ImportTransactionController.getImportInstructions",
         "ImportTransactionController.getImportMappingInfo",
