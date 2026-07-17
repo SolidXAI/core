@@ -6,6 +6,12 @@ import {
   WorkflowNodeHandlerResult,
 } from '../../../types/workflow-dsl.types';
 
+const fullWidthField = {
+  layout: {
+    width: 'full',
+  },
+};
+
 @WorkflowNodeProvider({
   type: 'http.request',
   kind: 'task',
@@ -32,6 +38,24 @@ import {
         type: 'object',
         default: {},
       },
+      query: {
+        type: 'object',
+        default: {},
+      },
+      bodyMode: {
+        type: 'string',
+        enum: ['none', 'raw', 'form-data'],
+        default: 'none',
+      },
+      rawContentType: {
+        type: 'string',
+        default: 'application/json',
+      },
+      rawBody: {},
+      formData: {
+        type: 'object',
+        default: {},
+      },
       body: {},
       timeoutMs: {
         type: 'number',
@@ -40,7 +64,17 @@ import {
     },
   },
   uiSchema: {
-    'ui:order': ['method', 'uri', 'headers', 'body', 'timeoutMs'],
+    'ui:order': [
+      'method',
+      'uri',
+      'query',
+      'headers',
+      'bodyMode',
+      'rawContentType',
+      'rawBody',
+      'formData',
+      'timeoutMs',
+    ],
   },
   outputSchema: {
     type: 'object',
@@ -61,7 +95,27 @@ import {
       description: 'Call an endpoint using an input-provided URI.',
       language: 'yaml',
       snippet:
-        'method: GET\nuri: "{{ input.endpoint }}"\ntimeoutMs: 30000\n',
+        'method: GET\nuri: "{{ input.endpoint }}"\nquery:\n  includeInactive: "false"\ntimeoutMs: 30000\n',
+      configurationOnly: true,
+    },
+    {
+      key: 'raw-post',
+      label: 'POST raw JSON',
+      description:
+        'Send a raw JSON request body with an explicit content type.',
+      language: 'yaml',
+      snippet:
+        'method: POST\nuri: https://api.example.com/orders\nheaders:\n  Authorization: "Bearer {{ variables.apiToken }}"\nbodyMode: raw\nrawContentType: application/json\nrawBody: |\n  {\n    "customerId": "{{ outputs.customer.id }}",\n    "priority": "high"\n  }\n',
+      configurationOnly: true,
+    },
+    {
+      key: 'form-data-post',
+      label: 'POST form data',
+      description:
+        'Send simple form-data fields. File values will be added once workflow file handling is introduced.',
+      language: 'yaml',
+      snippet:
+        'method: POST\nuri: https://api.example.com/upload\nbodyMode: form-data\nformData:\n  name: "{{ inputs.name }}"\n  source: workflow\n',
       configurationOnly: true,
     },
   ],
@@ -89,11 +143,27 @@ import {
       content:
         'The canonical request target field is `uri`. `url` is accepted temporarily for backward compatibility during migration.',
     },
+    {
+      key: 'query-field',
+      label: 'Query parameters',
+      content:
+        '`query` is resolved after expressions are evaluated and appended to the target URI as query-string parameters.',
+    },
+    {
+      key: 'body-mode-field',
+      label: 'Body modes',
+      content:
+        '`bodyMode` controls the request payload: `none` sends no body, `raw` sends `rawBody` with `rawContentType`, and `form-data` sends key/value form fields. File form-data values will be supported by a later file-handling pass.',
+    },
   ],
   authoring: {
     defaultConfiguration: {
       method: 'GET',
+      query: {},
       headers: {},
+      bodyMode: 'none',
+      rawContentType: 'application/json',
+      formData: {},
       timeoutMs: 30000,
     },
     configurationFields: [
@@ -105,6 +175,7 @@ import {
         enumValues: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
         defaultValue: 'GET',
         group: 'Request',
+        uiSchema: fullWidthField,
       },
       {
         key: 'uri',
@@ -114,6 +185,7 @@ import {
         required: true,
         expressionAllowed: true,
         group: 'Request',
+        uiSchema: fullWidthField,
       },
       {
         key: 'headers',
@@ -124,15 +196,87 @@ import {
         group: 'Request',
         widgetHint: 'key-value-editor',
         extensionComponentKey: 'workflow.node.field.httpHeaders',
+        uiSchema: fullWidthField,
       },
       {
-        key: 'body',
-        label: 'Body',
-        description: 'Optional request body.',
-        valueType: 'any',
+        key: 'query',
+        label: 'Query Parameters',
+        description: 'Optional query-string parameters appended to the URI.',
+        valueType: 'object',
         expressionAllowed: true,
         group: 'Request',
-        widgetHint: 'yaml-editor',
+        widgetHint: 'key-value-editor',
+        uiSchema: fullWidthField,
+      },
+      {
+        key: 'bodyMode',
+        label: 'Body Mode',
+        description: 'Controls how the request body is sent.',
+        valueType: 'string',
+        enumValues: ['none', 'raw', 'form-data'],
+        defaultValue: 'none',
+        group: 'Body',
+        uiSchema: fullWidthField,
+      },
+      {
+        key: 'rawContentType',
+        label: 'Raw Content Type',
+        description:
+          'Content-Type header used when Body Mode is raw. Explicit headers still win.',
+        valueType: 'string',
+        enumValues: [
+          'application/json',
+          'text/plain',
+          'application/xml',
+          'text/html',
+          'application/x-www-form-urlencoded',
+        ],
+        defaultValue: 'application/json',
+        group: 'Body',
+        uiSchema: {
+          ...fullWidthField,
+          visibleWhen: {
+            field: 'bodyMode',
+            equals: 'raw',
+          },
+        },
+      },
+      {
+        key: 'rawBody',
+        label: 'Raw Body',
+        description:
+          'Raw request payload sent exactly as typed after expression evaluation.',
+        valueType: 'string',
+        expressionAllowed: true,
+        group: 'Body',
+        widgetHint: 'raw-editor',
+        uiSchema: {
+          ...fullWidthField,
+          editor: {
+            language: 'json',
+          },
+          visibleWhen: {
+            field: 'bodyMode',
+            equals: 'raw',
+          },
+        },
+      },
+      {
+        key: 'formData',
+        label: 'Form Data',
+        description:
+          'Form-data fields. File inputs will be added once workflow file handling is introduced.',
+        valueType: 'object',
+        expressionAllowed: true,
+        group: 'Body',
+        widgetHint: 'key-value-editor',
+        uiSchema: {
+          ...fullWidthField,
+          visibleWhen: {
+            field: 'bodyMode',
+            equals: 'form-data',
+          },
+        },
       },
       {
         key: 'timeoutMs',
@@ -141,6 +285,7 @@ import {
         valueType: 'number',
         defaultValue: 30000,
         group: 'Advanced',
+        uiSchema: fullWidthField,
       },
     ],
     outputs: [
@@ -220,11 +365,11 @@ import {
     modalSize: 'xl',
     fieldComponentKeys: {
       headers: 'workflow.node.field.httpHeaders',
-      body: 'workflow.node.field.httpBody',
+      rawBody: 'workflow.node.field.httpBody',
     },
     layoutHints: {
       preferredPanel: 'flow',
-      groupOrder: ['Request', 'Advanced'],
+      groupOrder: ['Request', 'Body', 'Advanced'],
       stickySummary: true,
     },
   },
@@ -257,31 +402,35 @@ export class HttpRequestNode implements WorkflowNodeHandler {
     );
 
     try {
-      const response = await fetchImpl(uri, {
-        method: configuration.method ?? 'GET',
-        headers: configuration.headers,
-        body:
-          configuration.body === undefined || configuration.body === null
-            ? undefined
-            : typeof configuration.body === 'string'
-              ? configuration.body
-              : JSON.stringify(configuration.body),
+      const method = String(configuration.method ?? 'GET').toUpperCase();
+      const requestHeaders = this.normalizeHeaders(configuration.headers);
+      const finalUri = this.buildUri(uri, configuration.query);
+      const requestBody = this.resolveRequestBody(
+        configuration,
+        requestHeaders,
+        method,
+      );
+
+      const response = await fetchImpl(finalUri, {
+        method,
+        headers: requestHeaders,
+        body: requestBody,
         signal: controller.signal,
       } as any);
 
-      const headers: Record<string, string> = {};
+      const responseHeaders: Record<string, string> = {};
       response.headers.forEach((value, key) => {
-        headers[key] = value;
+        responseHeaders[key] = value;
       });
 
       const text = await response.text();
-      const body = this.parseBody(text);
+      const responseBody = this.parseBody(text);
 
       await context.emitLog({
         level: response.ok ? 'info' : 'warn',
         eventType: 'node.http.response',
         source: 'http.request',
-        message: `HTTP ${configuration.method ?? 'GET'} ${uri} returned ${response.status}.`,
+        message: `HTTP ${method} ${finalUri} returned ${response.status}.`,
       });
 
       return {
@@ -289,14 +438,172 @@ export class HttpRequestNode implements WorkflowNodeHandler {
           ok: response.ok,
           status: response.status,
           statusText: response.statusText,
-          headers,
-          body,
-          uri,
-          method: configuration.method ?? 'GET',
+          headers: responseHeaders,
+          body: responseBody,
+          uri: finalUri,
+          method,
         },
       };
     } finally {
       clearTimeout(timeout);
+    }
+  }
+
+  private buildUri(uri: string, query: any): string {
+    if (!query || typeof query !== 'object') {
+      return uri;
+    }
+
+    const url = new URL(uri);
+    const appendValue = (key: string, value: any) => {
+      if (!key || value === undefined || value === null) {
+        return;
+      }
+      if (Array.isArray(value)) {
+        value.forEach((item) => appendValue(key, item));
+        return;
+      }
+      if (typeof value === 'object') {
+        url.searchParams.append(key, JSON.stringify(value));
+        return;
+      }
+      url.searchParams.append(key, String(value));
+    };
+
+    if (Array.isArray(query)) {
+      query.forEach((item) => {
+        appendValue(String(item?.key ?? item?.name ?? ''), item?.value);
+      });
+      return url.toString();
+    }
+
+    Object.entries(query).forEach(([key, value]) => appendValue(key, value));
+    return url.toString();
+  }
+
+  private resolveRequestBody(
+    configuration: Record<string, any>,
+    headers: Record<string, string>,
+    method: string,
+  ): any {
+    if (method === 'GET' || method === 'HEAD') {
+      return undefined;
+    }
+
+    const legacyBodyConfigured =
+      configuration.body !== undefined && configuration.body !== null;
+    const bodyMode = configuration.bodyMode ?? (legacyBodyConfigured ? 'raw' : 'none');
+
+    if (bodyMode === 'none') {
+      return undefined;
+    }
+
+    if (bodyMode === 'form-data') {
+      const formData = this.buildFormData(configuration.formData);
+      this.deleteHeader(headers, 'content-type');
+      return formData;
+    }
+
+    const rawBody =
+      configuration.rawBody !== undefined ? configuration.rawBody : configuration.body;
+
+    if (rawBody === undefined || rawBody === null) {
+      return undefined;
+    }
+
+    const contentType = configuration.rawContentType ?? 'application/json';
+    this.setHeaderIfMissing(headers, 'Content-Type', contentType);
+
+    if (typeof rawBody === 'string') {
+      return rawBody;
+    }
+
+    if (String(contentType).toLowerCase().includes('json')) {
+      return JSON.stringify(rawBody);
+    }
+
+    return typeof rawBody === 'object' ? JSON.stringify(rawBody) : String(rawBody);
+  }
+
+  private buildFormData(formDataConfig: any): any {
+    const FormDataConstructor = globalThis.FormData;
+    if (!FormDataConstructor) {
+      throw new BadRequestException('global FormData is not available.');
+    }
+
+    const formData = new FormDataConstructor();
+    const appendValue = (key: string, value: any) => {
+      if (!key || value === undefined || value === null) {
+        return;
+      }
+      if (Array.isArray(value)) {
+        value.forEach((item) => appendValue(key, item));
+        return;
+      }
+      const BlobConstructor = (globalThis as any).Blob;
+      const FileConstructor = (globalThis as any).File;
+      if (
+        (BlobConstructor && value instanceof BlobConstructor) ||
+        (FileConstructor && value instanceof FileConstructor)
+      ) {
+        formData.append(key, value);
+        return;
+      }
+      formData.append(
+        key,
+        typeof value === 'object' ? JSON.stringify(value) : String(value),
+      );
+    };
+
+    if (Array.isArray(formDataConfig)) {
+      formDataConfig.forEach((item) => {
+        appendValue(String(item?.key ?? item?.name ?? ''), item?.value);
+      });
+      return formData;
+    }
+
+    Object.entries(formDataConfig ?? {}).forEach(([key, value]) =>
+      appendValue(key, value),
+    );
+    return formData;
+  }
+
+  private normalizeHeaders(headers: any): Record<string, string> {
+    if (!headers || typeof headers !== 'object' || Array.isArray(headers)) {
+      return {};
+    }
+
+    return Object.entries(headers).reduce<Record<string, string>>(
+      (acc, [key, value]) => {
+        if (value === undefined || value === null) {
+          return acc;
+        }
+        acc[key] = String(value);
+        return acc;
+      },
+      {},
+    );
+  }
+
+  private setHeaderIfMissing(
+    headers: Record<string, string>,
+    name: string,
+    value: string,
+  ) {
+    const existingKey = Object.keys(headers).find(
+      (key) => key.toLowerCase() === name.toLowerCase(),
+    );
+    if (!existingKey) {
+      headers[name] = value;
+    }
+  }
+
+  private deleteHeader(headers: Record<string, string>, name: string) {
+    const existingKey = Object.keys(headers).find(
+      (key) => key.toLowerCase() === name.toLowerCase(),
+    );
+    if (existingKey) {
+      delete headers[existingKey];
     }
   }
 
