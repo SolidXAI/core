@@ -614,7 +614,9 @@ export class ModuleMetadataSeederService {
 
         const capabilityRoles = [ALLOWED_TO_IMPORT_ROLE_NAME, ALLOWED_TO_EXPORT_ROLE_NAME];
         for (const adminUser of adminUsers) {
-            await this.userService.addRolesToUser(adminUser.username, capabilityRoles);
+            for (const capabilityRole of capabilityRoles) {
+                await this.userService.addRoleToUser(adminUser.username, capabilityRole);
+            }
         }
     }
 
