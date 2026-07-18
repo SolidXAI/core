@@ -8630,8 +8630,7 @@
                                 "attrs": {
                                   "name": "form-1",
                                   "label": "User",
-                                  "className": "grid",
-                                  "width": "20vw"
+                                  "className": "grid"
                                 },
                                 "children": [
                                   {
