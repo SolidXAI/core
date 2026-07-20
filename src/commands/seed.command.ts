@@ -26,23 +26,18 @@ export class SeedCommand extends CommandRunner {
         .filter(Boolean);
       parsedConf = {
         modulesToSeed,
-        pruneMetadata: true,
+        pruneMetadata: false,
         seedGlobalMetadata: true,
       };
       this.logger.log(`Modules to seed: ${modulesToSeed.join(', ')}`);
     } else {
       this.logger.log('No --modules-to-seed flag provided. Running with default seeder behavior.');
-      parsedConf = {
-        modulesToSeed: null,
-        pruneMetadata: true,
-        seedGlobalMetadata: true,
-      };
     }
 
     if (options?.prune) {
       parsedConf = parsedConf ?? {
         modulesToSeed: null,
-        pruneMetadata: true,
+        pruneMetadata: false,
         seedGlobalMetadata: true,
       };
       parsedConf.pruneMetadata = true;
