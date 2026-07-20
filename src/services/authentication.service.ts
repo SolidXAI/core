@@ -109,6 +109,26 @@ export class AuthenticationService {
     });
   }
 
+  private async resolveUserForPasswordSignIn(username: string, email: string) {
+    const normalizedEmail = email?.trim().toLowerCase();
+    const query = (await this.userRepository
+      .createSecurityRuleAwareQueryBuilder("u"))
+      .leftJoinAndSelect("u.roles", "roles");
+
+    if (username) {
+      query.where("u.username = :username", { username });
+    }
+    if (normalizedEmail) {
+      if (username) {
+        query.orWhere("LOWER(u.email) = :email", { email: normalizedEmail });
+      } else {
+        query.where("LOWER(u.email) = :email", { email: normalizedEmail });
+      }
+    }
+
+    return await query.getOne();
+  }
+
   async updatePasswordDetails(user: User, newPassword: string) {
     user.password = await this.hashingService.hash(newPassword);
     user.passwordScheme = this.hashingService.name();
@@ -985,7 +1005,10 @@ export class AuthenticationService {
   }
 
   async signIn(signInDto: SignInDto) {
-    const user = await this.resolveUser(signInDto.username, signInDto.email);
+    const user = await this.resolveUserForPasswordSignIn(
+      signInDto.username,
+      signInDto.email,
+    );
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
