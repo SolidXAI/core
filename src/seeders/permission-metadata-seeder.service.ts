@@ -6,6 +6,11 @@ import { RoleMetadataService } from '../services/role-metadata.service';
 @Injectable()
 export class PermissionMetadataSeederService {
   private readonly logger = new Logger(PermissionMetadataSeederService.name);
+  private readonly adminPermissionExclusionPrefixes = [
+    'ImportTransactionController.',
+    'ExportTemplateController.',
+    'ExportTransactionController.',
+  ];
 
   constructor(
     // @InjectRepository(PermissionMetadata)
@@ -58,6 +63,6 @@ export class PermissionMetadataSeederService {
     }
 
     // Associate the Admin role with all existing permissions. 
-    await this.roleService.addAllPermissionsToRole("Admin");
+    await this.roleService.addAllPermissionsToRoleExceptPrefixes("Admin", this.adminPermissionExclusionPrefixes);
   }
 }

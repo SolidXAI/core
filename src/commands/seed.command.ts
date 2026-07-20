@@ -1,6 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { Command, CommandRunner, Option } from 'nest-commander';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { ModuleMetadataSeederOptions } from 'src/interfaces';
 
 interface SeedCommandOptions {
   seeder?: string;
@@ -17,20 +18,33 @@ export class SeedCommand extends CommandRunner {
   }
 
   async run(passedParam: string[], options?: SeedCommandOptions): Promise<void> {
-    let parsedConf: any = null;
+    let parsedConf: ModuleMetadataSeederOptions | null = null;
     if (options?.modulesToSeed) {
       const modulesToSeed = options.modulesToSeed
         .split(',')
         .map((m) => m.trim())
         .filter(Boolean);
-      parsedConf = { modulesToSeed };
+      parsedConf = {
+        modulesToSeed,
+        pruneMetadata: true,
+        seedGlobalMetadata: true,
+      };
       this.logger.log(`Modules to seed: ${modulesToSeed.join(', ')}`);
     } else {
       this.logger.log('No --modules-to-seed flag provided. Running with default seeder behavior.');
+      parsedConf = {
+        modulesToSeed: null,
+        pruneMetadata: true,
+        seedGlobalMetadata: true,
+      };
     }
 
     if (options?.prune) {
-      parsedConf = parsedConf ?? {};
+      parsedConf = parsedConf ?? {
+        modulesToSeed: null,
+        pruneMetadata: true,
+        seedGlobalMetadata: true,
+      };
       parsedConf.pruneMetadata = true;
     }
 

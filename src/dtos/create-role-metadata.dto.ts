@@ -8,6 +8,8 @@ import { ApiProperty } from '@nestjs/swagger';
 
 export const ADMIN_ROLE_NAME = 'Admin';
 export const INTERNAL_ROLE_NAME = 'Internal User';
+export const ALLOWED_TO_IMPORT_ROLE_NAME = 'Allowed To Import';
+export const ALLOWED_TO_EXPORT_ROLE_NAME = 'Allowed To Export';
 export const PUBLIC_ROLE_NAME = 'Public';
 
 export class CreateRoleMetadataDto {
