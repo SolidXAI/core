@@ -1105,19 +1105,36 @@ export class AuthenticationService {
     throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
   }
 
+  private async resolveUserForOtpEmailSignIn(identifier: string,options: { withRoles?: boolean } = {},): Promise<User | null> {
+    const normalizedEmail = identifier?.trim().toLowerCase();
+    const query =
+      await this.userRepository.createSecurityRuleAwareQueryBuilder("u");
+
+    if (options.withRoles) {
+      query.leftJoinAndSelect("u.roles", "roles");
+    }
+
+    query.where("u.username = :username", { username: identifier });
+
+    if (normalizedEmail) {
+      query.orWhere("LOWER(u.email) = :email", { email: normalizedEmail });
+    }
+
+    return await query.getOne();
+  }
+
   private async findUserForLogin(
     type: PasswordlessLoginValidateWhatSources,
     identifier: string,
     options: { withRoles?: boolean } = {},
   ): Promise<User> {
-    const typeWhere =
+    const user =
       type === PasswordlessLoginValidateWhatSources.EMAIL
-        ? { email: identifier }
-        : { mobile: identifier };
-    const user = await this.userRepository.findOne({
-      where: [{ username: identifier }, typeWhere],
-      ...(options.withRoles ? { relations: { roles: true } } : {}),
-    });
+        ? await this.resolveUserForOtpEmailSignIn(identifier, options)
+        : await this.userRepository.findOne({
+            where: [{ username: identifier }, { mobile: identifier }],
+            ...(options.withRoles ? { relations: { roles: true } } : {}),
+          });
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
