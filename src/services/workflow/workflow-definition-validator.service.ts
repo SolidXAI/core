@@ -2,8 +2,10 @@ import { BadRequestException, Injectable } from '@nestjs/common';
 import {
   WorkflowDefinitionDsl,
   WorkflowNodeDefinition,
+  WorkflowTriggerDefinition,
 } from '../../types/workflow-dsl.types';
 import { WorkflowNodeRegistryService } from './workflow-node-registry.service';
+import { CronExpressionParser } from 'cron-parser';
 
 @Injectable()
 export class WorkflowDefinitionValidatorService {
@@ -28,6 +30,104 @@ export class WorkflowDefinitionValidatorService {
 
     const nodeIds = new Set<string>();
     this.validateNodes(definition.nodes, nodeIds);
+    this.validateTriggers(definition);
+  }
+
+  private validateTriggers(definition: WorkflowDefinitionDsl) {
+    const triggers = definition.triggers ?? [];
+    const triggerIds = new Set<string>();
+    const activeScheduleTriggers = triggers.filter(
+      (trigger) => trigger?.type === 'schedule' && !trigger.disabled,
+    );
+
+    for (const trigger of triggers) {
+      this.validateTrigger(trigger, triggerIds);
+    }
+
+    if (!activeScheduleTriggers.length) {
+      return;
+    }
+
+    const inputs = definition.inputs ?? {};
+    for (const [inputKey, inputDefinition] of Object.entries(inputs)) {
+      if (!this.inputHasDefault(inputDefinition)) {
+        throw new BadRequestException(
+          `Workflow input "${inputKey}" requires a default value before enabling a scheduled trigger.`,
+        );
+      }
+    }
+  }
+
+  private validateTrigger(
+    trigger: WorkflowTriggerDefinition,
+    triggerIds: Set<string>,
+  ) {
+    if (!trigger || typeof trigger !== 'object' || Array.isArray(trigger)) {
+      throw new BadRequestException('Every workflow trigger must be an object.');
+    }
+
+    if (!trigger.id) {
+      throw new BadRequestException('Every workflow trigger requires an id.');
+    }
+
+    if (triggerIds.has(trigger.id)) {
+      throw new BadRequestException(
+        `Duplicate workflow trigger id "${trigger.id}".`,
+      );
+    }
+    triggerIds.add(trigger.id);
+
+    if (!['schedule', 'webhook'].includes(trigger.type)) {
+      throw new BadRequestException(
+        `Workflow trigger "${trigger.id}" has unsupported type "${trigger.type}".`,
+      );
+    }
+
+    if (trigger.type === 'schedule') {
+      const cronExpression =
+        trigger.configuration?.cronExpression ?? trigger.configuration?.cron;
+      if (!cronExpression || typeof cronExpression !== 'string') {
+        throw new BadRequestException(
+          `Workflow trigger "${trigger.id}" requires a cron expression.`,
+        );
+      }
+
+      try {
+        CronExpressionParser.parse(cronExpression, {
+          currentDate: new Date(),
+          tz: trigger.configuration?.timezone ?? 'UTC',
+        });
+      } catch (error: any) {
+        throw new BadRequestException(
+          `Workflow trigger "${trigger.id}" has an invalid cron expression: ${error?.message ?? cronExpression}`,
+        );
+      }
+    }
+
+    if (trigger.type === 'webhook') {
+      const method = String(trigger.configuration?.method ?? 'POST').toUpperCase();
+      if (!['GET', 'POST', 'PUT', 'PATCH', 'DELETE'].includes(method)) {
+        throw new BadRequestException(
+          `Workflow trigger "${trigger.id}" has unsupported webhook method "${method}".`,
+        );
+      }
+    }
+  }
+
+  private inputHasDefault(inputDefinition: any): boolean {
+    if (
+      inputDefinition &&
+      typeof inputDefinition === 'object' &&
+      !Array.isArray(inputDefinition)
+    ) {
+      return (
+        Object.prototype.hasOwnProperty.call(inputDefinition, 'default') &&
+        inputDefinition.default !== undefined &&
+        inputDefinition.default !== null
+      );
+    }
+
+    return inputDefinition !== undefined && inputDefinition !== null;
   }
 
   private validateNodes(nodes: WorkflowNodeDefinition[], nodeIds: Set<string>) {

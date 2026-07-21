@@ -57,6 +57,9 @@ import {
   },
   ui: {
     icon: 'si-git-branch',
+    iconColor: '#db2777',
+    iconBackgroundColor: '#fce7f3',
+    iconBorderColor: '#f9a8d4',
     modalSize: 'lg',
     layoutHints: {
       groupOrder: ['General'],

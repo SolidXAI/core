@@ -655,6 +655,15 @@ export interface WorkflowNodeUiMetadata {
   /** Icon key used by topology cards, palette items, and docs. */
   icon?: string;
 
+  /** Icon foreground color used by palette/dialog/topology surfaces. */
+  iconColor?: string;
+
+  /** Icon tile background color used by palette/dialog/topology surfaces. */
+  iconBackgroundColor?: string;
+
+  /** Optional icon tile border color for richer palette treatments. */
+  iconBorderColor?: string;
+
   /** Custom full-node editor component registry key. */
   editorComponentKey?: string;
 

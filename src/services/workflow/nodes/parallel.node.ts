@@ -32,6 +32,9 @@ import {
   },
   ui: {
     icon: 'si-objects-column',
+    iconColor: '#2563eb',
+    iconBackgroundColor: '#dbeafe',
+    iconBorderColor: '#bfdbfe',
     modalSize: 'lg',
   },
 })

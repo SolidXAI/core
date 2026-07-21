@@ -17310,49 +17310,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "inputPayload"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "outputPayload"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "definitionVersion"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "definitionChecksum"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "definitionSnapshot"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "errorSummary"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "errorDetails"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "requestedByUserId"
             }
           }
         ]
@@ -17563,7 +17521,10 @@
                               "name": "definitionSnapshot",
                               "showLabel": false,
                               "className": "field w-full px-2 pt-2 min-h-0 h-full",
-                              "height": "calc(100vh - 260px)"
+                              "height": "calc(100vh - 260px)",
+                              "widget": "codeEditor",
+                              "editorLanguage": "yaml",
+                              "fontSize": 12
                             }
                           }
                         ]
@@ -17784,49 +17745,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "inputPayload"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "outputPayload"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "definitionVersion"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "definitionChecksum"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "definitionSnapshot"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "errorSummary"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "errorDetails"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "requestedByUserId"
             }
           }
         ]
@@ -19808,7 +19727,24 @@
   ],
   "checksums": [],
   "listOfValues": [],
-  "scheduledJobs": [],
+  "scheduledJobs": [
+    {
+      "scheduleName": "Workflow Scheduled Trigger Evaluator",
+      "isActive": true,
+      "frequency": "Custom",
+      "cronExpression": "*/5 * * * *",
+      "startTime": null,
+      "endTime": null,
+      "startDate": null,
+      "endDate": null,
+      "dayOfMonth": 0,
+      "lastRunAt": null,
+      "nextRunAt": null,
+      "dayOfWeek": "[\"Monday\",\"Tuesday\",\"Wednesday\",\"Thursday\",\"Friday\",\"Saturday\",\"Sunday\"]",
+      "job": "WorkflowScheduledTriggerJobService",
+      "moduleUserKey": "solid-core"
+    }
+  ],
   "securityRules": [
     {
       "name": "model:User-role:Internal User",

@@ -25,7 +25,7 @@ export class SmsFactory {
     getSmsService(name: string = null): ISMS {
         // This is the default provider
         // const smsServiceName = name || this.commonConfiguration.smsProvider;
-        const smsServiceName = this.settingService.getConfigValue<SolidCoreSetting>('smsProvider');
+        const smsServiceName = name || this.settingService.getConfigValue<SolidCoreSetting>('smsProvider');
         if (!smsServiceName) {
             throw new Error("Unable to resolve sms provider")
         }
@@ -38,6 +38,9 @@ export class SmsFactory {
         }
 
         const smsServiceProvider = smsProviders.find(provider => provider.name === smsServiceName);
+        if (!smsServiceProvider) {
+            throw new Error(`Unable to resolve sms provider ${smsServiceName}`);
+        }
 
         return smsServiceProvider.instance as ISMS;
     }

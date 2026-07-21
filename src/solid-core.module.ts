@@ -415,14 +415,27 @@ import { WorkflowTriggerExecutionRepository } from './repository/workflow-trigge
 import { WorkflowDefinitionValidatorService } from './services/workflow/workflow-definition-validator.service';
 import { WorkflowExecutionWriterService } from './services/workflow/workflow-execution-writer.service';
 import { WorkflowExpressionService } from './services/workflow/workflow-expression.service';
+import { WorkflowInvocationService } from './services/workflow/workflow-invocation.service';
 import { WorkflowNodeRegistryService } from './services/workflow/workflow-node-registry.service';
 import { WorkflowRuntimeService } from './services/workflow/workflow-runtime.service';
+import { WorkflowScheduledTriggerJobService } from './services/workflow/workflow-scheduled-trigger.job';
 import { ForEachNode } from './services/workflow/nodes/for-each.node';
 import { HttpRequestNode } from './services/workflow/nodes/http-request.node';
 import { IfNode } from './services/workflow/nodes/if.node';
 import { LogWriteNode } from './services/workflow/nodes/log-write.node';
 import { ParallelNode } from './services/workflow/nodes/parallel.node';
 import { SequentialNode } from './services/workflow/nodes/sequential.node';
+import {
+  SolidXCreateNode,
+  SolidXDeleteNode,
+  SolidXGetNode,
+  SolidXListNode,
+  SolidXPatchNode,
+  SolidXUpdateNode,
+} from './services/workflow/nodes/solidx-crud.nodes';
+import { SolidXLoginNode } from './services/workflow/nodes/solidx-login.node';
+import { SolidXSendEmailNode } from './services/workflow/nodes/solidx-send-email.node';
+import { SolidXSendSmsNode } from './services/workflow/nodes/solidx-send-sms.node';
 import { SwitchNode } from './services/workflow/nodes/switch.node';
 
 @Global()
@@ -869,11 +882,13 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowExecutionArtifactRepository,
     WorkflowTriggerExecutionService,
     WorkflowTriggerExecutionRepository,
+    WorkflowInvocationService,
     WorkflowRuntimeService,
     WorkflowExecutionWriterService,
     WorkflowExpressionService,
     WorkflowDefinitionValidatorService,
     WorkflowNodeRegistryService,
+    WorkflowScheduledTriggerJobService,
     LogWriteNode,
     HttpRequestNode,
     IfNode,
@@ -881,6 +896,15 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     ParallelNode,
     SequentialNode,
     SwitchNode,
+    SolidXLoginNode,
+    SolidXListNode,
+    SolidXGetNode,
+    SolidXCreateNode,
+    SolidXUpdateNode,
+    SolidXPatchNode,
+    SolidXDeleteNode,
+    SolidXSendEmailNode,
+    SolidXSendSmsNode,
   ],
   exports: [
     AuthenticationService,
@@ -944,6 +968,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     SolidMicroserviceAdapter,
     UserService,
     SettingService,
+    WorkflowInvocationService,
     WorkflowRuntimeService,
     WorkflowNodeRegistryService,
     WorkflowExpressionService,

@@ -42,6 +42,12 @@ export class WorkflowDefinitionController {
   }
 
   @ApiBearerAuth("jwt")
+  @Post('webhook/:reference')
+  executeWebhook(@Param('reference') reference: string, @Body() executeDto: ExecuteWorkflowDto) {
+    return this.service.executeWorkflowWebhook(reference, executeDto);
+  }
+
+  @ApiBearerAuth("jwt")
   @Post(':id/execute')
   execute(@Param('id') id: string, @Body() executeDto: ExecuteWorkflowDto) {
     return this.service.executeWorkflow(+id, executeDto);

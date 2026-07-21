@@ -32,6 +32,9 @@ import {
   },
   ui: {
     icon: 'si-list-numbers',
+    iconColor: '#0891b2',
+    iconBackgroundColor: '#cffafe',
+    iconBorderColor: '#a5f3fc',
     modalSize: 'lg',
   },
 })

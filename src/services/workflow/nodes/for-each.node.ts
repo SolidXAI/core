@@ -47,6 +47,9 @@ import {
   },
   ui: {
     icon: 'si-refresh',
+    iconColor: '#7c3aed',
+    iconBackgroundColor: '#f3e8ff',
+    iconBorderColor: '#d8b4fe',
     modalSize: 'lg',
     layoutHints: {
       groupOrder: ['General'],

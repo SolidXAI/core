@@ -52,6 +52,9 @@ import {
   },
   ui: {
     icon: 'si-code',
+    iconColor: '#4f46e5',
+    iconBackgroundColor: '#eef2ff',
+    iconBorderColor: '#c7d2fe',
     modalSize: 'lg',
     layoutHints: {
       groupOrder: ['General'],

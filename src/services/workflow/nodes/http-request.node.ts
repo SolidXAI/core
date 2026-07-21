@@ -361,6 +361,9 @@ const fullWidthField = {
   },
   ui: {
     icon: 'si-wifi',
+    iconColor: '#0f766e',
+    iconBackgroundColor: '#ccfbf1',
+    iconBorderColor: '#99f6e4',
     defaultEditorMode: 'schema',
     modalSize: 'xl',
     fieldComponentKeys: {

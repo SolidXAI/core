@@ -154,6 +154,9 @@ import {
   },
   ui: {
     icon: 'si-file',
+    iconColor: '#0284c7',
+    iconBackgroundColor: '#e0f2fe',
+    iconBorderColor: '#bae6fd',
     defaultEditorMode: 'schema',
     modalSize: 'lg',
     layoutHints: {
