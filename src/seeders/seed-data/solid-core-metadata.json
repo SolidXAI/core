@@ -1806,8 +1806,6 @@
             "index": true,
             "private": false,
             "encrypt": false,
-            "regexPattern": "^[A-Za-z0-9._-]{3,50}$",
-            "regexPatternNotMatchingErrorMsg": "Username must be 3 to 50 characters and contain only letters, numbers, dots, underscores, or hyphens.",
             "isSystem": true,
             "enableAuditTracking": true
           },
@@ -1838,8 +1836,6 @@
             "index": true,
             "private": false,
             "encrypt": false,
-            "regexPattern": "^[0-9]+$",
-            "regexPatternNotMatchingErrorMsg": "Mobile number must contain only numeric values.",
             "isSystem": true,
             "enableAuditTracking": true
           },
