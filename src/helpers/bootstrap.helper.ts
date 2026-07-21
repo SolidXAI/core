@@ -1,5 +1,5 @@
-import { ValidationPipe } from '@nestjs/common';
-import { NestFactory } from '@nestjs/core';
+import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NextFunction, Request, Response } from 'express';
@@ -169,7 +169,13 @@ export async function bootstrapSolidApp(
   }
 
   // Global interceptor
-  app.useGlobalInterceptors(new WrapResponseInterceptor());
+  app.useGlobalInterceptors(
+    new ClassSerializerInterceptor(app.get(Reflector), {
+      enableImplicitConversion: true, // optional but handy
+      // groups: ['client'], // if you use groups
+    }),
+    new WrapResponseInterceptor()
+  );
 
   // CORS
   app.enableCors(buildDefaultCorsOptions());

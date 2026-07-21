@@ -34,7 +34,7 @@ export class ModuleMetadataHelperService {
         if (!moduleName) {
             return '';
         }
-        return path.resolve(process.cwd(), 'src', moduleName);
+        return path.resolve(process.cwd(), 'src', kebabCase(moduleName));
     }
 
     async getSolidUiModulePath(moduleName: string): Promise<string> {

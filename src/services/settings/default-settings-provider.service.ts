@@ -22,6 +22,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 50,
       controlType: "boolean",
+      helpText: "Shows Google as a sign-in and sign-up option on supported authentication screens.",
     },
     {
       moduleName: "solid-core",
@@ -32,6 +33,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 50,
       controlType: "boolean",
+      helpText: "Shows Facebook as a sign-in and sign-up option on supported authentication screens.",
     },
     {
       moduleName: "solid-core",
@@ -42,6 +44,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 50,
       controlType: "boolean",
+      helpText: "Shows Microsoft as a sign-in and sign-up option on supported authentication screens.",
     },
     {
       moduleName: "solid-core",
@@ -52,6 +55,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 50,
       controlType: "boolean",
+      helpText: "Shows Microsoft Active Directory as a sign-in and sign-up option on supported authentication screens.",
     },
     {
       moduleName: "solid-core",
@@ -67,6 +71,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "Center", value: "center" },
         { label: "Right", value: "right" },
       ],
+      helpText: "Controls whether authentication forms are centered or shown beside a left or right visual panel.",
     },
     // Removed authPagesTheme as we are going to use the local storage based theme switching in the frontend instead of server side theme switching.
     // { moduleName: "solid-core", key: "authPagesTheme", value: "light", level: SettingLevel.SystemAdminEditable },
@@ -79,6 +84,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 10,
       controlType: "mediaSingle",
+      helpText: "Primary application logo used across branded authentication and workspace surfaces.",
     },
     {
       moduleName: "solid-core",
@@ -89,6 +95,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 20,
       controlType: "mediaSingle",
+      helpText: "Secondary company logo for installations that need separate corporate branding.",
     },
     {
       moduleName: "solid-core",
@@ -99,6 +106,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 30,
       controlType: "mediaSingle",
+      helpText: "Browser tab icon used by the workspace and authentication pages when a custom favicon is configured.",
     },
     {
       moduleName: "solid-core",
@@ -113,6 +121,22 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "In Form View", value: "in_form_view" },
         { label: "In Image View", value: "in_image_view" },
       ],
+      helpText: "Controls whether the app logo appears inside the authentication form or inside the image panel.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "rowClickAction",
+      value: "edit",
+      level: SettingLevel.SystemAdminEditable,
+      label: "Row Click Action",
+      group: "app-settings",
+      sortOrder: 45,
+      controlType: "selectionStatic",
+      options: [
+        { label: "Edit", value: "edit" },
+        { label: "View", value: "view" },
+      ],
+      helpText: "Decides whether clicking a list row opens the record in edit mode or view mode.",
     },
     {
       moduleName: "solid-core",
@@ -123,6 +147,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 50,
       controlType: "boolean",
+      helpText: "Shows or hides the title, subtitle, and description block on authentication screens.",
     },
     {
       moduleName: "solid-core",
@@ -133,6 +158,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 60,
       controlType: "shortText",
+      helpText: "Main application name shown on branded authentication screens.",
     },
     {
       moduleName: "solid-core",
@@ -143,6 +169,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 70,
       controlType: "shortText",
+      helpText: "Short subtitle shown above or beside the main application title.",
     },
     {
       moduleName: "solid-core",
@@ -153,6 +180,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 80,
       controlType: "longText",
+      helpText: "Supporting copy used to explain the product or workspace on authentication screens.",
     },
     {
       moduleName: "solid-core",
@@ -163,6 +191,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 90,
       controlType: "boolean",
+      helpText: "Shows or hides the terms and privacy links on authentication screens.",
     },
     {
       moduleName: "solid-core",
@@ -173,6 +202,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 100,
       controlType: "shortText",
+      helpText: "Terms and conditions URL shown when legal links are enabled.",
     },
     {
       moduleName: "solid-core",
@@ -183,6 +213,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 110,
       controlType: "shortText",
+      helpText: "Privacy policy URL shown when legal links are enabled.",
     },
     {
       moduleName: "solid-core",
@@ -193,6 +224,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 120,
       controlType: "boolean",
+      helpText: "Enables dark theme support for frontend surfaces that honor the global appearance setting.",
     },
     {
       moduleName: "solid-core",
@@ -203,6 +235,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "app-settings",
       sortOrder: 130,
       controlType: "longText",
+      helpText: "Footer copyright text shown on branded authentication screens.",
     },
     {
       moduleName: "solid-core",
@@ -213,6 +246,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "misc-settings",
       sortOrder: 10,
       controlType: "boolean",
+      helpText: "Allows username-based identity flows where the frontend supports them.",
     },
     {
       moduleName: "solid-core",
@@ -223,6 +257,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "misc-settings",
       sortOrder: 20,
       controlType: "boolean",
+      helpText: "Default notification toggle used by user-facing notification settings.",
     },
     {
       moduleName: "solid-core",
@@ -233,6 +268,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "misc-settings",
       sortOrder: 30,
       controlType: "shortText",
+      helpText: "Email address used by the support shortcut in the user menu and related help surfaces.",
     },
     {
       moduleName: "solid-core",
@@ -243,6 +279,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "misc-settings",
       sortOrder: 40,
       controlType: "shortText",
+      helpText: "Friendly label shown for the support shortcut, such as Support or Help Desk.",
     },
     {
       moduleName: "solid-core",
@@ -253,6 +290,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "misc-settings",
       sortOrder: 50,
       controlType: "shortText",
+      helpText: "Icon identifier used for the support shortcut so users can recognize it quickly.",
     },
     {
       moduleName: "solid-core",
@@ -263,6 +301,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 90,
       controlType: "mediaSingle",
+      helpText: "Banner image used when the authentication form is shown on the left and the visual panel is on the right.",
     },
     {
       moduleName: "solid-core",
@@ -273,6 +312,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 100,
       controlType: "mediaSingle",
+      helpText: "Banner image used when the authentication form is shown on the right and the visual panel is on the left.",
     },
     {
       moduleName: "solid-core",
@@ -283,6 +323,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 110,
       controlType: "mediaSingle",
+      helpText: "Background image used for the centered authentication layout.",
     },
     {
       moduleName: "solid-core",
@@ -311,6 +352,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       sortOrder: 10,
       controlType: "custom",
       settingsWidget: "solidXGenAiCodeBuilderConfigWidget",
+      helpText: "Structured AI builder configuration that stores providers, credentials, and model assignments for SolidX code generation features.",
     },
     {
       moduleName: "solid-core",
@@ -327,6 +369,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "ai-settings",
       sortOrder: 20,
       controlType: "boolean",
+      helpText: "Read-only flag indicating whether MCP integration is enabled for this deployment.",
     },
     {
       moduleName: "solid-core",
@@ -337,6 +380,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "ai-settings",
       sortOrder: 30,
       controlType: "shortText",
+      helpText: "Base MCP server URL used when MCP integration is enabled.",
     },
     {
       moduleName: "solid-core",
@@ -353,6 +397,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "system-settings",
       sortOrder: 10,
       controlType: "shortText",
+      helpText: "Default date-time format used by Solid core features that need a shared server-side format.",
     },
     {
       moduleName: "solid-core",
@@ -363,6 +408,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "system-settings",
       sortOrder: 20,
       controlType: "shortText",
+      helpText: "Default date format used by Solid core features that need a shared server-side format.",
     },
     {
       moduleName: "solid-core",
@@ -373,6 +419,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "system-settings",
       sortOrder: 30,
       controlType: "shortText",
+      helpText: "Backend base URL used to generate absolute links and media URLs.",
     }, 
     {
       moduleName: "solid-core",
@@ -383,6 +430,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "system-settings",
       sortOrder: 35,
       controlType: "shortText",
+      helpText: "Frontend admin application base URL used when the backend needs to point users back to the admin UI.",
     },
     {
       moduleName: "solid-core",
@@ -393,6 +441,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "system-settings",
       sortOrder: 40,
       controlType: "shortText",
+      helpText: "Public website URL for the product or marketing site.",
     },
 
     // app-builder-settings-provider.service.ts, app-builder.config.ts
@@ -405,6 +454,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "storage-settings",
       sortOrder: 10,
       controlType: "longText",
+      helpText: "Comma-separated list of module metadata seed files that are loaded by the platform.",
     },
     {
       moduleName: "solid-core",
@@ -415,6 +465,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "storage-settings",
       sortOrder: 20,
       controlType: "shortText",
+      helpText: "Directory where uploaded media is staged before downstream processing or persistence.",
     },
     {
       moduleName: "solid-core",
@@ -426,6 +477,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "storage-settings",
       sortOrder: 30,
       controlType: "shortText",
+      helpText: "Directory used by the default disk-based file storage provider for persisted files.",
     },
     {
       moduleName: "solid-core",
@@ -440,6 +492,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "Disk", value: "disk" },
         { label: "S3", value: "s3" },
       ],
+      helpText: "Default storage implementation used for file handling, such as local disk or S3.",
     },
 
     // aws-s3-settings-provider.service.ts
@@ -464,6 +517,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "storage-settings",
       sortOrder: 50,
       controlType: "shortText",
+      helpText: "AWS region used by the default S3 storage integration.",
     },
     {
       moduleName: "solid-core",
@@ -474,6 +528,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "storage-settings",
       sortOrder: 60,
       controlType: "shortText",
+      helpText: "Default S3 bucket used when the S3 storage provider is active.",
     },
 
     // email-settings-provider.service.ts
@@ -490,6 +545,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "SMTP Email Service", value: "SMTPEMailService" },
         { label: "Elastic Email Service", value: "ElasticEmailService" },
       ],
+      helpText: "Email delivery provider currently configured for outbound mail.",
     },
     {
       moduleName: "solid-core",
@@ -500,6 +556,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "email-settings",
       sortOrder: 20,
       controlType: "longText",
+      helpText: "Comma-separated list of email template seed files loaded by the platform.",
     },
     {
       moduleName: "solid-core",
@@ -510,6 +567,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "email-settings",
       sortOrder: 30,
       controlType: "boolean",
+      helpText: "Whether outbound emails are queued for asynchronous delivery instead of being sent inline.",
     },
     {
       moduleName: "solid-core",
@@ -520,6 +578,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "email-settings",
       sortOrder: 40,
       controlType: "shortText",
+      helpText: "SMTP host name used when the SMTP email provider is active.",
     },
     {
       moduleName: "solid-core",
@@ -530,6 +589,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "email-settings",
       sortOrder: 50,
       controlType: "numeric",
+      helpText: "SMTP port used when the SMTP email provider is active.",
     },
     {
       moduleName: "solid-core",
@@ -540,6 +600,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "email-settings",
       sortOrder: 60,
       controlType: "shortText",
+      helpText: "SMTP username used when the SMTP email provider is active.",
     },
     {
       moduleName: "solid-core",
@@ -557,6 +618,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "email-settings",
       sortOrder: 70,
       controlType: "shortText",
+      helpText: "Default From address for outbound mail sent through the SMTP provider.",
     },
     {
       moduleName: "solid-core",
@@ -573,6 +635,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "email-settings",
       sortOrder: 80,
       controlType: "shortText",
+      helpText: "Default From address for outbound mail sent through API-based email providers.",
     },
 
     // genai-settings-provider.service.ts
@@ -585,6 +648,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "ai-settings",
       sortOrder: 40,
       controlType: "shortText",
+      helpText: "Base URL of the RAG service used by AI-assisted features that need retrieval support.",
     },
     {
       moduleName: "solid-core",
@@ -627,6 +691,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "oauth-settings",
       sortOrder: 10,
       controlType: "shortText",
+      helpText: "Google OAuth client ID registered for this application.",
     },
     {
       moduleName: "solid-core",
@@ -643,6 +708,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "oauth-settings",
       sortOrder: 20,
       controlType: "shortText",
+      helpText: "Backend callback URL that Google redirects to after authentication.",
     },
     {
       moduleName: "solid-core",
@@ -653,6 +719,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "oauth-settings",
       sortOrder: 30,
       controlType: "shortText",
+      helpText: "Post-authentication Google redirect URL used by the application flow.",
     },
 
     // facebook-oauth-settings-provider.service.ts
@@ -661,6 +728,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       key: "FACEBOOK_CLIENT_ID",
       value: process.env.IAM_FACEBOOK_OAUTH_CLIENT_ID,
       level: SettingLevel.SystemAdminReadonly,
+      helpText: "Facebook OAuth client ID registered for this application.",
     },
     {
       moduleName: "solid-core",
@@ -673,12 +741,14 @@ const getSolidCoreSettings = (isProd: boolean) =>
       key: "FACEBOOK_CALLBACK_URL",
       value: process.env.IAM_FACEBOOK_OAUTH_CALLBACK_URL,
       level: SettingLevel.SystemAdminReadonly,
+      helpText: "Backend callback URL that Facebook redirects to after authentication.",
     },
     {
       moduleName: "solid-core",
       key: "FACEBOOK_REDIRECT_URL",
       value: process.env.IAM_FACEBOOK_OAUTH_REDIRECT_URL,
       level: SettingLevel.SystemAdminReadonly,
+      helpText: "Post-authentication Facebook redirect URL used by the application flow.",
     },
 
     // microsoft-oauth-settings-provider.service.ts
@@ -687,6 +757,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       key: "MICROSOFT_CLIENT_ID",
       value: process.env.IAM_MICROSOFT_OAUTH_CLIENT_ID,
       level: SettingLevel.SystemAdminReadonly,
+      helpText: "Microsoft OAuth client ID registered for this application.",
     },
     {
       moduleName: "solid-core",
@@ -699,18 +770,21 @@ const getSolidCoreSettings = (isProd: boolean) =>
       key: "MICROSOFT_TENANT_ID",
       value: process.env.IAM_MICROSOFT_OAUTH_TENANT_ID || "common",
       level: SettingLevel.SystemAdminReadonly,
+      helpText: "Microsoft OAuth tenant identifier used to scope sign-in requests.",
     },
     {
       moduleName: "solid-core",
       key: "MICROSOFT_CALLBACK_URL",
       value: process.env.IAM_MICROSOFT_OAUTH_CALLBACK_URL,
       level: SettingLevel.SystemAdminReadonly,
+      helpText: "Backend callback URL that Microsoft redirects to after authentication.",
     },
     {
       moduleName: "solid-core",
       key: "MICROSOFT_REDIRECT_URL",
       value: process.env.IAM_MICROSOFT_OAUTH_REDIRECT_URL,
       level: SettingLevel.SystemAdminReadonly,
+      helpText: "Post-authentication Microsoft redirect URL used by the application flow.",
     },
 
     // microsoft-active-directory-oauth-settings-provider.service.ts
@@ -723,6 +797,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "oauth-settings",
       sortOrder: 70,
       controlType: "shortText",
+      helpText: "Microsoft Active Directory client ID registered for this application.",
     },
     {
       moduleName: "solid-core",
@@ -740,6 +815,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "oauth-settings",
       sortOrder: 80,
       controlType: "shortText",
+      helpText: "Microsoft Active Directory tenant identifier used to scope sign-in requests.",
     },
     {
       moduleName: "solid-core",
@@ -750,6 +826,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "oauth-settings",
       sortOrder: 90,
       controlType: "shortText",
+      helpText: "Backend callback URL that Microsoft Active Directory redirects to after authentication.",
     },
     {
       moduleName: "solid-core",
@@ -760,6 +837,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "oauth-settings",
       sortOrder: 100,
       controlType: "shortText",
+      helpText: "Post-authentication Microsoft Active Directory redirect URL used by the application flow.",
     },
 
     // iam-settings-provider.service.ts
@@ -772,6 +850,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 20,
       controlType: "boolean",
+      helpText: "Enables passwordless sign-in flows such as OTP-based authentication.",
     },
     {
       moduleName: "solid-core",
@@ -782,6 +861,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 10,
       controlType: "boolean",
+      helpText: "Enables traditional password-based sign-in.",
     },
     {
       moduleName: "solid-core",
@@ -798,6 +878,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "Email", value: "email" },
         { label: "Mobile", value: "mobile" },
       ],
+      helpText: "Chooses whether passwordless registration validates new users by email or mobile number.",
     },
     {
       moduleName: "solid-core",
@@ -813,6 +894,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "Mobile", value: "mobile" },
         { label: "Selectable", value: "selectable" },
       ],
+      helpText: "Chooses whether passwordless login validates users by email, mobile number, or a selectable option.",
     },
     {
       moduleName: "solid-core",
@@ -823,6 +905,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 60,
       controlType: "boolean",
+      helpText: "Lets unauthenticated visitors create their own account from public registration screens.",
     },
     {
       moduleName: "solid-core",
@@ -834,6 +917,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 70,
       controlType: "boolean",
+      helpText: "Automatically activates newly registered users instead of requiring a separate activation step.",
     },
     {
       moduleName: "solid-core",
@@ -857,6 +941,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 85,
       controlType: "boolean",
+      helpText: "Allows OTP delivery to fall back to WhatsApp when the primary OTP path cannot be used.",
     },
     {
       moduleName: "solid-core",
@@ -867,6 +952,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 86,
       controlType: "shortText",
+      helpText: "Template identifier used when OTP messages are sent through WhatsApp.",
     },
     {
       moduleName: "solid-core",
@@ -877,6 +963,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 87,
       controlType: "boolean",
+      helpText: "Allows WhatsApp OTP delivery to run as an independent channel where supported.",
     },
     {
       moduleName: "solid-core",
@@ -887,6 +974,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 88,
       controlType: "shortText",
+      helpText: "Default dialing code applied when OTP phone numbers are entered without a country prefix.",
     },
     {
       moduleName: "solid-core",
@@ -905,6 +993,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 75,
       controlType: "shortText",
+      helpText: "Role assigned by default to newly created users in flows that rely on automatic role assignment.",
     },
     {
       moduleName: "solid-core",
@@ -934,6 +1023,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 110,
       controlType: "numeric",
+      helpText: "Maximum failed login attempts allowed before a user is considered blocked.",
     },
     {
       moduleName: "solid-core",
@@ -944,6 +1034,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 120,
       controlType: "boolean",
+      helpText: "Requires users to choose a new password the first time they sign in.",
     },
     {
       moduleName: "solid-core",
@@ -956,6 +1047,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 130,
       controlType: "shortText",
+      helpText: "Validation pattern applied to new passwords in registration and password-change flows.",
     },
     {
       moduleName: "solid-core",
@@ -968,6 +1060,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 140,
       controlType: "longText",
+      helpText: "Custom error message shown when a password does not satisfy the configured regex.",
     },
     {
       moduleName: "solid-core",
@@ -980,6 +1073,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 150,
       controlType: "longText",
+      helpText: "Human-friendly guidance shown to users so they understand the password policy before submission.",
     },
     {
       moduleName: "solid-core",
@@ -990,6 +1084,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 160,
       controlType: "boolean",
+      helpText: "Enables automatic password generation in flows that create user credentials on the user's behalf.",
     },
     {
       moduleName: "solid-core",
@@ -1009,6 +1104,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 170,
       controlType: "boolean",
+      helpText: "Adds name fields to the public registration form so users can provide profile details up front.",
     },
     {
       moduleName: "solid-core",
@@ -1022,6 +1118,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 180,
       controlType: "boolean",
+      helpText: "Sends a welcome email after a successful signup when email delivery is configured.",
     },
     {
       moduleName: "solid-core",
@@ -1035,6 +1132,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 190,
       controlType: "boolean",
+      helpText: "Sends a welcome SMS after a successful signup when SMS delivery is configured.",
     },
     {
       moduleName: "solid-core",
@@ -1045,6 +1143,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 180,
       controlType: "shortText",
+      helpText: "Frontend login page URL used in backend-generated links and redirects.",
     },
     {
       moduleName: "solid-core",
@@ -1055,6 +1154,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "authentication-settings",
       sortOrder: 190,
       controlType: "shortText",
+      helpText: "Frontend forgot-password page URL used in backend-generated links and redirects.",
     },
 
     // jwt-settings-provider.service.ts
@@ -1073,6 +1173,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "jwt-settings",
       sortOrder: 10,
       controlType: "shortText",
+      helpText: "JWT audience claim expected by tokens issued by this deployment.",
     },
     {
       moduleName: "solid-core",
@@ -1083,6 +1184,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "jwt-settings",
       sortOrder: 20,
       controlType: "shortText",
+      helpText: "JWT issuer claim attached to tokens issued by this deployment.",
     },
     {
       moduleName: "solid-core",
@@ -1099,7 +1201,16 @@ const getSolidCoreSettings = (isProd: boolean) =>
       value: parseInt(process.env.IAM_JWT_REFRESH_TOKEN_TTL ?? "604800", 10),
       level: SettingLevel.SystemEnv,
     },
-
+    {
+      moduleName: "solid-core",
+      key: "preventConcurrentLogins",
+      value: false,
+      level: SettingLevel.SystemAdminEditable,
+      label: "Prevent Concurrent Logins",
+      group: "authentication-settings",
+      sortOrder: 200,
+      controlType: "boolean",
+    },
     // queues-settings-provider.service.ts
     {
       moduleName: "solid-core",
@@ -1114,6 +1225,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "Database", value: "database" },
         { label: "RabbitMQ", value: "rabbitmq" },
       ],
+      helpText: "Default queue broker used for background job processing.",
     },
     {
       moduleName: "solid-core",
@@ -1124,6 +1236,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "queue-settings",
       sortOrder: 20,
       controlType: "shortText",
+      helpText: "Service role or worker identity expected by the queue subsystem.",
     },
     {
       moduleName: "solid-core",
@@ -1148,6 +1261,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "sms-settings",
       sortOrder: 10,
       controlType: "shortText",
+      helpText: "SMS delivery provider currently configured for outbound messages.",
     },
     {
       moduleName: "solid-core",
@@ -1158,6 +1272,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "sms-settings",
       sortOrder: 20,
       controlType: "longText",
+      helpText: "Comma-separated list of SMS template seed files loaded by the platform.",
     },
     {
       moduleName: "solid-core",
@@ -1168,6 +1283,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "sms-settings",
       sortOrder: 30,
       controlType: "boolean",
+      helpText: "Whether outbound SMS messages are queued for asynchronous delivery instead of being sent inline.",
     },
     {
       moduleName: "solid-core",
@@ -1178,6 +1294,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "sms-settings",
       sortOrder: 40,
       controlType: "shortText",
+      helpText: "MSG91 endpoint URL used when the MSG91 SMS provider is active.",
     },
     {
       moduleName: "solid-core",
@@ -1194,6 +1311,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "sms-settings",
       sortOrder: 50,
       controlType: "shortText",
+      helpText: "Twilio account SID used when the Twilio SMS provider is active.",
     },
     {
       moduleName: "solid-core",
@@ -1210,6 +1328,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "sms-settings",
       sortOrder: 60,
       controlType: "shortText",
+      helpText: "Twilio phone number used as the sender for outbound SMS.",
     },
 
     // tiny-url-settings-provider.service.ts
@@ -1222,6 +1341,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "short-url-settings",
       sortOrder: 10,
       controlType: "shortText",
+      helpText: "API endpoint used to create shortened URLs.",
     },
     {
       moduleName: "solid-core",
@@ -1238,6 +1358,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "short-url-settings",
       sortOrder: 20,
       controlType: "shortText",
+      helpText: "Short URL domain used when generating branded or provider-backed tiny URLs.",
     },
     {
       moduleName: "solid-core",
@@ -1248,6 +1369,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "short-url-settings",
       sortOrder: 30,
       controlType: "boolean",
+      helpText: "Indicates whether short URL generation is enabled for this deployment.",
     },
 
     // whatsapp-settings-provider.service.ts
@@ -1260,6 +1382,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "whatsapp-settings",
       sortOrder: 10,
       controlType: "shortText",
+      helpText: "WhatsApp delivery provider currently configured for outbound messages.",
     },
     {
       moduleName: "solid-core",
@@ -1270,6 +1393,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "whatsapp-settings",
       sortOrder: 20,
       controlType: "shortText",
+      helpText: "MSG91 endpoint URL used when the MSG91 WhatsApp provider is active.",
     },
     {
       moduleName: "solid-core",
@@ -1286,6 +1410,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "whatsapp-settings",
       sortOrder: 30,
       controlType: "shortText",
+      helpText: "Integrated WhatsApp number used by the MSG91 WhatsApp provider.",
     },
     {
       moduleName: "solid-core",
@@ -1296,6 +1421,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "whatsapp-settings",
       sortOrder: 40,
       controlType: "shortText",
+      helpText: "Base Meta WhatsApp API URL used by the Meta WhatsApp integration.",
     },
     {
       moduleName: "solid-core",
@@ -1306,6 +1432,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "whatsapp-settings",
       sortOrder: 50,
       controlType: "shortText",
+      helpText: "Meta WhatsApp API version used when building outbound requests.",
     },
     {
       moduleName: "solid-core",
@@ -1316,6 +1443,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "whatsapp-settings",
       sortOrder: 60,
       controlType: "shortText",
+      helpText: "Meta WhatsApp phone number ID used to send messages from the connected business account.",
     },
     {
       moduleName: "solid-core",
@@ -1326,6 +1454,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
       group: "whatsapp-settings",
       sortOrder: 70,
       controlType: "shortText",
+      helpText: "Meta WhatsApp business account ID associated with the connected sender.",
     },
     {
       moduleName: "solid-core",

@@ -8,6 +8,7 @@ export * from './commands/run-tests.command'
 export * from './commands/test.command'
 
 export * from './config/cache.options'
+export * from './services/active-session-storage.service'
 
 export * from './decorators/active-user.decorator'
 export * from './decorators/solid-request-context.decorator'
@@ -171,7 +172,6 @@ export * from './guards/permissions.guard'
 export * from './guards/roles.guard'
 
 export * from './helpers/command.service'
-export * from './helpers/nodemon-heartbeat'
 export * from './helpers/module.helper'
 export * from './helpers/schematic.service'
 export * from './helpers/solid-registry'

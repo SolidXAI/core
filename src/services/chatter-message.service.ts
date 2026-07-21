@@ -11,6 +11,7 @@ import { PostChatterMessageDto } from 'src/dtos/post-chatter-message.dto';
 import { UpdateChatterNoteMessageDto } from 'src/dtos/update-chatter-note-message.dto';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { lowerFirst } from 'src/helpers/string.helper';
+import { ChatterMentionNotificationPayload } from 'src/interfaces/chatter-mention-notification.interface';
 import { ChatterMessageDetailsRepository } from 'src/repository/chatter-message-details.repository';
 import { ChatterMessageRepository } from 'src/repository/chatter-message.repository';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
@@ -23,6 +24,15 @@ import { ChatterMessage } from '../entities/chatter-message.entity';
 import { getMediaStorageProvider } from './mediaStorageProviders';
 import { RequestContextService } from './request-context.service';
 import { Logger } from '@nestjs/common';
+import { SolidIntrospectService } from './solid-introspect.service';
+import { PublisherFactory } from './queues/publisher-factory.service';
+
+interface ChatterMention {
+    username: string;
+    display_name?: string;
+    displayName?: string;
+    id?: string | number;
+}
 
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
@@ -46,8 +56,29 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         private readonly modelMetadataRepo: ModelMetadataRepository,
         readonly requestContextService: RequestContextService,
         private readonly modelMetadataHelperService: ModelMetadataHelperService,
+        private readonly publisherFactory: PublisherFactory<ChatterMentionNotificationPayload>,
     ) {
         super(entityManager, repo, 'chatterMessage', 'solid-core', moduleRef);
+    }
+
+    private getCoModelService(coModelName: string): CRUDService<any> {
+        const introspectService = this.moduleRef.get(SolidIntrospectService, { strict: false });
+        const modelSingularName = lowerFirst(coModelName);
+        const coModelService = introspectService?.getCRUDService(modelSingularName);
+        if (!coModelService) {
+            throw new BadRequestException(ERROR_MESSAGES.MODEL_SERVICE_NOT_FOUND(modelSingularName));
+        }
+        return coModelService;
+    }
+
+    private async assertRecordAccess(coModelName: string, coModelEntityId: number) {
+        const activeUser = this.requestContextService.getActiveUser();
+        if (!activeUser) {
+            throw new ForbiddenException(ERROR_MESSAGES.FORBIDDEN);
+        }
+
+        const coModelService = this.getCoModelService(coModelName);
+        await coModelService.findOne(coModelEntityId, {}, { activeUser });
     }
 
     private resolveMessageUserId(userId?: number | null): number | null {
@@ -85,6 +116,78 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             .filter(v => Number.isInteger(v) && v > 0);
     }
 
+    private parseMessageBodyMentions(value?: string): ChatterMention[] {
+        if (!value || typeof value !== 'string') return [];
+        try {
+            const parsed = JSON.parse(value);
+            return Array.isArray(parsed) ? parsed : [];
+        } catch {
+            return [];
+        }
+    }
+
+    private renderMentionTokens(messageBody: string, mentions: ChatterMention[]) {
+        return mentions.reduce((nextMessage, mention, index) => {
+            const username = mention.username;
+            if (!username) return nextMessage;
+            return nextMessage.replace(new RegExp(`\\{\\{\\s*${index}\\s*\\}\\}`, 'g'), `@${username}`);
+        }, messageBody || '');
+    }
+
+    private async publishChatterMentionNotifications(message: ChatterMessage, model: any) {
+        if (message.messageType !== CHATTER_MESSAGE_TYPE.CUSTOM || message.messageSubType !== CHATTER_MESSAGE_SUBTYPE.NOTE) {
+            return;
+        }
+
+        const mentions = this.parseMessageBodyMentions(message.messageBodyMentions);
+        const mentionUserIds = mentions
+            .map(mention => Number(mention.id))
+            .filter(id => Number.isInteger(id) && id > 0);
+        const uniqueMentionUserIds = Array.from(new Set(mentionUserIds));
+        if (uniqueMentionUserIds.length === 0) return;
+
+        const activeUser = this.requestContextService.getActiveUser();
+
+        const payload: ChatterMentionNotificationPayload = {
+            templateName: 'chatter-mention-notification',
+            mentions: mentions.map(mention => ({
+                id: Number(mention.id) || undefined,
+                username: mention.username,
+                displayName: mention.display_name || mention.displayName || mention.username,
+            })),
+            actor: {
+                id: activeUser?.sub,
+                username: activeUser?.username,
+                email: activeUser?.email,
+            },
+            noteBody: this.renderMentionTokens(message.messageBody, mentions),
+            entity: {
+                id: message.coModelEntityId,
+                modelName: model?.singularName || message.coModelName,
+                moduleName: model?.module?.name,
+                displayName: model?.displayName || message.coModelName,
+                userKey: message.modelUserKey,
+            },
+            parentEntity: 'chatterMessage',
+            parentEntityId: message.id,
+        };
+
+        try {
+            await this.publisherFactory.publish(
+                {
+                    payload,
+                    parentEntity: 'chatterMessage',
+                    parentEntityId: message.id,
+                    retryCount: 3,
+                    retryInterval: 5000,
+                },
+                'ChatterMentionNotificationEmailQueuePublisher',
+            );
+        } catch (error: any) {
+            this._logger.error(`Failed to publish chatter mention notification email job: ${error.message}`, error.stack);
+        }
+    }
+
     async markCompleted(id: number) {
         const activeUser = this.requestContextService.getActiveUser();
         if (!activeUser) {
@@ -95,6 +198,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         if (!message) {
             throw new NotFoundException(`Entity [solid-core.chatterMessage] with id ${id} not found`);
         }
+
+        await this.assertRecordAccess(message.coModelName, message.coModelEntityId);
 
         message.status = CHATTER_MESSAGE_STATUS.COMPLETED;
         return this.repo.save(message);
@@ -111,6 +216,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             throw new NotFoundException(`Entity [solid-core.chatterMessage] with id ${id} not found`);
         }
 
+        await this.assertRecordAccess(message.coModelName, message.coModelEntityId);
+
         if (!this.isEditableCustomNoteMessage(message)) {
             throw new BadRequestException('Only custom note messages can be edited.');
         }
@@ -121,10 +228,11 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const removeAttachmentIds = this.parseAttachmentIds(updateDto?.removeAttachmentIds);
         const hasMessageBody = typeof updateDto?.messageBody === 'string';
+        const hasMessageBodyMentions = typeof updateDto?.messageBodyMentions === 'string';
         const trimmedMessageBody = (updateDto?.messageBody ?? '').trim();
         const hasNewFiles = Array.isArray(files) && files.length > 0;
 
-        if (!hasMessageBody && removeAttachmentIds.length === 0 && !hasNewFiles) {
+        if (!hasMessageBody && !hasMessageBodyMentions && removeAttachmentIds.length === 0 && !hasNewFiles) {
             throw new BadRequestException('No note changes submitted.');
         }
 
@@ -135,6 +243,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         if (hasMessageBody) {
             message.messageBody = trimmedMessageBody;
         }
+        if (hasMessageBodyMentions) {
+            message.messageBodyMentions = updateDto.messageBodyMentions;
+        }
+        const model = await this.modelMetadataRepo.findOne({
+            where: { singularName: message.coModelName },
+            relations: { module: true }
+        });
         message.updatedBy = activeUser.sub;
         // Ensure updatedAt changes even for attachment-only edits.
         message.updatedAt = new Date();
@@ -189,22 +304,28 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             }
         }
 
+        await this.publishChatterMentionNotifications(savedMessage, model);
+
         return savedMessage;
     }
 
     async postMessage(postDto: PostChatterMessageDto, files: Express.Multer.File[] = []) {
+        const coModelName = lowerFirst(postDto.coModelName);
+        await this.assertRecordAccess(coModelName, postDto.coModelEntityId);
+
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.CUSTOM;
         chatterMessage.messageSubType = postDto.messageSubType || CHATTER_MESSAGE_SUBTYPE.CUSTOM;
         chatterMessage.status = postDto.status ?? CHATTER_MESSAGE_STATUS.PENDING;
         chatterMessage.messageBody = postDto.messageBody;
+        chatterMessage.messageBodyMentions = postDto.messageBodyMentions;
         chatterMessage.coModelEntityId = postDto.coModelEntityId;
-        chatterMessage.coModelName = postDto.coModelName;
+        chatterMessage.coModelName = coModelName;
         chatterMessage.modelUserKey = postDto.modelUserKey ?? null;
 
         const model = await this.modelMetadataRepo.findOne({
-            where: { singularName: lowerFirst(postDto.coModelName) },
-            relations: { userKeyField: true }
+            where: { singularName: coModelName },
+            relations: { userKeyField: true, module: true }
         });
         chatterMessage.modelDisplayName = model?.displayName ?? null;
 
@@ -233,6 +354,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 }
             }
         }
+
+        await this.publishChatterMentionNotifications(savedMessage, model);
 
         return savedMessage;
     }
@@ -682,6 +805,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
     async getChatterMessages(entityId: number, entityName: string, query: any) {
         const { limit = 25, offset = 0, populate = [], populateMedia = [], filters } = query;
         this.logHeapUsed('getChatterMessages-start');
+
+        await this.assertRecordAccess(lowerFirst(entityName), entityId);
 
         const model = await this.modelMetadataRepo.findOne({
             where: {

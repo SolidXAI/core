@@ -106,7 +106,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
         const relationBefore = event.entity?.[AUDIT_BEFORE_SNAPSHOT] ?? null;
 
-        const relationAfter = await event.manager.getRepository(event.metadata.target as any).findOne({
+        const relationAfter = await event.queryRunner.manager.getRepository(event.metadata.target as any).findOne({
             where: { id: entityId } as any,
             relations: relations as any,
         });
@@ -151,23 +151,12 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
         if (batch.length === 0) return;
 
-        if (this.shouldDeferAuditPublish()) {
-            setImmediate(() => void this.publishAuditBatch(batch));
-            return;
-        }
-
         await this.publishAuditBatch(batch);
     }
 
     afterTransactionRollback(event: { queryRunner: any }) {
         // Drop buffered payloads; the write never happened.
         this.perTxn.delete(event.queryRunner);
-    }
-
-    private shouldDeferAuditPublish(): boolean {
-        const driver = (process.env.DEFAULT_DATABASE_DRIVER ?? '').toLowerCase();
-        const poolMax = Number(process.env.DEFAULT_DATABASE_POOL_MAX ?? 20);
-        return driver === 'pglite' && Number.isFinite(poolMax) && poolMax <= 1;
     }
 
     private async publishAuditBatch(batch: AuditQueuePayload[]) {

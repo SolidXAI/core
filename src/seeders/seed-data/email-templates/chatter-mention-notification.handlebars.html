@@ -1,0 +1,200 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8" />
+    <title>You were mentioned in a note</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+
+    <style>
+        @import url("https://fonts.googleapis.com/css?family=Nunito+Sans:400,700&display=swap");
+
+        body {
+            margin: 0;
+            padding: 0;
+            background-color: #f4f4f7;
+            font-family: "Nunito Sans", Helvetica, Arial, sans-serif;
+            color: #333;
+        }
+
+        .email-wrapper {
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .logo {
+            text-align: center;
+            margin-bottom: 20px;
+        }
+
+        .logo img {
+            height: 50px;
+        }
+
+        .content-box {
+            background-color: #ffffff;
+            padding: 40px;
+            border-radius: 8px;
+        }
+
+        .title {
+            font-size: 22px;
+            margin-bottom: 10px;
+        }
+
+        .intro {
+            font-size: 16px;
+            line-height: 1.6;
+            margin: 0;
+        }
+
+        .note-box {
+            background-color: #f7f3ff;
+            border-left: 4px solid #722ED1;
+            padding: 16px;
+            border-radius: 5px;
+            margin: 24px 0;
+        }
+
+        .note-label {
+            margin: 0 0 8px;
+            font-size: 13px;
+            font-weight: 700;
+            color: #722ED1;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .note-box p {
+            margin: 0;
+            font-size: 16px;
+            line-height: 1.6;
+            white-space: pre-wrap;
+        }
+
+        .note-body {
+            font-weight: 700;
+            font-style: italic;
+            color: #2f2450;
+        }
+
+        .record-summary {
+            background-color: #fbfbfd;
+            border: 1px solid #ececf1;
+            padding: 14px;
+            border-radius: 5px;
+            margin-bottom: 24px;
+        }
+
+        .record-summary p {
+            margin: 0 0 8px;
+            font-size: 14px;
+            line-height: 1.5;
+        }
+
+        .button-container {
+            text-align: center;
+            margin-bottom: 30px;
+            margin-top: 20px;
+        }
+
+        .button {
+            display: inline-block;
+            padding: 12px 24px;
+            background-color: #722ED1;
+            color: #ffffff;
+            text-decoration: none;
+            font-weight: bold;
+            border-radius: 5px;
+        }
+
+        .footer-text {
+            font-size: 16px;
+            line-height: 1.6;
+        }
+
+        .footer {
+            text-align: center;
+            font-size: 12px;
+            color: #6b6e76;
+            margin-top: 40px;
+        }
+
+        @media only screen and (max-width: 600px) {
+            .email-wrapper {
+                width: 100% !important;
+                padding: 20px 0 !important;
+                margin: 0;
+            }
+
+            .content-box {
+                padding: 20px !important;
+                border-radius: 0;
+            }
+
+            .title {
+                font-size: 18px !important;
+            }
+
+            .button {
+                padding: 10px !important;
+                font-size: 14px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="email-wrapper">
+        {{#if companyLogoUrl}}
+        <div class="logo">
+            <img src="{{companyLogoUrl}}" alt="Company Logo" />
+        </div>
+        {{/if}}
+
+        <div class="content-box">
+            <h2 class="title">Hi {{ mentionedUserDisplayName }},</h2>
+            <p class="intro">
+                <strong>{{ mentionedByDisplayName }}</strong> mentioned you in a note on
+                <strong>{{ entityDisplayName }}</strong>{{#if entityUserKey}} <strong>{{ entityUserKey }}</strong>{{/if}}.
+            </p>
+
+            <div class="note-box">
+                <p class="note-label" style="margin: 0 0 8px; font-size: 13px; font-weight: 700; color: #722ED1; text-transform: uppercase; letter-spacing: 0.04em;">
+                    Note
+                </p>
+                <p class="note-body" style="margin: 0; font-size: 16px; line-height: 1.6; white-space: pre-wrap; font-weight: 700; font-style: italic; color: #2f2450;">
+                    {{ noteBody }}
+                </p>
+            </div>
+
+            <div class="record-summary">
+                <p><strong>Record:</strong> {{ entityDisplayName }}{{#if entityUserKey}} - {{ entityUserKey }}{{/if}}</p>
+                <p><strong>Mentioned by:</strong> {{ mentionedByDisplayName }}{{#if mentionedByEmail}} ({{ mentionedByEmail }}){{/if}}</p>
+            </div>
+
+            <p class="intro">
+                To view the note and reply to {{ mentionedByDisplayName }}, open the record below.
+            </p>
+
+            <div class="button-container">
+                <a href="{{ entityFormUrl }}" class="button" target="_blank">
+                    Open Record
+                </a>
+            </div>
+
+            <p class="intro">
+                Regards,
+                <br />
+                The {{ solidAppName }} Team.
+            </p>
+        </div>
+
+        <div class="footer">
+            © 2025 <a href="{{ solidAppWebsiteUrl }}" target="_blank">{{ solidAppName }}</a>. All rights reserved.
+        </div>
+    </div>
+</body>
+
+</html>

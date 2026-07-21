@@ -1,4 +1,5 @@
 import { forwardRef, Inject, Injectable, Logger } from '@nestjs/common';
+import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
@@ -39,7 +40,12 @@ import { User } from '../entities/user.entity';
 import { MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL } from '../dtos/create-menu-item-metadata.dto';
 import { DEFAULT_SA_PASSWORD } from '../dtos/create-user.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
-import { ADMIN_ROLE_NAME, CreateRoleMetadataDto } from 'src/dtos/create-role-metadata.dto';
+import {
+    ADMIN_ROLE_NAME,
+    ALLOWED_TO_EXPORT_ROLE_NAME,
+    ALLOWED_TO_IMPORT_ROLE_NAME,
+    CreateRoleMetadataDto,
+} from 'src/dtos/create-role-metadata.dto';
 import { CreateSavedFiltersDto } from 'src/dtos/create-saved-filters.dto';
 import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { CreateLocaleDto } from 'src/dtos/create-locale.dto';
@@ -60,6 +66,7 @@ import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
 import { ViewMetadata } from 'src/entities/view-metadata.entity';
+import { EventDetails, EventType, ModuleMetadataSeederEventPayload } from 'src/interfaces';
 
 /**
  * Central metadata seeder for both solid-core and consuming modules.
@@ -79,6 +86,11 @@ import { ViewMetadata } from 'src/entities/view-metadata.entity';
  */
 @Injectable()
 export class ModuleMetadataSeederService {
+    private readonly adminPermissionExclusionPrefixes = [
+        'ImportTransactionController.',
+        'ExportTemplateController.',
+        'ExportTransactionController.',
+    ];
     private readonly logger = new Logger(ModuleMetadataSeederService.name);
     // Stable tag used on all verbose seed timing logs so runs can be grepped quickly.
     private readonly seedTimingTag = 'SEED_TIMING';
@@ -98,6 +110,7 @@ export class ModuleMetadataSeederService {
         private readonly moduleMetadataService: ModuleMetadataService,
         @Inject(forwardRef(() => ModelMetadataService))
         private readonly modelMetadataService: ModelMetadataService,
+        private readonly eventEmitter: EventEmitter2,
         private readonly fieldMetadataService: FieldMetadataService,
         private readonly mediaStorageProviderMetadataService: MediaStorageProviderMetadataService,
         private readonly roleService: RoleMetadataService,
@@ -131,7 +144,26 @@ export class ModuleMetadataSeederService {
         let currentModule = 'global';
         let currentStep = 'bootstrap';
         let modulesToSeed: string[] | null = null;
+        const requestedModulesToSeed = Array.isArray(conf?.modulesToSeed) ? [...conf.modulesToSeed] : null;
         const shouldSeedGlobalMetadata = conf?.seedGlobalMetadata !== false;
+        const seedOptions: ModuleMetadataSeederEventPayload['options'] = {
+            modulesToSeed: requestedModulesToSeed,
+            pruneMetadata: Boolean(conf?.pruneMetadata),
+            seedGlobalMetadata: shouldSeedGlobalMetadata,
+        };
+        const seedRunId = uuidv4();
+        const startedAt = new Date();
+        const seededModuleNames: string[] = [];
+
+        this.emitModuleMetadataSeederEvent(
+            EventType.MODULE_METADATA_SEEDER_STARTED,
+            {
+                seedRunId,
+                options: seedOptions,
+                startedAt: startedAt.toISOString(),
+                currentStep,
+            },
+        );
 
         try {
             this.enablePruning = Boolean(conf?.pruneMetadata);
@@ -190,6 +222,7 @@ export class ModuleMetadataSeederService {
 
                     console.log(`▶ Seeding Metadata for Module: ${moduleMetadata.name}`);
                     this.logger.log(`Seeding Metadata for Module: ${moduleMetadata.name}`);
+                    seededModuleNames.push(moduleMetadata.name);
 
                     await this.timeOperation('module-total', async () => {
                         currentStep = 'seedMediaStorageProviders';
@@ -283,10 +316,37 @@ export class ModuleMetadataSeederService {
             // Add a console log indicating seeding is finished. This needs to be console.log so that it looks proper when this code is run via CLI.
             console.log(`✔ Seeding completed.`);
             //this.logger.log(`All Seeders finished`);
+            await this.emitModuleMetadataSeederFinishedEvent(
+                EventType.MODULE_METADATA_SEEDER_FINISHED,
+                {
+                    seedRunId,
+                    options: seedOptions,
+                    startedAt: startedAt.toISOString(),
+                    finishedAt: new Date().toISOString(),
+                    durationMs: Date.now() - startedAt.getTime(),
+                    success: true,
+                    seededModuleNames,
+                    currentStep,
+                },
+            );
 
             //FIXME: Handle displaying the created users credentials in a better way.
             // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
         } catch (error: any) {
+            await this.emitModuleMetadataSeederFinishedEvent(
+                EventType.MODULE_METADATA_SEEDER_FINISHED,
+                {
+                    seedRunId,
+                    options: seedOptions,
+                    startedAt: startedAt.toISOString(),
+                    finishedAt: new Date().toISOString(),
+                    durationMs: Date.now() - startedAt.getTime(),
+                    success: false,
+                    seededModuleNames,
+                    currentStep,
+                    errorMessage: error?.message,
+                },
+            );
             this.logSeedFailureForCli(error, {
                 moduleName: currentModule,
                 step: currentStep,
@@ -294,6 +354,31 @@ export class ModuleMetadataSeederService {
                 modulesToSeed,
             });
             throw error;
+        }
+    }
+
+    private emitModuleMetadataSeederEvent(
+        type: EventType.MODULE_METADATA_SEEDER_STARTED | EventType.MODULE_METADATA_SEEDER_FINISHED,
+        payload: ModuleMetadataSeederEventPayload,
+    ): void {
+        try {
+            this.eventEmitter.emit(type, new EventDetails<ModuleMetadataSeederEventPayload>(type, payload));
+        } catch (error: any) {
+            this.logger.warn(`Failed to emit ${type}: ${error?.message ?? error}`);
+        }
+    }
+
+    private async emitModuleMetadataSeederFinishedEvent(
+        type: EventType.MODULE_METADATA_SEEDER_FINISHED,
+        payload: ModuleMetadataSeederEventPayload,
+    ): Promise<void> {
+        try {
+            console.log(`▶ Running post-seed hooks for runId=${payload.seedRunId}`);
+            await this.eventEmitter.emitAsync(type, new EventDetails<ModuleMetadataSeederEventPayload>(type, payload));
+            console.log(`✔ Post-seed hooks completed for runId=${payload.seedRunId}`);
+        } catch (error: any) {
+            console.log(`✖ Post-seed hooks failed for runId=${payload.seedRunId}: ${error?.message ?? error}`);
+            this.logger.warn(`Failed to emit ${type}: ${error?.message ?? error}`);
         }
     }
 
@@ -498,10 +583,17 @@ export class ModuleMetadataSeederService {
 
     private async setupDefaultRolesWithPermissions() {
         this.logger.debug(`About to add all permissions to the Admin role`);
-        await this.timeOperation('role-add-all-permissions', () => this.roleService.addAllPermissionsToRole(ADMIN_ROLE_NAME), {
+        await this.timeOperation('role-add-all-permissions', () => this.roleService.addAllPermissionsToRoleExceptPrefixes(ADMIN_ROLE_NAME, this.adminPermissionExclusionPrefixes), {
             moduleName: 'global',
             component: 'default-roles',
-            serviceCall: 'roleService.addAllPermissionsToRole',
+            serviceCall: 'roleService.addAllPermissionsToRoleExceptPrefixes',
+            details: `role=${ADMIN_ROLE_NAME}`,
+        });
+
+        await this.timeOperation('attach-capability-roles-to-admin-users', () => this.attachCapabilityRolesToAdminUsers(), {
+            moduleName: 'global',
+            component: 'default-roles',
+            serviceCall: 'attachCapabilityRolesToAdminUsers',
             details: `role=${ADMIN_ROLE_NAME}`,
         });
 
@@ -512,6 +604,20 @@ export class ModuleMetadataSeederService {
 
         // this.logger.debug(`About to add all permissions to the Public role`);
         // await this.roleService.addPermissionToRole(PUBLIC_ROLE_NAME, ['SettingController.wrapSettings', 'AuthenticationController.logout']);
+    }
+
+    private async attachCapabilityRolesToAdminUsers(): Promise<void> {
+        const adminUsers = await this.userService.findUsersByRole(ADMIN_ROLE_NAME, {});
+        if (!adminUsers?.length) {
+            return;
+        }
+
+        const capabilityRoles = [ALLOWED_TO_IMPORT_ROLE_NAME, ALLOWED_TO_EXPORT_ROLE_NAME];
+        for (const adminUser of adminUsers) {
+            for (const capabilityRole of capabilityRoles) {
+                await this.userService.addRoleToUser(adminUser.username, capabilityRole);
+            }
+        }
     }
 
     private async seedSecurityRules(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
@@ -1473,7 +1579,8 @@ export class ModuleMetadataSeederService {
             updatedAt?: Date;
         };
     }) {
-        const consumingProjectName = path.basename(process.cwd());
+        const consumingProjectRoot = path.resolve(process.cwd(), '..');
+        const consumingProjectName = path.basename(consumingProjectRoot);
         const solidxDir = path.join(os.homedir(), '.solidx', consumingProjectName);
         const configPath = path.join(solidxDir, 'mcp.json');
         await fs.promises.mkdir(solidxDir, { recursive: true });
@@ -1535,8 +1642,9 @@ export class ModuleMetadataSeederService {
             const { fields: fieldsMetadata, ...modelMetaDataWithoutFields } = modelMetadata;
 
             // Load and set the parent model if it exists.
+            let parentModel: ModelMetadata | null = null;
             if (modelMetadata.isChild && modelMetadata.parentModelUserKey) {
-                const parentModel = await this.getModelByUserKeyCached(modelMetadata.parentModelUserKey, {
+                parentModel = await this.getModelByUserKeyCached(modelMetadata.parentModelUserKey, {
                     moduleName: moduleMetadata.name,
                     component: 'module-model-fields',
                     details: `parentModel=${modelMetadata.parentModelUserKey}`,
@@ -1604,7 +1712,27 @@ export class ModuleMetadataSeederService {
                 }
             }
 
-            // Now that we have created fields & model update the model to stamp the userKeyField. 
+            // If userKeyField wasn't found among this model's own fields (e.g. STI "extension" models
+            // whose userKeyField is a column inherited from the parent entity), look it up on the
+            // parent model by the same name.
+            if (!userKeyField && modelMetadata.isChild && parentModel && userKeyFieldName) {
+                const inheritedUserKeyField = await this.timeOperation('field-find-inherited-user-key', () => fieldMetadataRepo.findOne({
+                    where: {
+                        model: { id: parentModel.id },
+                        name: userKeyFieldName,
+                    },
+                }), {
+                    moduleName: moduleMetadata.name,
+                    component: 'module-model-fields',
+                    serviceCall: 'fieldMetadataRepo.findOne',
+                    details: `model=${modelMetadata.singularName} parentModel=${modelMetadata.parentModelUserKey} field=${userKeyFieldName}`,
+                });
+                if (inheritedUserKeyField) {
+                    userKeyField = inheritedUserKeyField;
+                }
+            }
+
+            // Now that we have created fields & model update the model to stamp the userKeyField.
             if (userKeyField) {
                 modelMetaDataWithoutFields['userKeyField'] = userKeyField;
                 await this.timeOperation('model-user-key-field-upsert', () => this.modelMetadataService.upsert(modelMetaDataWithoutFields), {

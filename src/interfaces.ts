@@ -89,6 +89,7 @@ export interface SettingDefinition<T = any> {
   encrypted?: boolean;
   label?: string;
   description?: string;
+  helpText?: string;
   placeholder?: string;
   group?: string;
   sortOrder?: number;
@@ -227,6 +228,8 @@ export interface ISolidDatabaseModule {
 
 export enum EventType {
   USER_REGISTERED = 'user.registered',
+  MODULE_METADATA_SEEDER_STARTED = 'module-metadata-seeder.started',
+  MODULE_METADATA_SEEDER_FINISHED = 'module-metadata-seeder.finished',
 }
 
 export class EventDetails<T> {
@@ -234,6 +237,24 @@ export class EventDetails<T> {
     public type: any,
     public payload: T,
   ) { }
+}
+
+export interface ModuleMetadataSeederOptions {
+  modulesToSeed: string[] | null;
+  pruneMetadata: boolean;
+  seedGlobalMetadata: boolean;
+}
+
+export interface ModuleMetadataSeederEventPayload {
+  seedRunId: string;
+  options: ModuleMetadataSeederOptions;
+  startedAt: string;
+  finishedAt?: string;
+  durationMs?: number;
+  success?: boolean;
+  seededModuleNames?: string[];
+  currentStep?: string;
+  errorMessage?: string;
 }
 
 export interface IExtensionUserCreationProvider<T extends User = User, TDto extends CreateUserDto = CreateUserDto> {
