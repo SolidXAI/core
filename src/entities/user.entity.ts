@@ -19,12 +19,12 @@ export class User extends CommonEntity {
     @Expose()
     username: string;
 
-    @Index()
+    @Index({ unique: true })
     @Column({ type: "varchar", nullable: true })
     @Expose()
     email: string;
 
-    @Index()
+    @Index({ unique: true })
     @Column({ type: "varchar", nullable: true })
     @Expose()
     mobile: string;
