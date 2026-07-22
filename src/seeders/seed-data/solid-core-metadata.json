@@ -7596,6 +7596,203 @@
           }
         ],
         "moduleUserKey": "solid-core"
+      },
+      {
+        "singularName": "workflowSecret",
+        "pluralName": "workflowSecrets",
+        "displayName": "Workflow Secret",
+        "description": "Stores encrypted global secrets available to workflow expressions.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_workflow_secret",
+        "userKeyFieldUserKey": "key",
+        "isChild": false,
+        "parentModelUserKey": null,
+        "isSystem": false,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "key",
+            "displayName": "Key",
+            "description": "Global secret key used in workflow expressions, for example smtp.password.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": "^[A-Za-z][A-Za-z0-9_.-]*$",
+            "regexPatternNotMatchingErrorMsg": "Secret key must start with a letter and contain only letters, numbers, dots, underscores, or hyphens.",
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": true,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "description": "Human-facing secret name shown in the admin UI.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "description": "Operational notes describing where this secret is used.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": false,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "value",
+            "displayName": "Value",
+            "description": "Secret value. The admin-supplied value is encrypted before it is stored.",
+            "type": "shortText",
+            "ormType": "text",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": true,
+            "encryptionType": "aes-256",
+            "decryptWhen": "before-transit",
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "valueType",
+            "displayName": "Value Type",
+            "description": "How the decrypted value should be coerced for workflow runtime usage.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "string",
+            "selectionStaticValues": [
+              "string:String",
+              "json:JSON",
+              "number:Number",
+              "boolean:Boolean"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "description": "Secret lifecycle status.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "active",
+            "selectionStaticValues": [
+              "active:Active",
+              "inactive:Inactive"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "lastRotatedAt",
+            "displayName": "Last Rotated At",
+            "description": "When this secret was last rotated.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "lastAccessedAt",
+            "displayName": "Last Accessed At",
+            "description": "When this secret was last resolved by workflow runtime.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          }
+        ],
+        "moduleUserKey": "solid-core"
       }
     ]
   },
@@ -8617,6 +8814,32 @@
       "viewUserKey": "workflowTriggerExecution-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "workflowTriggerExecution"
+    },
+    {
+      "displayName": "Workflow Secret List Action",
+      "name": "workflowSecret-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowSecret-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowSecret"
+    },
+    {
+      "displayName": "Workflow Secret Tree View Action",
+      "name": "workflowSecret-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowSecret-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowSecret"
     }
   ],
   "menus": [
@@ -9014,6 +9237,15 @@
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "workflow-menu-item",
       "iconName": "bolt"
+    },
+    {
+      "displayName": "Secrets",
+      "name": "workflowSecret-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "workflowSecret-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "workflow-menu-item",
+      "iconName": "key"
     }
   ],
   "views": [
@@ -19654,6 +19886,299 @@
             "attrs": {
               "name": "metadata"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowSecret-list-view",
+      "displayName": "Workflow Secret",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowSecret",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "import": false,
+          "export": false,
+          "showRowActionsAsIconOnly": true,
+          "showRowActionsInContextMenu": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "key",
+              "sortable": true,
+              "isSearchable": true,
+              "className": "font-bold"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "valueType",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status",
+              "sortable": true,
+              "isSearchable": true,
+              "viewWidget": "PillWidget",
+              "pillColorMap": {
+                "active": "#dcfce7",
+                "inactive": "#e5e7eb",
+                "default": "#e5e7eb"
+              }
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "lastRotatedAt",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "lastAccessedAt",
+              "sortable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowSecret-tree-view",
+      "displayName": "Workflow Secret",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowSecret",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "key"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "valueType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "lastRotatedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "lastAccessedAt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowSecret-form-view",
+      "displayName": "Workflow Secret",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowSecret",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Workflow Secret",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "workflow-secret-notebook"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-secret-basic-info",
+                      "label": "Basic Info"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-secret-identity",
+                          "label": "Identity",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "key"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "displayName"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "description"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-secret-value",
+                          "label": "Secret",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "value"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "valueType"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "status"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-secret-usage",
+                      "label": "Usage"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-secret-usage-group",
+                          "label": "Usage",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "lastRotatedAt"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "lastAccessedAt"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
           }
         ]
       }

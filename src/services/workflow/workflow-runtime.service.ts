@@ -15,6 +15,7 @@ import { WorkflowExecutionWriterService } from './workflow-execution-writer.serv
 import { WorkflowExpressionService } from './workflow-expression.service';
 import { WorkflowDefinitionValidatorService } from './workflow-definition-validator.service';
 import { WorkflowNodeRegistryService } from './workflow-node-registry.service';
+import { WorkflowSecretService } from '../workflow-secret.service';
 import YAML from 'yaml';
 
 @Injectable()
@@ -28,6 +29,7 @@ export class WorkflowRuntimeService {
     private readonly expression: WorkflowExpressionService,
     private readonly writer: WorkflowExecutionWriterService,
     private readonly validator: WorkflowDefinitionValidatorService,
+    private readonly workflowSecretService: WorkflowSecretService,
   ) {}
 
   async executeDefinitionById(
@@ -62,16 +64,22 @@ export class WorkflowRuntimeService {
 
     const definitionDsl = this.assertDefinitionYaml(definition.definitionYaml);
     this.validator.validate(definitionDsl);
-    const execution = await this.writer.createExecution(definition, request);
+    const secrets = await this.workflowSecretService.getWorkflowSecretsContext();
+    const input = this.resolveWorkflowInput(definitionDsl, request, secrets);
+    const variables = this.resolveWorkflowVariables(definitionDsl, request, input, secrets);
+    const effectiveRequest: WorkflowExecutionRequest = {
+      ...request,
+      input,
+      variables,
+    };
+    const execution = await this.writer.createExecution(definition, effectiveRequest);
     const nodeCount = this.countNodes(definitionDsl.nodes);
     const outputs: Record<string, any> = {};
     const runtimeContext: WorkflowRuntimeContext = {
       execution,
-      input: request.input ?? {},
-      variables: {
-        ...(definitionDsl.variables ?? {}),
-        ...(request.variables ?? {}),
-      },
+      input,
+      variables,
+      secrets,
       outputs,
       counters: {
         step: 0,
@@ -136,6 +144,71 @@ export class WorkflowRuntimeService {
 
       return this.toResponse(failed);
     }
+  }
+
+  private resolveWorkflowInput(
+    definitionDsl: WorkflowDefinitionDsl,
+    request: WorkflowExecutionRequest,
+    secrets: Record<string, any>,
+  ): Record<string, any> {
+    const requestedInput = request.input ?? {};
+    const defaultInput = Object.entries(definitionDsl.inputs ?? {}).reduce(
+      (acc, [key, inputDefinition]) => {
+        if (
+          inputDefinition &&
+          typeof inputDefinition === 'object' &&
+          !Array.isArray(inputDefinition) &&
+          Object.prototype.hasOwnProperty.call(inputDefinition, 'default')
+        ) {
+          acc[key] = inputDefinition.default;
+          return acc;
+        }
+
+        if (
+          inputDefinition === null ||
+          inputDefinition === undefined ||
+          (typeof inputDefinition === 'object' && !Array.isArray(inputDefinition))
+        ) {
+          return acc;
+        }
+
+        acc[key] = inputDefinition;
+        return acc;
+      },
+      {} as Record<string, any>,
+    );
+    const rawInput = {
+      ...defaultInput,
+      ...requestedInput,
+    };
+
+    return this.expression.interpolate(rawInput, {
+      execution: undefined as any,
+      input: rawInput,
+      variables: definitionDsl.variables ?? {},
+      secrets,
+      outputs: {},
+    });
+  }
+
+  private resolveWorkflowVariables(
+    definitionDsl: WorkflowDefinitionDsl,
+    request: WorkflowExecutionRequest,
+    input: Record<string, any>,
+    secrets: Record<string, any>,
+  ): Record<string, any> {
+    const rawVariables = {
+      ...(definitionDsl.variables ?? {}),
+      ...(request.variables ?? {}),
+    };
+
+    return this.expression.interpolate(rawVariables, {
+      execution: undefined as any,
+      input,
+      variables: rawVariables,
+      secrets,
+      outputs: {},
+    });
   }
 
   private async runNodes(

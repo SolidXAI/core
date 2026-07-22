@@ -883,6 +883,9 @@ export interface WorkflowRuntimeContext {
   /** Workflow variables from DSL plus request-time overrides. */
   variables: Record<string, any>;
 
+  /** Decrypted global secrets available to workflow expressions. */
+  secrets?: Record<string, any>;
+
   /** Outputs keyed by node id. */
   outputs: Record<string, any>;
 

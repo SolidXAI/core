@@ -394,12 +394,14 @@ import { WorkflowStepExecution } from './entities/workflow-step-execution.entity
 import { WorkflowExecutionLog } from './entities/workflow-execution-log.entity';
 import { WorkflowExecutionArtifact } from './entities/workflow-execution-artifact.entity';
 import { WorkflowTriggerExecution } from './entities/workflow-trigger-execution.entity';
+import { WorkflowSecret } from './entities/workflow-secret.entity';
 import { WorkflowDefinitionController } from './controllers/workflow-definition.controller';
 import { WorkflowExecutionController } from './controllers/workflow-execution.controller';
 import { WorkflowStepExecutionController } from './controllers/workflow-step-execution.controller';
 import { WorkflowExecutionLogController } from './controllers/workflow-execution-log.controller';
 import { WorkflowExecutionArtifactController } from './controllers/workflow-execution-artifact.controller';
 import { WorkflowTriggerExecutionController } from './controllers/workflow-trigger-execution.controller';
+import { WorkflowSecretController } from './controllers/workflow-secret.controller';
 import { WorkflowDefinitionService } from './services/workflow-definition.service';
 import { WorkflowDefinitionMetadataSyncService } from './services/workflow/workflow-definition-metadata-sync.service';
 import { WorkflowExecutionService } from './services/workflow-execution.service';
@@ -407,12 +409,14 @@ import { WorkflowStepExecutionService } from './services/workflow-step-execution
 import { WorkflowExecutionLogService } from './services/workflow-execution-log.service';
 import { WorkflowExecutionArtifactService } from './services/workflow-execution-artifact.service';
 import { WorkflowTriggerExecutionService } from './services/workflow-trigger-execution.service';
+import { WorkflowSecretService } from './services/workflow-secret.service';
 import { WorkflowDefinitionRepository } from './repository/workflow-definition.repository';
 import { WorkflowExecutionRepository } from './repository/workflow-execution.repository';
 import { WorkflowStepExecutionRepository } from './repository/workflow-step-execution.repository';
 import { WorkflowExecutionLogRepository } from './repository/workflow-execution-log.repository';
 import { WorkflowExecutionArtifactRepository } from './repository/workflow-execution-artifact.repository';
 import { WorkflowTriggerExecutionRepository } from './repository/workflow-trigger-execution.repository';
+import { WorkflowSecretRepository } from './repository/workflow-secret.repository';
 import { WorkflowDefinitionValidatorService } from './services/workflow/workflow-definition-validator.service';
 import { WorkflowExecutionWriterService } from './services/workflow/workflow-execution-writer.service';
 import { WorkflowExpressionService } from './services/workflow/workflow-expression.service';
@@ -485,6 +489,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
       WorkflowExecutionLog,
       WorkflowExecutionArtifact,
       WorkflowTriggerExecution,
+      WorkflowSecret,
     ]),
 
     CacheModule.registerAsync(CacheManagerOptions),
@@ -577,6 +582,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowExecutionLogController,
     WorkflowExecutionArtifactController,
     WorkflowTriggerExecutionController,
+    WorkflowSecretController,
   ],
   providers: [
     {
@@ -885,6 +891,8 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowExecutionArtifactRepository,
     WorkflowTriggerExecutionService,
     WorkflowTriggerExecutionRepository,
+    WorkflowSecretService,
+    WorkflowSecretRepository,
     WorkflowInvocationService,
     WorkflowRuntimeService,
     WorkflowExecutionWriterService,

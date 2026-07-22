@@ -133,6 +133,7 @@ export class WorkflowExpressionService implements WorkflowExpressionResolver {
       inputs: context.input,
       input: context.input,
       variables: context.variables,
+      secrets: context.secrets,
       outputs: context.outputs,
       execution: context.execution,
       node: context.node,
