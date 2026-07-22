@@ -11,10 +11,10 @@ import { Readable } from "stream";
 import { MediaRepository } from "src/repository/media.repository";
 import { MediaDownloadUrlService } from "src/services/media-download-url.service";
 import {
-    buildMediaRecordCreateInput,
-    buildStoredMediaFileName,
-    getEffectiveS3Region,
-    resolveStoredMediaIsPublic,
+buildMediaRecordCreateInput,
+buildStoredMediaFileName,
+getEffectiveS3Region,
+resolveMediaIsPublic,
 } from "src/services/media-storage.utils";
 
 @Injectable()
@@ -54,7 +54,6 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
                     fileSize,
                 })
             ) as unknown as Media;
-            mediaEntity.isPublic = resolveStoredMediaIsPublic(mediaEntity.isPublic, storageProvider);
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         }
@@ -71,10 +70,9 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
         // Add the full URL to the media
         for (const m of media) {
             const storageMeta = m.mediaStorageProviderMetadata;
-            const isPublic = resolveStoredMediaIsPublic(m.isPublic, storageMeta);
-            m.isPublic = isPublic;
+            const isPublic = resolveMediaIsPublic(storageMeta);
             m['_full_url'] = isPublic === false
-                ? await this.mediaDownloadUrlService.resolveDownloadUrl(m.id, m.relativeUri, storageMeta)
+                ? await this.mediaDownloadUrlService.getPrivateUrl(m.id, m.relativeUri, storageMeta)
                 : await this.s3FileService.getUrl(
                     `${storageMeta.bucketName}:${m.relativeUri}`,
                     { region: getEffectiveS3Region(this.configService, storageMeta.region), expiresIn: 0 },
@@ -116,7 +114,6 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
                     originalFileName: file.originalname,
                 })
             ) as unknown as Media;
-            mediaEntity.isPublic = resolveStoredMediaIsPublic(mediaEntity.isPublic, storageProvider);
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         };
