@@ -46,16 +46,28 @@ export class ParallelNode implements WorkflowNodeHandler {
 
     const taskResults = await Promise.all(
       childTasks.map(async (task) => {
-        const outputs = {};
+        const inheritedOutputs = context.outputs ?? {};
+        const inheritedOutputKeys = new Set(Object.keys(inheritedOutputs));
+        const outputs = { ...inheritedOutputs };
 
         await context.runNodes([task], {
           outputs,
         });
 
+        const branchOutputs = Object.entries(outputs).reduce(
+          (acc, [key, value]) => {
+            if (!inheritedOutputKeys.has(key)) {
+              acc[key] = value;
+            }
+            return acc;
+          },
+          {} as Record<string, any>,
+        );
+
         return {
           id: task.id,
           name: task.name,
-          outputs,
+          outputs: branchOutputs,
         };
       }),
     );

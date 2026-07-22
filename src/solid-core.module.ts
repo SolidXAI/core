@@ -401,6 +401,7 @@ import { WorkflowExecutionLogController } from './controllers/workflow-execution
 import { WorkflowExecutionArtifactController } from './controllers/workflow-execution-artifact.controller';
 import { WorkflowTriggerExecutionController } from './controllers/workflow-trigger-execution.controller';
 import { WorkflowDefinitionService } from './services/workflow-definition.service';
+import { WorkflowDefinitionMetadataSyncService } from './services/workflow/workflow-definition-metadata-sync.service';
 import { WorkflowExecutionService } from './services/workflow-execution.service';
 import { WorkflowStepExecutionService } from './services/workflow-step-execution.service';
 import { WorkflowExecutionLogService } from './services/workflow-execution-log.service';
@@ -424,6 +425,7 @@ import { HttpRequestNode } from './services/workflow/nodes/http-request.node';
 import { IfNode } from './services/workflow/nodes/if.node';
 import { LogWriteNode } from './services/workflow/nodes/log-write.node';
 import { ParallelNode } from './services/workflow/nodes/parallel.node';
+import { RuntimePythonNode } from './services/workflow/nodes/runtime-python.node';
 import { SequentialNode } from './services/workflow/nodes/sequential.node';
 import {
   SolidXCreateNode,
@@ -871,6 +873,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     DashboardUserLayoutService,
     DashboardUserLayoutRepository,
     WorkflowDefinitionService,
+    WorkflowDefinitionMetadataSyncService,
     WorkflowDefinitionRepository,
     WorkflowExecutionService,
     WorkflowExecutionRepository,
@@ -894,6 +897,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     IfNode,
     ForEachNode,
     ParallelNode,
+    RuntimePythonNode,
     SequentialNode,
     SwitchNode,
     SolidXLoginNode,

@@ -14,6 +14,7 @@ import {
 import { WorkflowDefinitionValidatorService } from './workflow/workflow-definition-validator.service';
 import { CronExpressionParser } from 'cron-parser';
 import YAML from 'yaml';
+import { WorkflowDefinitionMetadataSyncService } from './workflow/workflow-definition-metadata-sync.service';
 
 @Injectable()
 export class WorkflowDefinitionService extends CRUDService<WorkflowDefinition>{
@@ -24,10 +25,83 @@ export class WorkflowDefinitionService extends CRUDService<WorkflowDefinition>{
     readonly moduleRef: ModuleRef,
     private readonly workflowRuntimeService: WorkflowRuntimeService,
     private readonly workflowDefinitionValidator: WorkflowDefinitionValidatorService,
+    private readonly workflowDefinitionMetadataSyncService: WorkflowDefinitionMetadataSyncService,
       
  ) {
    super(entityManager, repo, 'workflowDefinition', 'solid-core', moduleRef);
  }
+
+  async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<WorkflowDefinition> {
+    const savedDefinition = await super.create(createDto, files, solidRequestContext);
+    const populatedDefinition = await this.loadDefinitionWithModule(savedDefinition.id);
+    await this.workflowDefinitionMetadataSyncService.upsertWorkflowDefinition(populatedDefinition);
+    return savedDefinition;
+  }
+
+  async insertMany(createDtos: any[], filesArray: Express.Multer.File[][] = [], solidRequestContext: any = {}): Promise<WorkflowDefinition[]> {
+    const savedDefinitions = await super.insertMany(createDtos, filesArray, solidRequestContext);
+    for (const savedDefinition of savedDefinitions) {
+      const populatedDefinition = await this.loadDefinitionWithModule(savedDefinition.id);
+      await this.workflowDefinitionMetadataSyncService.upsertWorkflowDefinition(populatedDefinition);
+    }
+    return savedDefinitions;
+  }
+
+  async update(
+    id: number,
+    updateDto: any,
+    files: Express.Multer.File[] = [],
+    isPartialUpdate = false,
+    solidRequestContext: any = {},
+    isUpdate = false,
+  ): Promise<WorkflowDefinition> {
+    const previousDefinition = await this.loadDefinitionWithModule(id);
+    const savedDefinition = await super.update(id, updateDto, files, isPartialUpdate, solidRequestContext, isUpdate);
+    const populatedDefinition = await this.loadDefinitionWithModule(savedDefinition.id);
+    await this.workflowDefinitionMetadataSyncService.upsertWorkflowDefinition(
+      populatedDefinition,
+      previousDefinition,
+    );
+    return savedDefinition;
+  }
+
+  async delete(id: number, solidRequestContext: any = {}) {
+    const previousDefinition = await this.loadDefinitionWithModule(id);
+    const result = await super.delete(id, solidRequestContext);
+    await this.workflowDefinitionMetadataSyncService.removeWorkflowDefinition(previousDefinition);
+    return result;
+  }
+
+  async deleteMany(ids: number[], solidRequestContext: any = {}): Promise<any> {
+    const previousDefinitions = await this.entityManager.find(WorkflowDefinition, {
+      where: ids.map((id) => ({ id })) as any,
+      relations: ['moduleMetadata'],
+    });
+    const result = await super.deleteMany(ids, solidRequestContext);
+    for (const previousDefinition of previousDefinitions) {
+      await this.workflowDefinitionMetadataSyncService.removeWorkflowDefinition(previousDefinition);
+    }
+    return result;
+  }
+
+  async recover(id: number, solidRequestContext: any = {}) {
+    const result = await super.recover(id, solidRequestContext);
+    const populatedDefinition = await this.loadDefinitionWithModule(id);
+    await this.workflowDefinitionMetadataSyncService.upsertWorkflowDefinition(populatedDefinition);
+    return result;
+  }
+
+  async recoverMany(ids: number[], solidRequestContext: any = {}) {
+    const result = await super.recoverMany(ids, solidRequestContext);
+    const recoveredDefinitions = await this.entityManager.find(WorkflowDefinition, {
+      where: ids.map((id) => ({ id })) as any,
+      relations: ['moduleMetadata'],
+    });
+    for (const recoveredDefinition of recoveredDefinitions) {
+      await this.workflowDefinitionMetadataSyncService.upsertWorkflowDefinition(recoveredDefinition);
+    }
+    return result;
+  }
 
   validateWorkflowDefinition(definitionYaml: string) {
     const definition = this.parseDefinitionYaml(definitionYaml);
@@ -159,6 +233,20 @@ export class WorkflowDefinitionService extends CRUDService<WorkflowDefinition>{
     return this.entityManager.findOne(WorkflowDefinition, {
       where: { key: trimmedReference } as any,
     });
+  }
+
+  private async loadDefinitionWithModule(id: number): Promise<WorkflowDefinition> {
+    const definition = await this.entityManager.findOne(WorkflowDefinition, {
+      where: { id } as any,
+      relations: ['moduleMetadata'],
+      withDeleted: true,
+    });
+
+    if (!definition) {
+      throw new BadRequestException(`Workflow definition ${id} not found.`);
+    }
+
+    return definition;
   }
 
   private isScheduleTriggerDue(

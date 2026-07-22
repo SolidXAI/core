@@ -81,6 +81,26 @@ import {
       context: {},
       metadata: {},
     },
+    configurationLayout: {
+      type: 'tabs',
+      tabs: [
+        {
+          key: 'message',
+          label: 'Message',
+          groups: ['Message'],
+        },
+        {
+          key: 'context',
+          label: 'Context',
+          fields: ['context'],
+        },
+        {
+          key: 'metadata',
+          label: 'Metadata',
+          fields: ['metadata'],
+        },
+      ],
+    },
     configurationFields: [
       {
         key: 'level',
@@ -108,6 +128,14 @@ import {
         expressionAllowed: true,
         group: 'Advanced',
         widgetHint: 'yaml-editor',
+        uiSchema: {
+          layout: {
+            width: 'full',
+          },
+          editor: {
+            height: 'min(420px, calc(90vh - 330px))',
+          },
+        },
       },
       {
         key: 'metadata',
@@ -117,6 +145,14 @@ import {
         expressionAllowed: true,
         group: 'Advanced',
         widgetHint: 'yaml-editor',
+        uiSchema: {
+          layout: {
+            width: 'full',
+          },
+          editor: {
+            height: 'min(420px, calc(90vh - 330px))',
+          },
+        },
       },
     ],
     outputs: [
@@ -158,7 +194,7 @@ import {
     iconBackgroundColor: '#e0f2fe',
     iconBorderColor: '#bae6fd',
     defaultEditorMode: 'schema',
-    modalSize: 'lg',
+    modalSize: 'xl',
     layoutHints: {
       preferredPanel: 'flow',
       groupOrder: ['Message', 'Advanced'],

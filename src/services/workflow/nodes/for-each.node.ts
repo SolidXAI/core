@@ -15,18 +15,22 @@ import {
   tags: ['loop', 'iteration'],
   authoring: {
     defaultConfiguration: {
-      items: [],
+      items: '',
     },
     configurationFields: [
       {
         key: 'items',
         label: 'Items',
         description: 'Array or expression resolving to an array to iterate over.',
-        valueType: 'array',
+        valueType: 'string',
         required: true,
         expressionAllowed: true,
-        widgetHint: 'yaml-editor',
         group: 'General',
+        uiSchema: {
+          layout: {
+            width: 'full',
+          },
+        },
       },
     ],
     childSlots: [
@@ -71,7 +75,9 @@ export class ForEachNode implements WorkflowNodeHandler {
     const iterations = [];
 
     for (let index = 0; index < items.length; index++) {
-      const iterationOutputs = {};
+      const inheritedOutputs = context.outputs ?? {};
+      const inheritedOutputKeys = new Set(Object.keys(inheritedOutputs));
+      const iterationOutputs = { ...inheritedOutputs };
 
       await context.runNodes(childNodes, {
         item: items[index],
@@ -79,10 +85,20 @@ export class ForEachNode implements WorkflowNodeHandler {
         outputs: iterationOutputs,
       });
 
+      const childOutputs = Object.entries(iterationOutputs).reduce(
+        (acc, [key, value]) => {
+          if (!inheritedOutputKeys.has(key)) {
+            acc[key] = value;
+          }
+          return acc;
+        },
+        {} as Record<string, any>,
+      );
+
       iterations.push({
         index,
         item: items[index],
-        outputs: iterationOutputs,
+        outputs: childOutputs,
       });
     }
 

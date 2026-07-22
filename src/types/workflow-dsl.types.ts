@@ -382,6 +382,9 @@ export interface WorkflowNodeAuthoringMetadata {
   /** Schema-driven editable fields that write to `node.configuration`. */
   configurationFields?: WorkflowNodeConfigurationFieldDefinition[];
 
+  /** Optional higher-level layout for configuration fields. */
+  configurationLayout?: WorkflowNodeConfigurationLayoutDefinition;
+
   /** Child collections owned by this node when `kind: control`. */
   childSlots?: WorkflowNodeChildSlotDefinition[];
 
@@ -411,6 +414,30 @@ export interface WorkflowNodeAuthoringMetadata {
 
   /** Extra searchable text for palette and docs discovery. */
   searchableText?: string[];
+}
+
+/** Declarative layout for schema-driven node configuration fields. */
+export interface WorkflowNodeConfigurationLayoutDefinition {
+  /** Layout strategy. Only `tabs` is currently implemented by the generic UI. */
+  type: 'tabs';
+
+  /** Tab definitions. Fields not assigned to a tab should fall back to `Other`. */
+  tabs: WorkflowNodeConfigurationLayoutTabDefinition[];
+}
+
+/** One configuration tab. Tabs may include explicit fields and/or whole groups. */
+export interface WorkflowNodeConfigurationLayoutTabDefinition {
+  /** Stable tab key. */
+  key: string;
+
+  /** Human label shown in the editor. */
+  label: string;
+
+  /** Field keys or field paths to include in this tab. */
+  fields?: string[];
+
+  /** Group labels to include in this tab. */
+  groups?: string[];
 }
 
 /**

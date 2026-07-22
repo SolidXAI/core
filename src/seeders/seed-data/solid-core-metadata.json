@@ -8476,6 +8476,19 @@
       "modelUserKey": "workflowExecution"
     },
     {
+      "displayName": "Workflow Execution Detail Action",
+      "name": "workflowExecution-detail-action",
+      "type": "custom",
+      "domain": "",
+      "context": "{}",
+      "customComponent": "/admin/core/solid-core/workflow-execution/detail",
+      "customIsModal": false,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowExecution-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecution"
+    },
+    {
       "displayName": "Workflow Execution Tree View Action",
       "name": "workflowExecution-tree-action",
       "type": "solid",
@@ -17244,73 +17257,98 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true
+          "editAction": "workflowExecution-detail-action",
+          "delete": true,
+          "import": false,
+          "export": false,
+          "showRowActionsAsIconOnly": true,
+          "showRowActionsInContextMenu": false
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id"
+              "name": "id",
+              "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "executionIdentifier"
+              "name": "executionIdentifier",
+              "sortable": true,
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "workflowDefinition"
+              "name": "workflowDefinition",
+              "sortable": true,
+              "isSearchable": true,
+              "searchField": "workflowDefinition.displayName"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "workflowKey"
+              "name": "workflowDisplayName",
+              "className": "font-bold",
+              "sortable": true,
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "workflowDisplayName"
+              "name": "status",
+              "sortable": true,
+              "isSearchable": true,
+              "viewWidget": "PillWidget",
+              "pillColorMap": {
+                "created": "#e5e7eb",
+                "running": "#dbeafe",
+                "success": "#dcfce7",
+                "failed": "#fee2e2",
+                "cancelled": "#fef3c7",
+                "default": "#e5e7eb"
+              }
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "status"
+              "name": "triggerType",
+              "sortable": true,
+              "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "triggerType"
+              "name": "startedAt",
+              "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "startedAt"
+              "name": "finishedAt",
+              "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "finishedAt"
+              "name": "durationMs",
+              "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "durationMs"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "errorSummary"
+              "name": "errorSummary",
+              "isSearchable": true
             }
           }
         ]
@@ -20110,5 +20148,81 @@
       }
     }
   ],
-  "savedFilters": []
+  "savedFilters": [
+    {
+      "name": "Workflow Executions: Created",
+      "description": "Show workflow executions with Created status.",
+      "modelUserKey": "workflowExecution",
+      "viewUserKey": "workflowExecution-list-view",
+      "filterQueryJson": {
+        "$or": [
+          {
+            "status": {
+              "$eq": "created"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Workflow Executions: Running",
+      "description": "Show workflow executions with Running status.",
+      "modelUserKey": "workflowExecution",
+      "viewUserKey": "workflowExecution-list-view",
+      "filterQueryJson": {
+        "$or": [
+          {
+            "status": {
+              "$eq": "running"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Workflow Executions: Success",
+      "description": "Show workflow executions with Success status.",
+      "modelUserKey": "workflowExecution",
+      "viewUserKey": "workflowExecution-list-view",
+      "filterQueryJson": {
+        "$or": [
+          {
+            "status": {
+              "$eq": "success"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Workflow Executions: Failed",
+      "description": "Show workflow executions with Failed status.",
+      "modelUserKey": "workflowExecution",
+      "viewUserKey": "workflowExecution-list-view",
+      "filterQueryJson": {
+        "$or": [
+          {
+            "status": {
+              "$eq": "failed"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Workflow Executions: Cancelled",
+      "description": "Show workflow executions with Cancelled status.",
+      "modelUserKey": "workflowExecution",
+      "viewUserKey": "workflowExecution-list-view",
+      "filterQueryJson": {
+        "$or": [
+          {
+            "status": {
+              "$eq": "cancelled"
+            }
+          }
+        ]
+      }
+    }
+  ]
 }

@@ -432,6 +432,7 @@ export * from './subscribers/audit.subscriber'
 
 export * from './transformers/array-transformer'
 export * from './transformers/boolean-transformer'
+export * from './transformers/empty-string-to-null-transformer'
 export * from './transformers/integer-transformer'
 export { default as datetimeTransformer } from './transformers/datetime-transformer'
 export * from './transformers/typeorm/local-date-time-transformer'
