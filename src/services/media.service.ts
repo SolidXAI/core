@@ -183,6 +183,19 @@ export class MediaService extends CRUDService<Media> {
           fileName,
           mimeType,
         };
+      case MediaStorageProviderType.AwsS3:
+        if (!loadedMedia.mediaStorageProviderMetadata.bucketName) {
+          throw new Error(`AwsS3 media storage provider is missing bucketName for media id ${media.id}`);
+        }
+
+        return {
+          stream: await this.s3FileService.readStream(
+            `${loadedMedia.mediaStorageProviderMetadata.bucketName}:${loadedMedia.relativeUri}`,
+            { region: getEffectiveS3Region(this.configService, loadedMedia.mediaStorageProviderMetadata.region) },
+          ),
+          fileName,
+          mimeType,
+        };
       default:
         throw new Error(`Unsupported media storage provider type ${loadedMedia.mediaStorageProviderMetadata.type}`);
     }
