@@ -1,8 +1,12 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
 import { SettingService } from 'src/services/setting.service';
 import type { SolidCoreSetting } from 'src/services/settings/default-settings-provider.service';
+import { getEffectiveS3Region } from './media-storage.utils';
+import { ConfigService } from '@nestjs/config';
+import { S3FileService } from './file';
 
 export const MEDIA_DOWNLOAD_TOKEN_AUDIENCE = 'media-download';
 const DEFAULT_SIGNED_URL_EXPIRY_MINUTES = 60;
@@ -17,7 +21,9 @@ export class MediaDownloadUrlService {
 
   constructor(
     private readonly jwtService: JwtService,
+    private readonly s3FileService: S3FileService,
     private readonly settingService: SettingService,
+    private readonly configService: ConfigService,
   ) { }
 
   async resolveDownloadUrl(
@@ -26,8 +32,16 @@ export class MediaDownloadUrlService {
     storageProvider?: MediaStorageProviderMetadata,
   ): Promise<string> {
     const expiryMinutes = storageProvider?.signedUrlExpiry ?? DEFAULT_SIGNED_URL_EXPIRY_MINUTES;
-    
 
+      if ((storageProvider?.type as MediaStorageProviderType) === MediaStorageProviderType.AwsS3) {
+      if (storageProvider?.bucketName) {
+        return this.s3FileService.getUrl(
+          `${storageProvider.bucketName}:${relativeUri}`,
+          { region: getEffectiveS3Region(this.configService, storageProvider.region), expiresIn: expiryMinutes * 60 },
+        );
+      }
+      this.logger.warn(`Media id ${mediaId}: AwsS3 provider missing bucketName; falling back to app-hosted token URL`);
+    }
     // Filesystem (or misconfigured S3) has no native presigned-URL mechanism, so mint our
     // own short-lived token and embed it in the download URL - the token alone authorizes
     // the request (see MediaSignedUrlGuard), so it works in a plain <img src> with no
