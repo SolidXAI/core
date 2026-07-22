@@ -212,6 +212,7 @@ export class AuthenticationService {
         effectiveDto,
         entity,
         provider.repo as Repository<User>,
+        true,
       );
     }
     return this.performSignUp(signUpDto, new User(), this.userRepository);
@@ -221,6 +222,7 @@ export class AuthenticationService {
     signUpDto: SignUpDto,
     entity: T,
     repo: Repository<T>,
+    preferEntityApiKeyFlag: boolean = false,
   ): Promise<T> {
     try {
       const onForcePasswordChange =
@@ -241,7 +243,10 @@ export class AuthenticationService {
         onForcePasswordChange,
       );
       const privateDto = signUpDto as { isAllowedToGenerateApiKeys?: boolean };
-      if (privateDto.isAllowedToGenerateApiKeys !== undefined) {
+      if (
+        !preferEntityApiKeyFlag &&
+        privateDto.isAllowedToGenerateApiKeys !== undefined
+      ) {
         user.isAllowedToGenerateApiKeys = privateDto.isAllowedToGenerateApiKeys;
       }
       const savedUser = await repo.save(user);
