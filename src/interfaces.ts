@@ -344,6 +344,7 @@ export interface QueuesModuleOptions {
 
 export type MediaWithFullUrl = Media & {
   _full_url: string;
+  _download_url?: string;
 };
 
 

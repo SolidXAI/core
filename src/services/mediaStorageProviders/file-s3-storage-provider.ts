@@ -73,6 +73,7 @@ export class FileS3StorageProvider<T> implements MediaStorageProvider<T> {
             const storageMeta = m.mediaStorageProviderMetadata;
             const isPublic = resolveStoredMediaIsPublic(m.isPublic, storageMeta);
             m.isPublic = isPublic;
+            m['_download_url'] = await this.mediaDownloadUrlService.resolveDownloadUrl(m.id, m.relativeUri, storageMeta);
             m['_full_url'] = isPublic === false
                 ? await this.mediaDownloadUrlService.resolveDownloadUrl(m.id, m.relativeUri, storageMeta)
                 : await this.s3FileService.getUrl(

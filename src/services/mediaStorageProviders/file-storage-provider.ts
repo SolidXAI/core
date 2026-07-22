@@ -36,6 +36,7 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
             const storageProvider = this.resolveMediaStorageProvider(m, mediaFieldMetadata);
             const isPublic = resolveStoredMediaIsPublic(m.isPublic, storageProvider);
             m.isPublic = isPublic;
+            m['_download_url'] = await this.mediaDownloadUrlService.resolveDownloadUrl(m.id, m.relativeUri, storageProvider);
             m['_full_url'] = isPublic === false
                 ? await this.mediaDownloadUrlService.resolveDownloadUrl(m.id, m.relativeUri, storageProvider)
                 : await this.fileService.getUrl(buildDiskMediaPath(m.relativeUri, this.settingService, storageProvider));

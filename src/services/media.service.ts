@@ -242,6 +242,11 @@ export class MediaService extends CRUDService<Media> {
   private async decorateMediaRecord(media: Media): Promise<void> {
     const mediaStorageProvider = await this.resolveMediaStorageProvider(media);
     media.isPublic = resolveStoredMediaIsPublic(media.isPublic, mediaStorageProvider);
+    media['_download_url'] = await this.mediaDownloadUrlService.resolveDownloadUrl(
+      media.id,
+      media.relativeUri,
+      mediaStorageProvider,
+    );
     media.relativeUri = await this.resolveMediaUrl(media, mediaStorageProvider);
   }
 
