@@ -27,11 +27,9 @@ export function buildStoredMediaFileName(file: Pick<Express.Multer.File, 'filena
 export function buildDiskMediaPath(fileName: string,settingService: Pick<SettingService, 'getConfigValue'>,storageProvider?: Pick<MediaStorageProviderMetadata, 'localPath' | 'isPublic'>,): string {
   const publicBase = settingService.getConfigValue<SolidCoreSetting>('fileStorageDir') || DEFAULT_MEDIA_FILE_STORAGE_DIR;
   const privateBase = `${publicBase}-private`;
-  const localPath = storageProvider?.localPath;
-  const isUsingLegacyDefaultPath = localPath === publicBase || localPath === privateBase || localPath === privateBase;
-  const providerBase = (!localPath || isUsingLegacyDefaultPath)
-    ? (storageProvider?.isPublic === false ? privateBase : publicBase)
-    : localPath;
+  // const localPath = storageProvider?.localPath;
+  // const isUsingLegacyDefaultPath = localPath === publicBase || localPath === privateBase || localPath === privateBase;
+  const providerBase = storageProvider?.isPublic === false ? privateBase : publicBase
 
   if ( path.isAbsolute(fileName) || fileName.startsWith(`${publicBase}/`) || fileName.startsWith(`${privateBase}/`) || (!!storageProvider?.localPath && fileName.startsWith(`${storageProvider.localPath}/`))) {
     return fileName;
