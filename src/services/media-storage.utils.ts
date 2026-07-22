@@ -33,7 +33,7 @@ export function buildDiskMediaPath(fileName: string,settingService: Pick<Setting
     ? (storageProvider?.isPublic === false ? privateBase : publicBase)
     : localPath;
 
-  if ( path.isAbsolute(fileName) || fileName.startsWith(`${publicBase}/`) || fileName.startsWith(`${privateBase}/`) || fileName.startsWith(`${privateBase}/`) || (!!storageProvider?.localPath && fileName.startsWith(`${storageProvider.localPath}/`))) {
+  if ( path.isAbsolute(fileName) || fileName.startsWith(`${publicBase}/`) || fileName.startsWith(`${privateBase}/`) || (!!storageProvider?.localPath && fileName.startsWith(`${storageProvider.localPath}/`))) {
     return fileName;
   }
 
