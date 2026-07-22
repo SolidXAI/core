@@ -20,7 +20,7 @@ import { FieldMetadataRepository } from 'src/repository/field-metadata.repositor
 import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
 import { MediaRepository } from 'src/repository/media.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
-import { buildDiskMediaPath, buildStoredMediaFileName, getEffectiveS3Region, resolveStoredMediaIsPublic, } from 'src/services/media-storage.utils';
+import { buildDiskMediaPath, buildStoredMediaFileName, getEffectiveS3Region, resolveMediaIsPublic, } from 'src/services/media-storage.utils';
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 
 @Injectable()
@@ -131,10 +131,9 @@ export class MediaService extends CRUDService<Media> {
       // Delete temp file from disk
       await this.diskFileService.delete(file.path);
 
-      createDto['isPublic'] = resolveStoredMediaIsPublic(createDto['isPublic'], storageProvider);
+      delete createDto['isPublic'];
       const media = this.repo.create(createDto as Partial<Media>) as Media;
       const savedMedia = await this.repo.save(media);
-      savedMedia.isPublic = resolveStoredMediaIsPublic(savedMedia.isPublic, storageProvider);
       savedMedias.push(savedMedia)
     }
     return savedMedias
@@ -241,16 +240,15 @@ export class MediaService extends CRUDService<Media> {
 
   private async decorateMediaRecord(media: Media): Promise<void> {
     const mediaStorageProvider = await this.resolveMediaStorageProvider(media);
-    media.isPublic = resolveStoredMediaIsPublic(media.isPublic, mediaStorageProvider);
     media.relativeUri = await this.resolveMediaUrl(media, mediaStorageProvider);
   }
 
   private async resolveMediaUrl(media: Media, mediaStorageProvider?: MediaStorageProviderMetadata): Promise<string> {
     const resolvedMediaStorageProvider = mediaStorageProvider || await this.resolveMediaStorageProvider(media);
-    const isPublic = resolveStoredMediaIsPublic(media.isPublic, resolvedMediaStorageProvider);
+    const isPublic = resolveMediaIsPublic(resolvedMediaStorageProvider);
 
     if (isPublic === false) {
-      return this.mediaDownloadUrlService.resolveDownloadUrl(media.id, media.relativeUri, resolvedMediaStorageProvider);
+      return this.mediaDownloadUrlService.getPrivateUrl(media.id, media.relativeUri, resolvedMediaStorageProvider);
     }
 
     if (resolvedMediaStorageProvider?.type === MediaStorageProviderType.Filesystem) {

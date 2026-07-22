@@ -37,6 +37,10 @@ export class MediaDownloadUrlService {
     return `${String(baseUrl).replace(/\/+$/, '')}${downloadPath}`;
   }
 
+  async getPrivateUrl(mediaId: number, relativeUri: string, storageProvider?: MediaStorageProviderMetadata): Promise<string> {
+    return this.resolveDownloadUrl(mediaId, relativeUri, storageProvider);
+  }
+
   async verifyDownloadToken(token: string): Promise<MediaDownloadTokenPayload> {
     return this.jwtService.verifyAsync<MediaDownloadTokenPayload>(token, {
       secret: this.settingService.getConfigValue<SolidCoreSetting>('secret'),

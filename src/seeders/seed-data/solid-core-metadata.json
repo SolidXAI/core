@@ -1705,18 +1705,6 @@
             "isSystem": true
           },
           {
-            "name": "isPublic",
-            "displayName": "Is Public",
-            "type": "boolean",
-            "required": false,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "columnName": "is_public",
-            "isSystem": true
-          },
-          {
             "name": "modelMetadata",
             "displayName": "Model Metadata",
             "type": "relation",
@@ -8792,13 +8780,6 @@
           {
             "type": "field",
             "attrs": {
-              "name": "isPublic",
-              "sortable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "fileSize",
               "sortable": true
             }
@@ -8894,14 +8875,6 @@
               {
                 "type": "field",
                 "attrs": {
-                  "name": "isPublic",
-                  "label": "isPublic",
-                  "isSearchable": true
-                }
-              },
-              {
-                "type": "field",
-                "attrs": {
                   "name": "fieldMetadata",
                   "label": "fieldMetadata",
                   "isSearchable": true
@@ -8965,12 +8938,6 @@
                     "type": "field",
                     "attrs": {
                       "name": "mediaStorageProviderMetadata"
-                    }
-                  },
-                  {
-                    "type": "field",
-                    "attrs": {
-                      "name": "isPublic"
                     }
                   },
                   {
@@ -14580,12 +14547,6 @@
       "type": "filesystem",
       "isPublic": true,
       "localPath": "media-files-storage"
-    },
-    {
-      "name": "private-filesystem",
-      "type": "filesystem",
-      "isPublic": false,
-      "localPath": "media-private-files-storage"
     },
     {
       "name": "default-aws-s3",

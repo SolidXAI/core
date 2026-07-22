@@ -7,7 +7,6 @@ import { MediaStorageProviderMetadataRepository } from './media-storage-provider
 import { ModelMetadataRepository } from './model-metadata.repository';
 import { SecurityRuleRepository } from './security-rule.repository';
 import { SolidBaseRepository } from './solid-base.repository';
-import { resolveStoredMediaIsPublic } from 'src/services/media-storage.utils';
 
 @Injectable()
 export class MediaRepository extends SolidBaseRepository<Media> {
@@ -45,7 +44,7 @@ export class MediaRepository extends SolidBaseRepository<Media> {
                 id: createDto['mediaStorageProviderMetadataId']
             },
         });
-        createDto['isPublic'] = resolveStoredMediaIsPublic(createDto['isPublic'], createDto['mediaStorageProviderMetadata']);
+        delete createDto['isPublic'];
         const media = this.create(createDto);
         return this.save(media);
     }
