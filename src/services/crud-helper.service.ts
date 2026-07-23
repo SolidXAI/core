@@ -239,27 +239,6 @@ export class CrudHelperService {
         });
     }
 
-    private applyCurrentPublishedVersionFilter(qb: SelectQueryBuilder<any>, entityAlias: string) {
-        const entityTarget = qb.expressionMap.mainAlias?.target;
-        if (!entityTarget) return;
-
-        const newerPublishedVersionExists = qb.subQuery()
-            .select('1')
-            .from(entityTarget, 'newerPublishedVersion')
-            .where('newerPublishedVersion.isPublished = :currentPublishedVersionIsPublished', { currentPublishedVersionIsPublished: true })
-            .andWhere('newerPublishedVersion.publishedAt IS NOT NULL')
-            .andWhere(`COALESCE(newerPublishedVersion.initialEntityVersionId, newerPublishedVersion.id) = COALESCE(${entityAlias}.initialEntityVersionId, ${entityAlias}.id)`)
-            .andWhere(new Brackets(subQb => {
-                subQb.where(`newerPublishedVersion.publishedAt > ${entityAlias}.publishedAt`)
-                    .orWhere(`newerPublishedVersion.publishedAt = ${entityAlias}.publishedAt AND newerPublishedVersion.id > ${entityAlias}.id`);
-            }))
-            .getQuery();
-
-        qb.andWhere(`${entityAlias}.isPublished = :currentPublishedVersionIsPublished`, { currentPublishedVersionIsPublished: true });
-        qb.andWhere(`${entityAlias}.publishedAt IS NOT NULL`);
-        qb.andWhere(`NOT EXISTS ${newerPublishedVersionExists}`);
-    }
-
     buildFilterQuery(
         qb: SelectQueryBuilder<any>,
         basicFilterDto: BasicFilterDto,
@@ -332,17 +311,16 @@ export class CrudHelperService {
             const explicitIsPublished = this.normalizeBooleanFilterValue(basicFilterDto.isPublished);
             const hasIsLatestFilter = explicitIsLatest !== undefined || this.filtersContainField(filters, 'isLatest');
             const hasInitialVersionFilter = initialEntityVersionId !== undefined || this.filtersContainField(filters, 'initialEntityVersionId');
-            const shouldUseCurrentPublishedVersion = explicitIsPublished === true && !hasIsLatestFilter && !hasInitialVersionFilter;
+            const isPublishedViewRequested = explicitIsPublished === true || status === 'published';
+            const shouldSkipDefaultLatestForPublishedView = isPublishedViewRequested && !hasIsLatestFilter && !hasInitialVersionFilter;
 
             if (explicitIsLatest !== undefined) {
                 qb.andWhere(`${entityAlias}.isLatest = :isLatest`, { isLatest: explicitIsLatest });
-            } else if (!shouldUseCurrentPublishedVersion && !hasIsLatestFilter && !hasInitialVersionFilter) {
+            } else if (!shouldSkipDefaultLatestForPublishedView && !hasIsLatestFilter && !hasInitialVersionFilter) {
                 qb.andWhere(`${entityAlias}.isLatest = :defaultIsLatest`, { defaultIsLatest: true });
             }
 
-            if (shouldUseCurrentPublishedVersion) {
-                this.applyCurrentPublishedVersionFilter(qb, entityAlias);
-            } else if (explicitIsPublished !== undefined) {
+            if (explicitIsPublished !== undefined) {
                 qb.andWhere(`${entityAlias}.isPublished = :isPublished`, { isPublished: explicitIsPublished });
             }
 

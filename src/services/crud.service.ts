@@ -7,7 +7,7 @@ import { SolidBaseRepository } from "../repository/solid-base.repository";
 import { SettingService } from "./setting.service";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
-import { Brackets, EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
+import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { ComputedFieldValueType, RelationType, SelectionValueType, SolidFieldType } from "../dtos/create-field-metadata.dto";
@@ -539,27 +539,12 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
         const ids = entities.map(entity => entity.id).filter(Boolean);
         if (ids.length === 0) return;
 
-        const currentPublishedEntities = await this.repo.manager
-            .createQueryBuilder(this.repo.metadata.target, 'entity')
-            .where('entity.id IN (:...ids)', { ids })
-            .andWhere('entity.isPublished = :isPublished', { isPublished: true })
-            .andWhere('entity.publishedAt IS NOT NULL')
-            .andWhere(qb => {
-                const newerPublishedVersionExists = qb.subQuery()
-                    .select('1')
-                    .from(this.repo.metadata.target, 'newerPublishedVersion')
-                    .where('newerPublishedVersion.isPublished = :isPublished', { isPublished: true })
-                    .andWhere('newerPublishedVersion.publishedAt IS NOT NULL')
-                    .andWhere('COALESCE(newerPublishedVersion.initialEntityVersionId, newerPublishedVersion.id) = COALESCE(entity.initialEntityVersionId, entity.id)')
-                    .andWhere(new Brackets(subQb => {
-                        subQb.where('newerPublishedVersion.publishedAt > entity.publishedAt')
-                            .orWhere('newerPublishedVersion.publishedAt = entity.publishedAt AND newerPublishedVersion.id > entity.id');
-                    }))
-                    .getQuery();
-
-                return `NOT EXISTS ${newerPublishedVersionExists}`;
-            })
-            .getMany();
+        const currentPublishedEntities = await this.repo.find({
+            where: {
+                id: In(ids),
+                isPublished: true,
+            } as FindOptionsWhere<T>,
+        });
 
         if (currentPublishedEntities.length > 0) {
             const currentPublishedEntityIds = currentPublishedEntities.map(entity => entity.id);
@@ -1280,12 +1265,34 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
 
         const chainId = entity.initialEntityVersionId || entity.id;
 
-        const updatedEntity = await this.repo.save({
-            ...entity,
-            initialEntityVersionId: chainId,
-            isPublished: true,
-            publishedAt: new Date(),
-            updatedBy: solidRequestContext.activeUser?.sub ?? entity.updatedBy,
+        const updatedEntity = await this.repo.manager.transaction(async (manager) => {
+            const transactionalRepo = manager.getRepository(this.repo.metadata.target);
+            const chainVersions = await transactionalRepo.find({
+                where: [
+                    { initialEntityVersionId: chainId },
+                    { id: chainId },
+                ] as any,
+            }) as unknown as T[];
+            const archivedVersions = chainVersions
+                .filter(version => version.id !== entity.id)
+                .map(version => ({
+                    ...version,
+                    isPublished: false,
+                    publishedTracker: this.createPublishedVersionTracker(version.id),
+                }));
+
+            if (archivedVersions.length > 0) {
+                await transactionalRepo.save(archivedVersions as any);
+            }
+
+            return transactionalRepo.save({
+                ...entity,
+                initialEntityVersionId: chainId,
+                isPublished: true,
+                publishedAt: new Date(),
+                publishedTracker: "na",
+                updatedBy: solidRequestContext.activeUser?.sub ?? entity.updatedBy,
+            } as any) as Promise<T>;
         });
 
         return updatedEntity
