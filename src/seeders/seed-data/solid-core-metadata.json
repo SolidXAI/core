@@ -14545,8 +14545,7 @@
     {
       "name": "default-filesystem",
       "type": "filesystem",
-      "isPublic": true,
-      "localPath": "media-files-storage"
+      "isPublic": true
     },
     {
       "name": "default-aws-s3",
