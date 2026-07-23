@@ -59,9 +59,9 @@ export class CrudHelperService {
         { allowRelationLeaf = false }: { allowRelationLeaf?: boolean } = {}
     ): ResolvedFieldPath {
         // Fail closed: without metadata we cannot prove the identifier is safe.
-        if (!rootMetadata) throw new BadRequestException(`Cannot resolve field '${pathParts?.join('.')}'`);
+        if (!rootMetadata) throw new BadRequestException(`Cannot resolve field '${this.describeInvalidField(pathParts?.join('.'))}'`);
         if (!pathParts?.length || pathParts.some(part => !part)) {
-            throw new BadRequestException(`Invalid field path '${pathParts?.join('.')}'`);
+            throw new BadRequestException(`Invalid field path '${this.describeInvalidField(pathParts?.join('.'))}'`);
         }
 
         let metadata = rootMetadata;
@@ -78,7 +78,7 @@ export class CrudHelperService {
             if (!isLeaf) {
                 // Interior segments must be relations so we can keep walking.
                 if (!relation) {
-                    throw new BadRequestException(`Invalid relation '${pathParts[i]}' in '${pathParts.join('.')}'`);
+                    throw new BadRequestException(`Invalid relation '${this.describeInvalidField(pathParts[i])}' in '${this.describeInvalidField(pathParts.join('.'))}'`);
                 }
                 relationSegments.push(relation.propertyName); // canonical, from metadata
                 // THE HOP: advance to the entity on the other side so the NEXT iteration validates
@@ -101,10 +101,10 @@ export class CrudHelperService {
             if (column) {
                 return { relationSegments, leafProperty: column.propertyName, leafIsRelation: false };
             }
-            throw new BadRequestException(`Invalid field '${pathParts[i]}' in '${pathParts.join('.')}'`);
+            throw new BadRequestException(`Invalid field '${this.describeInvalidField(pathParts[i])}' in '${this.describeInvalidField(pathParts.join('.'))}'`);
         }
 
-        throw new BadRequestException(`Invalid field path '${pathParts.join('.')}'`);
+        throw new BadRequestException(`Invalid field path '${this.describeInvalidField(pathParts.join('.'))}'`);
     }
 
     /**
@@ -127,6 +127,18 @@ export class CrudHelperService {
     private findAliasMetadata(qb: SelectQueryBuilder<any>, alias: string): EntityMetadata | undefined {
         const found = qb?.expressionMap?.aliases?.find(a => a.name === alias);
         return found?.hasMetadata ? found.metadata : undefined;
+    }
+
+    /**
+     * Echo a rejected identifier back in a bounded way.
+     *
+     * Naming the bad field is what makes a 400 actionable for a legitimate typo, but reflecting an
+     * unbounded attacker-supplied string is needless: it hands an attacker a reliable echo channel
+     * and bloats logs. 80 characters is ample for a real field name.
+     */
+    private describeInvalidField(value: string): string {
+        const text = String(value ?? '');
+        return text.length > 80 ? `${text.slice(0, 80)}...` : text;
     }
 
     private orderOptions(sort: any[] = []) {
@@ -192,7 +204,7 @@ export class CrudHelperService {
                             // Surface the precise granularity message; keep the original fallback
                             // for driver-level failures.
                             if (error instanceof BadRequestException) throw error;
-                            throw new BadRequestException(`Unsupported field function '${funcAlias}'. Supported functions are: ${SUPPORTED_GRANULARITIES.join(', ')}.`);
+                            throw new BadRequestException(`Unsupported field function '${this.describeInvalidField(funcAlias)}'. Supported functions are: ${SUPPORTED_GRANULARITIES.join(', ')}.`);
                         }
                     }
                     this.buildOperatorQuery(qb, alias, leafProperty, normalizedPrimaryFilterObj, operator, columnExpression);
@@ -205,7 +217,7 @@ export class CrudHelperService {
                     // SECURITY: the nested key must be a real relation on the current entity.
                     const resolvedRelation = this.resolveFieldPath(selectQb, [rawField], { allowRelationLeaf: true, startAlias: alias });
                     if (!resolvedRelation.leafIsRelation) {
-                        throw new BadRequestException(`'${rawField}' is not a relation and cannot contain nested filters.`);
+                        throw new BadRequestException(`'${this.describeInvalidField(rawField)}' is not a relation and cannot contain nested filters.`);
                     }
                     const relationName = resolvedRelation.relationSegments[resolvedRelation.relationSegments.length - 1];
                     const joinField = `${alias}.${relationName}`;
@@ -529,7 +541,7 @@ export class CrudHelperService {
         // exactly how a quote break-out (`x'||(SELECT version())||'`) slipped through.
         if (!SUPPORTED_GRANULARITIES.includes(granularity)) {
             throw new BadRequestException(
-                `Unsupported granularity '${granularity}'. Supported granularities are: ${SUPPORTED_GRANULARITIES.join(', ')}.`
+                `Unsupported granularity '${this.describeInvalidField(granularity)}'. Supported granularities are: ${SUPPORTED_GRANULARITIES.join(', ')}.`
             );
         }
         switch (driver) {
@@ -654,7 +666,7 @@ export class CrudHelperService {
                 const resolvedKey = aliasMap[key];
                 if (!resolvedKey) {
                     throw new BadRequestException(
-                        `Cannot sort by '${String(key)}' on a grouped query. Sort only by a groupBy or aggregate field.`
+                        `Cannot sort by '${this.describeInvalidField(String(key))}' on a grouped query. Sort only by a groupBy or aggregate field.`
                     );
                 }
                 const value = orderOptions[key] as 'ASC' | 'DESC';
@@ -689,7 +701,7 @@ export class CrudHelperService {
         // names returned here are what get spliced below, so no request string reaches the join.
         const { relationSegments, leafIsRelation } = this.resolveFieldPath(qb, relationParts, { allowRelationLeaf: true });
         if (!leafIsRelation) {
-            throw new BadRequestException(`'${relation}' is not a relation and cannot be populated.`);
+            throw new BadRequestException(`'${this.describeInvalidField(relation)}' is not a relation and cannot be populated.`);
         }
         let parentAlias = entityAlias;
         relationSegments.forEach((part, i) => {
@@ -724,7 +736,7 @@ export class CrudHelperService {
         // Whitelist the function name too, mirroring buildAggregateExpression.
         if (!SUPPORTED_FIELD_FUNCTIONS.includes(aggregateFunction)) {
             throw new BadRequestException(
-                `Unsupported field function '${fieldParts[0]}'. Supported functions are: ${SUPPORTED_FIELD_FUNCTIONS.join(', ')}.`
+                `Unsupported field function '${this.describeInvalidField(fieldParts[0])}'. Supported functions are: ${SUPPORTED_FIELD_FUNCTIONS.join(', ')}.`
             );
         }
         const fieldName = fieldParts[1].replace(')', '').trim();
@@ -743,7 +755,7 @@ export class CrudHelperService {
         const resolved = this.resolveFieldPath(qb, field.split('.'));
         if (resolved.relationSegments.length) {
             throw new BadRequestException(
-                `Related field '${field}' is not supported in '${context}'. Use 'populate' to fetch related records.`
+                `Related field '${this.describeInvalidField(field)}' is not supported in '${context}'. Use 'populate' to fetch related records.`
             );
         }
         return resolved.leafProperty;
