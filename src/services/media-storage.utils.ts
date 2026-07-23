@@ -31,7 +31,7 @@ export function buildDiskMediaPath(fileName: string,settingService: Pick<Setting
   // const isUsingLegacyDefaultPath = localPath === publicBase || localPath === privateBase || localPath === privateBase;
   const providerBase = storageProvider?.isPublic === false ? privateBase : publicBase
 
-  if ( path.isAbsolute(fileName) || fileName.startsWith(`${publicBase}/`) || fileName.startsWith(`${privateBase}/`) || (!!storageProvider?.localPath && fileName.startsWith(`${storageProvider.localPath}/`))) {
+  if ( path.isAbsolute(fileName) || fileName.startsWith(`${publicBase}/`) || fileName.startsWith(`${privateBase}/`) ) {
     return fileName;
   }
 
