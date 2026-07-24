@@ -109,8 +109,6 @@ export class DraftPublishHelperService {
         isPartialUpdate: boolean,
         model: ModelMetadata,
     ): Promise<T> {
-        this.assertDraftPublishWorkflowEnabled(model, context.modelName);
-
         const relationNames = this.getVersionedRelationNames(model);
         const sourceEntity = await context.repo.findOne({
             where: { id } as unknown as FindOptionsWhere<T>,
