@@ -60,22 +60,6 @@ export class BasicFilterDto extends PaginationQueryDto {
     @ApiProperty({ description: "locale" })
     readonly locale?: string;
 
-    @IsOptional()
-    @ApiProperty({ description: "status publish draft" })
-    readonly status?: string;
-
-    @IsOptional()
-    @ApiProperty({ description: "Filter latest versions" })
-    readonly isLatest?: boolean | string;
-
-    @IsOptional()
-    @ApiProperty({ description: "Filter published versions" })
-    readonly isPublished?: boolean | string;
-
-    @IsOptional()
-    @ApiProperty({ description: "Version chain root id" })
-    readonly initialEntityVersionId?: number | string;
-
     // @IsOptional()
     // @ApiProperty({ description: "default locale id" })
     // readonly defaultEntityLocaleId?: number;

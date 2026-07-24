@@ -38,6 +38,7 @@ import { MqDashboardQueueNameVariableOptionsProvider } from "./services/selectio
 import { PseudoForeignKeySelectionProvider } from "./services/selection-providers/pseudo-foreign-key-selection-provider.service";
 import { ModuleMetadataSeederService } from "./seeders/module-metadata-seeder.service";
 import { ModuleTestDataService } from "./seeders/module-test-data.service";
+import { DraftPublishHelperService } from "./services/create-draft-publish-helper.service";
 import { CrudHelperService } from "./services/crud-helper.service";
 import { DatasourceManagementService } from "./services/datasource-management.service";
 import { DatasourceIntrospectionService } from "./services/datasource-introspection.service";
@@ -654,6 +655,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     InfoService,
     SolidIntrospectService,
     DiscoveryService,
+    DraftPublishHelperService,
     CrudHelperService,
     CRUDService,
     Reflector,
@@ -972,6 +974,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     ChatterMessageRepository,
     ChatterMessageService,
     ConfigModule,
+    DraftPublishHelperService,
     CrudHelperService,
     CRUDService,
     CsvService,

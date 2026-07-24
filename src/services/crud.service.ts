@@ -13,7 +13,6 @@ import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { ComputedFieldValueType, RelationType, SelectionValueType, SolidFieldType } from "../dtos/create-field-metadata.dto";
 import { MediaStorageProviderType } from "../dtos/create-media-storage-provider-metadata.dto";
 import { FieldMetadata } from "../entities/field-metadata.entity";
-import { Media } from "../entities/media.entity";
 import { ModelMetadata } from "../entities/model-metadata.entity";
 import { BigIntFieldCrudManager } from "../helpers/field-crud-managers/BigIntFieldCrudManager";
 import { BooleanFieldCrudManager } from "../helpers/field-crud-managers/BooleanFieldCrudManager";
@@ -37,6 +36,7 @@ import { ShortTextFieldCrudManager } from "../helpers/field-crud-managers/ShortT
 import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCrudManager";
 import { ModelMetadataHelperService } from "src/helpers/model-metadata-helper.service";
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
+import { DraftPublishHelperService } from "./create-draft-publish-helper.service";
 import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper.service";
 import { HashingService } from "./hashing.service";
 import { SolidRegistry } from "src/helpers/solid-registry";
@@ -50,6 +50,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
     private _modelMetadataService: ModelMetadataService;
     private _crudHelperService: CrudHelperService;
+    private _draftPublishHelperService: DraftPublishHelperService;
     private _discoveryService: DiscoveryService;
     private _settingService: SettingService;
 
@@ -70,12 +71,29 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return this._crudHelperService ??= this.moduleRef.get(CrudHelperService, { strict: false });
     }
 
+    protected get draftPublishHelperService(): DraftPublishHelperService {
+        return this._draftPublishHelperService ??= this.moduleRef.get(DraftPublishHelperService, { strict: false });
+    }
+
     protected get discoveryService(): DiscoveryService {
         return this._discoveryService ??= this.moduleRef.get(DiscoveryService, { strict: false });
     }
 
     protected get settingService(): SettingService {
         return this._settingService ??= this.moduleRef.get(SettingService, { strict: false });
+    }
+
+    private getDraftPublishCrudContext() {
+        return {
+            repo: this.repo,
+            modelName: this.modelName,
+            moduleName: this.moduleName,
+            validateAndTransformDto: this.validateAndTransformDto.bind(this),
+            saveMedia: this.saveMedia.bind(this),
+            getDatasourceDefaultEntityManager: this.getDatasourceDefaultEntityManager.bind(this),
+            getColumnDatabaseName: this.getColumnDatabaseName.bind(this),
+            escapeDatabaseName: this.escapeDatabaseName.bind(this),
+        };
     }
 
     private async tryCreateAsExtensionUser(createDto: any): Promise<T | null> {
@@ -123,19 +141,10 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         try {
             // 5. Save the entity
             // For media, we need to use a storage provider and save the media, then save the associated uri against the entity or media table
-            if (model.draftPublishWorkflow === true) {
-                createDto.isLatest = true;
-                createDto.isPublished = false;
-                createDto.publishedAt = null;
-                createDto.publishedTracker = "na";
-            }
+            this.draftPublishHelperService.applyCreateDefaults(model, createDto);
             const entity = this.repo.create(createDto);
             let savedEntity = await this.repo.save(entity) as unknown as T;
-
-            if (model.draftPublishWorkflow === true && !savedEntity.initialEntityVersionId) {
-                savedEntity.initialEntityVersionId = savedEntity.id;
-                savedEntity = await this.repo.save(savedEntity) as unknown as T;
-            }
+            savedEntity = await this.draftPublishHelperService.ensureInitialEntityVersionId(model, this.repo, savedEntity);
 
             // 6. Save the media
             if (hasMediaFields) {
@@ -222,12 +231,10 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
 
-        if (model.draftPublishWorkflow === true && entity.isLatest === false) {
-            throw new BadRequestException(`Only the latest version of ${this.modelName} can be updated.`);
-        }
+        this.draftPublishHelperService.assertUpdateAllowed(model, entity, this.modelName);
 
-        if (model.draftPublishWorkflow === true && entity.isPublished) {
-            return this.createVersionFromUpdate(id, updateDto, files, isPartialUpdate, model);
+        if (this.draftPublishHelperService.shouldCopyPublishedVersionForUpdate(model, entity)) {
+            return this.draftPublishHelperService.copyPublishedVersionAndUpdate(this.getDraftPublishCrudContext(), id, updateDto, files, isPartialUpdate, model);
         }
 
         // Capture pre-update many-to-many relation state for audit tracking
@@ -259,27 +266,6 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return savedEntity;
     }
 
-    private getVersionedRelationNames(model: ModelMetadata): string[] {
-        return model.fields
-            .filter(field => field.type === SolidFieldType.relation && field.relationType !== RelationType.oneToMany)
-            .map(field => field.name);
-    }
-
-    private wasFieldSubmitted(dto: any, field: FieldMetadata): boolean {
-        if (!dto) return false;
-        if (Object.prototype.hasOwnProperty.call(dto, field.name)) return true;
-        if (field.type !== SolidFieldType.relation) return false;
-        if (Object.prototype.hasOwnProperty.call(dto, `${field.name}Id`)) return true;
-        if (Object.prototype.hasOwnProperty.call(dto, `${field.name}Ids`)) return true;
-        if (Object.prototype.hasOwnProperty.call(dto, `${field.name}UserKey`)) return true;
-        if (Object.prototype.hasOwnProperty.call(dto, `${field.name}Command`)) return true;
-        if (field.relationCoModelFieldName) {
-            if (Object.prototype.hasOwnProperty.call(dto, `${field.relationCoModelFieldName}Ids`)) return true;
-            if (Object.prototype.hasOwnProperty.call(dto, `${field.relationCoModelFieldName}Command`)) return true;
-        }
-        return false;
-    }
-
     private getColumnDatabaseName(propertyName: string): string {
         const column = this.repo.metadata.findColumnWithPropertyName(propertyName);
         if (!column) {
@@ -290,145 +276,6 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
     private escapeDatabaseName(databaseName: string): string {
         return this.repo.manager.connection.driver.escape(databaseName);
-    }
-
-    private createPublishedVersionTracker(seed: number | string): string {
-        return `version:${seed}`;
-    }
-
-    private createTemporaryPublishedVersionTracker(): string {
-        return `version:pending:${Date.now()}:${Math.random().toString(36).slice(2)}`;
-    }
-
-    private async createVersionFromUpdate(id: number, updateDto: any, files: Express.Multer.File[], isPartialUpdate: boolean, model: ModelMetadata): Promise<T> {
-        if (model.draftPublishWorkflow !== true) {
-            throw new BadRequestException(`Draft publish workflow is not enabled for ${this.modelName}`);
-        }
-
-        const relationNames = this.getVersionedRelationNames(model);
-        const sourceEntity = await this.repo.findOne({
-            where: { id } as unknown as FindOptionsWhere<T>,
-            relations: relationNames as any,
-        });
-
-        if (!sourceEntity) {
-            throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
-        }
-
-        let hasMediaFields = false;
-        const submittedDto = { ...updateDto };
-        let transformedDto = { ...updateDto };
-
-        for (const field of model.fields) {
-            const transformed = await this.validateAndTransformDto(field, transformedDto, files, hasMediaFields, isPartialUpdate, false);
-            transformedDto = transformed.dto;
-            hasMediaFields = transformed.hasMediaFields;
-        }
-
-        const newVersionPayload: any = {};
-        const excludedColumns = new Set([
-            'id',
-            'createdAt',
-            'updatedAt',
-            'deletedAt',
-            'createdBy',
-            'updatedBy',
-            'publishedAt',
-            'isPublished',
-            'isLatest',
-            'initialEntityVersionId',
-            'publishedTracker',
-        ]);
-
-        this.repo.metadata.columns.forEach(column => {
-            if (!excludedColumns.has(column.propertyName)) {
-                newVersionPayload[column.propertyName] = sourceEntity[column.propertyName];
-            }
-        });
-
-        for (const relationName of relationNames) {
-            newVersionPayload[relationName] = sourceEntity[relationName];
-        }
-
-        for (const field of model.fields) {
-            if (this.wasFieldSubmitted(submittedDto, field) && Object.prototype.hasOwnProperty.call(transformedDto, field.name)) {
-                newVersionPayload[field.name] = transformedDto[field.name];
-            }
-        }
-
-        const chainId = sourceEntity.initialEntityVersionId || sourceEntity.id;
-        newVersionPayload.initialEntityVersionId = chainId;
-        newVersionPayload.isLatest = true;
-        newVersionPayload.isPublished = false;
-        newVersionPayload.publishedAt = null;
-        newVersionPayload.publishedTracker = this.createTemporaryPublishedVersionTracker();
-
-        const savedVersion = await this.repo.manager.transaction(async (manager) => {
-            const transactionalRepo = manager.getRepository(this.repo.metadata.target);
-
-            await manager
-                .createQueryBuilder()
-                .update(this.repo.metadata.target)
-                .set({ isLatest: false } as any)
-                .where(`${this.escapeDatabaseName(this.getColumnDatabaseName('isLatest'))} = :isLatest`, { isLatest: true })
-                .andWhere(`(${this.escapeDatabaseName(this.getColumnDatabaseName('initialEntityVersionId'))} = :chainId OR ${this.escapeDatabaseName(this.getColumnDatabaseName('id'))} = :chainId)`, { chainId })
-                .callListeners(false)
-                .execute();
-
-            const newVersion = transactionalRepo.create(newVersionPayload);
-            let persistedVersion = await transactionalRepo.save(newVersion) as unknown as T;
-            persistedVersion.publishedTracker = this.createPublishedVersionTracker(persistedVersion.id);
-            persistedVersion = await transactionalRepo.save(persistedVersion as any) as unknown as T;
-
-            await this.cloneMediaForVersion(model, sourceEntity.id, persistedVersion, files, manager);
-
-            return persistedVersion;
-        });
-
-        if (hasMediaFields) {
-            await this.saveMedia(model, files, savedVersion);
-        }
-
-        return savedVersion;
-    }
-
-    private async cloneMediaForVersion(model: ModelMetadata, sourceEntityId: number, targetEntity: T, files: Express.Multer.File[] = [], entityManager?: EntityManager): Promise<void> {
-        const mediaFields = model.fields.filter(field => field.type === SolidFieldType.mediaSingle || field.type === SolidFieldType.mediaMultiple);
-        if (mediaFields.length === 0) return;
-
-        const uploadedFieldNames = new Set(files.map(file => file.fieldname));
-        const mediaRepository = (entityManager ?? this.getDatasourceDefaultEntityManager()).getRepository(Media);
-
-        for (const mediaField of mediaFields) {
-            if (uploadedFieldNames.has(mediaField.name)) continue;
-
-            const sourceMedia = await mediaRepository.find({
-                where: {
-                    entityId: sourceEntityId,
-                    modelMetadata: { id: model.id },
-                    fieldMetadata: { id: mediaField.id },
-                } as any,
-                relations: {
-                    modelMetadata: true,
-                    mediaStorageProviderMetadata: true,
-                    fieldMetadata: true,
-                } as any,
-            });
-
-            for (const media of sourceMedia) {
-                const clonedMedia = mediaRepository.create({
-                    entityId: targetEntity.id,
-                    relativeUri: media.relativeUri,
-                    fileSize: media.fileSize,
-                    mimeType: media.mimeType,
-                    originalFileName: media.originalFileName,
-                    modelMetadata: media.modelMetadata,
-                    mediaStorageProviderMetadata: media.mediaStorageProviderMetadata,
-                    fieldMetadata: media.fieldMetadata,
-                });
-                await mediaRepository.save(clonedMedia);
-            }
-        }
     }
 
 /**
@@ -494,8 +341,9 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
         }
 
         let entitiesToDelete: T[] = [entity];
-        if (model.draftPublishWorkflow === true) {
-            await this.assertDraftPublishDeleteAllowed(entitiesToDelete);
+        const isDraftPublishEnabled = this.draftPublishHelperService.isDraftPublishEnabled(model);
+        if (isDraftPublishEnabled) {
+            await this.draftPublishHelperService.assertDraftPublishDeleteAllowed(this.repo, this.modelName, entitiesToDelete);
         }
 
         // If the model has internationalisation enabled, delete children with defaultEntityLocaleId === this entity's id
@@ -514,93 +362,25 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             }
         }
 
-        const deletedLatestChainIds = model.draftPublishWorkflow === true
-            ? this.getLatestDraftPublishChainIds(entitiesToDelete)
+        const deletedLatestChainIds = isDraftPublishEnabled
+            ? this.draftPublishHelperService.getLatestDraftPublishChainIds(entitiesToDelete)
             : [];
-        const deletedEntityIds = this.getEntityIds(entitiesToDelete);
+        const deletedEntityIds = this.draftPublishHelperService.getEntityIds(entitiesToDelete);
 
         let deleteResult: any;
         if (model.enableSoftDelete === true) {
-            this.markDeletedDraftPublishVersionsAsNotLatest(model, entitiesToDelete);
+            this.draftPublishHelperService.markDeletedDraftPublishVersionsAsNotLatest(model, entitiesToDelete);
             await this.repo.softRemove(entitiesToDelete);
             deleteResult = await this.repo.save(entitiesToDelete);
         } else {
             deleteResult = await this.repo.remove(entitiesToDelete);
         }
 
-        if (model.draftPublishWorkflow === true) {
-            await this.promoteLatestDraftPublishVersionAfterDelete(deletedLatestChainIds, deletedEntityIds);
+        if (isDraftPublishEnabled) {
+            await this.draftPublishHelperService.promoteLatestDraftPublishVersionAfterDelete(this.repo, deletedLatestChainIds, deletedEntityIds);
         }
 
         return deleteResult;
-    }
-
-    private async assertDraftPublishDeleteAllowed(entities: T[]): Promise<void> {
-        const ids = entities.map(entity => entity.id).filter(Boolean);
-        if (ids.length === 0) return;
-
-        const currentPublishedEntities = await this.repo.find({
-            where: {
-                id: In(ids),
-                isPublished: true,
-            } as FindOptionsWhere<T>,
-        });
-
-        if (currentPublishedEntities.length > 0) {
-            const currentPublishedEntityIds = currentPublishedEntities.map(entity => entity.id);
-            throw new BadRequestException(
-                `Published ${this.modelName} record cannot be deleted. Publish another draft or unpublish it before deleting. Invalid Ids ${currentPublishedEntityIds.join(', ')}.`
-            );
-        }
-    }
-
-    private markDeletedDraftPublishVersionsAsNotLatest(model: ModelMetadata, entities: T[]): void {
-        if (model.draftPublishWorkflow !== true) return;
-        for (const entity of entities) {
-            if (entity.isLatest === true) {
-                entity.isLatest = false;
-            }
-        }
-    }
-
-    private getLatestDraftPublishChainIds(entities: T[]): number[] {
-        return Array.from(new Set(
-            entities
-                .filter(entity => entity.isLatest === true)
-                .map(entity => entity.initialEntityVersionId || entity.id)
-        ));
-    }
-
-    private getEntityIds(entities: T[]): number[] {
-        return entities.map(entity => entity.id).filter(Boolean);
-    }
-
-    private async promoteLatestDraftPublishVersionAfterDelete(deletedLatestChainIds: number[], deletedIds: number[]): Promise<void> {
-        if (deletedLatestChainIds.length === 0) return;
-
-        for (const chainId of deletedLatestChainIds) {
-            const replacementQuery = this.repo.manager
-                .createQueryBuilder(this.repo.metadata.target, 'entity')
-                .where('(entity.initialEntityVersionId = :chainId OR entity.id = :chainId)', { chainId })
-                .orderBy('entity.createdAt', 'DESC')
-                .addOrderBy('entity.id', 'DESC');
-
-            if (deletedIds.length > 0) {
-                replacementQuery.andWhere('entity.id NOT IN (:...deletedIds)', { deletedIds });
-            }
-
-            const replacement = await replacementQuery.getOne();
-            if (!replacement) continue;
-
-            await this.repo.manager
-                .createQueryBuilder()
-                .update(this.repo.metadata.target)
-                .set({ isLatest: false } as any)
-                .where('(initial_entity_version_id = :chainId OR id = :chainId)', { chainId })
-                .execute();
-
-            await this.repo.update(replacement.id, { isLatest: true } as unknown as QueryDeepPartialEntity<T>);
-        }
     }
 
     private async fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false, entityId?: number) {
@@ -1097,22 +877,22 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
 
 
         // entity-level flag
-        const isDraftPublishEnabled = model?.draftPublishWorkflow === true;
+        const isDraftPublishEnabled = this.draftPublishHelperService.isDraftPublishEnabled(model);
 
         if (isDraftPublishEnabled) {
-            await this.assertDraftPublishDeleteAllowed(removedEntities);
+            await this.draftPublishHelperService.assertDraftPublishDeleteAllowed(this.repo, this.modelName, removedEntities);
         }
 
         const entitiesToDelete = removedEntities;
 
         const deletedLatestChainIds = isDraftPublishEnabled
-            ? this.getLatestDraftPublishChainIds(entitiesToDelete)
+            ? this.draftPublishHelperService.getLatestDraftPublishChainIds(entitiesToDelete)
             : [];
-        const deletedEntityIds = this.getEntityIds(entitiesToDelete);
+        const deletedEntityIds = this.draftPublishHelperService.getEntityIds(entitiesToDelete);
 
         let deleteResult: any;
         if (model.enableSoftDelete === true) {
-            this.markDeletedDraftPublishVersionsAsNotLatest(model, entitiesToDelete);
+            this.draftPublishHelperService.markDeletedDraftPublishVersionsAsNotLatest(model, entitiesToDelete);
             await this.repo.softRemove(entitiesToDelete);
             deleteResult = await this.repo.save(entitiesToDelete);
         } else {
@@ -1120,7 +900,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
         }
 
         if (isDraftPublishEnabled) {
-            await this.promoteLatestDraftPublishVersionAfterDelete(deletedLatestChainIds, deletedEntityIds);
+            await this.draftPublishHelperService.promoteLatestDraftPublishVersionAfterDelete(this.repo, deletedLatestChainIds, deletedEntityIds);
         }
 
         return deleteResult;
@@ -1258,13 +1038,6 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
 
         const model = await this.loadModel();
 
-        // Check if publish workflow is enabled for this model
-        if (!model.draftPublishWorkflow) {
-            throw new BadRequestException(
-                `Publish workflow is not enabled for ${this.modelName}`
-            );
-        }
-
         // Check user permissions
         if (solidRequestContext.activeUser) {
             const hasPermission = this.crudHelperService.hasPublishPermissionOnModel(
@@ -1276,69 +1049,13 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             }
         }
 
-        // Find the entity
-        const entity = await this.repo.findOne({ where: { id } as any });
-        if (!entity) {
-            throw new NotFoundException(`${this.modelName} with id ${id} not found`);
-        }
-
-        if (entity.isLatest === false) {
-            throw new BadRequestException(`Only the latest version of ${this.modelName} can be published.`);
-        }
-
-        // Check if already published
-        if (entity.isPublished) {
-            throw new BadRequestException(
-                `${this.modelName} with id ${id} is already published`
-            );
-        }
-
-        const chainId = entity.initialEntityVersionId || entity.id;
-
-        const updatedEntity = await this.repo.manager.transaction(async (manager) => {
-            const transactionalRepo = manager.getRepository(this.repo.metadata.target);
-            const chainVersions = await transactionalRepo.find({
-                where: [
-                    { initialEntityVersionId: chainId },
-                    { id: chainId },
-                ] as any,
-            }) as unknown as T[];
-            const archivedVersions = chainVersions
-                .filter(version => version.id !== entity.id)
-                .map(version => ({
-                    ...version,
-                    isPublished: false,
-                    publishedTracker: this.createPublishedVersionTracker(version.id),
-                }));
-
-            if (archivedVersions.length > 0) {
-                await transactionalRepo.save(archivedVersions as any);
-            }
-
-            return transactionalRepo.save({
-                ...entity,
-                initialEntityVersionId: chainId,
-                isPublished: true,
-                publishedAt: new Date(),
-                publishedTracker: "na",
-                updatedBy: solidRequestContext.activeUser?.sub ?? entity.updatedBy,
-            } as any) as Promise<T>;
-        });
-
-        return updatedEntity
+        return this.draftPublishHelperService.publishRecord(this.repo, model, this.modelName, id, solidRequestContext.activeUser);
     }
 
     /* Unpublish a record - marks the selected version as not currently published. */
     async unpublishRecord(id: number, solidRequestContext: any = {}): Promise<T> {
 
         const model = await this.loadModel();
-
-        // Check if publish workflow is enabled for this model
-        if (!model.draftPublishWorkflow) {
-            throw new BadRequestException(
-                `Publish workflow is not enabled for ${this.modelName}`
-            );
-        }
 
         // Check user permissions
         if (solidRequestContext.activeUser) {
@@ -1351,31 +1068,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             }
         }
 
-        // Find the entity
-        const entity = await this.repo.findOne({ where: { id } as any });
-        if (!entity) {
-            throw new NotFoundException(`${this.modelName} with id ${id} not found`);
-        }
-
-        if (entity.isLatest === false) {
-            throw new BadRequestException(`Only the latest version of ${this.modelName} can be unpublished.`);
-        }
-
-        // Check if already unpublished
-        if (!entity.isPublished) {
-            throw new BadRequestException(
-                `${this.modelName} with id ${id} is already unpublished`
-            );
-        }
-
-        // Keep publishedAt as history of when this version was last published.
-        const updatedEntity = await this.repo.save({
-            ...entity,
-            isPublished: false,
-            updatedBy: solidRequestContext.activeUser?.sub ?? entity.updatedBy,
-        });
-
-        return updatedEntity
+        return this.draftPublishHelperService.unpublishRecord(this.repo, model, this.modelName, id, solidRequestContext.activeUser);
     }
 
     private getDatasourceDefaultEntityManager() {
