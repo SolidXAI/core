@@ -39,9 +39,9 @@ export interface ResolvedFieldPath {
 
 export class CrudHelperService {
     constructor(
-        private readonly draftPublishHelperService: DraftPublishHelperService,
     ) { }
     private readonly logger = new Logger(CrudHelperService.name);
+    private readonly draftPublishHelperService = new DraftPublishHelperService();
 
     /**
      * Resolve a user-supplied dotted path (e.g. "customer.name") against real TypeORM metadata.

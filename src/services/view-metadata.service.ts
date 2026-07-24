@@ -264,10 +264,6 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     return localeRecords.sort((a, b) => {
       if (Boolean(a.isLatest) !== Boolean(b.isLatest)) return a.isLatest ? -1 : 1;
 
-      const aPublishedAt = a.publishedAt ? new Date(a.publishedAt).getTime() : 0;
-      const bPublishedAt = b.publishedAt ? new Date(b.publishedAt).getTime() : 0;
-      if (aPublishedAt !== bPublishedAt) return bPublishedAt - aPublishedAt;
-
       return Number(b.id ?? 0) - Number(a.id ?? 0);
     })[0];
   }
