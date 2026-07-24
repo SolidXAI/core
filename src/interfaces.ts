@@ -16,6 +16,8 @@ import { ComputedFieldMetadata } from './helpers/solid-registry';
 import { ActiveUserData } from './interfaces/active-user-data.interface';
 import { SecurityRuleConfig } from './dtos/security-rule-config.dto';
 import { SecurityRule } from './entities/security-rule.entity';
+import { ModelMetadata } from './entities/model-metadata.entity';
+import { ViewMetadata } from './entities/view-metadata.entity';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -157,6 +159,33 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
   value(optionValue: string, ctxt: T): Promise<ISelectionProviderValues | any>;
 
   values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
+}
+
+export interface IWorkflowFieldDataProviderContext<TProviderContext = Record<string, any>> {
+  entityId?: string;
+  modelName: string;
+  moduleName: string;
+  workflowFieldName: string;
+  workflowField: FieldMetadata;
+  solidModel?: ModelMetadata;
+  solidView?: ViewMetadata;
+  solidFieldsMetadata: Record<string, FieldMetadata>;
+  query?: Record<string, any>;
+  providerContext: TProviderContext;
+  activeUser?: ActiveUserData;
+}
+
+export interface IWorkflowFieldDataProviderValues {
+  label: string;
+  value: string | number;
+}
+
+export interface IWorkflowFieldDataProvider<
+  TContext extends IWorkflowFieldDataProviderContext = IWorkflowFieldDataProviderContext,
+> {
+  help(): string;
+  name(): string;
+  values(ctxt: TContext): Promise<readonly IWorkflowFieldDataProviderValues[]>;
 }
 
 export interface IDashboardWidgetDataProviderContext<TVariables = Record<string, any>, TProviderContext = Record<string, any>> {
