@@ -3202,7 +3202,7 @@
             "relationCoModelSingularName": "user",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": false,
             "unique": false,
             "index": true,
@@ -3227,7 +3227,7 @@
             "relationCoModelSingularName": "modelMetadata",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": true,
             "unique": false,
             "index": true,
@@ -3252,7 +3252,7 @@
             "relationCoModelSingularName": "viewMetadata",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
-            "relationCascade": "restrict",
+            "relationCascade": "cascade",
             "required": true,
             "unique": false,
             "index": true,
@@ -5262,6 +5262,2550 @@
             "isSystem": true
           }
         ]
+      },
+      {
+        "singularName": "workflowDefinition",
+        "pluralName": "workflowDefinitions",
+        "displayName": "Workflow Definition",
+        "description": "Stores the current reusable workflow definition and its canonical workflow DSL JSON.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_workflow_definition",
+        "userKeyFieldUserKey": "key",
+        "isChild": false,
+        "parentModelUserKey": null,
+        "isSystem": false,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "key",
+            "displayName": "Key",
+            "description": "Stable workflow key used as the metadata identity and developer-facing workflow identifier.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": true,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "moduleMetadata",
+            "displayName": "Module Metadata",
+            "description": "Owning SolidX module/package used for metadata persistence and distribution.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "description": "Human-facing workflow name shown in builder and execution screens.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "namespace",
+            "displayName": "Namespace",
+            "description": "Optional dot-path grouping for workflows, such as ops.monitoring.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "description": "Workflow description and operational notes.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": false,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "description": "Workflow lifecycle status.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "draft",
+            "selectionStaticValues": [
+              "draft:Draft",
+              "active:Active",
+              "inactive:Inactive",
+              "archived:Archived"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "definitionVersion",
+            "displayName": "Definition Version",
+            "description": "Human-managed or seed-managed version string for the current workflow definition.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "definitionChecksum",
+            "displayName": "Definition Checksum",
+            "description": "Checksum of the canonical definition JSON for change detection and execution traceability.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "definitionYaml",
+            "displayName": "Definition YAML",
+            "description": "Canonical workflow DSL YAML used for sharing, seeding, validation, and execution.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": false,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "tags",
+            "displayName": "Tags",
+            "description": "Optional array of tags for categorizing and searching workflows.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          }
+        ],
+        "moduleUserKey": "solid-core"
+      },
+      {
+        "singularName": "workflowExecution",
+        "pluralName": "workflowExecutions",
+        "displayName": "Workflow Execution",
+        "description": "Stores one runtime execution of a workflow definition, including status, trigger information, inputs, outputs, definition snapshot, and error details.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_workflow_execution",
+        "userKeyFieldUserKey": "executionIdentifier",
+        "isChild": false,
+        "parentModelUserKey": null,
+        "isSystem": false,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "executionIdentifier",
+            "displayName": "Execution Identifier",
+            "description": "System-generated readable execution identifier.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false
+          },
+          {
+            "name": "workflowDefinition",
+            "displayName": "Workflow Definition",
+            "description": "Workflow definition used to create this execution.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "workflowDefinition",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "workflowKey",
+            "displayName": "Workflow Key",
+            "description": "Snapshot of the workflow definition key for easier querying.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "workflowDisplayName",
+            "displayName": "Workflow Display Name",
+            "description": "Snapshot of the workflow display name at execution time.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "description": "Current workflow execution status.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "created",
+            "selectionStaticValues": [
+              "enqueued:Enqueued",
+              "created:Created",
+              "running:Running",
+              "success:Success",
+              "failed:Failed",
+              "cancelled:Cancelled"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "triggerType",
+            "displayName": "Trigger Type",
+            "description": "Mechanism that started this workflow execution.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "manual",
+            "selectionStaticValues": [
+              "manual:Manual",
+              "schedule:Schedule",
+              "webhook:Webhook",
+              "flow:Flow",
+              "polling:Polling",
+              "event:Event"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "startedAt",
+            "displayName": "Started At",
+            "description": "Execution start timestamp.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "finishedAt",
+            "displayName": "Finished At",
+            "description": "Execution finish timestamp.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "durationMs",
+            "displayName": "Duration Ms",
+            "description": "Execution duration in milliseconds.",
+            "type": "bigint",
+            "ormType": "bigint",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "inputPayload",
+            "displayName": "Input Payload",
+            "description": "Runtime inputs supplied to the workflow execution.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "outputPayload",
+            "displayName": "Output Payload",
+            "description": "Flow-level outputs produced by the workflow execution.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "definitionVersion",
+            "displayName": "Definition Version",
+            "description": "Definition version used by this execution.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "definitionChecksum",
+            "displayName": "Definition Checksum",
+            "description": "Definition checksum used by this execution.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "definitionSnapshot",
+            "displayName": "Definition Snapshot",
+            "description": "Exact workflow JSON definition used for this execution.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": false,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "errorSummary",
+            "displayName": "Error Summary",
+            "description": "Human-readable execution failure summary.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": false,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "errorDetails",
+            "displayName": "Error Details",
+            "description": "Structured execution error payload.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "requestedByUserId",
+            "displayName": "Requested By User Id",
+            "description": "User or actor id that requested the execution, if available.",
+            "type": "bigint",
+            "ormType": "bigint",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "workflowStepExecutions",
+            "displayName": "Step Executions",
+            "description": "Step execution records produced by this workflow execution.",
+            "type": "relation",
+            "isSystem": false,
+            "relationType": "one-to-many",
+            "relationCoModelSingularName": "workflowStepExecution",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationTypeManyToManyOwner": true,
+            "relationModelModuleName": "solid-core",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "workflowExecutionLogs",
+            "displayName": "Execution Logs",
+            "description": "Log records emitted by this workflow execution.",
+            "type": "relation",
+            "isSystem": false,
+            "relationType": "one-to-many",
+            "relationCoModelSingularName": "workflowExecutionLog",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationTypeManyToManyOwner": true,
+            "relationModelModuleName": "solid-core",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          },
+          {
+            "name": "workflowExecutionArtifacts",
+            "displayName": "Execution Artifacts",
+            "description": "Artifacts produced by this workflow execution.",
+            "type": "relation",
+            "isSystem": false,
+            "relationType": "one-to-many",
+            "relationCoModelSingularName": "workflowExecutionArtifact",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationTypeManyToManyOwner": true,
+            "relationModelModuleName": "solid-core",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false
+          }
+        ],
+        "moduleUserKey": "solid-core"
+      },
+      {
+        "singularName": "workflowStepExecution",
+        "pluralName": "workflowStepExecutions",
+        "displayName": "Workflow Step Execution",
+        "description": "Stores one node or step runtime execution within a workflow execution, including status, timing, input and output snapshots, retry or attempt state, and error details.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_workflow_step_execution",
+        "userKeyFieldUserKey": "stepExecutionKey",
+        "isChild": false,
+        "parentModelUserKey": null,
+        "isSystem": false,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "stepExecutionKey",
+            "displayName": "Step Execution Key",
+            "description": "Stable unique key for this step execution, assigned by the runtime.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": true,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "workflowExecution",
+            "displayName": "Workflow Execution",
+            "description": "Parent workflow execution this step belongs to.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "workflowExecution",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "nodeId",
+            "displayName": "Node Id",
+            "description": "Node id from the workflow definition DSL.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "nodeName",
+            "displayName": "Node Name",
+            "description": "Human-readable node name captured at execution time.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "nodeKind",
+            "displayName": "Node Kind",
+            "description": "Broad node category.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "task",
+            "selectionStaticValues": [
+              "task:Task",
+              "control:Control",
+              "subflow:Subflow"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "nodeType",
+            "displayName": "Node Type",
+            "description": "Registered node type id such as log.write, http.request, if, forEach, or parallel.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "description": "Current step execution status.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "created",
+            "selectionStaticValues": [
+              "created:Created",
+              "queued:Queued",
+              "running:Running",
+              "success:Success",
+              "failed:Failed",
+              "skipped:Skipped",
+              "cancelled:Cancelled",
+              "retrying:Retrying"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "attemptNumber",
+            "displayName": "Attempt Number",
+            "description": "Current attempt number for this step execution.",
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": false,
+            "defaultValue": 1,
+            "min": null,
+            "max": null,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "retryCount",
+            "displayName": "Retry Count",
+            "description": "Number of retries attempted for this step.",
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": false,
+            "defaultValue": 0,
+            "min": null,
+            "max": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "maxRetries",
+            "displayName": "Max Retries",
+            "description": "Maximum retry count resolved for this step.",
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "parentNodeId",
+            "displayName": "Parent Node Id",
+            "description": "Parent control or subflow node id when this step is nested.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "parentStepExecutionKey",
+            "displayName": "Parent Step Execution Key",
+            "description": "Parent step execution key for nested runtime structures.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "sequenceNumber",
+            "displayName": "Sequence Number",
+            "description": "Traversal or scheduling sequence number within the workflow execution.",
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "startedAt",
+            "displayName": "Started At",
+            "description": "Step start timestamp.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "finishedAt",
+            "displayName": "Finished At",
+            "description": "Step finish timestamp.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "durationMs",
+            "displayName": "Duration Ms",
+            "description": "Step duration in milliseconds.",
+            "type": "bigint",
+            "ormType": "bigint",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "timeoutMs",
+            "displayName": "Timeout Ms",
+            "description": "Timeout resolved for this step in milliseconds.",
+            "type": "bigint",
+            "ormType": "bigint",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "inputPayload",
+            "displayName": "Input Payload",
+            "description": "Input payload resolved for this step execution.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "outputPayload",
+            "displayName": "Output Payload",
+            "description": "Output payload produced by this step execution.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "runtimeContext",
+            "displayName": "Runtime Context",
+            "description": "Scoped runtime context used while executing this step.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "nodeSnapshot",
+            "displayName": "Node Snapshot",
+            "description": "Snapshot of the workflow node definition used for this step execution.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "errorSummary",
+            "displayName": "Error Summary",
+            "description": "Short human-readable error summary for failed steps.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": false,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "errorDetails",
+            "displayName": "Error Details",
+            "description": "Structured error details captured for failed steps.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          }
+        ],
+        "moduleUserKey": "solid-core"
+      },
+      {
+        "singularName": "workflowExecutionLog",
+        "pluralName": "workflowExecutionLogs",
+        "displayName": "Workflow Execution Log",
+        "description": "Stores timestamped log entries emitted during workflow and step execution for diagnostics, traceability, and runtime observability.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_workflow_execution_log",
+        "userKeyFieldUserKey": "logKey",
+        "isChild": false,
+        "parentModelUserKey": null,
+        "isSystem": false,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "logKey",
+            "displayName": "Log Key",
+            "description": "Stable unique key for this workflow execution log entry.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": true,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "workflowExecution",
+            "displayName": "Workflow Execution",
+            "description": "Workflow execution this log entry belongs to.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "workflowExecution",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "workflowStepExecution",
+            "displayName": "Workflow Step Execution",
+            "description": "Optional step execution this log entry belongs to when the log is node-scoped.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "workflowStepExecution",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "level",
+            "displayName": "Level",
+            "description": "Log severity level.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "info",
+            "selectionStaticValues": [
+              "trace:Trace",
+              "debug:Debug",
+              "info:Info",
+              "warn:Warn",
+              "error:Error"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "message",
+            "displayName": "Message",
+            "description": "Human-readable log message.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": false,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "defaultValue": null,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "eventType",
+            "displayName": "Event Type",
+            "description": "Structured event type such as execution.started, step.failed, or retry.scheduled.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "source",
+            "displayName": "Source",
+            "description": "Source component or runtime subsystem that emitted the log entry.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "nodeId",
+            "displayName": "Node Id",
+            "description": "Workflow node id associated with this log entry, when applicable.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "nodeType",
+            "displayName": "Node Type",
+            "description": "Registered node type associated with this log entry, when applicable.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "sequenceNumber",
+            "displayName": "Sequence Number",
+            "description": "Monotonic ordering number for log entries within the execution.",
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "occurredAt",
+            "displayName": "Occurred At",
+            "description": "Timestamp when the log entry was emitted.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "context",
+            "displayName": "Context",
+            "description": "Structured context for this log entry.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "metadata",
+            "displayName": "Metadata",
+            "description": "Additional metadata captured with this log entry.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          }
+        ],
+        "moduleUserKey": "solid-core"
+      },
+      {
+        "singularName": "workflowExecutionArtifact",
+        "pluralName": "workflowExecutionArtifacts",
+        "displayName": "Workflow Execution Artifact",
+        "description": "Stores artifacts produced during workflow or step execution, including files, payload snapshots, URLs, checksums, and metadata.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_workflow_execution_artifact",
+        "userKeyFieldUserKey": "artifactKey",
+        "isChild": false,
+        "parentModelUserKey": null,
+        "isSystem": false,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "artifactKey",
+            "displayName": "Artifact Key",
+            "description": "Stable unique key for this execution artifact.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": true,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "workflowExecution",
+            "displayName": "Workflow Execution",
+            "description": "Workflow execution this artifact belongs to.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "workflowExecution",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "workflowStepExecution",
+            "displayName": "Workflow Step Execution",
+            "description": "Optional step execution that produced this artifact.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "workflowStepExecution",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "name",
+            "displayName": "Name",
+            "description": "Human-readable artifact name.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "description": "Optional artifact description.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": false,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "artifactType",
+            "displayName": "Artifact Type",
+            "description": "Artifact storage or payload category.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "payload",
+            "selectionStaticValues": [
+              "payload:Payload",
+              "file:File",
+              "url:URL",
+              "text:Text",
+              "binary:Binary",
+              "json:JSON"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "nodeId",
+            "displayName": "Node Id",
+            "description": "Workflow node id that produced this artifact, when applicable.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "nodeType",
+            "displayName": "Node Type",
+            "description": "Registered node type that produced this artifact, when applicable.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "storageProviderKey",
+            "displayName": "Storage Provider Key",
+            "description": "Storage provider key when this artifact is stored outside the database.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "uri",
+            "displayName": "URI",
+            "description": "External URI, storage path, or download URL for the artifact.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": false,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "fileName",
+            "displayName": "File Name",
+            "description": "Original or generated file name for file artifacts.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "mimeType",
+            "displayName": "Mime Type",
+            "description": "MIME type for file or binary artifacts.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "sizeBytes",
+            "displayName": "Size Bytes",
+            "description": "Artifact size in bytes, when known.",
+            "type": "bigint",
+            "ormType": "bigint",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "checksum",
+            "displayName": "Checksum",
+            "description": "Artifact checksum or content hash, when available.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "producedAt",
+            "displayName": "Produced At",
+            "description": "Timestamp when the artifact was produced.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "payload",
+            "displayName": "Payload",
+            "description": "Inline structured artifact payload for small DB-stored artifacts.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "metadata",
+            "displayName": "Metadata",
+            "description": "Additional artifact metadata.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          }
+        ],
+        "moduleUserKey": "solid-core"
+      },
+      {
+        "singularName": "workflowTriggerExecution",
+        "pluralName": "workflowTriggerExecutions",
+        "displayName": "Workflow Trigger Execution",
+        "description": "Stores each trigger firing or trigger evaluation attempt, including trigger identity, status, payload, timing, and the workflow execution created from the trigger when applicable.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_workflow_trigger_execution",
+        "userKeyFieldUserKey": "triggerExecutionKey",
+        "isChild": false,
+        "parentModelUserKey": null,
+        "isSystem": false,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "triggerExecutionKey",
+            "displayName": "Trigger Execution Key",
+            "description": "Stable unique key for this trigger execution attempt.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": true,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "workflowDefinition",
+            "displayName": "Workflow Definition",
+            "description": "Workflow definition whose trigger fired or was evaluated.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "workflowDefinition",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "workflowExecution",
+            "displayName": "Workflow Execution",
+            "description": "Workflow execution created by this trigger, when a run was started.",
+            "type": "relation",
+            "ormType": "integer",
+            "isSystem": false,
+            "relationType": "many-to-one",
+            "relationCoModelFieldName": null,
+            "relationCreateInverse": true,
+            "relationCoModelSingularName": "workflowExecution",
+            "relationCoModelColumnName": null,
+            "relationModelModuleName": "solid-core",
+            "relationCascade": "cascade",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "relationJoinTableName": null,
+            "isRelationManyToManyOwner": null,
+            "relationFieldFixedFilter": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "triggerId",
+            "displayName": "Trigger Id",
+            "description": "Trigger id from the workflow definition DSL.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "triggerName",
+            "displayName": "Trigger Name",
+            "description": "Human-readable trigger name captured at execution time.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "triggerType",
+            "displayName": "Trigger Type",
+            "description": "Registered trigger type id or broad trigger category.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "selectionStaticValues": [
+              "schedule:Schedule",
+              "webhook:Webhook",
+              "event:Event",
+              "manual:Manual",
+              "api:API"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "description": "Current trigger execution status.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "received",
+            "selectionStaticValues": [
+              "received:Received",
+              "matched:Matched",
+              "ignored:Ignored",
+              "running:Running",
+              "success:Success",
+              "failed:Failed",
+              "cancelled:Cancelled"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "matched",
+            "displayName": "Matched",
+            "description": "Whether this trigger evaluation matched and should start a workflow execution.",
+            "type": "boolean",
+            "ormType": "boolean",
+            "isSystem": false,
+            "defaultValue": false,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "firedAt",
+            "displayName": "Fired At",
+            "description": "Timestamp when the trigger fired or was received.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "startedAt",
+            "displayName": "Started At",
+            "description": "Timestamp when trigger processing started.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "finishedAt",
+            "displayName": "Finished At",
+            "description": "Timestamp when trigger processing finished.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "durationMs",
+            "displayName": "Duration Ms",
+            "description": "Trigger processing duration in milliseconds.",
+            "type": "bigint",
+            "ormType": "bigint",
+            "isSystem": false,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "source",
+            "displayName": "Source",
+            "description": "Source system, scheduler, webhook endpoint, or event bus that produced the trigger.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "correlationId",
+            "displayName": "Correlation Id",
+            "description": "External correlation id for linking trigger attempts to upstream events.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "idempotencyKey",
+            "displayName": "Idempotency Key",
+            "description": "Optional idempotency key used to prevent duplicate trigger handling.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "payload",
+            "displayName": "Payload",
+            "description": "Trigger payload, request body, schedule context, or event data.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "triggerSnapshot",
+            "displayName": "Trigger Snapshot",
+            "description": "Snapshot of the trigger definition used for this trigger execution.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "errorSummary",
+            "displayName": "Error Summary",
+            "description": "Short human-readable error summary for failed trigger executions.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": false,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "errorDetails",
+            "displayName": "Error Details",
+            "description": "Structured error details captured for failed trigger executions.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          },
+          {
+            "name": "metadata",
+            "displayName": "Metadata",
+            "description": "Additional trigger execution metadata.",
+            "type": "json",
+            "ormType": "simple-json",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null
+          }
+        ],
+        "moduleUserKey": "solid-core"
+      },
+      {
+        "singularName": "workflowSecret",
+        "pluralName": "workflowSecrets",
+        "displayName": "Workflow Secret",
+        "description": "Stores encrypted global secrets available to workflow expressions.",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_workflow_secret",
+        "userKeyFieldUserKey": "key",
+        "isChild": false,
+        "parentModelUserKey": null,
+        "isSystem": false,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "key",
+            "displayName": "Key",
+            "description": "Global secret key used in workflow expressions, for example smtp.password.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": "^[A-Za-z][A-Za-z0-9_.-]*$",
+            "regexPatternNotMatchingErrorMsg": "Secret key must start with a letter and contain only letters, numbers, dots, underscores, or hyphens.",
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": true,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "displayName",
+            "displayName": "Display Name",
+            "description": "Human-facing secret name shown in the admin UI.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "description": "Operational notes describing where this secret is used.",
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": false,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "value",
+            "displayName": "Value",
+            "description": "Secret value. The admin-supplied value is encrypted before it is stored.",
+            "type": "shortText",
+            "ormType": "text",
+            "isSystem": false,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": true,
+            "encryptionType": "aes-256",
+            "decryptWhen": "before-transit",
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "valueType",
+            "displayName": "Value Type",
+            "description": "How the decrypted value should be coerced for workflow runtime usage.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "string",
+            "selectionStaticValues": [
+              "string:String",
+              "json:JSON",
+              "number:Number",
+              "boolean:Boolean"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "status",
+            "displayName": "Status",
+            "description": "Secret lifecycle status.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": false,
+            "defaultValue": "active",
+            "selectionStaticValues": [
+              "active:Active",
+              "inactive:Inactive"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
+            "name": "lastRotatedAt",
+            "displayName": "Last Rotated At",
+            "description": "When this secret was last rotated.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "lastAccessedAt",
+            "displayName": "Last Accessed At",
+            "description": "When this secret was last resolved by workflow runtime.",
+            "type": "datetime",
+            "ormType": "timestamp",
+            "isSystem": false,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          }
+        ],
+        "moduleUserKey": "solid-core"
       }
     ]
   },
@@ -6120,6 +8664,214 @@
       "viewUserKey": "roleMetadata-tree-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "roleMetadata"
+    },
+    {
+      "displayName": "solid-core Home",
+      "name": "solid-core-home-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/core/solid-core/home",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": ""
+    },
+    {
+      "displayName": "Workflow Definitions",
+      "name": "workflowDefinition-list-action",
+      "type": "custom",
+      "domain": "",
+      "context": "",
+      "customComponent": "/admin/core/solid-core/workflow-definition/list",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowDefinition-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowDefinition"
+    },
+    {
+      "displayName": "Workflow Execution List Action",
+      "name": "workflowExecution-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowExecution-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecution"
+    },
+    {
+      "displayName": "Workflow Execution Detail Action",
+      "name": "workflowExecution-detail-action",
+      "type": "custom",
+      "domain": "",
+      "context": "{}",
+      "customComponent": "/admin/core/solid-core/workflow-execution/detail",
+      "customIsModal": false,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowExecution-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecution"
+    },
+    {
+      "displayName": "Workflow Execution Tree View Action",
+      "name": "workflowExecution-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowExecution-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecution"
+    },
+    {
+      "displayName": "Workflow Definition Tree View Action",
+      "name": "workflowDefinition-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowDefinition-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowDefinition"
+    },
+    {
+      "displayName": "Workflow Step Execution List Action",
+      "name": "workflowStepExecution-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowStepExecution-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowStepExecution"
+    },
+    {
+      "displayName": "Workflow Step Execution Tree View Action",
+      "name": "workflowStepExecution-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowStepExecution-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowStepExecution"
+    },
+    {
+      "displayName": "Workflow Execution Log List Action",
+      "name": "workflowExecutionLog-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowExecutionLog-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecutionLog"
+    },
+    {
+      "displayName": "Workflow Execution Log Tree View Action",
+      "name": "workflowExecutionLog-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowExecutionLog-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecutionLog"
+    },
+    {
+      "displayName": "Workflow Execution Artifact List Action",
+      "name": "workflowExecutionArtifact-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowExecutionArtifact-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecutionArtifact"
+    },
+    {
+      "displayName": "Workflow Execution Artifact Tree View Action",
+      "name": "workflowExecutionArtifact-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowExecutionArtifact-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecutionArtifact"
+    },
+    {
+      "displayName": "Workflow Trigger Execution List Action",
+      "name": "workflowTriggerExecution-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowTriggerExecution-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowTriggerExecution"
+    },
+    {
+      "displayName": "Workflow Trigger Execution Tree View Action",
+      "name": "workflowTriggerExecution-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowTriggerExecution-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowTriggerExecution"
+    },
+    {
+      "displayName": "Workflow Secret List Action",
+      "name": "workflowSecret-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowSecret-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowSecret"
+    },
+    {
+      "displayName": "Workflow Secret Tree View Action",
+      "name": "workflowSecret-tree-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "workflowSecret-tree-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowSecret"
     }
   ],
   "menus": [
@@ -6473,6 +9225,59 @@
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item",
       "iconName": "fact_check"
+    },
+    {
+      "displayName": "Home",
+      "name": "solid-core-home-menu",
+      "sequenceNumber": 1,
+      "actionUserKey": "solid-core-home-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": ""
+    },
+    {
+      "displayName": "Workflow",
+      "name": "workflow-menu-item",
+      "sequenceNumber": 9,
+      "actionUserKey": "",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "",
+      "iconName": "account_tree"
+    },
+    {
+      "displayName": "Workflow Definition",
+      "name": "workflowDefinition-menu-item",
+      "sequenceNumber": 1,
+      "actionUserKey": "workflowDefinition-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "workflow-menu-item",
+      "iconName": "schema"
+    },
+    {
+      "displayName": "Workflow Execution",
+      "name": "workflowExecution-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "workflowExecution-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "workflow-menu-item",
+      "iconName": "play_circle"
+    },
+    {
+      "displayName": "Workflow Trigger Execution",
+      "name": "workflowTriggerExecution-menu-item",
+      "sequenceNumber": 3,
+      "actionUserKey": "workflowTriggerExecution-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "workflow-menu-item",
+      "iconName": "bolt"
+    },
+    {
+      "displayName": "Secrets",
+      "name": "workflowSecret-menu-item",
+      "sequenceNumber": 4,
+      "actionUserKey": "workflowSecret-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "workflow-menu-item",
+      "iconName": "key"
     }
   ],
   "views": [
@@ -14436,6 +17241,2978 @@
           }
         ]
       }
+    },
+    {
+      "name": "workflowDefinition-list-view",
+      "displayName": "Workflow Definition",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowDefinition",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "headerButtons": [
+            {
+              "attrs": {
+                "label": "Open Workflow Editor",
+                "action": "openWorkflowDefinitionEditorHeaderAction",
+                "actionInContextMenu": false,
+                "openInPopup": false,
+                "icon": "si-sparkles"
+              }
+            }
+          ],
+          "rowButtons": [
+            {
+              "attrs": {
+                "className": "p-button-text",
+                "icon": "si-pencil",
+                "label": "Open Editor",
+                "action": "openWorkflowDefinitionEditorRowAction",
+                "openInPopup": false,
+                "actionInContextMenu": true
+              }
+            }
+          ]
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "key"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "moduleMetadata"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "namespace"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "definitionVersion"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "definitionChecksum"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "definitionYaml"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "tags"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowDefinition-form-view",
+      "displayName": "Workflow Definition",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowDefinition",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Workflow Definition",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "workflow-definition-notebook"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-definition-basic-info",
+                      "label": "Basic Info"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-definition-identity",
+                          "label": "Identity",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "key"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "displayName"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "moduleMetadata"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "namespace"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-definition-lifecycle",
+                          "label": "Lifecycle",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "status"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "definitionVersion"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "definitionChecksum"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "tags"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "description"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-definition-yaml",
+                      "label": "Definition YAML"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-definition-yaml-group",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12 min-h-0 h-full"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "definitionYaml",
+                              "showLabel": false,
+                              "className": "field w-full px-2 pt-2 min-h-0 h-full",
+                              "height": "calc(100vh - 260px)"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowExecution-list-view",
+      "displayName": "Workflow Execution",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecution",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "editAction": "workflowExecution-detail-action",
+          "delete": true,
+          "import": false,
+          "export": false,
+          "showRowActionsAsIconOnly": true,
+          "showRowActionsInContextMenu": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "executionIdentifier",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowDefinition",
+              "sortable": true,
+              "isSearchable": true,
+              "searchField": "workflowDefinition.displayName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowDisplayName",
+              "className": "font-bold",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status",
+              "sortable": true,
+              "isSearchable": true,
+              "viewWidget": "PillWidget",
+              "pillColorMap": {
+                "created": "#e5e7eb",
+                "running": "#dbeafe",
+                "success": "#dcfce7",
+                "failed": "#fee2e2",
+                "cancelled": "#fef3c7",
+                "default": "#e5e7eb"
+              }
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerType",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "startedAt",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "finishedAt",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "durationMs",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorSummary",
+              "isSearchable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowExecution-form-view",
+      "displayName": "Workflow Execution",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecution",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Workflow Execution",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "workflow-execution-notebook"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-execution-basic-info",
+                      "label": "Basic Info"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-execution-identity",
+                          "label": "Identity",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "executionIdentifier"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "workflowDefinition"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "workflowKey"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "workflowDisplayName"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "requestedByUserId"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-execution-runtime",
+                          "label": "Runtime",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "status"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "triggerType"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "startedAt"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "finishedAt"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "durationMs"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "definitionVersion"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "definitionChecksum"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-execution-input",
+                      "label": "Input"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-execution-input-group",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12 min-h-0 h-full"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "inputPayload",
+                              "showLabel": false,
+                              "className": "field w-full px-2 pt-2 min-h-0 h-full",
+                              "height": "calc(100vh - 260px)"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-execution-output",
+                      "label": "Output"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-execution-output-group",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12 min-h-0 h-full"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "outputPayload",
+                              "showLabel": false,
+                              "className": "field w-full px-2 pt-2 min-h-0 h-full",
+                              "height": "calc(100vh - 260px)"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-execution-definition-snapshot",
+                      "label": "Definition Snapshot"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-execution-definition-snapshot-group",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12 min-h-0 h-full"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "definitionSnapshot",
+                              "showLabel": false,
+                              "className": "field w-full px-2 pt-2 min-h-0 h-full",
+                              "height": "calc(100vh - 260px)",
+                              "widget": "codeEditor",
+                              "editorLanguage": "yaml",
+                              "fontSize": 12
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-execution-steps",
+                      "label": "Steps"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-execution-steps-group",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "workflowStepExecutions",
+                              "showLabel": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-execution-logs",
+                      "label": "Logs"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-execution-logs-group",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "workflowExecutionLogs",
+                              "showLabel": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-execution-artifacts",
+                      "label": "Artifacts"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-execution-artifacts-group",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "workflowExecutionArtifacts",
+                              "showLabel": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-execution-errors",
+                      "label": "Errors"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-execution-error-summary-group",
+                          "label": "Summary",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "errorSummary"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-execution-error-details-group",
+                          "label": "Details",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12 min-h-0 h-full"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "errorDetails",
+                              "showLabel": false,
+                              "className": "field w-full px-2 pt-2 min-h-0 h-full",
+                              "height": "calc(100vh - 300px)"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowExecution-tree-view",
+      "displayName": "Workflow Execution",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecution",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "executionIdentifier"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowDefinition"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowDisplayName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "startedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "finishedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "durationMs"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorSummary"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowDefinition-tree-view",
+      "displayName": "Workflow Definition",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowDefinition",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "key"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "moduleMetadata"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "namespace"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "definitionVersion"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "definitionChecksum"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "definitionYaml"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "tags"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowStepExecution-list-view",
+      "displayName": "Workflow Step Execution",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowStepExecution",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "stepExecutionKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeKind"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "attemptNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "retryCount"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "maxRetries"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "parentNodeId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "parentStepExecutionKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequenceNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "startedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "finishedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "durationMs"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "timeoutMs"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "inputPayload"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "outputPayload"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "runtimeContext"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeSnapshot"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorSummary"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorDetails"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowStepExecution-form-view",
+      "displayName": "Workflow Step Execution",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowStepExecution",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Workflow Step Execution",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "stepExecutionKey"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "nodeId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "nodeKind"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "status"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "retryCount"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "parentNodeId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sequenceNumber"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "finishedAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "timeoutMs"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "outputPayload"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "nodeSnapshot"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "errorDetails"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "workflowExecution"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "nodeName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "nodeType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "attemptNumber"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "maxRetries"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "parentStepExecutionKey"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "startedAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "durationMs"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "inputPayload"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "runtimeContext"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "errorSummary"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowStepExecution-tree-view",
+      "displayName": "Workflow Step Execution",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowStepExecution",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "stepExecutionKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeKind"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "attemptNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "retryCount"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "maxRetries"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "parentNodeId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "parentStepExecutionKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequenceNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "startedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "finishedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "durationMs"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "timeoutMs"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "inputPayload"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "outputPayload"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "runtimeContext"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeSnapshot"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorSummary"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorDetails"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowExecutionLog-list-view",
+      "displayName": "Workflow Execution Log",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecutionLog",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "logKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowStepExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "level"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "message"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "eventType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "source"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequenceNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "occurredAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "context"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "metadata"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowExecutionLog-form-view",
+      "displayName": "Workflow Execution Log",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecutionLog",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Workflow Execution Log",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "logKey"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "workflowStepExecution"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "message"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "source"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "nodeType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "occurredAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "metadata"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "workflowExecution"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "level"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "eventType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "nodeId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sequenceNumber"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "context"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowExecutionLog-tree-view",
+      "displayName": "Workflow Execution Log",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecutionLog",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "logKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowStepExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "level"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "message"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "eventType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "source"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sequenceNumber"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "occurredAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "context"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "metadata"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowExecutionArtifact-list-view",
+      "displayName": "Workflow Execution Artifact",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecutionArtifact",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "artifactKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowStepExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "artifactType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "storageProviderKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "uri"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "fileName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mimeType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sizeBytes"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "checksum"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "producedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "payload"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "metadata"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowExecutionArtifact-form-view",
+      "displayName": "Workflow Execution Artifact",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecutionArtifact",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Workflow Execution Artifact",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "artifactKey"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "workflowStepExecution"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "description"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "nodeId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "storageProviderKey"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "fileName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sizeBytes"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "producedAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "metadata"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "workflowExecution"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "name"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "artifactType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "nodeType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "uri"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "mimeType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "checksum"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "payload"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowExecutionArtifact-tree-view",
+      "displayName": "Workflow Execution Artifact",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowExecutionArtifact",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "artifactKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowStepExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "artifactType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "nodeType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "storageProviderKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "uri"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "fileName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "mimeType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "sizeBytes"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "checksum"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "producedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "payload"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "metadata"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowTriggerExecution-list-view",
+      "displayName": "Workflow Trigger Execution",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowTriggerExecution",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerExecutionKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowDefinition"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "matched"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "firedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "startedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "finishedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "durationMs"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "source"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "correlationId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "idempotencyKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "payload"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerSnapshot"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorSummary"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorDetails"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "metadata"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowTriggerExecution-form-view",
+      "displayName": "Workflow Trigger Execution",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowTriggerExecution",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Workflow Trigger Execution",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "sheet-1"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-1",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "triggerExecutionKey"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "workflowExecution"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "triggerName"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "status"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "firedAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "finishedAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "source"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "idempotencyKey"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "triggerSnapshot"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "errorDetails"
+                        }
+                      }
+                    ]
+                  },
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "group-2",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "workflowDefinition"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "triggerId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "triggerType"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "matched"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "startedAt"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "durationMs"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "correlationId"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "payload"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "errorSummary"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "metadata"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowTriggerExecution-tree-view",
+      "displayName": "Workflow Trigger Execution",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowTriggerExecution",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerExecutionKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowDefinition"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "workflowExecution"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "matched"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "firedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "startedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "finishedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "durationMs"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "source"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "correlationId"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "idempotencyKey"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "payload"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "triggerSnapshot"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorSummary"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "errorDetails"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "metadata"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowSecret-list-view",
+      "displayName": "Workflow Secret",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowSecret",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "import": false,
+          "export": false,
+          "showRowActionsAsIconOnly": true,
+          "showRowActionsInContextMenu": false
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "key",
+              "sortable": true,
+              "isSearchable": true,
+              "className": "font-bold"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "description",
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "valueType",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status",
+              "sortable": true,
+              "isSearchable": true,
+              "viewWidget": "PillWidget",
+              "pillColorMap": {
+                "active": "#dcfce7",
+                "inactive": "#e5e7eb",
+                "default": "#e5e7eb"
+              }
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "lastRotatedAt",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "lastAccessedAt",
+              "sortable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowSecret-tree-view",
+      "displayName": "Workflow Secret",
+      "type": "tree",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowSecret",
+      "layout": {
+        "type": "tree",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "key"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "displayName"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "valueType"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "status"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "lastRotatedAt"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "lastAccessedAt"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "workflowSecret-form-view",
+      "displayName": "Workflow Secret",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "workflowSecret",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Workflow Secret",
+          "className": "grid"
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "workflow-secret-notebook"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-secret-basic-info",
+                      "label": "Basic Info"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-secret-identity",
+                          "label": "Identity",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "key"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "displayName"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "description"
+                            }
+                          }
+                        ]
+                      },
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-secret-value",
+                          "label": "Secret",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "value"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "valueType"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "status"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "workflow-secret-usage",
+                      "label": "Usage"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "workflow-secret-usage-group",
+                          "label": "Usage",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "lastRotatedAt"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "lastAccessedAt"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
     }
   ],
   "emailTemplates": [
@@ -14554,7 +20331,24 @@
   ],
   "checksums": [],
   "listOfValues": [],
-  "scheduledJobs": [],
+  "scheduledJobs": [
+    {
+      "scheduleName": "Workflow Scheduled Trigger Evaluator",
+      "isActive": true,
+      "frequency": "Custom",
+      "cronExpression": "*/5 * * * *",
+      "startTime": null,
+      "endTime": null,
+      "startDate": null,
+      "endDate": null,
+      "dayOfMonth": 0,
+      "lastRunAt": null,
+      "nextRunAt": null,
+      "dayOfWeek": "[\"Monday\",\"Tuesday\",\"Wednesday\",\"Thursday\",\"Friday\",\"Saturday\",\"Sunday\"]",
+      "job": "WorkflowScheduledTriggerJobService",
+      "moduleUserKey": "solid-core"
+    }
+  ],
   "securityRules": [
     {
       "name": "model:User-role:Internal User",
@@ -14961,5 +20755,81 @@
       }
     }
   ],
-  "savedFilters": []
+  "savedFilters": [
+    {
+      "name": "Workflow Executions: Created",
+      "description": "Show workflow executions with Created status.",
+      "modelUserKey": "workflowExecution",
+      "viewUserKey": "workflowExecution-list-view",
+      "filterQueryJson": {
+        "$or": [
+          {
+            "status": {
+              "$eq": "created"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Workflow Executions: Running",
+      "description": "Show workflow executions with Running status.",
+      "modelUserKey": "workflowExecution",
+      "viewUserKey": "workflowExecution-list-view",
+      "filterQueryJson": {
+        "$or": [
+          {
+            "status": {
+              "$eq": "running"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Workflow Executions: Success",
+      "description": "Show workflow executions with Success status.",
+      "modelUserKey": "workflowExecution",
+      "viewUserKey": "workflowExecution-list-view",
+      "filterQueryJson": {
+        "$or": [
+          {
+            "status": {
+              "$eq": "success"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Workflow Executions: Failed",
+      "description": "Show workflow executions with Failed status.",
+      "modelUserKey": "workflowExecution",
+      "viewUserKey": "workflowExecution-list-view",
+      "filterQueryJson": {
+        "$or": [
+          {
+            "status": {
+              "$eq": "failed"
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "Workflow Executions: Cancelled",
+      "description": "Show workflow executions with Cancelled status.",
+      "modelUserKey": "workflowExecution",
+      "viewUserKey": "workflowExecution-list-view",
+      "filterQueryJson": {
+        "$or": [
+          {
+            "status": {
+              "$eq": "cancelled"
+            }
+          }
+        ]
+      }
+    }
+  ]
 }
