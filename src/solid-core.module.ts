@@ -138,6 +138,8 @@ import { ComputedFieldEvaluationPublisherRedis } from "./jobs/redis/computed-fie
 import { ComputedFieldEvaluationSubscriberRedis } from "./jobs/redis/computed-field-evaluation-subscriber-redis.service";
 import { GenerateCodePublisherRedis } from "./jobs/redis/generate-code-publisher-redis.service";
 import { GenerateCodeSubscriberRedis } from "./jobs/redis/generate-code-subscriber-redis.service";
+import { WorkflowExecutionPublisherRedis } from "./jobs/redis/workflow-execution-publisher-redis.service";
+import { WorkflowExecutionSubscriberRedis } from "./jobs/redis/workflow-execution-subscriber-redis.service";
 import { Msg91OTPQueuePublisherRedis } from "./jobs/redis/msg91-otp-publisher-redis.service";
 import { Msg91OTPQueueSubscriberRedis } from "./jobs/redis/msg91-otp-subscriber-redis.service";
 import { Msg91SmsQueuePublisherRedis } from "./jobs/redis/msg91-sms-publisher-redis.service";
@@ -241,6 +243,8 @@ import { ComputedFieldEvaluationPublisherDatabase } from './jobs/database/comput
 import { ComputedFieldEvaluationSubscriberDatabase } from './jobs/database/computed-field-evaluation-subscriber-database.service';
 import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-publisher-database.service';
 import { GenerateCodeSubscriberDatabase } from './jobs/database/generate-code-subscriber-database.service';
+import { WorkflowExecutionPublisherDatabase } from './jobs/database/workflow-execution-publisher-database.service';
+import { WorkflowExecutionSubscriberDatabase } from './jobs/database/workflow-execution-subscriber-database.service';
 import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-database.service';
 import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
 import { Msg91SmsQueuePublisherDatabase } from './jobs/database/msg91-sms-publisher-database.service';
@@ -263,6 +267,8 @@ import { Three60WhatsappQueuePublisherDatabase } from "./jobs/database/three60-w
 import { Three60WhatsappQueueSubscriberDatabase } from "./jobs/database/three60-whatsapp-subscriber-database.service";
 import { GenerateCodePublisherRabbitmq } from "./jobs/rabbitmq/generate-code-publisher.service";
 import { GenerateCodeSubscriberRabbitmq } from "./jobs/rabbitmq/generate-code-subscriber.service";
+import { WorkflowExecutionPublisherRabbitmq } from "./jobs/rabbitmq/workflow-execution-publisher.service";
+import { WorkflowExecutionSubscriberRabbitmq } from "./jobs/rabbitmq/workflow-execution-subscriber.service";
 import { Three60WhatsappQueuePublisher } from "./jobs/rabbitmq/three60-whatsapp-publisher.service";
 import { Three60WhatsappQueueSubscriber } from "./jobs/rabbitmq/three60-whatsapp-subscriber.service";
 import { TwilioSmsQueuePublisherRabbitmq } from "./jobs/rabbitmq/twilio-sms-publisher.service";
@@ -745,6 +751,8 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     ComputedFieldEvaluationSubscriberRedis,
     GenerateCodePublisherRedis,
     GenerateCodeSubscriberRedis,
+    WorkflowExecutionPublisherRedis,
+    WorkflowExecutionSubscriberRedis,
     Msg91OTPQueuePublisherRedis,
     Msg91OTPQueueSubscriberRedis,
     Msg91SmsQueuePublisherRedis,
@@ -761,6 +769,10 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     GenerateCodeSubscriberDatabase,
     GenerateCodePublisherRabbitmq,
     GenerateCodeSubscriberRabbitmq,
+    WorkflowExecutionPublisherDatabase,
+    WorkflowExecutionSubscriberDatabase,
+    WorkflowExecutionPublisherRabbitmq,
+    WorkflowExecutionSubscriberRabbitmq,
     Msg91OTPQueuePublisher,
     MqMessageQueueService,
     MqMessageService,

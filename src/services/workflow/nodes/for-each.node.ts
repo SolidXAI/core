@@ -72,11 +72,9 @@ export class ForEachNode implements WorkflowNodeHandler {
     }
 
     const childNodes = context.node.tasks ?? [];
-    const iterations = [];
 
     for (let index = 0; index < items.length; index++) {
       const inheritedOutputs = context.outputs ?? {};
-      const inheritedOutputKeys = new Set(Object.keys(inheritedOutputs));
       const iterationOutputs = { ...inheritedOutputs };
 
       await context.runNodes(childNodes, {
@@ -84,28 +82,15 @@ export class ForEachNode implements WorkflowNodeHandler {
         index,
         outputs: iterationOutputs,
       });
-
-      const childOutputs = Object.entries(iterationOutputs).reduce(
-        (acc, [key, value]) => {
-          if (!inheritedOutputKeys.has(key)) {
-            acc[key] = value;
-          }
-          return acc;
-        },
-        {} as Record<string, any>,
-      );
-
-      iterations.push({
-        index,
-        item: items[index],
-        outputs: childOutputs,
-      });
     }
 
     return {
       output: {
         count: items.length,
-        iterations,
+        childNodeIds: childNodes.map((childNode) => childNode.id),
+        // Keep the control-node output intentionally small. Per-iteration
+        // outputs are already stored on the child workflowStepExecution rows.
+        iterationOutputsStoredOnSteps: true,
       },
     };
   }

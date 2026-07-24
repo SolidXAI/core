@@ -116,8 +116,16 @@ export class WorkflowDefinitionService extends CRUDService<WorkflowDefinition>{
     return this.workflowRuntimeService.executeDefinitionById(id, request ?? {});
   }
 
+  executeWorkflowAsync(id: number, request: ExecuteWorkflowDto) {
+    return this.workflowRuntimeService.executeDefinitionByIdAsync(id, request ?? {});
+  }
+
   executeWorkflowByKey(key: string, request: ExecuteWorkflowDto) {
     return this.workflowRuntimeService.executeDefinitionByKey(key, request ?? {});
+  }
+
+  executeWorkflowByKeyAsync(key: string, request: ExecuteWorkflowDto) {
+    return this.workflowRuntimeService.executeDefinitionByKeyAsync(key, request ?? {});
   }
 
   async executeWorkflowWebhook(

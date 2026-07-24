@@ -45,6 +45,9 @@ export class WorkflowExecution extends CommonEntity {
     @Column({ type: "simple-json", nullable: true })
     inputPayload: any;
 
+    // Retained for schema/backward compatibility only. Combined workflow output
+    // is no longer persisted here because large loops can make this payload
+    // duplicate all step outputs and cause OOMs; use step execution outputs.
     @Column({ type: "simple-json", nullable: true })
     outputPayload: any;
 

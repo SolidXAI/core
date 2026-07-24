@@ -16,10 +16,24 @@ export class WorkflowInvocationService {
     return this.workflowRuntimeService.executeDefinitionById(id, request);
   }
 
+  executeByIdAsync(
+    id: number,
+    request: WorkflowExecutionRequest = {},
+  ): Promise<WorkflowExecutionResponse> {
+    return this.workflowRuntimeService.executeDefinitionByIdAsync(id, request);
+  }
+
   executeByKey(
     key: string,
     request: WorkflowExecutionRequest = {},
   ): Promise<WorkflowExecutionResponse> {
     return this.workflowRuntimeService.executeDefinitionByKey(key, request);
+  }
+
+  executeByKeyAsync(
+    key: string,
+    request: WorkflowExecutionRequest = {},
+  ): Promise<WorkflowExecutionResponse> {
+    return this.workflowRuntimeService.executeDefinitionByKeyAsync(key, request);
   }
 }

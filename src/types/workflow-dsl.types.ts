@@ -43,6 +43,7 @@ export type WorkflowNodeConfigurationValueType =
 
 /** Lifecycle status for an entire workflow execution. */
 export type WorkflowExecutionStatus =
+  | 'enqueued'
   | 'created'
   | 'running'
   | 'success'

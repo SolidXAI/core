@@ -5616,6 +5616,7 @@
             "isSystem": false,
             "defaultValue": "created",
             "selectionStaticValues": [
+              "enqueued:Enqueued",
               "created:Created",
               "running:Running",
               "success:Success",

@@ -50,9 +50,7 @@ const jsonEditorField = {
       bcc: {},
       from: { type: 'string' },
       parentEntity: { type: 'string' },
-      parentEntityId: {},
-      attachments: { type: 'array', default: [] },
-      wrapperAttachments: { type: 'array', default: [] },
+      parentEntityId: { type: 'string' },
     },
   },
   outputSchema: {
@@ -111,8 +109,6 @@ const jsonEditorField = {
       shouldQueueEmails: true,
       cc: [],
       bcc: [],
-      attachments: [],
-      wrapperAttachments: [],
     },
     configurationFields: [
       {
@@ -130,13 +126,16 @@ const jsonEditorField = {
         key: 'to',
         label: 'To',
         description:
-          'Recipient email address, comma-separated list, or array. Expressions are allowed.',
+          'Recipient email address, comma-separated list, or array. Expressions are allowed. Use a pure expression like "{{ outputs.someStep.emails }}" when the expression should evaluate to an array; mixed text such as "ops@example.com, {{ outputs.someStep.emails }}" is treated as comma-separated text.',
         valueType: 'array',
         required: true,
         expressionAllowed: true,
         group: 'Recipients',
-        widgetHint: 'json-editor',
-        uiSchema: fullWidthField,
+        widgetHint: 'recipient-list',
+        uiSchema: {
+          ...fullWidthField,
+          placeholder: '{{ item.email }}',
+        },
       },
       {
         key: 'subject',
@@ -222,23 +221,29 @@ const jsonEditorField = {
         key: 'cc',
         label: 'CC',
         description:
-          'Optional CC recipients as comma-separated text or an array. Expressions are allowed.',
+          'Optional CC recipients as comma-separated text or an array. Expressions are allowed. Use a pure expression like "{{ outputs.someStep.emails }}" when the expression should evaluate to an array; mixed text such as "ops@example.com, {{ outputs.someStep.emails }}" is treated as comma-separated text.',
         valueType: 'array',
         expressionAllowed: true,
         group: 'Recipients',
-        widgetHint: 'json-editor',
-        uiSchema: fullWidthField,
+        widgetHint: 'recipient-list',
+        uiSchema: {
+          ...fullWidthField,
+          placeholder: '{{ outputs.someStep.ccEmails }}',
+        },
       },
       {
         key: 'bcc',
         label: 'BCC',
         description:
-          'Optional BCC recipients as comma-separated text or an array. Expressions are allowed.',
+          'Optional BCC recipients as comma-separated text or an array. Expressions are allowed. Use a pure expression like "{{ outputs.someStep.emails }}" when the expression should evaluate to an array; mixed text such as "ops@example.com, {{ outputs.someStep.emails }}" is treated as comma-separated text.',
         valueType: 'array',
         expressionAllowed: true,
         group: 'Recipients',
-        widgetHint: 'json-editor',
-        uiSchema: fullWidthField,
+        widgetHint: 'recipient-list',
+        uiSchema: {
+          ...fullWidthField,
+          placeholder: '{{ outputs.someStep.bccEmails }}',
+        },
       },
       {
         key: 'from',
@@ -263,32 +268,10 @@ const jsonEditorField = {
         key: 'parentEntityId',
         label: 'Parent Entity ID',
         description: 'Optional entity id used by providers for audit linkage.',
-        valueType: 'any',
+        valueType: 'string',
         expressionAllowed: true,
         group: 'Advanced',
         uiSchema: fullWidthField,
-      },
-      {
-        key: 'attachments',
-        label: 'Attachments',
-        description:
-          'Optional JSON attachment array using the native MailAttachment shape. File upload handling is intentionally not added in this pass.',
-        valueType: 'array',
-        expressionAllowed: true,
-        group: 'Advanced',
-        widgetHint: 'json-editor',
-        uiSchema: jsonEditorField,
-      },
-      {
-        key: 'wrapperAttachments',
-        label: 'Wrapper Attachments',
-        description:
-          'Optional JSON wrapper attachment array using the native MailAttachmentWrapper shape.',
-        valueType: 'array',
-        expressionAllowed: true,
-        group: 'Advanced',
-        widgetHint: 'json-editor',
-        uiSchema: jsonEditorField,
       },
     ],
     outputs: [

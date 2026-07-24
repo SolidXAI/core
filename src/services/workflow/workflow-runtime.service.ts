@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { EntityManager } from 'typeorm';
 import { WorkflowDefinition } from '../../entities/workflow-definition.entity';
@@ -16,6 +16,8 @@ import { WorkflowExpressionService } from './workflow-expression.service';
 import { WorkflowDefinitionValidatorService } from './workflow-definition-validator.service';
 import { WorkflowNodeRegistryService } from './workflow-node-registry.service';
 import { WorkflowSecretService } from '../workflow-secret.service';
+import { PublisherFactory } from '../queues/publisher-factory.service';
+import { WorkflowExecutionQueuePayload } from '../../types/workflow-execution-queue.types';
 import YAML from 'yaml';
 
 @Injectable()
@@ -30,6 +32,7 @@ export class WorkflowRuntimeService {
     private readonly writer: WorkflowExecutionWriterService,
     private readonly validator: WorkflowDefinitionValidatorService,
     private readonly workflowSecretService: WorkflowSecretService,
+    private readonly workflowExecutionPublisherFactory: PublisherFactory<WorkflowExecutionQueuePayload>,
   ) {}
 
   async executeDefinitionById(
@@ -43,6 +46,17 @@ export class WorkflowRuntimeService {
     return this.executeDefinition(definition, request);
   }
 
+  async executeDefinitionByIdAsync(
+    id: number,
+    request: WorkflowExecutionRequest = {},
+  ): Promise<WorkflowExecutionResponse> {
+    const definition = await this.entityManager.findOne(WorkflowDefinition, {
+      where: { id } as any,
+    });
+
+    return this.enqueueDefinition(definition, request);
+  }
+
   async executeDefinitionByKey(
     key: string,
     request: WorkflowExecutionRequest,
@@ -54,9 +68,81 @@ export class WorkflowRuntimeService {
     return this.executeDefinition(definition, request);
   }
 
+  async executeDefinitionByKeyAsync(
+    key: string,
+    request: WorkflowExecutionRequest = {},
+  ): Promise<WorkflowExecutionResponse> {
+    const definition = await this.entityManager.findOne(WorkflowDefinition, {
+      where: { key } as any,
+    });
+
+    return this.enqueueDefinition(definition, request);
+  }
+
+  private async queueWorkflowExecution(
+    payload: WorkflowExecutionQueuePayload,
+  ): Promise<string> {
+    const messageId = await this.workflowExecutionPublisherFactory.publish(
+      {
+        payload,
+        parentEntityId: payload.executionId,
+        parentEntity: 'workflowExecution',
+        retryCount: 0,
+        retryInterval: 1000,
+      },
+      'WorkflowExecutionPublisher',
+    );
+
+    this.logger.log(
+      `Queued workflow execution message ${messageId} for execution id ${payload.executionId}.`,
+    );
+
+    return messageId;
+  }
+
+  private async enqueueDefinition(
+    definition: WorkflowDefinition | null,
+    request: WorkflowExecutionRequest,
+  ): Promise<WorkflowExecutionResponse> {
+    if (!definition) {
+      throw new BadRequestException('Workflow definition not found.');
+    }
+
+    this.validator.validate(this.assertDefinitionYaml(definition.definitionYaml));
+    const execution = await this.writer.createEnqueuedExecution(definition, request);
+    await this.queueWorkflowExecution({
+      executionId: execution.id,
+    });
+
+    return this.toResponse(execution);
+  }
+
+  async executeEnqueuedExecution(
+    executionId: number,
+  ): Promise<WorkflowExecutionResponse> {
+    const execution = await this.entityManager.findOne(WorkflowExecution, {
+      where: { id: executionId } as any,
+      relations: ['workflowDefinition'],
+    });
+
+    if (!execution) {
+      throw new NotFoundException(`Workflow execution ${executionId} not found.`);
+    }
+
+    if (execution.status !== 'enqueued') {
+      throw new BadRequestException(
+        `Workflow execution ${executionId} is ${execution.status}; expected enqueued.`,
+      );
+    }
+
+    const request = this.readEnqueuedExecutionRequest(execution);
+    return this.executeDefinition(execution.workflowDefinition, request, execution);
+  }
+
   private async executeDefinition(
     definition: WorkflowDefinition | null,
     request: WorkflowExecutionRequest,
+    existingExecution?: WorkflowExecution,
   ): Promise<WorkflowExecutionResponse> {
     if (!definition) {
       throw new BadRequestException('Workflow definition not found.');
@@ -72,7 +158,9 @@ export class WorkflowRuntimeService {
       input,
       variables,
     };
-    const execution = await this.writer.createExecution(definition, effectiveRequest);
+    const execution = existingExecution
+      ? await this.writer.startExecution(existingExecution, effectiveRequest)
+      : await this.writer.createExecution(definition, effectiveRequest);
     const nodeCount = this.countNodes(definitionDsl.nodes);
     const outputs: Record<string, any> = {};
     const runtimeContext: WorkflowRuntimeContext = {
@@ -144,6 +232,66 @@ export class WorkflowRuntimeService {
 
       return this.toResponse(failed);
     }
+  }
+
+  async getExecutionStatus(executionId: number): Promise<WorkflowExecutionResponse> {
+    const execution = await this.findExecutionOrThrow(executionId);
+    return this.toResponse(execution);
+  }
+
+  async getLastStepOutput(executionId: number): Promise<any> {
+    await this.findExecutionOrThrow(executionId);
+    const step = await this.entityManager.findOne(WorkflowStepExecution, {
+      where: { workflowExecution: { id: executionId } } as any,
+      order: {
+        sequenceNumber: 'DESC',
+        id: 'DESC',
+      } as any,
+    });
+
+    if (!step) {
+      throw new NotFoundException(`No step executions found for workflow execution ${executionId}.`);
+    }
+
+    return this.toStepOutputResponse(step);
+  }
+
+  async getStepOutput(
+    executionId: number,
+    stepNameOrId: string,
+    options: { latest?: boolean; limit?: number; offset?: number } = {},
+  ): Promise<any> {
+    await this.findExecutionOrThrow(executionId);
+
+    const qb = this.entityManager
+      .createQueryBuilder(WorkflowStepExecution, 'step')
+      .innerJoin('step.workflowExecution', 'execution')
+      .where('execution.id = :executionId', { executionId })
+      .andWhere(
+        '(step.nodeId = :stepNameOrId OR step.nodeName = :stepNameOrId OR step.stepExecutionKey = :stepNameOrId)',
+        { stepNameOrId },
+      )
+      .orderBy('step.sequenceNumber', options.latest === false ? 'ASC' : 'DESC')
+      .addOrderBy('step.id', options.latest === false ? 'ASC' : 'DESC');
+
+    if (options.latest !== false && options.limit === undefined && options.offset === undefined) {
+      const step = await qb.getOne();
+      if (!step) {
+        throw new NotFoundException(
+          `No step output found for '${stepNameOrId}' in workflow execution ${executionId}.`,
+        );
+      }
+      return this.toStepOutputResponse(step);
+    }
+
+    const limit = Math.max(1, Math.min(Number(options.limit ?? 50), 200));
+    const offset = Math.max(0, Number(options.offset ?? 0));
+    const [steps, totalRecords] = await qb.limit(limit).offset(offset).getManyAndCount();
+
+    return {
+      meta: this.buildPagedMeta(offset, limit, totalRecords),
+      records: steps.map((step) => this.toStepOutputResponse(step)),
+    };
   }
 
   private resolveWorkflowInput(
@@ -381,6 +529,69 @@ export class WorkflowRuntimeService {
     }
 
     return parsed as WorkflowDefinitionDsl;
+  }
+
+  private readEnqueuedExecutionRequest(execution: WorkflowExecution): WorkflowExecutionRequest {
+    const payload = execution.inputPayload;
+    if (!payload || typeof payload !== 'object' || Array.isArray(payload)) {
+      return {
+        triggerType: execution.triggerType,
+        requestedByUserId: execution.requestedByUserId as any,
+      };
+    }
+
+    return {
+      ...(payload as WorkflowExecutionRequest),
+      triggerType: (payload as WorkflowExecutionRequest).triggerType ?? execution.triggerType,
+      requestedByUserId:
+        (payload as WorkflowExecutionRequest).requestedByUserId ??
+        (execution.requestedByUserId as any),
+    };
+  }
+
+  private async findExecutionOrThrow(executionId: number): Promise<WorkflowExecution> {
+    const execution = await this.entityManager.findOne(WorkflowExecution, {
+      where: { id: executionId } as any,
+    });
+
+    if (!execution) {
+      throw new NotFoundException(`Workflow execution ${executionId} not found.`);
+    }
+
+    return execution;
+  }
+
+  private toStepOutputResponse(step: WorkflowStepExecution) {
+    return {
+      id: step.id,
+      stepExecutionKey: step.stepExecutionKey,
+      nodeId: step.nodeId,
+      nodeName: step.nodeName,
+      nodeType: step.nodeType,
+      nodeKind: step.nodeKind,
+      sequenceNumber: step.sequenceNumber,
+      attemptNumber: step.attemptNumber,
+      status: step.status,
+      startedAt: step.startedAt,
+      finishedAt: step.finishedAt,
+      durationMs: step.durationMs as any,
+      runtimeContext: step.runtimeContext,
+      outputPayload: step.outputPayload,
+      errorSummary: step.errorSummary,
+    };
+  }
+
+  private buildPagedMeta(offset: number, limit: number, totalRecords: number) {
+    const currentPage = limit ? Math.floor(offset / limit) + 1 : 1;
+    const totalPages = limit ? Math.max(1, Math.ceil(totalRecords / limit)) : 1;
+    return {
+      totalRecords,
+      currentPage,
+      nextPage: currentPage < totalPages ? currentPage + 1 : null,
+      prevPage: currentPage > 1 ? currentPage - 1 : null,
+      totalPages,
+      perPage: limit,
+    };
   }
 
   private toResponse(execution: WorkflowExecution): WorkflowExecutionResponse {

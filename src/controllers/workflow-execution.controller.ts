@@ -4,6 +4,7 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { WorkflowExecutionService } from '../services/workflow-execution.service';
 import { CreateWorkflowExecutionDto } from '../dtos/create-workflow-execution.dto';
 import { UpdateWorkflowExecutionDto } from '../dtos/update-workflow-execution.dto';
+import { WorkflowRuntimeService } from '../services/workflow/workflow-runtime.service';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -13,7 +14,10 @@ enum ShowSoftDeleted {
 @ApiTags('Solid Core')
 @Controller('workflow-execution')
 export class WorkflowExecutionController {
-  constructor(private readonly service: WorkflowExecutionService) {}
+  constructor(
+    private readonly service: WorkflowExecutionService,
+    private readonly workflowRuntimeService: WorkflowRuntimeService,
+  ) {}
 
   @ApiBearerAuth("jwt")
   @Post()
@@ -54,6 +58,35 @@ export class WorkflowExecutionController {
   @Get('/recover/:id')
   async recover(@Param('id') id: number) {
     return this.service.recover(id);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Get(':id/status')
+  async getExecutionStatus(@Param('id') id: string) {
+    return this.workflowRuntimeService.getExecutionStatus(+id);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Get(':id/output/last-step')
+  async getLastStepOutput(@Param('id') id: string) {
+    return this.workflowRuntimeService.getLastStepOutput(+id);
+  }
+
+  @ApiBearerAuth("jwt")
+  @ApiQuery({ name: 'latest', required: false, type: Boolean })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @ApiQuery({ name: 'offset', required: false, type: Number })
+  @Get(':id/output/step/:stepNameOrId')
+  async getStepOutput(
+    @Param('id') id: string,
+    @Param('stepNameOrId') stepNameOrId: string,
+    @Query() query: any,
+  ) {
+    return this.workflowRuntimeService.getStepOutput(+id, stepNameOrId, {
+      latest: query.latest !== undefined ? query.latest !== 'false' : undefined,
+      limit: query.limit !== undefined ? Number(query.limit) : undefined,
+      offset: query.offset !== undefined ? Number(query.offset) : undefined,
+    });
   }
     
   @ApiBearerAuth("jwt")

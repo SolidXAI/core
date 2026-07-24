@@ -44,15 +44,53 @@ export class WorkflowExecutionWriterService {
     return this.entityManager.save(WorkflowExecution, execution);
   }
 
+  async createEnqueuedExecution(
+    definition: WorkflowDefinition,
+    request: WorkflowExecutionRequest,
+  ): Promise<WorkflowExecution> {
+    const execution = this.entityManager.create(WorkflowExecution, {
+      executionIdentifier: this.createKey('wf'),
+      workflowDefinition: definition,
+      workflowKey: definition.key,
+      workflowDisplayName: definition.displayName,
+      status: 'enqueued',
+      triggerType: request.triggerType ?? 'manual',
+      // While enqueued, keep the original request here so the subscriber can
+      // resume without duplicating large output state or adding a schema field.
+      inputPayload: request ?? {},
+      definitionVersion: definition.definitionVersion,
+      definitionChecksum: definition.definitionChecksum,
+      definitionSnapshot: definition.definitionYaml,
+      requestedByUserId: request.requestedByUserId as any,
+    });
+
+    return this.entityManager.save(WorkflowExecution, execution);
+  }
+
+  async startExecution(
+    execution: WorkflowExecution,
+    request: WorkflowExecutionRequest,
+  ): Promise<WorkflowExecution> {
+    execution.status = 'running';
+    execution.startedAt = new Date();
+    execution.inputPayload = request.input ?? {};
+    execution.triggerType = request.triggerType ?? execution.triggerType ?? 'manual';
+    execution.requestedByUserId = request.requestedByUserId as any;
+    return this.entityManager.save(WorkflowExecution, execution);
+  }
+
   async completeExecution(
     execution: WorkflowExecution,
-    outputPayload: any,
+    _outputPayload: any,
   ): Promise<WorkflowExecution> {
     const finishedAt = new Date();
     execution.status = 'success';
     execution.finishedAt = finishedAt;
     execution.durationMs = this.duration(execution.startedAt, finishedAt) as any;
-    execution.outputPayload = outputPayload;
+    // Do not persist the combined workflow output here. Large workflows and
+    // loops can duplicate every step output into one huge JSON payload; clients
+    // should read outputs from workflowStepExecution rows instead.
+    execution.outputPayload = null;
     return this.entityManager.save(WorkflowExecution, execution);
   }
 

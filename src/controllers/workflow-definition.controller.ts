@@ -42,6 +42,12 @@ export class WorkflowDefinitionController {
   }
 
   @ApiBearerAuth("jwt")
+  @Post('by-key/:key/execute-async')
+  executeByKeyAsync(@Param('key') key: string, @Body() executeDto: ExecuteWorkflowDto) {
+    return this.service.executeWorkflowByKeyAsync(key, executeDto);
+  }
+
+  @ApiBearerAuth("jwt")
   @Post('webhook/:reference')
   executeWebhook(@Param('reference') reference: string, @Body() executeDto: ExecuteWorkflowDto) {
     return this.service.executeWorkflowWebhook(reference, executeDto);
@@ -51,6 +57,12 @@ export class WorkflowDefinitionController {
   @Post(':id/execute')
   execute(@Param('id') id: string, @Body() executeDto: ExecuteWorkflowDto) {
     return this.service.executeWorkflow(+id, executeDto);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Post(':id/execute-async')
+  executeAsync(@Param('id') id: string, @Body() executeDto: ExecuteWorkflowDto) {
+    return this.service.executeWorkflowAsync(+id, executeDto);
   }
 
   @ApiBearerAuth("jwt")
