@@ -883,7 +883,11 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             }
         }
 
-        qb.where(new Brackets(qb => {
+        // SECURITY: must be andWhere. `where()` REPLACES every previously registered condition,
+        // which would discard the row-level security rules applied by
+        // createSecurityRuleAwareQueryBuilder above. (The inner `where` is safe: it is the first
+        // condition on a fresh Brackets sub-builder.)
+        qb.andWhere(new Brackets(qb => {
             qb.where(orConditions.join(' OR '), parameters);
         }));
 
