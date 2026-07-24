@@ -106,7 +106,7 @@ export class AuditSubscriber implements EntitySubscriberInterface {
 
         const relationBefore = event.entity?.[AUDIT_BEFORE_SNAPSHOT] ?? null;
 
-        const relationAfter = await this.dataSource.getRepository(event.metadata.target as any).findOne({
+        const relationAfter = await event.queryRunner.manager.getRepository(event.metadata.target as any).findOne({
             where: { id: entityId } as any,
             relations: relations as any,
         });

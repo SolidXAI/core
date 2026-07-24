@@ -1,0 +1,44 @@
+export type MediaCategory = 'image' | 'audio' | 'video' | 'file' | 'pdf';
+
+const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tiff', 'heic', 'heif'];
+const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac', 'webm'];
+const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', '3g2', 'webm', 'ogg'];
+const DOCUMENT_EXTENSIONS = ['txt', 'md', 'csv', 'json', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z'];
+const PDF_EXTENSION = 'pdf';
+
+/**
+ * Extensions that must never be accepted as media uploads, regardless of declared mimetype or
+ * admin-configured mediaTypes allowlist. Checked before any other resolution so a spoofed
+ * Content-Type (e.g. application/octet-stream on an .html file) can't bypass this.
+ */
+export const DANGEROUS_EXTENSIONS = new Set([
+    'html', 'htm', 'xhtml', 'svg', 'xml',
+    'js', 'mjs', 'php', 'phtml', 'jsp', 'asp', 'aspx',
+    'exe', 'sh', 'bat', 'cmd', 'ps1', 'jar', 'dll',
+]);
+
+/**
+ * Single source of truth for extension -> coarse media category. Shared by upload-time
+ * validation (MediaFieldCrudManager) and serve-time header hardening (ServeStaticModule), so
+ * both agree on which extensions belong to which category and neither drifts out of sync.
+ * webm/ogg are shared between AUDIO_EXTENSIONS and VIDEO_EXTENSIONS - last one wins here, they
+ * default to 'video' since that's the more common upload case.
+ */
+export const EXT_TO_MEDIA_TYPE: Record<string, MediaCategory> = {
+    ...Object.fromEntries(IMAGE_EXTENSIONS.map((ext) => [ext, 'image' as const])),
+    ...Object.fromEntries(AUDIO_EXTENSIONS.map((ext) => [ext, 'audio' as const])),
+    ...Object.fromEntries(VIDEO_EXTENSIONS.map((ext) => [ext, 'video' as const])),
+    ...Object.fromEntries(DOCUMENT_EXTENSIONS.map((ext) => [ext, 'file' as const])),
+    [PDF_EXTENSION]: 'pdf',
+};
+
+/**
+ * Extensions safe to serve inline with their natural Content-Type; everything else served from
+ * media-files-storage is forced to application/octet-stream + Content-Disposition: attachment.
+ */
+export const INLINE_SAFE_EXTENSIONS = new Set<string>([
+    ...IMAGE_EXTENSIONS,
+    ...AUDIO_EXTENSIONS,
+    ...VIDEO_EXTENSIONS,
+    PDF_EXTENSION,
+]);

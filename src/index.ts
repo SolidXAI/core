@@ -8,6 +8,7 @@ export * from './commands/run-tests.command'
 export * from './commands/test.command'
 
 export * from './config/cache.options'
+export * from './services/active-session-storage.service'
 
 export * from './decorators/active-user.decorator'
 export * from './decorators/solid-request-context.decorator'
@@ -29,6 +30,7 @@ export * from './decorators/sms-provider.decorator'
 export * from './decorators/settings-provider.decorator'
 export * from './decorators/extension-user-creation-provider.decorator'
 export * from './decorators/workflow-node-provider.decorator'
+export * from './decorators/workflow-field-data-provider.decorator'
 
 export * from './dtos/post-chatter-message.dto'
 export * from './dtos/update-chatter-note-message.dto'

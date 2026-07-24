@@ -1201,7 +1201,16 @@ const getSolidCoreSettings = (isProd: boolean) =>
       value: parseInt(process.env.IAM_JWT_REFRESH_TOKEN_TTL ?? "604800", 10),
       level: SettingLevel.SystemEnv,
     },
-
+    {
+      moduleName: "solid-core",
+      key: "preventConcurrentLogins",
+      value: false,
+      level: SettingLevel.SystemAdminEditable,
+      label: "Prevent Concurrent Logins",
+      group: "authentication-settings",
+      sortOrder: 200,
+      controlType: "boolean",
+    },
     // queues-settings-provider.service.ts
     {
       moduleName: "solid-core",

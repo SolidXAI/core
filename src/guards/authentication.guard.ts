@@ -9,6 +9,7 @@ import { AUTH_TYPE_KEY } from '../decorators/auth.decorator';
 import { AuthType } from '../enums/auth-type.enum';
 import { AccessTokenGuard } from './access-token.guard';
 import { ApiKeyGuard } from './api-key.guard';
+import { MediaSignedUrlGuard } from './media-signed-url.guard';
 import { IS_PUBLIC_KEY } from '../decorators/public.decorator';
 import { PermissionMetadataService } from '../services/permission-metadata.service';
 import { ClsService } from 'nestjs-cls';
@@ -22,15 +23,33 @@ export class AuthenticationGuard implements CanActivate {
       [AuthType.Bearer]: this.accessTokenGuard,
       [AuthType.ApiKey]: this.apiKeyGuard,
       [AuthType.None]: { canActivate: () => true },
+      [AuthType.MediaSignedUrl]: this.mediaSignedUrlGuard,
     };
 
   constructor(
     private readonly reflector: Reflector,
     private readonly accessTokenGuard: AccessTokenGuard,
     private readonly apiKeyGuard: ApiKeyGuard,
+    private readonly mediaSignedUrlGuard: MediaSignedUrlGuard,
     private readonly permissionService: PermissionMetadataService,
     private readonly cls: ClsService,
   ) { }
+
+  private isGenericUnauthorizedError(error: unknown): boolean {
+    if (!(error instanceof UnauthorizedException)) {
+      return false;
+    }
+
+    const response = error.getResponse();
+    const message =
+      typeof response === 'string'
+        ? response
+        : Array.isArray((response as any)?.message)
+          ? (response as any).message[0]
+          : (response as any)?.message;
+
+    return !message || message === 'Unauthorized';
+  }
 
   async canActivate(context: ExecutionContext): Promise<boolean> {
     // If method marked as public, then we return with true, else go ahead and apply the access token guard. 
@@ -72,7 +91,12 @@ export class AuthenticationGuard implements CanActivate {
       const canActivate = await Promise.resolve(
         instance.canActivate(context),
       ).catch((err) => {
-        error = err;
+        if (
+          this.isGenericUnauthorizedError(error) ||
+          !this.isGenericUnauthorizedError(err)
+        ) {
+          error = err;
+        }
       });
 
       if (canActivate) {
