@@ -1,4 +1,4 @@
-import { Brackets, SelectQueryBuilder, WhereExpressionBuilder } from "typeorm";
+import { Brackets, EntityMetadata, SelectQueryBuilder, WhereExpressionBuilder } from "typeorm";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { classify } from '../helpers/string.helper';
 import { ActiveUserData } from "src/interfaces/active-user-data.interface";
@@ -17,10 +17,129 @@ export enum UserIdFields {
     UPDATED_BY = 'updatedBy'
 }
 
+/** Aggregate functions permitted in the `fields` `fn(field)` syntax. */
+const SUPPORTED_FIELD_FUNCTIONS = ['COUNT', 'SUM', 'AVG', 'MIN', 'MAX'];
+
+/** Date granularities permitted in `groupBy` (`field:granularity`) and filter func-aliases. */
+const SUPPORTED_GRANULARITIES = ['day', 'week', 'month', 'year'];
+
+/**
+ * Outcome of resolving a user-supplied dotted path against real entity metadata.
+ * Every string here originates from TypeORM metadata, never from request input.
+ */
+export interface ResolvedFieldPath {
+    /** Canonical relation property names for each hop traversed (excludes a column leaf). */
+    relationSegments: string[];
+    /** Canonical column property name, when the leaf is a column. */
+    leafProperty?: string;
+    /** True when the leaf itself is a relation (populate / nested-filter join). */
+    leafIsRelation: boolean;
+}
+
 export class CrudHelperService {
     constructor(
     ) { }
     private readonly logger = new Logger(CrudHelperService.name);
+
+    /**
+     * Resolve a user-supplied dotted path (e.g. "customer.name") against real TypeORM metadata.
+     *
+     * SECURITY — this is the choke point that makes the filtering vocabulary safe.
+     * SQL can bind *values* as parameters but never *identifiers* (column names, aliases,
+     * ORDER BY expressions), so a client-chosen field name must be allow-listed instead.
+     * The caller's string is used ONLY as a lookup key; every value returned comes from
+     * ColumnMetadata/RelationMetadata, so callers build SQL exclusively from strings this
+     * codebase produced, never from request input.
+     *
+     * Throws BadRequestException on any segment that is not a real column/relation.
+     */
+    resolveFieldPathFromMetadata(
+        rootMetadata: EntityMetadata,
+        pathParts: string[],
+        { allowRelationLeaf = false }: { allowRelationLeaf?: boolean } = {}
+    ): ResolvedFieldPath {
+        // Fail closed: without metadata we cannot prove the identifier is safe.
+        if (!rootMetadata) throw new BadRequestException(`Cannot resolve field '${this.describeInvalidField(pathParts?.join('.'))}'`);
+        if (!pathParts?.length || pathParts.some(part => !part)) {
+            throw new BadRequestException(`Invalid field path '${this.describeInvalidField(pathParts?.join('.'))}'`);
+        }
+
+        let metadata = rootMetadata;
+        const relationSegments: string[] = [];
+
+        for (let i = 0; i < pathParts.length; i++) {
+            const isLeaf = i === pathParts.length - 1;
+            // `metadata` is the entity currently being walked; it advances one hop per segment.
+            // These lookups key on propertyName/propertyPath (NOT database name), so they are
+            // naming-strategy agnostic and resolve implicit relation FK columns correctly.
+            const relation = metadata.findRelationWithPropertyPath(pathParts[i]);
+            const column = metadata.findColumnWithPropertyName(pathParts[i]);
+
+            if (!isLeaf) {
+                // Interior segments must be relations so we can keep walking.
+                if (!relation) {
+                    throw new BadRequestException(`Invalid relation '${this.describeInvalidField(pathParts[i])}' in '${this.describeInvalidField(pathParts.join('.'))}'`);
+                }
+                relationSegments.push(relation.propertyName); // canonical, from metadata
+                // THE HOP: advance to the entity on the other side so the NEXT iteration validates
+                // against that entity rather than the root. Consumed at the top of the next pass —
+                // it only looks unused here because `continue` follows immediately.
+                // e.g. "shop.customer.mcc": NbfTransaction -> CustomerLocation -> Customer.
+                // Without this, "customer" would be checked on NbfTransaction (wrongly accepted)
+                // and "mcc" on NbfTransaction (wrongly rejected).
+                metadata = relation.inverseEntityMetadata;
+                continue;
+            }
+
+            // Leaf ordering matters: a many-to-one name can match BOTH a relation and its FK column.
+            // populate (allowRelationLeaf) must treat it as a relation so it can be joined;
+            // sort/filter must treat it as a column so it compares on the FK, as today.
+            if (allowRelationLeaf && relation) {
+                relationSegments.push(relation.propertyName);
+                return { relationSegments, leafIsRelation: true };
+            }
+            if (column) {
+                return { relationSegments, leafProperty: column.propertyName, leafIsRelation: false };
+            }
+            throw new BadRequestException(`Invalid field '${this.describeInvalidField(pathParts[i])}' in '${this.describeInvalidField(pathParts.join('.'))}'`);
+        }
+
+        throw new BadRequestException(`Invalid field path '${this.describeInvalidField(pathParts.join('.'))}'`);
+    }
+
+    /**
+     * Query-builder flavoured wrapper around {@link resolveFieldPathFromMetadata}.
+     *
+     * `startAlias` matters for nested filters: applyFilters recurses into joined relations
+     * carrying that relation's alias, so the leaf must resolve against the joined entity
+     * rather than always the root.
+     */
+    resolveFieldPath(
+        qb: SelectQueryBuilder<any>,
+        pathParts: string[],
+        { allowRelationLeaf = false, startAlias }: { allowRelationLeaf?: boolean; startAlias?: string } = {}
+    ): ResolvedFieldPath {
+        const aliasMetadata = startAlias ? this.findAliasMetadata(qb, startAlias) : undefined;
+        const rootMetadata = aliasMetadata ?? qb?.expressionMap?.mainAlias?.metadata;
+        return this.resolveFieldPathFromMetadata(rootMetadata, pathParts, { allowRelationLeaf });
+    }
+
+    private findAliasMetadata(qb: SelectQueryBuilder<any>, alias: string): EntityMetadata | undefined {
+        const found = qb?.expressionMap?.aliases?.find(a => a.name === alias);
+        return found?.hasMetadata ? found.metadata : undefined;
+    }
+
+    /**
+     * Echo a rejected identifier back in a bounded way.
+     *
+     * Naming the bad field is what makes a 400 actionable for a legitimate typo, but reflecting an
+     * unbounded attacker-supplied string is needless: it hands an attacker a reliable echo channel
+     * and bloats logs. 80 characters is ample for a real field name.
+     */
+    private describeInvalidField(value: string): string {
+        const text = String(value ?? '');
+        return text.length > 80 ? `${text.slice(0, 80)}...` : text;
+    }
 
     private orderOptions(sort: any[] = []) {
         const orderOptions = {};
@@ -72,24 +191,38 @@ export class CrudHelperService {
                 // if the key is an operator, then build the query based on the operator
                 if (operatorOrField.startsWith('$')) {
                     const operator = operatorOrField;
+                    // SECURITY: resolve against the CURRENT alias (this method recurses into joined
+                    // relations), so a nested filter key is checked on the joined entity rather than
+                    // the root. Resolution is driven off `selectQb` because `qb` is a
+                    // WhereExpressionBuilder and exposes no expressionMap.
+                    const { leafProperty } = this.resolveFieldPath(selectQb, [rawField], { startAlias: alias });
                     let columnExpression: string | undefined;
                     if (funcAlias) {
                         try {
-                            columnExpression = this.buildDateGranularityExpression(this.getDriver(selectQb), `${alias}.${rawField}`, funcAlias);
-                        } catch {
-                            throw new BadRequestException(`Unsupported field function '${funcAlias}'. Supported functions are: day, week, month, year.`);
+                            columnExpression = this.buildDateGranularityExpression(this.getDriver(selectQb), `${alias}.${leafProperty}`, funcAlias);
+                        } catch (error) {
+                            // Surface the precise granularity message; keep the original fallback
+                            // for driver-level failures.
+                            if (error instanceof BadRequestException) throw error;
+                            throw new BadRequestException(`Unsupported field function '${this.describeInvalidField(funcAlias)}'. Supported functions are: ${SUPPORTED_GRANULARITIES.join(', ')}.`);
                         }
                     }
-                    this.buildOperatorQuery(qb, alias, rawField, normalizedPrimaryFilterObj, operator, columnExpression);
+                    this.buildOperatorQuery(qb, alias, leafProperty, normalizedPrimaryFilterObj, operator, columnExpression);
                     return;
                 }
                 else { // Recursively call the applyFilters method to handle nested conditions
                     if (funcAlias) {
                         throw new BadRequestException(`Function alias ':${funcAlias}' is not valid on relation field '${rawField}'. It can only be applied to scalar fields.`);
                     }
-                    const joinField = `${alias}.${rawField}`;
-                    if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, rawField);
-                    this.applyFilters(qb, primaryFilterObj, rawField, selectQb);
+                    // SECURITY: the nested key must be a real relation on the current entity.
+                    const resolvedRelation = this.resolveFieldPath(selectQb, [rawField], { allowRelationLeaf: true, startAlias: alias });
+                    if (!resolvedRelation.leafIsRelation) {
+                        throw new BadRequestException(`'${this.describeInvalidField(rawField)}' is not a relation and cannot contain nested filters.`);
+                    }
+                    const relationName = resolvedRelation.relationSegments[resolvedRelation.relationSegments.length - 1];
+                    const joinField = `${alias}.${relationName}`;
+                    if (!this.isRelationJoined(selectQb, joinField)) selectQb.leftJoin(joinField, relationName);
+                    this.applyFilters(qb, primaryFilterObj, relationName, selectQb);
                 }
             });
         }
@@ -332,7 +465,7 @@ export class CrudHelperService {
         if (normalizedFields && normalizedFields.length) {
             qb.select(normalizedFields.map(field => {
                 // If the field contains a (, do not prefix the entity alias
-                return this.wrapFieldWithAlias(field, entityAlias);
+                return this.wrapFieldWithAlias(qb, field, entityAlias);
             }));
         }
 
@@ -354,7 +487,10 @@ export class CrudHelperService {
                         qb.addOrderBy(orderColumn, value);
                         if (created) qb.addSelect(orderColumn);
                     } else {
-                        qb.addOrderBy(`${entityAlias}.${field}`, value);
+                        // SECURITY: resolve against real metadata and order by the canonical column
+                        // name, never the raw input (addOrderBy accepts arbitrary SQL text).
+                        const { leafProperty } = this.resolveFieldPath(qb, [field]);
+                        qb.addOrderBy(`${entityAlias}.${leafProperty}`, value);
                     }
                 });
                 if (!hasExplicitIdSort) {
@@ -369,7 +505,10 @@ export class CrudHelperService {
 
         if (showSoftDeleted === 'exclusive') {
             qb.withDeleted();
-            qb.where(`${entityAlias}.deletedAt IS NOT NULL`);
+            // SECURITY: must be andWhere. `where()` REPLACES every previously registered condition,
+            // which discarded the user's filters, the locale/status predicates and — critically —
+            // the row-level security rules applied by createSecurityRuleAwareQueryBuilder.
+            qb.andWhere(`${entityAlias}.deletedAt IS NOT NULL`);
         }
 
         // Apply the pagination options & handle the case when the query has joins
@@ -412,14 +551,18 @@ export class CrudHelperService {
     }
 
     private ensureRelationPathJoined(qb: SelectQueryBuilder<any>, rootAlias: string, pathParts: string[]) {
+        // SECURITY: validate the whole path against real metadata before any segment reaches SQL,
+        // and build from the canonical names returned rather than the caller's strings. Covers
+        // dotted `sort`, `groupBy` and `aggregates`, which all route through here.
+        const resolved = this.resolveFieldPath(qb, pathParts);
         const mainAlias =
             qb.expressionMap?.mainAlias?.name ||
             qb.expressionMap?.aliases?.find(a => a.metadata)?.name ||
             qb.expressionMap?.aliases?.[0]?.name;
         let parentAlias = mainAlias || rootAlias;
         let leafJoinCreated = false;
-        for (let i = 0; i < pathParts.length - 1; i++) {
-            const part = pathParts[i];
+        for (let i = 0; i < resolved.relationSegments.length; i++) {
+            const part = resolved.relationSegments[i];
             const joinProperty = `${parentAlias}.${part}`;
             const existingAlias = this.getExistingJoinAlias(qb, joinProperty);
             const joinAlias = existingAlias ?? this.sanitizeAlias(`${parentAlias}_${part}`);
@@ -431,7 +574,7 @@ export class CrudHelperService {
             }
             parentAlias = joinAlias;
         }
-        return { alias: parentAlias, property: pathParts[pathParts.length - 1], created: leafJoinCreated };
+        return { alias: parentAlias, property: resolved.leafProperty, created: leafJoinCreated };
     }
 
     private getDriver(qb: SelectQueryBuilder<any>) {
@@ -439,6 +582,16 @@ export class CrudHelperService {
     }
 
     private buildDateGranularityExpression(driver: string, columnExpr: string, granularity: string) {
+        // SECURITY: `granularity` is caller-supplied (groupBy `field:granularity`, or a filter
+        // func-alias) and is interpolated into a quoted SQL string literal in the postgres branch
+        // below. Validate it for EVERY driver here rather than per-driver: the whitelist used to be
+        // duplicated inside the mysql/mssql switches and simply absent for postgres, which is
+        // exactly how a quote break-out (`x'||(SELECT version())||'`) slipped through.
+        if (!SUPPORTED_GRANULARITIES.includes(granularity)) {
+            throw new BadRequestException(
+                `Unsupported granularity '${this.describeInvalidField(granularity)}'. Supported granularities are: ${SUPPORTED_GRANULARITIES.join(', ')}.`
+            );
+        }
         switch (driver) {
             case 'postgres':
             case 'cockroachdb':
@@ -555,7 +708,15 @@ export class CrudHelperService {
             const orderOptions = this.orderOptions(normalizedSort);
             const orderOptionKeys = Object.keys(orderOptions) as Array<keyof typeof orderOptions>;
             orderOptionKeys.forEach((key) => {
-                const resolvedKey = aliasMap[key] || key as string;
+                // SECURITY: in a grouped query the only legally sortable names are the declared
+                // group/aggregate aliases. Falling back to the raw key spliced it into a quoted
+                // identifier, which an embedded double-quote could break out of.
+                const resolvedKey = aliasMap[key];
+                if (!resolvedKey) {
+                    throw new BadRequestException(
+                        `Cannot sort by '${this.describeInvalidField(String(key))}' on a grouped query. Sort only by a groupBy or aggregate field.`
+                    );
+                }
                 const value = orderOptions[key] as 'ASC' | 'DESC';
                 qb.addOrderBy(`"${resolvedKey}"`, value);
             });
@@ -584,12 +745,18 @@ export class CrudHelperService {
     private buildJoinQueryForRelation(qb: SelectQueryBuilder<any>, entityAlias: string, relation: string) {
         // We split the joinProperty to get the alias of the entity we are joining
         const relationParts = relation.split('.');
+        // SECURITY: every segment must be a real relation on the entity being walked. The canonical
+        // names returned here are what get spliced below, so no request string reaches the join.
+        const { relationSegments, leafIsRelation } = this.resolveFieldPath(qb, relationParts, { allowRelationLeaf: true });
+        if (!leafIsRelation) {
+            throw new BadRequestException(`'${this.describeInvalidField(relation)}' is not a relation and cannot be populated.`);
+        }
         let parentAlias = entityAlias;
-        relationParts.forEach((part, i) => {
+        relationSegments.forEach((part, i) => {
             const joinProperty = `${parentAlias}.${part}`;
             // Check if the relation is already joined, if not then join it
             if (!this.isRelationJoined(qb, joinProperty)) {
-                const joinAlias = relationParts.slice(0, i + 1).join('_');
+                const joinAlias = this.sanitizeAlias(relationSegments.slice(0, i + 1).join('_'));
                 qb.leftJoinAndSelect(joinProperty, joinAlias);
             }
             else {
@@ -597,18 +764,49 @@ export class CrudHelperService {
                 //If the join is already present, it is probably because of the relation being passed in the where filter i.e applyFilters method
                 qb.addSelect(`${part}`);
             }
+            // NOTE: deliberately left as `part` rather than the joinAlias. That is a pre-existing
+            // alias-chaining bug which breaks 3+ level populate; fixing it is tracked separately so
+            // this security change stays behaviour-preserving for queries that work today.
             parentAlias = part; // Update the parent alias for the next iteration
         });
         return qb;
     }
 
-    private wrapFieldWithAlias(field: string, entityAlias: string): string {
-        if (!this.isAggregateField(field)) return `${entityAlias}.${field}`;
+    private wrapFieldWithAlias(qb: SelectQueryBuilder<any>, field: string, entityAlias: string): string {
+        // SECURITY: `qb.select()` accepts arbitrary SQL text, so the field name must be resolved
+        // against real metadata and the canonical column name spliced instead of the raw input.
+        if (!this.isAggregateField(field)) {
+            return `${entityAlias}.${this.resolveOwnColumn(qb, field, 'fields')}`;
+        }
         // For aggregate fields, extract the field name from the aggregate function & wrap it with the entity alias, if it is not already wrapped
         const fieldParts = field.split('(');
-        const aggregateFunction = fieldParts[0];
-        const fieldName = fieldParts[1].replace(')', '');
-        return `${aggregateFunction}(${entityAlias}.${fieldName})`;
+        const aggregateFunction = fieldParts[0].trim().toUpperCase();
+        // Whitelist the function name too, mirroring buildAggregateExpression.
+        if (!SUPPORTED_FIELD_FUNCTIONS.includes(aggregateFunction)) {
+            throw new BadRequestException(
+                `Unsupported field function '${this.describeInvalidField(fieldParts[0])}'. Supported functions are: ${SUPPORTED_FIELD_FUNCTIONS.join(', ')}.`
+            );
+        }
+        const fieldName = fieldParts[1].replace(')', '').trim();
+        return `${aggregateFunction}(${entityAlias}.${this.resolveOwnColumn(qb, fieldName, 'fields')})`;
+    }
+
+    /**
+     * Resolve a single-segment column on the root entity and return its canonical name.
+     *
+     * Related (dotted) paths are rejected rather than resolved: the caller emits
+     * `<rootAlias>.<column>` and builds no joins, so resolving a dotted path here would splice the
+     * leaf against the root alias and silently read the wrong column. Such paths previously
+     * produced invalid SQL, so rejecting them is the honest behaviour.
+     */
+    private resolveOwnColumn(qb: SelectQueryBuilder<any>, field: string, context: string): string {
+        const resolved = this.resolveFieldPath(qb, field.split('.'));
+        if (resolved.relationSegments.length) {
+            throw new BadRequestException(
+                `Related field '${this.describeInvalidField(field)}' is not supported in '${context}'. Use 'populate' to fetch related records.`
+            );
+        }
+        return resolved.leafProperty;
     }
 
     isAggregateField(field: string): boolean {

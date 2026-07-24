@@ -962,6 +962,12 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             }
         }
 
+        // Validate populate/fields against real entity metadata before handing them to TypeORM.
+        // This path is not SQL-injectable (setFindOptions is metadata driven), but without this an
+        // unknown name surfaces as an unhandled TypeORM error — a 500 leaking schema detail — and
+        // behaves inconsistently with find(), which returns a 400.
+        this.validateFindOneQueryFields(normalizedPopulate, this.crudHelperService.normalize(fields));
+
         let entity = await this.repo.findOne({
             where: {
                 id: id,
@@ -978,6 +984,30 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             entity = populatedEntities[0] as Awaited<T>;
         }
         return entity;
+    }
+
+    /**
+     * Validate findOne's `populate` / `fields` against the entity's real TypeORM metadata.
+     *
+     * `findOne` goes through repo.findOne({ relations, select }) -> setFindOptions, which is
+     * metadata driven and therefore not SQL-injectable. Validating here is about turning an
+     * unknown name into a clean 400 instead of an unhandled TypeORM error (a 500 that leaks
+     * schema detail), and keeping behaviour consistent with find().
+     */
+    private validateFindOneQueryFields(populate: string[], fields: string[]) {
+        const metadata = this.repo.metadata;
+        if (!metadata) return;
+        for (const relationPath of populate) {
+            const resolved = this.crudHelperService.resolveFieldPathFromMetadata(
+                metadata, relationPath.split('.'), { allowRelationLeaf: true }
+            );
+            if (!resolved.leafIsRelation) {
+                throw new BadRequestException(`'${relationPath}' is not a relation and cannot be populated.`);
+            }
+        }
+        for (const field of fields) {
+            this.crudHelperService.resolveFieldPathFromMetadata(metadata, field.split('.'));
+        }
     }
 
     async createMany(createDtos: any[], solidRequestContext: any = {}): Promise<T[]> {

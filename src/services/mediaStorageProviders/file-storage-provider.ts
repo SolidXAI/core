@@ -9,7 +9,7 @@ import { Readable } from "stream";
 import * as fs from "fs";
 import { SettingService } from "../setting.service";
 import { MediaDownloadUrlService } from "src/services/media-download-url.service";
-import { buildDiskMediaPath, buildMediaRecordCreateInput, buildStoredMediaFileName, resolveStoredMediaIsPublic, } from "src/services/media-storage.utils";
+import {buildDiskMediaPath,buildMediaRecordCreateInput,buildStoredMediaFileName,resolveMediaIsPublic,} from "src/services/media-storage.utils";
 
 @Injectable()
 export class FileStorageProvider<T> implements MediaStorageProvider<T> {
@@ -34,10 +34,9 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
         // });
         for (const m of media) {
             const storageProvider = this.resolveMediaStorageProvider(m, mediaFieldMetadata);
-            const isPublic = resolveStoredMediaIsPublic(m.isPublic, storageProvider);
-            m.isPublic = isPublic;
+            const isPublic = resolveMediaIsPublic(storageProvider);
             m['_full_url'] = isPublic === false
-                ? await this.mediaDownloadUrlService.resolveDownloadUrl(m.id, m.relativeUri, storageProvider)
+                ? await this.mediaDownloadUrlService.getPrivateUrl(m.id, m.relativeUri, storageProvider)
                 : await this.fileService.getUrl(buildDiskMediaPath(m.relativeUri, this.settingService, storageProvider));
         }
 
@@ -67,7 +66,6 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
                     originalFileName: file.originalname,
                 })
             ) as unknown as Media;
-            mediaEntity.isPublic = resolveStoredMediaIsPublic(mediaEntity.isPublic, storageProvider);
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         };
@@ -92,7 +90,6 @@ export class FileStorageProvider<T> implements MediaStorageProvider<T> {
                     fileSize,
                 })
             ) as unknown as Media;
-            mediaEntity.isPublic = resolveStoredMediaIsPublic(mediaEntity.isPublic, storageProvider);
             result.push(mediaEntity);
             this.logger.debug(`Stored media with`, mediaEntity);
         };

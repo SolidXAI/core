@@ -212,6 +212,7 @@ export class AuthenticationService {
         effectiveDto,
         entity,
         provider.repo as Repository<User>,
+        true,
       );
     }
     return this.performSignUp(signUpDto, new User(), this.userRepository);
@@ -221,6 +222,7 @@ export class AuthenticationService {
     signUpDto: SignUpDto,
     entity: T,
     repo: Repository<T>,
+    preferEntityApiKeyFlag: boolean = false,
   ): Promise<T> {
     try {
       const onForcePasswordChange =
@@ -241,7 +243,10 @@ export class AuthenticationService {
         onForcePasswordChange,
       );
       const privateDto = signUpDto as { isAllowedToGenerateApiKeys?: boolean };
-      if (privateDto.isAllowedToGenerateApiKeys !== undefined) {
+      if (
+        !preferEntityApiKeyFlag &&
+        privateDto.isAllowedToGenerateApiKeys !== undefined
+      ) {
         user.isAllowedToGenerateApiKeys = privateDto.isAllowedToGenerateApiKeys;
       }
       const savedUser = await repo.save(user);
@@ -1067,15 +1072,13 @@ export class AuthenticationService {
     }
 
     const type = this.resolveLoginType(signInDto);
-    const user = await this.findUserForLoginOrNull(type, signInDto.identifier);
-    if (user) {
-      const dummyOtp = this.getDummyOtpForUser(user);
-      if (!dummyOtp) {
-        await this.assignLoginOtp(user, type);
-        await this.notifyUserOnOtpInititateLogin(user, type);
-      }
+    const user = await this.findUserForLogin(type, signInDto.identifier);
+    const dummyOtp = this.getDummyOtpForUser(user);
+    if (!dummyOtp) {
+      await this.assignLoginOtp(user, type);
+      await this.notifyUserOnOtpInititateLogin(user, type);
     }
-    return this.buildLoginOtpResponse(type, signInDto.identifier, user);
+    return this.buildLoginOtpResponse(user, type);
   }
 
   private resolveLoginType(
@@ -1144,25 +1147,6 @@ export class AuthenticationService {
     return user;
   }
 
-  private async findUserForLoginOrNull(
-    type: PasswordlessLoginValidateWhatSources,
-    identifier: string,
-    options: { withRoles?: boolean } = {},
-  ): Promise<User | null> {
-    try {
-      return await this.findUserForLogin(type, identifier, options);
-    } catch (error) {
-      if (
-        error instanceof UnauthorizedException &&
-        (error.message === ERROR_MESSAGES.USER_NOT_FOUND ||
-          error.message === ERROR_MESSAGES.USER_INACTIVE)
-      ) {
-        return null;
-      }
-      throw error;
-    }
-  }
-
   private async assignLoginOtp(
     user: User,
     type: PasswordlessLoginValidateWhatSources,
@@ -1186,27 +1170,17 @@ export class AuthenticationService {
   }
 
   private buildLoginOtpResponse(
+    user: User,
     type: PasswordlessLoginValidateWhatSources,
-    identifier: string,
-    user?: User | null,
   ) {
-    const maskedIdentifier = this.buildMaskedLoginIdentifier(
-      type,
-      user?.email ?? user?.mobile ?? identifier,
-    );
+    const maskedIdentifier =
+      type === PasswordlessLoginValidateWhatSources.EMAIL
+        ? { email: this.maskEmail(user.email) }
+        : { mobile: this.maskMobile(user.mobile) };
     return {
       message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_LOGIN,
       user: maskedIdentifier,
     };
-  }
-
-  private buildMaskedLoginIdentifier(
-    type: PasswordlessLoginValidateWhatSources,
-    identifier: string,
-  ) {
-    return type === PasswordlessLoginValidateWhatSources.EMAIL
-      ? { email: this.maskEmail(identifier) }
-      : { mobile: this.maskMobile(identifier) };
   }
 
   private async notifyUserOnOtpInititateLogin(
@@ -1346,12 +1320,9 @@ export class AuthenticationService {
       throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
     }
 
-    const user = await this.findUserForLoginOrNull(type, identifier, {
+    const user = await this.findUserForLogin(type, identifier, {
       withRoles: true,
     });
-    if (!user) {
-      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
-    }
     this.checkAccountBlocked(user);
     const dummyOtp = this.getDummyOtpForUser(user);
 
