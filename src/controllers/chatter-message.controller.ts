@@ -20,12 +20,12 @@ enum ShowSoftDeleted {
 export class ChatterMessageController {
   constructor(private readonly service: ChatterMessageService) {}
 
-  @ApiBearerAuth("jwt")
-  @Post()
-  @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateChatterMessageDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-    return this.service.create(createDto, files);
-  }
+  // @ApiBearerAuth("jwt")
+  // @Post()
+  // @UseInterceptors(AnyFilesInterceptor())
+  // create(@Body() createDto: CreateChatterMessageDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  //   return this.service.create(createDto, files);
+  // }
 
   // @ApiBearerAuth("jwt")
   // @Post('/bulk')
@@ -61,7 +61,7 @@ export class ChatterMessageController {
   //   return this.service.recover(id);
   // }
 
-  @Public()
+  @ApiBearerAuth("jwt")
   @Get('/getChatterMessages/:entityId/:entityName')
   @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
   @ApiQuery({ name: 'limit', required: false, type: Number })

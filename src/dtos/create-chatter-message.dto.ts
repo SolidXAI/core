@@ -18,6 +18,11 @@ export class CreateChatterMessageDto {
     @ApiProperty()
     messageBody: string;
 
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    messageBodyMentions: string;
+
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()

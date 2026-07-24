@@ -3912,6 +3912,18 @@
             "isSystem": false
           },
           {
+            "name": "messageBodyMentions",
+            "displayName": "Message Body Mentions",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": false
+          },
+          {
             "name": "coModelEntityId",
             "displayName": "CoModel Entity Id",
             "type": "int",
@@ -5294,6 +5306,9 @@
         "FieldMetadataController.getSelectionDynamicValues",
         "FieldMetadataController.getSelectionDynamicValue",
         "FieldMetadataController.findFieldDefaultMetaData",
+        "MediaController.findMany",
+        "MediaController.findOne",
+        "MediaController.download",
         "SavedFiltersController.delete",
         "SavedFiltersController.deleteMany",
         "SavedFiltersController.findOne",
@@ -5304,20 +5319,11 @@
         "SavedFiltersController.update",
         "SavedFiltersController.insertMany",
         "SavedFiltersController.create",
-        "ChatterMessageController.create",
         "ChatterMessageController.getChatterMessages",
         "ChatterMessageController.postMessage",
         "ChatterMessageController.findMany",
         "ChatterMessageController.markCompleted",
         "ChatterMessageController.updateCustomNoteMessage",
-        "ImportTransactionController.getImportTemplate",
-        "ImportTransactionController.getImportInstructions",
-        "ImportTransactionController.getImportMappingInfo",
-        "ImportTransactionController.startImportSync",
-        "ImportTransactionController.startImportAsync",
-        "ImportTransactionController.exportFailedImportedImports",
-        "ExportTemplateController.startExportSync",
-        "ExportTemplateController.startExportAsync",
         "ListOfValuesController.findMany",
         "ListOfValuesController.findOne",
         "SettingController.getAllSettings",
@@ -5335,6 +5341,31 @@
         "DashboardController.saveLayout",
         "mcp:invoke",
         "agent:invoke"
+      ]
+    },
+    {
+      "name": "Allowed To Import",
+      "permissions": [
+        "ImportTransactionController.create",
+        "ImportTransactionController.delete",
+        "ImportTransactionController.deleteMany",
+        "ImportTransactionController.getImportTemplate",
+        "ImportTransactionController.getImportInstructions",
+        "ImportTransactionController.getImportMappingInfo",
+        "ImportTransactionController.partialUpdate",
+        "ImportTransactionController.startImportSync",
+        "ImportTransactionController.startImportAsync",
+        "ImportTransactionController.exportFailedImportedImports"
+      ]
+    },
+    {
+      "name": "Allowed To Export",
+      "permissions": [
+        "ExportTemplateController.create",
+        "ExportTemplateController.delete",
+        "ExportTemplateController.findMany",
+        "ExportTemplateController.startExportSync",
+        "ExportTemplateController.startExportAsync"
       ]
     },
     {
@@ -8596,16 +8627,15 @@
                             "attrs": {
                               "name": "roles",
                               "widget": "checkbox",
-                              "inlineCreateAutoSave": "true",
+                              "inlineCreateAutoSave": "false",
                               "renderModeCheckboxPreprocessor": "MenuItemMetadataRolesFormFieldPreprocessor",
-                              "inlineCreate": "true",
+                              "inlineCreate": "false",
                               "inlineCreateLayout": {
                                 "type": "form",
                                 "attrs": {
                                   "name": "form-1",
                                   "label": "User",
-                                  "className": "grid",
-                                  "width": "20vw"
+                                  "className": "grid"
                                 },
                                 "children": [
                                   {
@@ -14462,6 +14492,15 @@
       "description": "Welcome email sent to users after signup.",
       "active": true,
       "type": "text"
+    },
+    {
+      "name": "chatter-mention-notification",
+      "displayName": "Default: Chatter Mention Notification",
+      "body": "chatter-mention-notification.handlebars.html",
+      "subject": "{{mentionedByDisplayName}} mentioned you in {{entityDisplayName}}",
+      "description": "This template notifies users when they are mentioned in a custom chatter note.",
+      "active": true,
+      "type": "text"
     }
   ],
   "smsTemplates": [
@@ -14505,7 +14544,8 @@
   "mediaStorageProviders": [
     {
       "name": "default-filesystem",
-      "type": "filesystem"
+      "type": "filesystem",
+      "isPublic": true
     },
     {
       "name": "default-aws-s3",
@@ -14534,6 +14574,47 @@
       "description": "Show All User records",
       "roleUserKey": "Admin",
       "modelMetadataUserKey": "user",
+      "securityRuleConfig": {
+        "filters": {
+          "id": {
+            "$ne": "0"
+          }
+        }
+      }
+    },
+    {
+      "name": "model:Media-role:Internal User-own",
+      "description": "Show Media records owned by the current user",
+      "roleUserKey": "Internal User",
+      "modelMetadataUserKey": "media",
+      "securityRuleConfig": {
+        "filters": {
+          "createdBy": {
+            "$eq": "$activeUserId"
+          }
+        }
+      }
+    },
+    {
+      "name": "model:Media-role:Internal User-public",
+      "description": "Show public Media records",
+      "roleUserKey": "Internal User",
+      "modelMetadataUserKey": "media",
+      "securityRuleConfig": {
+        "filters": {
+          "mediaStorageProviderMetadata": {
+            "isPublic": {
+              "$eq": true
+            }
+          }
+        }
+      }
+    },
+    {
+      "name": "model:Media-role:Admin",
+      "description": "Show All Media records",
+      "roleUserKey": "Admin",
+      "modelMetadataUserKey": "media",
       "securityRuleConfig": {
         "filters": {
           "id": {

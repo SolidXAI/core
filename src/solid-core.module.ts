@@ -47,6 +47,7 @@ import { ListOfValuesService } from "./services/list-of-values.service";
 // import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from "./services/media-storage-provider-metadata.service";
 import { MediaService } from "./services/media.service";
+import { MediaDownloadUrlService } from "./services/media-download-url.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
 import { RemovedFieldMigrationService } from "./services/removed-field-migration.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
@@ -55,9 +56,10 @@ import { ModulePackageService } from "./services/module-package.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { join } from "path";
+import { extname, join } from "path";
 import { RefreshModelCommand } from "./commands/refresh-model.command";
 import { MediaController } from "./controllers/media.controller";
+import { INLINE_SAFE_EXTENSIONS } from "./constants/media-file-types";
 
 import { RefreshModuleCommand } from "./commands/refresh-module.command";
 import { ModelMetadataSubscriber } from "./subscribers/model-metadata.subscriber";
@@ -106,6 +108,7 @@ import { MqMessage } from "./entities/mq-message.entity";
 import { SmsTemplate } from "./entities/sms-template.entity";
 import { AccessTokenGuard } from "./guards/access-token.guard";
 import { ApiKeyGuard } from "./guards/api-key.guard";
+import { MediaSignedUrlGuard } from "./guards/media-signed-url.guard";
 import { AuthenticationGuard } from "./guards/authentication.guard";
 import { PermissionsGuard } from "./guards/permissions.guard";
 import { SolidRegistry } from "./helpers/solid-registry";
@@ -130,10 +133,17 @@ import { ChatterQueuePublisherRabbitmq } from "./jobs/rabbitmq/chatter-queue-pub
 import { ChatterQueueSubscriberRabbitmq } from "./jobs/rabbitmq/chatter-queue-subscriber.service";
 import { ChatterQueuePublisherDatabase } from "./jobs/database/chatter-queue-publisher-database.service";
 import { ChatterQueueSubscriberDatabase } from "./jobs/database/chatter-queue-subscriber-database.service";
+import { ChatterMentionNotificationEmailQueueHandler } from "./jobs/chatter-mention-notification-email-queue-handler.service";
+import { ChatterMentionNotificationEmailQueuePublisherDatabase } from "./jobs/database/chatter-mention-notification-email-publisher-database.service";
+import { ChatterMentionNotificationEmailQueueSubscriberDatabase } from "./jobs/database/chatter-mention-notification-email-subscriber-database.service";
+import { ChatterMentionNotificationEmailQueuePublisherRabbitmq } from "./jobs/rabbitmq/chatter-mention-notification-email-publisher.service";
+import { ChatterMentionNotificationEmailQueueSubscriberRabbitmq } from "./jobs/rabbitmq/chatter-mention-notification-email-subscriber.service";
 import { ApiEmailQueuePublisherRedis } from "./jobs/redis/api-email-publisher-redis.service";
 import { ApiEmailQueueSubscriberRedis } from "./jobs/redis/api-email-subscriber-redis.service";
 import { ChatterQueuePublisherRedis } from "./jobs/redis/chatter-queue-publisher-redis.service";
 import { ChatterQueueSubscriberRedis } from "./jobs/redis/chatter-queue-subscriber-redis.service";
+import { ChatterMentionNotificationEmailQueuePublisherRedis } from "./jobs/redis/chatter-mention-notification-email-publisher-redis.service";
+import { ChatterMentionNotificationEmailQueueSubscriberRedis } from "./jobs/redis/chatter-mention-notification-email-subscriber-redis.service";
 import { ComputedFieldEvaluationPublisherRedis } from "./jobs/redis/computed-field-evaluation-publisher-redis.service";
 import { ComputedFieldEvaluationSubscriberRedis } from "./jobs/redis/computed-field-evaluation-subscriber-redis.service";
 import { GenerateCodePublisherRedis } from "./jobs/redis/generate-code-publisher-redis.service";
@@ -153,6 +163,7 @@ import { TwilioSmsQueueSubscriberRedis } from "./jobs/redis/twilio-sms-subscribe
 import { UserRegistrationListener } from "./listeners/user-registration.listener";
 import { GoogleOauthStrategy } from "./passport-strategies/google-oauth.strategy";
 import { ApiKeyService } from "./services/api-key.service";
+import { ActiveSessionStorageService } from "./services/active-session-storage.service";
 import { AuthenticationService } from "./services/authentication.service";
 import { BcryptService } from "./services/bcrypt.service";
 import { UuidExternalIdEntityComputedFieldProvider } from "./services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service";
@@ -436,7 +447,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
       rootPath: join(process.cwd(), "media-files-storage"),
       serveRoot: "/media-files-storage",
       serveStaticOptions: {
-        setHeaders: (res /*, path, stat*/) => {
+        setHeaders: (res, path) => {
           // Allow use of these files from a different origin (e.g., :3000 UI)
           // Use 'same-site' if both origins are on the same site (localhost:* counts as same-site)
           res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"); // or 'same-site'
@@ -444,6 +455,20 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
           // If you need to load into <canvas> without tainting or fetch images via XHR,
           // you can also expose CORS here (not needed for simple <img>):
           // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+          // Prevent the browser from ever content-sniffing a served file into something
+          // more dangerous than its declared Content-Type (e.g. rendering a mislabeled
+          // upload as HTML and executing embedded script).
+          res.setHeader("X-Content-Type-Options", "nosniff");
+
+          // Only a small allowlist of media types is ever safe to render inline. Everything
+          // else (including svg, html, and any other uploaded file) is forced to download
+          // rather than be displayed/executed by the browser, regardless of what mimetype or
+          // extension it was uploaded with.
+          if (!INLINE_SAFE_EXTENSIONS.has(extname(path).toLowerCase().replace(/^\./, ''))) {
+            res.setHeader("Content-Type", "application/octet-stream");
+            res.setHeader("Content-Disposition", "attachment");
+          }
         },
       },
     }),
@@ -562,6 +587,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     SchematicService,
     MediaStorageProviderMetadataService,
     MediaService,
+    MediaDownloadUrlService,
     // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
     ModuleTestDataService,
@@ -646,7 +672,9 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     SoftDeleteAwareEventSubscriber,
     AccessTokenGuard,
     ApiKeyGuard,
+    MediaSignedUrlGuard,
     ApiKeyService,
+    ActiveSessionStorageService,
     AuthenticationService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,
@@ -663,6 +691,11 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ChatterQueueSubscriberRabbitmq,
     ChatterQueuePublisherDatabase,
     ChatterQueueSubscriberDatabase,
+    ChatterMentionNotificationEmailQueueHandler,
+    ChatterMentionNotificationEmailQueuePublisherRabbitmq,
+    ChatterMentionNotificationEmailQueueSubscriberRabbitmq,
+    ChatterMentionNotificationEmailQueuePublisherDatabase,
+    ChatterMentionNotificationEmailQueueSubscriberDatabase,
 
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,
@@ -672,6 +705,8 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ApiEmailQueueSubscriberRedis,
     ChatterQueuePublisherRedis,
     ChatterQueueSubscriberRedis,
+    ChatterMentionNotificationEmailQueuePublisherRedis,
+    ChatterMentionNotificationEmailQueueSubscriberRedis,
     ComputedFieldEvaluationPublisherRedis,
     ComputedFieldEvaluationSubscriberRedis,
     GenerateCodePublisherRedis,
