@@ -18,17 +18,17 @@ export class SavedFilters extends CommonEntity {
     isPrivate: boolean = false;
 
     @Index()
-    @ManyToOne(() => User, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => User, { nullable: true })
     @JoinColumn()
     user: User;
 
     @Index()
-    @ManyToOne(() => ModelMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ModelMetadata, { nullable: false })
     @JoinColumn()
     model: ModelMetadata;
 
     @Index()
-    @ManyToOne(() => ViewMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ViewMetadata, { nullable: false })
     @JoinColumn()
     view: ViewMetadata;
 
