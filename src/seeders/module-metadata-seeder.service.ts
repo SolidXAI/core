@@ -3,6 +3,7 @@ import { EventEmitter2 } from '@nestjs/event-emitter';
 import * as fs from 'fs';
 import * as os from 'os';
 import * as path from 'path';
+import { createHash } from 'crypto';
 import { v4 as uuidv4 } from 'uuid';
 
 import { CreateEmailTemplateDto } from 'src/dtos/create-email-template.dto';
@@ -66,6 +67,7 @@ import { FieldMetadata } from 'src/entities/field-metadata.entity';
 import { ModelMetadata } from 'src/entities/model-metadata.entity';
 import { PermissionMetadata } from 'src/entities/permission-metadata.entity';
 import { ViewMetadata } from 'src/entities/view-metadata.entity';
+import { WorkflowDefinition } from 'src/entities/workflow-definition.entity';
 import { EventDetails, EventType, ModuleMetadataSeederEventPayload } from 'src/interfaces';
 
 /**
@@ -236,10 +238,15 @@ export class ModuleMetadataSeederService {
                         const moduleModelFieldCounts = await this.timeOperation('seed-module-model-fields', () => this.seedModuleModelFields(moduleMetadata), { moduleName: moduleMetadata.name, component: 'module-model-fields' });
                         console.log(`${this.formatSeedResult(moduleMetadata.name, 'Module/Model/Fields', moduleModelFieldCounts)}`);
 
-                currentStep = 'seedLocales';
-                this.logger.log(`Seeding Locales`);
-                const localeCounts = await this.seedLocales(overallMetadata);
-                console.log(`${this.formatSeedResult(moduleMetadata.name, 'Locales', localeCounts)}`);
+                        currentStep = 'seedWorkflowDefinitions';
+                        this.logger.log(`Seeding Workflow Definitions`);
+                        const workflowDefinitionCounts = await this.timeOperation('seed-workflow-definitions', () => this.seedWorkflowDefinitions(moduleMetadata, overallMetadata), { moduleName: moduleMetadata.name, component: 'workflow-definitions' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Workflow Definitions', workflowDefinitionCounts)}`);
+
+                        currentStep = 'seedLocales';
+                        this.logger.log(`Seeding Locales`);
+                        const localeCounts = await this.seedLocales(overallMetadata);
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'Locales', localeCounts)}`);
 
                         currentStep = 'seedPermissions';
                         this.logger.log(`Seeding Permissions`);
@@ -550,6 +557,28 @@ export class ModuleMetadataSeederService {
         return { pruned, upserted: savedFilters.length };
     }
 
+    private async seedWorkflowDefinitions(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
+        const workflowDefinitions = this.getSeedArray<any>(overallMetadata?.workflowDefinitions)
+            .map((definition) => ({
+                ...definition,
+                moduleUserKey: definition.moduleUserKey ?? moduleMetadata.name,
+                definitionYaml: this.resolveSeedFileBackedWorkflowDefinitionYaml(definition.definitionYaml, overallMetadata?.__seedFilePath),
+            }));
+        const pruned = this.enablePruning ? await this.timeOperation('prune-workflow-definitions', () => this.pruneWorkflowDefinitions(workflowDefinitions, moduleMetadata.name), {
+            moduleName: moduleMetadata.name,
+            component: 'workflow-definitions',
+            serviceCall: 'pruneWorkflowDefinitions',
+        }) : 0;
+        if (workflowDefinitions.length > 0) {
+            await this.timeOperation('handle-workflow-definitions', () => this.handleSeedWorkflowDefinitions(workflowDefinitions), {
+                moduleName: moduleMetadata.name,
+                component: 'workflow-definitions',
+                serviceCall: 'handleSeedWorkflowDefinitions',
+            });
+        }
+        return { pruned, upserted: workflowDefinitions.length };
+    }
+
     private async seedListOfValues(moduleMetadata: CreateModuleMetadataDto, overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         const listOfValues = this.getSeedArray<CreateListOfValuesDto>(overallMetadata?.listOfValues);
         const pruned = this.enablePruning ? await this.timeOperation('prune-list-of-values', () => this.pruneListOfValues(listOfValues, moduleMetadata.name), {
@@ -785,11 +814,34 @@ export class ModuleMetadataSeederService {
 
             if (fs.existsSync(fullPath)) {
                 const overallMetadata = JSON.parse(fs.readFileSync(fullPath, 'utf-8'));
+                overallMetadata.__seedFilePath = fullPath;
                 seedDataFiles.push(overallMetadata);
             }
         }
 
         return seedDataFiles;
+    }
+
+    private resolveSeedFileBackedWorkflowDefinitionYaml(definitionYaml: string, seedFilePath?: string): string {
+        if (typeof definitionYaml !== 'string' || !definitionYaml.startsWith('file:')) {
+            return definitionYaml;
+        }
+
+        if (!seedFilePath) {
+            throw new Error(`Cannot resolve workflow definition YAML file reference "${definitionYaml}" because the seed file path is unavailable.`);
+        }
+
+        const relativePath = definitionYaml.slice('file:'.length).trim();
+        if (!relativePath) {
+            throw new Error(`Cannot resolve workflow definition YAML file reference "${definitionYaml}" because no relative path was provided.`);
+        }
+
+        const resolvedPath = path.resolve(path.dirname(seedFilePath), relativePath);
+        if (!fs.existsSync(resolvedPath)) {
+            throw new Error(`Workflow definition YAML file "${resolvedPath}" referenced from "${seedFilePath}" does not exist.`);
+        }
+
+        return fs.readFileSync(resolvedPath, 'utf-8');
     }
 
     // OK
@@ -2147,6 +2199,52 @@ export class ModuleMetadataSeederService {
         }
     }
 
+    private async handleSeedWorkflowDefinitions(workflowDefinitions: any[]) {
+        if (!workflowDefinitions || workflowDefinitions.length === 0) {
+            this.logger.debug(`No workflow definitions found to seed`);
+            return;
+        }
+
+        const repo = this.dataSource.getRepository(WorkflowDefinition);
+        for (const definition of workflowDefinitions) {
+            const moduleMetadata = await this.getModuleByUserKeyCached(definition.moduleUserKey, {
+                moduleName: definition.moduleUserKey,
+                component: 'workflow-definitions',
+                details: `module=${definition.moduleUserKey}`,
+            });
+
+            if (!moduleMetadata) {
+                throw new Error(`Cannot seed workflow definition "${definition.key}": module metadata "${definition.moduleUserKey}" was not found.`);
+            }
+
+            const existing = await repo.findOne({
+                where: {
+                    key: definition.key,
+                } as any,
+            });
+            const payload = repo.create({
+                ...existing,
+                key: definition.key,
+                moduleMetadata,
+                displayName: definition.displayName,
+                namespace: definition.namespace,
+                description: definition.description,
+                status: definition.status ?? 'active',
+                definitionVersion: definition.definitionVersion,
+                definitionChecksum: this.workflowDefinitionChecksum(definition.definitionYaml),
+                definitionYaml: definition.definitionYaml,
+                tags: definition.tags,
+            });
+
+            await this.timeOperation('workflow-definition-save', () => repo.save(payload), {
+                moduleName: definition.moduleUserKey,
+                component: 'workflow-definitions',
+                serviceCall: 'workflowDefinitionRepository.save',
+                details: `workflow=${definition.key}`,
+            });
+        }
+    }
+
     private async handleSeedLocales(localesDto: CreateLocaleDto[]) {
         if (!localesDto || localesDto.length === 0) {
             this.logger.debug(`No locales found to seed`);
@@ -2389,6 +2487,49 @@ export class ModuleMetadataSeederService {
                 .createQueryBuilder()
                 .delete()
                 .from(SecurityRule)
+                .whereInIds(ids)
+                .execute();
+            return result.affected ?? 0;
+        }
+        return 0;
+    }
+
+    private async pruneWorkflowDefinitions(workflowDefinitionsDto: any[] | undefined, moduleName?: string): Promise<number> {
+        if (!moduleName) {
+            this.logger.warn(`Skipping workflow definition prune: missing module name in metadata.`);
+            return 0;
+        }
+        const workflowDefinitions = workflowDefinitionsDto ?? [];
+
+        const module = await this.getModuleByUserKeyCached(moduleName, {
+            moduleName,
+            component: 'workflow-definitions',
+            details: `module=${moduleName}`,
+        });
+        if (!module) {
+            this.logger.warn(`Skipping workflow definition prune: module not found for ${moduleName}.`);
+            return 0;
+        }
+
+        const workflowKeys = [...new Set(workflowDefinitions.map(dto => dto.key).filter(Boolean))];
+        const repo = this.dataSource.getRepository(WorkflowDefinition);
+        const idsToDeleteQuery = repo
+            .createQueryBuilder('workflowDefinition')
+            .select('workflowDefinition.id', 'id')
+            .innerJoin('workflowDefinition.moduleMetadata', 'moduleMetadata')
+            .where('moduleMetadata.id = :moduleId', { moduleId: module.id });
+
+        if (workflowKeys.length > 0) {
+            idsToDeleteQuery.andWhere('workflowDefinition.key NOT IN (:...workflowKeys)', { workflowKeys });
+        }
+
+        const rows = await idsToDeleteQuery.getRawMany();
+        const ids = rows.map((row) => row.id);
+        if (ids.length > 0) {
+            const result = await repo
+                .createQueryBuilder()
+                .delete()
+                .from(WorkflowDefinition)
                 .whereInIds(ids)
                 .execute();
             return result.affected ?? 0;
@@ -2822,6 +2963,27 @@ export class ModuleMetadataSeederService {
             return `✔ [${moduleName}] ${label} seeded (pruned ${counts.pruned}, upserted ${counts.upserted})`;
         }
         return `✔ [${moduleName}] ${label} seeded (upserted ${counts.upserted})`;
+    }
+
+    private workflowDefinitionChecksum(value: any): string {
+        return createHash('sha256')
+            .update(typeof value === 'string' ? value : this.stableStringify(value))
+            .digest('hex');
+    }
+
+    private stableStringify(value: any): string {
+        if (Array.isArray(value)) {
+            return `[${value.map((entry) => this.stableStringify(entry)).join(',')}]`;
+        }
+
+        if (value && typeof value === 'object') {
+            return `{${Object.keys(value)
+                .sort()
+                .map((key) => `${JSON.stringify(key)}:${this.stableStringify(value[key])}`)
+                .join(',')}}`;
+        }
+
+        return JSON.stringify(value);
     }
 
 }
