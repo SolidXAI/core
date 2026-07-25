@@ -578,6 +578,13 @@ export interface WorkflowNodeOutputDefinition {
   /** Whether the output is expected on successful execution. */
   required?: boolean;
 
+  /**
+   * Whether this output is added to `outputs.<nodeId>` for downstream expressions.
+   * Defaults to true. Set false for observability-only outputs that should be
+   * stored on the step execution but not suggested or exposed to later nodes.
+   */
+  includeInRuntimeContext?: boolean;
+
   /** Optional machine schema for this output value. */
   schema?: Record<string, any>;
 }

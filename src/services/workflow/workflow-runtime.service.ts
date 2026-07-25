@@ -444,7 +444,7 @@ export class WorkflowRuntimeService {
       });
 
       const output = result.output ?? {};
-      context.outputs[node.id] = output;
+      context.outputs[node.id] = this.getRuntimeContextOutput(node, output);
 
       for (const artifact of result.artifacts ?? []) {
         await this.writer.writeArtifact(context.execution, step, artifact);
@@ -658,6 +658,58 @@ export class WorkflowRuntimeService {
       availableVariableKeys: Object.keys(context.variables ?? {}),
       availableOutputNodeIds: Object.keys(context.outputs ?? {}),
     };
+  }
+
+  private getRuntimeContextOutput(
+    node: WorkflowNodeDefinition,
+    output: Record<string, any>,
+  ): Record<string, any> {
+    const hiddenOutputPaths =
+      this.registry
+        .getMetadata(node.type)
+        .authoring?.outputs?.filter(
+          (definition) => definition.includeInRuntimeContext === false,
+        )
+        .map((definition) => definition.path ?? definition.key)
+        .filter(Boolean) ?? [];
+
+    if (!hiddenOutputPaths.length || !output || typeof output !== 'object') {
+      return output;
+    }
+
+    const runtimeOutput = this.cloneOutput(output);
+    hiddenOutputPaths.forEach((path) => {
+      this.deletePath(runtimeOutput, path);
+    });
+
+    return runtimeOutput;
+  }
+
+  private cloneOutput(output: Record<string, any>): Record<string, any> {
+    if (typeof structuredClone === 'function') {
+      return structuredClone(output);
+    }
+
+    return JSON.parse(JSON.stringify(output));
+  }
+
+  private deletePath(target: Record<string, any>, path: string) {
+    const parts = path.split('.').filter(Boolean);
+    if (!parts.length) {
+      return;
+    }
+
+    let cursor: any = target;
+    for (let index = 0; index < parts.length - 1; index += 1) {
+      cursor = cursor?.[parts[index]];
+      if (!cursor || typeof cursor !== 'object') {
+        return;
+      }
+    }
+
+    if (cursor && typeof cursor === 'object') {
+      delete cursor[parts[parts.length - 1]];
+    }
   }
 
   private summarizeValue(value: any): any {

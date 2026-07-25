@@ -53,6 +53,17 @@ export class WorkflowNodeRegistryService implements OnModuleInit {
     return provider.handler;
   }
 
+  getMetadata(type: string): WorkflowNodeProviderMetadata {
+    const provider = this.providers.get(type);
+    if (!provider) {
+      throw new BadRequestException(
+        `No workflow node provider registered for type "${type}".`,
+      );
+    }
+
+    return provider.metadata;
+  }
+
   list(): WorkflowNodeMetadataResponse[] {
     return Array.from(this.providers.values())
       .map(({ metadata }) => this.toMetadataResponse(metadata))
