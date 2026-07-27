@@ -1108,11 +1108,6 @@ export class DatasourceIntrospectionService {
             ? "timestamp"
             : "datetime";
         const integerType = normalizedDatasourceType === "postgres" ? "integer" : "int";
-        const booleanType = normalizedDatasourceType === "postgres"
-            ? "boolean"
-            : normalizedDatasourceType === "mysql"
-                ? "tinyint"
-                : "bit";
         const varcharType = normalizedDatasourceType === "mssql" ? "nvarchar" : "varchar";
         const currentTimestampDefault = normalizedDatasourceType === "postgres"
             ? "now()"
@@ -1158,34 +1153,6 @@ export class DatasourceIntrospectionService {
                             columnName: field.columnName,
                             type: publishedAtType,
                             isNullable: true,
-                        } satisfies SystemColumnDefinition;
-                    case "isPublished":
-                        return {
-                            columnName: field.columnName,
-                            type: booleanType,
-                            isNullable: false,
-                            defaultExpression: normalizedDatasourceType === "postgres" ? "false" : "0",
-                        } satisfies SystemColumnDefinition;
-                    case "isLatest":
-                        return {
-                            columnName: field.columnName,
-                            type: booleanType,
-                            isNullable: false,
-                            defaultExpression: normalizedDatasourceType === "postgres" ? "true" : "1",
-                        } satisfies SystemColumnDefinition;
-                    case "initialEntityVersionId":
-                        return {
-                            columnName: field.columnName,
-                            type: integerType,
-                            isNullable: true,
-                        } satisfies SystemColumnDefinition;
-                    case "publishedTracker":
-                        return {
-                            columnName: field.columnName,
-                            type: varcharType,
-                            length: "255",
-                            isNullable: false,
-                            defaultExpression: "'na'",
                         } satisfies SystemColumnDefinition;
                     case "localeName":
                         return {
@@ -1713,16 +1680,17 @@ export class DatasourceIntrospectionService {
 
     private getLegacySuperclassFieldName(columnName: string, legacyTableType: LegacyTableType) {
         const normalized = columnName.toLowerCase();
+        // LegacyCommonEntityWithExistingId doesn't declare the draft/publish versioning
+        // columns (see DRAFT_PUBLISH_VERSIONING_FIELD_NAMES), so their ss_-prefixed column
+        // names must not appear here — otherwise a table that still physically has one of
+        // those columns would have it silently treated as superclass-handled and dropped
+        // from introspection instead of being surfaced as a real column.
         const legacyFieldMap: Record<string, string> = {
             ss_created_at: "createdAt",
             ss_updated_at: "updatedAt",
             ss_deleted_at: "deletedAt",
             ss_deleted_tracker: "deletedTracker",
             ss_published_at: "publishedAt",
-            ss_is_published: "isPublished",
-            ss_is_latest: "isLatest",
-            ss_initial_entity_version_id: "initialEntityVersionId",
-            ss_published_tracker: "publishedTracker",
             ss_locale_name: "localeName",
             ss_default_entity_locale_id: "defaultEntityLocaleId",
             ss_created_by_id: "createdBy",
