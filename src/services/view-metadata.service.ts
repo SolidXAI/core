@@ -197,11 +197,12 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     return this.getDefaultWorkflowFieldData(workflowField, workflowFieldName, fieldsMap);
   }
 
-  //for locales 
+  //for locales
   private async getEntityRecordsInAllLocales(
     modelName: string,
     id: string,
-    defaultEntityLocaleIdFromQuery?: string
+    defaultEntityLocaleIdFromQuery: string | undefined,
+    draftPublishEnabled: boolean,
   ): Promise<{ records: any[], defaultEntityLocaleId: string | null }> {
     const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
     // const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
@@ -221,7 +222,8 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
         where: [
           { defaultEntityLocaleId: defaultEntityLocaleIdFromQuery },
           { id: defaultEntityLocaleIdFromQuery },
-          { initialEntityVersionId: defaultEntityLocaleIdFromQuery }
+          // initialEntityVersionId only exists on draft/publish-enabled models (legacy tables lack the column)
+          ...(draftPublishEnabled ? [{ initialEntityVersionId: defaultEntityLocaleIdFromQuery }] : []),
         ]
       });
 
@@ -237,7 +239,9 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       return { records: [], defaultEntityLocaleId: null };
     }
 
-    const defaultEntityLocaleId = entityRecord.defaultEntityLocaleId || entityRecord.initialEntityVersionId || entityRecord.id;
+    const defaultEntityLocaleId = entityRecord.defaultEntityLocaleId
+      || (draftPublishEnabled ? entityRecord.initialEntityVersionId : null)
+      || entityRecord.id;
     if (entityRecord.defaultEntityLocaleId) {
       this.logger.debug(`Editing translated locale record. Translation root id: ${defaultEntityLocaleId}`);
     } else {
@@ -248,7 +252,7 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       where: [
         { defaultEntityLocaleId: defaultEntityLocaleId },
         { id: defaultEntityLocaleId },
-        { initialEntityVersionId: defaultEntityLocaleId }
+        ...(draftPublishEnabled ? [{ initialEntityVersionId: defaultEntityLocaleId }] : []),
       ]
     });
 
@@ -257,12 +261,13 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     return { records, defaultEntityLocaleId };
   }
 
-  private pickCurrentLocaleRecord(records: any[], localeName: string): any | null {
+  private pickCurrentLocaleRecord(records: any[], localeName: string, draftPublishEnabled: boolean): any | null {
     const localeRecords = records.filter(record => record.localeName === localeName);
     if (localeRecords.length === 0) return null;
 
     return localeRecords.sort((a, b) => {
-      if (Boolean(a.isLatest) !== Boolean(b.isLatest)) return a.isLatest ? -1 : 1;
+      // isLatest only exists on draft/publish-enabled models (legacy tables lack the column)
+      if (draftPublishEnabled && Boolean(a.isLatest) !== Boolean(b.isLatest)) return a.isLatest ? -1 : 1;
 
       return Number(b.id ?? 0) - Number(a.id ?? 0);
     })[0];
@@ -518,11 +523,12 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     // }
     if (entity.model.internationalisation) {
       const defaultEntityLocaleIdFromQuery = query?.defaultEntityLocaleId;
+      const draftPublishEnabled = entity.model.draftPublishWorkflow === true;
       const { records: entityRecordsInAllLocales, defaultEntityLocaleId } =
-        await this.getEntityRecordsInAllLocales(modelName, id, defaultEntityLocaleIdFromQuery);
+        await this.getEntityRecordsInAllLocales(modelName, id, defaultEntityLocaleIdFromQuery, draftPublishEnabled);
       const allLocales = await this.entityManager.getRepository(Locale).find({});
       for (const locale of allLocales) {
-        const matchingRecord = this.pickCurrentLocaleRecord(entityRecordsInAllLocales, locale.locale);
+        const matchingRecord = this.pickCurrentLocaleRecord(entityRecordsInAllLocales, locale.locale, draftPublishEnabled);
         applicableLocales.push({
           locale: locale.locale,
           displayName: locale.displayName,

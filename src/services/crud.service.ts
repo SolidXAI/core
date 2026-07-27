@@ -340,10 +340,9 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
 
-        let entitiesToDelete: T[] = [entity];
-        const isDraftPublishEnabled = this.draftPublishHelperService.isDraftPublishEnabled(model);
-        if (isDraftPublishEnabled) {
-            await this.draftPublishHelperService.assertDraftPublishDeleteAllowed(this.repo, this.modelName, entitiesToDelete);
+        const entitiesToDelete: T[] = [entity];
+        if (this.draftPublishHelperService.isDraftPublishEnabled(model)) {
+            this.draftPublishHelperService.assertDraftPublishDeleteAllowed(this.modelName, entitiesToDelete);
         }
 
         // If the model has internationalisation enabled, delete children with defaultEntityLocaleId === this entity's id
@@ -362,25 +361,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             }
         }
 
-        const deletedLatestChainIds = isDraftPublishEnabled
-            ? this.draftPublishHelperService.getLatestDraftPublishChainIds(entitiesToDelete)
-            : [];
-        const deletedEntityIds = this.draftPublishHelperService.getEntityIds(entitiesToDelete);
-
-        let deleteResult: any;
-        if (model.enableSoftDelete === true) {
-            this.draftPublishHelperService.markDeletedDraftPublishVersionsAsNotLatest(model, entitiesToDelete);
-            await this.repo.softRemove(entitiesToDelete);
-            deleteResult = await this.repo.save(entitiesToDelete);
-        } else {
-            deleteResult = await this.repo.remove(entitiesToDelete);
-        }
-
-        if (isDraftPublishEnabled) {
-            await this.draftPublishHelperService.promoteLatestDraftPublishVersionAfterDelete(this.repo, deletedLatestChainIds, deletedEntityIds);
-        }
-
-        return deleteResult;
+        return this.draftPublishHelperService.performDeleteAndPromote(this.repo, model, entitiesToDelete);
     }
 
     private async fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false, entityId?: number) {
@@ -876,34 +857,11 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
         }
 
 
-        // entity-level flag
-        const isDraftPublishEnabled = this.draftPublishHelperService.isDraftPublishEnabled(model);
-
-        if (isDraftPublishEnabled) {
-            await this.draftPublishHelperService.assertDraftPublishDeleteAllowed(this.repo, this.modelName, removedEntities);
+        if (this.draftPublishHelperService.isDraftPublishEnabled(model)) {
+            this.draftPublishHelperService.assertDraftPublishDeleteAllowed(this.modelName, removedEntities);
         }
 
-        const entitiesToDelete = removedEntities;
-
-        const deletedLatestChainIds = isDraftPublishEnabled
-            ? this.draftPublishHelperService.getLatestDraftPublishChainIds(entitiesToDelete)
-            : [];
-        const deletedEntityIds = this.draftPublishHelperService.getEntityIds(entitiesToDelete);
-
-        let deleteResult: any;
-        if (model.enableSoftDelete === true) {
-            this.draftPublishHelperService.markDeletedDraftPublishVersionsAsNotLatest(model, entitiesToDelete);
-            await this.repo.softRemove(entitiesToDelete);
-            deleteResult = await this.repo.save(entitiesToDelete);
-        } else {
-            deleteResult = await this.repo.remove(entitiesToDelete);
-        }
-
-        if (isDraftPublishEnabled) {
-            await this.draftPublishHelperService.promoteLatestDraftPublishVersionAfterDelete(this.repo, deletedLatestChainIds, deletedEntityIds);
-        }
-
-        return deleteResult;
+        return this.draftPublishHelperService.performDeleteAndPromote(this.repo, model, removedEntities);
     }
 
     async recover(id: number, solidRequestContext: any = {}) {

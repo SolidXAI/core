@@ -1,12 +1,14 @@
 import { BadRequestException, NotFoundException } from "@nestjs/common";
 import { EntityManager, FindOptionsWhere, In, SelectQueryBuilder } from "typeorm";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
+import { DRAFT_PUBLISH_VERSIONING_FIELD_NAMES } from "../constants/draft-publish-fields";
 import { RelationType, SolidFieldType } from "../dtos/create-field-metadata.dto";
 import { CommonEntity } from "../entities/common.entity";
 import { FieldMetadata } from "../entities/field-metadata.entity";
 import { Media } from "../entities/media.entity";
 import { ModelMetadata } from "../entities/model-metadata.entity";
 import { SolidBaseRepository } from "../repository/solid-base.repository";
+import { normalizeObjectKeys } from "./object.utils";
 
 type TransformDtoResult = {
     dto: any;
@@ -88,17 +90,7 @@ export class DraftPublishHelperService {
     }
 
     filtersContainField(filters: any, fieldName: string): boolean {
-        if (!filters || typeof filters !== 'object') return false;
-        const normalizedFilters = this.normalizeObjectKeys(filters);
-        return Object.keys(normalizedFilters).some(key => {
-            const [rawField] = key.split(':');
-            if (rawField === fieldName) return true;
-            const value = normalizedFilters[key];
-            if (key === '$and' || key === '$or') {
-                return Array.isArray(value) && value.some((nestedFilter: any) => this.filtersContainField(nestedFilter, fieldName));
-            }
-            return value && typeof value === 'object' && this.filtersContainField(value, fieldName);
-        });
+        return this.someFilterLeaf(filters, fieldName, () => true);
     }
 
     async copyPublishedVersionAndUpdate<T extends CommonEntity>(
@@ -120,7 +112,10 @@ export class DraftPublishHelperService {
         }
 
         let hasMediaFields = false;
-        const submittedDto = { ...updateDto };
+        // Snapshot of what the caller actually submitted, used only for hasOwnProperty checks
+        // below; the transform pipeline works off its own copy (transformedDto) so this
+        // reference never needs to be cloned.
+        const submittedDto = updateDto;
         let transformedDto = { ...updateDto };
 
         for (const field of model.fields) {
@@ -173,27 +168,53 @@ export class DraftPublishHelperService {
         return savedVersion;
     }
 
-    async assertDraftPublishDeleteAllowed<T extends CommonEntity>(
-        repo: SolidBaseRepository<T>,
+    assertDraftPublishDeleteAllowed<T extends CommonEntity>(
         modelName: string,
         entities: T[],
-    ): Promise<void> {
-        const ids = entities.map(entity => entity.id).filter(Boolean);
-        if (ids.length === 0) return;
+    ): void {
+        // The caller just loaded these entities, so their isPublished flags are already
+        // current — no need to re-query the DB for the same rows.
+        const currentPublishedEntityIds = entities
+            .filter(entity => entity.isPublished === true)
+            .map(entity => entity.id);
 
-        const currentPublishedEntities = await repo.find({
-            where: {
-                id: In(ids),
-                isPublished: true,
-            } as FindOptionsWhere<T>,
-        });
-
-        if (currentPublishedEntities.length > 0) {
-            const currentPublishedEntityIds = currentPublishedEntities.map(entity => entity.id);
+        if (currentPublishedEntityIds.length > 0) {
             throw new BadRequestException(
                 `Published ${modelName} record cannot be deleted. Publish another draft or unpublish it before deleting. Invalid Ids ${currentPublishedEntityIds.join(', ')}.`
             );
         }
+    }
+
+    /**
+     * Shared delete sequence for both single and bulk delete: soft/hard delete the given
+     * entities and promote a replacement latest version for any chain whose latest version
+     * was just deleted. Callers must have already run assertDraftPublishDeleteAllowed.
+     */
+    async performDeleteAndPromote<T extends CommonEntity>(
+        repo: SolidBaseRepository<T>,
+        model: ModelMetadata,
+        entitiesToDelete: T[],
+    ): Promise<T[]> {
+        const isDraftPublishEnabled = this.isDraftPublishEnabled(model);
+        const deletedLatestChainIds = isDraftPublishEnabled
+            ? this.getLatestDraftPublishChainIds(entitiesToDelete)
+            : [];
+        const deletedEntityIds = this.getEntityIds(entitiesToDelete);
+
+        let deleteResult: T[];
+        if (model.enableSoftDelete === true) {
+            this.markDeletedDraftPublishVersionsAsNotLatest(model, entitiesToDelete);
+            await repo.softRemove(entitiesToDelete);
+            deleteResult = await repo.save(entitiesToDelete);
+        } else {
+            deleteResult = await repo.remove(entitiesToDelete);
+        }
+
+        if (isDraftPublishEnabled) {
+            await this.promoteLatestDraftPublishVersionAfterDelete(repo, deletedLatestChainIds, deletedEntityIds);
+        }
+
+        return deleteResult;
     }
 
     markDeletedDraftPublishVersionsAsNotLatest<T extends CommonEntity>(model: ModelMetadata, entities: T[]): void {
@@ -224,29 +245,39 @@ export class DraftPublishHelperService {
     ): Promise<void> {
         if (deletedLatestChainIds.length === 0) return;
 
-        for (const chainId of deletedLatestChainIds) {
-            const replacementQuery = repo.manager
-                .createQueryBuilder(repo.metadata.target, 'entity')
-                .where('(entity.initialEntityVersionId = :chainId OR entity.id = :chainId)', { chainId })
-                .orderBy('entity.createdAt', 'DESC')
-                .addOrderBy('entity.id', 'DESC');
+        // Chains are independent of one another, so promote replacements concurrently
+        // rather than awaiting one chain at a time.
+        await Promise.all(deletedLatestChainIds.map(chainId =>
+            this.promoteReplacementForChain(repo, chainId, deletedIds)
+        ));
+    }
 
-            if (deletedIds.length > 0) {
-                replacementQuery.andWhere('entity.id NOT IN (:...deletedIds)', { deletedIds });
-            }
+    private async promoteReplacementForChain<T extends CommonEntity>(
+        repo: SolidBaseRepository<T>,
+        chainId: number,
+        deletedIds: number[],
+    ): Promise<void> {
+        const replacementQuery = repo.manager
+            .createQueryBuilder(repo.metadata.target, 'entity')
+            .where('(entity.initialEntityVersionId = :chainId OR entity.id = :chainId)', { chainId })
+            .orderBy('entity.createdAt', 'DESC')
+            .addOrderBy('entity.id', 'DESC');
 
-            const replacement = await replacementQuery.getOne() as T | null;
-            if (!replacement) continue;
-
-            await repo.manager
-                .createQueryBuilder()
-                .update(repo.metadata.target)
-                .set({ isLatest: false } as any)
-                .where('(initial_entity_version_id = :chainId OR id = :chainId)', { chainId })
-                .execute();
-
-            await repo.update(replacement.id, { isLatest: true } as unknown as QueryDeepPartialEntity<T>);
+        if (deletedIds.length > 0) {
+            replacementQuery.andWhere('entity.id NOT IN (:...deletedIds)', { deletedIds });
         }
+
+        const replacement = await replacementQuery.getOne() as T | null;
+        if (!replacement) return;
+
+        await repo.manager
+            .createQueryBuilder()
+            .update(repo.metadata.target)
+            .set({ isLatest: false } as any)
+            .where('(initial_entity_version_id = :chainId OR id = :chainId)', { chainId })
+            .execute();
+
+        await repo.update(replacement.id, { isLatest: true } as unknown as QueryDeepPartialEntity<T>);
     }
 
     async publishRecord<T extends CommonEntity>(
@@ -256,16 +287,7 @@ export class DraftPublishHelperService {
         id: number,
         activeUser?: any,
     ): Promise<T> {
-        this.assertDraftPublishWorkflowEnabled(model, modelName);
-
-        const entity = await repo.findOne({ where: { id } as any });
-        if (!entity) {
-            throw new NotFoundException(`${modelName} with id ${id} not found`);
-        }
-
-        if (entity.isLatest === false) {
-            throw new BadRequestException(`Only the latest version of ${modelName} can be published.`);
-        }
+        const entity = await this.loadLatestEntityForPublishAction(repo, model, modelName, id, 'published');
 
         if (entity.isPublished) {
             throw new BadRequestException(`${modelName} with id ${id} is already published`);
@@ -311,16 +333,7 @@ export class DraftPublishHelperService {
         id: number,
         activeUser?: any,
     ): Promise<T> {
-        this.assertDraftPublishWorkflowEnabled(model, modelName);
-
-        const entity = await repo.findOne({ where: { id } as any });
-        if (!entity) {
-            throw new NotFoundException(`${modelName} with id ${id} not found`);
-        }
-
-        if (entity.isLatest === false) {
-            throw new BadRequestException(`Only the latest version of ${modelName} can be unpublished.`);
-        }
+        const entity = await this.loadLatestEntityForPublishAction(repo, model, modelName, id, 'unpublished');
 
         if (!entity.isPublished) {
             throw new BadRequestException(`${modelName} with id ${id} is already unpublished`);
@@ -333,12 +346,49 @@ export class DraftPublishHelperService {
         });
     }
 
-    private normalizeObjectKeys(obj: any): any {
-        return Object.keys(obj).reduce((acc, key) => {
-            const newKey = key.replace(/^\[(.*)\]$/, '$1');
-            acc[newKey] = obj[key];
-            return acc;
-        }, {});
+    /**
+     * Load the latest version of a draft/publish-enabled record for a publish/unpublish
+     * action, applying the two checks both actions share (workflow enabled, version is latest).
+     */
+    private async loadLatestEntityForPublishAction<T extends CommonEntity>(
+        repo: SolidBaseRepository<T>,
+        model: ModelMetadata,
+        modelName: string,
+        id: number,
+        action: 'published' | 'unpublished',
+    ): Promise<T> {
+        this.assertDraftPublishWorkflowEnabled(model, modelName);
+
+        const entity = await repo.findOne({ where: { id } as any });
+        if (!entity) {
+            throw new NotFoundException(`${modelName} with id ${id} not found`);
+        }
+
+        if (entity.isLatest === false) {
+            throw new BadRequestException(`Only the latest version of ${modelName} can be ${action}.`);
+        }
+
+        return entity;
+    }
+
+    /**
+     * Walk a (possibly nested, $and/$or-combined) filters object looking for any leaf keyed
+     * by `fieldName`, delegating the leaf test to the caller. Shared by filtersContainField
+     * (any occurrence counts) and filtersContainBooleanValue (occurrence must match a value).
+     */
+    private someFilterLeaf(filters: any, fieldName: string, matchesLeaf: (value: any) => boolean): boolean {
+        if (!filters || typeof filters !== 'object') return false;
+        const normalizedFilters = normalizeObjectKeys(filters);
+
+        return Object.keys(normalizedFilters).some(key => {
+            const [rawField] = key.split(':');
+            const value = normalizedFilters[key];
+            if (rawField === fieldName) return matchesLeaf(value);
+            if (key === '$and' || key === '$or') {
+                return Array.isArray(value) && value.some((nestedFilter: any) => this.someFilterLeaf(nestedFilter, fieldName, matchesLeaf));
+            }
+            return value && typeof value === 'object' && this.someFilterLeaf(value, fieldName, matchesLeaf);
+        });
     }
 
     private normalizeBooleanFilterValue(value: boolean | string | undefined): boolean | undefined {
@@ -353,20 +403,7 @@ export class DraftPublishHelperService {
     }
 
     private filtersContainBooleanValue(filters: any, fieldName: string, expectedValue: boolean): boolean {
-        if (!filters || typeof filters !== 'object') return false;
-        const normalizedFilters = this.normalizeObjectKeys(filters);
-
-        return Object.keys(normalizedFilters).some(key => {
-            const [rawField] = key.split(':');
-            const value = normalizedFilters[key];
-            if (rawField === fieldName) {
-                return this.extractBooleanFilterValues(value).includes(expectedValue);
-            }
-            if (key === '$and' || key === '$or') {
-                return Array.isArray(value) && value.some((nestedFilter: any) => this.filtersContainBooleanValue(nestedFilter, fieldName, expectedValue));
-            }
-            return value && typeof value === 'object' && this.filtersContainBooleanValue(value, fieldName, expectedValue);
-        });
+        return this.someFilterLeaf(filters, fieldName, value => this.extractBooleanFilterValues(value).includes(expectedValue));
     }
 
     private extractBooleanFilterValues(filterValue: any): boolean[] {
@@ -380,7 +417,7 @@ export class DraftPublishHelperService {
         }
         if (typeof filterValue !== 'object') return [];
 
-        const normalizedValue = this.normalizeObjectKeys(filterValue);
+        const normalizedValue = normalizeObjectKeys(filterValue);
         return Object.keys(normalizedValue)
             .filter(operator => operator === '$eq' || operator === '$in')
             .flatMap(operator => this.extractBooleanFilterValues(normalizedValue[operator]));
@@ -421,10 +458,7 @@ export class DraftPublishHelperService {
             'createdBy',
             'updatedBy',
             'publishedAt',
-            'isPublished',
-            'isLatest',
-            'initialEntityVersionId',
-            'publishedTracker',
+            ...DRAFT_PUBLISH_VERSIONING_FIELD_NAMES,
         ]);
 
         repo.metadata.columns.forEach(column => {
@@ -452,38 +486,43 @@ export class DraftPublishHelperService {
         if (mediaFields.length === 0) return;
 
         const uploadedFieldNames = new Set(files.map(file => file.fieldname));
+        const clonableFieldIds = mediaFields
+            .filter(field => !uploadedFieldNames.has(field.name))
+            .map(field => field.id);
+        if (clonableFieldIds.length === 0) return;
+
         const mediaRepository = (entityManager ?? context.getDatasourceDefaultEntityManager()).getRepository(Media);
 
-        for (const mediaField of mediaFields) {
-            if (uploadedFieldNames.has(mediaField.name)) continue;
+        // One query for every clonable media field instead of one query per field.
+        const sourceMedia = await mediaRepository.find({
+            where: {
+                entityId: sourceEntityId,
+                modelMetadata: { id: model.id },
+                fieldMetadata: { id: In(clonableFieldIds) },
+            } as any,
+            relations: {
+                modelMetadata: true,
+                mediaStorageProviderMetadata: true,
+                fieldMetadata: true,
+            } as any,
+        });
+        if (sourceMedia.length === 0) return;
 
-            const sourceMedia = await mediaRepository.find({
-                where: {
-                    entityId: sourceEntityId,
-                    modelMetadata: { id: model.id },
-                    fieldMetadata: { id: mediaField.id },
-                } as any,
-                relations: {
-                    modelMetadata: true,
-                    mediaStorageProviderMetadata: true,
-                    fieldMetadata: true,
-                } as any,
-            });
-
-            for (const media of sourceMedia) {
-                const clonedMedia = mediaRepository.create({
-                    entityId: targetEntity.id,
-                    relativeUri: media.relativeUri,
-                    fileSize: media.fileSize,
-                    mimeType: media.mimeType,
-                    originalFileName: media.originalFileName,
-                    modelMetadata: media.modelMetadata,
-                    mediaStorageProviderMetadata: media.mediaStorageProviderMetadata,
-                    fieldMetadata: media.fieldMetadata,
-                });
-                await mediaRepository.save(clonedMedia);
-            }
-        }
+        // Reuse the same underlying file across versions instead of physically duplicating it
+        // in storage; MediaService.deletePhysicalFile guards against removing the file while
+        // another Media row still references it. Saved as a single batch instead of one insert
+        // per row.
+        const clonedMedia = sourceMedia.map(media => mediaRepository.create({
+            entityId: targetEntity.id,
+            relativeUri: media.relativeUri,
+            fileSize: media.fileSize,
+            mimeType: media.mimeType,
+            originalFileName: media.originalFileName,
+            modelMetadata: media.modelMetadata,
+            mediaStorageProviderMetadata: media.mediaStorageProviderMetadata,
+            fieldMetadata: media.fieldMetadata,
+        }));
+        await mediaRepository.save(clonedMedia);
     }
 
     private createPublishedVersionTracker(seed: number | string): string {

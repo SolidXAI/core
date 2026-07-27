@@ -7,6 +7,7 @@ import { BadRequestException, Logger } from "@nestjs/common";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { buildCastToText } from "src/helpers/typeorm-db-helper";
 import { DraftPublishHelperService } from "./create-draft-publish-helper.service";
+import { normalizeObjectKeys } from "./object.utils";
 
 export enum FilterCombinator {
     AND = '$and',
@@ -165,7 +166,7 @@ export class CrudHelperService {
     }
 
     applyFilters(qb: WhereExpressionBuilder, filters: any, alias: string = 'entity', selectQb: SelectQueryBuilder<any>) {
-        const normalizedFilters = this.normalizeObjectKeys(filters);
+        const normalizedFilters = normalizeObjectKeys(filters);
         if (normalizedFilters.$and) {
             normalizedFilters.$and.forEach((andFilter: any) => {
                 qb.andWhere(
@@ -184,7 +185,7 @@ export class CrudHelperService {
             // For individual conditions
             Object.keys(normalizedFilters).forEach(key => {
                 const primaryFilterObj = normalizedFilters[key];
-                const normalizedPrimaryFilterObj = this.normalizeObjectKeys(primaryFilterObj);
+                const normalizedPrimaryFilterObj = normalizeObjectKeys(primaryFilterObj);
 
                 const [rawField, funcAlias] = key.split(':');
 
@@ -312,17 +313,6 @@ export class CrudHelperService {
             default:
                 throw new Error(`Operator ${operator} is not supported`);
         }
-    }
-
-    // Normalize the primary operator object by removing the surrounding brackets in the keys e.g [$eq] => $eq
-    private normalizeObjectKeys(obj: any): any {
-        return Object.keys(obj).reduce((acc, key) => {
-            // Transform the key by removing surrounding brackets
-            const newKey = key.replace(/^\[(.*)\]$/, '$1');
-            // Assign the value to the transformed key in the accumulator object
-            acc[newKey] = obj[key];
-            return acc;
-        }, {});
     }
 
     normalize(value: string | string[]): string[] {
