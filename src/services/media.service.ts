@@ -248,7 +248,7 @@ export class MediaService extends CRUDService<Media> {
 
     if (blockedIds.length > 0) {
       throw new BadRequestException(
-        `Media belonging to a published record cannot be deleted. Edit the record to create a draft first. Invalid Ids ${blockedIds.join(', ')}.`
+        'Media belonging to a published record cannot be deleted. Edit the record to create a draft first'
       );
     }
   }
