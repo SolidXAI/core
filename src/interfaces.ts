@@ -272,6 +272,7 @@ export interface ModuleMetadataSeederOptions {
   modulesToSeed: string[] | null;
   pruneMetadata: boolean;
   seedGlobalMetadata: boolean;
+  skipHooks: boolean;
 }
 
 export interface ModuleMetadataSeederEventPayload {
