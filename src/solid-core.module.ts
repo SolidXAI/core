@@ -441,10 +441,12 @@ import { WorkflowInvocationService } from './services/workflow/workflow-invocati
 import { WorkflowNodeRegistryService } from './services/workflow/workflow-node-registry.service';
 import { WorkflowRuntimeService } from './services/workflow/workflow-runtime.service';
 import { WorkflowScheduledTriggerJobService } from './services/workflow/workflow-scheduled-trigger.job';
+import { ExecutionFailNode } from './services/workflow/nodes/execution-fail.node';
 import { ForEachNode } from './services/workflow/nodes/for-each.node';
 import { HttpRequestNode } from './services/workflow/nodes/http-request.node';
 import { IfNode } from './services/workflow/nodes/if.node';
 import { LogWriteNode } from './services/workflow/nodes/log-write.node';
+import { LoopUntilNode } from './services/workflow/nodes/loop-until.node';
 import { ParallelNode } from './services/workflow/nodes/parallel.node';
 import { RuntimePythonNode } from './services/workflow/nodes/runtime-python.node';
 import { SequentialNode } from './services/workflow/nodes/sequential.node';
@@ -947,10 +949,12 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowDefinitionValidatorService,
     WorkflowNodeRegistryService,
     WorkflowScheduledTriggerJobService,
+    ExecutionFailNode,
     LogWriteNode,
     HttpRequestNode,
     IfNode,
     ForEachNode,
+    LoopUntilNode,
     ParallelNode,
     RuntimePythonNode,
     SequentialNode,

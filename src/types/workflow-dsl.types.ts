@@ -200,6 +200,9 @@ export interface WorkflowNodeDefinition {
   /** Child nodes executed when no `switch.cases` entry matches the switch value. */
   defaults?: WorkflowNodeDefinition[];
 
+  /** Child nodes executed when this node or its child subtree fails. */
+  errors?: WorkflowNodeDefinition[];
+
   /**
    * Named child-node collections for `switch`.
    *
@@ -286,6 +289,12 @@ export interface WorkflowDefinitionDsl {
 
   /** Optional workflow triggers that can create executions. */
   triggers?: WorkflowTriggerDefinition[];
+
+  /** Workflow-level error handler nodes executed sequentially when execution fails. */
+  errors?: WorkflowNodeDefinition[];
+
+  /** Workflow-level cleanup nodes executed sequentially after success or failure. */
+  finally?: WorkflowNodeDefinition[];
 
   /** Workflow-level custom annotations for tooling. */
   metadata?: Record<string, any>;
@@ -874,6 +883,21 @@ export interface WorkflowExpressionResolver {
   resolveExpression(expression: string, context: WorkflowRuntimeContext): any;
 }
 
+/** Loop context exposed to expressions for nested itemized controls. */
+export interface WorkflowLoopContext {
+  /** Current item for this loop frame. */
+  item: any;
+
+  /** Zero-based iteration index for this loop frame. */
+  index: number;
+
+  /** Loop control node id. */
+  nodeId?: string;
+
+  /** Loop control step execution key. */
+  stepExecutionKey?: string;
+}
+
 /** Runtime context shared by workflow execution and node execution. */
 export interface WorkflowRuntimeContext {
   /** Parent workflow execution entity. */
@@ -911,6 +935,18 @@ export interface WorkflowRuntimeContext {
 
   /** Current item index for itemized/iterative control nodes. */
   index?: number;
+
+  /** Nearest parent loop frame, when inside nested loop children. */
+  parent?: WorkflowLoopContext;
+
+  /** Parent loop frames, nearest first. */
+  parents?: WorkflowLoopContext[];
+
+  /** Loop frames from outermost to innermost, including the current loop. */
+  loops?: WorkflowLoopContext[];
+
+  /** Current error context when executing an error handler. */
+  error?: any;
 
   /** Parent control node id when executing nested child nodes. */
   parentNodeId?: string;

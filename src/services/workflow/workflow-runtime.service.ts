@@ -161,7 +161,11 @@ export class WorkflowRuntimeService {
     const execution = existingExecution
       ? await this.writer.startExecution(existingExecution, effectiveRequest)
       : await this.writer.createExecution(definition, effectiveRequest);
-    const nodeCount = this.countNodes(definitionDsl.nodes);
+    const nodeCount = this.countNodes([
+      ...(definitionDsl.nodes ?? []),
+      ...(definitionDsl.errors ?? []),
+      ...(definitionDsl.finally ?? []),
+    ]);
     const outputs: Record<string, any> = {};
     const runtimeContext: WorkflowRuntimeContext = {
       execution,
@@ -175,26 +179,52 @@ export class WorkflowRuntimeService {
       },
     };
 
+    this.logger.log(
+      `Starting workflow execution ${execution.executionIdentifier} for ${definition.key} with ${nodeCount} node(s).`,
+    );
+    await this.writer.writeLog(execution, undefined, {
+      level: 'info',
+      eventType: 'execution.started',
+      message: `Workflow execution started for ${definition.key}.`,
+      metadata: {
+        executionIdentifier: execution.executionIdentifier,
+        workflowKey: definition.key,
+        triggerType: execution.triggerType,
+        nodeCount,
+        inputKeys: Object.keys(runtimeContext.input ?? {}),
+        variableKeys: Object.keys(runtimeContext.variables ?? {}),
+      },
+    }, this.nextLogSequence(runtimeContext));
+
+    let executionError: unknown;
+
     try {
-      this.logger.log(
-        `Starting workflow execution ${execution.executionIdentifier} for ${definition.key} with ${nodeCount} node(s).`,
-      );
+      await this.runNodes(definitionDsl.nodes, runtimeContext);
+    } catch (error) {
+      executionError = error;
+      await this.runGlobalErrorHandlers(definitionDsl, runtimeContext, error);
+    }
+
+    try {
+      await this.runFinallyHandlers(definitionDsl, runtimeContext);
+    } catch (finallyError) {
       await this.writer.writeLog(execution, undefined, {
-        level: 'info',
-        eventType: 'execution.started',
-        message: `Workflow execution started for ${definition.key}.`,
+        level: 'error',
+        eventType: 'finally.failed',
+        message: `Finally handler failed: ${this.errorMessage(finallyError)}.`,
+        context: this.summarizeError(finallyError),
         metadata: {
-          executionIdentifier: execution.executionIdentifier,
-          workflowKey: definition.key,
-          triggerType: execution.triggerType,
-          nodeCount,
-          inputKeys: Object.keys(runtimeContext.input ?? {}),
-          variableKeys: Object.keys(runtimeContext.variables ?? {}),
+          originalError: executionError
+            ? this.summarizeError(executionError)
+            : undefined,
         },
       }, this.nextLogSequence(runtimeContext));
+      if (!executionError) {
+        executionError = finallyError;
+      }
+    }
 
-      await this.runNodes(definitionDsl.nodes, runtimeContext);
-
+    if (!executionError) {
       const completed = await this.writer.completeExecution(execution, outputs);
 
       this.logger.log(
@@ -212,26 +242,26 @@ export class WorkflowRuntimeService {
       }, this.nextLogSequence(runtimeContext));
 
       return this.toResponse(completed);
-    } catch (error) {
-      const failed = await this.writer.failExecution(execution, error);
-
-      this.logger.error(
-        `Failed workflow execution ${failed.executionIdentifier} for ${definition.key}: ${failed.errorSummary}`,
-        error instanceof Error ? error.stack : undefined,
-      );
-      await this.writer.writeLog(failed, undefined, {
-        level: 'error',
-        eventType: 'execution.failed',
-        message: failed.errorSummary,
-        context: this.summarizeError(error),
-        metadata: {
-          executionIdentifier: failed.executionIdentifier,
-          durationMs: failed.durationMs,
-        },
-      }, this.nextLogSequence(runtimeContext));
-
-      return this.toResponse(failed);
     }
+
+    const failed = await this.writer.failExecution(execution, executionError);
+
+    this.logger.error(
+      `Failed workflow execution ${failed.executionIdentifier} for ${definition.key}: ${failed.errorSummary}`,
+      executionError instanceof Error ? executionError.stack : undefined,
+    );
+    await this.writer.writeLog(failed, undefined, {
+      level: 'error',
+      eventType: 'execution.failed',
+      message: failed.errorSummary,
+      context: this.summarizeError(executionError),
+      metadata: {
+        executionIdentifier: failed.executionIdentifier,
+        durationMs: failed.durationMs,
+      },
+    }, this.nextLogSequence(runtimeContext));
+
+    return this.toResponse(failed);
   }
 
   async getExecutionStatus(executionId: number): Promise<WorkflowExecutionResponse> {
@@ -363,17 +393,19 @@ export class WorkflowRuntimeService {
     nodes: WorkflowNodeDefinition[],
     context: WorkflowRuntimeContext,
   ): Promise<Record<string, any>> {
+    const nodeOutputs: Record<string, any> = {};
+
     for (const node of nodes ?? []) {
-      await this.runNode(node, context);
+      nodeOutputs[node.id] = await this.runNode(node, context);
     }
 
-    return context.outputs;
+    return nodeOutputs;
   }
 
   private async runNode(
     node: WorkflowNodeDefinition,
     context: WorkflowRuntimeContext,
-  ): Promise<void> {
+  ): Promise<Record<string, any>> {
     const inputPayload = {
       configuration: node.configuration,
       input: context.input,
@@ -400,7 +432,7 @@ export class WorkflowRuntimeService {
         message: `Skipped disabled node ${node.id}.`,
         metadata: this.nodeLogMetadata(node, context, step),
       }, this.nextLogSequence(context));
-      return;
+      return context.outputs[node.id];
     }
 
     try {
@@ -472,6 +504,8 @@ export class WorkflowRuntimeService {
           artifactCount: result.artifacts?.length ?? 0,
         },
       }, this.nextLogSequence(context));
+
+      return output;
     } catch (error) {
       await this.writer.failStep(step, error);
 
@@ -486,7 +520,7 @@ export class WorkflowRuntimeService {
           context: this.summarizeError(error),
           metadata: this.nodeLogMetadata(node, context, step),
         }, this.nextLogSequence(context));
-        return;
+        return context.outputs[node.id];
       }
 
       await this.writer.writeLog(context.execution, step, {
@@ -496,8 +530,156 @@ export class WorkflowRuntimeService {
         context: this.summarizeError(error),
         metadata: this.nodeLogMetadata(node, context, step),
       }, this.nextLogSequence(context));
+      await this.runLocalErrorHandlers(node, context, error);
       throw error;
     }
+  }
+
+  private async runGlobalErrorHandlers(
+    definitionDsl: WorkflowDefinitionDsl,
+    context: WorkflowRuntimeContext,
+    error: unknown,
+  ): Promise<void> {
+    const errorNodes = definitionDsl.errors ?? [];
+    if (!errorNodes.length) {
+      return;
+    }
+
+    await this.runErrorHandlers(
+      errorNodes,
+      context,
+      error,
+      'global',
+      undefined,
+      undefined,
+    );
+  }
+
+  private async runFinallyHandlers(
+    definitionDsl: WorkflowDefinitionDsl,
+    context: WorkflowRuntimeContext,
+  ): Promise<void> {
+    const finallyNodes = definitionDsl.finally ?? [];
+    if (!finallyNodes.length) {
+      return;
+    }
+
+    await this.writer.writeLog(context.execution, undefined, {
+      level: 'info',
+      eventType: 'finally.started',
+      message: 'Running workflow finally handlers.',
+      metadata: {
+        handlerNodeCount: finallyNodes.length,
+      },
+    }, this.nextLogSequence(context));
+
+    await this.runNodes(finallyNodes, context);
+
+    await this.writer.writeLog(context.execution, undefined, {
+      level: 'info',
+      eventType: 'finally.completed',
+      message: 'Workflow finally handlers completed.',
+      metadata: {
+        handlerNodeCount: finallyNodes.length,
+      },
+    }, this.nextLogSequence(context));
+  }
+
+  private async runLocalErrorHandlers(
+    node: WorkflowNodeDefinition,
+    context: WorkflowRuntimeContext,
+    error: unknown,
+  ): Promise<void> {
+    const errorNodes = node.errors ?? [];
+    if (!errorNodes.length) {
+      return;
+    }
+
+    await this.runErrorHandlers(
+      errorNodes,
+      context,
+      error,
+      'local',
+      node.id,
+      context.stepExecution?.stepExecutionKey,
+    );
+  }
+
+  private async runErrorHandlers(
+    errorNodes: WorkflowNodeDefinition[],
+    context: WorkflowRuntimeContext,
+    error: unknown,
+    scope: 'global' | 'local',
+    sourceNodeId?: string,
+    sourceStepExecutionKey?: string,
+  ): Promise<void> {
+    const errorContext = this.buildErrorContext(error, sourceNodeId, sourceStepExecutionKey);
+
+    await this.writer.writeLog(context.execution, undefined, {
+      level: 'warn',
+      eventType: `error-handler.${scope}.started`,
+      message:
+        scope === 'global'
+          ? 'Running workflow-level error handlers.'
+          : `Running local error handlers for node ${sourceNodeId}.`,
+      context: errorContext,
+      metadata: {
+        sourceNodeId,
+        sourceStepExecutionKey,
+        handlerNodeCount: errorNodes.length,
+      },
+    }, this.nextLogSequence(context));
+
+    try {
+      await this.runNodes(errorNodes, {
+        ...context,
+        error: errorContext,
+        parentNodeId: sourceNodeId ?? context.parentNodeId,
+        parentStepExecutionKey:
+          sourceStepExecutionKey ?? context.parentStepExecutionKey,
+      });
+    } catch (handlerError) {
+      await this.writer.writeLog(context.execution, undefined, {
+        level: 'error',
+        eventType: `error-handler.${scope}.failed`,
+        message: `Error handler failed: ${this.errorMessage(handlerError)}.`,
+        context: this.summarizeError(handlerError),
+        metadata: {
+          originalError: errorContext,
+          sourceNodeId,
+          sourceStepExecutionKey,
+        },
+      }, this.nextLogSequence(context));
+      return;
+    }
+
+    await this.writer.writeLog(context.execution, undefined, {
+      level: 'info',
+      eventType: `error-handler.${scope}.completed`,
+      message:
+        scope === 'global'
+          ? 'Workflow-level error handlers completed.'
+          : `Local error handlers completed for node ${sourceNodeId}.`,
+      context: errorContext,
+      metadata: {
+        sourceNodeId,
+        sourceStepExecutionKey,
+      },
+    }, this.nextLogSequence(context));
+  }
+
+  private buildErrorContext(
+    error: unknown,
+    nodeId?: string,
+    stepExecutionKey?: string,
+  ): Record<string, any> {
+    const summary = this.summarizeError(error);
+    return {
+      ...summary,
+      message: this.errorMessage(error),
+      nodeId,
+      stepExecutionKey,
+    };
   }
 
   private assertDefinitionYaml(value: any): WorkflowDefinitionDsl {
@@ -627,6 +809,7 @@ export class WorkflowRuntimeService {
         ...(node.then ?? []),
         ...(node.else ?? []),
         ...(node.defaults ?? []),
+        ...(node.errors ?? []),
         ...Object.values(node.cases ?? {}).flat(),
       ];
 

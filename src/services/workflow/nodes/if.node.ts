@@ -42,6 +42,13 @@ import {
         description: 'Nodes that run when the condition evaluates to false.',
         kind: 'sequence',
       },
+      {
+        key: 'errors',
+        label: 'Errors',
+        description: 'Nodes that run sequentially if the selected branch fails.',
+        kind: 'sequence',
+        layout: 'sequential',
+      },
     ],
     supportsDescription: true,
     supportsName: true,

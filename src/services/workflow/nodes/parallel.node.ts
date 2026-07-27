@@ -23,6 +23,13 @@ import {
         layout: 'parallel',
         required: true,
       },
+      {
+        key: 'errors',
+        label: 'Errors',
+        description: 'Nodes that run sequentially if this parallel branch fails.',
+        kind: 'sequence',
+        layout: 'sequential',
+      },
     ],
     supportsDescription: true,
     supportsName: true,

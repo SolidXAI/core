@@ -23,6 +23,13 @@ import {
         layout: 'sequential',
         required: true,
       },
+      {
+        key: 'errors',
+        label: 'Errors',
+        description: 'Nodes that run sequentially if this sequence fails.',
+        kind: 'sequence',
+        layout: 'sequential',
+      },
     ],
     supportsDescription: true,
     supportsName: true,

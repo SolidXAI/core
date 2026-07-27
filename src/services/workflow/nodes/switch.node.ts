@@ -47,6 +47,13 @@ import {
           'Fallback sequence that runs when no case key matches the resolved value.',
         kind: 'sequence',
       },
+      {
+        key: 'errors',
+        label: 'Errors',
+        description: 'Nodes that run sequentially if the selected case fails.',
+        kind: 'sequence',
+        layout: 'sequential',
+      },
     ],
     supportsDescription: true,
     supportsName: true,
