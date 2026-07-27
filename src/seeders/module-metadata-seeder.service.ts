@@ -148,24 +148,30 @@ export class ModuleMetadataSeederService {
         let modulesToSeed: string[] | null = null;
         const requestedModulesToSeed = Array.isArray(conf?.modulesToSeed) ? [...conf.modulesToSeed] : null;
         const shouldSeedGlobalMetadata = conf?.seedGlobalMetadata !== false;
+        const skipHooks = Boolean(conf?.skipHooks);
         const seedOptions: ModuleMetadataSeederEventPayload['options'] = {
             modulesToSeed: requestedModulesToSeed,
             pruneMetadata: Boolean(conf?.pruneMetadata),
             seedGlobalMetadata: shouldSeedGlobalMetadata,
+            skipHooks,
         };
         const seedRunId = uuidv4();
         const startedAt = new Date();
         const seededModuleNames: string[] = [];
 
-        this.emitModuleMetadataSeederEvent(
-            EventType.MODULE_METADATA_SEEDER_STARTED,
-            {
-                seedRunId,
-                options: seedOptions,
-                startedAt: startedAt.toISOString(),
-                currentStep,
-            },
-        );
+        if (skipHooks) {
+            console.log('▶ Skipping pre-seed hooks (--skip-hooks).');
+        } else {
+            this.emitModuleMetadataSeederEvent(
+                EventType.MODULE_METADATA_SEEDER_STARTED,
+                {
+                    seedRunId,
+                    options: seedOptions,
+                    startedAt: startedAt.toISOString(),
+                    currentStep,
+                },
+            );
+        }
 
         try {
             this.enablePruning = Boolean(conf?.pruneMetadata);
@@ -323,37 +329,45 @@ export class ModuleMetadataSeederService {
             // Add a console log indicating seeding is finished. This needs to be console.log so that it looks proper when this code is run via CLI.
             console.log(`✔ Seeding completed.`);
             //this.logger.log(`All Seeders finished`);
-            await this.emitModuleMetadataSeederFinishedEvent(
-                EventType.MODULE_METADATA_SEEDER_FINISHED,
-                {
-                    seedRunId,
-                    options: seedOptions,
-                    startedAt: startedAt.toISOString(),
-                    finishedAt: new Date().toISOString(),
-                    durationMs: Date.now() - startedAt.getTime(),
-                    success: true,
-                    seededModuleNames,
-                    currentStep,
-                },
-            );
+            if (skipHooks) {
+                console.log('▶ Skipping post-seed hooks (--skip-hooks).');
+            } else {
+                await this.emitModuleMetadataSeederFinishedEvent(
+                    EventType.MODULE_METADATA_SEEDER_FINISHED,
+                    {
+                        seedRunId,
+                        options: seedOptions,
+                        startedAt: startedAt.toISOString(),
+                        finishedAt: new Date().toISOString(),
+                        durationMs: Date.now() - startedAt.getTime(),
+                        success: true,
+                        seededModuleNames,
+                        currentStep,
+                    },
+                );
+            }
 
             //FIXME: Handle displaying the created users credentials in a better way.
             // this.logger.log(`Newly created username is: ${usersDetail?.length > 0 ? usersDetail[0]?.username : ''} and password is ${usersDetail?.length > 0 ? usersDetail[0]?.password : ''}`);
         } catch (error: any) {
-            await this.emitModuleMetadataSeederFinishedEvent(
-                EventType.MODULE_METADATA_SEEDER_FINISHED,
-                {
-                    seedRunId,
-                    options: seedOptions,
-                    startedAt: startedAt.toISOString(),
-                    finishedAt: new Date().toISOString(),
-                    durationMs: Date.now() - startedAt.getTime(),
-                    success: false,
-                    seededModuleNames,
-                    currentStep,
-                    errorMessage: error?.message,
-                },
-            );
+            if (skipHooks) {
+                console.log('▶ Skipping post-seed hooks (--skip-hooks).');
+            } else {
+                await this.emitModuleMetadataSeederFinishedEvent(
+                    EventType.MODULE_METADATA_SEEDER_FINISHED,
+                    {
+                        seedRunId,
+                        options: seedOptions,
+                        startedAt: startedAt.toISOString(),
+                        finishedAt: new Date().toISOString(),
+                        durationMs: Date.now() - startedAt.getTime(),
+                        success: false,
+                        seededModuleNames,
+                        currentStep,
+                        errorMessage: error?.message,
+                    },
+                );
+            }
             this.logSeedFailureForCli(error, {
                 moduleName: currentModule,
                 step: currentStep,
