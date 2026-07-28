@@ -574,6 +574,29 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
         return this.crudHelperService.pagedResponse(offset, limit, count, entities);
     }
 
+    /**
+     * Reduce a user to USER_SUMMARY_FIELDS as a plain object.
+     *
+     * Returning the hydrated entity is not good enough. A partially selected `User` is still
+     * built with `new User()`, so every property that has a TypeScript field initializer
+     * (`active`, `forcePasswordChange`, `lastLoginProvider`, `failedLoginAttempts`,
+     * `isAllowedToGenerateApiKeys`) is present on the instance holding its *default* rather
+     * than the value in the database - `active: true` for a user who may well be inactive.
+     * Serialization does not help: those defaults are real own properties. Copying the
+     * allowlist into a fresh object is what guarantees the response contains only columns
+     * actually read from the database.
+     */
+    protected toUserSummary(user: unknown): Partial<User> | null {
+        if (!user) {
+            return null;
+        }
+        const summary: Partial<User> = {};
+        for (const field of USER_SUMMARY_FIELDS) {
+            summary[field] = user[field] as never;
+        }
+        return summary;
+    }
+
     // entities is an array of T
     // T can contain createdBy and updatedBy fields
     // We need to populate the createdBy and updatedBy fields with the User entity
@@ -593,7 +616,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                         select: USER_SUMMARY_FIELDS as unknown as (keyof User)[],
                     });
                     // @ts-ignore
-                    entity[userFieldPath] = user;
+                    entity[userFieldPath] = this.toUserSummary(user);
                 }
             }
         }

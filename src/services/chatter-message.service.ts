@@ -114,11 +114,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
      */
     private trimMessageUser<M extends ChatterMessage>(message: M): M {
         if (message?.user) {
-            const trimmedUser = {} as User;
-            for (const field of CHATTER_MESSAGE_USER_FIELDS) {
-                trimmedUser[field] = message.user[field] as never;
-            }
-            message.user = trimmedUser;
+            message.user = this.toUserSummary(message.user) as User;
         }
         return message;
     }
@@ -967,6 +963,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const [entities, count] = await qb.getManyAndCount();
         this.logHeapUsed('getChatterMessages-entitiesLoaded');
+
+        // The join above only selects the allowlisted columns, but TypeORM still hydrates the
+        // author with `new User()`, which leaves every initialiser-backed property (active,
+        // forcePasswordChange, ...) sitting on the instance holding its default rather than a
+        // value read from the database. Replace it with a plain object of exactly the
+        // allowlisted keys so the response cannot report fabricated defaults as data.
+        this.trimMessageUsers(entities);
 
         // Convert date strings in message details to ISO format for consistent handling on the frontend
         const DATE_FIELD_TYPES = ['date', 'datetime', 'time'];
