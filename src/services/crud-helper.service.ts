@@ -7,6 +7,7 @@ import { BadRequestException, Logger } from "@nestjs/common";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { buildCastToText } from "src/helpers/typeorm-db-helper";
 import { DraftPublishHelperService } from "./create-draft-publish-helper.service";
+import { InternationalisationHelperService } from "./internationalisation-helper.service";
 import { normalizeObjectKeys } from "./object.utils";
 
 export enum FilterCombinator {
@@ -43,6 +44,7 @@ export class CrudHelperService {
     ) { }
     private readonly logger = new Logger(CrudHelperService.name);
     private readonly draftPublishHelperService = new DraftPublishHelperService();
+    private readonly internationalisationHelperService = new InternationalisationHelperService();
 
     /**
      * Resolve a user-supplied dotted path (e.g. "customer.name") against real TypeORM metadata.
@@ -382,19 +384,9 @@ export class CrudHelperService {
             }
         }
 
-        let finalLocale = locale
         if (internationalisation) {
-            // If locale is not provided in the filter dto, then assume it is the default locale to be used. 
-            if (!finalLocale) {
-                //Get default locale from registry
-                const solidRegistry = moduleRef.get(SolidRegistry, { strict: false });
-                const defaultLocale = solidRegistry.getDefaultLocale();
-                if(defaultLocale){
-                    finalLocale = defaultLocale.locale;
-                }else{
-                    finalLocale = 'en';
-                }
-            }
+            // If locale is not provided in the filter dto, then assume it is the default locale to be used.
+            const finalLocale = locale || this.internationalisationHelperService.resolveDefaultLocaleName(moduleRef.get(SolidRegistry, { strict: false }));
             qb.andWhere(`${entityAlias}.localeName = :locale`, { locale: finalLocale });
         }
 

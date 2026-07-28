@@ -12,6 +12,7 @@ import { CreateModelMetadataDto } from 'src/dtos/create-model-metadata.dto';
 import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
 import { getDynamicModuleNamesBasedOnMetadata } from 'src/helpers/module.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { InternationalisationHelperService } from 'src/services/internationalisation-helper.service';
 import { MediaRepository } from 'src/repository/media.repository';
 import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
 import { AuthenticationService } from 'src/services/authentication.service';
@@ -24,6 +25,7 @@ import { TestingDataRecord, TestingRoleSpec, TestingUserSpec } from 'src/testing
 @Injectable()
 export class ModuleTestDataService {
   private readonly logger = new Logger(ModuleTestDataService.name);
+  private readonly internationalisationHelperService = new InternationalisationHelperService();
   private static readonly TEARDOWN_RETRY_ATTEMPTS = 5;
 
   constructor(
@@ -247,8 +249,7 @@ export class ModuleTestDataService {
       const payload: Record<string, any> = { ...(entry.data ?? {}) };
 
       if (modelDef.internationalisation && !payload.localeName) {
-        const defaultLocale = this.solidRegistry.getDefaultLocale();
-        payload.localeName = defaultLocale?.locale ?? 'en';
+        payload.localeName = this.internationalisationHelperService.resolveDefaultLocaleName(this.solidRegistry);
       }
 
       for (const field of modelDef.fields ?? []) {

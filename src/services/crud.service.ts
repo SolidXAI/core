@@ -37,6 +37,7 @@ import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCr
 import { ModelMetadataHelperService } from "src/helpers/model-metadata-helper.service";
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
 import { DraftPublishHelperService } from "./create-draft-publish-helper.service";
+import { InternationalisationHelperService } from "./internationalisation-helper.service";
 import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper.service";
 import { HashingService } from "./hashing.service";
 import { SolidRegistry } from "src/helpers/solid-registry";
@@ -51,6 +52,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
     private _modelMetadataService: ModelMetadataService;
     private _crudHelperService: CrudHelperService;
     private _draftPublishHelperService: DraftPublishHelperService;
+    private _internationalisationHelperService: InternationalisationHelperService;
     private _discoveryService: DiscoveryService;
     private _settingService: SettingService;
 
@@ -73,6 +75,10 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
     protected get draftPublishHelperService(): DraftPublishHelperService {
         return this._draftPublishHelperService ??= this.moduleRef.get(DraftPublishHelperService, { strict: false });
+    }
+
+    protected get internationalisationHelperService(): InternationalisationHelperService {
+        return this._internationalisationHelperService ??= this.moduleRef.get(InternationalisationHelperService, { strict: false });
     }
 
     protected get discoveryService(): DiscoveryService {
@@ -345,23 +351,32 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             this.draftPublishHelperService.assertDraftPublishDeleteAllowed(this.modelName, entitiesToDelete);
         }
 
-        // If the model has internationalisation enabled, delete children with defaultEntityLocaleId === this entity's id
-        if (model.internationalisation) {
-            // Find all child entities where defaultEntityLocaleId === this entity's id
-            const childEntities = await this.repo.find({
-                where: { defaultEntityLocaleId: id } as any
-            });
+        await this.internationalisationHelperService.deleteChildLocaleEntities(this.repo, model, [id]);
 
-            if (childEntities.length > 0) {
-                if (model.enableSoftDelete === true) {
-                    await this.repo.softRemove(childEntities);
-                } else {
-                    await this.repo.remove(childEntities);
-                }
-            }
+        return this.deleteEntitiesAndPromote(model, entitiesToDelete);
+    }
+
+    private async deleteEntitiesAndPromote(model: ModelMetadata, entitiesToDelete: T[]): Promise<T[]> {
+        const isDraftPublishEnabled = this.draftPublishHelperService.isDraftPublishEnabled(model);
+        const deletedLatestChainIds = isDraftPublishEnabled
+            ? this.draftPublishHelperService.getLatestDraftPublishChainIds(entitiesToDelete)
+            : [];
+
+        let deleteResult: T[];
+        if (model.enableSoftDelete === true) {
+            this.draftPublishHelperService.markDeletedDraftPublishVersionsAsNotLatest(model, entitiesToDelete);
+            await this.repo.softRemove(entitiesToDelete);
+            deleteResult = await this.repo.save(entitiesToDelete);
+        } else {
+            deleteResult = await this.repo.remove(entitiesToDelete);
         }
 
-        return this.draftPublishHelperService.performDeleteAndPromote(this.repo, model, entitiesToDelete);
+        if (isDraftPublishEnabled) {
+            const deletedEntityIds = this.draftPublishHelperService.getEntityIds(entitiesToDelete);
+            await this.draftPublishHelperService.promoteLatestDraftPublishVersionAfterDelete(this.repo, deletedLatestChainIds, deletedEntityIds);
+        }
+
+        return deleteResult;
     }
 
     private async fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false, entityId?: number) {
@@ -861,7 +876,9 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             this.draftPublishHelperService.assertDraftPublishDeleteAllowed(this.modelName, removedEntities);
         }
 
-        return this.draftPublishHelperService.performDeleteAndPromote(this.repo, model, removedEntities);
+        await this.internationalisationHelperService.deleteChildLocaleEntities(this.repo, model, ids);
+
+        return this.deleteEntitiesAndPromote(model, removedEntities);
     }
 
     async recover(id: number, solidRequestContext: any = {}) {

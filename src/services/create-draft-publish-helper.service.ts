@@ -185,38 +185,6 @@ export class DraftPublishHelperService {
         }
     }
 
-    /**
-     * Shared delete sequence for both single and bulk delete: soft/hard delete the given
-     * entities and promote a replacement latest version for any chain whose latest version
-     * was just deleted. Callers must have already run assertDraftPublishDeleteAllowed.
-     */
-    async performDeleteAndPromote<T extends CommonEntity>(
-        repo: SolidBaseRepository<T>,
-        model: ModelMetadata,
-        entitiesToDelete: T[],
-    ): Promise<T[]> {
-        const isDraftPublishEnabled = this.isDraftPublishEnabled(model);
-        const deletedLatestChainIds = isDraftPublishEnabled
-            ? this.getLatestDraftPublishChainIds(entitiesToDelete)
-            : [];
-        const deletedEntityIds = this.getEntityIds(entitiesToDelete);
-
-        let deleteResult: T[];
-        if (model.enableSoftDelete === true) {
-            this.markDeletedDraftPublishVersionsAsNotLatest(model, entitiesToDelete);
-            await repo.softRemove(entitiesToDelete);
-            deleteResult = await repo.save(entitiesToDelete);
-        } else {
-            deleteResult = await repo.remove(entitiesToDelete);
-        }
-
-        if (isDraftPublishEnabled) {
-            await this.promoteLatestDraftPublishVersionAfterDelete(repo, deletedLatestChainIds, deletedEntityIds);
-        }
-
-        return deleteResult;
-    }
-
     markDeletedDraftPublishVersionsAsNotLatest<T extends CommonEntity>(model: ModelMetadata, entities: T[]): void {
         if (!this.isDraftPublishEnabled(model)) return;
         for (const entity of entities) {
