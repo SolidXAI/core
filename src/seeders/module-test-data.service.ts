@@ -25,13 +25,13 @@ import { TestingDataRecord, TestingRoleSpec, TestingUserSpec } from 'src/testing
 @Injectable()
 export class ModuleTestDataService {
   private readonly logger = new Logger(ModuleTestDataService.name);
-  private readonly internationalisationHelperService = new InternationalisationHelperService();
   private static readonly TEARDOWN_RETRY_ATTEMPTS = 5;
 
   constructor(
     private readonly moduleRef: ModuleRef,
     private readonly discoveryService: DiscoveryService,
     private readonly solidRegistry: SolidRegistry,
+    private readonly internationalisationHelperService: InternationalisationHelperService,
   ) {}
 
   async setupTestData(modulesToTest?: string[]): Promise<void> {

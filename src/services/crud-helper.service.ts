@@ -3,7 +3,7 @@ import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { classify } from '../helpers/string.helper';
 import { ActiveUserData } from "src/interfaces/active-user-data.interface";
 import { SolidRegistry } from "src/helpers/solid-registry";
-import { BadRequestException, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { buildCastToText } from "src/helpers/typeorm-db-helper";
 import { DraftPublishHelperService } from "./create-draft-publish-helper.service";
@@ -39,12 +39,14 @@ export interface ResolvedFieldPath {
     leafIsRelation: boolean;
 }
 
+@Injectable()
 export class CrudHelperService {
-    constructor(
-    ) { }
     private readonly logger = new Logger(CrudHelperService.name);
-    private readonly draftPublishHelperService = new DraftPublishHelperService();
-    private readonly internationalisationHelperService = new InternationalisationHelperService();
+
+    constructor(
+        private readonly draftPublishHelperService: DraftPublishHelperService,
+        private readonly internationalisationHelperService: InternationalisationHelperService,
+    ) { }
 
     /**
      * Resolve a user-supplied dotted path (e.g. "customer.name") against real TypeORM metadata.
