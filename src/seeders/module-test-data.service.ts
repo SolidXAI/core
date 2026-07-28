@@ -246,6 +246,11 @@ export class ModuleTestDataService {
       const entityRepo = this.resolveRepository(modelUserKey);
       const payload: Record<string, any> = { ...(entry.data ?? {}) };
 
+      if (modelDef.internationalisation && !payload.localeName) {
+        const defaultLocale = this.solidRegistry.getDefaultLocale();
+        payload.localeName = defaultLocale?.locale ?? 'en';
+      }
+
       for (const field of modelDef.fields ?? []) {
         if (field.type === 'relation' && field.relationType === 'many-to-one') {
           const userKeyProp = `${field.name}UserKey`;
