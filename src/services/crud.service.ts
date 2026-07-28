@@ -908,6 +908,10 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             } as unknown as QueryDeepPartialEntity<T>
             );
 
+            if (this.draftPublishHelperService.isDraftPublishEnabled(loadedmodel)) {
+                await this.draftPublishHelperService.promoteRecoveredDraftPublishVersion(this.repo, softDeletedRows);
+            }
+
             return { message: SUCCESS_MESSAGES.RECORD_RECOVERED, data: softDeletedRows };
         } catch (error: any) {
             if (error instanceof QueryFailedError && (error as any).code === '23505') {
@@ -953,6 +957,14 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                 { id: In(ids) } as unknown as FindOptionsWhere<T>,
                 { deletedAt: null, deletedTracker: "not-deleted" } as unknown as QueryDeepPartialEntity<T>
             );
+
+            if (this.draftPublishHelperService.isDraftPublishEnabled(loadedmodel)) {
+                // Sequential: two ids in the same batch could belong to the same version
+                // chain, and each promotion clears isLatest across the whole chain first.
+                for (const entity of softDeletedRows) {
+                    await this.draftPublishHelperService.promoteRecoveredDraftPublishVersion(this.repo, entity);
+                }
+            }
 
             return { message: SUCCESS_MESSAGES.SELECTED_RECORDS_RECOVERED, recoveredIds: ids };
         } catch (error: any) {

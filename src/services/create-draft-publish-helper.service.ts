@@ -85,7 +85,16 @@ export class DraftPublishHelperService {
         const shouldApplyDefaultLatestFilter = !isPublishedViewRequested && !hasIsLatestFilter && !hasInitialVersionFilter;
 
         if (shouldApplyDefaultLatestFilter) {
-            qb.andWhere(`${entityAlias}.isLatest = :defaultIsLatest`, { defaultIsLatest: true });
+            // OR in deletedAt IS NOT NULL so soft-deleted rows — always isLatest: false
+            // once deleted, see markDeletedDraftPublishVersionsAsNotLatest — stay visible
+            // when showSoftDeleted=inclusive/exclusive calls qb.withDeleted() to bypass
+            // TypeORM's automatic deletedAt-IS-NULL exclusion. Under the default query
+            // (no withDeleted()), deletedAt IS NOT NULL rows are already excluded by
+            // TypeORM itself, so this OR has no effect there.
+            qb.andWhere(
+                `(${entityAlias}.isLatest = :defaultIsLatest OR ${entityAlias}.deletedAt IS NOT NULL)`,
+                { defaultIsLatest: true },
+            );
         }
     }
 
@@ -246,6 +255,23 @@ export class DraftPublishHelperService {
             .execute();
 
         await repo.update(replacement.id, { isLatest: true } as unknown as QueryDeepPartialEntity<T>);
+    }
+
+    async promoteRecoveredDraftPublishVersion<T extends CommonEntity>(
+        repo: SolidBaseRepository<T>,
+        recoveredEntity: T,
+    ): Promise<void> {
+        const chainId = recoveredEntity.initialEntityVersionId || recoveredEntity.id;
+
+        await repo.manager
+            .createQueryBuilder()
+            .update(repo.metadata.target)
+            .set({ isLatest: false } as any)
+            .where('(initial_entity_version_id = :chainId OR id = :chainId)', { chainId })
+            .execute();
+
+        await repo.update(recoveredEntity.id, { isLatest: true } as unknown as QueryDeepPartialEntity<T>);
+        recoveredEntity.isLatest = true;
     }
 
     async publishRecord<T extends CommonEntity>(
