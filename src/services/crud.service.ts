@@ -7,6 +7,7 @@ import { SolidBaseRepository } from "../repository/solid-base.repository";
 import { SettingService } from "./setting.service";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
+import { USER_SUMMARY_FIELDS } from "src/constants/user.constants";
 import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
@@ -584,6 +585,12 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                 if (userId) {
                     const user = await userRepository.findOne({
                         where: { id: userId },
+                        // SECURITY: a populated createdBy/updatedBy is only ever displayed as
+                        // "who did this", so it must not ship the author's email, mobile, role
+                        // assignments or API keys - let alone the credential columns, which
+                        // survive here whenever User is subclassed (class-transformer resolves
+                        // @Exclude() per class and does not inherit it).
+                        select: USER_SUMMARY_FIELDS as unknown as (keyof User)[],
                     });
                     // @ts-ignore
                     entity[userFieldPath] = user;

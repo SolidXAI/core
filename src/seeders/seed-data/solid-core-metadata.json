@@ -10407,7 +10407,8 @@
             "attrs": {
               "name": "user",
               "isSearchable": true,
-              "searchField": "user.fullName"
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           }
         ]
@@ -10491,7 +10492,8 @@
                           {
                             "type": "field",
                             "attrs": {
-                              "name": "user"
+                              "name": "user",
+                              "coModelFieldToDisplay": "fullName"
                             }
                           },
                           {
@@ -14829,7 +14831,8 @@
               "name": "user",
               "label": "User",
               "isSearchable": true,
-              "searchField": "user.fullName"
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           },
           {
@@ -17051,7 +17054,8 @@
               "name": "user",
               "label": "User",
               "isSearchable": true,
-              "searchField": "user.fullName"
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           }
         ]
