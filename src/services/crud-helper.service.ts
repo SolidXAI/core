@@ -6,7 +6,7 @@ import { SolidRegistry } from "src/helpers/solid-registry";
 import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { buildCastToText } from "src/helpers/typeorm-db-helper";
-import { DraftPublishHelperService } from "./create-draft-publish-helper.service";
+import { DraftPublishHelperService } from "./draft-publish-helper.service";
 import { InternationalisationHelperService } from "./internationalisation-helper.service";
 import { normalizeObjectKeys } from "./object.utils";
 

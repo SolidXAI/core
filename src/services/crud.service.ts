@@ -36,7 +36,7 @@ import { ShortTextFieldCrudManager } from "../helpers/field-crud-managers/ShortT
 import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCrudManager";
 import { ModelMetadataHelperService } from "src/helpers/model-metadata-helper.service";
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
-import { DraftPublishHelperService } from "./create-draft-publish-helper.service";
+import { DraftPublishHelperService } from "./draft-publish-helper.service";
 import { InternationalisationHelperService } from "./internationalisation-helper.service";
 import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper.service";
 import { HashingService } from "./hashing.service";

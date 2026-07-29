@@ -38,7 +38,7 @@ import { MqDashboardQueueNameVariableOptionsProvider } from "./services/selectio
 import { PseudoForeignKeySelectionProvider } from "./services/selection-providers/pseudo-foreign-key-selection-provider.service";
 import { ModuleMetadataSeederService } from "./seeders/module-metadata-seeder.service";
 import { ModuleTestDataService } from "./seeders/module-test-data.service";
-import { DraftPublishHelperService } from "./services/create-draft-publish-helper.service";
+import { DraftPublishHelperService } from "./services/draft-publish-helper.service";
 import { InternationalisationHelperService } from "./services/internationalisation-helper.service";
 import { CrudHelperService } from "./services/crud-helper.service";
 import { DatasourceManagementService } from "./services/datasource-management.service";
