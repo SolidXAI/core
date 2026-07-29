@@ -169,6 +169,7 @@ import { GoogleOauthStrategy } from "./passport-strategies/google-oauth.strategy
 import { ApiKeyService } from "./services/api-key.service";
 import { ActiveSessionStorageService } from "./services/active-session-storage.service";
 import { AuthenticationService } from "./services/authentication.service";
+import { MetadataValidationService } from "./services/metadata-validation.service";
 import { BcryptService } from "./services/bcrypt.service";
 import { UuidExternalIdEntityComputedFieldProvider } from "./services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service";
 import { UuidExternalIdComputedFieldProvider } from "./services/computed-fields/uuid-external-id-computed-field-provider.service";
@@ -646,6 +647,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     ModuleMetadataExplorerService,
     ModuleMetadataHelperService,
     ModulePackageService,
+    MetadataValidationService,
     ModelMetadataService,
     ModelMetadataHelperService,
     FieldMetadataService,
@@ -1004,6 +1006,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     SmsFactory,
     MediaService,
     MediaStorageProviderMetadataService,
+    MetadataValidationService,
     ModelMetadataHelperService,
     ModelMetadataService,
     ModuleMetadataService,

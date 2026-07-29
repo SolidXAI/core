@@ -125,10 +125,10 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
-      key: "rowClickAction",
+      key: "recordClickAction",
       value: "edit",
       level: SettingLevel.SystemAdminEditable,
-      label: "Row Click Action",
+      label: "Record Click Action",
       group: "app-settings",
       sortOrder: 45,
       controlType: "selectionStatic",
@@ -136,7 +136,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "Edit", value: "edit" },
         { label: "View", value: "view" },
       ],
-      helpText: "Decides whether clicking a list row opens the record in edit mode or view mode.",
+      helpText: "Decides whether clicking a record in List, Card, Kanban, or Tree View opens it in edit mode or view mode.",
     },
     {
       moduleName: "solid-core",
