@@ -13,6 +13,7 @@ import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ConfirmModulePackageImportDto } from 'src/dtos/confirm-module-package-import.dto';
 import { RunModulePackageBuildDto } from 'src/dtos/run-module-package-build.dto';
+import { setFileDownloadHeaders } from 'src/helpers/file-download.helper';
 import { RunModulePackageSeedDto } from 'src/dtos/run-module-package-seed.dto';
 import { ModulePackageService } from 'src/services/module-package.service';
 
@@ -39,9 +40,7 @@ export class ModulePackageController {
         @Res() res: Response,
     ) {
         const archive = await this.modulePackageService.exportModulePackage(moduleName);
-        res.setHeader('Content-Disposition', `attachment; filename="${archive.fileName}"`);
-        res.setHeader('Content-Type', archive.mimeType);
-        res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
+        setFileDownloadHeaders(res, { fileName: archive.fileName, mimeType: archive.mimeType });
         res.sendFile(archive.filePath);
     }
 

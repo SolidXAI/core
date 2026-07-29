@@ -30,6 +30,12 @@ export class MailFactory {
         }
 
         const mailServiceProvider = mailProviders.find(provider => provider.name === mailServiceName);
+        if (!mailServiceProvider?.instance) {
+            const registeredProviders = mailProviders.map((provider) => provider?.name).filter(Boolean).join(", ");
+            throw new Error(
+                `Mail provider "${mailServiceName}" is not registered. Registered providers: ${registeredProviders || "none"}`,
+            );
+        }
 
         return mailServiceProvider.instance as IMail;
     }

@@ -10,6 +10,13 @@ import {
 export const DEFAULT_MEDIA_UPLOAD_DIR = "media-uploads";
 export const DEFAULT_MEDIA_FILE_STORAGE_DIR = "media-files-storage";
 
+// Seeded setting values are written once and never overwritten, so an unparseable
+// env var would persist. Fall back whenever it is missing or not a positive number.
+const timeoutFromEnv = (value: string | undefined, fallback: number): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 // 1.
 const getSolidCoreSettings = (isProd: boolean) =>
   [
@@ -125,10 +132,10 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
-      key: "rowClickAction",
+      key: "recordClickAction",
       value: "edit",
       level: SettingLevel.SystemAdminEditable,
-      label: "Row Click Action",
+      label: "Record Click Action",
       group: "app-settings",
       sortOrder: 45,
       controlType: "selectionStatic",
@@ -136,7 +143,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "Edit", value: "edit" },
         { label: "View", value: "view" },
       ],
-      helpText: "Decides whether clicking a list row opens the record in edit mode or view mode.",
+      helpText: "Decides whether clicking a record in List, Card, Kanban, or Tree View opens it in edit mode or view mode.",
     },
     {
       moduleName: "solid-core",
@@ -1477,7 +1484,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "uiTestDefaultTimeoutMs",
-      value: 30000,
+      value: timeoutFromEnv(process.env.COMMON_UI_TEST_DEFAULT_TIMEOUT_MS, 30000),
       level: SettingLevel.SystemAdminEditable,
       label: "UI Test Default Timeout (ms)",
       group: "testing-settings",
@@ -1488,7 +1495,10 @@ const getSolidCoreSettings = (isProd: boolean) =>
     {
       moduleName: "solid-core",
       key: "uiTestNavigationTimeoutMs",
-      value: 30000,
+      value: timeoutFromEnv(
+        process.env.COMMON_UI_TEST_NAVIGATION_TIMEOUT_MS,
+        timeoutFromEnv(process.env.COMMON_UI_TEST_DEFAULT_TIMEOUT_MS, 30000),
+      ),
       level: SettingLevel.SystemAdminEditable,
       label: "UI Test Navigation Timeout (ms)",
       group: "testing-settings",
