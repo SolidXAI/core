@@ -6,7 +6,7 @@ import { Brackets, EntityManager, EntityMetadata, In } from 'typeorm';
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
 import { CHATTER_MESSAGE_STATUS, CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE, CHATTER_MESSAGE_USER_FIELDS } from 'src/constants/chatter-message.constants';
-import { DANGEROUS_EXTENSIONS, getLowercaseFileExtension } from 'src/constants/media-file-types';
+import { isDangerousMediaFile } from 'src/constants/media-file-types';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { PostChatterMessageDto } from 'src/dtos/post-chatter-message.dto';
 import { UpdateChatterNoteMessageDto } from 'src/dtos/update-chatter-note-message.dto';
@@ -175,23 +175,14 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }, messageBody || '');
     }
 
+    /**
+     * Chatter attachments bypass MediaFieldCrudManager - they go straight to
+     * storageProvider.store() - so the shared predicate is applied here directly. The rules
+     * themselves live in media-file-types so upload paths can't drift apart.
+     */
     private validateChatterMediaFiles(files: Express.Multer.File[] = []) {
-        if (!Array.isArray(files) || files.length === 0) {
-            return;
-        }
-
-        for (const file of files) {
-            const fileName = file.originalname ?? file.filename ?? '';
-            const ext = getLowercaseFileExtension(fileName);
-            const mimeType = (file.mimetype || '').toLowerCase().trim();
-            if (
-                (ext && DANGEROUS_EXTENSIONS.has(ext)) ||
-                mimeType === 'image/svg+xml' ||
-                mimeType === 'text/html' ||
-                mimeType === 'application/xhtml+xml'
-            ) {
-                throw new BadRequestException('Dangerous file types are not allowed in chatter attachments.');
-            }
+        if (Array.isArray(files) && files.some(file => isDangerousMediaFile(file))) {
+            throw new BadRequestException('Dangerous file types are not allowed in chatter attachments.');
         }
     }
 
@@ -326,9 +317,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             throw new BadRequestException('Message body cannot be empty.');
         }
 
-        if (hasNewFiles) {
-            this.validateChatterMediaFiles(files);
-        }
+        this.validateChatterMediaFiles(files);
 
         if (hasMessageBody) {
             message.messageBody = trimmedMessageBody;
@@ -404,9 +393,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         const coModelName = lowerFirst(postDto.coModelName);
         await this.assertRecordAccess(coModelName, postDto.coModelEntityId);
 
-        if (files && files.length > 0) {
-            this.validateChatterMediaFiles(files);
-        }
+        this.validateChatterMediaFiles(files);
 
         const chatterMessage = new ChatterMessage();
         chatterMessage.messageType = CHATTER_MESSAGE_TYPE.CUSTOM;

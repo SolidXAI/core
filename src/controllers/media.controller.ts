@@ -9,6 +9,8 @@ import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { UpdateMediaDto } from 'src/dtos/update-media.dto';
 import { MediaService } from 'src/services/media.service';
 import { Response } from 'express';
+import { getLowercaseFileExtension, INLINE_SAFE_EXTENSIONS } from 'src/constants/media-file-types';
+import { setFileDownloadHeaders } from 'src/helpers/file-download.helper';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -91,18 +93,25 @@ export class MediaController {
 
   @Auth(AuthType.MediaSignedUrl)
   @ApiQuery({ name: 'token', required: true, type: String, description: "Short-lived signed token obtained from a private Media record's URL - not entered manually." })
-  @ApiQuery({ name: 'disposition', required: false, enum: ['inline', 'attachment'], description: "'inline' (default) renders/previews in the browser, matching public media. Pass 'attachment' to force a browser download (e.g. from a download button)." })
+  @ApiQuery({ name: 'disposition', required: false, enum: ['inline', 'attachment'], description: "'inline' (default) renders/previews in the browser, matching public media - it applies only to types safe to render inline (images, audio, video, pdf); anything else is always downloaded. Pass 'attachment' to force a browser download (e.g. from a download button)." })
   @Get(':id/download')
   async download(@Param('id') id: string, @Query('disposition') disposition: string, @Res() res: Response, @SolidRequestContextDecorator() solidRequestContext: SolidRequestContextDto) {
     const media = await this.service.findOne(+id, {}, solidRequestContext);
     const { stream, fileName, mimeType } = await this.service.fileDownloadStream(media);
 
-    const contentDisposition = disposition === 'attachment' ? 'attachment' : 'inline';
-    res.setHeader('Content-Disposition', `${contentDisposition}; filename="${fileName}"`);
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
-    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
-    res.setHeader("X-Content-Type-Options", "nosniff");
+    // Mirror the static-serve hardening in SolidCoreModule: only a small allowlist of media
+    // types is ever safe to render inline. Anything else is forced to download rather than be
+    // displayed/executed, regardless of the mimetype the record was stored with - nosniff
+    // alone would not help here, since it faithfully honours a declared text/html.
+    const isInlineSafe = INLINE_SAFE_EXTENSIONS.has(getLowercaseFileExtension(fileName) ?? '');
+    const requestedInline = disposition !== 'attachment';
+
+    setFileDownloadHeaders(res, {
+      fileName,
+      mimeType: isInlineSafe ? mimeType : 'application/octet-stream',
+      disposition: requestedInline && isInlineSafe ? 'inline' : 'attachment',
+      crossOriginResourcePolicy: true,
+    });
 
     stream.pipe(res);
   }

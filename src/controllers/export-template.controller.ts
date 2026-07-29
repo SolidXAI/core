@@ -8,6 +8,7 @@ import { Response } from 'express';
 import { StartExportSyncDto } from 'src/dtos/export.dto';
 import { ActiveUser } from 'src/decorators/active-user.decorator';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
+import { setFileDownloadHeaders } from 'src/helpers/file-download.helper';
 
 @ApiTags('Solid Core') 
 @Controller('export-template') //FIXME: Change this to the model plural name 
@@ -91,9 +92,10 @@ export class ExportTemplateController {
       throw new InternalServerErrorException("Export stream is null");
     }
     // ✅ Set response headers for streaming
-    res.setHeader('Content-Disposition', `attachment; filename="${exportFileInfo.fileName}"`);
-    res.setHeader('Content-Type', exportFileInfo.mimeType);
-    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
+    setFileDownloadHeaders(res, {
+      fileName: exportFileInfo.fileName,
+      mimeType: exportFileInfo.mimeType,
+    });
     // Pipe the strea to the response as an excel file
     exportFileInfo.exportStream.pipe(res);
   }
