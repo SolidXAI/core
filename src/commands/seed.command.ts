@@ -1,11 +1,13 @@
 import { Logger } from '@nestjs/common';
 import { Command, CommandRunner, Option } from 'nest-commander';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { ModuleMetadataSeederOptions } from 'src/interfaces';
 
 interface SeedCommandOptions {
   seeder?: string;
   modulesToSeed?: string;
   prune?: boolean;
+  skipHooks?: boolean;
 }
 
 @Command({ name: 'seed', description: 'Install seed data for a given module' })
@@ -17,21 +19,42 @@ export class SeedCommand extends CommandRunner {
   }
 
   async run(passedParam: string[], options?: SeedCommandOptions): Promise<void> {
-    let parsedConf: any = null;
+    let parsedConf: ModuleMetadataSeederOptions | null = null;
     if (options?.modulesToSeed) {
       const modulesToSeed = options.modulesToSeed
         .split(',')
         .map((m) => m.trim())
         .filter(Boolean);
-      parsedConf = { modulesToSeed };
+      parsedConf = {
+        modulesToSeed,
+        pruneMetadata: false,
+        seedGlobalMetadata: true,
+        skipHooks: false,
+      };
       this.logger.log(`Modules to seed: ${modulesToSeed.join(', ')}`);
     } else {
       this.logger.log('No --modules-to-seed flag provided. Running with default seeder behavior.');
     }
 
     if (options?.prune) {
-      parsedConf = parsedConf ?? {};
+      parsedConf = parsedConf ?? {
+        modulesToSeed: null,
+        pruneMetadata: false,
+        seedGlobalMetadata: true,
+        skipHooks: false,
+      };
       parsedConf.pruneMetadata = true;
+    }
+
+    if (options?.skipHooks) {
+      parsedConf = parsedConf ?? {
+        modulesToSeed: null,
+        pruneMetadata: false,
+        seedGlobalMetadata: true,
+        skipHooks: false,
+      };
+      parsedConf.skipHooks = true;
+      this.logger.log('Skipping pre-seed and post-seed hooks.');
     }
 
     const seeder = this.solidRegistry
@@ -63,6 +86,11 @@ export class SeedCommand extends CommandRunner {
 
   @Option({ flags: '--prune', description: 'Prune metadata not present in JSON.' })
   parsePrune(): boolean {
+    return true;
+  }
+
+  @Option({ flags: '--skip-hooks', description: 'Skip emitting pre-seed and post-seed lifecycle hooks/events.' })
+  parseSkipHooks(): boolean {
     return true;
   }
 }

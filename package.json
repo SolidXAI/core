@@ -1,6 +1,6 @@
 {
   "name": "@solidxai/core",
-  "version": "0.1.12-beta.3",
+  "version": "0.1.13-beta.5",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -81,7 +81,8 @@
     "ts-morph": "^27.0.2",
     "twilio": "^5.8.0",
     "uuid": "^9.0.1",
-    "xlsx": "^0.18.5"
+    "xlsx": "^0.18.5",
+    "yaml": "^2.9.0"
   },
   "peerDependenciesMeta": {},
   "peerDependencies": {

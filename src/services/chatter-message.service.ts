@@ -21,6 +21,7 @@ import { CRUDService } from 'src/services/crud.service';
 import { MediaStorageProviderType } from '../dtos/create-media-storage-provider-metadata.dto';
 import { ChatterMessageDetails } from '../entities/chatter-message-details.entity';
 import { ChatterMessage } from '../entities/chatter-message.entity';
+import { User } from '../entities/user.entity';
 import { getMediaStorageProvider } from './mediaStorageProviders';
 import { RequestContextService } from './request-context.service';
 import { Logger } from '@nestjs/common';
@@ -186,6 +187,31 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         } catch (error: any) {
             this._logger.error(`Failed to publish chatter mention notification email job: ${error.message}`, error.stack);
         }
+    }
+
+    // Deliberately bypasses UserRepository's security-rule filtering: the mention picker
+    // needs id/username/fullName for any active user regardless of the caller's row-level
+    // access to the User model, same as the getChatterMessages one-to-many lookup below.
+    async getMentionableUsers(search?: string, limit: number = 8): Promise<Array<{ id: number; username: string; fullName: string }>> {
+        const normalizedLimit = Number.isInteger(limit) && limit > 0 && limit <= 50 ? limit : 8;
+        const userRepository = this.entityManager.getRepository(User);
+
+        const qb = userRepository
+            .createQueryBuilder('user')
+            .select(['user.id', 'user.username', 'user.fullName'])
+            .where('user.active = :active', { active: true });
+
+        const trimmedSearch = (search ?? '').trim();
+        if (trimmedSearch) {
+            qb.andWhere('(LOWER(user.username) LIKE :search OR LOWER(user.fullName) LIKE :search)', {
+                search: `%${trimmedSearch.toLowerCase()}%`,
+            });
+        }
+
+        qb.orderBy('user.username', 'ASC').take(normalizedLimit);
+
+        const users = await qb.getMany();
+        return users.map(user => ({ id: user.id, username: user.username, fullName: user.fullName }));
     }
 
     async markCompleted(id: number) {
@@ -883,7 +909,11 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             }
         }
 
-        qb.where(new Brackets(qb => {
+        // SECURITY: must be andWhere. `where()` REPLACES every previously registered condition,
+        // which would discard the row-level security rules applied by
+        // createSecurityRuleAwareQueryBuilder above. (The inner `where` is safe: it is the first
+        // condition on a fresh Brackets sub-builder.)
+        qb.andWhere(new Brackets(qb => {
             qb.where(orConditions.join(' OR '), parameters);
         }));
 

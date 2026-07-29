@@ -148,6 +148,8 @@ import { ComputedFieldEvaluationPublisherRedis } from "./jobs/redis/computed-fie
 import { ComputedFieldEvaluationSubscriberRedis } from "./jobs/redis/computed-field-evaluation-subscriber-redis.service";
 import { GenerateCodePublisherRedis } from "./jobs/redis/generate-code-publisher-redis.service";
 import { GenerateCodeSubscriberRedis } from "./jobs/redis/generate-code-subscriber-redis.service";
+import { WorkflowExecutionPublisherRedis } from "./jobs/redis/workflow-execution-publisher-redis.service";
+import { WorkflowExecutionSubscriberRedis } from "./jobs/redis/workflow-execution-subscriber-redis.service";
 import { Msg91OTPQueuePublisherRedis } from "./jobs/redis/msg91-otp-publisher-redis.service";
 import { Msg91OTPQueueSubscriberRedis } from "./jobs/redis/msg91-otp-subscriber-redis.service";
 import { Msg91SmsQueuePublisherRedis } from "./jobs/redis/msg91-sms-publisher-redis.service";
@@ -253,6 +255,8 @@ import { ComputedFieldEvaluationPublisherDatabase } from './jobs/database/comput
 import { ComputedFieldEvaluationSubscriberDatabase } from './jobs/database/computed-field-evaluation-subscriber-database.service';
 import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-publisher-database.service';
 import { GenerateCodeSubscriberDatabase } from './jobs/database/generate-code-subscriber-database.service';
+import { WorkflowExecutionPublisherDatabase } from './jobs/database/workflow-execution-publisher-database.service';
+import { WorkflowExecutionSubscriberDatabase } from './jobs/database/workflow-execution-subscriber-database.service';
 import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-database.service';
 import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
 import { Msg91SmsQueuePublisherDatabase } from './jobs/database/msg91-sms-publisher-database.service';
@@ -275,6 +279,8 @@ import { Three60WhatsappQueuePublisherDatabase } from "./jobs/database/three60-w
 import { Three60WhatsappQueueSubscriberDatabase } from "./jobs/database/three60-whatsapp-subscriber-database.service";
 import { GenerateCodePublisherRabbitmq } from "./jobs/rabbitmq/generate-code-publisher.service";
 import { GenerateCodeSubscriberRabbitmq } from "./jobs/rabbitmq/generate-code-subscriber.service";
+import { WorkflowExecutionPublisherRabbitmq } from "./jobs/rabbitmq/workflow-execution-publisher.service";
+import { WorkflowExecutionSubscriberRabbitmq } from "./jobs/rabbitmq/workflow-execution-subscriber.service";
 import { Three60WhatsappQueuePublisher } from "./jobs/rabbitmq/three60-whatsapp-publisher.service";
 import { Three60WhatsappQueueSubscriber } from "./jobs/rabbitmq/three60-whatsapp-subscriber.service";
 import { TwilioSmsQueuePublisherRabbitmq } from "./jobs/rabbitmq/twilio-sms-publisher.service";
@@ -400,6 +406,63 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
 import { MssqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mssql-datasource-introspection-provider.service";
 import { MysqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mysql-datasource-introspection-provider.service";
 import { PostgresDatasourceIntrospectionProviderService } from "./services/datasource-introspection/postgres-datasource-introspection-provider.service";
+import { WorkflowDefinition } from './entities/workflow-definition.entity';
+import { WorkflowExecution } from './entities/workflow-execution.entity';
+import { WorkflowStepExecution } from './entities/workflow-step-execution.entity';
+import { WorkflowExecutionLog } from './entities/workflow-execution-log.entity';
+import { WorkflowExecutionArtifact } from './entities/workflow-execution-artifact.entity';
+import { WorkflowTriggerExecution } from './entities/workflow-trigger-execution.entity';
+import { WorkflowSecret } from './entities/workflow-secret.entity';
+import { WorkflowDefinitionController } from './controllers/workflow-definition.controller';
+import { WorkflowExecutionController } from './controllers/workflow-execution.controller';
+import { WorkflowStepExecutionController } from './controllers/workflow-step-execution.controller';
+import { WorkflowExecutionLogController } from './controllers/workflow-execution-log.controller';
+import { WorkflowExecutionArtifactController } from './controllers/workflow-execution-artifact.controller';
+import { WorkflowTriggerExecutionController } from './controllers/workflow-trigger-execution.controller';
+import { WorkflowSecretController } from './controllers/workflow-secret.controller';
+import { WorkflowDefinitionService } from './services/workflow-definition.service';
+import { WorkflowDefinitionMetadataSyncService } from './services/workflow/workflow-definition-metadata-sync.service';
+import { WorkflowExecutionService } from './services/workflow-execution.service';
+import { WorkflowStepExecutionService } from './services/workflow-step-execution.service';
+import { WorkflowExecutionLogService } from './services/workflow-execution-log.service';
+import { WorkflowExecutionArtifactService } from './services/workflow-execution-artifact.service';
+import { WorkflowTriggerExecutionService } from './services/workflow-trigger-execution.service';
+import { WorkflowSecretService } from './services/workflow-secret.service';
+import { WorkflowDefinitionRepository } from './repository/workflow-definition.repository';
+import { WorkflowExecutionRepository } from './repository/workflow-execution.repository';
+import { WorkflowStepExecutionRepository } from './repository/workflow-step-execution.repository';
+import { WorkflowExecutionLogRepository } from './repository/workflow-execution-log.repository';
+import { WorkflowExecutionArtifactRepository } from './repository/workflow-execution-artifact.repository';
+import { WorkflowTriggerExecutionRepository } from './repository/workflow-trigger-execution.repository';
+import { WorkflowSecretRepository } from './repository/workflow-secret.repository';
+import { WorkflowDefinitionValidatorService } from './services/workflow/workflow-definition-validator.service';
+import { WorkflowExecutionWriterService } from './services/workflow/workflow-execution-writer.service';
+import { WorkflowExpressionService } from './services/workflow/workflow-expression.service';
+import { WorkflowInvocationService } from './services/workflow/workflow-invocation.service';
+import { WorkflowNodeRegistryService } from './services/workflow/workflow-node-registry.service';
+import { WorkflowRuntimeService } from './services/workflow/workflow-runtime.service';
+import { WorkflowScheduledTriggerJobService } from './services/workflow/workflow-scheduled-trigger.job';
+import { ExecutionFailNode } from './services/workflow/nodes/execution-fail.node';
+import { ForEachNode } from './services/workflow/nodes/for-each.node';
+import { HttpRequestNode } from './services/workflow/nodes/http-request.node';
+import { IfNode } from './services/workflow/nodes/if.node';
+import { LogWriteNode } from './services/workflow/nodes/log-write.node';
+import { LoopUntilNode } from './services/workflow/nodes/loop-until.node';
+import { ParallelNode } from './services/workflow/nodes/parallel.node';
+import { RuntimePythonNode } from './services/workflow/nodes/runtime-python.node';
+import { SequentialNode } from './services/workflow/nodes/sequential.node';
+import {
+  SolidXCreateNode,
+  SolidXDeleteNode,
+  SolidXGetNode,
+  SolidXListNode,
+  SolidXPatchNode,
+  SolidXUpdateNode,
+} from './services/workflow/nodes/solidx-crud.nodes';
+import { SolidXLoginNode } from './services/workflow/nodes/solidx-login.node';
+import { SolidXSendEmailNode } from './services/workflow/nodes/solidx-send-email.node';
+import { SolidXSendSmsNode } from './services/workflow/nodes/solidx-send-sms.node';
+import { SwitchNode } from './services/workflow/nodes/switch.node';
 
 @Global()
 @Module({
@@ -440,6 +503,13 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
       UserViewMetadata,
       ViewMetadata,
       ModelSequence,
+      WorkflowDefinition,
+      WorkflowExecution,
+      WorkflowStepExecution,
+      WorkflowExecutionLog,
+      WorkflowExecutionArtifact,
+      WorkflowTriggerExecution,
+      WorkflowSecret,
     ]),
 
     CacheModule.registerAsync(CacheManagerOptions),
@@ -540,6 +610,13 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ViewMetadataController,
     ModelSequenceController,
     DashboardUserLayoutController,
+    WorkflowDefinitionController,
+    WorkflowExecutionController,
+    WorkflowStepExecutionController,
+    WorkflowExecutionLogController,
+    WorkflowExecutionArtifactController,
+    WorkflowTriggerExecutionController,
+    WorkflowSecretController,
   ],
   providers: [
     {
@@ -713,6 +790,8 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ComputedFieldEvaluationSubscriberRedis,
     GenerateCodePublisherRedis,
     GenerateCodeSubscriberRedis,
+    WorkflowExecutionPublisherRedis,
+    WorkflowExecutionSubscriberRedis,
     Msg91OTPQueuePublisherRedis,
     Msg91OTPQueueSubscriberRedis,
     Msg91SmsQueuePublisherRedis,
@@ -729,6 +808,10 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     GenerateCodeSubscriberDatabase,
     GenerateCodePublisherRabbitmq,
     GenerateCodeSubscriberRabbitmq,
+    WorkflowExecutionPublisherDatabase,
+    WorkflowExecutionSubscriberDatabase,
+    WorkflowExecutionPublisherRabbitmq,
+    WorkflowExecutionSubscriberRabbitmq,
     Msg91OTPQueuePublisher,
     MqMessageQueueService,
     MqMessageService,
@@ -846,6 +929,47 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ListOfRolesSelectionProvider,
     DashboardUserLayoutService,
     DashboardUserLayoutRepository,
+    WorkflowDefinitionService,
+    WorkflowDefinitionMetadataSyncService,
+    WorkflowDefinitionRepository,
+    WorkflowExecutionService,
+    WorkflowExecutionRepository,
+    WorkflowStepExecutionService,
+    WorkflowStepExecutionRepository,
+    WorkflowExecutionLogService,
+    WorkflowExecutionLogRepository,
+    WorkflowExecutionArtifactService,
+    WorkflowExecutionArtifactRepository,
+    WorkflowTriggerExecutionService,
+    WorkflowTriggerExecutionRepository,
+    WorkflowSecretService,
+    WorkflowSecretRepository,
+    WorkflowInvocationService,
+    WorkflowRuntimeService,
+    WorkflowExecutionWriterService,
+    WorkflowExpressionService,
+    WorkflowDefinitionValidatorService,
+    WorkflowNodeRegistryService,
+    WorkflowScheduledTriggerJobService,
+    ExecutionFailNode,
+    LogWriteNode,
+    HttpRequestNode,
+    IfNode,
+    ForEachNode,
+    LoopUntilNode,
+    ParallelNode,
+    RuntimePythonNode,
+    SequentialNode,
+    SwitchNode,
+    SolidXLoginNode,
+    SolidXListNode,
+    SolidXGetNode,
+    SolidXCreateNode,
+    SolidXUpdateNode,
+    SolidXPatchNode,
+    SolidXDeleteNode,
+    SolidXSendEmailNode,
+    SolidXSendSmsNode,
   ],
   exports: [
     AuthenticationService,
@@ -910,6 +1034,10 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     SolidMicroserviceAdapter,
     UserService,
     SettingService,
+    WorkflowInvocationService,
+    WorkflowRuntimeService,
+    WorkflowNodeRegistryService,
+    WorkflowExpressionService,
   ],
 })
 export class SolidCoreModule implements NestModule {

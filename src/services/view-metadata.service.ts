@@ -18,6 +18,7 @@ import { MenuItemMetadataService } from './menu-item-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { UserViewMetadataService } from './user-view-metadata.service';
 import { MenuItemMetadata } from 'src/entities/menu-item-metadata.entity';
+import { IWorkflowFieldDataProviderValues } from 'src/interfaces';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -111,6 +112,90 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
   }
 
   private readonly logger = new Logger(ViewMetadataService.name);
+
+  private parseJsonObject(value: any): Record<string, any> {
+    if (!value) {
+      return {};
+    }
+
+    if (typeof value === 'object') {
+      return value;
+    }
+
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (error: any) {
+        this.logger.warn(`Unable to parse workflow field provider context: ${error?.message ?? error}`);
+      }
+    }
+
+    return {};
+  }
+
+  private async getDefaultWorkflowFieldData(
+    workflowField: FieldMetadata,
+    workflowFieldName: string,
+    fieldsMap: Map<string, FieldMetadata>,
+  ): Promise<IWorkflowFieldDataProviderValues[]> {
+    if (workflowField.type === 'selectionStatic') {
+      return workflowField.selectionStaticValues.map(item => {
+        const [value, label] = item.split(":");
+        return { label, value };
+      });
+    }
+
+    if (workflowField.type === 'relation' && workflowField.relationType === 'many-to-one') {
+      const comodelCrudService = this.introspectService.getCRUDService(workflowField.relationCoModelSingularName);
+      const data = await comodelCrudService.find({ limit: 100, offset: 0, });
+      const records = data.records ?? [];
+      const workflowFieldMetadata = fieldsMap.get(workflowFieldName);
+      const workflowFieldUserKey = (workflowFieldMetadata as any)?.relationModel?.userKeyField?.name;
+
+      if (!workflowFieldUserKey) {
+        this.logger.warn(`Unable to identify relation user key for workflow field: ${workflowFieldName}`);
+        return [];
+      }
+
+      return records.map(item => ({ label: item[workflowFieldUserKey], value: item['id'] }));
+    }
+
+    return [];
+  }
+
+  private async getWorkflowFieldData(
+    entity: ViewMetadata,
+    workflowField: FieldMetadata,
+    workflowFieldName: string,
+    fieldsMap: Map<string, FieldMetadata>,
+    query: Record<string, any>,
+    activeUser: any,
+  ): Promise<readonly IWorkflowFieldDataProviderValues[]> {
+    const workflowFieldDataProviderName = entity.layout?.attrs?.workflowFieldDataProvider;
+    if (workflowFieldDataProviderName) {
+      const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
+      const provider = solidRegistry.getWorkflowFieldDataProviderInstance(workflowFieldDataProviderName);
+      if (!provider) {
+        throw new BadRequestException(`Workflow field data provider ${workflowFieldDataProviderName} not found`);
+      }
+
+      return provider.values({
+        entityId: query?.id,
+        modelName: entity.model?.singularName ?? query?.modelName,
+        moduleName: entity.module?.name ?? query?.moduleName,
+        workflowFieldName,
+        workflowField,
+        solidModel: entity.model,
+        solidView: entity,
+        solidFieldsMetadata: Object.fromEntries(fieldsMap),
+        query,
+        providerContext: this.parseJsonObject(entity.layout?.attrs?.workflowFieldDataProviderCtxt),
+        activeUser,
+      });
+    }
+
+    return this.getDefaultWorkflowFieldData(workflowField, workflowFieldName, fieldsMap);
+  }
 
   //for locales 
   private async getEntityRecordsInAllLocales(
@@ -331,28 +416,9 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     }
 
     // 9. Use the resolved workflowField to populate workflow specific metadata.
-    // Check if we were able to resolve an actual workflowField.
-    let solidFormViewWorkflowData = [];
+    let solidFormViewWorkflowData: readonly IWorkflowFieldDataProviderValues[] = [];
     if (viewType === 'form' && workflowField) {
-      // check for type of workflow field. 
-      // for workflowFields of type selectionStatic we simply return the key/values from field metadata AS-IS
-      if (workflowField.type === 'selectionStatic') {
-        solidFormViewWorkflowData = workflowField.selectionStaticValues.map(item => {
-          const [value, label] = item.split(":");
-          return { label, value };
-        });
-      }
-      // for workflowFields of type relation.many-to-one we need to query the co-model, and return data in key/value format.
-      if (workflowField.type === 'relation' && workflowField.relationType === 'many-to-one') {
-        const comodelCrudService = this.introspectService.getCRUDService(workflowField.relationCoModelSingularName);
-        const data = await comodelCrudService.find({ limit: 100, offset: 0, });
-        const records = data.records ?? [];
-        const workflowFieldMetadata = fieldsMap.get(workflowFieldName);
-        const workflowFielUserkey = workflowFieldMetadata['relationModel']['userKeyField']['name'];
-
-        // iterate over the comodel records extracting the label & value. 
-        solidFormViewWorkflowData = records.map(item => ({ 'label': item[workflowFielUserkey], 'value': item['id'] }))
-      }
+      solidFormViewWorkflowData = await this.getWorkflowFieldData(entity, workflowField, workflowFieldName, fieldsMap, query, activeUser);
     }
 
     // 10. If this model supports internationalisation, we need to load the locales applicable with the id of an actual record for each locale if present.
