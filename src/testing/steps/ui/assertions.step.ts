@@ -2,8 +2,13 @@ import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { StepRegistry } from "../../core/step-registry";
 
-type VisibleInput = { selector: string };
-type ExpectTextInput = { selector: string; equals?: string; contains?: string };
+type VisibleInput = { selector: string; timeoutMs?: number };
+type ExpectTextInput = {
+  selector: string;
+  equals?: string;
+  contains?: string;
+  timeoutMs?: number;
+};
 
 function requirePage(ctx: TestContext, op: string) {
   if (!ctx.ui || !ctx.ui.page) {
@@ -19,7 +24,10 @@ export function registerAssertionSteps(registry: StepRegistry): void {
     if (!input.selector) {
       throw new Error('Missing "selector" in step.with for op "ui.expectVisible"');
     }
-    await page.waitForSelector(input.selector, { state: "visible" });
+    await page.waitForSelector(input.selector, {
+      state: "visible",
+      timeout: ctx.ui?.resolveTimeout(input.timeoutMs),
+    });
   });
 
   registry.register("ui.expectHidden", async (ctx: TestContext, step: OpStep) => {
@@ -28,7 +36,10 @@ export function registerAssertionSteps(registry: StepRegistry): void {
     if (!input.selector) {
       throw new Error('Missing "selector" in step.with for op "ui.expectHidden"');
     }
-    await page.waitForSelector(input.selector, { state: "hidden" });
+    await page.waitForSelector(input.selector, {
+      state: "hidden",
+      timeout: ctx.ui?.resolveTimeout(input.timeoutMs),
+    });
   });
 
   registry.register("ui.expectText", async (ctx: TestContext, step: OpStep) => {
@@ -38,7 +49,9 @@ export function registerAssertionSteps(registry: StepRegistry): void {
       throw new Error('Missing "selector" in step.with for op "ui.expectText"');
     }
 
-    const text = await page.locator(input.selector).innerText();
+    const text = await page
+      .locator(input.selector)
+      .innerText({ timeout: ctx.ui?.resolveTimeout(input.timeoutMs) });
     if (input.equals !== undefined) {
       if (text !== input.equals) {
         throw new Error(

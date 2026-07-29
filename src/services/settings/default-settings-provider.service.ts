@@ -1474,6 +1474,28 @@ const getSolidCoreSettings = (isProd: boolean) =>
       value: process.env.COMMON_META_WHATSAPP_APP_SECRET,
       level: SettingLevel.SystemEnv,
     },
+    {
+      moduleName: "solid-core",
+      key: "uiTestDefaultTimeoutMs",
+      value: 30000,
+      level: SettingLevel.SystemAdminEditable,
+      label: "UI Test Default Timeout (ms)",
+      group: "testing-settings",
+      sortOrder: 10,
+      controlType: "numeric",
+      helpText: "How long UI test steps wait for an element before failing. Raise this if tests time out on slow screens. Overridden by the --ui-timeout-ms flag and by a per-step timeoutMs.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "uiTestNavigationTimeoutMs",
+      value: 30000,
+      level: SettingLevel.SystemAdminEditable,
+      label: "UI Test Navigation Timeout (ms)",
+      group: "testing-settings",
+      sortOrder: 20,
+      controlType: "numeric",
+      helpText: "How long the ui.goto step waits for a page to load before failing. Falls back to the UI test default timeout.",
+    },
   ] as const satisfies SettingDefinition[];
 
 // 2.
