@@ -17,6 +17,19 @@ export const DANGEROUS_EXTENSIONS = new Set([
     'exe', 'sh', 'bat', 'cmd', 'ps1', 'jar', 'dll',
 ]);
 
+export function getLowercaseFileExtension(fileName?: string | null): string | undefined {
+    if (!fileName) {
+        return undefined;
+    }
+
+    const lastDotIndex = fileName.lastIndexOf('.');
+    if (lastDotIndex < 0 || lastDotIndex === fileName.length - 1) {
+        return undefined;
+    }
+
+    return fileName.slice(lastDotIndex + 1).toLowerCase();
+}
+
 /**
  * Single source of truth for extension -> coarse media category. Shared by upload-time
  * validation (MediaFieldCrudManager) and serve-time header hardening (ServeStaticModule), so

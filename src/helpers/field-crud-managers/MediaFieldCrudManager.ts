@@ -1,5 +1,5 @@
 import { FieldCrudManager, ValidationError } from "src/interfaces";
-import { DANGEROUS_EXTENSIONS, EXT_TO_MEDIA_TYPE, MediaCategory } from "src/constants/media-file-types";
+import { DANGEROUS_EXTENSIONS, EXT_TO_MEDIA_TYPE, getLowercaseFileExtension, MediaCategory } from "src/constants/media-file-types";
 
 export enum SolidMediaType {
     mediaSingle = 'mediaSingle',
@@ -80,7 +80,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
     }
 
     private resolveMediaType(mimetype?: string, filename?: string): MediaType | null {
-        const ext = (filename || '').split('.').pop()?.toLowerCase();
+        const ext = getLowercaseFileExtension(filename);
         if (ext && DANGEROUS_EXTENSIONS.has(ext)) {
             return null;
         }
