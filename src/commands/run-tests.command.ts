@@ -7,6 +7,8 @@ import { WebhookReporter } from 'src/testing/reporter/webhook-reporter';
 import { runFromMetadata } from 'src/testing/runner/run-from-metadata';
 import type { TestingMetadata } from 'src/testing/contracts/testing-metadata.types';
 import { SpecRegistry } from 'src/testing/core/spec-registry';
+import { SettingService } from 'src/services/setting.service';
+import type { SolidCoreSetting } from 'src/services/settings/default-settings-provider.service';
 
 interface TestRunCommandOptions {
   module?: string;
@@ -18,6 +20,8 @@ interface TestRunCommandOptions {
   apiBaseUrl?: string;
   uiBaseUrl?: string;
   headless?: boolean;
+  uiTimeoutMs?: number;
+  uiNavigationTimeoutMs?: number;
   timeoutMs?: number;
   retries?: number;
   listSpecs?: boolean;
@@ -34,6 +38,7 @@ export class TestRunCommand extends CommandRunner {
 
   constructor(
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
+    private readonly settingService: SettingService,
   ) {
     super();
   }
@@ -89,6 +94,14 @@ export class TestRunCommand extends CommandRunner {
       const apiBaseUrl = options?.apiBaseUrl ?? process.env.BASE_URL;
       const uiBaseUrl = options?.uiBaseUrl ?? process.env.FRONTEND_BASE_URL;
       const headless = options?.headless ?? true;
+      const uiTimeoutMs =
+        options?.uiTimeoutMs
+        ?? toPositiveNumber(process.env.UI_TIMEOUT_MS)
+        ?? toPositiveNumber(this.settingService.getConfigValue<SolidCoreSetting>('uiTestDefaultTimeoutMs'));
+      const uiNavigationTimeoutMs =
+        options?.uiNavigationTimeoutMs
+        ?? toPositiveNumber(process.env.UI_NAVIGATION_TIMEOUT_MS)
+        ?? toPositiveNumber(this.settingService.getConfigValue<SolidCoreSetting>('uiTestNavigationTimeoutMs'));
       const printApiLogs = options?.printApiLogs ?? false;
 
       const webhookUrl = process.env.SOLIDCTL_WEBHOOK_URL;
@@ -105,7 +118,12 @@ export class TestRunCommand extends CommandRunner {
           skipScenarioIds,
           reporter,
           api: apiBaseUrl ? { baseUrl: apiBaseUrl } : undefined,
-          ui: { baseUrl: uiBaseUrl, headless },
+          ui: {
+            baseUrl: uiBaseUrl,
+            headless,
+            defaultTimeoutMs: uiTimeoutMs,
+            navigationTimeoutMs: uiNavigationTimeoutMs,
+          },
           defaults: {
             timeoutMs: options?.timeoutMs,
             retries: options?.retries,
@@ -226,6 +244,26 @@ export class TestRunCommand extends CommandRunner {
   }
 
   @Option({
+    flags: '--ui-timeout-ms [number]',
+    description:
+      'Default timeout in ms for UI steps (waits, clicks, fills). Defaults to process.env.UI_TIMEOUT_MS, then the uiTestDefaultTimeoutMs setting, then 30000.',
+    required: false,
+  })
+  parseUiTimeoutMs(val: string): number {
+    return Number(val);
+  }
+
+  @Option({
+    flags: '--ui-navigation-timeout-ms [number]',
+    description:
+      'Default timeout in ms for ui.goto navigation. Defaults to process.env.UI_NAVIGATION_TIMEOUT_MS, then the uiTestNavigationTimeoutMs setting, then --ui-timeout-ms.',
+    required: false,
+  })
+  parseUiNavigationTimeoutMs(val: string): number {
+    return Number(val);
+  }
+
+  @Option({
     flags: '--timeout-ms [number]',
     description: 'Default scenario timeout in milliseconds.',
     required: false,
@@ -260,6 +298,14 @@ function splitCsv(value?: string): string[] | undefined {
     .map((item) => item.trim())
     .filter(Boolean);
   return items.length ? items : undefined;
+}
+
+// Accepts unknown because settings come back already parsed as numbers, while env
+// vars arrive as strings.
+function toPositiveNumber(value?: unknown): number | undefined {
+  if (value === null || value === undefined || value === '') return undefined;
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : undefined;
 }
 
 function resolveSpecPath(entry: string, metadataPath: string): string {
