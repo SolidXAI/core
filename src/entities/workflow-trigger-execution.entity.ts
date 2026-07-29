@@ -35,7 +35,7 @@ export class WorkflowTriggerExecution extends CommonEntity {
     status: string = "received";
 
     @Index()
-    @Column({ nullable: true, default: false })
+    @Column({ type: "bit", nullable: true, default: false })
     matched: boolean = false;
 
     @Index()
