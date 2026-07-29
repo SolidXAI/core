@@ -37,6 +37,8 @@ import { ShortTextFieldCrudManager } from "../helpers/field-crud-managers/ShortT
 import { UUIDFieldCrudManager } from "../helpers/field-crud-managers/UUIDFieldCrudManager";
 import { ModelMetadataHelperService } from "src/helpers/model-metadata-helper.service";
 import { FieldCrudManager, MediaWithFullUrl } from "../interfaces";
+import { DraftPublishHelperService } from "./draft-publish-helper.service";
+import { InternationalisationHelperService } from "./internationalisation-helper.service";
 import { CrudHelperService, FilterCombinator, UserIdFields } from "./crud-helper.service";
 import { HashingService } from "./hashing.service";
 import { SolidRegistry } from "src/helpers/solid-registry";
@@ -50,6 +52,8 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
 
     private _modelMetadataService: ModelMetadataService;
     private _crudHelperService: CrudHelperService;
+    private _draftPublishHelperService: DraftPublishHelperService;
+    private _internationalisationHelperService: InternationalisationHelperService;
     private _discoveryService: DiscoveryService;
     private _settingService: SettingService;
 
@@ -70,12 +74,33 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         return this._crudHelperService ??= this.moduleRef.get(CrudHelperService, { strict: false });
     }
 
+    protected get draftPublishHelperService(): DraftPublishHelperService {
+        return this._draftPublishHelperService ??= this.moduleRef.get(DraftPublishHelperService, { strict: false });
+    }
+
+    protected get internationalisationHelperService(): InternationalisationHelperService {
+        return this._internationalisationHelperService ??= this.moduleRef.get(InternationalisationHelperService, { strict: false });
+    }
+
     protected get discoveryService(): DiscoveryService {
         return this._discoveryService ??= this.moduleRef.get(DiscoveryService, { strict: false });
     }
 
     protected get settingService(): SettingService {
         return this._settingService ??= this.moduleRef.get(SettingService, { strict: false });
+    }
+
+    private getDraftPublishCrudContext() {
+        return {
+            repo: this.repo,
+            modelName: this.modelName,
+            moduleName: this.moduleName,
+            validateAndTransformDto: this.validateAndTransformDto.bind(this),
+            saveMedia: this.saveMedia.bind(this),
+            getDatasourceDefaultEntityManager: this.getDatasourceDefaultEntityManager.bind(this),
+            getColumnDatabaseName: this.getColumnDatabaseName.bind(this),
+            escapeDatabaseName: this.escapeDatabaseName.bind(this),
+        };
     }
 
     private async tryCreateAsExtensionUser(createDto: any): Promise<T | null> {
@@ -123,8 +148,11 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         try {
             // 5. Save the entity
             // For media, we need to use a storage provider and save the media, then save the associated uri against the entity or media table
+            this.draftPublishHelperService.applyCreateDefaults(model, createDto);
+            this.internationalisationHelperService.applyCreateDefaults(model, createDto, this.moduleRef.get(SolidRegistry, { strict: false }));
             const entity = this.repo.create(createDto);
-            const savedEntity = await this.repo.save(entity) as unknown as T;
+            let savedEntity = await this.repo.save(entity) as unknown as T;
+            savedEntity = await this.draftPublishHelperService.ensureInitialEntityVersionId(model, this.repo, savedEntity);
 
             // 6. Save the media
             if (hasMediaFields) {
@@ -211,9 +239,10 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
 
-        if (model.draftPublishWorkflow === true && entity.publishedAt) {
-            throw new BadRequestException(`Cannot update a published record for model ${this.modelName}. Unpublish it first.`
-            );
+        this.draftPublishHelperService.assertUpdateAllowed(model, entity, this.modelName);
+
+        if (this.draftPublishHelperService.shouldCopyPublishedVersionForUpdate(model, entity)) {
+            return this.draftPublishHelperService.copyPublishedVersionAndUpdate(this.getDraftPublishCrudContext(), id, updateDto, files, isPartialUpdate, model);
         }
 
         // Capture pre-update many-to-many relation state for audit tracking
@@ -243,6 +272,18 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             await this.saveMedia(model, files, savedEntity);
         }
         return savedEntity;
+    }
+
+    private getColumnDatabaseName(propertyName: string): string {
+        const column = this.repo.metadata.findColumnWithPropertyName(propertyName);
+        if (!column) {
+            throw new Error(`Column ${propertyName} not found in entity ${this.repo.metadata.name}`);
+        }
+        return column.databaseName;
+    }
+
+    private escapeDatabaseName(databaseName: string): string {
+        return this.repo.manager.connection.driver.escape(databaseName);
     }
 
 /**
@@ -307,32 +348,37 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
         }
 
-        if (model.draftPublishWorkflow === true && entity.publishedAt) {
-            throw new BadRequestException(`Cannot update a published record for model ${this.modelName}, Unpublish it first.`);
+        const entitiesToDelete: T[] = [entity];
+        if (this.draftPublishHelperService.isDraftPublishEnabled(model)) {
+            this.draftPublishHelperService.assertDraftPublishDeleteAllowed(this.modelName, entitiesToDelete);
         }
 
-        // If the model has internationalisation enabled, delete children with defaultEntityLocaleId === this entity's id
-        if (model.internationalisation) {
-            // Find all child entities where defaultEntityLocaleId === this entity's id
-            const childEntities = await this.repo.find({
-                where: { defaultEntityLocaleId: id } as any
-            });
+        await this.internationalisationHelperService.deleteChildLocaleEntities(this.repo, model, [id]);
 
-            if (childEntities.length > 0) {
-                if (model.enableSoftDelete === true) {
-                    await this.repo.softRemove(childEntities);
-                } else {
-                    await this.repo.remove(childEntities);
-                }
-            }
-        }
+        return this.deleteEntitiesAndPromote(model, entitiesToDelete);
+    }
 
+    private async deleteEntitiesAndPromote(model: ModelMetadata, entitiesToDelete: T[]): Promise<T[]> {
+        const isDraftPublishEnabled = this.draftPublishHelperService.isDraftPublishEnabled(model);
+        const deletedLatestChainIds = isDraftPublishEnabled
+            ? this.draftPublishHelperService.getLatestDraftPublishChainIds(entitiesToDelete)
+            : [];
+
+        let deleteResult: T[];
         if (model.enableSoftDelete === true) {
-            await this.repo.softRemove(entity);
-            return this.repo.save(entity);
+            this.draftPublishHelperService.markDeletedDraftPublishVersionsAsNotLatest(model, entitiesToDelete);
+            await this.repo.softRemove(entitiesToDelete);
+            deleteResult = await this.repo.save(entitiesToDelete);
         } else {
-            return this.repo.remove(entity);
+            deleteResult = await this.repo.remove(entitiesToDelete);
         }
+
+        if (isDraftPublishEnabled) {
+            const deletedEntityIds = this.draftPublishHelperService.getEntityIds(entitiesToDelete);
+            await this.draftPublishHelperService.promoteLatestDraftPublishVersionAfterDelete(this.repo, deletedLatestChainIds, deletedEntityIds);
+        }
+
+        return deleteResult;
     }
 
     private async fieldCrudManager(fieldMetadata: FieldMetadata, entityManager: EntityManager, isPartialUpdate: boolean = false, isUpdate: boolean = false, entityId?: number) {
@@ -529,9 +575,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
         var qb: SelectQueryBuilder<T> = await this.repo.createSecurityRuleAwareQueryBuilder(alias)
 
         if (basicFilterDto.groupBy?.length) {
-            const groupFilterQb = (internationalisation && draftPublishWorkflow)
-                ? this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef, FilterCombinator.AND, false, false)
-                : this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, undefined, undefined, undefined, FilterCombinator.AND, false, false);
+            const groupFilterQb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef, FilterCombinator.AND, false, false);
 
             return this.crudHelperService.executeGroupPipeline(
                 groupFilterQb, basicFilterDto, alias,
@@ -543,9 +587,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             );
         }
         else {
-            qb = (internationalisation && draftPublishWorkflow)
-                ? this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef)
-                : this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias);
+            qb = this.crudHelperService.buildFilterQuery(qb, basicFilterDto, alias, internationalisation, draftPublishWorkflow, this.moduleRef);
             const { meta, records } = await this.handleNonGroupFind(qb, populateUserIdFields, populateMedia, offset, limit, alias);
             return {
                 meta,
@@ -795,6 +837,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             module: true,
         });
 
+        const solidRegistry = this.moduleRef.get(SolidRegistry, { strict: false });
         const entitiesForSave: T[] = [];
         for (const createDto of createDtos) {
             // Validate and transform each createDto sequentially
@@ -807,6 +850,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                 }
                 transformedDto = await fieldManager.transformForCreate(createDto);
             }
+            this.internationalisationHelperService.applyCreateDefaults(model, transformedDto, solidRegistry);
             const entity = this.repo.create(transformedDto);
             entitiesForSave.push(entity as unknown as T);
         }
@@ -844,7 +888,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
 
 
 
-        const removedEntities = [];
+        const removedEntities: T[] = [];
         for (let i = 0; i < ids.length; i++) {
             const id = ids[i]
             const entity = await this.repo.findOne({
@@ -853,36 +897,21 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                 } as unknown as FindOptionsWhere<T>,
             });
 
+            if (!entity) {
+                throw new Error(`Entity [${this.moduleName}.${this.modelName}] with id ${id} not found`);
+            }
+
             removedEntities.push(entity);
         }
 
 
-        // entity-level flag
-        const isDraftPublishEnabled = model?.draftPublishWorkflow === true;
-
-        let publishedEntitiesExists: T[] = [];
-
-        if (isDraftPublishEnabled) {
-            publishedEntitiesExists = removedEntities.filter(
-                (x) => !!x?.publishedAt
-            );
+        if (this.draftPublishHelperService.isDraftPublishEnabled(model)) {
+            this.draftPublishHelperService.assertDraftPublishDeleteAllowed(this.modelName, removedEntities);
         }
 
-        if (publishedEntitiesExists.length > 0) {
-            const publishedEntitiesExistsID = publishedEntitiesExists.map(x => x.id);
+        await this.internationalisationHelperService.deleteChildLocaleEntities(this.repo, model, ids);
 
-            throw new BadRequestException(
-                `Cannot delete published record(s) for model ${this.modelName} with Ids ${publishedEntitiesExistsID.join(', ')}. Unpublish them first.`
-            );
-        }
-
-        if (model.enableSoftDelete === true) {
-            await this.repo.softRemove(removedEntities);
-            return this.repo.save(removedEntities);
-        } else {
-            return this.repo.remove(removedEntities);
-        }
-        // return removedEntities
+        return this.deleteEntitiesAndPromote(model, removedEntities);
     }
 
     async recover(id: number, solidRequestContext: any = {}) {
@@ -911,6 +940,10 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                 deletedAt: null, deletedTracker: "not-deleted"
             } as unknown as QueryDeepPartialEntity<T>
             );
+
+            if (this.draftPublishHelperService.isDraftPublishEnabled(loadedmodel)) {
+                await this.draftPublishHelperService.promoteRecoveredDraftPublishVersion(this.repo, softDeletedRows);
+            }
 
             return { message: SUCCESS_MESSAGES.RECORD_RECOVERED, data: softDeletedRows };
         } catch (error: any) {
@@ -957,6 +990,14 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                 { id: In(ids) } as unknown as FindOptionsWhere<T>,
                 { deletedAt: null, deletedTracker: "not-deleted" } as unknown as QueryDeepPartialEntity<T>
             );
+
+            if (this.draftPublishHelperService.isDraftPublishEnabled(loadedmodel)) {
+                // Sequential: two ids in the same batch could belong to the same version
+                // chain, and each promotion clears isLatest across the whole chain first.
+                for (const entity of softDeletedRows) {
+                    await this.draftPublishHelperService.promoteRecoveredDraftPublishVersion(this.repo, entity);
+                }
+            }
 
             return { message: SUCCESS_MESSAGES.SELECTED_RECORDS_RECOVERED, recoveredIds: ids };
         } catch (error: any) {
@@ -1012,17 +1053,10 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
         return model.userKeyField?.name || '';
     }
 
-    /* Publish a record - sets publishedAt timestamp */
+    /* Publish a record - marks the selected version as the active published version. */
     async publishRecord(id: number, solidRequestContext: any = {}): Promise<T> {
 
         const model = await this.loadModel();
-
-        // Check if publish workflow is enabled for this model
-        if (!model.draftPublishWorkflow) {
-            throw new BadRequestException(
-                `Publish workflow is not enabled for ${this.modelName}`
-            );
-        }
 
         // Check user permissions
         if (solidRequestContext.activeUser) {
@@ -1035,36 +1069,13 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             }
         }
 
-        // Find the entity
-        const entity = await this.repo.findOne({ where: { id } as any });
-        if (!entity) {
-            throw new NotFoundException(`${this.modelName} with id ${id} not found`);
-        }
-
-        // Check if already published
-        if (entity.publishedAt) {
-            throw new BadRequestException(
-                `${this.modelName} with id ${id} is already published`
-            );
-        }
-
-        // Update publish status
-        const updatedEntity = await this.repo.save({ ...entity, publishedAt: new Date() });
-
-        return updatedEntity
+        return this.draftPublishHelperService.publishRecord(this.repo, model, this.modelName, id, solidRequestContext.activeUser);
     }
 
-    /* Unpublish a record - clears publishedAt timestamp */
+    /* Unpublish a record - marks the selected version as not currently published. */
     async unpublishRecord(id: number, solidRequestContext: any = {}): Promise<T> {
 
         const model = await this.loadModel();
-
-        // Check if publish workflow is enabled for this model
-        if (!model.draftPublishWorkflow) {
-            throw new BadRequestException(
-                `Publish workflow is not enabled for ${this.modelName}`
-            );
-        }
 
         // Check user permissions
         if (solidRequestContext.activeUser) {
@@ -1077,23 +1088,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             }
         }
 
-        // Find the entity
-        const entity = await this.repo.findOne({ where: { id } as any });
-        if (!entity) {
-            throw new NotFoundException(`${this.modelName} with id ${id} not found`);
-        }
-
-        // Check if already unpublished
-        if (!entity.publishedAt) {
-            throw new BadRequestException(
-                `${this.modelName} with id ${id} is already unpublished`
-            );
-        }
-
-        // Update unpublish status
-        const updatedEntity = await this.repo.save({ ...entity, publishedAt: null });
-
-        return updatedEntity
+        return this.draftPublishHelperService.unpublishRecord(this.repo, model, this.modelName, id, solidRequestContext.activeUser);
     }
 
     private getDatasourceDefaultEntityManager() {

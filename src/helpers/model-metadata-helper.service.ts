@@ -2,6 +2,7 @@
 
 import { forwardRef, Inject, Injectable, Logger } from "@nestjs/common";
 import { _ } from "lodash";
+import { DRAFT_PUBLISH_VERSIONING_FIELD_NAMES } from "src/constants/draft-publish-fields";
 import { LEGACY_TABLE_FIELDS_PREFIX } from "src/entities/legacy-common.entity-with-existing-id.entity";
 import { LegacyTableType } from "src/enums/legacy-table-type.enum";
 import { ModelMetadataRepository } from "src/repository/model-metadata.repository";
@@ -88,6 +89,32 @@ export class ModelMetadataHelperService {
                 enableAuditTracking:true
             },
             {
+                name: "isPublished",
+                displayName: "Is Published",
+                type: "boolean",
+                isSystem: true,
+                enableAuditTracking: true
+            },
+            {
+                name: "isLatest",
+                displayName: "Is Latest",
+                type: "boolean",
+                isSystem: true,
+                enableAuditTracking: true
+            },
+            {
+                name: "initialEntityVersionId",
+                displayName: "Initial Entity Version Id",
+                type: "int",
+                isSystem: true,
+            },
+            {
+                name: "publishedTracker",
+                displayName: "Published Tracker",
+                type: "shortText",
+                isSystem: true,
+            },
+            {
                 name: "localeName",
                 displayName: "Locale",
                 type: "shortText",
@@ -117,7 +144,11 @@ export class ModelMetadataHelperService {
     }
 
     private getSystemFieldsMetadataMappingForLegacyTable(withId: boolean=true) {
-        const systemFieldsMetadata = this.getSystemFieldsMetadataMapping();
+        // Legacy tables don't have the draft/publish versioning columns, so exclude
+        // them from the legacy system fields metadata mapping.
+        const legacyExcludedFieldNames: readonly string[] = DRAFT_PUBLISH_VERSIONING_FIELD_NAMES;
+        const systemFieldsMetadata = this.getSystemFieldsMetadataMapping()
+            .filter(field => !legacyExcludedFieldNames.includes(field.name));
         if (!withId) {
             // Remove the id field metadata
             const index = systemFieldsMetadata.findIndex(field => field.name === 'id');

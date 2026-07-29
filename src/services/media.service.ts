@@ -1,13 +1,14 @@
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager, In } from 'typeorm';
+import { EntityManager, In, Not } from 'typeorm';
 import * as path from 'path';
 import { Readable } from 'stream';
 
 import { ConfigService } from '@nestjs/config';
 import { CRUDService } from 'src/services/crud.service';
 import { DiskFileService, S3FileService } from 'src/services/file';
+import { classify } from 'src/helpers/string.helper';
 import { MediaDownloadUrlService } from 'src/services/media-download-url.service';
 
 
@@ -176,8 +177,12 @@ export class MediaService extends CRUDService<Media> {
   async delete(id: number, solidRequestContext: any = {}) {
     const media = await this.repo.findOne({
       where: { id },
-      relations: ['mediaStorageProviderMetadata'],
+      relations: ['mediaStorageProviderMetadata', 'modelMetadata'],
     });
+
+    if (media) {
+      await this.assertMediaDeletable([media]);
+    }
 
     const result = await super.delete(id, solidRequestContext);
 
@@ -193,8 +198,10 @@ export class MediaService extends CRUDService<Media> {
       where: {
         id: In(ids),
       },
-      relations: ['mediaStorageProviderMetadata'],
+      relations: ['mediaStorageProviderMetadata', 'modelMetadata'],
     });
+
+    await this.assertMediaDeletable(mediaRecords);
 
     const result = await super.deleteMany(ids, solidRequestContext);
 
@@ -203,6 +210,33 @@ export class MediaService extends CRUDService<Media> {
     }
 
     return result;
+  }
+
+  /**
+   * Media belonging to a published draft/publish-enabled record must survive edits made to
+   * later drafts (see DraftPublishHelperService.cloneMediaForVersion) - deleting it directly
+   * would strip the published version's media out from under it. Mirrors the equivalent
+   * entity-level guard in DraftPublishHelperService.assertDraftPublishDeleteAllowed.
+   */
+  private async assertMediaDeletable(mediaRecords: Media[]): Promise<void> {
+    const blockedIds: number[] = [];
+
+    for (const media of mediaRecords) {
+      if (!media.modelMetadata?.draftPublishWorkflow) continue;
+
+      const entityRepository = this.entityManager.getRepository(classify(media.modelMetadata.singularName));
+      const owningEntity = await entityRepository.findOne({ where: { id: media.entityId } as any });
+
+      if (owningEntity && (owningEntity as any).isPublished === true) {
+        blockedIds.push(media.id);
+      }
+    }
+
+    if (blockedIds.length > 0) {
+      throw new BadRequestException(
+        'Media belonging to a published record cannot be deleted. Edit the record to create a draft first'
+      );
+    }
   }
 
   private async decorateMediaRecords(medias: Media[]): Promise<void> {
@@ -244,6 +278,17 @@ export class MediaService extends CRUDService<Media> {
     }
 
     try {
+      // Draft/publish versioning may clone a Media row that reuses the same
+      // relativeUri (see DraftPublishHelperService.cloneMediaForVersion) instead of
+      // duplicating the underlying file. Skip the physical delete if another row
+      // still references it.
+      const stillReferenced = await this.repo.exists({
+        where: { relativeUri: media.relativeUri, id: Not(media.id) },
+      });
+      if (stillReferenced) {
+        return;
+      }
+
       const mediaStorageProvider = await this.resolveMediaStorageProvider(media);
       if (!mediaStorageProvider) {
         return;

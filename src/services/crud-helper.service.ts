@@ -3,9 +3,12 @@ import { BasicFilterDto } from "../dtos/basic-filters.dto";
 import { classify } from '../helpers/string.helper';
 import { ActiveUserData } from "src/interfaces/active-user-data.interface";
 import { SolidRegistry } from "src/helpers/solid-registry";
-import { BadRequestException, Logger } from "@nestjs/common";
+import { BadRequestException, Injectable, Logger } from "@nestjs/common";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { buildCastToText } from "src/helpers/typeorm-db-helper";
+import { DraftPublishHelperService } from "./draft-publish-helper.service";
+import { InternationalisationHelperService } from "./internationalisation-helper.service";
+import { normalizeObjectKeys } from "./object.utils";
 
 export enum FilterCombinator {
     AND = '$and',
@@ -36,10 +39,14 @@ export interface ResolvedFieldPath {
     leafIsRelation: boolean;
 }
 
+@Injectable()
 export class CrudHelperService {
-    constructor(
-    ) { }
     private readonly logger = new Logger(CrudHelperService.name);
+
+    constructor(
+        private readonly draftPublishHelperService: DraftPublishHelperService,
+        private readonly internationalisationHelperService: InternationalisationHelperService,
+    ) { }
 
     /**
      * Resolve a user-supplied dotted path (e.g. "customer.name") against real TypeORM metadata.
@@ -163,7 +170,7 @@ export class CrudHelperService {
     }
 
     applyFilters(qb: WhereExpressionBuilder, filters: any, alias: string = 'entity', selectQb: SelectQueryBuilder<any>) {
-        const normalizedFilters = this.normalizeObjectKeys(filters);
+        const normalizedFilters = normalizeObjectKeys(filters);
         if (normalizedFilters.$and) {
             normalizedFilters.$and.forEach((andFilter: any) => {
                 qb.andWhere(
@@ -182,7 +189,7 @@ export class CrudHelperService {
             // For individual conditions
             Object.keys(normalizedFilters).forEach(key => {
                 const primaryFilterObj = normalizedFilters[key];
-                const normalizedPrimaryFilterObj = this.normalizeObjectKeys(primaryFilterObj);
+                const normalizedPrimaryFilterObj = normalizeObjectKeys(primaryFilterObj);
 
                 const [rawField, funcAlias] = key.split(':');
 
@@ -312,17 +319,6 @@ export class CrudHelperService {
         }
     }
 
-    // Normalize the primary operator object by removing the surrounding brackets in the keys e.g [$eq] => $eq
-    private normalizeObjectKeys(obj: any): any {
-        return Object.keys(obj).reduce((acc, key) => {
-            // Transform the key by removing surrounding brackets
-            const newKey = key.replace(/^\[(.*)\]$/, '$1');
-            // Assign the value to the transformed key in the accumulator object
-            acc[newKey] = obj[key];
-            return acc;
-        }, {});
-    }
-
     normalize(value: string | string[]): string[] {
         if (!value) return []; // if the value is nullish, then return an empty array
         return Array.isArray(value) ? value : [value];        // if the value is an array, return it as is, otherwise return it as an array
@@ -359,7 +355,7 @@ export class CrudHelperService {
         applySorting: boolean = true
     ): SelectQueryBuilder<any> { // TODO : Check how to pass a type to SelectQueryBuilder instead of any
         let { limit, offset, showSoftDeleted, filters } = basicFilterDto;
-        const { fields, sort, populate = [], populateMedia = [], locale, status } = basicFilterDto;
+        const { fields, sort, populate = [], populateMedia = [], locale } = basicFilterDto;
 
         // Normalize the fields, sort, groupBy and populate options i.e (since they can be either a string or an array of strings, when coming from the request)
         const normalizedFields = this.normalize(fields);
@@ -390,28 +386,14 @@ export class CrudHelperService {
             }
         }
 
-        let finalLocale = locale
         if (internationalisation) {
-            // If locale is not provided in the filter dto, then assume it is the default locale to be used. 
-            if (!finalLocale) {
-                //Get default locale from registry
-                const solidRegistry = moduleRef.get(SolidRegistry, { strict: false });
-                const defaultLocale = solidRegistry.getDefaultLocale();
-                if(defaultLocale){
-                    finalLocale = defaultLocale.locale;
-                }else{
-                    finalLocale = 'en';
-                }
-            }
+            // If locale is not provided in the filter dto, then assume it is the default locale to be used.
+            const finalLocale = locale || this.internationalisationHelperService.resolveDefaultLocaleName(moduleRef.get(SolidRegistry, { strict: false }));
             qb.andWhere(`${entityAlias}.localeName = :locale`, { locale: finalLocale });
         }
 
-        if (draftPublishWorkflow && status) {
-            if (basicFilterDto.status === 'published') {
-                qb.andWhere(`${entityAlias}.publishedAt IS NOT NULL`);
-            } else if (basicFilterDto.status === 'draft') {
-                qb.andWhere(`${entityAlias}.publishedAt IS NULL`);
-            }
+        if (draftPublishWorkflow) {
+            this.draftPublishHelperService.applyDraftPublishFilterDefaults(qb, filters, entityAlias);
         }
         // Depending upon the select option, apply the select clause
         if (normalizedFields && normalizedFields.length) {
