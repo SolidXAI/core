@@ -6141,7 +6141,7 @@
             "type": "int",
             "ormType": "integer",
             "isSystem": false,
-            "defaultValue": 1,
+            "defaultValue": "1",
             "min": null,
             "max": null,
             "required": true,
@@ -6162,7 +6162,7 @@
             "type": "int",
             "ormType": "integer",
             "isSystem": false,
-            "defaultValue": 0,
+            "defaultValue": "0",
             "min": null,
             "max": null,
             "required": false,
@@ -7367,7 +7367,7 @@
             "type": "boolean",
             "ormType": "boolean",
             "isSystem": false,
-            "defaultValue": false,
+            "defaultValue": "false",
             "required": false,
             "unique": false,
             "index": true,
@@ -7868,6 +7868,7 @@
         "ChatterMessageController.findMany",
         "ChatterMessageController.markCompleted",
         "ChatterMessageController.updateCustomNoteMessage",
+        "ChatterMessageController.getMentionableUsers",
         "ListOfValuesController.findMany",
         "ListOfValuesController.findOne",
         "SettingController.getAllSettings",
@@ -10433,7 +10434,8 @@
             "attrs": {
               "name": "user",
               "isSearchable": true,
-              "searchField": "user.fullName"
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           }
         ]
@@ -10517,7 +10519,8 @@
                           {
                             "type": "field",
                             "attrs": {
-                              "name": "user"
+                              "name": "user",
+                              "coModelFieldToDisplay": "fullName"
                             }
                           },
                           {
@@ -14855,7 +14858,8 @@
               "name": "user",
               "label": "User",
               "isSearchable": true,
-              "searchField": "user.fullName"
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           },
           {
@@ -17077,7 +17081,8 @@
               "name": "user",
               "label": "User",
               "isSearchable": true,
-              "searchField": "user.fullName"
+              "searchField": "user.fullName",
+              "coModelFieldToDisplay": "fullName"
             }
           }
         ]

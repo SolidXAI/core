@@ -5,7 +5,7 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { Brackets, EntityManager, EntityMetadata, In } from 'typeorm';
 
 import { classify } from '@angular-devkit/core/src/utils/strings';
-import { CHATTER_MESSAGE_STATUS, CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE } from 'src/constants/chatter-message.constants';
+import { CHATTER_MESSAGE_STATUS, CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE, CHATTER_MESSAGE_USER_FIELDS } from 'src/constants/chatter-message.constants';
 import { DANGEROUS_EXTENSIONS, getLowercaseFileExtension } from 'src/constants/media-file-types';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { PostChatterMessageDto } from 'src/dtos/post-chatter-message.dto';
@@ -19,9 +19,11 @@ import { FieldMetadataRepository } from 'src/repository/field-metadata.repositor
 import { MediaRepository } from 'src/repository/media.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
 import { CRUDService } from 'src/services/crud.service';
+import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { MediaStorageProviderType } from '../dtos/create-media-storage-provider-metadata.dto';
 import { ChatterMessageDetails } from '../entities/chatter-message-details.entity';
 import { ChatterMessage } from '../entities/chatter-message.entity';
+import { User } from '../entities/user.entity';
 import { getMediaStorageProvider } from './mediaStorageProviders';
 import { RequestContextService } from './request-context.service';
 import { Logger } from '@nestjs/common';
@@ -100,6 +102,44 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.user = resolvedUserId ? ({ id: resolvedUserId } as any) : null;
         chatterMessage.createdBy = resolvedUserId;
         chatterMessage.updatedBy = resolvedUserId;
+    }
+
+    /**
+     * Reduce a message's hydrated `user` relation to CHATTER_MESSAGE_USER_FIELDS.
+     *
+     * `getChatterMessages` restricts the columns in the query itself, which is preferable.
+     * The generic CRUD paths below build their query from find-options and hand `populate`
+     * straight to TypeORM, so they are trimmed after the fact instead. (`createdBy` /
+     * `updatedBy` need nothing here - CRUDService.handlePopulateUserIdFields already selects
+     * only USER_SUMMARY_FIELDS when a caller populates them.)
+     */
+    private trimMessageUser<M extends ChatterMessage>(message: M): M {
+        if (message?.user) {
+            message.user = this.toUserSummary(message.user) as User;
+        }
+        return message;
+    }
+
+    private trimMessageUsers(messages: ChatterMessage[] | undefined) {
+        messages?.forEach(message => this.trimMessageUser(message));
+    }
+
+    /**
+     * `GET /chatter-message?populate[]=user` would otherwise be a way around the column
+     * allowlist applied by getChatterMessages.
+     */
+    async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}): Promise<any> {
+        const result = await super.find(basicFilterDto, solidRequestContext);
+        this.trimMessageUsers(result?.records);
+        // A grouped find (populateGroup) nests its entities one level deeper.
+        for (const groupRecord of result?.groupRecords ?? []) {
+            this.trimMessageUsers(groupRecord?.groupData?.records);
+        }
+        return result;
+    }
+
+    async findOne(id: number, query: any = {}, solidRequestContext: any = {}) {
+        return this.trimMessageUser(await super.findOne(id, query, solidRequestContext));
     }
 
     private isEditableCustomNoteMessage(message: ChatterMessage): boolean {
@@ -207,6 +247,31 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         } catch (error: any) {
             this._logger.error(`Failed to publish chatter mention notification email job: ${error.message}`, error.stack);
         }
+    }
+
+    // Deliberately bypasses UserRepository's security-rule filtering: the mention picker
+    // needs id/username/fullName for any active user regardless of the caller's row-level
+    // access to the User model, same as the getChatterMessages one-to-many lookup below.
+    async getMentionableUsers(search?: string, limit: number = 8): Promise<Array<{ id: number; username: string; fullName: string }>> {
+        const normalizedLimit = Number.isInteger(limit) && limit > 0 && limit <= 50 ? limit : 8;
+        const userRepository = this.entityManager.getRepository(User);
+
+        const qb = userRepository
+            .createQueryBuilder('user')
+            .select(['user.id', 'user.username', 'user.fullName'])
+            .where('user.active = :active', { active: true });
+
+        const trimmedSearch = (search ?? '').trim();
+        if (trimmedSearch) {
+            qb.andWhere('(LOWER(user.username) LIKE :search OR LOWER(user.fullName) LIKE :search)', {
+                search: `%${trimmedSearch.toLowerCase()}%`,
+            });
+        }
+
+        qb.orderBy('user.username', 'ASC').take(normalizedLimit);
+
+        const users = await qb.getMany();
+        return users.map(user => ({ id: user.id, username: user.username, fullName: user.fullName }));
     }
 
     async markCompleted(id: number) {
@@ -331,7 +396,8 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         await this.publishChatterMentionNotifications(savedMessage, model);
 
-        return savedMessage;
+        // The `user` relation was loaded for the ownership check above; don't return all of it.
+        return this.trimMessageUser(savedMessage);
     }
 
     async postMessage(postDto: PostChatterMessageDto, files: Express.Multer.File[] = []) {
@@ -920,15 +986,24 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             qb.where(orConditions.join(' OR '), parameters);
         }));
 
-        const relations = ['chatterMessageDetails', 'user'];
+        const relations = ['chatterMessageDetails'];
         if (populate && populate.length > 0) {
             const normalizedPopulate = this.crudHelperService.normalize(populate);
-            relations.push(...normalizedPopulate.filter(rel => !relations.includes(rel)));
+            // SECURITY: 'user' is joined below with an explicit column allowlist. A client-supplied
+            // populate[]=user must not be able to turn it back into a full-entity join (the chatter
+            // panel does send exactly that).
+            relations.push(...normalizedPopulate.filter(rel => rel !== 'user' && !relations.includes(rel)));
         }
 
         relations.forEach(relation => {
             qb.leftJoinAndSelect(`entity.${relation}`, relation);
         });
+
+        // Only the author's id and display name leave this endpoint - see CHATTER_MESSAGE_USER_FIELDS.
+        // This join must stay before applyFilters below: it lets filters[user][fullName] reuse this
+        // alias instead of adding a second join of its own.
+        qb.leftJoin('entity.user', 'user');
+        qb.addSelect(CHATTER_MESSAGE_USER_FIELDS.map(field => `user.${field}`));
 
         if (filters) {
             qb.andWhere(new Brackets(whereQb => {
@@ -942,6 +1017,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         const [entities, count] = await qb.getManyAndCount();
         this.logHeapUsed('getChatterMessages-entitiesLoaded');
+
+        // The join above only selects the allowlisted columns, but TypeORM still hydrates the
+        // author with `new User()`, which leaves every initialiser-backed property (active,
+        // forcePasswordChange, ...) sitting on the instance holding its default rather than a
+        // value read from the database. Replace it with a plain object of exactly the
+        // allowlisted keys so the response cannot report fabricated defaults as data.
+        this.trimMessageUsers(entities);
 
         // Convert date strings in message details to ISO format for consistent handling on the frontend
         const DATE_FIELD_TYPES = ['date', 'datetime', 'time'];
