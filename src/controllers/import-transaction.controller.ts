@@ -7,6 +7,7 @@ import { UpdateImportTransactionDto } from '../dtos/update-import-transaction.dt
 import { Response } from 'express';
 import { ActiveUser } from 'src/decorators/active-user.decorator';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
+import { setFileDownloadHeaders } from 'src/helpers/file-download.helper';
 
 enum ShowSoftDeleted {
   INCLUSIVE = "inclusive",
@@ -27,9 +28,10 @@ export class ImportTransactionController {
     }
 
     // ✅ Set response headers for streaming
-    res.setHeader('Content-Disposition', `attachment; filename="${importTemplateFileInfo.fileName}"`);
-    res.setHeader('Content-Type', importTemplateFileInfo.mimeType);
-    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
+    setFileDownloadHeaders(res, {
+      fileName: importTemplateFileInfo.fileName,
+      mimeType: importTemplateFileInfo.mimeType,
+    });
     // Pipe the stream to the response as an excel file
     importTemplateFileInfo.stream.pipe(res);
   }
@@ -117,9 +119,7 @@ export class ImportTransactionController {
       throw new InternalServerErrorException("Failed records stream is null");
     }
     // ✅ Set response headers for streaming
-    res.setHeader('Content-Disposition', `attachment; filename="${fileName}"`);
-    res.setHeader('Content-Type', mimeType);
-    res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
+    setFileDownloadHeaders(res, { fileName, mimeType });
     // Pipe the strea to the response as an excel file
     stream.pipe(res);
   }

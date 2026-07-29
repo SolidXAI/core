@@ -58,10 +58,10 @@ import { ModulePackageService } from "./services/module-package.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { extname, join } from "path";
+import { basename, join } from "path";
 import { RefreshModelCommand } from "./commands/refresh-model.command";
 import { MediaController } from "./controllers/media.controller";
-import { INLINE_SAFE_EXTENSIONS } from "./constants/media-file-types";
+import { getLowercaseFileExtension, INLINE_SAFE_EXTENSIONS } from "./constants/media-file-types";
 
 import { RefreshModuleCommand } from "./commands/refresh-module.command";
 import { ModelMetadataSubscriber } from "./subscribers/model-metadata.subscriber";
@@ -538,7 +538,11 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
           // else (including svg, html, and any other uploaded file) is forced to download
           // rather than be displayed/executed by the browser, regardless of what mimetype or
           // extension it was uploaded with.
-          if (!INLINE_SAFE_EXTENSIONS.has(extname(path).toLowerCase().replace(/^\./, ''))) {
+          // basename first: getLowercaseFileExtension takes a file name, not a path, so a
+          // directory containing a dot must not be mistaken for the extension. An
+          // extensionless file yields undefined, which is not inline-safe - so it correctly
+          // falls through to the forced-download branch.
+          if (!INLINE_SAFE_EXTENSIONS.has(getLowercaseFileExtension(basename(path)) ?? '')) {
             res.setHeader("Content-Type", "application/octet-stream");
             res.setHeader("Content-Disposition", "attachment");
           }
