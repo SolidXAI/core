@@ -148,6 +148,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
             // 5. Save the entity
             // For media, we need to use a storage provider and save the media, then save the associated uri against the entity or media table
             this.draftPublishHelperService.applyCreateDefaults(model, createDto);
+            this.internationalisationHelperService.applyCreateDefaults(model, createDto, this.moduleRef.get(SolidRegistry, { strict: false }));
             const entity = this.repo.create(createDto);
             let savedEntity = await this.repo.save(entity) as unknown as T;
             savedEntity = await this.draftPublishHelperService.ensureInitialEntityVersionId(model, this.repo, savedEntity);
@@ -806,6 +807,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             module: true,
         });
 
+        const solidRegistry = this.moduleRef.get(SolidRegistry, { strict: false });
         const entitiesForSave: T[] = [];
         for (const createDto of createDtos) {
             // Validate and transform each createDto sequentially
@@ -818,6 +820,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                 }
                 transformedDto = await fieldManager.transformForCreate(createDto);
             }
+            this.internationalisationHelperService.applyCreateDefaults(model, transformedDto, solidRegistry);
             const entity = this.repo.create(transformedDto);
             entitiesForSave.push(entity as unknown as T);
         }

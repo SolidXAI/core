@@ -14,6 +14,12 @@ export class InternationalisationHelperService {
         return model?.internationalisation === true;
     }
 
+    /** Defaults `localeName` on a create DTO for internationalised models, so new records stay visible to the default-locale filter in `find()`. */
+    applyCreateDefaults(model: ModelMetadata, createDto: any, solidRegistry: SolidRegistry): void {
+        if (!this.isInternationalisationEnabled(model) || createDto.localeName) return;
+        createDto.localeName = this.resolveDefaultLocaleName(solidRegistry);
+    }
+
     async deleteChildLocaleEntities<T extends CommonEntity>(
         repo: SolidBaseRepository<T>,
         model: ModelMetadata,
