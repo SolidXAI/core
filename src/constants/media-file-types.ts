@@ -17,6 +17,15 @@ export const DANGEROUS_EXTENSIONS = new Set([
     'exe', 'sh', 'bat', 'cmd', 'ps1', 'jar', 'dll',
 ]);
 
+/**
+ * Mimetypes that are never safe to accept, regardless of extension. These render as active
+ * content in a browser (svg can carry <script>), so they are rejected even when the filename
+ * looks harmless. Kept alongside DANGEROUS_EXTENSIONS so upload paths check both.
+ */
+export const DANGEROUS_MIME_TYPES = new Set([
+    'image/svg+xml', 'text/html', 'application/xhtml+xml',
+]);
+
 export function getLowercaseFileExtension(fileName?: string | null): string | undefined {
     if (!fileName) {
         return undefined;
@@ -28,6 +37,33 @@ export function getLowercaseFileExtension(fileName?: string | null): string | un
     }
 
     return fileName.slice(lastDotIndex + 1).toLowerCase();
+}
+
+/** Minimal shape of an uploaded file, so this module stays free of framework imports. */
+export interface UploadedFileLike {
+    mimetype?: string;
+    originalname?: string;
+    filename?: string;
+}
+
+/** originalname is the client-supplied name; filename is multer's on-disk name. */
+export function getUploadedFileName(file?: UploadedFileLike | null): string {
+    return file?.originalname ?? file?.filename ?? '';
+}
+
+/**
+ * Single predicate for "must never be stored". Shared by every upload entry point
+ * (MediaFieldCrudManager, chatter attachments) so the rules can't drift between them.
+ * Extension is checked before mimetype so a spoofed Content-Type (e.g.
+ * application/octet-stream on an .html file) can't bypass it.
+ */
+export function isDangerousMediaFile(file?: UploadedFileLike | null): boolean {
+    const ext = getLowercaseFileExtension(getUploadedFileName(file));
+    if (ext && DANGEROUS_EXTENSIONS.has(ext)) {
+        return true;
+    }
+
+    return DANGEROUS_MIME_TYPES.has((file?.mimetype || '').toLowerCase().trim());
 }
 
 /**
