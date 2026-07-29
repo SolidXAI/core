@@ -30,6 +30,8 @@ export class WorkflowDefinitionValidatorService {
 
     const nodeIds = new Set<string>();
     this.validateNodes(definition.nodes, nodeIds);
+    this.validateNodes(definition.errors ?? [], nodeIds);
+    this.validateNodes(definition.finally ?? [], nodeIds);
     this.validateTriggers(definition);
   }
 
@@ -144,12 +146,12 @@ export class WorkflowDefinitionValidatorService {
     for (const unsupportedKey of ['children', 'branches', 'nodes']) {
       if (Object.prototype.hasOwnProperty.call(node, unsupportedKey)) {
         throw new BadRequestException(
-          `Workflow node "${node.id ?? 'unknown'}" uses unsupported child key "${unsupportedKey}". Use "tasks", "then", "else", "defaults", or "cases" instead.`,
+          `Workflow node "${node.id ?? 'unknown'}" uses unsupported child key "${unsupportedKey}". Use "tasks", "then", "else", "defaults", "errors", or "cases" instead.`,
         );
       }
     }
 
-    for (const childKey of ['tasks', 'then', 'else', 'defaults'] as const) {
+    for (const childKey of ['tasks', 'then', 'else', 'defaults', 'errors'] as const) {
       const childValue = node[childKey];
       if (
         childValue !== undefined &&
@@ -216,6 +218,7 @@ export class WorkflowDefinitionValidatorService {
     this.validateNodes(node.then ?? [], nodeIds);
     this.validateNodes(node.else ?? [], nodeIds);
     this.validateNodes(node.defaults ?? [], nodeIds);
+    this.validateNodes(node.errors ?? [], nodeIds);
     Object.values(node.cases ?? {}).forEach((caseNodes) => {
       this.validateNodes(caseNodes, nodeIds);
     });

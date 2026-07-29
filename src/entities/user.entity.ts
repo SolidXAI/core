@@ -5,6 +5,23 @@ import { UserViewMetadata } from 'src/entities/user-view-metadata.entity'
 import { UserApiKey } from 'src/entities/user-api-key.entity'
 import { Exclude, Expose } from "class-transformer";
 
+/**
+ * Serialization is locked down twice over, and both halves are load-bearing:
+ *
+ * - The class-level `@Exclude()` below makes User itself an allowlist: only `@Expose()`d
+ *   properties are serialized.
+ * - Every other property additionally carries its own `@Exclude()`. That looks redundant
+ *   here, and for `User` it is - but class-transformer resolves the *class-level* strategy
+ *   with a direct lookup on the exact constructor (MetadataStorage.getStrategy), so a
+ *   subclass inherits nothing and falls back to `exposeAll`. Since this entity is a
+ *   `@TableInheritance` root that consuming projects extend (see
+ *   IExtensionUserCreationProvider), an extension user that forgets its own `@Exclude()`
+ *   would otherwise serialize the password hash and every OAuth/verification token.
+ *   Property-level metadata *is* walked up the prototype chain, so the per-property
+ *   decorators are what actually protect subclasses.
+ *
+ * Keep both. Adding a new column? Give it `@Expose()` or `@Exclude()` - never neither.
+ */
 @Entity("ss_user")
 @TableInheritance({ column: { type: "varchar", name: "type", default: "User" } })
 @Exclude()
@@ -19,18 +36,18 @@ export class User extends CommonEntity {
     @Expose()
     username: string;
 
-    @Index()
+    @Index({ unique: true })
     @Column({ type: "varchar", nullable: true })
     @Expose()
     email: string;
 
-    @Index()
+    @Index({ unique: true })
     @Column({ type: "varchar", nullable: true })
     @Expose()
     mobile: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     password: string;
 
     @Column({ nullable: true, default: true })
@@ -38,67 +55,67 @@ export class User extends CommonEntity {
     forcePasswordChange: boolean = true;
 
     @Column({ type: "varchar", default: "local" })
-    // don't send to client
+    @Exclude()
     lastLoginProvider: string = "local";
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client (test)
+    @Exclude()
     accessCode: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     googleAccessToken: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     googleId: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     googleProfilePicture: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     facebookId: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     facebookAccessToken: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     facebookProfilePicture: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     appleId: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     appleAccessToken: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     microsoftId: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     microsoftAccessToken: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     microsoftProfilePicture: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     microsoftActiveDirectoryId: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     microsoftActiveDirectoryAccessToken: string;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     microsoftActiveDirectoryProfilePicture: string;
 
     @Index()
@@ -107,63 +124,63 @@ export class User extends CommonEntity {
     active: boolean = true;
 
     @Column({ nullable: true })
-    // don't send to client
+    @Exclude()
     forgotPasswordConfirmedAt: Date;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     verificationTokenOnForgotPassword: string;
 
     @Column({ nullable: true })
-    // don't send to client
+    @Exclude()
     verificationTokenOnForgotPasswordExpiresAt: Date;
 
     @Column({ nullable: true })
-    // don't send to client
+    @Exclude()
     emailVerifiedOnRegistrationAt: Date;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     emailVerificationTokenOnRegistration: string;
 
     @Column({ nullable: true })
-    // don't send to client
+    @Exclude()
     emailVerificationTokenOnRegistrationExpiresAt: Date;
 
     @Column({ nullable: true })
-    // don't send to client
+    @Exclude()
     mobileVerifiedOnRegistrationAt: Date;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     mobileVerificationTokenOnRegistration: string;
 
     @Column({ nullable: true })
-    // don't send to client
+    @Exclude()
     mobileVerificationTokenOnRegistrationExpiresAt: Date;
 
     @Column({ nullable: true })
-    // don't send to client
+    @Exclude()
     emailVerifiedOnLoginAt: Date;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     emailVerificationTokenOnLogin: string;
 
     @Column({ nullable: true })
-    // don't send to client
+    @Exclude()
     emailVerificationTokenOnLoginExpiresAt: Date;
 
     @Column({ nullable: true })
-    // don't send to client
+    @Exclude()
     mobileVerifiedOnLoginAt: Date;
 
     @Column({ type: "varchar", nullable: true })
-    // don't send to client
+    @Exclude()
     mobileVerificationTokenOnLogin: string;
 
     @Column({ nullable: true })
-    // don't send to client
+    @Exclude()
     mobileVerificationTokenOnLoginExpiresAt: Date;
 
     @Column({ type: "varchar", nullable: true })
@@ -176,18 +193,18 @@ export class User extends CommonEntity {
     roles: RoleMetadata[];
 
     @OneToMany(() => UserViewMetadata, userViewMetadata => userViewMetadata.user, { cascade: true })
-    // don't send to client
+    @Exclude()
     userViewMetadata: UserViewMetadata[];
 
-    // dont send to client
+    @Exclude()
     @Column({ type: "varchar", default: "bcrypt" })
     passwordScheme: string;
 
-    // dont send to client
+    @Exclude()
     @Column({ type: "int", default: 1 })
     passwordSchemeVersion: number;
 
-    // dont send to client
+    @Exclude()
     @Column({ nullable: true })
     rehashedAt: Date;
 

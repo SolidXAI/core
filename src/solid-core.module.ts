@@ -58,10 +58,10 @@ import { ModulePackageService } from "./services/module-package.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { extname, join } from "path";
+import { basename, join } from "path";
 import { RefreshModelCommand } from "./commands/refresh-model.command";
 import { MediaController } from "./controllers/media.controller";
-import { INLINE_SAFE_EXTENSIONS } from "./constants/media-file-types";
+import { getLowercaseFileExtension, INLINE_SAFE_EXTENSIONS } from "./constants/media-file-types";
 
 import { RefreshModuleCommand } from "./commands/refresh-module.command";
 import { ModelMetadataSubscriber } from "./subscribers/model-metadata.subscriber";
@@ -169,6 +169,7 @@ import { GoogleOauthStrategy } from "./passport-strategies/google-oauth.strategy
 import { ApiKeyService } from "./services/api-key.service";
 import { ActiveSessionStorageService } from "./services/active-session-storage.service";
 import { AuthenticationService } from "./services/authentication.service";
+import { MetadataValidationService } from "./services/metadata-validation.service";
 import { BcryptService } from "./services/bcrypt.service";
 import { UuidExternalIdEntityComputedFieldProvider } from "./services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service";
 import { UuidExternalIdComputedFieldProvider } from "./services/computed-fields/uuid-external-id-computed-field-provider.service";
@@ -443,10 +444,12 @@ import { WorkflowInvocationService } from './services/workflow/workflow-invocati
 import { WorkflowNodeRegistryService } from './services/workflow/workflow-node-registry.service';
 import { WorkflowRuntimeService } from './services/workflow/workflow-runtime.service';
 import { WorkflowScheduledTriggerJobService } from './services/workflow/workflow-scheduled-trigger.job';
+import { ExecutionFailNode } from './services/workflow/nodes/execution-fail.node';
 import { ForEachNode } from './services/workflow/nodes/for-each.node';
 import { HttpRequestNode } from './services/workflow/nodes/http-request.node';
 import { IfNode } from './services/workflow/nodes/if.node';
 import { LogWriteNode } from './services/workflow/nodes/log-write.node';
+import { LoopUntilNode } from './services/workflow/nodes/loop-until.node';
 import { ParallelNode } from './services/workflow/nodes/parallel.node';
 import { RuntimePythonNode } from './services/workflow/nodes/runtime-python.node';
 import { SequentialNode } from './services/workflow/nodes/sequential.node';
@@ -535,7 +538,11 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
           // else (including svg, html, and any other uploaded file) is forced to download
           // rather than be displayed/executed by the browser, regardless of what mimetype or
           // extension it was uploaded with.
-          if (!INLINE_SAFE_EXTENSIONS.has(extname(path).toLowerCase().replace(/^\./, ''))) {
+          // basename first: getLowercaseFileExtension takes a file name, not a path, so a
+          // directory containing a dot must not be mistaken for the extension. An
+          // extensionless file yields undefined, which is not inline-safe - so it correctly
+          // falls through to the forced-download branch.
+          if (!INLINE_SAFE_EXTENSIONS.has(getLowercaseFileExtension(basename(path)) ?? '')) {
             res.setHeader("Content-Type", "application/octet-stream");
             res.setHeader("Content-Disposition", "attachment");
           }
@@ -644,6 +651,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     ModuleMetadataExplorerService,
     ModuleMetadataHelperService,
     ModulePackageService,
+    MetadataValidationService,
     ModelMetadataService,
     ModelMetadataHelperService,
     FieldMetadataService,
@@ -951,10 +959,12 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowDefinitionValidatorService,
     WorkflowNodeRegistryService,
     WorkflowScheduledTriggerJobService,
+    ExecutionFailNode,
     LogWriteNode,
     HttpRequestNode,
     IfNode,
     ForEachNode,
+    LoopUntilNode,
     ParallelNode,
     RuntimePythonNode,
     SequentialNode,
@@ -1000,6 +1010,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     SmsFactory,
     MediaService,
     MediaStorageProviderMetadataService,
+    MetadataValidationService,
     ModelMetadataHelperService,
     ModelMetadataService,
     ModuleMetadataService,

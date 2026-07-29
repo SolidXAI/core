@@ -139,10 +139,15 @@ export class WorkflowExpressionService implements WorkflowExpressionResolver {
       node: context.node,
       item: context.item,
       index: context.index,
+      parent: context.parent,
+      parents: context.parents,
+      loops: context.loops,
+      error: context.error,
     };
 
     const parts = path
       .replace(/\[(?:'|")([^'"]+)(?:'|")\]/g, '.$1')
+      .replace(/\[(\d+)\]/g, '.$1')
       .split('.')
       .filter(Boolean);
 

@@ -7,6 +7,7 @@ import { SolidBaseRepository } from "../repository/solid-base.repository";
 import { SettingService } from "./setting.service";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { SUCCESS_MESSAGES } from "src/constants/success-messages";
+import { USER_SUMMARY_FIELDS } from "src/constants/user.constants";
 import { EntityManager, FindOptionsWhere, In, IsNull, Not, QueryFailedError, SelectQueryBuilder } from "typeorm";
 import { QueryDeepPartialEntity } from "typeorm/query-builder/QueryPartialEntity";
 import { BasicFilterDto } from "../dtos/basic-filters.dto";
@@ -615,6 +616,29 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
         return this.crudHelperService.pagedResponse(offset, limit, count, entities);
     }
 
+    /**
+     * Reduce a user to USER_SUMMARY_FIELDS as a plain object.
+     *
+     * Returning the hydrated entity is not good enough. A partially selected `User` is still
+     * built with `new User()`, so every property that has a TypeScript field initializer
+     * (`active`, `forcePasswordChange`, `lastLoginProvider`, `failedLoginAttempts`,
+     * `isAllowedToGenerateApiKeys`) is present on the instance holding its *default* rather
+     * than the value in the database - `active: true` for a user who may well be inactive.
+     * Serialization does not help: those defaults are real own properties. Copying the
+     * allowlist into a fresh object is what guarantees the response contains only columns
+     * actually read from the database.
+     */
+    protected toUserSummary(user: unknown): Partial<User> | null {
+        if (!user) {
+            return null;
+        }
+        const summary: Partial<User> = {};
+        for (const field of USER_SUMMARY_FIELDS) {
+            summary[field] = user[field] as never;
+        }
+        return summary;
+    }
+
     // entities is an array of T
     // T can contain createdBy and updatedBy fields
     // We need to populate the createdBy and updatedBy fields with the User entity
@@ -626,9 +650,15 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                 if (userId) {
                     const user = await userRepository.findOne({
                         where: { id: userId },
+                        // SECURITY: a populated createdBy/updatedBy is only ever displayed as
+                        // "who did this", so it must not ship the author's email, mobile, role
+                        // assignments or API keys - let alone the credential columns, which
+                        // survive here whenever User is subclassed (class-transformer resolves
+                        // @Exclude() per class and does not inherit it).
+                        select: USER_SUMMARY_FIELDS as unknown as (keyof User)[],
                     });
                     // @ts-ignore
-                    entity[userFieldPath] = user;
+                    entity[userFieldPath] = this.toUserSummary(user);
                 }
             }
         }

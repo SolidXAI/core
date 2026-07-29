@@ -17,11 +17,12 @@ import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
 import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
 import { Media } from 'src/entities/media.entity';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
+import { MediaFieldCrudManager, SolidMediaType } from 'src/helpers/field-crud-managers/MediaFieldCrudManager';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
 import { MediaRepository } from 'src/repository/media.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
-import { buildDiskMediaPath, buildStoredMediaFileName, getEffectiveS3Region, resolveMediaIsPublic, } from 'src/services/media-storage.utils';
+import { buildDiskMediaPath, getEffectiveS3Region, resolveMediaIsPublic, } from 'src/services/media-storage.utils';
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 
 @Injectable()
@@ -104,40 +105,25 @@ export class MediaService extends CRUDService<Media> {
       throw new NotFoundException('Media storage provider metadata not found');
     }
 
-    const savedMedias = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const storageProvider = createDto.mediaStorageProviderMetadata as MediaStorageProviderMetadata;
-      const fileName = buildStoredMediaFileName(file);
+    createDto['fieldMetadata'].mediaStorageProvider = createDto['mediaStorageProviderMetadata'];
 
-      switch (storageProvider.type) {
-        case MediaStorageProviderType.Filesystem:
-          const fileStoragePath = buildDiskMediaPath(fileName, this.settingService, storageProvider);
-          await this.diskFileService.copy(file.path, fileStoragePath);
-          createDto['relativeUri'] = fileName;
-          break;
-        case MediaStorageProviderType.AwsS3:
-          const bucketName = storageProvider.bucketName;
-          const region = getEffectiveS3Region(this.configService, storageProvider.region);
-
-          // Read file from disk and upload to S3
-          const fileData = await this.diskFileService.read(file.path);
-          await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { contentType: file.mimetype, region });
-
-          createDto['relativeUri'] = fileName;
-          break;
-        default:
-          break;
-      }
-      // Delete temp file from disk
-      await this.diskFileService.delete(file.path);
-
-      delete createDto['isPublic'];
-      const media = this.repo.create(createDto as Partial<Media>) as Media;
-      const savedMedia = await this.repo.save(media);
-      savedMedias.push(savedMedia)
+    const validator = new MediaFieldCrudManager({
+      type: createDto['fieldMetadata']?.type as SolidMediaType,
+      required: true,
+      fieldName: 'files',
+      mediaMaxSizeKb: createDto['fieldMetadata']?.mediaMaxSizeKb,
+      mediaTypes: createDto['fieldMetadata']?.mediaTypes || [],
+      isUpdate: false,
+    });
+    const validationErrors = validator.validate(createDto, files);
+    if (validationErrors.length > 0) {
+      throw new BadRequestException(validationErrors.map(error => error.error).join(', '));
     }
-    return savedMedias
+
+    const storageProviderType = createDto['mediaStorageProviderMetadata'].type as MediaStorageProviderType;
+    const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
+
+    return storageProvider.store(files, { id: Number(createDto['entityId']) }, createDto['fieldMetadata']);
   }
 
   async remove(id: number) {

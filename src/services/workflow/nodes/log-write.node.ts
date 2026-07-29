@@ -162,6 +162,7 @@ import {
         description: 'The resolved log level.',
         valueType: 'string',
         path: 'level',
+        includeInRuntimeContext: false,
       },
       {
         key: 'message',
@@ -169,6 +170,7 @@ import {
         description: 'The rendered log message.',
         valueType: 'string',
         path: 'message',
+        includeInRuntimeContext: false,
       },
     ],
     supportsExpressions: true,
