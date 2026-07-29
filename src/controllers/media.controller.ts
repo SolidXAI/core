@@ -102,6 +102,8 @@ export class MediaController {
     res.setHeader('Content-Type', mimeType);
     res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin');
     res.setHeader('Access-Control-Expose-Headers', 'Content-Disposition, Content-Type');
+    res.setHeader("X-Content-Type-Options", "nosniff");
+
     stream.pipe(res);
   }
 
