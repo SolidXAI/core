@@ -85,6 +85,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
     total: scenarios.length,
     startedAt: new Date(startedAt).toISOString(),
     scenarioIds: scenarios.map((s) => s.id),
+    scenarios: scenarios.map((s) => ({ id: s.id, name: s.name, type: s.type })),
   });
 
   try {

@@ -6,10 +6,11 @@ import type {
   ArtifactRef,
   LifecycleEnvelope,
   LifecycleEventType,
+  ScenarioDescriptor,
   ScenarioEndData,
   StepResultData,
 } from "./lifecycle-events.types";
-import type { OpStep, ScenarioSpec } from "../contracts/testing-metadata.types";
+import type { OpStep, ScenarioSpec, ScenarioType } from "../contracts/testing-metadata.types";
 import type { StepPhase } from "../contracts/runtime-context.types";
 
 /**
@@ -121,12 +122,14 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
     total: number;
     startedAt: string;
     scenarioIds: string[];
+    scenarios?: ScenarioDescriptor[];
   }): void {
     this.total = args.total;
     this.startedAtMs = Date.now();
     this.emit("run.start", {
       total: args.total,
       scenarioIds: args.scenarioIds,
+      scenarios: args.scenarios ?? args.scenarioIds.map((id) => ({ id, type: "api" as ScenarioType })),
       startedAt: args.startedAt,
     });
   }

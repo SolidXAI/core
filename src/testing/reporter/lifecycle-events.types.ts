@@ -39,9 +39,17 @@ export interface StepResultData {
   error?: string;
 }
 
+/** Minimal descriptor of a scenario in the run, so consumers can snapshot the full suite at run time. */
+export interface ScenarioDescriptor {
+  id: string;
+  name?: string;
+  type: ScenarioType;
+}
+
 export interface RunStartData {
   total: number;
   scenarioIds: string[];
+  scenarios: ScenarioDescriptor[];
   startedAt: string;
 }
 
