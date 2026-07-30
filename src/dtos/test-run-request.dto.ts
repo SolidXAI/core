@@ -34,8 +34,13 @@ export interface CaptureOptionsInput {
  * cannot travel inline and must be deployed on the worker.
  */
 export class TestRunRequestDto {
+  @IsOptional()
   @IsArray()
-  scenarios!: ScenarioSpec[];
+  scenarios?: ScenarioSpec[];
+
+  @IsOptional()
+  @IsString()
+  scenariosPath?: string;
 
   @IsOptional()
   @IsArray()

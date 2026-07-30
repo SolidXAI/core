@@ -9,6 +9,7 @@ import { QueuesModuleOptions } from "../../interfaces";
 import { DatabaseSubscriber } from 'src/services/queues/database-subscriber.service';
 import { PollerService } from 'src/services/poller.service';
 import { runFromMetadata } from '../../testing/runner/run-from-metadata';
+import { readScenariosFile } from '../../testing/runner/read-scenarios-file';
 import {
   LifecycleWebhookReporter,
   WebhookPostFn,
@@ -19,9 +20,11 @@ import { TestRunJobPayload } from '../../dtos/test-run-request.dto';
 
 /**
  * Executes a queued test run on the worker tier (QUEUES_SERVICE_ROLE=subscriber).
- * Runs the inline scenarios via {@link runFromMetadata} with a
- * {@link LifecycleWebhookReporter} that streams run.start → scenario.* → run.end to
- * the caller's webhookUrl. A failing TEST is NOT a failing JOB: failures are reported
+ * Resolves scenarios from `scenariosPath` (read from disk here, at execution time —
+ * the worker shares the filesystem with the caller) or from inline `scenarios`, then
+ * runs them via {@link runFromMetadata} with a {@link LifecycleWebhookReporter} that
+ * streams run.start → scenario.* → run.end to the caller's webhookUrl. A failing TEST
+ * is NOT a failing JOB: failures (including an unreadable scenario file) are reported
  * over the webhook (run.end ok:false) and the job still completes, so the queue does
  * not retry a deterministically-failing test run.
  */
@@ -72,11 +75,27 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
             artifactSink,
         });
 
+        let scenarios = p.scenarios;
+        let data = p.data;
+        if (p.scenariosPath) {
+            const read = readScenariosFile(p.scenariosPath);
+            if (!read.ok) {
+                const reason = `Scenario file unreadable: ${p.scenariosPath} (${read.error})`;
+                this.testRunLogger.warn(`Test run ${p.runId} — ${reason}`);
+                reporter.onRunStart({ total: 0, startedAt: new Date().toISOString(), scenarioIds: [] });
+                await reporter.flushPending(1, reason);
+                return { runId: p.runId, exitCode: 1 };
+            }
+            scenarios = read.scenarios;
+            data = read.data ?? data;
+            this.testRunLogger.debug(`Test run ${p.runId} loaded ${scenarios.length} scenario(s) from ${p.scenariosPath}`);
+        }
+
         let exitCode = 0;
         try {
             await runFromMetadata({
-                scenarios: p.scenarios,
-                data: p.data,
+                scenarios,
+                data,
                 includeTags: p.includeTags,
                 scenarioIds: p.scenarioIds,
                 skipScenarioIds: p.skipScenarioIds,
