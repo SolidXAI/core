@@ -32,11 +32,11 @@ export class WorkflowExecution extends CommonEntity {
     triggerType: string = "manual";
 
     @Index()
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     startedAt: Date;
 
     @Index()
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     finishedAt: Date;
 
     @Column({ type: "bigint", nullable: true })

@@ -25,9 +25,9 @@ export class WorkflowSecret extends CommonEntity {
     @Column({ type: "varchar", default: "active" })
     status: string = "active";
 
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     lastRotatedAt: Date;
 
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     lastAccessedAt: Date;
 }

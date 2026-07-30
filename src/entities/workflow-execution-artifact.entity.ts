@@ -61,7 +61,7 @@ export class WorkflowExecutionArtifact extends CommonEntity {
     checksum: string;
 
     @Index()
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true })
     producedAt: Date;
 
     @Column({ type: "simple-json", nullable: true })
