@@ -104,6 +104,15 @@ Or set the installation-wide default under **Settings → Testing Settings** in 
 (`uiTestDefaultTimeoutMs` / `uiTestNavigationTimeoutMs`). Those rows are created by `solid seed`;
 until then the built-in `30000` applies. Flags and env vars still win, so CI keeps per-run control.
 
+The seeded value of those two settings can be provisioned from the environment with
+`COMMON_UI_TEST_DEFAULT_TIMEOUT_MS` and `COMMON_UI_TEST_NAVIGATION_TIMEOUT_MS` (the latter falls
+back to the former). Seeding is insert-only, so these apply on first seed only — afterwards the
+stored value wins and the setting must be changed in the admin UI. Values that are missing,
+non-numeric, or not positive fall back to `30000`.
+
+Note these are distinct from the run-time `UI_TIMEOUT_MS` / `UI_NAVIGATION_TIMEOUT_MS` vars,
+which override the setting on a per-run basis and are read every run.
+
 Or bump only the one slow step, leaving the rest of the suite strict:
 ```json
 {

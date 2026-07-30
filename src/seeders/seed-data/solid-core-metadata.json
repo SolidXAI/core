@@ -11642,7 +11642,8 @@
             "type": "field",
             "attrs": {
               "name": "fileSize",
-              "sortable": true
+              "sortable": true,
+              "viewWidget": "MediaFileSizeListWidget"
             }
           }
         ]
@@ -11806,6 +11807,13 @@
                     "type": "field",
                     "attrs": {
                       "name": "fieldMetadata"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "fileSize",
+                      "viewWidget": "MediaFileSizeFormViewWidget"
                     }
                   }
                 ]
