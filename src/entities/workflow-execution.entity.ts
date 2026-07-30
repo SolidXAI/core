@@ -4,6 +4,7 @@ import { WorkflowDefinition } from './workflow-definition.entity'
 import { WorkflowStepExecution } from './workflow-step-execution.entity';
 import { WorkflowExecutionLog } from './workflow-execution-log.entity';
 import { WorkflowExecutionArtifact } from './workflow-execution-artifact.entity';
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_workflow_execution')
 export class WorkflowExecution extends CommonEntity {
@@ -32,11 +33,11 @@ export class WorkflowExecution extends CommonEntity {
     triggerType: string = "manual";
 
     @Index()
-    @Column({ nullable: true })
+    @Column({ nullable: true, ...getColumnType('datetime') })
     startedAt: Date;
 
     @Index()
-    @Column({ nullable: true })
+    @Column({ nullable: true, ...getColumnType('datetime') })
     finishedAt: Date;
 
     @Column({ type: "bigint", nullable: true })

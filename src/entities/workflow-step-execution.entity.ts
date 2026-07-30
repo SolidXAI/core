@@ -1,6 +1,7 @@
 import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, Column, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { WorkflowExecution } from './workflow-execution.entity'
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_workflow_step_execution')
 export class WorkflowStepExecution extends CommonEntity {
@@ -55,11 +56,11 @@ export class WorkflowStepExecution extends CommonEntity {
     sequenceNumber: number;
 
     @Index()
-    @Column({ nullable: true })
+    @Column({ nullable: true, ...getColumnType('datetime') })
     startedAt: Date;
 
     @Index()
-    @Column({ nullable: true })
+    @Column({ nullable: true, ...getColumnType('datetime') })
     finishedAt: Date;
 
     @Column({ type: "bigint", nullable: true })
