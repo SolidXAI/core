@@ -328,8 +328,12 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
     });
   }
 
-  /** Emit run.end and wait for all queued deliveries to complete. */
-  async flushPending(exitCode?: number): Promise<void> {
+  /**
+   * Emit run.end and wait for all queued deliveries to complete. `error` names a
+   * run-level failure reason (e.g. an unreadable scenario file) so a run that failed
+   * before any scenario ran carries a clear message rather than a bare count.
+   */
+  async flushPending(exitCode?: number, error?: string): Promise<void> {
     this.emit("run.end", {
       // A non-zero exitCode (e.g. the runner threw before any scenario ran) must
       // mark the run failed even when failed === 0.
@@ -339,6 +343,7 @@ export class LifecycleWebhookReporter extends ConsoleReporter {
       failed: this.failed,
       durationMs: Date.now() - this.startedAtMs,
       exitCode,
+      error,
       artifacts: this.runArtifacts.length ? [...this.runArtifacts] : undefined,
     });
     await this.chain;
