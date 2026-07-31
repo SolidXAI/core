@@ -93,11 +93,9 @@ export class PlaywrightAdapter {
   async start(): Promise<void> {
     const { chromium } = await import('playwright');
     this.browser = await chromium.launch({ headless: this.headless });
-    this.context = await this.browser.newContext();
-    this.context.setDefaultTimeout(this.defaultTimeoutMs);
-    this.context.setDefaultNavigationTimeout(this.navigationTimeoutMs);
     // Record a whole-run video only when this run enables it; it is still only KEPT when
-    // the run fails (see stop({ keepVideo }) / the runner).
+    // the run fails (see stop({ keepVideo }) / the runner). The temp dir has to exist
+    // before the context is created, since recordVideo is a context-creation option.
     if (this.recordVideo) {
       const os = await import('os');
       const path = await import('path');
@@ -107,6 +105,8 @@ export class PlaywrightAdapter {
     this.context = await this.browser.newContext(
       this.videoDir ? { recordVideo: { dir: this.videoDir } } : {},
     );
+    this.context.setDefaultTimeout(this.defaultTimeoutMs);
+    this.context.setDefaultNavigationTimeout(this.navigationTimeoutMs);
     this.page = await this.context.newPage();
     this.attachCaptureListeners(this.page);
   }
@@ -285,7 +285,12 @@ export class PlaywrightAdapter {
   resolveUrl(url: string): string {
     if (isAbsoluteUrl(url)) return url;
     if (this.baseUrl) {
-      return new URL(url, this.baseUrl).toString();
+      // Treat the configured base as a prefix and keep it whole, matching how
+      // the API adapter combines axios `baseURL` with a relative url. Resolving
+      // through `new URL()` follows RFC 3986 and discards any path on the base,
+      // so an application registered at https://host/myapp would send "/login"
+      // to https://host/login instead of https://host/myapp/login.
+      return `${this.baseUrl.replace(/\/+$/, "")}/${url.replace(/^\/+/, "")}`;
     }
     return url;
   }
