@@ -12591,7 +12591,7 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
+          "create": false,
           "edit": true,
           "delete": true,
           "import": true,
