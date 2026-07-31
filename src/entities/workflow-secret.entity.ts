@@ -1,5 +1,6 @@
 import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, Column, Index } from 'typeorm';
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_workflow_secret')
 export class WorkflowSecret extends CommonEntity {
@@ -25,9 +26,9 @@ export class WorkflowSecret extends CommonEntity {
     @Column({ type: "varchar", default: "active" })
     status: string = "active";
 
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true, ...getColumnType('datetime') })
     lastRotatedAt: Date;
 
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true, ...getColumnType('datetime') })
     lastAccessedAt: Date;
 }

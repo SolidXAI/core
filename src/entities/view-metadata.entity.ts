@@ -19,11 +19,11 @@ export class ViewMetadata extends CommonEntity {
     @Column({ name: "type", type: "varchar" })
     type: string;
 
-    //TODO: To make this truly cross db compatible, we should avoid setting a db type
+    // TODO: To make this truly cross db compatible, we should avoid setting a db type  
     @Column({ name: "context", type: "text" })
     context: any = "{}";
 
-    //TODO: To make this truly cross db compatible, we should avoid setting a db type
+    // TODO: To make this truly cross db compatible, we should avoid setting a db type
     @Column({ name: "layout", type: "text" })
     layout: any;
 

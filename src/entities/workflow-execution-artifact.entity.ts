@@ -2,6 +2,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, Column, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { WorkflowExecution } from './workflow-execution.entity';
 import { WorkflowStepExecution } from './workflow-step-execution.entity'
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_workflow_execution_artifact')
 export class WorkflowExecutionArtifact extends CommonEntity {
@@ -10,12 +11,12 @@ export class WorkflowExecutionArtifact extends CommonEntity {
     artifactKey: string;
 
     @Index()
-    @ManyToOne(() => WorkflowExecution, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => WorkflowExecution, { nullable: false })
     @JoinColumn()
     workflowExecution: WorkflowExecution;
 
     @Index()
-    @ManyToOne(() => WorkflowStepExecution, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => WorkflowStepExecution, { nullable: true })
     @JoinColumn()
     workflowStepExecution: WorkflowStepExecution;
 
@@ -61,7 +62,7 @@ export class WorkflowExecutionArtifact extends CommonEntity {
     checksum: string;
 
     @Index()
-    @Column({ type: "timestamp", nullable: true })
+    @Column({ nullable: true, ...getColumnType('datetime') })
     producedAt: Date;
 
     @Column({ type: "simple-json", nullable: true })

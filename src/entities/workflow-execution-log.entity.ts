@@ -2,6 +2,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, Column, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { WorkflowExecution } from './workflow-execution.entity';
 import { WorkflowStepExecution } from './workflow-step-execution.entity'
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_workflow_execution_log')
 export class WorkflowExecutionLog extends CommonEntity {
@@ -10,12 +11,12 @@ export class WorkflowExecutionLog extends CommonEntity {
     logKey: string;
 
     @Index()
-    @ManyToOne(() => WorkflowExecution, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => WorkflowExecution, { nullable: false })
     @JoinColumn()
     workflowExecution: WorkflowExecution;
 
     @Index()
-    @ManyToOne(() => WorkflowStepExecution, { onDelete: "CASCADE", nullable: true })
+    @ManyToOne(() => WorkflowStepExecution, { nullable: true })
     @JoinColumn()
     workflowStepExecution: WorkflowStepExecution;
 
@@ -47,7 +48,7 @@ export class WorkflowExecutionLog extends CommonEntity {
     sequenceNumber: number;
 
     @Index()
-    @Column({ type: "timestamp" })
+    @Column({ ...getColumnType('datetime') })
     occurredAt: Date;
 
     @Column({ type: "simple-json", nullable: true })

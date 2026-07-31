@@ -3,6 +3,7 @@ import { SubCommand, CommandRunner, Option } from 'nest-commander';
 import * as path from 'path';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { ConsoleReporter } from 'src/testing/reporter/console-reporter';
+import { ProgressReporter } from 'src/testing/reporter/progress-reporter';
 import { WebhookReporter } from 'src/testing/reporter/webhook-reporter';
 import { runFromMetadata } from 'src/testing/runner/run-from-metadata';
 import type { TestingMetadata } from 'src/testing/contracts/testing-metadata.types';
@@ -27,6 +28,7 @@ interface TestRunCommandOptions {
   listSpecs?: boolean;
   printApiLogs?: boolean;
   runName?: string;
+  progress?: boolean;
 }
 
 @SubCommand({
@@ -106,9 +108,12 @@ export class TestRunCommand extends CommandRunner {
 
       const webhookUrl = process.env.SOLIDCTL_WEBHOOK_URL;
       const runName = options?.runName ?? `run-${Date.now()}`;
-      const reporter = webhookUrl
+      const baseReporter = webhookUrl
         ? new WebhookReporter(webhookUrl, runName)
         : new ConsoleReporter();
+      const reporter = options?.progress === false
+        ? baseReporter
+        : new ProgressReporter(baseReporter);
 
       try {
         await runFromMetadata({
@@ -138,8 +143,8 @@ export class TestRunCommand extends CommandRunner {
         console.error('Run tests command failed');
         process.exitCode = 1;
       } finally {
-        if (reporter instanceof WebhookReporter) {
-          await reporter.flush(Number(process.exitCode ?? 0));
+        if (baseReporter instanceof WebhookReporter) {
+          await baseReporter.flush(Number(process.exitCode ?? 0));
         }
       }
       return;
@@ -288,6 +293,15 @@ export class TestRunCommand extends CommandRunner {
   })
   parseRunName(val: string): string {
     return val;
+  }
+
+  @Option({
+    flags: '--no-progress',
+    description: 'Disable the interactive test progress footer.',
+    required: false,
+  })
+  parseNoProgress(): boolean {
+    return false;
   }
 }
 

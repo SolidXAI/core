@@ -479,6 +479,7 @@ Common `test run` flags (all pass through solidctl unchanged):
 - `--ui-navigation-timeout-ms <number>` — default wait for `ui.goto`
 - `--timeout-ms <number>` / `--retries <number>` — scenario-level guard and retry count
 - `--scenario-ids <ids>` / `--include-tags <tags>` / `--skip-scenario-ids <ids>`
+- `--no-progress` — disable the interactive test progress footer
 
 ## Add A New Step (SOP)
 1. Create a new `*.step.ts` in the right domain folder.
