@@ -1,4 +1,5 @@
 import { FieldCrudManager, ValidationError } from "src/interfaces";
+import { EXT_TO_MEDIA_TYPE, getLowercaseFileExtension, getUploadedFileName, isDangerousMediaFile, MediaCategory } from "src/constants/media-file-types";
 
 export enum SolidMediaType {
     mediaSingle = 'mediaSingle',
@@ -14,7 +15,7 @@ export interface MediaFieldOptions {
     isUpdate: boolean | undefined | null;
 }
 
-type MediaType = 'image' | 'audio' | 'video' | 'file' | 'pdf';
+type MediaType = MediaCategory;
 
 const MIME_TO_MEDIA_TYPE: Record<string, MediaType> = {
     // Images
@@ -25,7 +26,6 @@ const MIME_TO_MEDIA_TYPE: Record<string, MediaType> = {
     'image/gif': 'image',
     'image/bmp': 'image',
     'image/tiff': 'image',
-    'image/svg+xml': 'image',
     'image/heic': 'image',
     'image/heif': 'image',
 
@@ -72,35 +72,22 @@ const MIME_TO_MEDIA_TYPE: Record<string, MediaType> = {
     'application/x-zip-compressed': 'file',
     'application/x-rar-compressed': 'file',
     'application/x-7z-compressed': 'file',
-
-    // Common binary fallback category
-    'application/octet-stream': 'file',
 };
-
-const EXT_TO_MEDIA_TYPE: Record<string, MediaType> = {
-    // Images
-    png: 'image', jpg: 'image', jpeg: 'image', webp: 'image', gif: 'image', bmp: 'image', tiff: 'image', svg: 'image', heic: 'image', heif: 'image',
-
-    // Audio
-    mp3: 'audio', wav: 'audio', ogg: 'audio', aac: 'audio', m4a: 'audio', flac: 'audio',
-
-    // Video
-    mp4: 'video', mov: 'video', avi: 'video', mkv: 'video', mpeg: 'video', mpg: 'video', '3gp': 'video', '3g2': 'video',
-
-    // Files
-    pdf: 'file', txt: 'file', md: 'file', csv: 'file', json: 'file',
-    doc: 'file', docx: 'file', xls: 'file', xlsx: 'file', ppt: 'file', pptx: 'file',
-    zip: 'file', rar: 'file', '7z': 'file',
-};
-
 
 export class MediaFieldCrudManager implements FieldCrudManager {
 
     constructor(private readonly options: MediaFieldOptions) {
     }
 
-    private resolveMediaType(mimetype?: string, filename?: string): MediaType | null {
-        const mt = (mimetype || '').toLowerCase().trim();
+    private resolveMediaType(file: Express.Multer.File): MediaType | null {
+        // Belt-and-braces: dangerous files are already rejected outright by
+        // validateDangerousFiles, but never let one resolve to a usable category.
+        if (isDangerousMediaFile(file)) {
+            return null;
+        }
+
+        const ext = getLowercaseFileExtension(getUploadedFileName(file));
+        const mt = (file.mimetype || '').toLowerCase().trim();
         if (mt && MIME_TO_MEDIA_TYPE[mt]) {
             return MIME_TO_MEDIA_TYPE[mt];
         }
@@ -110,8 +97,8 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         if (mt.startsWith('audio/')) return 'audio';
         if (mt.startsWith('video/')) return 'video';
 
-        // Fallback to extension if provided
-        const ext = (filename || '').split('.').pop()?.toLowerCase();
+        // Fallback to extension if provided (also covers generic/unrecognized
+        // mimetypes such as application/octet-stream).
         if (ext && EXT_TO_MEDIA_TYPE[ext]) {
             return EXT_TO_MEDIA_TYPE[ext];
         }
@@ -125,14 +112,29 @@ export class MediaFieldCrudManager implements FieldCrudManager {
     }
 
     private applyValidations(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
+        // Runs for every media field type and regardless of the admin-configured mediaTypes
+        // allowlist - a dangerous upload is never acceptable, so this must not sit behind
+        // the optional type checks below.
+        const errors = this.validateDangerousFiles(fieldFiles);
+
         switch (this.options.type) {
             case SolidMediaType.mediaSingle:
-                return this.validateMediaSingle(fieldFiles);
+                return [...errors, ...this.validateMediaSingle(fieldFiles)];
             case SolidMediaType.mediaMultiple:
-                return this.validateMediaMultiple(fieldFiles);
+                return [...errors, ...this.validateMediaMultiple(fieldFiles)];
             default:
-                return [];
+                return errors;
         }
+    }
+
+    private validateDangerousFiles(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
+        return fieldFiles
+            .filter(fieldFile => isDangerousMediaFile(fieldFile))
+            .map(fieldFile => ({
+                field: this.options.fieldName,
+                error: `${this.options.fieldName} file type not allowed. ` +
+                    `${getUploadedFileName(fieldFile) || 'File'} is a potentially dangerous file type.`
+            }));
     }
 
     private validateMediaSingle(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
@@ -169,7 +171,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
             for (let i = 0; i < fieldFiles.length; i++) {
                 const fieldFile = fieldFiles[i];
 
-                const resolvedType = this.resolveMediaType(fieldFile.mimetype, fieldFile.originalname ?? fieldFile.filename ?? '');
+                const resolvedType = this.resolveMediaType(fieldFile);
                 if (!resolvedType || !allowedFileTypes.includes(resolvedType)) {
                     errors.push({
                         field: this.options.fieldName,

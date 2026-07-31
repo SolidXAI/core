@@ -150,6 +150,10 @@ export class ConsoleReporter implements Reporter {
   private passedScenarios = 0;
   private failedScenarios = 0;
 
+  onRunStart(_args: { total: number }): void {
+    // Progress-aware reporters use this hook; the plain console reporter has no setup.
+  }
+
   onScenarioStart(scenario: { id: string; name?: string }): void {
     const label = scenario.name ? `${scenario.id} (${scenario.name})` : scenario.id;
     console.log(`\n▶ Scenario: ${label}`);

@@ -28,7 +28,7 @@ export function registerManualSteps(registry: StepRegistry): void {
     const inputConfig = (step.with ?? {}) as WaitForManualInput;
     const message = inputConfig.message?.trim() || "Manual interaction required.";
     const prompt = inputConfig.prompt?.trim() || "Press Enter to continue...";
-    const timeoutMs = inputConfig.timeoutMs;
+    const timeoutMs = ctx.ui?.resolveTimeout(inputConfig.timeoutMs);
     const bringToFront = inputConfig.bringToFront ?? true;
 
     if (ctx.ui?.isHeadless()) {

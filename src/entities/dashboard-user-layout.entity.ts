@@ -6,12 +6,12 @@ import { ModuleMetadata } from 'src/entities/module-metadata.entity'
 @Entity('ss_dashboard_user_layout')
 export class DashboardUserLayout extends CommonEntity {
     @Index()
-    @ManyToOne(() => User, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => User, { nullable: false })
     @JoinColumn()
     user: User;
 
     @Index()
-    @ManyToOne(() => ModuleMetadata, { onDelete: "CASCADE", nullable: false })
+    @ManyToOne(() => ModuleMetadata, { nullable: false })
     @JoinColumn()
     module: ModuleMetadata;
 

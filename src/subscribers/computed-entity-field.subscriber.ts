@@ -1,7 +1,6 @@
 import { camelCase } from 'lodash';
 import { forwardRef, Inject, Injectable, InternalServerErrorException, Logger, Scope } from "@nestjs/common";
 import { ComputedFieldTriggerOperation } from "src/dtos/create-field-metadata.dto";
-import { isEmbeddedDb } from "src/helpers/environment.helper";
 import { ComputedFieldMetadata, SolidRegistry, TypeOrmEventContext } from "src/helpers/solid-registry";
 import { IEntityPreComputeFieldProvider } from "src/interfaces";
 import { PublisherFactory } from "src/services/queues/publisher-factory.service";
@@ -16,13 +15,6 @@ export interface ComputedFieldEvaluationPayload extends ComputedFieldMetadata {
 export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface {
     private readonly logger = new Logger(this.constructor.name);
     private dataSource: DataSource;
-
-    // Per-transaction buffer for post-event evaluation jobs. Entries are
-    // flushed in afterTransactionCommit so the publish (which uses the
-    // default DataSource) never races the in-flight transaction's connection.
-    // On PGlite (pool size 1), the flush is deferred via setImmediate to
-    // ensure the transaction's connection has been released first.
-    private perTxn = new WeakMap<any, { computedField: ComputedFieldMetadata<any>; databaseEntity: any }[]>();
 
     constructor(
         private readonly solidRegistry: SolidRegistry,
@@ -68,18 +60,8 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
 
     //FIXME: Need to add support for beforeRemove, beforeSoftRemove, afterSoftRemove, beforeRecover, afterRecover
 
-    // --------- post-event dispatch (pglite vs non-pglite) ----------
-
-    /**
-     * On embedded PGlite (pool size 1): buffer payloads on the queryRunner and
-     * flush in afterTransactionCommit (deferred via setImmediate) so the publish
-     * never tries to get a second connection while the transaction is active.
-     *
-     * On regular Postgres: fire-and-forget publish immediately (original behaviour),
-     * since the pool has spare connections.
-     */
     private handlePostEventJobs(
-        event: InsertEvent<any> | UpdateEvent<any> | RemoveEvent<any>,
+        _event: InsertEvent<any> | UpdateEvent<any> | RemoveEvent<any>,
         entity: any,
         currentOperation: ComputedFieldTriggerOperation,
         modelName: string,
@@ -94,44 +76,11 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         );
         if (computedFieldsTobeEvaluated.length === 0) return;
 
-        if (isEmbeddedDb()) {
-            const qr = event.queryRunner;
-            const arr = this.perTxn.get(qr) ?? [];
-            for (const computedField of computedFieldsTobeEvaluated) {
-                arr.push({
-                    computedField: this.attachContext(computedField, eventContext),
-                    databaseEntity: entity,
-                });
-            }
-            this.perTxn.set(qr, arr);
-        } else {
-            for (const computedField of computedFieldsTobeEvaluated) {
-                this.enqueueComputedFieldEvaluationJob(
-                    this.attachContext(computedField, eventContext),
-                    entity,
-                );
-            }
-        }
-    }
-
-    // --------- transaction lifecycle (pglite only) ----------
-    async afterTransactionCommit(event: { queryRunner: any }) {
-        const batch = this.perTxn.get(event.queryRunner) ?? [];
-        this.perTxn.delete(event.queryRunner);
-        if (batch.length === 0) return;
-
-        // Deferred via setImmediate so the transaction's connection is released
-        // back to the (size-1) pool before the publish tries to acquire it.
-        setImmediate(() => void this.flushBatch(batch));
-    }
-
-    afterTransactionRollback(event: { queryRunner: any }) {
-        this.perTxn.delete(event.queryRunner);
-    }
-
-    private async flushBatch(batch: { computedField: ComputedFieldMetadata<any>; databaseEntity: any }[]) {
-        for (const { computedField, databaseEntity } of batch) {
-            this.enqueueComputedFieldEvaluationJob(computedField, databaseEntity);
+        for (const computedField of computedFieldsTobeEvaluated) {
+            this.enqueueComputedFieldEvaluationJob(
+                this.attachContext(computedField, eventContext),
+                entity,
+            );
         }
     }
 
@@ -199,10 +148,8 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
     }
 
     private enqueueComputedFieldEvaluationJob(computedField: ComputedFieldMetadata<any>, databaseEntity: any) {
-        const { manager: _manager, ...serializableEventContext } = computedField.eventContext ?? {};
         const payload = {
             ...computedField,
-            eventContext: serializableEventContext,
             databaseEntity,
         };
         this.publisherFactory.publish({ payload }, 'ComputedFieldEvaluationPublisher');
@@ -224,10 +171,6 @@ export class ComputedEntityFieldSubscriber implements EntitySubscriberInterface 
         const base: TypeOrmEventContext = {
             metadataName: event.metadata?.name,
             eventType: eventType,
-            // Only pass the transaction's EntityManager for embedded DB (PGlite),
-            // where a second pooled connection mid-transaction would deadlock.
-            // On regular Postgres, providers use their injected EntityManager.
-            ...(isEmbeddedDb() ? { manager: event.manager } : {}),
         };
         if ("entityId" in event && event.entityId) {
             base.entityId = event.entityId;

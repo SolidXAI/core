@@ -20,12 +20,12 @@ enum ShowSoftDeleted {
 export class ChatterMessageController {
   constructor(private readonly service: ChatterMessageService) {}
 
-  @ApiBearerAuth("jwt")
-  @Post()
-  @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateChatterMessageDto, @UploadedFiles() files: Array<Express.Multer.File>) {
-    return this.service.create(createDto, files);
-  }
+  // @ApiBearerAuth("jwt")
+  // @Post()
+  // @UseInterceptors(AnyFilesInterceptor())
+  // create(@Body() createDto: CreateChatterMessageDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  //   return this.service.create(createDto, files);
+  // }
 
   // @ApiBearerAuth("jwt")
   // @Post('/bulk')
@@ -61,7 +61,7 @@ export class ChatterMessageController {
   //   return this.service.recover(id);
   // }
 
-  @Public()
+  @ApiBearerAuth("jwt")
   @Get('/getChatterMessages/:entityId/:entityName')
   @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
   @ApiQuery({ name: 'limit', required: false, type: Number })
@@ -93,6 +93,14 @@ export class ChatterMessageController {
   @Get()
   async findMany(@Query() query: any) { 
     return this.service.find(query);  
+  }
+
+  @ApiBearerAuth("jwt")
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @Get('mentionable-users')
+  async getMentionableUsers(@Query() query: any) {
+    return this.service.getMentionableUsers(query?.search, query?.limit ? +query.limit : undefined);
   }
 
   @ApiBearerAuth("jwt")

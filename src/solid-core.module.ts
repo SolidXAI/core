@@ -38,6 +38,8 @@ import { MqDashboardQueueNameVariableOptionsProvider } from "./services/selectio
 import { PseudoForeignKeySelectionProvider } from "./services/selection-providers/pseudo-foreign-key-selection-provider.service";
 import { ModuleMetadataSeederService } from "./seeders/module-metadata-seeder.service";
 import { ModuleTestDataService } from "./seeders/module-test-data.service";
+import { DraftPublishHelperService } from "./services/draft-publish-helper.service";
+import { InternationalisationHelperService } from "./services/internationalisation-helper.service";
 import { CrudHelperService } from "./services/crud-helper.service";
 import { DatasourceManagementService } from "./services/datasource-management.service";
 import { DatasourceIntrospectionService } from "./services/datasource-introspection.service";
@@ -47,6 +49,7 @@ import { ListOfValuesService } from "./services/list-of-values.service";
 // import { MediaStorageProviderMetadataSeederService } from './services/media-storage-provider-metadata-seeder.service';
 import { MediaStorageProviderMetadataService } from "./services/media-storage-provider-metadata.service";
 import { MediaService } from "./services/media.service";
+import { MediaDownloadUrlService } from "./services/media-download-url.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
 import { RemovedFieldMigrationService } from "./services/removed-field-migration.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
@@ -55,9 +58,10 @@ import { ModulePackageService } from "./services/module-package.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { join } from "path";
+import { basename, join } from "path";
 import { RefreshModelCommand } from "./commands/refresh-model.command";
 import { MediaController } from "./controllers/media.controller";
+import { getLowercaseFileExtension, INLINE_SAFE_EXTENSIONS } from "./constants/media-file-types";
 
 import { RefreshModuleCommand } from "./commands/refresh-module.command";
 import { ModelMetadataSubscriber } from "./subscribers/model-metadata.subscriber";
@@ -106,6 +110,7 @@ import { MqMessage } from "./entities/mq-message.entity";
 import { SmsTemplate } from "./entities/sms-template.entity";
 import { AccessTokenGuard } from "./guards/access-token.guard";
 import { ApiKeyGuard } from "./guards/api-key.guard";
+import { MediaSignedUrlGuard } from "./guards/media-signed-url.guard";
 import { AuthenticationGuard } from "./guards/authentication.guard";
 import { PermissionsGuard } from "./guards/permissions.guard";
 import { SolidRegistry } from "./helpers/solid-registry";
@@ -130,14 +135,23 @@ import { ChatterQueuePublisherRabbitmq } from "./jobs/rabbitmq/chatter-queue-pub
 import { ChatterQueueSubscriberRabbitmq } from "./jobs/rabbitmq/chatter-queue-subscriber.service";
 import { ChatterQueuePublisherDatabase } from "./jobs/database/chatter-queue-publisher-database.service";
 import { ChatterQueueSubscriberDatabase } from "./jobs/database/chatter-queue-subscriber-database.service";
+import { ChatterMentionNotificationEmailQueueHandler } from "./jobs/chatter-mention-notification-email-queue-handler.service";
+import { ChatterMentionNotificationEmailQueuePublisherDatabase } from "./jobs/database/chatter-mention-notification-email-publisher-database.service";
+import { ChatterMentionNotificationEmailQueueSubscriberDatabase } from "./jobs/database/chatter-mention-notification-email-subscriber-database.service";
+import { ChatterMentionNotificationEmailQueuePublisherRabbitmq } from "./jobs/rabbitmq/chatter-mention-notification-email-publisher.service";
+import { ChatterMentionNotificationEmailQueueSubscriberRabbitmq } from "./jobs/rabbitmq/chatter-mention-notification-email-subscriber.service";
 import { ApiEmailQueuePublisherRedis } from "./jobs/redis/api-email-publisher-redis.service";
 import { ApiEmailQueueSubscriberRedis } from "./jobs/redis/api-email-subscriber-redis.service";
 import { ChatterQueuePublisherRedis } from "./jobs/redis/chatter-queue-publisher-redis.service";
 import { ChatterQueueSubscriberRedis } from "./jobs/redis/chatter-queue-subscriber-redis.service";
+import { ChatterMentionNotificationEmailQueuePublisherRedis } from "./jobs/redis/chatter-mention-notification-email-publisher-redis.service";
+import { ChatterMentionNotificationEmailQueueSubscriberRedis } from "./jobs/redis/chatter-mention-notification-email-subscriber-redis.service";
 import { ComputedFieldEvaluationPublisherRedis } from "./jobs/redis/computed-field-evaluation-publisher-redis.service";
 import { ComputedFieldEvaluationSubscriberRedis } from "./jobs/redis/computed-field-evaluation-subscriber-redis.service";
 import { GenerateCodePublisherRedis } from "./jobs/redis/generate-code-publisher-redis.service";
 import { GenerateCodeSubscriberRedis } from "./jobs/redis/generate-code-subscriber-redis.service";
+import { WorkflowExecutionPublisherRedis } from "./jobs/redis/workflow-execution-publisher-redis.service";
+import { WorkflowExecutionSubscriberRedis } from "./jobs/redis/workflow-execution-subscriber-redis.service";
 import { Msg91OTPQueuePublisherRedis } from "./jobs/redis/msg91-otp-publisher-redis.service";
 import { Msg91OTPQueueSubscriberRedis } from "./jobs/redis/msg91-otp-subscriber-redis.service";
 import { Msg91SmsQueuePublisherRedis } from "./jobs/redis/msg91-sms-publisher-redis.service";
@@ -153,7 +167,9 @@ import { TwilioSmsQueueSubscriberRedis } from "./jobs/redis/twilio-sms-subscribe
 import { UserRegistrationListener } from "./listeners/user-registration.listener";
 import { GoogleOauthStrategy } from "./passport-strategies/google-oauth.strategy";
 import { ApiKeyService } from "./services/api-key.service";
+import { ActiveSessionStorageService } from "./services/active-session-storage.service";
 import { AuthenticationService } from "./services/authentication.service";
+import { MetadataValidationService } from "./services/metadata-validation.service";
 import { BcryptService } from "./services/bcrypt.service";
 import { UuidExternalIdEntityComputedFieldProvider } from "./services/computed-fields/entity/uuid-externalid-entity-computed-field-provider.service";
 import { UuidExternalIdComputedFieldProvider } from "./services/computed-fields/uuid-external-id-computed-field-provider.service";
@@ -241,6 +257,8 @@ import { ComputedFieldEvaluationPublisherDatabase } from './jobs/database/comput
 import { ComputedFieldEvaluationSubscriberDatabase } from './jobs/database/computed-field-evaluation-subscriber-database.service';
 import { GenerateCodePublisherDatabase } from './jobs/database/generate-code-publisher-database.service';
 import { GenerateCodeSubscriberDatabase } from './jobs/database/generate-code-subscriber-database.service';
+import { WorkflowExecutionPublisherDatabase } from './jobs/database/workflow-execution-publisher-database.service';
+import { WorkflowExecutionSubscriberDatabase } from './jobs/database/workflow-execution-subscriber-database.service';
 import { OTPQueuePublisherDatabase } from './jobs/database/otp-publisher-database.service';
 import { OTPQueueSubscriberDatabase } from './jobs/database/otp-subscriber-database.service';
 import { Msg91SmsQueuePublisherDatabase } from './jobs/database/msg91-sms-publisher-database.service';
@@ -263,6 +281,8 @@ import { Three60WhatsappQueuePublisherDatabase } from "./jobs/database/three60-w
 import { Three60WhatsappQueueSubscriberDatabase } from "./jobs/database/three60-whatsapp-subscriber-database.service";
 import { GenerateCodePublisherRabbitmq } from "./jobs/rabbitmq/generate-code-publisher.service";
 import { GenerateCodeSubscriberRabbitmq } from "./jobs/rabbitmq/generate-code-subscriber.service";
+import { WorkflowExecutionPublisherRabbitmq } from "./jobs/rabbitmq/workflow-execution-publisher.service";
+import { WorkflowExecutionSubscriberRabbitmq } from "./jobs/rabbitmq/workflow-execution-subscriber.service";
 import { Three60WhatsappQueuePublisher } from "./jobs/rabbitmq/three60-whatsapp-publisher.service";
 import { Three60WhatsappQueueSubscriber } from "./jobs/rabbitmq/three60-whatsapp-subscriber.service";
 import { TwilioSmsQueuePublisherRabbitmq } from "./jobs/rabbitmq/twilio-sms-publisher.service";
@@ -388,6 +408,63 @@ import { DashboardUserLayoutRepository } from './repositories/dashboard-user-lay
 import { MssqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mssql-datasource-introspection-provider.service";
 import { MysqlDatasourceIntrospectionProviderService } from "./services/datasource-introspection/mysql-datasource-introspection-provider.service";
 import { PostgresDatasourceIntrospectionProviderService } from "./services/datasource-introspection/postgres-datasource-introspection-provider.service";
+import { WorkflowDefinition } from './entities/workflow-definition.entity';
+import { WorkflowExecution } from './entities/workflow-execution.entity';
+import { WorkflowStepExecution } from './entities/workflow-step-execution.entity';
+import { WorkflowExecutionLog } from './entities/workflow-execution-log.entity';
+import { WorkflowExecutionArtifact } from './entities/workflow-execution-artifact.entity';
+import { WorkflowTriggerExecution } from './entities/workflow-trigger-execution.entity';
+import { WorkflowSecret } from './entities/workflow-secret.entity';
+import { WorkflowDefinitionController } from './controllers/workflow-definition.controller';
+import { WorkflowExecutionController } from './controllers/workflow-execution.controller';
+import { WorkflowStepExecutionController } from './controllers/workflow-step-execution.controller';
+import { WorkflowExecutionLogController } from './controllers/workflow-execution-log.controller';
+import { WorkflowExecutionArtifactController } from './controllers/workflow-execution-artifact.controller';
+import { WorkflowTriggerExecutionController } from './controllers/workflow-trigger-execution.controller';
+import { WorkflowSecretController } from './controllers/workflow-secret.controller';
+import { WorkflowDefinitionService } from './services/workflow-definition.service';
+import { WorkflowDefinitionMetadataSyncService } from './services/workflow/workflow-definition-metadata-sync.service';
+import { WorkflowExecutionService } from './services/workflow-execution.service';
+import { WorkflowStepExecutionService } from './services/workflow-step-execution.service';
+import { WorkflowExecutionLogService } from './services/workflow-execution-log.service';
+import { WorkflowExecutionArtifactService } from './services/workflow-execution-artifact.service';
+import { WorkflowTriggerExecutionService } from './services/workflow-trigger-execution.service';
+import { WorkflowSecretService } from './services/workflow-secret.service';
+import { WorkflowDefinitionRepository } from './repository/workflow-definition.repository';
+import { WorkflowExecutionRepository } from './repository/workflow-execution.repository';
+import { WorkflowStepExecutionRepository } from './repository/workflow-step-execution.repository';
+import { WorkflowExecutionLogRepository } from './repository/workflow-execution-log.repository';
+import { WorkflowExecutionArtifactRepository } from './repository/workflow-execution-artifact.repository';
+import { WorkflowTriggerExecutionRepository } from './repository/workflow-trigger-execution.repository';
+import { WorkflowSecretRepository } from './repository/workflow-secret.repository';
+import { WorkflowDefinitionValidatorService } from './services/workflow/workflow-definition-validator.service';
+import { WorkflowExecutionWriterService } from './services/workflow/workflow-execution-writer.service';
+import { WorkflowExpressionService } from './services/workflow/workflow-expression.service';
+import { WorkflowInvocationService } from './services/workflow/workflow-invocation.service';
+import { WorkflowNodeRegistryService } from './services/workflow/workflow-node-registry.service';
+import { WorkflowRuntimeService } from './services/workflow/workflow-runtime.service';
+import { WorkflowScheduledTriggerJobService } from './services/workflow/workflow-scheduled-trigger.job';
+import { ExecutionFailNode } from './services/workflow/nodes/execution-fail.node';
+import { ForEachNode } from './services/workflow/nodes/for-each.node';
+import { HttpRequestNode } from './services/workflow/nodes/http-request.node';
+import { IfNode } from './services/workflow/nodes/if.node';
+import { LogWriteNode } from './services/workflow/nodes/log-write.node';
+import { LoopUntilNode } from './services/workflow/nodes/loop-until.node';
+import { ParallelNode } from './services/workflow/nodes/parallel.node';
+import { RuntimePythonNode } from './services/workflow/nodes/runtime-python.node';
+import { SequentialNode } from './services/workflow/nodes/sequential.node';
+import {
+  SolidXCreateNode,
+  SolidXDeleteNode,
+  SolidXGetNode,
+  SolidXListNode,
+  SolidXPatchNode,
+  SolidXUpdateNode,
+} from './services/workflow/nodes/solidx-crud.nodes';
+import { SolidXLoginNode } from './services/workflow/nodes/solidx-login.node';
+import { SolidXSendEmailNode } from './services/workflow/nodes/solidx-send-email.node';
+import { SolidXSendSmsNode } from './services/workflow/nodes/solidx-send-sms.node';
+import { SwitchNode } from './services/workflow/nodes/switch.node';
 
 @Global()
 @Module({
@@ -428,6 +505,13 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
       UserViewMetadata,
       ViewMetadata,
       ModelSequence,
+      WorkflowDefinition,
+      WorkflowExecution,
+      WorkflowStepExecution,
+      WorkflowExecutionLog,
+      WorkflowExecutionArtifact,
+      WorkflowTriggerExecution,
+      WorkflowSecret,
     ]),
 
     CacheModule.registerAsync(CacheManagerOptions),
@@ -436,7 +520,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
       rootPath: join(process.cwd(), "media-files-storage"),
       serveRoot: "/media-files-storage",
       serveStaticOptions: {
-        setHeaders: (res /*, path, stat*/) => {
+        setHeaders: (res, path) => {
           // Allow use of these files from a different origin (e.g., :3000 UI)
           // Use 'same-site' if both origins are on the same site (localhost:* counts as same-site)
           res.setHeader("Cross-Origin-Resource-Policy", "cross-origin"); // or 'same-site'
@@ -444,6 +528,24 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
           // If you need to load into <canvas> without tainting or fetch images via XHR,
           // you can also expose CORS here (not needed for simple <img>):
           // res.setHeader('Access-Control-Allow-Origin', 'http://localhost:3000');
+
+          // Prevent the browser from ever content-sniffing a served file into something
+          // more dangerous than its declared Content-Type (e.g. rendering a mislabeled
+          // upload as HTML and executing embedded script).
+          res.setHeader("X-Content-Type-Options", "nosniff");
+
+          // Only a small allowlist of media types is ever safe to render inline. Everything
+          // else (including svg, html, and any other uploaded file) is forced to download
+          // rather than be displayed/executed by the browser, regardless of what mimetype or
+          // extension it was uploaded with.
+          // basename first: getLowercaseFileExtension takes a file name, not a path, so a
+          // directory containing a dot must not be mistaken for the extension. An
+          // extensionless file yields undefined, which is not inline-safe - so it correctly
+          // falls through to the forced-download branch.
+          if (!INLINE_SAFE_EXTENSIONS.has(getLowercaseFileExtension(basename(path)) ?? '')) {
+            res.setHeader("Content-Type", "application/octet-stream");
+            res.setHeader("Content-Disposition", "attachment");
+          }
         },
       },
     }),
@@ -514,6 +616,13 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ViewMetadataController,
     ModelSequenceController,
     DashboardUserLayoutController,
+    WorkflowDefinitionController,
+    WorkflowExecutionController,
+    WorkflowStepExecutionController,
+    WorkflowExecutionLogController,
+    WorkflowExecutionArtifactController,
+    WorkflowTriggerExecutionController,
+    WorkflowSecretController,
   ],
   providers: [
     {
@@ -542,6 +651,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ModuleMetadataExplorerService,
     ModuleMetadataHelperService,
     ModulePackageService,
+    MetadataValidationService,
     ModelMetadataService,
     ModelMetadataHelperService,
     FieldMetadataService,
@@ -554,6 +664,8 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     InfoService,
     SolidIntrospectService,
     DiscoveryService,
+    DraftPublishHelperService,
+    InternationalisationHelperService,
     CrudHelperService,
     CRUDService,
     Reflector,
@@ -562,6 +674,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     SchematicService,
     MediaStorageProviderMetadataService,
     MediaService,
+    MediaDownloadUrlService,
     // MediaStorageProviderMetadataSeederService,
     ModuleMetadataSeederService,
     ModuleTestDataService,
@@ -646,7 +759,9 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     SoftDeleteAwareEventSubscriber,
     AccessTokenGuard,
     ApiKeyGuard,
+    MediaSignedUrlGuard,
     ApiKeyService,
+    ActiveSessionStorageService,
     AuthenticationService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,
@@ -663,6 +778,11 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ChatterQueueSubscriberRabbitmq,
     ChatterQueuePublisherDatabase,
     ChatterQueueSubscriberDatabase,
+    ChatterMentionNotificationEmailQueueHandler,
+    ChatterMentionNotificationEmailQueuePublisherRabbitmq,
+    ChatterMentionNotificationEmailQueueSubscriberRabbitmq,
+    ChatterMentionNotificationEmailQueuePublisherDatabase,
+    ChatterMentionNotificationEmailQueueSubscriberDatabase,
 
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,
@@ -672,10 +792,14 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ApiEmailQueueSubscriberRedis,
     ChatterQueuePublisherRedis,
     ChatterQueueSubscriberRedis,
+    ChatterMentionNotificationEmailQueuePublisherRedis,
+    ChatterMentionNotificationEmailQueueSubscriberRedis,
     ComputedFieldEvaluationPublisherRedis,
     ComputedFieldEvaluationSubscriberRedis,
     GenerateCodePublisherRedis,
     GenerateCodeSubscriberRedis,
+    WorkflowExecutionPublisherRedis,
+    WorkflowExecutionSubscriberRedis,
     Msg91OTPQueuePublisherRedis,
     Msg91OTPQueueSubscriberRedis,
     Msg91SmsQueuePublisherRedis,
@@ -692,6 +816,10 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     GenerateCodeSubscriberDatabase,
     GenerateCodePublisherRabbitmq,
     GenerateCodeSubscriberRabbitmq,
+    WorkflowExecutionPublisherDatabase,
+    WorkflowExecutionSubscriberDatabase,
+    WorkflowExecutionPublisherRabbitmq,
+    WorkflowExecutionSubscriberRabbitmq,
     Msg91OTPQueuePublisher,
     MqMessageQueueService,
     MqMessageService,
@@ -809,6 +937,47 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ListOfRolesSelectionProvider,
     DashboardUserLayoutService,
     DashboardUserLayoutRepository,
+    WorkflowDefinitionService,
+    WorkflowDefinitionMetadataSyncService,
+    WorkflowDefinitionRepository,
+    WorkflowExecutionService,
+    WorkflowExecutionRepository,
+    WorkflowStepExecutionService,
+    WorkflowStepExecutionRepository,
+    WorkflowExecutionLogService,
+    WorkflowExecutionLogRepository,
+    WorkflowExecutionArtifactService,
+    WorkflowExecutionArtifactRepository,
+    WorkflowTriggerExecutionService,
+    WorkflowTriggerExecutionRepository,
+    WorkflowSecretService,
+    WorkflowSecretRepository,
+    WorkflowInvocationService,
+    WorkflowRuntimeService,
+    WorkflowExecutionWriterService,
+    WorkflowExpressionService,
+    WorkflowDefinitionValidatorService,
+    WorkflowNodeRegistryService,
+    WorkflowScheduledTriggerJobService,
+    ExecutionFailNode,
+    LogWriteNode,
+    HttpRequestNode,
+    IfNode,
+    ForEachNode,
+    LoopUntilNode,
+    ParallelNode,
+    RuntimePythonNode,
+    SequentialNode,
+    SwitchNode,
+    SolidXLoginNode,
+    SolidXListNode,
+    SolidXGetNode,
+    SolidXCreateNode,
+    SolidXUpdateNode,
+    SolidXPatchNode,
+    SolidXDeleteNode,
+    SolidXSendEmailNode,
+    SolidXSendSmsNode,
   ],
   exports: [
     AuthenticationService,
@@ -817,6 +986,8 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     ChatterMessageRepository,
     ChatterMessageService,
     ConfigModule,
+    DraftPublishHelperService,
+    InternationalisationHelperService,
     CrudHelperService,
     CRUDService,
     CsvService,
@@ -839,6 +1010,7 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     SmsFactory,
     MediaService,
     MediaStorageProviderMetadataService,
+    MetadataValidationService,
     ModelMetadataHelperService,
     ModelMetadataService,
     ModuleMetadataService,
@@ -872,6 +1044,10 @@ import { PostgresDatasourceIntrospectionProviderService } from "./services/datas
     SolidMicroserviceAdapter,
     UserService,
     SettingService,
+    WorkflowInvocationService,
+    WorkflowRuntimeService,
+    WorkflowNodeRegistryService,
+    WorkflowExpressionService,
   ],
 })
 export class SolidCoreModule implements NestModule {

@@ -56,6 +56,7 @@ export const ERROR_MESSAGES = {
 
     // general errors
     FORBIDDEN: 'Forbidden',
+    RESOURCE_NOT_FOUND: 'The requested resource was not found.',
 
 
     // database errors

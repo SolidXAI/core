@@ -11,6 +11,13 @@ import { getDefaultThemeKey, getThemesByMode } from "src/theme/themeRegistry";
 export const DEFAULT_MEDIA_UPLOAD_DIR = "media-uploads";
 export const DEFAULT_MEDIA_FILE_STORAGE_DIR = "media-files-storage";
 
+// Seeded setting values are written once and never overwritten, so an unparseable
+// env var would persist. Fall back whenever it is missing or not a positive number.
+const timeoutFromEnv = (value: string | undefined, fallback: number): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
+
 // 1.
 const getSolidCoreSettings = (isProd: boolean) =>
   [
@@ -126,10 +133,10 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
-      key: "rowClickAction",
+      key: "recordClickAction",
       value: "edit",
       level: SettingLevel.SystemAdminEditable,
-      label: "Row Click Action",
+      label: "Record Click Action",
       group: "app-settings",
       sortOrder: 45,
       controlType: "selectionStatic",
@@ -137,7 +144,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "Edit", value: "edit" },
         { label: "View", value: "view" },
       ],
-      helpText: "Decides whether clicking a list row opens the record in edit mode or view mode.",
+      helpText: "Decides whether clicking a record in List, Card, Kanban, or Tree View opens it in edit mode or view mode.",
     },
     {
       moduleName: "solid-core",
@@ -1232,7 +1239,16 @@ const getSolidCoreSettings = (isProd: boolean) =>
       value: parseInt(process.env.IAM_JWT_REFRESH_TOKEN_TTL ?? "604800", 10),
       level: SettingLevel.SystemEnv,
     },
-
+    {
+      moduleName: "solid-core",
+      key: "preventConcurrentLogins",
+      value: false,
+      level: SettingLevel.SystemAdminEditable,
+      label: "Prevent Concurrent Logins",
+      group: "authentication-settings",
+      sortOrder: 200,
+      controlType: "boolean",
+    },
     // queues-settings-provider.service.ts
     {
       moduleName: "solid-core",
@@ -1495,6 +1511,31 @@ const getSolidCoreSettings = (isProd: boolean) =>
       key: "metaWhatsappAppSecret",
       value: process.env.COMMON_META_WHATSAPP_APP_SECRET,
       level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "uiTestDefaultTimeoutMs",
+      value: timeoutFromEnv(process.env.COMMON_UI_TEST_DEFAULT_TIMEOUT_MS, 30000),
+      level: SettingLevel.SystemAdminEditable,
+      label: "UI Test Default Timeout (ms)",
+      group: "testing-settings",
+      sortOrder: 10,
+      controlType: "numeric",
+      helpText: "How long UI test steps wait for an element before failing. Raise this if tests time out on slow screens. Overridden by the --ui-timeout-ms flag and by a per-step timeoutMs.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "uiTestNavigationTimeoutMs",
+      value: timeoutFromEnv(
+        process.env.COMMON_UI_TEST_NAVIGATION_TIMEOUT_MS,
+        timeoutFromEnv(process.env.COMMON_UI_TEST_DEFAULT_TIMEOUT_MS, 30000),
+      ),
+      level: SettingLevel.SystemAdminEditable,
+      label: "UI Test Navigation Timeout (ms)",
+      group: "testing-settings",
+      sortOrder: 20,
+      controlType: "numeric",
+      helpText: "How long the ui.goto step waits for a page to load before failing. Falls back to the UI test default timeout.",
     },
   ] as const satisfies SettingDefinition[];
 

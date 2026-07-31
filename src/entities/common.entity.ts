@@ -25,6 +25,30 @@ export abstract class CommonEntity {
     @Column({ name: 'published_at', default: null, nullable: true, transformer: LocalDateTimeTransformer })
     publishedAt: Date;
 
+    // Optional (not just nullable) because legacy tables (see LegacyCommonEntityWithExistingId)
+    // don't carry these versioning columns at all. CRUDService<T extends CommonEntity> is
+    // otherwise used for both plain and legacy entities, so these must stay structurally
+    // satisfiable by a type that never declares them.
+    @Expose()
+    @Column({ name: 'is_published', default: false })
+    @Index()
+    isPublished?: boolean;
+
+    @Expose()
+    @Column({ name: 'is_latest', default: true })
+    @Index()
+    isLatest?: boolean;
+
+    @Expose()
+    @Column({ type: "int", name: 'initial_entity_version_id', default: null, nullable: true })
+    @Index()
+    initialEntityVersionId?: number;
+
+    @Expose()
+    @Column({ name: 'published_tracker', default: "na" })
+    @Index()
+    publishedTracker?: string;
+
     @Expose()
     @Column({ type: "varchar", name: 'locale_name', default: null })
     localeName: string;

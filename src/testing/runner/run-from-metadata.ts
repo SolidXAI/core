@@ -67,6 +67,7 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
 
   const resources = new SimpleResourceStore();
   const reporter = opts.reporter ?? new ConsoleReporter();
+  reporter.onRunStart?.({ total: scenarios.length });
   const api = new ApiAdapter(opts.api);
   const { PlaywrightAdapter } = await import("../adapters/ui/playwright-adapter");
   const ui = new PlaywrightAdapter(opts.ui);

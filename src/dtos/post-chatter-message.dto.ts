@@ -15,6 +15,10 @@ export class PostChatterMessageDto {
 
     @IsString()
     @IsOptional()
+    messageBodyMentions?: string;
+
+    @IsString()
+    @IsOptional()
     messageSubType?: string;
 
     @IsString()

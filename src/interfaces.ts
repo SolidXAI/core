@@ -16,6 +16,8 @@ import { ComputedFieldMetadata } from './helpers/solid-registry';
 import { ActiveUserData } from './interfaces/active-user-data.interface';
 import { SecurityRuleConfig } from './dtos/security-rule-config.dto';
 import { SecurityRule } from './entities/security-rule.entity';
+import { ModelMetadata } from './entities/model-metadata.entity';
+import { ViewMetadata } from './entities/view-metadata.entity';
 
 export interface FieldCrudManager {
   // fieldMetadata: FieldMetadata;
@@ -159,6 +161,33 @@ export interface ISelectionProvider<T extends ISelectionProviderContext> {
   values(query: any, ctxt: T): Promise<readonly ISelectionProviderValues[]>;
 }
 
+export interface IWorkflowFieldDataProviderContext<TProviderContext = Record<string, any>> {
+  entityId?: string;
+  modelName: string;
+  moduleName: string;
+  workflowFieldName: string;
+  workflowField: FieldMetadata;
+  solidModel?: ModelMetadata;
+  solidView?: ViewMetadata;
+  solidFieldsMetadata: Record<string, FieldMetadata>;
+  query?: Record<string, any>;
+  providerContext: TProviderContext;
+  activeUser?: ActiveUserData;
+}
+
+export interface IWorkflowFieldDataProviderValues {
+  label: string;
+  value: string | number;
+}
+
+export interface IWorkflowFieldDataProvider<
+  TContext extends IWorkflowFieldDataProviderContext = IWorkflowFieldDataProviderContext,
+> {
+  help(): string;
+  name(): string;
+  values(ctxt: TContext): Promise<readonly IWorkflowFieldDataProviderValues[]>;
+}
+
 export interface IDashboardWidgetDataProviderContext<TVariables = Record<string, any>, TProviderContext = Record<string, any>> {
   moduleName: string;
   dashboardName: string;
@@ -228,6 +257,8 @@ export interface ISolidDatabaseModule {
 
 export enum EventType {
   USER_REGISTERED = 'user.registered',
+  MODULE_METADATA_SEEDER_STARTED = 'module-metadata-seeder.started',
+  MODULE_METADATA_SEEDER_FINISHED = 'module-metadata-seeder.finished',
 }
 
 export class EventDetails<T> {
@@ -235,6 +266,25 @@ export class EventDetails<T> {
     public type: any,
     public payload: T,
   ) { }
+}
+
+export interface ModuleMetadataSeederOptions {
+  modulesToSeed: string[] | null;
+  pruneMetadata: boolean;
+  seedGlobalMetadata: boolean;
+  skipHooks: boolean;
+}
+
+export interface ModuleMetadataSeederEventPayload {
+  seedRunId: string;
+  options: ModuleMetadataSeederOptions;
+  startedAt: string;
+  finishedAt?: string;
+  durationMs?: number;
+  success?: boolean;
+  seededModuleNames?: string[];
+  currentStep?: string;
+  errorMessage?: string;
 }
 
 export interface IExtensionUserCreationProvider<T extends User = User, TDto extends CreateUserDto = CreateUserDto> {

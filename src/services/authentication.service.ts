@@ -20,7 +20,7 @@ import { SUCCESS_MESSAGES } from "src/constants/success-messages";
 import { CreateUserDto } from "src/dtos/create-user.dto";
 import { MailFactory } from "src/factories/mail.factory";
 import { UserRepository } from "src/repository/user.repository";
-import { DataSource, DeepPartial, Repository } from "typeorm";
+import { DataSource, DeepPartial, FindOptionsWhere, Repository } from "typeorm";
 import { v4 as uuidv4 } from "uuid";
 import {
   ForgotPasswordSendVerificationTokenOn,
@@ -39,6 +39,7 @@ import { SignUpDto } from "../dtos/sign-up.dto";
 import { User } from "../entities/user.entity";
 import { EventDetails, EventType } from "../interfaces";
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
+import { ActiveSessionStorageService } from "./active-session-storage.service";
 import { HashingService } from "./hashing.service";
 import {
   InvalidatedRefreshTokenError,
@@ -48,6 +49,7 @@ import { SsoCodeStorageService } from "./sso-code-storage.service";
 import { RoleMetadataService } from "./role-metadata.service";
 import { SettingService } from "./setting.service";
 import { UserActivityHistoryService } from "./user-activity-history.service";
+import { MetadataValidationService } from "./metadata-validation.service";
 import { UserService } from "./user.service";
 import { SmsFactory } from "src/factories/sms.factory";
 import { WhatsAppFactory } from "src/factories/whatsapp.factory";
@@ -74,6 +76,7 @@ export class AuthenticationService {
     private readonly userRepository: UserRepository,
     private readonly hashingService: HashingService,
     private readonly jwtService: JwtService,
+    private readonly activeSessionStorage: ActiveSessionStorageService,
     private readonly refreshTokenIdsStorage: RefreshTokenIdsStorageService,
     private readonly httpService: HttpService,
     // private readonly mailService: SMTPEMailService,
@@ -86,6 +89,7 @@ export class AuthenticationService {
     private readonly roleMetadataService: RoleMetadataService,
     private readonly userActivityHistoryService: UserActivityHistoryService,
     private readonly ssoCodeStorage: SsoCodeStorageService,
+    private readonly metadataValidationService: MetadataValidationService,
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
@@ -105,6 +109,26 @@ export class AuthenticationService {
         roles: true,
       },
     });
+  }
+
+  private async resolveUserForPasswordSignIn(username: string, email: string) {
+    const normalizedEmail = email?.trim().toLowerCase();
+    const query = (await this.userRepository
+      .createSecurityRuleAwareQueryBuilder("u"))
+      .leftJoinAndSelect("u.roles", "roles");
+
+    if (username) {
+      query.where("u.username = :username", { username });
+    }
+    if (normalizedEmail) {
+      if (username) {
+        query.orWhere("LOWER(u.email) = :email", { email: normalizedEmail });
+      } else {
+        query.where("LOWER(u.email) = :email", { email: normalizedEmail });
+      }
+    }
+
+    return await query.getOne();
   }
 
   async updatePasswordDetails(user: User, newPassword: string) {
@@ -190,6 +214,7 @@ export class AuthenticationService {
         effectiveDto,
         entity,
         provider.repo as Repository<User>,
+        true,
       );
     }
     return this.performSignUp(signUpDto, new User(), this.userRepository);
@@ -199,8 +224,12 @@ export class AuthenticationService {
     signUpDto: SignUpDto,
     entity: T,
     repo: Repository<T>,
+    preferEntityApiKeyFlag: boolean = false,
   ): Promise<T> {
     try {
+      await this.assertUniqueSignupIdentifiers(signUpDto, repo);
+      await this.metadataValidationService.validateCreateDto("user", signUpDto);
+
       const onForcePasswordChange =
         this.settingService.getConfigValue<SolidCoreSetting>(
           "forceChangePasswordOnFirstLogin",
@@ -219,7 +248,10 @@ export class AuthenticationService {
         onForcePasswordChange,
       );
       const privateDto = signUpDto as { isAllowedToGenerateApiKeys?: boolean };
-      if (privateDto.isAllowedToGenerateApiKeys !== undefined) {
+      if (
+        !preferEntityApiKeyFlag &&
+        privateDto.isAllowedToGenerateApiKeys !== undefined
+      ) {
         user.isAllowedToGenerateApiKeys = privateDto.isAllowedToGenerateApiKeys;
       }
       const savedUser = await repo.save(user);
@@ -247,6 +279,59 @@ export class AuthenticationService {
       }
       throw err;
     }
+  }
+
+  private async assertUniqueSignupIdentifiers<T extends User>(
+    signUpDto: SignUpDto,
+    repo: Repository<T>,
+  ): Promise<void> {
+    const username = signUpDto.username?.trim();
+    const email = signUpDto.email?.trim();
+    const mobile = signUpDto.mobile?.trim();
+
+    const where: FindOptionsWhere<T>[] = [];
+
+    if (username) {
+      where.push({ username } as FindOptionsWhere<T>);
+    }
+
+    if (email) {
+      where.push({ email } as FindOptionsWhere<T>);
+    }
+
+    if (mobile) {
+      where.push({ mobile } as FindOptionsWhere<T>);
+    }
+
+    if (where.length === 0) {
+      return;
+    }
+
+    const existingUser = await repo.findOne({ where });
+
+    if (!existingUser) {
+      return;
+    }
+
+    if (email && existingUser.email === email) {
+      throw new ConflictException(
+        `A user with email address "${email}" already exists.`,
+      );
+    }
+
+    if (mobile && existingUser.mobile === mobile) {
+      throw new ConflictException(
+        `A user with mobile number "${mobile}" already exists.`,
+      );
+    }
+
+    if (username && existingUser.username === username) {
+      throw new ConflictException(
+        `A user with username "${username}" already exists.`,
+      );
+    }
+
+    throw new ConflictException(ERROR_MESSAGES.USER_ALREADY_EXISTS);
   }
 
   private async handlePasswordlessSignupOtp<T extends User>(
@@ -373,11 +458,23 @@ export class AuthenticationService {
     // if forcePasswordChange is true, then we trigger an email to the user to change the password, this needs to be done using a queue.
     // Create a new method like notifyUserOnForcePasswordChange, create a new email template we can call it on-force-password-change this template to include the random password
     if (user.forcePasswordChange && autoGeneratedPwd) {
-      await this.notifyUserOnForcePasswordChange(user, autoGeneratedPwd);
+      try {
+        await this.notifyUserOnForcePasswordChange(user, autoGeneratedPwd);
+      } catch (error: any) {
+        this.logger.error(
+          `Failed to send force-password-change email for user ${user.id}: ${error?.message ?? error}`,
+        );
+      }
     }
 
     // Send welcome notifications (email/SMS) if enabled.
-    await this.notifyUserOnSignup(user);
+    try {
+      await this.notifyUserOnSignup(user);
+    } catch (error: any) {
+      this.logger.error(
+        `Failed to send signup notifications for user ${user.id}: ${error?.message ?? error}`,
+      );
+    }
   }
 
   generatePassword(length: number = 8): string {
@@ -983,7 +1080,10 @@ export class AuthenticationService {
   }
 
   async signIn(signInDto: SignInDto) {
-    const user = await this.resolveUser(signInDto.username, signInDto.email);
+    const user = await this.resolveUserForPasswordSignIn(
+      signInDto.username,
+      signInDto.email,
+    );
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
@@ -1042,15 +1142,13 @@ export class AuthenticationService {
     }
 
     const type = this.resolveLoginType(signInDto);
-    const user = await this.findUserForLoginOrNull(type, signInDto.identifier);
-    if (user) {
-      const dummyOtp = this.getDummyOtpForUser(user);
-      if (!dummyOtp) {
-        await this.assignLoginOtp(user, type);
-        await this.notifyUserOnOtpInititateLogin(user, type);
-      }
+    const user = await this.findUserForLogin(type, signInDto.identifier);
+    const dummyOtp = this.getDummyOtpForUser(user);
+    if (!dummyOtp) {
+      await this.assignLoginOtp(user, type);
+      await this.notifyUserOnOtpInititateLogin(user, type);
     }
-    return this.buildLoginOtpResponse(type, signInDto.identifier, user);
+    return this.buildLoginOtpResponse(user, type);
   }
 
   private resolveLoginType(
@@ -1080,19 +1178,36 @@ export class AuthenticationService {
     throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
   }
 
+  private async resolveUserForOtpEmailSignIn(identifier: string,options: { withRoles?: boolean } = {},): Promise<User | null> {
+    const normalizedEmail = identifier?.trim().toLowerCase();
+    const query =
+      await this.userRepository.createSecurityRuleAwareQueryBuilder("u");
+
+    if (options.withRoles) {
+      query.leftJoinAndSelect("u.roles", "roles");
+    }
+
+    query.where("u.username = :username", { username: identifier });
+
+    if (normalizedEmail) {
+      query.orWhere("LOWER(u.email) = :email", { email: normalizedEmail });
+    }
+
+    return await query.getOne();
+  }
+
   private async findUserForLogin(
     type: PasswordlessLoginValidateWhatSources,
     identifier: string,
     options: { withRoles?: boolean } = {},
   ): Promise<User> {
-    const typeWhere =
+    const user =
       type === PasswordlessLoginValidateWhatSources.EMAIL
-        ? { email: identifier }
-        : { mobile: identifier };
-    const user = await this.userRepository.findOne({
-      where: [{ username: identifier }, typeWhere],
-      ...(options.withRoles ? { relations: { roles: true } } : {}),
-    });
+        ? await this.resolveUserForOtpEmailSignIn(identifier, options)
+        : await this.userRepository.findOne({
+            where: [{ username: identifier }, { mobile: identifier }],
+            ...(options.withRoles ? { relations: { roles: true } } : {}),
+          });
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.USER_NOT_FOUND);
     }
@@ -1100,25 +1215,6 @@ export class AuthenticationService {
       throw new UnauthorizedException(ERROR_MESSAGES.USER_INACTIVE);
     }
     return user;
-  }
-
-  private async findUserForLoginOrNull(
-    type: PasswordlessLoginValidateWhatSources,
-    identifier: string,
-    options: { withRoles?: boolean } = {},
-  ): Promise<User | null> {
-    try {
-      return await this.findUserForLogin(type, identifier, options);
-    } catch (error) {
-      if (
-        error instanceof UnauthorizedException &&
-        (error.message === ERROR_MESSAGES.USER_NOT_FOUND ||
-          error.message === ERROR_MESSAGES.USER_INACTIVE)
-      ) {
-        return null;
-      }
-      throw error;
-    }
   }
 
   private async assignLoginOtp(
@@ -1144,27 +1240,17 @@ export class AuthenticationService {
   }
 
   private buildLoginOtpResponse(
+    user: User,
     type: PasswordlessLoginValidateWhatSources,
-    identifier: string,
-    user?: User | null,
   ) {
-    const maskedIdentifier = this.buildMaskedLoginIdentifier(
-      type,
-      user?.email ?? user?.mobile ?? identifier,
-    );
+    const maskedIdentifier =
+      type === PasswordlessLoginValidateWhatSources.EMAIL
+        ? { email: this.maskEmail(user.email) }
+        : { mobile: this.maskMobile(user.mobile) };
     return {
       message: SUCCESS_MESSAGES.OTP_SENT_SUCCESS_LOGIN,
       user: maskedIdentifier,
     };
-  }
-
-  private buildMaskedLoginIdentifier(
-    type: PasswordlessLoginValidateWhatSources,
-    identifier: string,
-  ) {
-    return type === PasswordlessLoginValidateWhatSources.EMAIL
-      ? { email: this.maskEmail(identifier) }
-      : { mobile: this.maskMobile(identifier) };
   }
 
   private async notifyUserOnOtpInititateLogin(
@@ -1304,12 +1390,9 @@ export class AuthenticationService {
       throw new BadRequestException(ERROR_MESSAGES.INVALID_VERIFICATION_TYPE);
     }
 
-    const user = await this.findUserForLoginOrNull(type, identifier, {
+    const user = await this.findUserForLogin(type, identifier, {
       withRoles: true,
     });
-    if (!user) {
-      throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
-    }
     this.checkAccountBlocked(user);
     const dummyOtp = this.getDummyOtpForUser(user);
 
@@ -1565,7 +1648,7 @@ export class AuthenticationService {
     // Assuming all users do not have mobile as mandatory.
     if (
       forgotPasswordSendVerificationTokenOn ==
-        ForgotPasswordSendVerificationTokenOn.MOBILE &&
+      ForgotPasswordSendVerificationTokenOn.MOBILE &&
       user.mobile
     ) {
       const smsService = this.smsFactory.getSmsService();
@@ -1689,7 +1772,7 @@ export class AuthenticationService {
     // Assuming all users do not have mobile as mandatory.
     if (
       forgotPasswordSendVerificationTokenOn ==
-        ForgotPasswordSendVerificationTokenOn.MOBILE &&
+      ForgotPasswordSendVerificationTokenOn.MOBILE &&
       user.mobile
     ) {
       const smsService = this.smsFactory.getSmsService();
@@ -1711,8 +1794,16 @@ export class AuthenticationService {
   }
 
   async generateTokens(user: User) {
+    const sessionId = this.shouldPreventConcurrentLogins()
+      ? randomUUID()
+      : undefined;
+    if (sessionId) {
+      await this.activeSessionStorage.setActiveSession(user.id, sessionId);
+    } else {
+      await this.activeSessionStorage.clearActiveSession(user.id);
+    }
     const [accessToken, refreshToken] = await Promise.all([
-      await this.generateAccessToken(user),
+      await this.generateAccessToken(user, sessionId),
       await this.generateRefreshToken(user),
     ]);
 
@@ -1722,16 +1813,24 @@ export class AuthenticationService {
     };
   }
 
-  async generateAccessToken(user: User) {
+  async generateAccessToken(user: User, sessionId?: string) {
     // const userRoleNames = user.roles.map((role) => role.name).join(';')
     const userRoleNames = user.roles.map((role) => role.name);
+    const resolvedSessionId = this.shouldPreventConcurrentLogins()
+      ? sessionId ?? (await this.activeSessionStorage.getActiveSession(user.id))
+      : undefined;
 
     const accessTokenTtl =
       this.settingService.getConfigValue<SolidCoreSetting>("accessTokenTtl");
     const accessToken = await this.signToken<Partial<ActiveUserData>>(
       user.id,
       accessTokenTtl,
-      { username: user.username, email: user.email, roles: userRoleNames },
+      {
+        username: user.username,
+        email: user.email,
+        roles: userRoleNames,
+        ...(resolvedSessionId ? { sessionId: resolvedSessionId } : {}),
+      },
     );
 
     return accessToken;
@@ -2150,6 +2249,14 @@ export class AuthenticationService {
     );
   }
 
+  private shouldPreventConcurrentLogins(): boolean {
+    return (
+      this.settingService.getConfigValue<SolidCoreSetting>(
+        "preventConcurrentLogins",
+      ) === true
+    );
+  }
+
   private checkAccountBlocked(user: User): void {
     const maxFailedAttempts =
       this.settingService.getConfigValue<SolidCoreSetting>(
@@ -2206,6 +2313,7 @@ export class AuthenticationService {
 
       const userId = payload.sub;
       await this.refreshTokenIdsStorage.invalidate(userId);
+      await this.activeSessionStorage.clearActiveSession(userId);
       const user = await this.userRepository.findOne({
         where: {
           id: userId,
@@ -2304,6 +2412,7 @@ function parseUniqueConstraintError(detail: string): string {
     const fieldMap: Record<string, string> = {
       username: "username",
       email: "email address",
+      mobile: "mobile number",
       full_name_user_key: "full name",
     };
     const friendlyField = fieldMap[field] || field;

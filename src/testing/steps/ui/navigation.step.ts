@@ -2,7 +2,7 @@ import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { StepRegistry } from "../../core/step-registry";
 
-type GotoInput = { url: string };
+type GotoInput = { url: string; timeoutMs?: number };
 type ExpectUrlInput = { equals?: string; contains?: string };
 
 function requirePage(ctx: TestContext, op: string) {
@@ -20,7 +20,9 @@ export function registerNavigationSteps(registry: StepRegistry): void {
       throw new Error('Missing "url" in step.with for op "ui.goto"');
     }
     const url = ctx.ui?.resolveUrl(input.url) ?? input.url;
-    await page.goto(url);
+    await page.goto(url, {
+      timeout: ctx.ui?.resolveNavigationTimeout(input.timeoutMs),
+    });
   });
 
   registry.register("ui.expectUrl", async (ctx: TestContext, step: OpStep) => {

@@ -28,8 +28,6 @@ import { PermissionMetadata } from '../entities/permission-metadata.entity';
 import { RoleMetadata } from '../entities/role-metadata.entity';
 import { ViewMetadata } from '../entities/view-metadata.entity';
 import { CommandService } from '../helpers/command.service';
-import { isEmbeddedDb } from '../helpers/environment.helper';
-import { startNodemonHeartbeat } from '../helpers/nodemon-heartbeat';
 import {
   REFRESH_MODEL_COMMAND,
   REMOVE_FIELDS_COMMAND,
@@ -1032,26 +1030,6 @@ export class ModelMetadataService {
   @DisallowInProduction()
   async generateCodeViaCtl(modelId: number): Promise<string> {
     const model = await this.findOne(modelId);
-    const isEmbedded = isEmbeddedDb();
-
-    // When using an embedded PGlite database, the single-connection limit means
-    // a spawned `solid refresh-model` subprocess cannot get its own DB connection
-    // while the API server is already holding it. Fall back to in-process code
-    // generation (which reuses the existing connection).
-    if (isEmbedded) {
-      this.logger.log('Embedded database detected — generating API code in-process');
-      // Prevent nodemon from restarting the server while schematics write files.
-      const heartbeat = startNodemonHeartbeat(path.join(process.cwd(), 'src'));
-      try {
-        return await this.handleGenerateCode({
-          modelUserKey: model.singularName,
-          dryRun: false,
-        });
-      } finally {
-        heartbeat.stop();
-      }
-    }
-
     return this.commandService.executeCommandWithArgs({
       command: 'npx',
       args: ['@solidxai/solidctl@latest', 'generate', 'model', `--name=${model.singularName}`],
@@ -1751,7 +1729,10 @@ export class ModelMetadataService {
     // --------------------
     // Find record index in page
     // --------------------
-    const index = records.findIndex(r => String(r.id) === String(recordId));
+    const index = records.findIndex(r =>
+      String(r.id) === String(recordId) ||
+      (r.initialEntityVersionId && String(r.initialEntityVersionId) === String(recordId))
+    );
 
     if (index === -1) {
       throw new BadRequestException(`Record not found in current page`);

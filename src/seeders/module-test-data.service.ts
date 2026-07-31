@@ -12,6 +12,7 @@ import { CreateModelMetadataDto } from 'src/dtos/create-model-metadata.dto';
 import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
 import { getDynamicModuleNamesBasedOnMetadata } from 'src/helpers/module.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
+import { InternationalisationHelperService } from 'src/services/internationalisation-helper.service';
 import { MediaRepository } from 'src/repository/media.repository';
 import { PermissionMetadataRepository } from 'src/repository/permission-metadata.repository';
 import { AuthenticationService } from 'src/services/authentication.service';
@@ -30,6 +31,7 @@ export class ModuleTestDataService {
     private readonly moduleRef: ModuleRef,
     private readonly discoveryService: DiscoveryService,
     private readonly solidRegistry: SolidRegistry,
+    private readonly internationalisationHelperService: InternationalisationHelperService,
   ) {}
 
   async setupTestData(modulesToTest?: string[]): Promise<void> {
@@ -245,6 +247,10 @@ export class ModuleTestDataService {
 
       const entityRepo = this.resolveRepository(modelUserKey);
       const payload: Record<string, any> = { ...(entry.data ?? {}) };
+
+      if (modelDef.internationalisation && !payload.localeName) {
+        payload.localeName = this.internationalisationHelperService.resolveDefaultLocaleName(this.solidRegistry);
+      }
 
       for (const field of modelDef.fields ?? []) {
         if (field.type === 'relation' && field.relationType === 'many-to-one') {

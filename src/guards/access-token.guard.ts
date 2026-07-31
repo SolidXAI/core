@@ -2,23 +2,26 @@ import type { SolidCoreSetting } from "src/services/settings/default-settings-pr
 import {
   CanActivate,
   ExecutionContext,
-  Inject,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
+import { ERROR_MESSAGES } from "src/constants/error-messages";
 import { ActiveUserData } from '../interfaces/active-user-data.interface';
 import { REQUEST_USER_KEY } from "../constants";
 import { PermissionMetadataService } from '../services/permission-metadata.service';
 import { ClsService } from 'nestjs-cls';
+import { ActiveSessionStorageService } from "../services/active-session-storage.service";
 import { SettingService } from '../services/setting.service';
+import { createHash } from "crypto";
 
 @Injectable()
 export class AccessTokenGuard implements CanActivate {
   constructor(
     private readonly jwtService: JwtService,
     private readonly permissionsService: PermissionMetadataService,
+    private readonly activeSessionStorage: ActiveSessionStorageService,
     private readonly settingService: SettingService,
     private readonly cls: ClsService
   ) { }
@@ -44,6 +47,9 @@ export class AccessTokenGuard implements CanActivate {
         jwtConfiguration
       );
 
+      // Prevent Concurrent Login Feature
+      await this.validateConcurrentLoginSession(payload, token);
+
       // Load permissions given the user. 
       const permissions = await this.permissionsService.findAllUsingRoles(payload.roles);
       payload.permissions = permissions.map((permission) => permission.name);
@@ -52,8 +58,10 @@ export class AccessTokenGuard implements CanActivate {
       this.cls.set(REQUEST_USER_KEY, payload);
       // console.log(`About to set payload in the request user key:`);
       // console.log(payload);
-    } catch {
-      throw new UnauthorizedException();
+    } catch (err) {
+      throw err instanceof UnauthorizedException
+        ? err
+        : new UnauthorizedException();
     }
     return true;
   }
@@ -63,5 +71,37 @@ export class AccessTokenGuard implements CanActivate {
     // Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJzdWIiOjEsImVtYWlsIjoidXNlcjFAbmVzdGpzLmNvbSIsImlhdCI6MTcwMDk5NTk1MywiZXhwIjoxNzAwOTk5NTUzLCJhdWQiOiJsb2NhbGhvc3Q6MzAwMCIsImlzcyI6ImxvY2FsaG9zdDozMDAwIn0.303Y04SZjKqoPjJRq4hXHcarHeZYS878gPGWmw2SoUc
     const [_, token] = request.headers.authorization?.split(' ') ?? [];
     return token;
+  }
+
+  private resolveSessionId(payload: ActiveUserData, token: string): string {
+    if (payload.sessionId) {
+      return payload.sessionId;
+    }
+
+    // Legacy tokens (issued before preventConcurrentLogins was enabled)
+    // have no sessionId claim, so derive a stable fallback from the token.
+    return createHash('sha256').update(token).digest('hex');
+  }
+
+  private async validateConcurrentLoginSession(payload: ActiveUserData, token: string,): Promise<void> {
+    if (!this.settingService.getConfigValue<SolidCoreSetting>("preventConcurrentLogins",)) {
+      return;
+    }
+
+    const activeSessionId = await this.activeSessionStorage.getActiveSession(payload.sub);
+    const currentSessionId = this.resolveSessionId(payload, token);
+
+    if (!activeSessionId) {
+      // No active session recorded yet for this user — this is the first
+      // request we've seen since the feature was enabled (or storage was
+      // cleared). Adopt this request's session as the active one so this
+      // browser stays logged in going forward.
+      await this.activeSessionStorage.setActiveSession(payload.sub, currentSessionId,);
+      return;
+    }
+
+    if (currentSessionId !== activeSessionId) {
+      throw new UnauthorizedException(ERROR_MESSAGES.SESSION_INVALID);
+    }
   }
 }

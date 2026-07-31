@@ -3,6 +3,9 @@ import type { OpStep, ScenarioSpec } from "../contracts/testing-metadata.types";
 import type { SolidTestSpecResult } from "../contracts/test-spec.types";
 
 export interface Reporter {
+  onRunStart?(args: {
+    total: number;
+  }): void;
   onScenarioStart(scenario: ScenarioSpec): void;
   onScenarioEnd(
     scenario: ScenarioSpec,

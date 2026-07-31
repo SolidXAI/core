@@ -26,6 +26,12 @@ export class UpdateChatterMessageDto {
 
     @IsNotEmpty()
     @IsOptional()
+    @IsString()
+    @ApiProperty()
+    messageBodyMentions: string;
+
+    @IsNotEmpty()
+    @IsOptional()
     @IsInt()
     @ApiProperty()
     coModelEntityId: number;

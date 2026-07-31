@@ -1,33 +1,39 @@
-import { forwardRef, Inject, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager, In } from 'typeorm';
+import { EntityManager, In, Not } from 'typeorm';
 import * as path from 'path';
-import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from "src/services/settings/default-settings-provider.service";
-import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
+import { Readable } from 'stream';
 
 import { ConfigService } from '@nestjs/config';
 import { CRUDService } from 'src/services/crud.service';
 import { DiskFileService, S3FileService } from 'src/services/file';
+import { classify } from 'src/helpers/string.helper';
+import { MediaDownloadUrlService } from 'src/services/media-download-url.service';
 
 
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
 import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
 import { Media } from 'src/entities/media.entity';
+import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
+import { MediaFieldCrudManager, SolidMediaType } from 'src/helpers/field-crud-managers/MediaFieldCrudManager';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
 import { MediaRepository } from 'src/repository/media.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
+import { buildDiskMediaPath, getEffectiveS3Region, resolveMediaIsPublic, } from 'src/services/media-storage.utils';
 import { getMediaStorageProvider } from "./mediaStorageProviders";
-
 
 @Injectable()
 export class MediaService extends CRUDService<Media> {
+  private readonly logger = new Logger(MediaService.name);
+
   constructor(
     readonly configService: ConfigService,
     readonly diskFileService: DiskFileService,
     readonly s3FileService: S3FileService,
+    private readonly mediaDownloadUrlService: MediaDownloadUrlService,
     @InjectEntityManager()
     readonly entityManager: EntityManager,
     // @InjectRepository(Media, 'default')
@@ -51,89 +57,73 @@ export class MediaService extends CRUDService<Media> {
   async find(basicFilterDto: BasicFilterDto, solidRequestContext: any = {}) {
     const data = await super.find(basicFilterDto, solidRequestContext);
     if (data.records) {
-
-      for (const media of data.records) {
-        const mediaStorageProvider = media.mediaStorageProviderMetadata;
-
-        if (mediaStorageProvider?.type === MediaStorageProviderType.Filesystem) {
-          media.relativeUri = await this.diskFileService.getUrl(this.getFullFilePathForDisk(media.relativeUri));
-        } else if (mediaStorageProvider?.type === MediaStorageProviderType.AwsS3) {
-          media.relativeUri = await this.s3FileService.getUrl(`${mediaStorageProvider.bucketName}:${media.relativeUri}`, { region: mediaStorageProvider.region });
-        }
-      }
+      await this.decorateMediaRecords(data.records);
     }
     if (data.groupRecords) {
-
       for (const group of data.groupRecords) {
-        for (const media of group.groupData.records) {
-          const mediaStorageProvider = media.mediaStorageProviderMetadata;
-
-          if (mediaStorageProvider?.type === MediaStorageProviderType.Filesystem) {
-            media.relativeUri = await this.diskFileService.getUrl(this.getFullFilePathForDisk(media.relativeUri));
-          }
-          else if (mediaStorageProvider?.type === MediaStorageProviderType.AwsS3) {
-            media.relativeUri = await this.s3FileService.getUrl(`${mediaStorageProvider.bucketName}:${media.relativeUri}`, { region: mediaStorageProvider.region });
-          }
-        }
+        await this.decorateMediaRecords(group.groupData.records);
       }
     }
     return data
   }
 
-  async upload(createDto: any, files: Array<Express.Multer.File>) {
+  async findOne(id: number, query: any = {}, solidRequestContext: any = {}) {
+    const media = await super.findOne(id, query, solidRequestContext);
+    if (media) {
+      await this.decorateMediaRecord(media);
+    }
+    return media;
+  }
 
-    if (!files) {
+  async upload(createDto: any, files: Array<Express.Multer.File>, _solidRequestContext: any = {}) {
+
+    if (!files || files.length === 0) {
       throw new NotFoundException(ERROR_MESSAGES.FILE_NOT_FOUND);
 
     }
-    const savedMedias = [];
-    for (let i = 0; i < files.length; i++) {
 
-      createDto['fieldMetadata'] = await this.fieldMetadataRepo.findOne({
-        where: {
-          id: createDto['fieldMetadataId']
-        },
-      });
-      createDto['modelMetadata'] = await this.modelMetadataRepo.findOne({
-        where: {
-          id: createDto['modelMetadataId']
-        },
-      });
-      createDto['mediaStorageProviderMetadata'] = await this.mediaStorageProviderMetadataRepo.findOne({
-        where: {
-          id: createDto['mediaStorageProviderMetadataId']
-        },
-      });
+    createDto['fieldMetadata'] = await this.fieldMetadataRepo.findOne({
+      where: {
+        id: createDto['fieldMetadataId']
+      },
+      relations: ['mediaStorageProvider', 'model'],
+    });
+    createDto['modelMetadata'] = await this.modelMetadataRepo.findOne({
+      where: {
+        id: createDto['modelMetadataId']
+      },
+    });
+    createDto['mediaStorageProviderMetadata'] = await this.mediaStorageProviderMetadataRepo.findOne({
+      where: {
+        id: createDto['mediaStorageProviderMetadataId']
+      },
+    });
+    createDto['mediaStorageProviderMetadata'] = createDto['mediaStorageProviderMetadata'] || createDto['fieldMetadata']?.mediaStorageProvider;
+    createDto['modelMetadata'] = createDto['modelMetadata'] || createDto['fieldMetadata']?.model;
 
-      const file = files[i];
-
-      switch (createDto.mediaStorageProviderMetadata.type) {
-        case MediaStorageProviderType.Filesystem:
-          const fileStoragePath = this.getFullFilePathForDisk(this.getFileName(file));
-          await this.diskFileService.copy(file.path, fileStoragePath);
-          createDto['relativeUri'] = this.getFileName(file);
-          break;
-        case MediaStorageProviderType.AwsS3:
-          const fileName = this.getFileName(file);
-          const bucketName = createDto.mediaStorageProviderMetadata.bucketName;
-
-          // Read file from disk and upload to S3
-          const fileData = await this.diskFileService.read(file.path);
-          await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { contentType: file.mimetype });
-
-          createDto['relativeUri'] = fileName;
-          break;
-        default:
-          break;
-      }
-      // Delete temp file from disk
-      await this.diskFileService.delete(file.path);
-
-      const media = this.repo.create(createDto);
-      const savedMedia = await this.repo.save(media);
-      savedMedias.push(savedMedia)
+    if (!createDto['mediaStorageProviderMetadata']) {
+      throw new NotFoundException('Media storage provider metadata not found');
     }
-    return savedMedias
+
+    createDto['fieldMetadata'].mediaStorageProvider = createDto['mediaStorageProviderMetadata'];
+
+    const validator = new MediaFieldCrudManager({
+      type: createDto['fieldMetadata']?.type as SolidMediaType,
+      required: true,
+      fieldName: 'files',
+      mediaMaxSizeKb: createDto['fieldMetadata']?.mediaMaxSizeKb,
+      mediaTypes: createDto['fieldMetadata']?.mediaTypes || [],
+      isUpdate: false,
+    });
+    const validationErrors = validator.validate(createDto, files);
+    if (validationErrors.length > 0) {
+      throw new BadRequestException(validationErrors.map(error => error.error).join(', '));
+    }
+
+    const storageProviderType = createDto['mediaStorageProviderMetadata'].type as MediaStorageProviderType;
+    const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
+
+    return storageProvider.store(files, { id: Number(createDto['entityId']) }, createDto['fieldMetadata']);
   }
 
   async remove(id: number) {
@@ -157,17 +147,186 @@ export class MediaService extends CRUDService<Media> {
     return this.repo.remove(media);
   }
 
-  private getFullFilePathForDisk(fileName: string): string {
-    const base = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
-      || DEFAULT_MEDIA_FILE_STORAGE_DIR;
-    if (path.isAbsolute(fileName) || fileName.startsWith(`${base}/`)) {
-      return fileName;
+  async fileDownloadStream(media: Media): Promise<{ stream: Readable | null, fileName: string, mimeType: string, redirectUrl?: string }> {
+    const loadedMedia = await this.repo.findOne({
+      where: { id: media.id },
+      relations: ['mediaStorageProviderMetadata'],
+    });
+
+    if (!loadedMedia || !loadedMedia.mediaStorageProviderMetadata) {
+      throw new NotFoundException(`Media with id ${media.id} not found`);
     }
-    return `${base}/${fileName}`;
+
+    const fileName = loadedMedia.originalFileName || path.basename(loadedMedia.relativeUri || `${loadedMedia.id}`);
+    const mimeType = loadedMedia.mimeType || 'application/octet-stream';
+
+    switch (loadedMedia.mediaStorageProviderMetadata.type as MediaStorageProviderType) {
+      case MediaStorageProviderType.Filesystem:
+        return {
+          stream: await this.diskFileService.readStream(
+            buildDiskMediaPath(loadedMedia.relativeUri, this.settingService, loadedMedia.mediaStorageProviderMetadata),
+          ),
+          fileName,
+          mimeType,
+        };
+      default:
+        throw new Error(`Unsupported media storage provider type ${loadedMedia.mediaStorageProviderMetadata.type}`);
+    }
   }
 
-  private getFileName(file: Express.Multer.File): string {
-    return `${file.filename}-${file.originalname}`;
+  async delete(id: number, solidRequestContext: any = {}) {
+    const media = await this.repo.findOne({
+      where: { id },
+      relations: ['mediaStorageProviderMetadata', 'modelMetadata'],
+    });
+
+    if (media) {
+      await this.assertMediaDeletable([media]);
+    }
+
+    const result = await super.delete(id, solidRequestContext);
+
+    if (media) {
+      await this.deletePhysicalFile(media);
+    }
+
+    return result;
   }
 
+  async deleteMany(ids: number[], solidRequestContext: any = {}) {
+    const mediaRecords = await this.repo.find({
+      where: {
+        id: In(ids),
+      },
+      relations: ['mediaStorageProviderMetadata', 'modelMetadata'],
+    });
+
+    await this.assertMediaDeletable(mediaRecords);
+
+    const result = await super.deleteMany(ids, solidRequestContext);
+
+    for (const media of mediaRecords) {
+      await this.deletePhysicalFile(media);
+    }
+
+    return result;
+  }
+
+  /**
+   * Media belonging to a published draft/publish-enabled record must survive edits made to
+   * later drafts (see DraftPublishHelperService.cloneMediaForVersion) - deleting it directly
+   * would strip the published version's media out from under it. Mirrors the equivalent
+   * entity-level guard in DraftPublishHelperService.assertDraftPublishDeleteAllowed.
+   */
+  private async assertMediaDeletable(mediaRecords: Media[]): Promise<void> {
+    const blockedIds: number[] = [];
+
+    for (const media of mediaRecords) {
+      if (!media.modelMetadata?.draftPublishWorkflow) continue;
+
+      const entityRepository = this.entityManager.getRepository(classify(media.modelMetadata.singularName));
+      const owningEntity = await entityRepository.findOne({ where: { id: media.entityId } as any });
+
+      if (owningEntity && (owningEntity as any).isPublished === true) {
+        blockedIds.push(media.id);
+      }
+    }
+
+    if (blockedIds.length > 0) {
+      throw new BadRequestException(
+        'Media belonging to a published record cannot be deleted. Edit the record to create a draft first'
+      );
+    }
+  }
+
+  private async decorateMediaRecords(medias: Media[]): Promise<void> {
+    for (const media of medias) {
+      await this.decorateMediaRecord(media);
+    }
+  }
+
+  private async decorateMediaRecord(media: Media): Promise<void> {
+    const mediaStorageProvider = await this.resolveMediaStorageProvider(media);
+    media.relativeUri = await this.resolveMediaUrl(media, mediaStorageProvider);
+  }
+
+  private async resolveMediaUrl(media: Media, mediaStorageProvider?: MediaStorageProviderMetadata): Promise<string> {
+    const resolvedMediaStorageProvider = mediaStorageProvider || await this.resolveMediaStorageProvider(media);
+    const isPublic = resolveMediaIsPublic(resolvedMediaStorageProvider);
+
+    if (isPublic === false) {
+      return this.mediaDownloadUrlService.getPrivateUrl(media.id, media.relativeUri, resolvedMediaStorageProvider);
+    }
+
+    if (resolvedMediaStorageProvider?.type === MediaStorageProviderType.Filesystem) {
+      return this.diskFileService.getUrl(buildDiskMediaPath(media.relativeUri, this.settingService, resolvedMediaStorageProvider));
+    }
+
+    if (resolvedMediaStorageProvider?.type === MediaStorageProviderType.AwsS3) {
+      return this.s3FileService.getUrl(
+        `${resolvedMediaStorageProvider.bucketName}:${media.relativeUri}`,
+        { region: getEffectiveS3Region(this.configService, resolvedMediaStorageProvider.region), expiresIn: 0 },
+      );
+    }
+
+    return media.relativeUri;
+  }
+
+  private async deletePhysicalFile(media: Media): Promise<void> {
+    if (!media?.relativeUri) {
+      return;
+    }
+
+    try {
+      // Draft/publish versioning may clone a Media row that reuses the same
+      // relativeUri (see DraftPublishHelperService.cloneMediaForVersion) instead of
+      // duplicating the underlying file. Skip the physical delete if another row
+      // still references it.
+      const stillReferenced = await this.repo.exists({
+        where: { relativeUri: media.relativeUri, id: Not(media.id) },
+      });
+      if (stillReferenced) {
+        return;
+      }
+
+      const mediaStorageProvider = await this.resolveMediaStorageProvider(media);
+      if (!mediaStorageProvider) {
+        return;
+      }
+
+      switch (mediaStorageProvider.type as MediaStorageProviderType) {
+        case MediaStorageProviderType.Filesystem:
+          await this.diskFileService.delete(buildDiskMediaPath(media.relativeUri, this.settingService, mediaStorageProvider));
+          return;
+        case MediaStorageProviderType.AwsS3:
+          await this.s3FileService.delete(
+            `${mediaStorageProvider.bucketName}:${media.relativeUri}`,
+            { region: getEffectiveS3Region(this.configService, mediaStorageProvider.region) },
+          );
+          return;
+        default:
+          this.logger.warn(`Skipping physical delete for unsupported media storage provider type ${mediaStorageProvider.type}`);
+      }
+    } catch (error: any) {
+      const message = error?.message ?? String(error);
+      this.logger.warn(`Failed to delete physical media file for media id ${media.id}: ${message}`);
+    }
+  }
+
+  private async resolveMediaStorageProvider(media: Media): Promise<MediaStorageProviderMetadata | undefined> {
+    if (media.mediaStorageProviderMetadata) {
+      return media.mediaStorageProviderMetadata;
+    }
+
+    if (!media.id) {
+      return undefined;
+    }
+
+    const loadedMedia = await this.repo.findOne({
+      where: { id: media.id },
+      relations: ['mediaStorageProviderMetadata'],
+    });
+
+    return loadedMedia?.mediaStorageProviderMetadata;
+  }
 }

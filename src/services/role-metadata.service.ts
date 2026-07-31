@@ -140,6 +140,10 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     return await this._addPermissionsToRole(roleName, null);
   }
 
+  async addAllPermissionsToRoleExceptPrefixes(roleName: string, excludedPermissionPrefixes: string[]): Promise<RoleMetadata> {
+    return await this._addPermissionsToRole(roleName, null, excludedPermissionPrefixes);
+  }
+
   async addPermissionsToRole(roleName: string, permissionNames: string[]): Promise<RoleMetadata> {
     return await this._addPermissionsToRole(roleName, permissionNames);
   }
@@ -148,7 +152,11 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     return await this._addPermissionsToRole(roleName, permissionName);
   }
 
-  private async _addPermissionsToRole(roleName: string, permissionNames: string[]): Promise<RoleMetadata> {
+  private async _addPermissionsToRole(
+    roleName: string,
+    permissionNames: string[],
+    excludedPermissionPrefixes: string[] = [],
+  ): Promise<RoleMetadata> {
     const role = await this.repo.findOne({
       where: { name: roleName },
       select: {
@@ -161,7 +169,7 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     }
 
     const joinInfo = this.getRolePermissionJoinInfo();
-    const targetPermissions = await this.loadTargetPermissions(permissionNames);
+    const targetPermissions = await this.loadTargetPermissions(permissionNames, excludedPermissionPrefixes);
 
     if (!permissionNames || permissionNames.length === 0) {
       await this.entityManager
@@ -226,21 +234,25 @@ export class RoleMetadataService extends CRUDService<RoleMetadata> {
     return existingPermission;
   }
 
-  private async loadTargetPermissions(permissionNames: string[] | null): Promise<PermissionMetadata[]> {
+  private async loadTargetPermissions(permissionNames: string[] | null, excludedPermissionPrefixes: string[] = []): Promise<PermissionMetadata[]> {
     if (permissionNames && permissionNames.length !== 0) {
       const uniquePermissionNames = [...new Set(permissionNames)];
       const permissions = await this.permissionRepository.find({ where: { name: In(uniquePermissionNames) } });
       if (permissions.length !== uniquePermissionNames.length) {
         throw new Error(`One or more permissions not found.`);
       }
-      return permissions;
+      return permissions.filter((permission) =>
+        !excludedPermissionPrefixes.some((prefix) => permission.name.startsWith(prefix)),
+      );
     }
 
     const permissions = await this.permissionRepository.find();
     if (permissions.length === 0) {
       throw new Error(`No permissions configured in the system. Did you forget to run the PermissionSeederService?`);
     }
-    return permissions;
+    return permissions.filter((permission) =>
+      !excludedPermissionPrefixes.some((prefix) => permission.name.startsWith(prefix)),
+    );
   }
 
   private getRolePermissionJoinInfo(): { tableName: string; roleIdColumn: string; permissionIdColumn: string } {
