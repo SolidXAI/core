@@ -404,6 +404,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.coModelEntityId = postDto.coModelEntityId;
         chatterMessage.coModelName = coModelName;
         chatterMessage.modelUserKey = postDto.modelUserKey ?? null;
+        chatterMessage.createdAt = postDto.createdAt ?? new Date();
 
         const model = await this.modelMetadataRepo.findOne({
             where: { singularName: coModelName },
