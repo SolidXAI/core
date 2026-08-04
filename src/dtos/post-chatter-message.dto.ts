@@ -1,4 +1,4 @@
-import { IsNotEmpty, IsNumber, IsString, IsOptional, IsDate } from 'class-validator';
+import { IsNotEmpty, IsNumber, IsString, IsOptional } from 'class-validator';
 
 export class PostChatterMessageDto {
     @IsNumber()
@@ -28,8 +28,4 @@ export class PostChatterMessageDto {
     @IsString()
     @IsOptional()
     status?: string;
-
-    @IsDate()
-    @IsOptional()
-    createdAt?: Date;
 }
