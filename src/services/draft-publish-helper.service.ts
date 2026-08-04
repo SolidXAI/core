@@ -333,11 +333,63 @@ export class DraftPublishHelperService {
             throw new BadRequestException(`${modelName} with id ${id} is already unpublished`);
         }
 
-        return repo.save({
-            ...entity,
-            isPublished: false,
-            updatedBy: activeUser?.sub ?? entity.updatedBy,
+        const chainId = entity.initialEntityVersionId || entity.id;
+
+        return repo.manager.transaction(async (manager) => {
+            const transactionalRepo = manager.getRepository(repo.metadata.target);
+
+            // Release the "na" published tracker before anything else can claim it, mirroring
+            // publishRecord's archive-others-then-publish ordering in reverse. unpublishRecord
+            // only ever acts on the latest version (see loadLatestEntityForPublishAction), so
+            // this always becomes a Draft rather than an Archived version — clear publishedAt
+            // to match applyCreateDefaults' Draft convention instead of leaving a stale date.
+            const unpublishedEntity = await transactionalRepo.save({
+                ...entity,
+                isPublished: false,
+                publishedAt: null,
+                publishedTracker: this.createPublishedVersionTracker(entity.id),
+                updatedBy: activeUser?.sub ?? entity.updatedBy,
+            } as any) as unknown as T;
+
+            const chainVersions = await transactionalRepo.find({
+                where: [
+                    { initialEntityVersionId: chainId },
+                    { id: chainId },
+                ] as any,
+            }) as unknown as T[];
+
+            const versionToRestore = this.pickMostRecentlyPublishedVersion(
+                chainVersions.filter(version => version.id !== entity.id),
+            );
+
+            if (versionToRestore) {
+                await transactionalRepo.save({
+                    ...versionToRestore,
+                    isPublished: true,
+                    publishedAt: new Date(),
+                    publishedTracker: "na",
+                } as any);
+            }
+
+            return unpublishedEntity;
         });
+    }
+
+    /**
+     * Among the other versions in a chain, find the one that was live most recently before
+     * being superseded (i.e. the "Archived" version unpublishRecord should restore). Ties on
+     * publishedAt fall back to the highest id, matching pickCurrentLocaleRecord's ordering.
+     */
+    private pickMostRecentlyPublishedVersion<T extends CommonEntity>(versions: T[]): T | null {
+        const previouslyPublished = versions.filter(version => Boolean(version.publishedAt));
+        if (previouslyPublished.length === 0) return null;
+
+        return previouslyPublished.sort((a, b) => {
+            const aPublishedAt = new Date(a.publishedAt as any).getTime();
+            const bPublishedAt = new Date(b.publishedAt as any).getTime();
+            if (aPublishedAt !== bPublishedAt) return bPublishedAt - aPublishedAt;
+            return Number(b.id) - Number(a.id);
+        })[0];
     }
 
     /**

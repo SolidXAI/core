@@ -6,6 +6,7 @@ import {
   SettingDefinition,
   SettingLevel,
 } from "src/interfaces";
+import { getDefaultThemeKey, getThemesByMode } from "src/theme/theme-registry";
 
 export const DEFAULT_MEDIA_UPLOAD_DIR = "media-uploads";
 export const DEFAULT_MEDIA_FILE_STORAGE_DIR = "media-files-storage";
@@ -232,6 +233,36 @@ const getSolidCoreSettings = (isProd: boolean) =>
       sortOrder: 120,
       controlType: "boolean",
       helpText: "Enables dark theme support for frontend surfaces that honor the global appearance setting.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "lightTheme",
+      value: getDefaultThemeKey("light"),
+      level: SettingLevel.SystemAdminEditable,
+      label: "Light Theme",
+      group: "app-settings",
+      sortOrder: 125,
+      controlType: "selectionStatic",
+      options: getThemesByMode("light").map((theme) => ({
+        label: theme.label,
+        value: theme.key,
+      })),
+      helpText: "Selects the theme used whenever the application is in light mode.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "darkTheme",
+      value: getDefaultThemeKey("dark"),
+      level: SettingLevel.SystemAdminEditable,
+      label: "Dark Theme",
+      group: "app-settings",
+      sortOrder: 126,
+      controlType: "selectionStatic",
+      options: getThemesByMode("dark").map((theme) => ({
+        label: theme.label,
+        value: theme.key,
+      })),
+      helpText: "Selects the theme used whenever the application is in dark mode.",
     },
     {
       moduleName: "solid-core",
