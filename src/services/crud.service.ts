@@ -583,7 +583,8 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                 async (entities) => {
                     if (populateUserIdFields?.length) await this.handlePopulateUserIdFields(populateUserIdFields, entities);
                     if (populateMedia?.length) await this.handlePopulateMedia(populateMedia, entities);
-                }
+                },
+                internationalisation, draftPublishWorkflow, this.moduleRef
             );
         }
         else {
