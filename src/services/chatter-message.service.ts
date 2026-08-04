@@ -37,6 +37,16 @@ interface ChatterMention {
     id?: string | number;
 }
 
+/**
+ * Server-side-only overrides for `postMessage`. Not part of `PostChatterMessageDto`, so
+ * nothing here is settable over HTTP - only in-process callers such as migration or
+ * back-fill services can supply it.
+ */
+export interface PostChatterMessageOptions {
+    /** Backdate the message instead of stamping it with the current time. */
+    createdAt?: Date;
+}
+
 @Injectable()
 export class ChatterMessageService extends CRUDService<ChatterMessage> {
     private readonly _logger = new Logger(ChatterMessageService.name);
@@ -389,7 +399,14 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         return this.trimMessageUser(savedMessage);
     }
 
-    async postMessage(postDto: PostChatterMessageDto, files: Express.Multer.File[] = []) {
+    /**
+     * Post a chatter message.
+     *
+     * `options` is deliberately kept out of `PostChatterMessageDto` so it can only be supplied
+     * by server-side callers (migrations, back-fills). The controller binds the DTO alone, so
+     * an API client has no way to backdate a message.
+     */
+    async postMessage(postDto: PostChatterMessageDto, files: Express.Multer.File[] = [], options: PostChatterMessageOptions = {}) {
         const coModelName = lowerFirst(postDto.coModelName);
         await this.assertRecordAccess(coModelName, postDto.coModelEntityId);
 
@@ -404,6 +421,10 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.coModelEntityId = postDto.coModelEntityId;
         chatterMessage.coModelName = coModelName;
         chatterMessage.modelUserKey = postDto.modelUserKey ?? null;
+        // Left unset otherwise, so the @CreateDateColumn default still applies.
+        if (options.createdAt) {
+            chatterMessage.createdAt = options.createdAt;
+        }
 
         const model = await this.modelMetadataRepo.findOne({
             where: { singularName: coModelName },
