@@ -6,7 +6,7 @@ import {
   SettingDefinition,
   SettingLevel,
 } from "src/interfaces";
-import { getDefaultThemeKey, getThemesByMode } from "src/theme/themeRegistry";
+import { getDefaultThemeKey, getThemesByMode } from "src/theme/theme-registry";
 
 export const DEFAULT_MEDIA_UPLOAD_DIR = "media-uploads";
 export const DEFAULT_MEDIA_FILE_STORAGE_DIR = "media-files-storage";
