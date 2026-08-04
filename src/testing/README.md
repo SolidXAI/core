@@ -252,11 +252,14 @@ Options in `with`:
 - `timeoutMs` (optional, overrides the run-wide UI navigation timeout)
 
 ### **Op: `ui.expectUrl`**
-Description: Asserts the current page URL.
+Description: Waits for the page URL to match, then asserts it. Backed by `page.waitForURL`, so an
+assertion placed straight after a navigating click does not race the navigation. Returns
+immediately when the URL already matches.
 
 Options in `with`:
 - `equals` (optional)
 - `contains` (optional)
+- `timeoutMs` (optional, overrides the run-wide UI navigation timeout)
 
 ### **Op: `ui.fill`**
 Description: Fills an input or editable element.
