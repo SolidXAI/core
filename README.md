@@ -160,6 +160,25 @@ export class AppModule {}
 
 For full configuration options — environment variables, storage providers, queue setup, and OAuth credentials — see the [Developer Documentation](https://docs.solidxai.com/docs).
 
+### Security headers and iframe embedding
+
+`bootstrapSolidApp` applies security headers through Helmet. The `frame-ancestors` CSP directive controls which origins are allowed to embed responses from the API in an iframe. This is relevant when rendering PDFs or other protected resources in the browser's built-in viewer.
+
+By default, the bootstrap helper allows the current origin and local development origins (`localhost`, `127.0.0.1`, and `::1`) over HTTP or HTTPS on any port. This supports common setups where the UI and API run on different local ports, such as `localhost:3001` embedding a PDF served by `localhost:3000`.
+
+To customize the allowlist, pass `security.frameAncestors` when bootstrapping the API. The configured list replaces the default list, so include every origin that should be allowed:
+
+```typescript
+bootstrapSolidApp(() => AppModule.forRoot(), {
+  swagger: { title: 'My API', description: 'My API description' },
+  security: {
+    frameAncestors: ["'self'", 'https://portal.example.com'],
+  },
+});
+```
+
+For a fully restricted application, use `frameAncestors: ["'none'"]`. When cross-origin ancestors are allowed, `@solidxai/core` omits the legacy `X-Frame-Options` header because that header cannot express an origin allowlist; the CSP directive remains the source of truth.
+
 
 ## Technology Stack
 
