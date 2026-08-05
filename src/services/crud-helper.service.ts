@@ -889,25 +889,25 @@ export class CrudHelperService {
         };
     }
 
-    async countGroupedRecords(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string, internationalisation?: boolean, draftPublishWorkflow?: boolean, moduleRef?: any) { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
-        const { limit, offset, ...rest } = basicFilterDto;
-        const filteredDto = { ...rest, limit: undefined, offset: undefined };
+    // async countGroupedRecords(qb: SelectQueryBuilder<any>, basicFilterDto: BasicFilterDto, entityAlias: string, internationalisation?: boolean, draftPublishWorkflow?: boolean, moduleRef?: any) { //TODO : Check how to pass a type to SelectQueryBuilder instead of any
+    //     const { limit, offset, ...rest } = basicFilterDto;
+    //     const filteredDto = { ...rest, limit: undefined, offset: undefined };
 
-        const filteredQB = this.buildFilterQuery(qb, filteredDto as BasicFilterDto, entityAlias, internationalisation, draftPublishWorkflow, moduleRef, FilterCombinator.AND, false, false);
+    //     const filteredQB = this.buildFilterQuery(qb, filteredDto as BasicFilterDto, entityAlias, internationalisation, draftPublishWorkflow, moduleRef, FilterCombinator.AND, false, false);
 
-        const groupByFields = this.normalize(filteredDto.groupBy);
+    //     const groupByFields = this.normalize(filteredDto.groupBy);
 
-        if (!groupByFields || groupByFields.length === 0) {
-            throw new Error(ERROR_MESSAGES.INVALID_GROUP_BY_COUNT);
-        }
+    //     if (!groupByFields || groupByFields.length === 0) {
+    //         throw new Error(ERROR_MESSAGES.INVALID_GROUP_BY_COUNT);
+    //     }
 
-        this.applyGroupBySelections(filteredQB, groupByFields, entityAlias);
-        this.applyAggregates(filteredQB, ['count'], entityAlias);
-        filteredQB.limit(undefined).offset(undefined).take(undefined).skip(undefined);
+    //     this.applyGroupBySelections(filteredQB, groupByFields, entityAlias);
+    //     this.applyAggregates(filteredQB, ['count'], entityAlias);
+    //     filteredQB.limit(undefined).offset(undefined).take(undefined).skip(undefined);
 
-        const rawResults = await filteredQB.getRawMany();
-        return rawResults.length;
-    }
+    //     const rawResults = await filteredQB.getRawMany();
+    //     return rawResults.length;
+    // }
 
     hasReadPermissionOnModel = (activeUser: ActiveUserData, modelName: string) => {
         const permissionNames = [`${classify(modelName)}Controller.findOne`, `${classify(modelName)}Controller.findMany`];
