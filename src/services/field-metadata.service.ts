@@ -7,12 +7,13 @@ import { ComputedFieldMetadata, SolidRegistry } from 'src/helpers/solid-registry
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { DataSource, Repository, SelectQueryBuilder } from 'typeorm';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
-import { CascadeType, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MediaType, MSSQLType, PSQLType, RelationType, SelectionValueType, SolidFieldType } from '../dtos/create-field-metadata.dto';
+import { CascadeType, ComputedFieldValueType, CreateFieldMetadataDto, DecryptWhenType, EncryptionType, MSSQLType, PSQLType, RelationType, SelectionValueType, SolidFieldType } from '../dtos/create-field-metadata.dto';
 import { SelectionDynamicQueryDto } from '../dtos/selection-dynamic-query.dto';
 import { UpdateFieldMetaDataDto } from '../dtos/update-field-metadata.dto';
 import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ISelectionProviderValues, MediaStorageProvider } from '../interfaces';
+import { MEDIA_CATEGORIES } from '../constants/media-file-types';
 import { CrudHelperService } from './crud-helper.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import qs from 'qs';
@@ -414,7 +415,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
             encryptionTypes: enumToResponseArray(EncryptionType),
             ormType: ormFieldTypeForSolid,
             decryptWhenTypes: enumToResponseArray(DecryptWhenType),
-            mediaTypes: enumToResponseArray(MediaType),
+            mediaTypes: MEDIA_CATEGORIES.map((value) => ({ label: value, value })),
             relationTypes: enumToResponseArray(RelationType),
             selectionDynamicProviders: sps,
             computedProviders: cps,

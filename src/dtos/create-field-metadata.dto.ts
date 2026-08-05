@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
+import { MEDIA_CATEGORIES, MediaCategory } from '../constants/media-file-types';
 
 import {
   IsArray,
@@ -155,13 +156,7 @@ export enum DecryptWhenType {
   afterTransit = 'after-transit',
 }
 
-export enum MediaType {
-  image = 'image',
-  audio = 'audio',
-  video = 'video',
-  // document = 'document',
-  file = 'file',
-}
+export type MediaType = MediaCategory;
 
 export enum RelationType {
   manyToOne = 'many-to-one',
@@ -308,7 +303,7 @@ export class CreateFieldMetadataDto {
   private: boolean;
 
   @ApiProperty({ description: 'Allowed media types for the field. Only for type=mediaSingle,mediaMultiple', })
-  @IsEnum(MediaType, { each: true })
+  @IsIn([...MEDIA_CATEGORIES], { each: true })
   @IsOptional()
   mediaTypes: MediaType[];
 
