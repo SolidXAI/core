@@ -1,15 +1,39 @@
 import { HelmetOptions } from "helmet";
 import { Environment } from "src/decorators/disallow-in-production.decorator";
 
+export interface SolidSecurityOptions {
+  /**
+   * Origins that may embed this application in an iframe.
+   * Defaults to the local HTTP/HTTPS loopback origins on any port.
+   */
+  frameAncestors?: string[];
+}
+
+export const DEFAULT_FRAME_ANCESTORS = [
+  "'self'",
+  "http://localhost:*",
+  "https://localhost:*",
+  "http://127.0.0.1:*",
+  "https://127.0.0.1:*",
+  "http://[::1]:*",
+  "https://[::1]:*",
+];
+
 /**
  * Default security headers for SolidX apps.
  * - HSTS only in prod over HTTPS
- * - CSP with frame-ancestors 'none' (prevents clickjacking)
- * - X-Frame-Options: DENY (legacy fallback)
+ * - CSP with configurable frame-ancestors
+ * - X-Frame-Options disabled when cross-origin frame ancestors are allowed
  * - No X-XSS-Protection (deprecated)
  */
-export function buildDefaultSecurityHeaderOptions(): Readonly<HelmetOptions> {
+export function buildDefaultSecurityHeaderOptions(
+  options: SolidSecurityOptions = {},
+): Readonly<HelmetOptions> {
   const isProd = process.env.ENV === Environment.Production;
+  const frameAncestors = options.frameAncestors ?? DEFAULT_FRAME_ANCESTORS;
+  const allowsCrossOriginFrames = frameAncestors.some(
+    (source) => source !== "'self'" && source !== "'none'",
+  );
 
   return {
     // Modern CSP. Add more directives as your app needs (script-src, connect-src, etc.)
@@ -23,7 +47,7 @@ export function buildDefaultSecurityHeaderOptions(): Readonly<HelmetOptions> {
         // "form-action": ["'self'"],
 
         // clickjacking defense (modern)
-        "frame-ancestors": ["'none'"],
+        "frame-ancestors": frameAncestors,
         "style-src": ["'self'"],
         // add/adjust as needed for your app:
         // "script-src": ["'self'"],              // add hashes/nonces/CSPRO if needed
@@ -34,9 +58,12 @@ export function buildDefaultSecurityHeaderOptions(): Readonly<HelmetOptions> {
       },
     },
 
-    
-    // Legacy clickjacking defense (kept for older UAs)
-    frameguard: { action: "deny" },
+    // Legacy clickjacking defense for configurations that do not allow
+    // cross-origin parents (kept for older UAs).
+    // X-Frame-Options cannot express an allowlist. It must be omitted when
+    // CSP allows a parent on another origin, otherwise older browsers may
+    // still block the iframe despite the CSP configuration.
+    frameguard: allowsCrossOriginFrames ? false : { action: "deny" },
 
     // Referrer/cross-origin policies
     referrerPolicy: { policy: "strict-origin-when-cross-origin" },

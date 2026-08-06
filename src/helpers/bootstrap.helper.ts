@@ -12,7 +12,12 @@ import { CommandFactory } from 'nest-commander';
 import { createWinstonLoggerConfig } from '../winston.logger';
 import { WrapResponseInterceptor } from '../interceptors/wrap-response.interceptor';
 import { buildDefaultCorsOptions } from './cors.helper';
-import { buildDefaultSecurityHeaderOptions, buildPermissionsPolicyHeader, PermissionsPolicyConfig } from './security.helper';
+import {
+  buildDefaultSecurityHeaderOptions,
+  buildPermissionsPolicyHeader,
+  PermissionsPolicyConfig,
+  SolidSecurityOptions,
+} from './security.helper';
 import { parseBooleanEnv } from './environment.helper';
 
 // ---- Shared process handlers ----
@@ -50,6 +55,8 @@ export interface SolidBootstrapOptions {
   swagger?: SolidSwaggerOptions | false;
   /** Permissions-Policy header overrides (merged with defaults). */
   permissionsPolicyOverrides?: Partial<PermissionsPolicyConfig>;
+  /** Security header overrides, including iframe frame-ancestor allowlists. */
+  security?: SolidSecurityOptions;
   /** Show full NestJS init logs during bootstrap (route mapping, module deps, pollers). Defaults to false. */
   verboseBootstrap?: boolean;
 }
@@ -64,6 +71,7 @@ export interface SolidBootstrapOptions {
  * // main.ts
  * bootstrapSolidApp(() => AppModule.forRoot(), {
  *   swagger: { title: 'My API', description: 'My API description' },
+ *   security: { frameAncestors: ["'self'", 'https://portal.example.com'] },
  * });
  */
 export async function bootstrapSolidApp(
@@ -72,7 +80,13 @@ export async function bootstrapSolidApp(
 ): Promise<void> {
   registerGlobalProcessHandlers();
 
-  const { globalPrefix = 'api', swagger = {}, permissionsPolicyOverrides = {}, verboseBootstrap = false } = options;
+  const {
+    globalPrefix = 'api',
+    swagger = {},
+    permissionsPolicyOverrides = {},
+    security = {},
+    verboseBootstrap = false,
+  } = options;
 
   const startTime = Date.now();
   const appModule = await appModuleFactory();
@@ -105,7 +119,7 @@ export async function bootstrapSolidApp(
   server.get('/', (_req, res) => res.status(200).send('SOLID OK'));
 
   // Security headers
-  app.use(helmet(buildDefaultSecurityHeaderOptions()));
+  app.use(helmet(buildDefaultSecurityHeaderOptions(security)));
 
   // Nest's Swagger UI HTML injects inline styles; keep CSP strict elsewhere.
   const isSwaggerPath = (path: string) =>

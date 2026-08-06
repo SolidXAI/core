@@ -1,5 +1,7 @@
 export type MediaCategory = 'image' | 'audio' | 'video' | 'file' | 'pdf';
 
+export const MEDIA_CATEGORIES = ['image', 'audio', 'video', 'file', 'pdf'] as const;
+
 const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tiff', 'heic', 'heif'];
 const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac', 'webm'];
 const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', '3g2', 'webm', 'ogg'];

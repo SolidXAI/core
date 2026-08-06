@@ -225,14 +225,14 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
-      key: "enableDarkMode",
+      key: "showThemeToggle",
       value: true,
       level: SettingLevel.SystemAdminEditable,
-      label: "Enable Dark Mode",
+      label: "Show Theme Toggle",
       group: "app-settings",
       sortOrder: 120,
       controlType: "boolean",
-      helpText: "Enables dark theme support for frontend surfaces that honor the global appearance setting.",
+      helpText: "Shows the theme toggle in the frontend so users can switch between light and dark themes.",
     },
     {
       moduleName: "solid-core",
@@ -1536,6 +1536,12 @@ const getSolidCoreSettings = (isProd: boolean) =>
       sortOrder: 20,
       controlType: "numeric",
       helpText: "How long the ui.goto step waits for a page to load before failing. Falls back to the UI test default timeout.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "uiTestBrowsersEagerInstall",
+      value: process.env.COMMON_UI_TEST_BROWSERS_EAGER_INSTALL === "true",
+      level: SettingLevel.SystemEnv,
     },
   ] as const satisfies SettingDefinition[];
 

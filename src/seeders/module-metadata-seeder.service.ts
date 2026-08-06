@@ -1049,17 +1049,25 @@ export class ModuleMetadataSeederService {
 
     private async seedModelSequences(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
         const modelSequences = this.getSeedArray<CreateModelSequenceDto>(overallMetadata?.modelSequences);
-        const pruned = this.enablePruning ? await this.timeOperation('prune-model-sequences', () => this.pruneModelSequences(modelSequences, overallMetadata?.moduleMetadata?.name), {
+
+        // Getting rid of currentValue even if it is present in the seed data. 
+        // This is because we don't want to overwrite the currentValue in the database with the seed data. 
+        // The currentValue should be managed by the application and not by the seed data.
+        const cleanModelSequences = modelSequences.map((sequence) => {
+            const { currentValue, ...cleanModelSequence }: CreateModelSequenceDto = sequence;
+            return cleanModelSequence;
+        });
+        const pruned = this.enablePruning ? await this.timeOperation('prune-model-sequences', () => this.pruneModelSequences(cleanModelSequences, overallMetadata?.moduleMetadata?.name), {
             moduleName: overallMetadata?.moduleMetadata?.name,
             component: 'model-sequences',
             serviceCall: 'pruneModelSequences',
         }) : 0;
-        await this.timeOperation('handle-model-sequences', () => this.handleSeedModelSequences(modelSequences), {
+        await this.timeOperation('handle-model-sequences', () => this.handleSeedModelSequences(cleanModelSequences), {
             moduleName: overallMetadata?.moduleMetadata?.name,
             component: 'model-sequences',
             serviceCall: 'handleSeedModelSequences',
         });
-        return { pruned, upserted: modelSequences.length };
+        return { pruned, upserted: cleanModelSequences.length };
     }
 
     // OK

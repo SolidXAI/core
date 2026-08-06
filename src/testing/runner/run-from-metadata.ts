@@ -14,6 +14,7 @@ import { SpecRegistry } from "../core/spec-registry";
 import { TestingEngine } from "../core/testing-engine";
 import { filterScenarios } from "./scenario-filter";
 import { ensureUiStarted, scenarioNeedsUi } from "./lifecycle";
+import { ensureChromiumInstalled } from "../adapters/ui/browser-provisioner";
 import { ConsoleReporter } from "../reporter/console-reporter";
 
 
@@ -68,6 +69,12 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const testData = buildTestDataIndex(opts.data ?? opts.metadata?.testing?.data);
   if (opts.specs) {
     opts.specs(specRegistry);
+  }
+
+  // Fetch the browser before the reporter starts drawing its footer, so the download
+  // gets a clean terminal and a missing browser fails before any scenario runs.
+  if (scenarios.some(scenarioNeedsUi)) {
+    await ensureChromiumInstalled();
   }
 
   const resources = new SimpleResourceStore();
