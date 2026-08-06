@@ -1537,6 +1537,12 @@ const getSolidCoreSettings = (isProd: boolean) =>
       controlType: "numeric",
       helpText: "How long the ui.goto step waits for a page to load before failing. Falls back to the UI test default timeout.",
     },
+    {
+      moduleName: "solid-core",
+      key: "uiTestBrowsersEagerInstall",
+      value: process.env.COMMON_UI_TEST_BROWSERS_EAGER_INSTALL === "true",
+      level: SettingLevel.SystemEnv,
+    },
   ] as const satisfies SettingDefinition[];
 
 // 2.

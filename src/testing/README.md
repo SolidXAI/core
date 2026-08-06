@@ -8,6 +8,21 @@
 - `reporter/`: reporting interfaces + console reporter
 - `runner/`: lifecycle helpers + metadata runner
 
+## Browser Setup
+UI scenarios need a Chromium build. The npm `playwright` package ships no install script, so
+the binary is fetched separately.
+
+- **By default it is lazy.** The first test run that selects a UI scenario downloads Chromium
+  (~150MB) before the run starts, then reuses it. Runs filtered to API-only scenarios never
+  download anything, and neither do projects that have no UI scenarios.
+- **To fetch it at install time instead**, set `COMMON_UI_TEST_BROWSERS_EAGER_INSTALL=true`
+  either in the API project's `.env` or as a real environment variable. Useful for CI images.
+  A failed download never fails the install. Note that `npm install --ignore-scripts` skips
+  this entirely, in which case the lazy path still applies.
+- **In Docker**, browsers land in `~/.cache/ms-playwright` (Linux). A multi-stage build that
+  installs as `root` but runs as another user must set `PLAYWRIGHT_BROWSERS_PATH` to a shared
+  location, or the runtime user will not find the binary.
+
 ## Metadata Shape
 `TestingMetadata` lives under `testing` in module metadata JSON files.
 
