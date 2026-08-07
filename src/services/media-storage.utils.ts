@@ -5,6 +5,11 @@ import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provide
 import { SettingService } from 'src/services/setting.service';
 import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from 'src/services/settings/default-settings-provider.service';
 import type { SolidCoreSetting } from 'src/services/settings/default-settings-provider.service';
+import { normalizeUploadedFileName } from 'src/constants/media-file-types';
+
+// Keeps the joined path well clear of filesystem NAME_MAX (255 on ext4/APFS) once the
+// multer hash prefix and separator are added.
+const MAX_STORED_FILE_NAME_LENGTH = 150;
 
 
 export interface MediaRecordCreateInput {
@@ -18,9 +23,29 @@ export interface MediaRecordCreateInput {
   originalFileName?: string;
 }
 
+/**
+ * Reduces a client-supplied name to something safe to interpolate into a filesystem path.
+ * `originalname` is fully attacker-controlled, so without this a name like
+ * `../../../../tmp/pwned.png` escapes the media storage directory entirely - the multer hash
+ * prefix does not contain it, because the leading `..` simply cancels the prefix segment.
+ *
+ * Everything outside a conservative allowlist becomes `_`; the result can never contain a
+ * path separator, so the joined path always stays inside the storage root.
+ */
+export function sanitizeStoredMediaFileName(originalName?: string | null): string {
+  const sanitized = normalizeUploadedFileName(originalName)
+    .replace(/[^A-Za-z0-9._-]/g, '_')
+    // Collapse any run of dots so no `..` segment can survive.
+    .replace(/\.{2,}/g, '.')
+    .replace(/^[._-]+/, '')
+    .slice(0, MAX_STORED_FILE_NAME_LENGTH);
+
+  return sanitized || 'file';
+}
+
 // Builds the stored file name format shared by media storage implementations.
 export function buildStoredMediaFileName(file: Pick<Express.Multer.File, 'filename' | 'originalname'>): string {
-  return `${file.filename}-${file.originalname}`;
+  return `${file.filename}-${sanitizeStoredMediaFileName(file.originalname)}`;
 }
 
 // Resolves the on-disk path for a media file based on settings and provider visibility.

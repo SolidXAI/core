@@ -29,17 +29,66 @@ export const DANGEROUS_MIME_TYPES = new Set([
     'image/svg+xml', 'text/html', 'application/xhtml+xml',
 ]);
 
-export function getLowercaseFileExtension(fileName?: string | null): string | undefined {
+/**
+ * Reduces a client-supplied name to the name that will actually be resolved on disk, so
+ * extension checks can't be dodged by decorating it. Each step defends a known bypass:
+ *
+ *  - `../../evil.exe`      -> only the final path segment is the file name.
+ *  - `evil.exe\0.png`      -> a NUL truncates the name at the syscall/filesystem layer, so
+ *                             anything after it is invisible to the OS but visible to naive
+ *                             validation.
+ *  - `evil.exe::$DATA`     -> NTFS alternate data stream suffix; the file on disk is evil.exe.
+ *  - `evil.exe.` / `.exe ` -> Windows silently strips trailing dots and spaces when resolving
+ *                             a path, so these land on disk as evil.exe.
+ */
+export function normalizeUploadedFileName(fileName?: string | null): string {
     if (!fileName) {
+        return '';
+    }
+
+    let name = String(fileName).split(/[/\\]/).pop() ?? '';
+
+    const nulIndex = name.indexOf('\0');
+    if (nulIndex >= 0) {
+        name = name.slice(0, nulIndex);
+    }
+
+    const streamIndex = name.indexOf(':');
+    if (streamIndex >= 0) {
+        name = name.slice(0, streamIndex);
+    }
+
+    return name.replace(/[\s.]+$/, '');
+}
+
+/**
+ * The effective extension - what the OS/browser will treat the file as. Used for media
+ * category resolution and inline-safety decisions. Always normalizes first, so
+ * `evil.exe.` resolves to `exe` rather than to nothing.
+ */
+export function getLowercaseFileExtension(fileName?: string | null): string | undefined {
+    const name = normalizeUploadedFileName(fileName);
+
+    const lastDotIndex = name.lastIndexOf('.');
+    if (lastDotIndex < 0 || lastDotIndex === name.length - 1) {
         return undefined;
     }
 
-    const lastDotIndex = fileName.lastIndexOf('.');
-    if (lastDotIndex < 0 || lastDotIndex === fileName.length - 1) {
-        return undefined;
-    }
+    return name.slice(lastDotIndex + 1).toLowerCase();
+}
 
-    return fileName.slice(lastDotIndex + 1).toLowerCase();
+/**
+ * Every dot-delimited segment after the stem, lowercased. The danger check uses this rather
+ * than only the effective extension so a dangerous type buried in a double extension
+ * (`evil.exe.png`, `shell.php.jpg`) is still caught - several servers and browsers resolve
+ * such names by an earlier segment than the last one.
+ *
+ * The stem is skipped so an innocuous file that merely starts with a keyword (`exe.png`)
+ * isn't rejected.
+ */
+export function getLowercaseFileExtensionSegments(fileName?: string | null): string[] {
+    const segments = normalizeUploadedFileName(fileName).toLowerCase().split('.');
+    return segments.slice(1).filter(segment => segment.length > 0);
 }
 
 /** Minimal shape of an uploaded file, so this module stays free of framework imports. */
@@ -57,12 +106,12 @@ export function getUploadedFileName(file?: UploadedFileLike | null): string {
 /**
  * Single predicate for "must never be stored". Shared by every upload entry point
  * (MediaFieldCrudManager, chatter attachments) so the rules can't drift between them.
- * Extension is checked before mimetype so a spoofed Content-Type (e.g.
- * application/octet-stream on an .html file) can't bypass it.
+ * Extensions are checked before mimetype so a spoofed Content-Type (e.g.
+ * application/octet-stream, or image/png, on an .html file) can't bypass it.
  */
 export function isDangerousMediaFile(file?: UploadedFileLike | null): boolean {
-    const ext = getLowercaseFileExtension(getUploadedFileName(file));
-    if (ext && DANGEROUS_EXTENSIONS.has(ext)) {
+    const segments = getLowercaseFileExtensionSegments(getUploadedFileName(file));
+    if (segments.some(segment => DANGEROUS_EXTENSIONS.has(segment))) {
         return true;
     }
 
