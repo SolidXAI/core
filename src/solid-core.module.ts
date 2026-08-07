@@ -1,6 +1,5 @@
 import "multer";
-import { Global, MiddlewareConsumer, Module, NestModule } from "@nestjs/common";
-import * as express from "express";
+import { Global, Module } from "@nestjs/common";
 import { ConfigModule, ConfigService } from "@nestjs/config";
 import {
   APP_FILTER,
@@ -1050,13 +1049,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowExpressionService,
   ],
 })
-export class SolidCoreModule implements NestModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(
-        express.json({ limit: "10mb" }),
-        express.urlencoded({ limit: "10mb", extended: true }),
-      )
-      .forRoutes("*");
-  }
-}
+// Body-size limits live in bootstrapSolidApp (see SolidBootstrapOptions.bodyLimit).
+// They cannot be applied here: module middleware is registered in registerRouter(),
+// which runs after Nest's own parser middleware, so anything set here never takes effect.
+export class SolidCoreModule {}
