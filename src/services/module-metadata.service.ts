@@ -18,6 +18,7 @@ import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.
 import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
 import { PermissionMetadataSeederService } from 'src/seeders/permission-metadata-seeder.service';
 import { DiskFileService } from 'src/services/file';
+import { sanitizeStoredMediaFileName } from 'src/services/media-storage.utils';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
 import { UpdateModuleMetadataDto } from '../dtos/update-module-metadata.dto';
 import {
@@ -609,7 +610,8 @@ export class ModuleMetadataService {
   }
 
   private getFileName(file: Express.Multer.File): string {
-    return `${file.filename}-${file.originalname}`;
+    // originalname is attacker-controlled and feeds straight into a storage path.
+    return `${file.filename}-${sanitizeStoredMediaFileName(file.originalname)}`;
   }
 
 }
