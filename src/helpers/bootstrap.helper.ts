@@ -62,8 +62,12 @@ export interface SolidBootstrapOptions {
   verboseBootstrap?: boolean;
   /**
    * Max request body size for JSON and urlencoded payloads, as a `bytes`-compatible
-   * string (e.g. '25mb', '512kb'). Defaults to '25mb'.
-   * Note: does not apply to multipart uploads — those are governed by Multer.
+   * string (e.g. '10mb', '512kb'). Defaults to '10mb'.
+   *
+   * Does NOT apply to multipart/form-data uploads: body-parser matches on Content-Type,
+   * so multipart requests skip these parsers entirely and are handled by Multer. Raise
+   * this only for large structured JSON (e.g. /bulk arrays), bearing in mind the parsed
+   * object graph can retain several times the raw byte size.
    */
   bodyLimit?: string;
 }
@@ -93,7 +97,7 @@ export async function bootstrapSolidApp(
     permissionsPolicyOverrides = {},
     security = {},
     verboseBootstrap = false,
-    bodyLimit = '25mb',
+    bodyLimit = '10mb',
   } = options;
 
   const startTime = Date.now();
