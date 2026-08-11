@@ -2293,18 +2293,22 @@ export class AuthenticationService {
   // }
   async logout(refreshToken: string) {
     try {
-      const payload = await this.verifyRefreshTokenForLogout(refreshToken);
+      // const activeUser = this.requestContextService.getActiveUser();
+      // const userId = activeUser?.sub;
+      // const user = await this.userRepository.findOne({
+      //     where: {
+      //         id: userId,
+      //     }
+      // })
+      // // Invalidate refresh token if you store them
+      // await this.refreshTokenIdsStorage.invalidate(userId); // ← Your existing logic
+      // if (!refreshToken) {
+      //     throw new UnauthorizedException('Refresh token is required');
+      // }
+      const payload = this.jwtService.decode(refreshToken) as any;
 
-      // Nothing verifiable to act on: forged, malformed, or signed with another
-      // secret. Acting on an unauthenticated `sub` is exactly the hole this
-      // closes - the route is @Public(), so a decoded-but-unverified token let
-      // anyone log out an arbitrary user. Report success either way: logout
-      // must be safe to call blindly from a client error path, and a 401/200
-      // split here would leak whether a token string is genuine (RFC 7009 §2.2
-      // takes the same position for revocation endpoints).
-      if (!payload?.sub) {
-        this.logger.warn("logout called with an unverifiable refresh token");
-        return { message: SUCCESS_MESSAGES.LOGOUT_SUCCESS };
+      if (!payload || !payload.sub) {
+        throw new UnauthorizedException(ERROR_MESSAGES.INVALID_REFRESH_TOKEN);
       }
 
       const userId = payload.sub;
@@ -2316,44 +2320,14 @@ export class AuthenticationService {
         },
       });
       // Log logout event
-      if (user) {
-        await this.userActivityHistoryService.logEvent("logout", user);
-      }
+      await this.userActivityHistoryService.logEvent("logout", user);
 
       return { message: SUCCESS_MESSAGES.LOGOUT_SUCCESS };
     } catch (err: any) {
-      // JWT problems no longer reach here - verifyRefreshTokenForLogout
-      // swallows them - so this is left for genuine infrastructure failures
-      // (cache or database unavailable), where a 500 is the correct answer.
       throw err instanceof UnauthorizedException ||
         err instanceof InternalServerErrorException
         ? err
         : new InternalServerErrorException(ERROR_MESSAGES.LOGOUT_FAILED);
-    }
-  }
-
-  private async verifyRefreshTokenForLogout(
-    refreshToken: string,
-  ): Promise<{ sub: number } | null> {
-    try {
-      const payload = await this.jwtService.verifyAsync(refreshToken, {
-        secret: this.settingService.getConfigValue<SolidCoreSetting>("secret"),
-        audience:
-          this.settingService.getConfigValue<SolidCoreSetting>("audience"),
-        issuer: this.settingService.getConfigValue<SolidCoreSetting>("issuer"),
-        // Signature, audience and issuer are still enforced; only `exp` is
-        // tolerated. An expired session must still be able to log out - the
-        // previous jwtService.decode() allowed that, and a plain verifyAsync
-        // would throw TokenExpiredError, which the catch above would turn into
-        // a 500 on an ordinary sign-out.
-        ignoreExpiration: true,
-      });
-
-      // Access and refresh tokens share secret, audience and issuer, so only
-      // this claim distinguishes them. Reject an access token presented here.
-      return payload?.refreshTokenId ? payload : null;
-    } catch {
-      return null; // bad signature or malformed
     }
   }
 
@@ -2391,11 +2365,7 @@ export class AuthenticationService {
         id: user.id,
         roles: user.roles.map((role) => role.name),
       },
-      // Null-guarded because the cache entry now carries a TTL: once it
-      // expires - or after a logout followed by a call with a still-valid
-      // access token - there is no state to read. Matches the existing
-      // handling in generateSsoCode.
-      refreshToken: refreshTokenState?.currentRefreshToken ?? null,
+      refreshToken: refreshTokenState.currentRefreshToken,
       // ...tokens
     };
     return response;
