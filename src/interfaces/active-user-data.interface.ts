@@ -23,6 +23,15 @@ export interface ActiveUserData {
   sessionId?: string;
 
   /**
+   * Identifies which per-device refresh-token bucket this session belongs to.
+   * Present only while concurrent logins are permitted; mutually exclusive with
+   * sessionId, which exists only when they are not. Carried on the access token
+   * so bearer-authenticated endpoints that need this session's refresh token
+   * can find it.
+   */
+  deviceKey?: string;
+
+  /**
    * The subject's (user) roles.
    * These are part of the JWT token, we simply decode them.
    */

@@ -1793,7 +1793,13 @@ export class AuthenticationService {
     }
   }
 
-  async generateTokens(user: User) {
+  /**
+   * @param deviceId optional stable per-device identifier. Supplied by callers
+   * that own a device credential; otherwise a key is minted per login so that
+   * clients with no device concept (the web UI) still get their own bucket
+   * instead of sharing - and evicting - one.
+   */
+  async generateTokens(user: User, deviceId?: string) {
     const sessionId = this.shouldPreventConcurrentLogins()
       ? randomUUID()
       : undefined;
@@ -1802,9 +1808,17 @@ export class AuthenticationService {
     } else {
       await this.activeSessionStorage.clearActiveSession(user.id);
     }
+
+    // Mutually exclusive with sessionId by construction: per-device buckets
+    // exist only when preventConcurrentLogins is off, sessionId only when it
+    // is on.
+    const deviceKey = this.refreshTokenIdsStorage.areConcurrentLoginsAllowed()
+      ? deviceId ?? randomUUID()
+      : undefined;
+
     const [accessToken, refreshToken] = await Promise.all([
-      await this.generateAccessToken(user, sessionId),
-      await this.generateRefreshToken(user),
+      await this.generateAccessToken(user, sessionId, deviceKey),
+      await this.generateRefreshToken(user, undefined, deviceKey),
     ]);
 
     return {
@@ -1813,7 +1827,7 @@ export class AuthenticationService {
     };
   }
 
-  async generateAccessToken(user: User, sessionId?: string) {
+  async generateAccessToken(user: User, sessionId?: string, deviceKey?: string) {
     // const userRoleNames = user.roles.map((role) => role.name).join(';')
     const userRoleNames = user.roles.map((role) => role.name);
     const resolvedSessionId = this.shouldPreventConcurrentLogins()
@@ -1830,18 +1844,36 @@ export class AuthenticationService {
         email: user.email,
         roles: userRoleNames,
         ...(resolvedSessionId ? { sessionId: resolvedSessionId } : {}),
+        // Carried so that bearer-authenticated endpoints which need this
+        // session's refresh token - generateSsoCode, me - can locate its
+        // bucket. The refresh token is not available to them.
+        ...(deviceKey ? { deviceKey } : {}),
       },
     );
 
     return accessToken;
   }
 
-  async generateRefreshToken(user: User, previousRefreshToken?: string) {
+  async generateRefreshToken(
+    user: User,
+    previousRefreshToken?: string,
+    deviceKey?: string,
+  ) {
     const refreshTokenId = randomUUID();
     const refreshTokenTtl =
       this.settingService.getConfigValue<SolidCoreSetting>("refreshTokenTtl");
+
+    // Only per-device tokens carry an epoch - it is what makes bulk
+    // invalidation possible without enumerating buckets. Single-slot tokens
+    // are invalidated by deleting their one key.
+    const epoch = deviceKey
+      ? await this.refreshTokenIdsStorage.getEpoch(user.id)
+      : undefined;
+
     const refreshToken = await this.signToken(user.id, refreshTokenTtl, {
       refreshTokenId,
+      ...(deviceKey ? { deviceKey } : {}),
+      ...(epoch !== undefined ? { epoch } : {}),
     });
 
     // store the refresh token id in the redis storage.
@@ -1849,6 +1881,7 @@ export class AuthenticationService {
       user.id,
       refreshToken,
       previousRefreshToken,
+      deviceKey,
     );
 
     return refreshToken;
@@ -1863,8 +1896,16 @@ export class AuthenticationService {
       const issuer =
         this.settingService.getConfigValue<SolidCoreSetting>("issuer");
 
-      const { sub } = await this.jwtService.verifyAsync<
-        Pick<ActiveUserData, "sub"> & { refreshTokenId: string }
+      // deviceKey/epoch are absent on tokens issued before per-device sessions,
+      // and on tokens issued while preventConcurrentLogins is on. That absence
+      // is the signal the storage layer branches on - no request-body change
+      // and no client change is needed to carry it.
+      const { sub, deviceKey, epoch } = await this.jwtService.verifyAsync<
+        Pick<ActiveUserData, "sub"> & {
+          refreshTokenId: string;
+          deviceKey?: string;
+          epoch?: number;
+        }
       >(refreshTokenDto.refreshToken, {
         secret,
         audience,
@@ -1892,17 +1933,24 @@ export class AuthenticationService {
       //     throw new Error('Refresh token is invalid');
       // }
 
-      const currentRefreshToken =
-        await this.refreshTokenIdsStorage.validateAndRotate(
-          user,
-          refreshTokenDto.refreshToken,
-        );
+      const rotated = await this.refreshTokenIdsStorage.validateAndRotate(
+        user,
+        refreshTokenDto.refreshToken,
+        { deviceKey, epoch },
+      );
 
       await this.userActivityHistoryService.logEvent("tokenRefreshed", user);
 
       return {
-        accessToken: await this.generateAccessToken(user),
-        refreshToken: currentRefreshToken,
+        // The rotated key, not the incoming one: a session migrating out of the
+        // pre-deploy single slot is assigned a bucket here, and the new access
+        // token has to name the same one.
+        accessToken: await this.generateAccessToken(
+          user,
+          undefined,
+          rotated.deviceKey,
+        ),
+        refreshToken: rotated.refreshToken,
       };
     } catch (err: any) {
       if (err instanceof InvalidatedRefreshTokenError) {
@@ -2291,7 +2339,7 @@ export class AuthenticationService {
   //     // Invalidate the refresh token
   //     // await this.refreshTokenIdsStorage.invalidate(user.id);
   // }
-  async logout(refreshToken: string) {
+  async logout(refreshToken: string, allDevices = false) {
     try {
       const payload = await this.verifyRefreshTokenForLogout(refreshToken);
 
@@ -2308,7 +2356,14 @@ export class AuthenticationService {
       }
 
       const userId = payload.sub;
-      await this.refreshTokenIdsStorage.invalidate(userId);
+      if (allDevices) {
+        await this.refreshTokenIdsStorage.invalidateAll(userId);
+      } else {
+        // Scoped to the bucket this token belongs to, so signing out on one
+        // device leaves the others alive. A token with no deviceKey names the
+        // single slot, which is the same key as before.
+        await this.refreshTokenIdsStorage.invalidate(userId, payload.deviceKey);
+      }
       await this.activeSessionStorage.clearActiveSession(userId);
       const user = await this.userRepository.findOne({
         where: {
@@ -2334,7 +2389,7 @@ export class AuthenticationService {
 
   private async verifyRefreshTokenForLogout(
     refreshToken: string,
-  ): Promise<{ sub: number } | null> {
+  ): Promise<{ sub: number; deviceKey?: string } | null> {
     try {
       const payload = await this.jwtService.verifyAsync(refreshToken, {
         secret: this.settingService.getConfigValue<SolidCoreSetting>("secret"),
@@ -2378,9 +2433,14 @@ export class AuthenticationService {
 
     // const tokens = await this.generateTokens(user);
 
-    // Get the refresh token for a user from refresh token storage.
+    // Get the refresh token for a user from refresh token storage. The bucket
+    // is named by the access token's own deviceKey claim; absent for
+    // single-slot sessions, which resolves to the same key as before.
     const refreshTokenState =
-      await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(user.id);
+      await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(
+        user.id,
+        activeUser.deviceKey,
+      );
 
     const response = {
       user: {
@@ -2408,6 +2468,7 @@ export class AuthenticationService {
     const refreshTokenState =
       await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(
         activeUser.sub,
+        activeUser.deviceKey,
       );
     if (!refreshTokenState?.currentRefreshToken) {
       throw new UnauthorizedException("No active session found");

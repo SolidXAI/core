@@ -131,7 +131,19 @@ export class ApiKeyService {
 
         const user = apiKeyRecord.user;
 
-        const tokens = await this.authenticationService.generateTokens(user);
+        // Keyed on the API key record so every call for this key reuses one
+        // refresh-token bucket. Without it each call mints a fresh key and
+        // therefore a new bucket with a refreshTokenTtl lifetime - a client
+        // polling this endpoint would accumulate them without bound.
+        //
+        // The consequence is that replicas sharing one API key share one
+        // bucket and invalidate each other, which is exactly the behaviour
+        // before per-device sessions existed, and is benign here: an API key
+        // is a permanent credential, so a failed refresh just re-mints.
+        const tokens = await this.authenticationService.generateTokens(
+            user,
+            `apikey-${apiKeyRecord.id}`,
+        );
 
 
         return {
