@@ -30,9 +30,34 @@ export const DANGEROUS_MIME_TYPES = new Set([
 ]);
 
 /**
+ * Percent-decodes a filename, repeating a bounded number of times so a double-encoded payload
+ * (`%252e` -> `%2e` -> `.`) survives a single pass through a proxy/framework that already
+ * decoded once. Malformed escape sequences are left as-is rather than thrown, since this runs
+ * on attacker-controlled input and a literal `%` in a filename (`100%done.pdf`) is legal.
+ */
+function decodePercentEncodingSafely(name: string): string {
+    let decoded = name;
+    for (let i = 0; i < 3; i++) {
+        let next: string;
+        try {
+            next = decodeURIComponent(decoded);
+        } catch {
+            return decoded;
+        }
+        if (next === decoded) {
+            return decoded;
+        }
+        decoded = next;
+    }
+    return decoded;
+}
+
+/**
  * Reduces a client-supplied name to the name that will actually be resolved on disk, so
  * extension checks can't be dodged by decorating it. Each step defends a known bypass:
  *
+ *  - `evil.exe%2e`         -> percent-encoding a trailing dot (or anything else) hides the real
+ *                             extension from naive string matching; decode before inspecting it.
  *  - `../../evil.exe`      -> only the final path segment is the file name.
  *  - `evil.exe\0.png`      -> a NUL truncates the name at the syscall/filesystem layer, so
  *                             anything after it is invisible to the OS but visible to naive
@@ -46,7 +71,8 @@ export function normalizeUploadedFileName(fileName?: string | null): string {
         return '';
     }
 
-    let name = String(fileName).split(/[/\\]/).pop() ?? '';
+    let name = decodePercentEncodingSafely(String(fileName));
+    name = name.split(/[/\\]/).pop() ?? '';
 
     const nulIndex = name.indexOf('\0');
     if (nulIndex >= 0) {
