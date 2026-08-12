@@ -38,6 +38,23 @@ export class UserDeviceCredential extends CommonEntity {
     @Column()
     mpinScheme: string;
 
+    /**
+     * The hashing *policy* version this row was hashed under - not a version of
+     * MPIN itself. It comes from `HashingService.currentVersion()`, which
+     * `BcryptService` currently returns as **2**, so freshly created rows read
+     * 2, exactly as `ss_user.password_scheme_version` does.
+     *
+     * It matters because `BcryptService.normalize` applies the configured
+     * pepper only when `version >= 2`. Storing the version per row means an
+     * older hash still verifies after the policy changes: `compare()` uses the
+     * version the row was written with, and `needsRehash()` upgrades it on the
+     * next successful login.
+     *
+     * The `default: 1` is inherited from the `User` precedent and is never
+     * reached, since every write path sets this explicitly. Note it would be
+     * *wrong* if it ever were: a row hashed at 2 but recorded as 1 would be
+     * compared without the pepper and could never authenticate.
+     */
     @Column({ default: 1 })
     mpinSchemeVersion: number;
 
