@@ -107,8 +107,11 @@ export class AuthenticationController {
     @Post('logout')
     @Public()
     @HttpCode(HttpStatus.OK)
-    async logout(@Body('refreshToken') refreshToken: string) {
-        return this.authService.logout(refreshToken);
+    async logout(
+        @Body('refreshToken') refreshToken: string,
+        @Body('allDevices') allDevices?: boolean,
+    ) {
+        return this.authService.logout(refreshToken, allDevices === true);
     }
 
     @ApiBearerAuth("jwt")

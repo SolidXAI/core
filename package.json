@@ -1,6 +1,6 @@
 {
   "name": "@solidxai/core",
-  "version": "0.1.13-beta.14",
+  "version": "0.1.13-beta.20",
   "description": "This module is a NestJS module containing all the required core providers required by a Solid application",
   "main": "dist/index.js",
   "types": "dist/index.d.ts",
@@ -46,7 +46,7 @@
     "bcrypt": "^5.1.1",
     "bson": "^6.10.1",
     "cache-manager": "^5.5.2",
-    "cache-manager-redis-store": "^3.0.1",
+    "cache-manager-redis-yet": "^5.1.5",
     "class-transformer": "^0.5.1",
     "class-validator": "^0.14.1",
     "cron-parser": "^5.5.0",

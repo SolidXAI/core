@@ -30,12 +30,22 @@ export class HttpExceptionFilter implements ExceptionFilter {
         const isHttp = exception instanceof HttpException;
         const explicitStatus = isHttp ? exception.getStatus() : undefined;
 
+        // Errors from http-errors-style libraries (e.g. body-parser's PayloadTooLargeError)
+        // are plain Errors carrying their own status. Honour it rather than collapsing to 500.
+        const rawStatus = exception?.status ?? exception?.statusCode;
+        const derivedStatus =
+            typeof rawStatus === 'number' && rawStatus >= 400 && rawStatus < 600
+                ? rawStatus
+                : undefined;
+
         // Canonical code + static message
         const code: ErrorCode = this.errorMapper.mapException(exception);
         const defaultStatus = this.errorMapper.getHttpStatus(code);
         const message = code === 'solidx-unknown-error' ? `${exception?.message}` : this.errorMapper.getMessage(code);
 
-        const status = explicitStatus ?? defaultStatus ?? 500;
+        // derivedStatus must precede defaultStatus: getHttpStatus() returns a hard 500
+        // for unmatched codes, so it is never undefined and would always win otherwise.
+        const status = explicitStatus ?? derivedStatus ?? defaultStatus ?? 500;
 
         // Logging
         this.logger.error(

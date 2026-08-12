@@ -16,6 +16,7 @@ import { ModuleMetadataRepository } from 'src/repository/module-metadata.reposit
 import type { SolidCoreSetting } from './settings/default-settings-provider.service';
 import { Logger } from '@nestjs/common';
 import { EncryptionService } from './encryption.service';
+import { sanitizeStoredMediaFileName } from './media-storage.utils';
 
 
 @Injectable()
@@ -358,7 +359,8 @@ export class SettingService {
     if (uploadedFiles?.length) {
       for (const file of uploadedFiles) {
         const settingKey = file.fieldname;
-        const relativeFileName = `${file.filename}-${file.originalname}`;
+        // originalname is attacker-controlled and feeds straight into a storage path.
+        const relativeFileName = `${file.filename}-${sanitizeStoredMediaFileName(file.originalname)}`;
 
         // Read file from local disk (where Multer stores uploads) and write to storage
         // The path builder constructs the provider-appropriate storage path

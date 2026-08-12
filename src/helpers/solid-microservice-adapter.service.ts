@@ -79,7 +79,12 @@ export class SolidMicroserviceAdapter {
     const responseData = response.data as SolidxIamAuthResponse;
     const ttlSeconds = this.getJwtTtlSeconds(responseData?.data?.accessToken);
     if (ttlSeconds && ttlSeconds > 0) {
-      await this.cacheManager.set(cacheKey, responseData, ttlSeconds);
+      // cache-manager v5 expects milliseconds. This previously passed seconds,
+      // which the old Redis store discarded outright - so the entry simply
+      // never expired. Now that TTLs are honoured, passing seconds unconverted
+      // would expire the cached token ~1000x too early and re-authenticate
+      // against IAM on nearly every call.
+      await this.cacheManager.set(cacheKey, responseData, ttlSeconds * 1000);
     }
 
     return responseData;
