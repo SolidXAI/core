@@ -32,6 +32,59 @@ export class SolidCoreErrorCodesProvider implements IErrorCodeProvider {
                     httpStatus: 401,
                 },
             },
+            // MPIN rules sit above the generic session rules so that an MPIN
+            // failure is never reported as a session problem. The three codes
+            // drive three different client behaviours: retry, wait, and
+            // discard-the-handle.
+            {
+                code: 'solidx-mpin-locked',
+                priority: 120,
+                match: (txt) => txt.includes(ERROR_MESSAGES.MPIN_LOCKED.toLowerCase()),
+                meta: {
+                    message: ERROR_MESSAGES.MPIN_LOCKED,
+                    httpStatus: 401,
+                },
+            },
+            {
+                code: 'solidx-mpin-revoked',
+                priority: 120,
+                match: (txt) => txt.includes(ERROR_MESSAGES.MPIN_REVOKED.toLowerCase()),
+                meta: {
+                    message: ERROR_MESSAGES.MPIN_REVOKED,
+                    httpStatus: 401,
+                },
+            },
+            {
+                code: 'solidx-mpin-invalid',
+                priority: 120,
+                match: (txt) => txt.includes(ERROR_MESSAGES.MPIN_INVALID.toLowerCase()),
+                meta: {
+                    message: ERROR_MESSAGES.MPIN_INVALID,
+                    httpStatus: 401,
+                },
+            },
+            // Setup-time rejections. Distinct codes so the client can say
+            // "choose a less predictable PIN" rather than parsing a message.
+            // Safe to distinguish: both occur only on bearer-authenticated
+            // routes, so neither discloses anything.
+            {
+                code: 'solidx-mpin-too-predictable',
+                priority: 120,
+                match: (txt) => txt.includes(ERROR_MESSAGES.MPIN_TOO_PREDICTABLE.toLowerCase()),
+                meta: {
+                    message: ERROR_MESSAGES.MPIN_TOO_PREDICTABLE,
+                    httpStatus: 400,
+                },
+            },
+            {
+                code: 'solidx-mpin-format-invalid',
+                priority: 120,
+                match: (txt) => txt.includes(ERROR_MESSAGES.MPIN_FORMAT_INVALID.toLowerCase()),
+                meta: {
+                    message: ERROR_MESSAGES.MPIN_FORMAT_INVALID,
+                    httpStatus: 400,
+                },
+            },
             {
                 code: 'solidx-mcp-server-unavailable',
                 priority: 100,

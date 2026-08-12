@@ -2361,6 +2361,164 @@
         ]
       },
       {
+        "singularName": "userDeviceCredential",
+        "tableName": "ss_user_device_credential",
+        "pluralName": "userDeviceCredentials",
+        "displayName": "User Device Credential",
+        "description": "Per-device MPIN credentials",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "userKeyFieldUserKey": "credentialKey",
+        "isSystem": true,
+        "fields": [
+          {
+            "name": "credentialKey",
+            "displayName": "Credential Key",
+            "description": "Natural key: <username>-<deviceId>. Populated by MpinService, not by the computed-field pipeline.",
+            "type": "shortText",
+            "length": 512,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isUserKey": true,
+            "isSystem": true
+          },
+          {
+            "name": "hashedCredentialRef",
+            "displayName": "Hashed Credential Ref",
+            "type": "shortText",
+            "length": 512,
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": true,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "hashedMpin",
+            "displayName": "Hashed MPIN",
+            "type": "shortText",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": true,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "mpinScheme",
+            "displayName": "MPIN Scheme",
+            "type": "selectionStatic",
+            "required": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "selectionStaticValues": [
+              "bcrypt:bcrypt"
+            ]
+          },
+          {
+            "name": "mpinSchemeVersion",
+            "displayName": "MPIN Scheme Version",
+            "type": "int",
+            "required": true,
+            "private": false,
+            "encrypt": false,
+            "defaultValue": "1",
+            "isSystem": true
+          },
+          {
+            "name": "deviceId",
+            "displayName": "Device Id",
+            "type": "shortText",
+            "length": 512,
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "deviceName",
+            "displayName": "Device Name",
+            "type": "shortText",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "platform",
+            "displayName": "Platform",
+            "type": "shortText",
+            "length": 512,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "isActive",
+            "displayName": "Is Active",
+            "type": "boolean",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "defaultValue": "true",
+            "isSystem": true
+          },
+          {
+            "name": "failedAttempts",
+            "displayName": "Failed Attempts",
+            "type": "int",
+            "required": true,
+            "private": false,
+            "encrypt": false,
+            "defaultValue": "0",
+            "isSystem": true
+          },
+          {
+            "name": "lockedUntil",
+            "displayName": "Locked Until",
+            "type": "datetime",
+            "required": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "lastUsedAt",
+            "displayName": "Last Used At",
+            "type": "datetime",
+            "required": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
+            "name": "user",
+            "displayName": "User",
+            "type": "relation",
+            "required": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          }
+        ]
+      },
+      {
         "singularName": "userActivityHistory",
         "tableName": "ss_user_activity_history",
         "pluralName": "userActivityHistories",
