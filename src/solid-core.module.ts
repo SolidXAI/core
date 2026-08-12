@@ -97,6 +97,7 @@ import { GoogleAuthenticationController } from "./controllers/google-authenticat
 import { MenuItemMetadataController } from "./controllers/menu-item-metadata.controller";
 import { MqMessageQueueController } from "./controllers/mq-message-queue.controller";
 import { MqMessageController } from "./controllers/mq-message.controller";
+import { MpinAuthenticationController } from "./controllers/mpin-authentication.controller";
 import { OTPAuthenticationController } from "./controllers/otp-authentication.controller";
 import { ServiceController } from "./controllers/service.controller";
 import { SmsTemplateController } from "./controllers/sms-template.controller";
@@ -166,6 +167,7 @@ import { TwilioSmsQueueSubscriberRedis } from "./jobs/redis/twilio-sms-subscribe
 import { UserRegistrationListener } from "./listeners/user-registration.listener";
 import { GoogleOauthStrategy } from "./passport-strategies/google-oauth.strategy";
 import { ApiKeyService } from "./services/api-key.service";
+import { MpinService } from "./services/mpin.service";
 import { ActiveSessionStorageService } from "./services/active-session-storage.service";
 import { AuthenticationService } from "./services/authentication.service";
 import { MetadataValidationService } from "./services/metadata-validation.service";
@@ -246,6 +248,7 @@ import { Setting } from './entities/setting.entity';
 import { UserActivityHistory } from './entities/user-activity-history.entity';
 import { UserViewMetadata } from './entities/user-view-metadata.entity';
 import { UserApiKey } from './entities/user-api-key.entity';
+import { UserDeviceCredential } from './entities/user-device-credential.entity';
 import { User } from './entities/user.entity';
 import { HttpExceptionFilter } from './filters/http-exception.filter';
 import { ModelMetadataHelperService } from './helpers/model-metadata-helper.service';
@@ -318,6 +321,7 @@ import { SmsTemplateRepository } from './repository/sms-template.repository';
 import { UserActivityHistoryRepository } from './repository/user-activity-history.repository';
 import { UserViewMetadataRepository } from './repository/user-view-metadata.repository';
 import { UserApiKeyRepository } from './repository/user-api-key.repository';
+import { UserDeviceCredentialRepository } from './repository/user-device-credential.repository';
 import { UserRepository } from './repository/user.repository';
 import { ViewMetadataRepository } from './repository/view-metadata.repository';
 import { PermissionMetadataSeederService } from './seeders/permission-metadata-seeder.service';
@@ -500,6 +504,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
       SmsTemplate,
       User,
       UserApiKey,
+      UserDeviceCredential,
       UserActivityHistory,
       UserViewMetadata,
       ViewMetadata,
@@ -595,6 +600,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     GupshupWebhookController,
     MetaCloudWhatsappWebhookController,
     OTPAuthenticationController,
+    MpinAuthenticationController,
     PermissionMetadataController,
     RoleMetadataController,
     SavedFiltersController,
@@ -760,6 +766,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     ApiKeyGuard,
     MediaSignedUrlGuard,
     ApiKeyService,
+    MpinService,
     ActiveSessionStorageService,
     AuthenticationService,
     GoogleAuthenticationController,
@@ -829,6 +836,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     PermissionMetadataSeederService,
     UserService,
     UserApiKeyRepository,
+    UserDeviceCredentialRepository,
     UserRepository,
     SettingService,
     ConcatComputedFieldProvider,
