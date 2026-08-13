@@ -8,6 +8,7 @@ import { classify } from '@angular-devkit/core/src/utils/strings';
 import { CHATTER_MESSAGE_STATUS, CHATTER_MESSAGE_SUBTYPE, CHATTER_MESSAGE_TYPE, CHATTER_MESSAGE_USER_FIELDS } from 'src/constants/chatter-message.constants';
 import { isDangerousMediaFile } from 'src/constants/media-file-types';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { MediaFieldCrudManager, SolidMediaType } from 'src/helpers/field-crud-managers/MediaFieldCrudManager';
 import { PostChatterMessageDto } from 'src/dtos/post-chatter-message.dto';
 import { UpdateChatterNoteMessageDto } from 'src/dtos/update-chatter-note-message.dto';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
@@ -196,6 +197,34 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         }
     }
 
+    /**
+     * Validates newly-uploaded attachments against each declared media field's real config
+     * (mediaTypes/mediaMaxSizeKb/mediaAllowedExtensions), grouped by fieldname - the same rules
+     * MediaFieldCrudManager already enforces everywhere else. Shared between postMessage and
+     * updateCustomNoteMessage so the two entry points can't drift apart; isUpdate is the only
+     * thing that differs between them.
+     */
+    private validateChatterAttachmentsForFields(files: Express.Multer.File[], mediaFields: any[], isUpdate: boolean): void {
+        for (const mediaField of mediaFields) {
+            const media = files.filter(multerFile => multerFile.fieldname === mediaField.name);
+            if (media.length === 0) continue;
+
+            const validator = new MediaFieldCrudManager({
+                type: mediaField.type as SolidMediaType,
+                required: mediaField.required,
+                fieldName: mediaField.name,
+                mediaMaxSizeKb: mediaField.mediaMaxSizeKb,
+                mediaTypes: mediaField.mediaTypes,
+                mediaAllowedExtensions: mediaField.mediaAllowedExtensions,
+                isUpdate,
+            });
+            const validationErrors = validator.validate({}, media);
+            if (validationErrors.length > 0) {
+                throw new BadRequestException(validationErrors.map(error => error.error).join(', '));
+            }
+        }
+    }
+
     private async publishChatterMentionNotifications(message: ChatterMessage, model: any) {
         if (message.messageType !== CHATTER_MESSAGE_TYPE.CUSTOM || message.messageSubType !== CHATTER_MESSAGE_SUBTYPE.NOTE) {
             return;
@@ -329,6 +358,24 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         this.validateChatterMediaFiles(files);
 
+        let chatterModel: any = null;
+        let mediaFields: any[] = [];
+        if (removeAttachmentIds.length > 0 || hasNewFiles) {
+            chatterModel = await this.modelMetadataService.findOneBySingularName('chatterMessage', {
+                fields: {
+                    model: true,
+                    mediaStorageProvider: true,
+                },
+                module: true,
+            });
+
+            mediaFields = chatterModel.fields.filter(field => field.type === 'mediaSingle' || field.type === 'mediaMultiple');
+
+            if (hasNewFiles) {
+                this.validateChatterAttachmentsForFields(files, mediaFields, true);
+            }
+        }
+
         if (hasMessageBody) {
             message.messageBody = trimmedMessageBody;
         }
@@ -345,15 +392,6 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         const savedMessage = await this.repo.save(message);
 
         if (removeAttachmentIds.length > 0 || hasNewFiles) {
-            const model = await this.modelMetadataService.findOneBySingularName('chatterMessage', {
-                fields: {
-                    model: true,
-                    mediaStorageProvider: true,
-                },
-                module: true,
-            });
-
-            const mediaFields = model.fields.filter(field => field.type === 'mediaSingle' || field.type === 'mediaMultiple');
             const attachmentFieldIds = mediaFields.map(field => field.id);
 
             if (removeAttachmentIds.length > 0 && attachmentFieldIds.length > 0) {
@@ -361,7 +399,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                     where: {
                         id: In(removeAttachmentIds),
                         entityId: savedMessage.id,
-                        modelMetadata: { id: model.id },
+                        modelMetadata: { id: chatterModel.id },
                         fieldMetadata: { id: In(attachmentFieldIds) },
                     },
                     relations: {
@@ -434,10 +472,9 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
 
         this.stampMessageAuditFields(chatterMessage);
 
-        const savedMessage = await this.repo.save(chatterMessage);
-
+        let mediaFields: any[] = [];
         if (files && files.length > 0) {
-            const model = await this.modelMetadataService.findOneBySingularName('chatterMessage', {
+            const chatterModel = await this.modelMetadataService.findOneBySingularName('chatterMessage', {
                 fields: {
                     model: true,
                     mediaStorageProvider: true,
@@ -445,8 +482,13 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
                 module: true,
             });
 
-            const mediaFields = model.fields.filter(field => field.type === 'mediaSingle' || field.type === 'mediaMultiple');
+            mediaFields = chatterModel.fields.filter(field => field.type === 'mediaSingle' || field.type === 'mediaMultiple');
+            this.validateChatterAttachmentsForFields(files, mediaFields, false);
+        }
 
+        const savedMessage = await this.repo.save(chatterMessage);
+
+        if (files && files.length > 0) {
             for (const mediaField of mediaFields) {
                 const media = files.filter(multerFile => multerFile.fieldname === mediaField.name);
                 if (media.length > 0) {

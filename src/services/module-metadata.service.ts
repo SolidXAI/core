@@ -13,6 +13,7 @@ import { ConfigService } from '@nestjs/config';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import * as path from 'path'; // To handle file paths
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
+import { isDangerousMediaFile } from 'src/constants/media-file-types';
 import { DisallowInProduction } from 'src/decorators/disallow-in-production.decorator';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 import { ModuleMetadataRepository } from 'src/repository/module-metadata.repository';
@@ -137,6 +138,9 @@ export class ModuleMetadataService {
 
   async createInDB(manager: EntityManager, createDto: CreateModuleMetadataDto, files: Express.Multer.File[] = []) {
     if (files.length > 0) {
+      if (isDangerousMediaFile(files[0])) {
+        throw new BadRequestException('Dangerous file types are not allowed for the menu icon.');
+      }
       const fileStoragePath = this.getFullFilePathForDisk(this.getFileName(files[0]));
       this.fileService.copy(files[0].path, fileStoragePath);
       this.fileService.delete(files[0].path);
@@ -241,6 +245,9 @@ export class ModuleMetadataService {
       throw new NotFoundException(ERROR_MESSAGES.MODULE_ID_NOT_FOUND(id));
     }
     if (files.length > 0) {
+      if (isDangerousMediaFile(files[0])) {
+        throw new BadRequestException('Dangerous file types are not allowed for the menu icon.');
+      }
 
       const fileStoragePath = this.getFullFilePathForDisk(this.getFileName(files[0]));
       this.fileService.copy(files[0].path, fileStoragePath);

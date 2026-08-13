@@ -12,6 +12,7 @@ export interface MediaFieldOptions {
     fieldName: string | undefined | null;
     mediaMaxSizeKb: number | undefined | null;
     mediaTypes: string[];
+    mediaAllowedExtensions?: string[] | null;
     isUpdate: boolean | undefined | null;
 }
 
@@ -86,24 +87,28 @@ export class MediaFieldCrudManager implements FieldCrudManager {
             return null;
         }
 
+        // Extension is authoritative: a declared mimetype is fully attacker-controlled and
+        // proved insufficient on its own (a .msi uploaded as image/png previously resolved to
+        // 'image', since the mimetype match short-circuited before the extension was ever
+        // checked). The extension must independently resolve to a known-safe category before
+        // anything is accepted - not merely "not on the denylist".
         const ext = getLowercaseFileExtension(getUploadedFileName(file));
+        const extType = ext ? EXT_TO_MEDIA_TYPE[ext] : undefined;
+        if (!extType) {
+            return null;
+        }
+
+        // The mimetype may only confirm or veto what the extension already established, never
+        // grant a category on its own. A mimetype that doesn't resolve to anything (e.g.
+        // application/octet-stream) has no opinion and is treated as agreeing.
         const mt = (file.mimetype || '').toLowerCase().trim();
-        if (mt && MIME_TO_MEDIA_TYPE[mt]) {
-            return MIME_TO_MEDIA_TYPE[mt];
+        const mimeType = MIME_TO_MEDIA_TYPE[mt]
+            ?? (mt.startsWith('image/') ? 'image' : mt.startsWith('audio/') ? 'audio' : mt.startsWith('video/') ? 'video' : undefined);
+        if (mimeType && mimeType !== extType) {
+            return null;
         }
 
-        // Some libs may send "image/*" etc. Treat broad families safely.
-        if (mt.startsWith('image/')) return 'image';
-        if (mt.startsWith('audio/')) return 'audio';
-        if (mt.startsWith('video/')) return 'video';
-
-        // Fallback to extension if provided (also covers generic/unrecognized
-        // mimetypes such as application/octet-stream).
-        if (ext && EXT_TO_MEDIA_TYPE[ext]) {
-            return EXT_TO_MEDIA_TYPE[ext];
-        }
-
-        return null;
+        return extType;
     }
 
     validate(dto: any, files: Array<Express.Multer.File>): ValidationError[] {
@@ -112,18 +117,17 @@ export class MediaFieldCrudManager implements FieldCrudManager {
     }
 
     private applyValidations(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
-        // Runs for every media field type and regardless of the admin-configured mediaTypes
-        // allowlist - a dangerous upload is never acceptable, so this must not sit behind
-        // the optional type checks below.
-        const errors = this.validateDangerousFiles(fieldFiles);
+        // A dangerous upload is never acceptable, regardless of admin config, so this is the
+        // only check that sits outside validateCommon() and can't be skipped either way below.
+        const dangerousFileErrors = this.validateDangerousFiles(fieldFiles);
 
         switch (this.options.type) {
             case SolidMediaType.mediaSingle:
-                return [...errors, ...this.validateMediaSingle(fieldFiles)];
+                return [...dangerousFileErrors, ...this.validateMediaSingle(fieldFiles)];
             case SolidMediaType.mediaMultiple:
-                return [...errors, ...this.validateMediaMultiple(fieldFiles)];
+                return [...dangerousFileErrors, ...this.validateMediaMultiple(fieldFiles)];
             default:
-                return errors;
+                return dangerousFileErrors;
         }
     }
 
@@ -137,7 +141,18 @@ export class MediaFieldCrudManager implements FieldCrudManager {
             }));
     }
 
-    private validateMediaSingle(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
+    // Every optional, admin-configured, per-field check - no-ops when its setting is unset -
+    // shared between mediaSingle and mediaMultiple so neither can drift out of sync with it.
+    private validateCommon(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
+        return [
+            ...this.validateRequired(fieldFiles),
+            ...this.validateSize(fieldFiles),
+            ...this.validateTypes(fieldFiles),
+            ...this.validateAllowedExtensions(fieldFiles),
+        ];
+    }
+
+    private validateRequired(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
         const errors: ValidationError[] = [];
         if (!this.options.isUpdate && this.options.required && fieldFiles.length === 0) {
             errors.push({
@@ -145,13 +160,11 @@ export class MediaFieldCrudManager implements FieldCrudManager {
                 error: `${this.options.fieldName} is required`
             });
         }
-        if (fieldFiles.length > 1) {
-            errors.push({
-                field: this.options.fieldName,
-                error: `${this.options.fieldName} must be a single file`
-            });
-        }
-        // validate size
+        return errors;
+    }
+
+    private validateSize(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
+        const errors: ValidationError[] = [];
         if (this.options.mediaMaxSizeKb) {
             for (let i = 0; i < fieldFiles.length; i++) {
                 const fieldFile = fieldFiles[i];
@@ -164,7 +177,11 @@ export class MediaFieldCrudManager implements FieldCrudManager {
                 }
             }
         }
-        // validate type
+        return errors;
+    }
+
+    private validateTypes(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
+        const errors: ValidationError[] = [];
         if (this.options.mediaTypes && this.options.mediaTypes.length > 0) {
             const allowedFileTypes = this.options.mediaTypes as MediaType[];
 
@@ -182,19 +199,41 @@ export class MediaFieldCrudManager implements FieldCrudManager {
                 }
             }
         }
+        return errors;
+    }
 
+    private validateAllowedExtensions(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
+        const allowed = this.options.mediaAllowedExtensions;
+        if (!allowed || allowed.length === 0) {
+            return [];
+        }
+
+        const normalizedAllowed = new Set(allowed.map(ext => ext.toLowerCase().replace(/^\./, '')));
+        return fieldFiles
+            .filter(fieldFile => {
+                const ext = getLowercaseFileExtension(getUploadedFileName(fieldFile));
+                return !ext || !normalizedAllowed.has(ext);
+            })
+            .map(fieldFile => ({
+                field: this.options.fieldName,
+                error: `${this.options.fieldName} file type not allowed. ` +
+                    `Allowed extensions: ${[...normalizedAllowed].join(', ')}.`
+            }));
+    }
+
+    private validateMediaSingle(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
+        const errors = this.validateCommon(fieldFiles);
+        if (fieldFiles.length > 1) {
+            errors.push({
+                field: this.options.fieldName,
+                error: `${this.options.fieldName} must be a single file`
+            });
+        }
         return errors;
     }
 
     private validateMediaMultiple(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
-        const errors: ValidationError[] = [];
-        if (!this.options.isUpdate && this.options.required && fieldFiles.length === 0) {
-            errors.push({
-                field: this.options.fieldName,
-                error: `${this.options.fieldName} is required`
-            });
-        }
-        return errors;
+        return this.validateCommon(fieldFiles);
     }
 
     transformForCreate(dto: any): any {
