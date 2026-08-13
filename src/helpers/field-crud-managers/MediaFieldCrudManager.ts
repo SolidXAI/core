@@ -12,6 +12,7 @@ export interface MediaFieldOptions {
     fieldName: string | undefined | null;
     mediaMaxSizeKb: number | undefined | null;
     mediaTypes: string[];
+    mediaAllowedExtensions?: string[] | null;
     isUpdate: boolean | undefined | null;
 }
 
@@ -115,7 +116,10 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         // Runs for every media field type and regardless of the admin-configured mediaTypes
         // allowlist - a dangerous upload is never acceptable, so this must not sit behind
         // the optional type checks below.
-        const errors = this.validateDangerousFiles(fieldFiles);
+        const errors = [
+            ...this.validateDangerousFiles(fieldFiles),
+            ...this.validateAllowedExtensions(fieldFiles),
+        ];
 
         switch (this.options.type) {
             case SolidMediaType.mediaSingle:
@@ -134,6 +138,25 @@ export class MediaFieldCrudManager implements FieldCrudManager {
                 field: this.options.fieldName,
                 error: `${this.options.fieldName} file type not allowed. ` +
                     `${getUploadedFileName(fieldFile) || 'File'} is a potentially dangerous file type.`
+            }));
+    }
+
+    private validateAllowedExtensions(fieldFiles: Array<Express.Multer.File>): ValidationError[] {
+        const allowed = this.options.mediaAllowedExtensions;
+        if (!allowed || allowed.length === 0) {
+            return [];
+        }
+
+        const normalizedAllowed = new Set(allowed.map(ext => ext.toLowerCase().replace(/^\./, '')));
+        return fieldFiles
+            .filter(fieldFile => {
+                const ext = getLowercaseFileExtension(getUploadedFileName(fieldFile));
+                return !ext || !normalizedAllowed.has(ext);
+            })
+            .map(fieldFile => ({
+                field: this.options.fieldName,
+                error: `${this.options.fieldName} file type not allowed. ` +
+                    `Allowed extensions: ${[...normalizedAllowed].join(', ')}.`
             }));
     }
 

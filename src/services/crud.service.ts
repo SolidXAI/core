@@ -446,6 +446,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                     ...commonOptions,
                     mediaMaxSizeKb: fieldMetadata.mediaMaxSizeKb,
                     mediaTypes: fieldMetadata.mediaTypes,
+                    mediaAllowedExtensions: fieldMetadata.mediaAllowedExtensions,
                     type: fieldMetadata.type as unknown as SolidMediaType
                 };
                 return new MediaFieldCrudManager(options);
