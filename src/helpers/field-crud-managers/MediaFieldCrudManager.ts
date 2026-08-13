@@ -87,24 +87,28 @@ export class MediaFieldCrudManager implements FieldCrudManager {
             return null;
         }
 
+        // Extension is authoritative: a declared mimetype is fully attacker-controlled and
+        // proved insufficient on its own (a .msi uploaded as image/png previously resolved to
+        // 'image', since the mimetype match short-circuited before the extension was ever
+        // checked). The extension must independently resolve to a known-safe category before
+        // anything is accepted - not merely "not on the denylist".
         const ext = getLowercaseFileExtension(getUploadedFileName(file));
+        const extType = ext ? EXT_TO_MEDIA_TYPE[ext] : undefined;
+        if (!extType) {
+            return null;
+        }
+
+        // The mimetype may only confirm or veto what the extension already established, never
+        // grant a category on its own. A mimetype that doesn't resolve to anything (e.g.
+        // application/octet-stream) has no opinion and is treated as agreeing.
         const mt = (file.mimetype || '').toLowerCase().trim();
-        if (mt && MIME_TO_MEDIA_TYPE[mt]) {
-            return MIME_TO_MEDIA_TYPE[mt];
+        const mimeType = MIME_TO_MEDIA_TYPE[mt]
+            ?? (mt.startsWith('image/') ? 'image' : mt.startsWith('audio/') ? 'audio' : mt.startsWith('video/') ? 'video' : undefined);
+        if (mimeType && mimeType !== extType) {
+            return null;
         }
 
-        // Some libs may send "image/*" etc. Treat broad families safely.
-        if (mt.startsWith('image/')) return 'image';
-        if (mt.startsWith('audio/')) return 'audio';
-        if (mt.startsWith('video/')) return 'video';
-
-        // Fallback to extension if provided (also covers generic/unrecognized
-        // mimetypes such as application/octet-stream).
-        if (ext && EXT_TO_MEDIA_TYPE[ext]) {
-            return EXT_TO_MEDIA_TYPE[ext];
-        }
-
-        return null;
+        return extType;
     }
 
     validate(dto: any, files: Array<Express.Multer.File>): ValidationError[] {

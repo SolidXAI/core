@@ -17,6 +17,7 @@ export const DANGEROUS_EXTENSIONS = new Set([
     'html', 'htm', 'xhtml', 'svg', 'xml',
     'js', 'mjs', 'php', 'phtml', 'jsp', 'asp', 'aspx',
     'exe', 'sh', 'bat', 'cmd', 'ps1', 'jar', 'dll',
+    'msi', 'msix', 'msp', 'com', 'scr', 'vbs', 'vbe', 'wsf', 'wsh', 'hta', 'cpl', 'pif', 'reg',
 ]);
 
 
