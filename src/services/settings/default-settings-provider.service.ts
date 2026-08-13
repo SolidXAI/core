@@ -532,6 +532,20 @@ const getSolidCoreSettings = (isProd: boolean) =>
       ],
       helpText: "Default storage implementation used for file handling, such as local disk or S3.",
     },
+    {
+      moduleName: "solid-core",
+      key: "maxMediaFileSizeMb",
+      value: (() => {
+        const parsedMb = Number(process.env.AB_MEDIA_MAX_FILE_SIZE_MB);
+        return Number.isFinite(parsedMb) && parsedMb > 0 ? parsedMb : 100;
+      })(),
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Max Media File Size (MB)",
+      group: "storage-settings",
+      sortOrder: 45,
+      controlType: "numeric",
+      helpText: "Global upload size limit enforced by Multer under every per-field mediaMaxSizeKb restriction. Read-only here: it's applied once at process start, so changing AB_MEDIA_MAX_FILE_SIZE_MB requires an app restart to take effect - editing this in the admin UI would not do that.",
+    },
 
     // aws-s3-settings-provider.service.ts
     {
