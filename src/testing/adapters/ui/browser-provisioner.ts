@@ -1,4 +1,4 @@
-import { spawnSync } from "child_process";
+import { ChildProcess, spawn } from "child_process";
 import * as fs from "fs";
 import * as path from "path";
 
@@ -6,6 +6,9 @@ import * as path from "path";
  * The npm `playwright` package ships no install script, so `npm install` places the
  * JS module but never downloads the browser binary. These helpers fetch it on demand.
  */
+
+let inFlight: Promise<void> | null = null;
+let activeInstall: ChildProcess | null = null;
 
 /**
  * Resolves Playwright's own CLI entry point.
@@ -40,8 +43,31 @@ export async function isChromiumInstalled(): Promise<boolean> {
 /**
  * Downloads Chromium unless it is already present. Only Chromium is fetched: it is the
  * sole browser PlaywrightAdapter launches.
+ *
+ * Concurrent callers share one download. This matters once a server warms the browser up
+ * at boot while a test run may start before that finishes.
  */
-export async function ensureChromiumInstalled(): Promise<void> {
+export function ensureChromiumInstalled(): Promise<void> {
+  if (!inFlight) {
+    // Clearing on settle rather than caching the result lets a failed download be retried
+    // by the next caller instead of poisoning the whole process lifetime.
+    inFlight = installChromium().finally(() => {
+      inFlight = null;
+      activeInstall = null;
+    });
+  }
+  return inFlight;
+}
+
+/**
+ * Stops a download that is still running, so shutting down mid-install does not orphan the
+ * child process against a half-written browser cache.
+ */
+export function cancelChromiumInstall(): void {
+  activeInstall?.kill("SIGTERM");
+}
+
+async function installChromium(): Promise<void> {
   if (await isChromiumInstalled()) return;
 
   const cliPath = resolvePlaywrightCli();
@@ -56,21 +82,34 @@ export async function ensureChromiumInstalled(): Promise<void> {
     "Chromium is required for UI scenarios and is not installed yet. Downloading it now (~150MB, one time)...",
   );
 
-  const result = spawnSync(process.execPath, [cliPath, "install", "chromium"], {
-    stdio: "inherit",
+  await new Promise<void>((resolve, reject) => {
+    // Async spawn, never spawnSync: this also runs inside a live server during module init,
+    // where a synchronous child would block the event loop for the whole download.
+    const child = spawn(process.execPath, [cliPath, "install", "chromium"], {
+      stdio: "inherit",
+    });
+    activeInstall = child;
+
+    child.on("error", (error) =>
+      reject(
+        new Error(
+          `Failed to download Chromium: ${error.message}. ` +
+            "Install it manually with: npx playwright install chromium",
+        ),
+      ),
+    );
+
+    child.on("close", (code, signal) => {
+      if (code === 0) {
+        resolve();
+        return;
+      }
+      reject(
+        new Error(
+          `Chromium download ${signal ? `was stopped by ${signal}` : `exited with code ${code}`}. ` +
+            "Install it manually with: npx playwright install chromium",
+        ),
+      );
+    });
   });
-
-  if (result.error) {
-    throw new Error(
-      `Failed to download Chromium: ${result.error.message}. ` +
-        "Install it manually with: npx playwright install chromium",
-    );
-  }
-
-  if (result.status !== 0) {
-    throw new Error(
-      `Chromium download exited with code ${result.status}. ` +
-        "Install it manually with: npx playwright install chromium",
-    );
-  }
 }

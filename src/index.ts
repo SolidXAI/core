@@ -480,3 +480,11 @@ export * from './solid-core.module'
 export * from './winston.logger'
 
 export { ERROR_MESSAGES } from './constants/error-messages'
+
+// Named rather than `export *` so the testing internals stay private: consumers only need
+// to provision the browser, which Test Hub does on module init.
+export {
+  ensureChromiumInstalled,
+  isChromiumInstalled,
+  cancelChromiumInstall,
+} from './testing/adapters/ui/browser-provisioner'
