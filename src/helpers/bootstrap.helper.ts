@@ -109,16 +109,6 @@ export async function bootstrapSolidApp(
     logger: WinstonModule.createLogger({ ...createWinstonLoggerConfig(), level: verboseBootstrap ? 'debug' : 'error' }),
   });
 
-  // Raise the body-parser limit so large inline payloads (e.g. full test-suite
-  // JSON posted to /test-runs) are not rejected with PayloadTooLargeError.
-  const bodyLimit = process.env.SOLID_BODY_LIMIT || '50mb';
-  try {
-    (app as any).useBodyParser?.('json', { limit: bodyLimit });
-    (app as any).useBodyParser?.('urlencoded', { limit: bodyLimit, extended: true });
-  } catch {
-    // useBodyParser is express-only; ignore on other adapters.
-  }
-
   const apiEnabled = parseBooleanEnv('API_ENABLED', true);
 
   if (!apiEnabled) {
