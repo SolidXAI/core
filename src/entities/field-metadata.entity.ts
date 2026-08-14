@@ -77,6 +77,9 @@ export class FieldMetadata extends CommonEntity {
     @Column({ name: 'media_max_size_kb', nullable: true })
     mediaMaxSizeKb: number;
 
+    @Column({ name: 'media_allowed_extensions', nullable: true, type: "simple-json" })
+    mediaAllowedExtensions: string[];
+
     @Index()
     @ManyToOne(() => MediaStorageProviderMetadata, { onDelete: 'SET NULL' })
     @JoinColumn({ name: 'media_storage_provider_id' })

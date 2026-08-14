@@ -113,6 +113,7 @@ export class MediaService extends CRUDService<Media> {
       fieldName: 'files',
       mediaMaxSizeKb: createDto['fieldMetadata']?.mediaMaxSizeKb,
       mediaTypes: createDto['fieldMetadata']?.mediaTypes || [],
+      mediaAllowedExtensions: createDto['fieldMetadata']?.mediaAllowedExtensions || [],
       isUpdate: false,
     });
     const validationErrors = validator.validate(createDto, files);

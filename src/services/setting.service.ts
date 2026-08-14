@@ -17,6 +17,7 @@ import type { SolidCoreSetting } from './settings/default-settings-provider.serv
 import { Logger } from '@nestjs/common';
 import { EncryptionService } from './encryption.service';
 import { sanitizeStoredMediaFileName } from './media-storage.utils';
+import { isDangerousMediaFile } from 'src/constants/media-file-types';
 
 
 @Injectable()
@@ -358,6 +359,10 @@ export class SettingService {
     // Handle uploaded files
     if (uploadedFiles?.length) {
       for (const file of uploadedFiles) {
+        if (isDangerousMediaFile(file)) {
+          throw new BadRequestException('Dangerous file types are not allowed for settings.');
+        }
+
         const settingKey = file.fieldname;
         // originalname is attacker-controlled and feeds straight into a storage path.
         const relativeFileName = `${file.filename}-${sanitizeStoredMediaFileName(file.originalname)}`;

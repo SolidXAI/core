@@ -560,6 +560,19 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         dest: process.env.AB_MEDIA_UPLOAD_DIR ?? "media-uploads",
+        // A global floor under whatever per-field mediaMaxSizeKb restrictions apply, not a
+        // replacement for them - some upload paths (e.g. chatter attachments) had no size cap
+        // enforced anywhere before this. Must stay >= the largest legitimate per-field limit
+        // already configured (chatter's messageAttachments is 102400 KB / 100MB), since Multer
+        // enforces this before any of our own field-level checks ever run. Mirrored (read-only,
+        // for visibility only - see comment there for why) as the "maxMediaFileSizeMb" setting
+        // in default-settings-provider.service.ts; keep both parsing expressions in sync.
+        limits: {
+          fileSize: (() => {
+            const parsedMb = Number(process.env.AB_MEDIA_MAX_FILE_SIZE_MB);
+            return (Number.isFinite(parsedMb) && parsedMb > 0 ? parsedMb : 100) * 1024 * 1024;
+          })(),
+        },
       }),
       inject: [ConfigService],
     }),
