@@ -1,5 +1,6 @@
 import { isEmpty, isNotEmpty, isString, length, matches } from "class-validator";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
+import { normalizeTextFieldInDto, normalizeTextFieldValue } from "./textFieldCrudManagerUtils";
 
 export interface ShortTextFieldOptions {
     length: number | undefined | null;
@@ -16,7 +17,7 @@ export class ShortTextFieldCrudManager implements FieldCrudManager {
     }
 
     validate(dto: any,  _files:Array<Express.Multer.File>): ValidationError[] {
-        const fieldValue: any = dto[this.options.fieldName];
+        const fieldValue: any = normalizeTextFieldValue(dto[this.options.fieldName]);
         return this.applyValidations(fieldValue);
     }
 
@@ -39,7 +40,7 @@ export class ShortTextFieldCrudManager implements FieldCrudManager {
     }
 
     transformForCreate(dto: any): any {
-        return dto;
+        return normalizeTextFieldInDto(dto, this.options.fieldName);
     }
 
     // Validation to be applied
