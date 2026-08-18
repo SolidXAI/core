@@ -1,5 +1,6 @@
 import { isEmpty, isNotEmpty, isString, matches } from "class-validator";
 import { FieldCrudManager, ValidationError } from "src/interfaces";
+import { normalizeTextFieldInDto, normalizeTextFieldValue } from "./textFieldCrudManagerUtils";
 
 export interface LongTextFieldOptions {
     regexPattern: string | undefined | null;
@@ -15,7 +16,7 @@ export class LongTextFieldCrudManager implements FieldCrudManager {
     }
 
     validate(dto: any): ValidationError[] {
-        const fieldValue: any = dto[this.options.fieldName];
+        const fieldValue: any = normalizeTextFieldValue(dto[this.options.fieldName]);
         return this.applyValidations(fieldValue);
     }
 
@@ -36,7 +37,7 @@ export class LongTextFieldCrudManager implements FieldCrudManager {
     }
 
     transformForCreate(dto: any): any {
-        return dto;
+        return normalizeTextFieldInDto(dto, this.options.fieldName);
     }
 
     // Validation to be applied
