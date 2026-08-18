@@ -13,6 +13,7 @@ import { StepRegistry } from "../core/step-registry";
 import { SpecRegistry } from "../core/spec-registry";
 import { TestingEngine } from "../core/testing-engine";
 import { filterScenarios } from "./scenario-filter";
+import { collectSecretKeys } from "../core/interpolation";
 import { ensureUiStarted, scenarioNeedsUi } from "./lifecycle";
 import { ensureChromiumInstalled } from "../adapters/ui/browser-provisioner";
 import { ConsoleReporter } from "../reporter/console-reporter";
@@ -46,7 +47,58 @@ export type RunnerOptions = {
   defaults?: { timeoutMs?: number; retries?: number };
   options?: { printApiLogs?: boolean };
   specs?: (registry: SpecRegistry) => void;
+  /**
+   * Resolves `${secret:...}` references against the secret store. Injected by the
+   * caller so this runner stays free of database and DI coupling. Required only if a
+   * scenario actually references a secret.
+   */
+  resolveSecrets?: (keys: string[]) => Promise<Record<string, any>>;
 };
+
+/**
+ * Resolves every secret referenced by the scenarios about to run, in one call, and
+ * returns a per-scenario view of the result.
+ *
+ * Partitioned deliberately: ctxBase is shared across scenarios, so handing every
+ * scenario the whole map would let each read secrets belonging to the others.
+ */
+async function resolveSecretsByScenario(
+  scenarios: ScenarioSpec[],
+  resolveSecrets?: RunnerOptions["resolveSecrets"],
+): Promise<Map<string, Record<string, any>>> {
+  const keysByScenario = new Map<string, string[]>();
+  const allKeys = new Set<string>();
+
+  for (const scenario of scenarios) {
+    const keys = collectSecretKeys(scenario);
+    if (keys.length === 0) continue;
+    keysByScenario.set(scenario.id, keys);
+    keys.forEach((key) => allKeys.add(key));
+  }
+
+  if (allKeys.size === 0) return new Map();
+
+  if (!resolveSecrets) {
+    throw new Error(
+      `Scenarios reference secrets (${[...allKeys].join(", ")}) but no secret resolver was provided to the runner.`,
+    );
+  }
+
+  // Resolved up front so a missing secret fails the run before any scenario executes.
+  const resolved = await resolveSecrets([...allKeys]);
+
+  const byScenario = new Map<string, Record<string, any>>();
+  for (const [scenarioId, keys] of keysByScenario) {
+    byScenario.set(
+      scenarioId,
+      keys.reduce((acc, key) => {
+        acc[key] = resolved[key];
+        return acc;
+      }, {} as Record<string, any>),
+    );
+  }
+  return byScenario;
+}
 
 export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const startedAt = Date.now();
@@ -77,6 +129,9 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
     await ensureChromiumInstalled();
   }
 
+  // Before any scenario starts, so a missing secret fails the run rather than a scenario.
+  const secretsByScenario = await resolveSecretsByScenario(scenarios, opts.resolveSecrets);
+
   const resources = new SimpleResourceStore();
   const reporter: Reporter = opts.reporter ?? new ConsoleReporter();
   const api = new ApiAdapter(opts.api);
@@ -101,7 +156,10 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
         await ensureUiStarted(ctxBase, uiStarted);
       }
       try {
-        await engine.runScenario(scenario, ctxBase);
+        await engine.runScenario(scenario, {
+          ...ctxBase,
+          secrets: secretsByScenario.get(scenario.id),
+        });
         passed += 1;
       } catch (error) {
         failed += 1;
