@@ -129,6 +129,27 @@ export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
     }, {} as Record<string, any>);
   }
 
+  /**
+   * Resolves secrets on behalf of an external caller, recording the access.
+   *
+   * Separate from resolveMany because handing plaintext outside the process is the one
+   * path that must leave a trail: it logs the actor and the keys, and stamps
+   * lastAccessedAt on exactly the rows read.
+   */
+  async resolveForActor(keys: string[], actor?: { sub?: number; username?: string }): Promise<Record<string, any>> {
+    const resolved = await this.resolveMany(keys);
+    const resolvedKeys = Object.keys(resolved);
+
+    if (resolvedKeys.length > 0) {
+      this.logger.log(
+        `Secret access: user=${actor?.username ?? actor?.sub ?? 'unknown'} keys=[${resolvedKeys.join(', ')}]`,
+      );
+      await this.repo.update({ key: In(resolvedKeys) } as any, { lastAccessedAt: new Date() });
+    }
+
+    return resolved;
+  }
+
   private prepareSecretForSave(dto: any, requireValue: boolean): any {
     const preparedDto = { ...dto };
     const rawValue = preparedDto.value;
