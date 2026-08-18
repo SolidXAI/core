@@ -2,11 +2,60 @@ export type MediaCategory = 'image' | 'audio' | 'video' | 'file' | 'pdf';
 
 export const MEDIA_CATEGORIES = ['image', 'audio', 'video', 'file', 'pdf'] as const;
 
-const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tiff', 'heic', 'heif'];
-const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac', 'webm'];
-const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', '3g2', 'webm', 'ogg'];
-const DOCUMENT_EXTENSIONS = ['txt', 'md', 'csv', 'json', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z'];
-const PDF_EXTENSION = 'pdf';
+export const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tiff', 'heic', 'heif'];
+export const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac', 'webm'];
+export const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', '3g2', 'webm', 'ogg'];
+export const DOCUMENT_EXTENSIONS = ['txt', 'md', 'csv', 'json', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z'];
+export const PDF_EXTENSION = 'pdf';
+
+export const MEDIA_TYPE_TO_EXTENSIONS: Record<MediaCategory, string[]> = {
+    image: IMAGE_EXTENSIONS,
+    audio: AUDIO_EXTENSIONS,
+    video: VIDEO_EXTENSIONS,
+    file: DOCUMENT_EXTENSIONS,
+    pdf: [PDF_EXTENSION],
+};
+
+export const EXTENSION_TO_MIME_TYPE: Record<string, string> = {
+    png: "image/png",
+    jpg: "image/jpeg",
+    jpeg: "image/jpeg",
+    webp: "image/webp",
+    gif: "image/gif",
+    bmp: "image/bmp",
+    tiff: "image/tiff",
+    heic: "image/heic",
+    heif: "image/heif",
+    mp3: "audio/mpeg",
+    wav: "audio/wav",
+    ogg: "audio/ogg",
+    aac: "audio/aac",
+    m4a: "audio/mp4",
+    flac: "audio/flac",
+    webm: "video/webm",
+    mp4: "video/mp4",
+    mov: "video/quicktime",
+    avi: "video/x-msvideo",
+    mkv: "video/x-matroska",
+    mpeg: "video/mpeg",
+    mpg: "video/mpeg",
+    "3gp": "video/3gpp",
+    "3g2": "video/3gpp2",
+    pdf: "application/pdf",
+    txt: "text/plain",
+    md: "text/markdown",
+    csv: "text/csv",
+    json: "application/json",
+    doc: "application/msword",
+    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+    xls: "application/vnd.ms-excel",
+    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+    ppt: "application/vnd.ms-powerpoint",
+    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
+    zip: "application/zip",
+    rar: "application/x-rar-compressed",
+    "7z": "application/x-7z-compressed",
+};
 
 /**
  * Extensions that must never be accepted as media uploads, regardless of declared mimetype or

@@ -13,7 +13,7 @@ import { UpdateFieldMetaDataDto } from '../dtos/update-field-metadata.dto';
 import { FieldMetadata } from '../entities/field-metadata.entity';
 import { ModelMetadata } from '../entities/model-metadata.entity';
 import { ISelectionProviderValues, MediaStorageProvider } from '../interfaces';
-import { MEDIA_CATEGORIES } from '../constants/media-file-types';
+import { EXTENSION_TO_MIME_TYPE, MEDIA_CATEGORIES, MEDIA_TYPE_TO_EXTENSIONS } from '../constants/media-file-types';
 import { CrudHelperService } from './crud-helper.service';
 import { ERROR_MESSAGES } from 'src/constants/error-messages';
 import qs from 'qs';
@@ -416,6 +416,8 @@ export class FieldMetadataService implements OnApplicationBootstrap {
             ormType: ormFieldTypeForSolid,
             decryptWhenTypes: enumToResponseArray(DecryptWhenType),
             mediaTypes: MEDIA_CATEGORIES.map((value) => ({ label: value, value })),
+            mediaTypeExtensions: MEDIA_TYPE_TO_EXTENSIONS,
+            extensionToMimeType: EXTENSION_TO_MIME_TYPE,
             relationTypes: enumToResponseArray(RelationType),
             selectionDynamicProviders: sps,
             computedProviders: cps,

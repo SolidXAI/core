@@ -10,6 +10,7 @@ export interface MediaFieldOptions {
     type: SolidMediaType;
     required: boolean | undefined | null;
     fieldName: string | undefined | null;
+    fieldLabel?: string | undefined | null;
     mediaMaxSizeKb: number | undefined | null;
     mediaTypes: string[];
     mediaAllowedExtensions?: string[] | null;
@@ -80,6 +81,10 @@ export class MediaFieldCrudManager implements FieldCrudManager {
     constructor(private readonly options: MediaFieldOptions) {
     }
 
+    private getFieldLabel(): string {
+        return this.options.fieldLabel || this.options.fieldName || 'File';
+    }
+
     private resolveMediaType(file: Express.Multer.File): MediaType | null {
         // Belt-and-braces: dangerous files are already rejected outright by
         // validateDangerousFiles, but never let one resolve to a usable category.
@@ -136,7 +141,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
             .filter(fieldFile => isDangerousMediaFile(fieldFile))
             .map(fieldFile => ({
                 field: this.options.fieldName,
-                error: `${this.options.fieldName} file type not allowed. ` +
+                error: `${this.getFieldLabel()} file type not allowed. ` +
                     `${getUploadedFileName(fieldFile) || 'File'} is a potentially dangerous file type.`
             }));
     }
@@ -157,7 +162,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         if (!this.options.isUpdate && this.options.required && fieldFiles.length === 0) {
             errors.push({
                 field: this.options.fieldName,
-                error: `${this.options.fieldName} is required`
+                error: `${this.getFieldLabel()} is required`
             });
         }
         return errors;
@@ -172,7 +177,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
                 if (fieldFileSizeInBytes > this.options.mediaMaxSizeKb) {
                     errors.push({
                         field: this.options.fieldName,
-                        error: `${this.options.fieldName} with size ${fieldFileSizeInBytes} KB exceeds max size limit of ${this.options.mediaMaxSizeKb} KB`
+                        error: `${this.getFieldLabel()} with size ${fieldFileSizeInBytes} KB exceeds max size limit of ${this.options.mediaMaxSizeKb} KB`
                     });
                 }
             }
@@ -192,7 +197,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
                 if (!resolvedType || !allowedFileTypes.includes(resolvedType)) {
                     errors.push({
                         field: this.options.fieldName,
-                        error: `${this.options.fieldName} file type not allowed. ` +
+                        error: `${this.getFieldLabel()} file type not allowed. ` +
                             `Allowed: ${allowedFileTypes.join(', ')}. ` +
                             `Received mimetype: ${fieldFile.mimetype}${resolvedType ? ` (mapped to ${resolvedType})` : ''}`
                     });
@@ -216,7 +221,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
             })
             .map(fieldFile => ({
                 field: this.options.fieldName,
-                error: `${this.options.fieldName} file type not allowed. ` +
+                error: `${this.getFieldLabel()} file type not allowed. ` +
                     `Allowed extensions: ${[...normalizedAllowed].join(', ')}.`
             }));
     }
@@ -226,7 +231,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         if (fieldFiles.length > 1) {
             errors.push({
                 field: this.options.fieldName,
-                error: `${this.options.fieldName} must be a single file`
+                error: `${this.getFieldLabel()} must be a single file`
             });
         }
         return errors;
