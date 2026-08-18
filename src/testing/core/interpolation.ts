@@ -94,7 +94,44 @@ function getByPathWithBrackets(obj: Record<string, any>, path: string): unknown 
 
 type TokenResolution = { value: unknown; raw: boolean };
 
+const SECRET_PREFIX = "secret:";
+
+/**
+ * Collects the secret keys referenced anywhere inside `value` — step args, headers,
+ * bodies — without depending on its shape. Used by the runner to resolve exactly the
+ * secrets a scenario needs, rather than loading the whole store into a run.
+ *
+ * Shares TOKEN_REGEX with the resolver deliberately: a second hand-written matcher is
+ * how the two drift, and drift means a scenario silently losing a secret it referenced.
+ */
+export function collectSecretKeys(value: unknown): string[] {
+  const keys = new Set<string>();
+  for (const match of JSON.stringify(value ?? null).matchAll(TOKEN_REGEX)) {
+    const token = match[1];
+    if (token.startsWith(SECRET_PREFIX)) {
+      const name = token.slice(SECRET_PREFIX.length);
+      if (name) keys.add(name);
+    }
+  }
+  return [...keys];
+}
+
 function resolveToken(token: string, ctx: TestContext): TokenResolution {
+  if (token.startsWith(SECRET_PREFIX)) {
+    const name = token.slice(SECRET_PREFIX.length);
+    if (!name) {
+      throw new Error('Invalid interpolation token: "secret:"');
+    }
+    // Resolved server-side into ctx.secrets before the run; never caller-supplied.
+    const value = ctx.secrets?.[name];
+    if (value === undefined) {
+      throw new Error(`Missing secret for token: "${token}"`);
+    }
+    // Secrets carry a declared valueType, so a json/number/boolean secret used as an
+    // exact token returns typed rather than stringified. Strings behave like env:.
+    return { value, raw: typeof value !== "string" };
+  }
+
   if (token.startsWith("env:")) {
     const name = token.slice("env:".length);
     if (!name) {
