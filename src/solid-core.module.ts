@@ -428,6 +428,7 @@ import { WorkflowExecutionLogController } from './controllers/workflow-execution
 import { WorkflowExecutionArtifactController } from './controllers/workflow-execution-artifact.controller';
 import { WorkflowTriggerExecutionController } from './controllers/workflow-trigger-execution.controller';
 import { WorkflowSecretController } from './controllers/workflow-secret.controller';
+import { SecretResolutionController } from './controllers/secret-resolution.controller';
 import { WorkflowDefinitionService } from './services/workflow-definition.service';
 import { WorkflowDefinitionMetadataSyncService } from './services/workflow/workflow-definition-metadata-sync.service';
 import { WorkflowExecutionService } from './services/workflow-execution.service';
@@ -645,6 +646,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowExecutionArtifactController,
     WorkflowTriggerExecutionController,
     WorkflowSecretController,
+    SecretResolutionController,
   ],
   providers: [
     {

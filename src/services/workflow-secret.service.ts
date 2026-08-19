@@ -1,7 +1,7 @@
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ModuleRef } from "@nestjs/core";
-import { EntityManager } from 'typeorm';
+import { EntityManager, In } from 'typeorm';
 import { CRUDService } from 'src/services/crud.service';
 import { WorkflowSecret } from '../entities/workflow-secret.entity';
 import { WorkflowSecretRepository } from '../repository/workflow-secret.repository';
@@ -86,6 +86,68 @@ export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
     }
 
     return context;
+  }
+
+  /**
+   * Resolves one secret to its decrypted, type-coerced value.
+   *
+   * `key` is the literal key column value — "smtp.password" is one row, not a path.
+   * Callers must resolve at point of use and must not cache the result.
+   */
+  async resolve(key: string): Promise<any> {
+    const resolved = await this.resolveMany([key]);
+    return resolved[key];
+  }
+
+  /**
+   * Resolves several secrets in a single query, returning a flat map keyed by the
+   * literal keys requested.
+   *
+   * Fail-closed: throws for a key that is missing, inactive or undecryptable rather
+   * than omitting it from the result. A credential that silently resolves to undefined
+   * becomes an empty password on an outbound request.
+   */
+  async resolveMany(keys: string[]): Promise<Record<string, any>> {
+    const uniqueKeys = Array.from(new Set((keys ?? []).filter(Boolean)));
+    if (uniqueKeys.length === 0) {
+      return {};
+    }
+
+    const secrets = await this.repo.find({
+      where: { key: In(uniqueKeys), status: "active" } as any,
+    });
+    const secretsByKey = new Map(secrets.map((secret) => [secret.key, secret]));
+
+    const missing = uniqueKeys.filter((key) => !secretsByKey.has(key));
+    if (missing.length > 0) {
+      throw new NotFoundException(`No active secret found for: ${missing.join(', ')}`);
+    }
+
+    return uniqueKeys.reduce((resolved, key) => {
+      resolved[key] = this.decryptAndCoerce(secretsByKey.get(key));
+      return resolved;
+    }, {} as Record<string, any>);
+  }
+
+  /**
+   * Resolves secrets on behalf of an external caller, recording the access.
+   *
+   * Separate from resolveMany because handing plaintext outside the process is the one
+   * path that must leave a trail: it logs the actor and the keys, and stamps
+   * lastAccessedAt on exactly the rows read.
+   */
+  async resolveForActor(keys: string[], actor?: { sub?: number; username?: string }): Promise<Record<string, any>> {
+    const resolved = await this.resolveMany(keys);
+    const resolvedKeys = Object.keys(resolved);
+
+    if (resolvedKeys.length > 0) {
+      this.logger.log(
+        `Secret access: user=${actor?.username ?? actor?.sub ?? 'unknown'} keys=[${resolvedKeys.join(', ')}]`,
+      );
+      await this.repo.update({ key: In(resolvedKeys) } as any, { lastAccessedAt: new Date() });
+    }
+
+    return resolved;
   }
 
   private prepareSecretForSave(dto: any, requireValue: boolean): any {

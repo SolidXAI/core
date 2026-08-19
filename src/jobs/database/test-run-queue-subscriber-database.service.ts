@@ -17,6 +17,7 @@ import {
 import { FileServiceArtifactSink } from '../../testing/reporter/file-service-artifact-sink';
 import { FILE_SERVICE, IFileService } from '../../services/file/file-service.interface';
 import { TestRunJobPayload } from '../../dtos/test-run-request.dto';
+import { WorkflowSecretService } from '../../services/workflow-secret.service';
 
 /**
  * Executes a queued test run on the worker tier (QUEUES_SERVICE_ROLE=subscriber).
@@ -38,6 +39,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
         readonly poller: PollerService,
         private readonly httpService: HttpService,
         @Inject(FILE_SERVICE) private readonly fileService: IFileService,
+        private readonly workflowSecretService: WorkflowSecretService,
     ) {
         super(mqMessageService, mqMessageQueueService, poller);
     }
@@ -105,6 +107,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true },
                 options: { printApiLogs: p.printApiLogs ?? true },
                 externalRunId: p.externalRunId,
+                resolveSecrets: (keys) => this.workflowSecretService.resolveMany(keys),
             });
         } catch (err: any) {
             // A failed scenario is surfaced via the run.end webhook, not as a job failure.
