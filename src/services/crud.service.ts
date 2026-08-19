@@ -184,7 +184,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         const validationErrors = fieldManager.validate(dto, files);
         const errors = (validationErrors instanceof Promise) ? await validationErrors : validationErrors;
         if (errors.length > 0) {
-            throw new BadRequestException(`Validation errors in ${field.name} is invalid i.e ${errors.map(e => e.error).join(', ')}`); //FIXME: Better to return a validation error object
+            throw new BadRequestException(`Validation errors in ${field.displayName || field.name} is invalid i.e ${errors.map(e => e.error).join(', ')}`); //FIXME: Better to return a validation error object
         }
         const dtoOrPromise = fieldManager.transformForCreate(dto);
         dto = (dtoOrPromise instanceof Promise) ? await dtoOrPromise : dtoOrPromise;
@@ -444,6 +444,7 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                 //    Plan the media table schema e.g id, uri, storageProvider, entity_id, entity_name, createdAt, updatedAt
                 const options = {
                     ...commonOptions,
+                    fieldLabel: fieldMetadata.displayName,
                     mediaMaxSizeKb: fieldMetadata.mediaMaxSizeKb,
                     mediaTypes: fieldMetadata.mediaTypes,
                     mediaAllowedExtensions: fieldMetadata.mediaAllowedExtensions,

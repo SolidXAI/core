@@ -1,5 +1,5 @@
 import { FieldCrudManager, ValidationError } from "src/interfaces";
-import { EXT_TO_MEDIA_TYPE, getLowercaseFileExtension, getUploadedFileName, isDangerousMediaFile, MediaCategory } from "src/constants/media-file-types";
+import { EXT_TO_MEDIA_TYPE, getLowercaseFileExtension, getUploadedFileName, isDangerousMediaFile, MediaCategory, MIME_TO_MEDIA_TYPE } from "src/constants/media-file-types";
 
 export enum SolidMediaType {
     mediaSingle = 'mediaSingle',
@@ -10,6 +10,7 @@ export interface MediaFieldOptions {
     type: SolidMediaType;
     required: boolean | undefined | null;
     fieldName: string | undefined | null;
+    fieldLabel?: string | undefined | null;
     mediaMaxSizeKb: number | undefined | null;
     mediaTypes: string[];
     mediaAllowedExtensions?: string[] | null;
@@ -18,66 +19,13 @@ export interface MediaFieldOptions {
 
 type MediaType = MediaCategory;
 
-const MIME_TO_MEDIA_TYPE: Record<string, MediaType> = {
-    // Images
-    'image/png': 'image',
-    'image/jpeg': 'image',
-    'image/jpg': 'image',
-    'image/webp': 'image',
-    'image/gif': 'image',
-    'image/bmp': 'image',
-    'image/tiff': 'image',
-    'image/heic': 'image',
-    'image/heif': 'image',
-
-    // Audio
-    'audio/mpeg': 'audio',      // mp3
-    'audio/mp3': 'audio',
-    'audio/wav': 'audio',
-    'audio/x-wav': 'audio',
-    'audio/webm': 'audio',
-    'audio/ogg': 'audio',
-    'audio/aac': 'audio',
-    'audio/mp4': 'audio',       // m4a often shows as audio/mp4
-    'audio/x-m4a': 'audio',
-    'audio/flac': 'audio',
-
-    // Video
-    'video/mp4': 'video',
-    'video/mpeg': 'video',
-    'video/webm': 'video',
-    'video/ogg': 'video',
-    'video/quicktime': 'video', // mov
-    'video/x-msvideo': 'video', // avi
-    'video/x-matroska': 'video',// mkv
-    'video/3gpp': 'video',
-    'video/3gpp2': 'video',
-
-    // Documents / files (treat as "file")
-    'application/pdf': 'pdf',
-    'text/plain': 'file',
-    'text/markdown': 'file',
-    'application/json': 'file',
-    'text/csv': 'file',
-
-    // Office
-    'application/msword': 'file', // doc
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'file', // docx
-    'application/vnd.ms-excel': 'file', // xls
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'file', // xlsx
-    'application/vnd.ms-powerpoint': 'file', // ppt
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'file', // pptx,
-
-    // Archives (optional)
-    'application/zip': 'file',
-    'application/x-zip-compressed': 'file',
-    'application/x-rar-compressed': 'file',
-    'application/x-7z-compressed': 'file',
-};
-
 export class MediaFieldCrudManager implements FieldCrudManager {
 
     constructor(private readonly options: MediaFieldOptions) {
+    }
+
+    private getFieldLabel(): string {
+        return this.options.fieldLabel || this.options.fieldName || 'File';
     }
 
     private resolveMediaType(file: Express.Multer.File): MediaType | null {
@@ -136,7 +84,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
             .filter(fieldFile => isDangerousMediaFile(fieldFile))
             .map(fieldFile => ({
                 field: this.options.fieldName,
-                error: `${this.options.fieldName} file type not allowed. ` +
+                error: `${this.getFieldLabel()} file type not allowed. ` +
                     `${getUploadedFileName(fieldFile) || 'File'} is a potentially dangerous file type.`
             }));
     }
@@ -157,7 +105,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         if (!this.options.isUpdate && this.options.required && fieldFiles.length === 0) {
             errors.push({
                 field: this.options.fieldName,
-                error: `${this.options.fieldName} is required`
+                error: `${this.getFieldLabel()} is required`
             });
         }
         return errors;
@@ -172,7 +120,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
                 if (fieldFileSizeInBytes > this.options.mediaMaxSizeKb) {
                     errors.push({
                         field: this.options.fieldName,
-                        error: `${this.options.fieldName} with size ${fieldFileSizeInBytes} KB exceeds max size limit of ${this.options.mediaMaxSizeKb} KB`
+                        error: `${this.getFieldLabel()} with size ${fieldFileSizeInBytes} KB exceeds max size limit of ${this.options.mediaMaxSizeKb} KB`
                     });
                 }
             }
@@ -192,7 +140,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
                 if (!resolvedType || !allowedFileTypes.includes(resolvedType)) {
                     errors.push({
                         field: this.options.fieldName,
-                        error: `${this.options.fieldName} file type not allowed. ` +
+                        error: `${this.getFieldLabel()} file type not allowed. ` +
                             `Allowed: ${allowedFileTypes.join(', ')}. ` +
                             `Received mimetype: ${fieldFile.mimetype}${resolvedType ? ` (mapped to ${resolvedType})` : ''}`
                     });
@@ -216,7 +164,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
             })
             .map(fieldFile => ({
                 field: this.options.fieldName,
-                error: `${this.options.fieldName} file type not allowed. ` +
+                error: `${this.getFieldLabel()} file type not allowed. ` +
                     `Allowed extensions: ${[...normalizedAllowed].join(', ')}.`
             }));
     }
@@ -226,7 +174,7 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         if (fieldFiles.length > 1) {
             errors.push({
                 field: this.options.fieldName,
-                error: `${this.options.fieldName} must be a single file`
+                error: `${this.getFieldLabel()} must be a single file`
             });
         }
         return errors;
