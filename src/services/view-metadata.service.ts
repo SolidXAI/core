@@ -17,6 +17,7 @@ import { SolidIntrospectService } from './solid-introspect.service';
 import { UserViewMetadataService } from './user-view-metadata.service';
 import { MenuItemMetadata } from 'src/entities/menu-item-metadata.entity';
 import { IWorkflowFieldDataProviderValues } from 'src/interfaces';
+import { MEDIA_FILE_TYPES } from 'src/constants/media-file-types';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -383,6 +384,9 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     const r = {
       'solidView': entity,
       'solidFieldsMetadata': Object.fromEntries(fieldsMap),
+      // Reuse the form view payload for media picker filtering so the runtime widgets
+      // can derive category-to-extension fallbacks from the same backend source of truth.
+      'mediaFileTypeDefinitions': MEDIA_FILE_TYPES,
       'solidFormViewWorkflowData': solidFormViewWorkflowData,
       'applicableLocales': applicableLocales,
       'viewModes': viewModes

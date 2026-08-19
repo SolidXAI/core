@@ -2,60 +2,100 @@ export type MediaCategory = 'image' | 'audio' | 'video' | 'file' | 'pdf';
 
 export const MEDIA_CATEGORIES = ['image', 'audio', 'video', 'file', 'pdf'] as const;
 
-export const IMAGE_EXTENSIONS = ['png', 'jpg', 'jpeg', 'webp', 'gif', 'bmp', 'tiff', 'heic', 'heif'];
-export const AUDIO_EXTENSIONS = ['mp3', 'wav', 'ogg', 'aac', 'm4a', 'flac', 'webm'];
-export const VIDEO_EXTENSIONS = ['mp4', 'mov', 'avi', 'mkv', 'mpeg', 'mpg', '3gp', '3g2', 'webm', 'ogg'];
-export const DOCUMENT_EXTENSIONS = ['txt', 'md', 'csv', 'json', 'doc', 'docx', 'xls', 'xlsx', 'ppt', 'pptx', 'zip', 'rar', '7z'];
+export type MediaFileTypeDefinition = {
+    mediaType: MediaCategory;
+    mimeType: string;
+    extension: string;
+};
+
+// Single source of truth for every supported media extension, its canonical MIME type,
+// and the coarse media category used across validation and UI metadata.
+export const MEDIA_FILE_TYPES: MediaFileTypeDefinition[] = [
+    { mediaType: 'image', mimeType: 'image/png', extension: 'png' },
+    { mediaType: 'image', mimeType: 'image/jpeg', extension: 'jpg' },
+    { mediaType: 'image', mimeType: 'image/jpg', extension: 'jpg' },
+    { mediaType: 'image', mimeType: 'image/jpeg', extension: 'jpeg' },
+    { mediaType: 'image', mimeType: 'image/webp', extension: 'webp' },
+    { mediaType: 'image', mimeType: 'image/gif', extension: 'gif' },
+    { mediaType: 'image', mimeType: 'image/bmp', extension: 'bmp' },
+    { mediaType: 'image', mimeType: 'image/tiff', extension: 'tiff' },
+    { mediaType: 'image', mimeType: 'image/heic', extension: 'heic' },
+    { mediaType: 'image', mimeType: 'image/heif', extension: 'heif' },
+
+    { mediaType: 'audio', mimeType: 'audio/mpeg', extension: 'mp3' },
+    { mediaType: 'audio', mimeType: 'audio/mp3', extension: 'mp3' },
+    { mediaType: 'audio', mimeType: 'audio/wav', extension: 'wav' },
+    { mediaType: 'audio', mimeType: 'audio/x-wav', extension: 'wav' },
+    { mediaType: 'audio', mimeType: 'audio/ogg', extension: 'ogg' },
+    { mediaType: 'audio', mimeType: 'audio/aac', extension: 'aac' },
+    { mediaType: 'audio', mimeType: 'audio/mp4', extension: 'm4a' },
+    { mediaType: 'audio', mimeType: 'audio/x-m4a', extension: 'm4a' },
+    { mediaType: 'audio', mimeType: 'audio/flac', extension: 'flac' },
+    { mediaType: 'audio', mimeType: 'audio/webm', extension: 'webm' },
+
+    { mediaType: 'video', mimeType: 'video/mp4', extension: 'mp4' },
+    { mediaType: 'video', mimeType: 'video/quicktime', extension: 'mov' },
+    { mediaType: 'video', mimeType: 'video/x-msvideo', extension: 'avi' },
+    { mediaType: 'video', mimeType: 'video/x-matroska', extension: 'mkv' },
+    { mediaType: 'video', mimeType: 'video/mpeg', extension: 'mpeg' },
+    { mediaType: 'video', mimeType: 'video/mpeg', extension: 'mpg' },
+    { mediaType: 'video', mimeType: 'video/3gpp', extension: '3gp' },
+    { mediaType: 'video', mimeType: 'video/3gpp2', extension: '3g2' },
+    { mediaType: 'video', mimeType: 'video/webm', extension: 'webm' },
+    { mediaType: 'video', mimeType: 'video/ogg', extension: 'ogg' },
+
+    { mediaType: 'file', mimeType: 'text/plain', extension: 'txt' },
+    { mediaType: 'file', mimeType: 'text/markdown', extension: 'md' },
+    { mediaType: 'file', mimeType: 'text/csv', extension: 'csv' },
+    { mediaType: 'file', mimeType: 'application/json', extension: 'json' },
+    { mediaType: 'file', mimeType: 'application/msword', extension: 'doc' },
+    { mediaType: 'file', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document', extension: 'docx' },
+    { mediaType: 'file', mimeType: 'application/vnd.ms-excel', extension: 'xls' },
+    { mediaType: 'file', mimeType: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', extension: 'xlsx' },
+    { mediaType: 'file', mimeType: 'application/vnd.ms-powerpoint', extension: 'ppt' },
+    { mediaType: 'file', mimeType: 'application/vnd.openxmlformats-officedocument.presentationml.presentation', extension: 'pptx' },
+    { mediaType: 'file', mimeType: 'application/zip', extension: 'zip' },
+    { mediaType: 'file', mimeType: 'application/x-zip-compressed', extension: 'zip' },
+    { mediaType: 'file', mimeType: 'application/x-rar-compressed', extension: 'rar' },
+    { mediaType: 'file', mimeType: 'application/x-7z-compressed', extension: '7z' },
+
+    { mediaType: 'pdf', mimeType: 'application/pdf', extension: 'pdf' },
+];
+
+const createMediaTypeBuckets = (): Record<MediaCategory, string[]> => ({
+    image: [],
+    audio: [],
+    video: [],
+    file: [],
+    pdf: [],
+});
+
+export const MEDIA_TYPE_TO_EXTENSIONS: Record<MediaCategory, string[]> = MEDIA_FILE_TYPES.reduce((acc, fileType) => {
+    if (!acc[fileType.mediaType].includes(fileType.extension)) {
+        acc[fileType.mediaType].push(fileType.extension);
+    }
+    return acc;
+}, createMediaTypeBuckets());
+
+export const IMAGE_EXTENSIONS = MEDIA_TYPE_TO_EXTENSIONS.image;
+export const AUDIO_EXTENSIONS = MEDIA_TYPE_TO_EXTENSIONS.audio;
+export const VIDEO_EXTENSIONS = MEDIA_TYPE_TO_EXTENSIONS.video;
+export const DOCUMENT_EXTENSIONS = MEDIA_TYPE_TO_EXTENSIONS.file;
 export const PDF_EXTENSION = 'pdf';
 
-export const MEDIA_TYPE_TO_EXTENSIONS: Record<MediaCategory, string[]> = {
-    image: IMAGE_EXTENSIONS,
-    audio: AUDIO_EXTENSIONS,
-    video: VIDEO_EXTENSIONS,
-    file: DOCUMENT_EXTENSIONS,
-    pdf: [PDF_EXTENSION],
-};
+export const EXTENSION_TO_MIME_TYPE: Record<string, string> = MEDIA_FILE_TYPES.reduce((acc, fileType) => {
+    if (!(fileType.extension in acc)) {
+        acc[fileType.extension] = fileType.mimeType;
+    }
+    return acc;
+}, {} as Record<string, string>);
 
-export const EXTENSION_TO_MIME_TYPE: Record<string, string> = {
-    png: "image/png",
-    jpg: "image/jpeg",
-    jpeg: "image/jpeg",
-    webp: "image/webp",
-    gif: "image/gif",
-    bmp: "image/bmp",
-    tiff: "image/tiff",
-    heic: "image/heic",
-    heif: "image/heif",
-    mp3: "audio/mpeg",
-    wav: "audio/wav",
-    ogg: "audio/ogg",
-    aac: "audio/aac",
-    m4a: "audio/mp4",
-    flac: "audio/flac",
-    webm: "video/webm",
-    mp4: "video/mp4",
-    mov: "video/quicktime",
-    avi: "video/x-msvideo",
-    mkv: "video/x-matroska",
-    mpeg: "video/mpeg",
-    mpg: "video/mpeg",
-    "3gp": "video/3gpp",
-    "3g2": "video/3gpp2",
-    pdf: "application/pdf",
-    txt: "text/plain",
-    md: "text/markdown",
-    csv: "text/csv",
-    json: "application/json",
-    doc: "application/msword",
-    docx: "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
-    xls: "application/vnd.ms-excel",
-    xlsx: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
-    ppt: "application/vnd.ms-powerpoint",
-    pptx: "application/vnd.openxmlformats-officedocument.presentationml.presentation",
-    zip: "application/zip",
-    rar: "application/x-rar-compressed",
-    "7z": "application/x-7z-compressed",
-};
+export const MIME_TO_MEDIA_TYPE: Record<string, MediaCategory> = MEDIA_FILE_TYPES.reduce((acc, fileType) => {
+    if (!(fileType.mimeType in acc)) {
+        acc[fileType.mimeType] = fileType.mediaType;
+    }
+    return acc;
+}, {} as Record<string, MediaCategory>);
 
 /**
  * Extensions that must never be accepted as media uploads, regardless of declared mimetype or
@@ -202,11 +242,7 @@ export function isDangerousMediaFile(file?: UploadedFileLike | null): boolean {
  * default to 'video' since that's the more common upload case.
  */
 export const EXT_TO_MEDIA_TYPE: Record<string, MediaCategory> = {
-    ...Object.fromEntries(IMAGE_EXTENSIONS.map((ext) => [ext, 'image' as const])),
-    ...Object.fromEntries(AUDIO_EXTENSIONS.map((ext) => [ext, 'audio' as const])),
-    ...Object.fromEntries(VIDEO_EXTENSIONS.map((ext) => [ext, 'video' as const])),
-    ...Object.fromEntries(DOCUMENT_EXTENSIONS.map((ext) => [ext, 'file' as const])),
-    [PDF_EXTENSION]: 'pdf',
+    ...Object.fromEntries(MEDIA_FILE_TYPES.map((fileType) => [fileType.extension, fileType.mediaType])),
 };
 
 /**

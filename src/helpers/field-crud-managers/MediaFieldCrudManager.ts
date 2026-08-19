@@ -1,5 +1,5 @@
 import { FieldCrudManager, ValidationError } from "src/interfaces";
-import { EXT_TO_MEDIA_TYPE, getLowercaseFileExtension, getUploadedFileName, isDangerousMediaFile, MediaCategory } from "src/constants/media-file-types";
+import { EXT_TO_MEDIA_TYPE, getLowercaseFileExtension, getUploadedFileName, isDangerousMediaFile, MediaCategory, MIME_TO_MEDIA_TYPE } from "src/constants/media-file-types";
 
 export enum SolidMediaType {
     mediaSingle = 'mediaSingle',
@@ -18,63 +18,6 @@ export interface MediaFieldOptions {
 }
 
 type MediaType = MediaCategory;
-
-const MIME_TO_MEDIA_TYPE: Record<string, MediaType> = {
-    // Images
-    'image/png': 'image',
-    'image/jpeg': 'image',
-    'image/jpg': 'image',
-    'image/webp': 'image',
-    'image/gif': 'image',
-    'image/bmp': 'image',
-    'image/tiff': 'image',
-    'image/heic': 'image',
-    'image/heif': 'image',
-
-    // Audio
-    'audio/mpeg': 'audio',      // mp3
-    'audio/mp3': 'audio',
-    'audio/wav': 'audio',
-    'audio/x-wav': 'audio',
-    'audio/webm': 'audio',
-    'audio/ogg': 'audio',
-    'audio/aac': 'audio',
-    'audio/mp4': 'audio',       // m4a often shows as audio/mp4
-    'audio/x-m4a': 'audio',
-    'audio/flac': 'audio',
-
-    // Video
-    'video/mp4': 'video',
-    'video/mpeg': 'video',
-    'video/webm': 'video',
-    'video/ogg': 'video',
-    'video/quicktime': 'video', // mov
-    'video/x-msvideo': 'video', // avi
-    'video/x-matroska': 'video',// mkv
-    'video/3gpp': 'video',
-    'video/3gpp2': 'video',
-
-    // Documents / files (treat as "file")
-    'application/pdf': 'pdf',
-    'text/plain': 'file',
-    'text/markdown': 'file',
-    'application/json': 'file',
-    'text/csv': 'file',
-
-    // Office
-    'application/msword': 'file', // doc
-    'application/vnd.openxmlformats-officedocument.wordprocessingml.document': 'file', // docx
-    'application/vnd.ms-excel': 'file', // xls
-    'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet': 'file', // xlsx
-    'application/vnd.ms-powerpoint': 'file', // ppt
-    'application/vnd.openxmlformats-officedocument.presentationml.presentation': 'file', // pptx,
-
-    // Archives (optional)
-    'application/zip': 'file',
-    'application/x-zip-compressed': 'file',
-    'application/x-rar-compressed': 'file',
-    'application/x-7z-compressed': 'file',
-};
 
 export class MediaFieldCrudManager implements FieldCrudManager {
 
