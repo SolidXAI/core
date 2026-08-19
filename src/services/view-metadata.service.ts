@@ -385,8 +385,8 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
       'solidView': entity,
       'solidFieldsMetadata': Object.fromEntries(fieldsMap),
       // Reuse the form view payload for media picker filtering so the runtime widgets
-      // can derive category-to-extension fallbacks from the same backend source of truth.
-      'mediaFileTypeDefinitions': MEDIA_FILE_TYPES,
+      // can derive category-to-extension fallbacks without exposing unused MIME details.
+      'mediaFileTypeDefinitions': MEDIA_FILE_TYPES.map(({ mediaType, extension }) => ({ mediaType, extension })),
       'solidFormViewWorkflowData': solidFormViewWorkflowData,
       'applicableLocales': applicableLocales,
       'viewModes': viewModes

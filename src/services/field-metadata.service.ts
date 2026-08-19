@@ -416,7 +416,7 @@ export class FieldMetadataService implements OnApplicationBootstrap {
             ormType: ormFieldTypeForSolid,
             decryptWhenTypes: enumToResponseArray(DecryptWhenType),
             mediaTypes: MEDIA_CATEGORIES.map((value) => ({ label: value, value })),
-            mediaFileTypeDefinitions: MEDIA_FILE_TYPES,
+            mediaFileTypeDefinitions: MEDIA_FILE_TYPES.map(({ mediaType, extension }) => ({ mediaType, extension })),
             relationTypes: enumToResponseArray(RelationType),
             selectionDynamicProviders: sps,
             computedProviders: cps,
