@@ -129,9 +129,6 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
     await ensureChromiumInstalled();
   }
 
-  // Before any scenario starts, so a missing secret fails the run rather than a scenario.
-  const secretsByScenario = await resolveSecretsByScenario(scenarios, opts.resolveSecrets);
-
   const resources = new SimpleResourceStore();
   const reporter: Reporter = opts.reporter ?? new ConsoleReporter();
   const api = new ApiAdapter(opts.api);
@@ -151,6 +148,11 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   });
 
   try {
+    // One query for the whole run, after onRunStart so a failure here still reports
+    // run.end. Keys that do not resolve are not fatal — they surface at the step that
+    // references them, where the reporter can name the token and locate the failure.
+    const secretsByScenario = await resolveSecretsByScenario(scenarios, opts.resolveSecrets);
+
     for (const scenario of scenarios) {
       if (scenarioNeedsUi(scenario)) {
         await ensureUiStarted(ctxBase, uiStarted);
@@ -167,6 +169,11 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
         throw error;
       }
     }
+  } catch (error) {
+    // Also catches a setup failure before the loop (unreachable database, absent
+    // encryption key), which would otherwise leave runError unset and report ok: true.
+    runError = error;
+    throw error;
   } finally {
     reporter.onRunEnd?.({
       ok: !runError,

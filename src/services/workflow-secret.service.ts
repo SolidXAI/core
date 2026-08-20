@@ -100,14 +100,17 @@ export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
   }
 
   /**
-   * Resolves several secrets in a single query, returning a flat map keyed by the
-   * literal keys requested.
+   * Resolves whatever of `keys` exists and is active, in a single query, omitting the
+   * rest. Returns a flat map keyed by the literal keys requested.
    *
-   * Fail-closed: throws for a key that is missing, inactive or undecryptable rather
-   * than omitting it from the result. A credential that silently resolves to undefined
-   * becomes an empty password on an outbound request.
+   * For callers that can report a missing key better than this service can — the test
+   * runner lets an unresolved key surface at the step that references it, which names
+   * the token and locates the failure. Prefer resolveMany elsewhere.
+   *
+   * Still fail-closed on infrastructure: an absent APP_ENCRYPTION_KEY or a failed
+   * decrypt throws rather than yielding a partial map.
    */
-  async resolveMany(keys: string[]): Promise<Record<string, any>> {
+  async resolveAvailable(keys: string[]): Promise<Record<string, any>> {
     const uniqueKeys = Array.from(new Set((keys ?? []).filter(Boolean)));
     if (uniqueKeys.length === 0) {
       return {};
@@ -116,17 +119,32 @@ export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
     const secrets = await this.repo.find({
       where: { key: In(uniqueKeys), status: "active" } as any,
     });
-    const secretsByKey = new Map(secrets.map((secret) => [secret.key, secret]));
 
-    const missing = uniqueKeys.filter((key) => !secretsByKey.has(key));
+    return secrets.reduce((resolved, secret) => {
+      resolved[secret.key] = this.decryptAndCoerce(secret);
+      return resolved;
+    }, {} as Record<string, any>);
+  }
+
+  /**
+   * Resolves several secrets in a single query, returning a flat map keyed by the
+   * literal keys requested.
+   *
+   * Fail-closed: throws for a key that is missing, inactive or undecryptable rather
+   * than omitting it from the result. A credential that silently resolves to undefined
+   * becomes an empty password on an outbound request.
+   */
+  async resolveMany(keys: string[]): Promise<Record<string, any>> {
+    const resolved = await this.resolveAvailable(keys);
+
+    const missing = Array.from(new Set((keys ?? []).filter(Boolean))).filter(
+      (key) => !(key in resolved),
+    );
     if (missing.length > 0) {
       throw new NotFoundException(`No active secret found for: ${missing.join(', ')}`);
     }
 
-    return uniqueKeys.reduce((resolved, key) => {
-      resolved[key] = this.decryptAndCoerce(secretsByKey.get(key));
-      return resolved;
-    }, {} as Record<string, any>);
+    return resolved;
   }
 
   /**

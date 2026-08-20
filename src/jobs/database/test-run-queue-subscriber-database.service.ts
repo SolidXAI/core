@@ -107,7 +107,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true },
                 options: { printApiLogs: p.printApiLogs ?? true },
                 externalRunId: p.externalRunId,
-                resolveSecrets: (keys) => this.workflowSecretService.resolveMany(keys),
+                resolveSecrets: (keys) => this.workflowSecretService.resolveAvailable(keys),
             });
         } catch (err: any) {
             // A failed scenario is surfaced via the run.end webhook, not as a job failure.

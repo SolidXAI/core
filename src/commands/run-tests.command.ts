@@ -136,7 +136,7 @@ export class TestRunCommand extends CommandRunner {
             retries: options?.retries,
           },
           options: { printApiLogs },
-          resolveSecrets: (keys) => this.workflowSecretService.resolveMany(keys),
+          resolveSecrets: (keys) => this.workflowSecretService.resolveAvailable(keys),
           specs: specEntries.length
             ? (registry) => loadSpecRegistrations(specEntries, metadataPath, registry)
             : undefined,
