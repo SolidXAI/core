@@ -1,5 +1,5 @@
 import { FieldCrudManager, ValidationError } from "src/interfaces";
-import { EXT_TO_MEDIA_TYPE, getLowercaseFileExtension, getUploadedFileName, isDangerousMediaFile, MediaCategory, MIME_TO_MEDIA_TYPE } from "src/constants/media-file-types";
+import { EXT_TO_MEDIA_TYPES, getLowercaseFileExtension, getUploadedFileName, isDangerousMediaFile, MediaCategory, MIME_TO_MEDIA_TYPE } from "src/constants/media-file-types";
 
 export enum SolidMediaType {
     mediaSingle = 'mediaSingle',
@@ -40,9 +40,15 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         // 'image', since the mimetype match short-circuited before the extension was ever
         // checked). The extension must independently resolve to a known-safe category before
         // anything is accepted - not merely "not on the denylist".
+        // Read the file extension from the uploaded filename, for example "song.ogg" -> "ogg".
         const ext = getLowercaseFileExtension(getUploadedFileName(file));
-        const extType = ext ? EXT_TO_MEDIA_TYPE[ext] : undefined;
-        if (!extType) {
+
+        // Find every media category that supports this extension.
+        // An extension can belong to multiple categories, for example .ogg can be audio or video.
+        const extTypes = ext ? EXT_TO_MEDIA_TYPES[ext] : undefined;
+
+        // Reject files whose extension is not part of the supported media definitions.
+        if (!extTypes || extTypes.length === 0) {
             return null;
         }
 
@@ -52,11 +58,13 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         const mt = (file.mimetype || '').toLowerCase().trim();
         const mimeType = MIME_TO_MEDIA_TYPE[mt]
             ?? (mt.startsWith('image/') ? 'image' : mt.startsWith('audio/') ? 'audio' : mt.startsWith('video/') ? 'video' : undefined);
-        if (mimeType && mimeType !== extType) {
+        // When the extension is shared, the MIME type identifies the actual category:
+        // audio/ogg becomes audio, while video/ogg becomes video.
+        if (mimeType && !extTypes.includes(mimeType)) {
             return null;
         }
 
-        return extType;
+        return mimeType || extTypes[0];
     }
 
     validate(dto: any, files: Array<Express.Multer.File>): ValidationError[] {
