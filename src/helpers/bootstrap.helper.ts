@@ -1,5 +1,6 @@
 import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
+import { NestExpressApplication } from '@nestjs/platform-express';
 import { WsAdapter } from '@nestjs/platform-ws';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NextFunction, Request, Response } from 'express';
@@ -12,7 +13,12 @@ import { CommandFactory } from 'nest-commander';
 import { createWinstonLoggerConfig } from '../winston.logger';
 import { WrapResponseInterceptor } from '../interceptors/wrap-response.interceptor';
 import { buildDefaultCorsOptions } from './cors.helper';
-import { buildDefaultSecurityHeaderOptions, buildPermissionsPolicyHeader, PermissionsPolicyConfig } from './security.helper';
+import {
+  buildDefaultSecurityHeaderOptions,
+  buildPermissionsPolicyHeader,
+  PermissionsPolicyConfig,
+  SolidSecurityOptions,
+} from './security.helper';
 import { parseBooleanEnv } from './environment.helper';
 
 // ---- Shared process handlers ----
@@ -50,8 +56,20 @@ export interface SolidBootstrapOptions {
   swagger?: SolidSwaggerOptions | false;
   /** Permissions-Policy header overrides (merged with defaults). */
   permissionsPolicyOverrides?: Partial<PermissionsPolicyConfig>;
+  /** Security header overrides, including iframe frame-ancestor allowlists. */
+  security?: SolidSecurityOptions;
   /** Show full NestJS init logs during bootstrap (route mapping, module deps, pollers). Defaults to false. */
   verboseBootstrap?: boolean;
+  /**
+   * Max request body size for JSON and urlencoded payloads, as a `bytes`-compatible
+   * string (e.g. '10mb', '512kb'). Defaults to '10mb'.
+   *
+   * Does NOT apply to multipart/form-data uploads: body-parser matches on Content-Type,
+   * so multipart requests skip these parsers entirely and are handled by Multer. Raise
+   * this only for large structured JSON (e.g. /bulk arrays), bearing in mind the parsed
+   * object graph can retain several times the raw byte size.
+   */
+  bodyLimit?: string;
 }
 
 /**
@@ -64,19 +82,30 @@ export interface SolidBootstrapOptions {
  * // main.ts
  * bootstrapSolidApp(() => AppModule.forRoot(), {
  *   swagger: { title: 'My API', description: 'My API description' },
+ *   security: { frameAncestors: ["'self'", 'https://portal.example.com'] },
  * });
  */
 export async function bootstrapSolidApp(
   appModuleFactory: () => Promise<any>,
   options: SolidBootstrapOptions = {},
-): Promise<void> {
+): Promise<NestExpressApplication> {
   registerGlobalProcessHandlers();
 
-  const { globalPrefix = 'api', swagger = {}, permissionsPolicyOverrides = {}, verboseBootstrap = false } = options;
+  const {
+    globalPrefix = 'api',
+    swagger = {},
+    permissionsPolicyOverrides = {},
+    security = {},
+    verboseBootstrap = false,
+    bodyLimit = '10mb',
+  } = options;
 
   const startTime = Date.now();
   const appModule = await appModuleFactory();
-  const app = await NestFactory.create(appModule, {
+  const app = await NestFactory.create<NestExpressApplication>(appModule, {
+    // Nest's default parsers are registered during init() with a 100kb limit, ahead of
+    // any module middleware. Disable them so the parsers below own the limit outright.
+    bodyParser: false,
     logger: WinstonModule.createLogger({ ...createWinstonLoggerConfig(), level: verboseBootstrap ? 'debug' : 'error' }),
   });
 
@@ -87,7 +116,7 @@ export async function bootstrapSolidApp(
     app
       .get(WINSTON_MODULE_NEST_PROVIDER)
       .log('API server disabled via API_ENABLED=false. Skipping HTTP listen.', 'Bootstrap');
-    return;
+    return app;
   }
 
   // Health check at root path
@@ -95,7 +124,7 @@ export async function bootstrapSolidApp(
   server.get('/', (_req, res) => res.status(200).send('SOLID OK'));
 
   // Security headers
-  app.use(helmet(buildDefaultSecurityHeaderOptions()));
+  app.use(helmet(buildDefaultSecurityHeaderOptions(security)));
 
   // Nest's Swagger UI HTML injects inline styles; keep CSP strict elsewhere.
   const isSwaggerPath = (path: string) =>
@@ -135,6 +164,12 @@ export async function bootstrapSolidApp(
     }
     next();
   });
+
+  // Body parsers — replaces Nest's default 100kb parsers (disabled via bodyParser: false).
+  // Registered here so the middleware order Nest applied by default is preserved:
+  // helmet -> CSP -> Permissions-Policy -> qs -> body parsers -> routes.
+  app.useBodyParser('json', { limit: bodyLimit });
+  app.useBodyParser('urlencoded', { limit: bodyLimit, extended: true });
 
   // Global ValidationPipe
   app.useGlobalPipes(
@@ -195,6 +230,8 @@ export async function bootstrapSolidApp(
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
   process.stdout.write(`\x1b[32mServer started on port ${port} in ${elapsed}s\x1b[0m\n`);
+
+  return app;
 }
 
 // ---- CLI bootstrap ----

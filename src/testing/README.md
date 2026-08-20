@@ -75,6 +75,57 @@ General step fields:
 - `timeoutMs` (optional): per-step timeout override
 - `spec` (optional): used by `test.spec` to identify the spec
 
+## Timeouts
+There are two independent timeout layers. They are easy to confuse, so note which one you want:
+
+**1. Engine timeouts** — `scenario.timeoutMs` and the top-level `step.timeoutMs`.
+These wrap execution in a `Promise.race` (`core/timeout.ts`). They are a hard upper bound
+on wall-clock time and do **not** cancel the underlying browser call, so the failure message
+only tells you the scenario or op that overran.
+
+**2. UI (Playwright) timeouts** — the run-wide default plus per-step `with.timeoutMs`.
+This is what governs how long `ui.expectVisible`, `ui.click`, `ui.fill` etc. wait for a
+selector. Playwright cancels the operation itself, so the error names the selector and the
+state it was waiting for. **If your UI steps are timing out, this is the knob to turn.**
+
+Resolution order for UI steps: `with.timeoutMs` → `--ui-timeout-ms` → `UI_TIMEOUT_MS` →
+`uiTestDefaultTimeoutMs` setting → `30000`.
+`ui.goto` uses the navigation timeout instead: `with.timeoutMs` → `--ui-navigation-timeout-ms`
+→ `UI_NAVIGATION_TIMEOUT_MS` → `uiTestNavigationTimeoutMs` setting → the resolved UI timeout.
+
+Raise the default for a whole run:
+```bash
+solid test run --module <module-name> --ui-timeout-ms 60000
+# or
+UI_TIMEOUT_MS=60000 solid test run --module <module-name>
+```
+
+Or set the installation-wide default under **Settings → Testing Settings** in the admin UI
+(`uiTestDefaultTimeoutMs` / `uiTestNavigationTimeoutMs`). Those rows are created by `solid seed`;
+until then the built-in `30000` applies. Flags and env vars still win, so CI keeps per-run control.
+
+The seeded value of those two settings can be provisioned from the environment with
+`COMMON_UI_TEST_DEFAULT_TIMEOUT_MS` and `COMMON_UI_TEST_NAVIGATION_TIMEOUT_MS` (the latter falls
+back to the former). Seeding is insert-only, so these apply on first seed only — afterwards the
+stored value wins and the setting must be changed in the admin UI. Values that are missing,
+non-numeric, or not positive fall back to `30000`.
+
+Note these are distinct from the run-time `UI_TIMEOUT_MS` / `UI_NAVIGATION_TIMEOUT_MS` vars,
+which override the setting on a per-run basis and are read every run.
+
+Or bump only the one slow step, leaving the rest of the suite strict:
+```json
+{
+  "then": {
+    "op": "ui.expectVisible",
+    "with": { "selector": "#report-grid", "timeoutMs": 90000 }
+  }
+}
+```
+
+Caution: a scenario-level `timeoutMs` lower than the UI timeout will fire first and mask the
+more useful Playwright error. Keep `defaults.timeoutMs` above your UI timeout.
+
 ## Interpolation
 Available tokens:
 - `${env:NAME}` (environment variables)
@@ -198,6 +249,7 @@ Description: Navigates the browser to a URL.
 
 Options in `with`:
 - `url` (required)
+- `timeoutMs` (optional, overrides the run-wide UI navigation timeout)
 
 ### **Op: `ui.expectUrl`**
 Description: Asserts the current page URL.
@@ -212,6 +264,7 @@ Description: Fills an input or editable element.
 Options in `with`:
 - `selector` (required)
 - `value` (required)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
 
 ### **Op: `ui.select`**
 Description: Selects an option in a select element.
@@ -219,12 +272,14 @@ Description: Selects an option in a select element.
 Options in `with`:
 - `selector` (required)
 - `value` (required)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
 
 ### **Op: `ui.click`**
 Description: Clicks an element located by selector.
 
 Options in `with`:
 - `selector` (required)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
 
 ### **Op: `ui.press`**
 Description: Presses a keyboard key on a focused element.
@@ -232,6 +287,7 @@ Description: Presses a keyboard key on a focused element.
 Options in `with`:
 - `selector` (required)
 - `key` (required)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
 
 ### **Op: `ui.waitForManual`**
 Description: Pauses a headed Playwright run so a human can interact with the live browser, then resumes when Enter is pressed in the terminal.
@@ -242,7 +298,7 @@ Options in `with`:
 - `waitForSelector` (optional, waits for a visible selector after resume)
 - `waitForUrlEquals` (optional, waits until the current URL exactly matches)
 - `waitForUrlContains` (optional, waits until the current URL contains a substring)
-- `timeoutMs` (optional, timeout for post-resume waits)
+- `timeoutMs` (optional, timeout for post-resume waits; defaults to the run-wide UI timeout)
 - `bringToFront` (optional, defaults to `true`)
 
 Notes:
@@ -269,6 +325,7 @@ Description: Waits for an element to be visible.
 
 Options in `with`:
 - `selector` (required)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
 
 ### **Op: `ui.expectText`**
 Description: Asserts the text content of an element.
@@ -277,6 +334,7 @@ Options in `with`:
 - `selector` (required)
 - `equals` (optional)
 - `contains` (optional)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
 
 ### **Op: `assert.equals`**
 Description: Asserts strict equality between two values.
@@ -388,7 +446,12 @@ await runFromMetadata({
   includeTags: ["smoke"],
   defaults: { timeoutMs: 30_000, retries: 1 },
   api: { baseUrl: "https://api.example.com" },
-  ui: { baseUrl: "https://app.example.com", headless: true }
+  ui: {
+    baseUrl: "https://app.example.com",
+    headless: true,
+    defaultTimeoutMs: 30_000,
+    navigationTimeoutMs: 45_000
+  }
 });
 ```
 
@@ -408,6 +471,15 @@ Lightweight existing-database workflow:
 `test data --unlink` deletes records declared in `testing.data` in reverse order using each model's actual `userKeyFieldUserKey` value from `testing.data[*].data`. This assumes `testing.data` is authored in dependency order, with parent records appearing before dependent records.
 
 For human-assisted OTP or third-party verification flows, use `ui.waitForManual` in a headed run so the browser remains interactive while the scenario is paused.
+
+Common `test run` flags (all pass through solidctl unchanged):
+- `--ui-base-url <url>` / `--api-base-url <url>`
+- `--headless [true|false]`
+- `--ui-timeout-ms <number>` — default wait for every UI step (see [Timeouts](#timeouts))
+- `--ui-navigation-timeout-ms <number>` — default wait for `ui.goto`
+- `--timeout-ms <number>` / `--retries <number>` — scenario-level guard and retry count
+- `--scenario-ids <ids>` / `--include-tags <tags>` / `--skip-scenario-ids <ids>`
+- `--no-progress` — disable the interactive test progress footer
 
 ## Add A New Step (SOP)
 1. Create a new `*.step.ts` in the right domain folder.

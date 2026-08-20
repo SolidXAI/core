@@ -35,7 +35,7 @@ export class CreateModelSequenceDto {
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    currentValue: number;
+    currentValue?: number;
     @IsOptional()
     @IsString()
     @ApiProperty()

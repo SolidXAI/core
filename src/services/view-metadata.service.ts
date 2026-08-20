@@ -4,8 +4,6 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { CRUDService } from 'src/services/crud.service';
 import { EntityManager } from 'typeorm';
 
-import { classify } from '../helpers/string.helper';
-import { Locale } from 'src/entities/locale.entity';
 import { ModelMetadataHelperService } from 'src/helpers/model-metadata-helper.service';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
@@ -18,6 +16,7 @@ import { MenuItemMetadataService } from './menu-item-metadata.service';
 import { SolidIntrospectService } from './solid-introspect.service';
 import { UserViewMetadataService } from './user-view-metadata.service';
 import { MenuItemMetadata } from 'src/entities/menu-item-metadata.entity';
+import { IWorkflowFieldDataProviderValues } from 'src/interfaces';
 
 @Injectable()
 export class ViewMetadataService extends CRUDService<ViewMetadata> {
@@ -112,62 +111,88 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
 
   private readonly logger = new Logger(ViewMetadataService.name);
 
-  //for locales 
-  private async getEntityRecordsInAllLocales(
-    modelName: string,
-    id: string,
-    defaultEntityLocaleIdFromQuery?: string
-  ): Promise<{ records: any[], defaultEntityLocaleId: string | null }> {
-    const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
-    // const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
-    const currentEntityRepository = this.entityManager.getRepository(classify(modelName));
-
-    // Case 1: Creating a new record with no defaultEntityLocaleId to clone
-    if (id === 'new' && !defaultEntityLocaleIdFromQuery) {
-      this.logger.debug(`Creating new record without cloning from any defaultEntityLocaleId.`);
-      return { records: [], defaultEntityLocaleId: null };
+  private parseJsonObject(value: any): Record<string, any> {
+    if (!value) {
+      return {};
     }
 
-    // Case 2: Creating a new record and cloning from an existing defaultEntityLocaleId
-    if (id === 'new' && defaultEntityLocaleIdFromQuery) {
-      this.logger.debug(`Creating new record by cloning translations from defaultEntityLocaleId: ${defaultEntityLocaleIdFromQuery}`);
+    if (typeof value === 'object') {
+      return value;
+    }
 
-      const records = await currentEntityRepository.find({
-        where: [
-          { defaultEntityLocaleId: defaultEntityLocaleIdFromQuery },
-          { id: defaultEntityLocaleIdFromQuery }
-        ]
+    if (typeof value === 'string') {
+      try {
+        return JSON.parse(value);
+      } catch (error: any) {
+        this.logger.warn(`Unable to parse workflow field provider context: ${error?.message ?? error}`);
+      }
+    }
+
+    return {};
+  }
+
+  private async getDefaultWorkflowFieldData(
+    workflowField: FieldMetadata,
+    workflowFieldName: string,
+    fieldsMap: Map<string, FieldMetadata>,
+  ): Promise<IWorkflowFieldDataProviderValues[]> {
+    if (workflowField.type === 'selectionStatic') {
+      return workflowField.selectionStaticValues.map(item => {
+        const [value, label] = item.split(":");
+        return { label, value };
       });
-
-      this.logger.debug(`Found ${records.length} cloned records for new entity.`);
-      return { records, defaultEntityLocaleId: defaultEntityLocaleIdFromQuery };
     }
 
-    // Case 3: Editing an existing entity
-    const entityRecord = await currentEntityRepository.findOne({ where: { id } });
+    if (workflowField.type === 'relation' && workflowField.relationType === 'many-to-one') {
+      const comodelCrudService = this.introspectService.getCRUDService(workflowField.relationCoModelSingularName);
+      const data = await comodelCrudService.find({ limit: 100, offset: 0, });
+      const records = data.records ?? [];
+      const workflowFieldMetadata = fieldsMap.get(workflowFieldName);
+      const workflowFieldUserKey = (workflowFieldMetadata as any)?.relationModel?.userKeyField?.name;
 
-    if (!entityRecord) {
-      this.logger.warn(`No entity found for id ${id}`);
-      return { records: [], defaultEntityLocaleId: null };
+      if (!workflowFieldUserKey) {
+        this.logger.warn(`Unable to identify relation user key for workflow field: ${workflowFieldName}`);
+        return [];
+      }
+
+      return records.map(item => ({ label: item[workflowFieldUserKey], value: item['id'] }));
     }
 
-    const defaultEntityLocaleId = entityRecord.defaultEntityLocaleId || entityRecord.id;
-    if (entityRecord.defaultEntityLocaleId) {
-      this.logger.debug(`Editing translated locale record. Translation root id: ${defaultEntityLocaleId}`);
-    } else {
-      this.logger.debug(`Editing translation root record with id ${defaultEntityLocaleId}`);
+    return [];
+  }
+
+  private async getWorkflowFieldData(
+    entity: ViewMetadata,
+    workflowField: FieldMetadata,
+    workflowFieldName: string,
+    fieldsMap: Map<string, FieldMetadata>,
+    query: Record<string, any>,
+    activeUser: any,
+  ): Promise<readonly IWorkflowFieldDataProviderValues[]> {
+    const workflowFieldDataProviderName = entity.layout?.attrs?.workflowFieldDataProvider;
+    if (workflowFieldDataProviderName) {
+      const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
+      const provider = solidRegistry.getWorkflowFieldDataProviderInstance(workflowFieldDataProviderName);
+      if (!provider) {
+        throw new BadRequestException(`Workflow field data provider ${workflowFieldDataProviderName} not found`);
+      }
+
+      return provider.values({
+        entityId: query?.id,
+        modelName: entity.model?.singularName ?? query?.modelName,
+        moduleName: entity.module?.name ?? query?.moduleName,
+        workflowFieldName,
+        workflowField,
+        solidModel: entity.model,
+        solidView: entity,
+        solidFieldsMetadata: Object.fromEntries(fieldsMap),
+        query,
+        providerContext: this.parseJsonObject(entity.layout?.attrs?.workflowFieldDataProviderCtxt),
+        activeUser,
+      });
     }
 
-    const records = await currentEntityRepository.find({
-      where: [
-        { defaultEntityLocaleId: defaultEntityLocaleId },
-        { id: defaultEntityLocaleId }
-      ]
-    });
-
-    this.logger.debug(`Found ${records.length} records in all locales for existing entity.`);
-
-    return { records, defaultEntityLocaleId };
+    return this.getDefaultWorkflowFieldData(workflowField, workflowFieldName, fieldsMap);
   }
 
   // START: Custom Service Methods
@@ -331,28 +356,9 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
     }
 
     // 9. Use the resolved workflowField to populate workflow specific metadata.
-    // Check if we were able to resolve an actual workflowField.
-    let solidFormViewWorkflowData = [];
+    let solidFormViewWorkflowData: readonly IWorkflowFieldDataProviderValues[] = [];
     if (viewType === 'form' && workflowField) {
-      // check for type of workflow field. 
-      // for workflowFields of type selectionStatic we simply return the key/values from field metadata AS-IS
-      if (workflowField.type === 'selectionStatic') {
-        solidFormViewWorkflowData = workflowField.selectionStaticValues.map(item => {
-          const [value, label] = item.split(":");
-          return { label, value };
-        });
-      }
-      // for workflowFields of type relation.many-to-one we need to query the co-model, and return data in key/value format.
-      if (workflowField.type === 'relation' && workflowField.relationType === 'many-to-one') {
-        const comodelCrudService = this.introspectService.getCRUDService(workflowField.relationCoModelSingularName);
-        const data = await comodelCrudService.find({ limit: 100, offset: 0, });
-        const records = data.records ?? [];
-        const workflowFieldMetadata = fieldsMap.get(workflowFieldName);
-        const workflowFielUserkey = workflowFieldMetadata['relationModel']['userKeyField']['name'];
-
-        // iterate over the comodel records extracting the label & value. 
-        solidFormViewWorkflowData = records.map(item => ({ 'label': item[workflowFielUserkey], 'value': item['id'] }))
-      }
+      solidFormViewWorkflowData = await this.getWorkflowFieldData(entity, workflowField, workflowFieldName, fieldsMap, query, activeUser);
     }
 
     // 10. If this model supports internationalisation, we need to load the locales applicable with the id of an actual record for each locale if present.
@@ -366,92 +372,12 @@ export class ViewMetadataService extends CRUDService<ViewMetadata> {
      * ]
      */
 
-    const applicableLocales: any = []
-    // if (entity.model.internationalisation) {
-    //   const allLocales = await this.entityManager.getRepository(Locale).find({});
-
-    //   if (id === 'new') {
-    //     allLocales.forEach(locale => {
-    //       applicableLocales.push({
-    //         locale: locale.locale,
-    //         displayName: locale.displayName,
-    //         isDefault: locale.isDefault ? 'yes' : 'no',
-    //         defaultEntityLocaleId: null,
-    //         entityId: null
-    //       });
-    //     });
-    //   }
-    //   else {
-    //     const defaultLocale = allLocales.find(locale => locale.isDefault);
-    //     this.logger.debug(`Default locale is: ${defaultLocale.locale}`);
-
-    //     // Get hold of the repository for the current model
-    //     const solidRegistry = await this.moduleRef.get(SolidRegistry, { strict: false });
-    //     const currentEntityTarget = solidRegistry.getEntityTarget(this.entityManager, classify(modelName));
-    //     const currentEntityRepository = this.entityManager.getRepository(currentEntityTarget);
-
-    //     // We are in edit mode, the id that is being edited could be a record tagged with the default locale or it could be tagged with a non-default locale.
-    //     const entityRecord = await currentEntityRepository.findOne({
-    //       where: {
-    //         id: id,
-    //       }
-    //     });
-    //     if(entityRecord){
-    //     //  Resolve the default entity locale id....
-    //       let defaultEntityLocaleId = null;
-    //       if (entityRecord.localeName === defaultLocale.locale) {
-    //         defaultEntityLocaleId = entityRecord.id;
-    //         this.logger.debug(`You are editing a record tagged with the default locale: ${entityRecord.localeName}.`);
-    //       }
-    //       else {
-    //         defaultEntityLocaleId = entityRecord.defaultEntityLocaleId;
-    //         this.logger.debug(`You are editing a record tagged with the non-default locale: ${entityRecord.localeName}. `);
-    //       }
-    //       this.logger.debug(`Identified default Entity Locale Id: ${defaultEntityLocaleId}`);
-
-    //       // Now we query for all records in the same model matching the defaultEntityLocaleId
-    //       // Get all records mathcing the defaultEntityLocaleId or where the id is same as the defaultEntityLocaleId
-    //       const entityRecordsInAllLocales = await currentEntityRepository.find({
-    //         where: [
-    //           { defaultEntityLocaleId: defaultEntityLocaleId },
-    //           { id: defaultEntityLocaleId }
-    //         ],
-    //       });
-    //       this.logger.debug(`Found ${entityRecordsInAllLocales.length} records in all locales for the defaultEntityLocaleId: ${defaultEntityLocaleId}`);
-
-    //       // Loop over all locales and populate the applicableLocales array
-    //       for (const locale of allLocales) {
-    //         // Find the record in the entityRecordsInAllLocales that matches the current locale
-    //         const matchingRecord = entityRecordsInAllLocales.find(record => record.localeName === locale.locale);
-
-    //         applicableLocales.push({
-    //           locale: locale.locale,
-    //           displayName: locale.displayName,
-    //           isDefault: locale.isDefault ? 'yes' : 'no',
-    //           defaultEntityLocaleId: defaultEntityLocaleId,
-    //           entityId: (matchingRecord ? matchingRecord.id : null)
-    //         });
-    //       }
-    //     }else{
-    //       this.logger.warn(`No record found for id: ${id} in model: ${modelName}. Cannot determine applicable locales.`);
-    //     }
-    //   }
-    // }
+    let applicableLocales: any[] = [];
     if (entity.model.internationalisation) {
-      const defaultEntityLocaleIdFromQuery = query?.defaultEntityLocaleId;
-      const { records: entityRecordsInAllLocales, defaultEntityLocaleId } =
-        await this.getEntityRecordsInAllLocales(modelName, id, defaultEntityLocaleIdFromQuery);
-      const allLocales = await this.entityManager.getRepository(Locale).find({});
-      for (const locale of allLocales) {
-        const matchingRecord = entityRecordsInAllLocales.find(record => record.localeName === locale.locale);
-        applicableLocales.push({
-          locale: locale.locale,
-          displayName: locale.displayName,
-          isDefault: locale.isDefault ? 'yes' : 'no',
-          defaultEntityLocaleId: defaultEntityLocaleId,
-          entityId: matchingRecord ? matchingRecord.id : null
-        });
-      }
+      const draftPublishEnabled = entity.model.draftPublishWorkflow === true;
+      applicableLocales = await this.internationalisationHelperService.buildApplicableLocales(
+        this.entityManager, modelName, id, query?.defaultEntityLocaleId, draftPublishEnabled,
+      );
     }
 
     const r = {

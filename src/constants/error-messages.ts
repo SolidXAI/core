@@ -127,6 +127,20 @@ export const ERROR_MESSAGES = {
 
     DEFAULT_REGEX_PATTERN_NOT_MATCHING_ERROR_MSG: 'Invalid regex pattern.',
 
+    // MPIN errors.
+    // MPIN_INVALID is deliberately shared by "wrong MPIN" and "unknown handle",
+    // so a failed sign-in never reveals whether the credential handle was real.
+    // MPIN_REVOKED is separate and is returned for any attempt against a
+    // deactivated credential - it discloses nothing useful, since a dead
+    // credential grants no capability, and it lets the client stop retrying.
+    MPIN_INVALID: 'Invalid MPIN.',
+    MPIN_LOCKED: 'MPIN sign-in is temporarily locked due to repeated failed attempts.',
+    MPIN_REVOKED: 'MPIN sign-in has been disabled for this device. Please sign in normally.',
+    MPIN_NOT_ENABLED: 'MPIN sign-in is not enabled.',
+    MPIN_FORMAT_INVALID: 'MPIN does not meet the required format.',
+    MPIN_TOO_PREDICTABLE: 'MPIN is too easy to guess. Avoid repeated or sequential digits.',
+    MPIN_CREDENTIAL_NOT_FOUND: 'MPIN device credential not found.',
+
     PERMISSION_MESSAGES: {
     insertMany: (model?: string) =>
       `You do not have permission to import ${model ?? 'these'} records.`,

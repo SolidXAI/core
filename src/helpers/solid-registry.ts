@@ -7,7 +7,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { IDashboardWidgetDataProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule } from "../interfaces";
+import { IDashboardWidgetDataProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule, IWorkflowFieldDataProvider } from "../interfaces";
 import { ObjectLiteral } from 'typeorm';
 
 type ControllerMetadata = {
@@ -71,6 +71,7 @@ export class SolidRegistry {
   private seeders: Set<InstanceWrapper> = new Set();
   private scheduledJobProviders: Set<InstanceWrapper> = new Set();
   private selectionProviders: Set<InstanceWrapper> = new Set();
+  private workflowFieldDataProviders: Set<InstanceWrapper> = new Set();
   private dashboardWidgetDataProviders: Set<InstanceWrapper> = new Set();
   private computedFieldProviders: Set<InstanceWrapper> = new Set();
   private solidDatabaseModules: Set<InstanceWrapper> = new Set();
@@ -135,6 +136,10 @@ export class SolidRegistry {
 
   registerSelectionProvider(selectionProvider: InstanceWrapper): void {
     this.selectionProviders.add(selectionProvider);
+  }
+
+  registerWorkflowFieldDataProvider(provider: InstanceWrapper): void {
+    this.workflowFieldDataProviders.add(provider);
   }
 
   registerDashboardWidgetDataProvider(provider: InstanceWrapper): void {
@@ -227,6 +232,10 @@ export class SolidRegistry {
     return Array.from(this.selectionProviders);
   }
 
+  getWorkflowFieldDataProviders(): Array<InstanceWrapper> {
+    return Array.from(this.workflowFieldDataProviders);
+  }
+
   getDashboardWidgetDataProviders(): Array<InstanceWrapper> {
     return Array.from(this.dashboardWidgetDataProviders);
   }
@@ -240,6 +249,17 @@ export class SolidRegistry {
         return selectionProvider.instance;
       }
     }
+  }
+
+  getWorkflowFieldDataProviderInstance(name: string): IWorkflowFieldDataProvider | undefined {
+    const providers = this.getWorkflowFieldDataProviders();
+    for (let i = 0; i < providers.length; i++) {
+      const provider = providers[i];
+      if (provider?.instance?.name?.() === name || provider?.name === name) {
+        return provider.instance as IWorkflowFieldDataProvider;
+      }
+    }
+    return undefined;
   }
 
   getDashboardWidgetDataProviderInstance(name: string): IDashboardWidgetDataProvider | undefined {
@@ -346,7 +366,7 @@ export class SolidRegistry {
   }
 
   getCommonEntityKeys(): (keyof CommonEntity | 'createdBy' | 'updatedBy')[] {
-    return ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt'];
+    return ['id', 'createdAt', 'updatedAt', 'deletedAt', 'createdBy', 'updatedBy', 'deletedTracker', 'localeName', 'defaultEntityLocaleId', 'publishedAt', 'isPublished', 'isLatest', 'initialEntityVersionId', 'publishedTracker'];
     // return Reflect.getMetadataKeys(CommonEntity.prototype) as (keyof CommonEntity)[];
   }
 

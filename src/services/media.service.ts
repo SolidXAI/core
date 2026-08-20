@@ -1,13 +1,14 @@
-import { forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ModuleRef } from "@nestjs/core";
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { EntityManager, In } from 'typeorm';
+import { EntityManager, In, Not } from 'typeorm';
 import * as path from 'path';
 import { Readable } from 'stream';
 
 import { ConfigService } from '@nestjs/config';
 import { CRUDService } from 'src/services/crud.service';
 import { DiskFileService, S3FileService } from 'src/services/file';
+import { classify } from 'src/helpers/string.helper';
 import { MediaDownloadUrlService } from 'src/services/media-download-url.service';
 
 
@@ -16,11 +17,12 @@ import { BasicFilterDto } from 'src/dtos/basic-filters.dto';
 import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
 import { Media } from 'src/entities/media.entity';
 import { MediaStorageProviderMetadata } from 'src/entities/media-storage-provider-metadata.entity';
+import { MediaFieldCrudManager, SolidMediaType } from 'src/helpers/field-crud-managers/MediaFieldCrudManager';
 import { FieldMetadataRepository } from 'src/repository/field-metadata.repository';
 import { MediaStorageProviderMetadataRepository } from 'src/repository/media-storage-provider-metadata.repository';
 import { MediaRepository } from 'src/repository/media.repository';
 import { ModelMetadataRepository } from 'src/repository/model-metadata.repository';
-import { buildDiskMediaPath, buildStoredMediaFileName, getEffectiveS3Region, resolveMediaIsPublic, } from 'src/services/media-storage.utils';
+import { buildDiskMediaPath, getEffectiveS3Region, resolveMediaIsPublic, } from 'src/services/media-storage.utils';
 import { getMediaStorageProvider } from "./mediaStorageProviders";
 
 @Injectable()
@@ -103,40 +105,26 @@ export class MediaService extends CRUDService<Media> {
       throw new NotFoundException('Media storage provider metadata not found');
     }
 
-    const savedMedias = [];
-    for (let i = 0; i < files.length; i++) {
-      const file = files[i];
-      const storageProvider = createDto.mediaStorageProviderMetadata as MediaStorageProviderMetadata;
-      const fileName = buildStoredMediaFileName(file);
+    createDto['fieldMetadata'].mediaStorageProvider = createDto['mediaStorageProviderMetadata'];
 
-      switch (storageProvider.type) {
-        case MediaStorageProviderType.Filesystem:
-          const fileStoragePath = buildDiskMediaPath(fileName, this.settingService, storageProvider);
-          await this.diskFileService.copy(file.path, fileStoragePath);
-          createDto['relativeUri'] = fileName;
-          break;
-        case MediaStorageProviderType.AwsS3:
-          const bucketName = storageProvider.bucketName;
-          const region = getEffectiveS3Region(this.configService, storageProvider.region);
-
-          // Read file from disk and upload to S3
-          const fileData = await this.diskFileService.read(file.path);
-          await this.s3FileService.write(`${bucketName}:${fileName}`, fileData, { contentType: file.mimetype, region });
-
-          createDto['relativeUri'] = fileName;
-          break;
-        default:
-          break;
-      }
-      // Delete temp file from disk
-      await this.diskFileService.delete(file.path);
-
-      delete createDto['isPublic'];
-      const media = this.repo.create(createDto as Partial<Media>) as Media;
-      const savedMedia = await this.repo.save(media);
-      savedMedias.push(savedMedia)
+    const validator = new MediaFieldCrudManager({
+      type: createDto['fieldMetadata']?.type as SolidMediaType,
+      required: true,
+      fieldName: 'files',
+      mediaMaxSizeKb: createDto['fieldMetadata']?.mediaMaxSizeKb,
+      mediaTypes: createDto['fieldMetadata']?.mediaTypes || [],
+      mediaAllowedExtensions: createDto['fieldMetadata']?.mediaAllowedExtensions || [],
+      isUpdate: false,
+    });
+    const validationErrors = validator.validate(createDto, files);
+    if (validationErrors.length > 0) {
+      throw new BadRequestException(validationErrors.map(error => error.error).join(', '));
     }
-    return savedMedias
+
+    const storageProviderType = createDto['mediaStorageProviderMetadata'].type as MediaStorageProviderType;
+    const storageProvider = await getMediaStorageProvider(this.moduleRef, storageProviderType);
+
+    return storageProvider.store(files, { id: Number(createDto['entityId']) }, createDto['fieldMetadata']);
   }
 
   async remove(id: number) {
@@ -190,8 +178,12 @@ export class MediaService extends CRUDService<Media> {
   async delete(id: number, solidRequestContext: any = {}) {
     const media = await this.repo.findOne({
       where: { id },
-      relations: ['mediaStorageProviderMetadata'],
+      relations: ['mediaStorageProviderMetadata', 'modelMetadata'],
     });
+
+    if (media) {
+      await this.assertMediaDeletable([media]);
+    }
 
     const result = await super.delete(id, solidRequestContext);
 
@@ -207,8 +199,10 @@ export class MediaService extends CRUDService<Media> {
       where: {
         id: In(ids),
       },
-      relations: ['mediaStorageProviderMetadata'],
+      relations: ['mediaStorageProviderMetadata', 'modelMetadata'],
     });
+
+    await this.assertMediaDeletable(mediaRecords);
 
     const result = await super.deleteMany(ids, solidRequestContext);
 
@@ -217,6 +211,33 @@ export class MediaService extends CRUDService<Media> {
     }
 
     return result;
+  }
+
+  /**
+   * Media belonging to a published draft/publish-enabled record must survive edits made to
+   * later drafts (see DraftPublishHelperService.cloneMediaForVersion) - deleting it directly
+   * would strip the published version's media out from under it. Mirrors the equivalent
+   * entity-level guard in DraftPublishHelperService.assertDraftPublishDeleteAllowed.
+   */
+  private async assertMediaDeletable(mediaRecords: Media[]): Promise<void> {
+    const blockedIds: number[] = [];
+
+    for (const media of mediaRecords) {
+      if (!media.modelMetadata?.draftPublishWorkflow) continue;
+
+      const entityRepository = this.entityManager.getRepository(classify(media.modelMetadata.singularName));
+      const owningEntity = await entityRepository.findOne({ where: { id: media.entityId } as any });
+
+      if (owningEntity && (owningEntity as any).isPublished === true) {
+        blockedIds.push(media.id);
+      }
+    }
+
+    if (blockedIds.length > 0) {
+      throw new BadRequestException(
+        'Media belonging to a published record cannot be deleted. Edit the record to create a draft first'
+      );
+    }
   }
 
   private async decorateMediaRecords(medias: Media[]): Promise<void> {
@@ -258,6 +279,17 @@ export class MediaService extends CRUDService<Media> {
     }
 
     try {
+      // Draft/publish versioning may clone a Media row that reuses the same
+      // relativeUri (see DraftPublishHelperService.cloneMediaForVersion) instead of
+      // duplicating the underlying file. Skip the physical delete if another row
+      // still references it.
+      const stillReferenced = await this.repo.exists({
+        where: { relativeUri: media.relativeUri, id: Not(media.id) },
+      });
+      if (stillReferenced) {
+        return;
+      }
+
       const mediaStorageProvider = await this.resolveMediaStorageProvider(media);
       if (!mediaStorageProvider) {
         return;

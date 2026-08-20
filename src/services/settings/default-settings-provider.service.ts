@@ -6,9 +6,17 @@ import {
   SettingDefinition,
   SettingLevel,
 } from "src/interfaces";
+import { getDefaultThemeKey, getThemesByMode } from "src/theme/theme-registry";
 
 export const DEFAULT_MEDIA_UPLOAD_DIR = "media-uploads";
 export const DEFAULT_MEDIA_FILE_STORAGE_DIR = "media-files-storage";
+
+// Seeded setting values are written once and never overwritten, so an unparseable
+// env var would persist. Fall back whenever it is missing or not a positive number.
+const timeoutFromEnv = (value: string | undefined, fallback: number): number => {
+  const parsed = Number(value);
+  return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback;
+};
 
 // 1.
 const getSolidCoreSettings = (isProd: boolean) =>
@@ -125,10 +133,10 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
-      key: "rowClickAction",
+      key: "recordClickAction",
       value: "edit",
       level: SettingLevel.SystemAdminEditable,
-      label: "Row Click Action",
+      label: "Record Click Action",
       group: "app-settings",
       sortOrder: 45,
       controlType: "selectionStatic",
@@ -136,7 +144,7 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "Edit", value: "edit" },
         { label: "View", value: "view" },
       ],
-      helpText: "Decides whether clicking a list row opens the record in edit mode or view mode.",
+      helpText: "Decides whether clicking a record in List, Card, Kanban, or Tree View opens it in edit mode or view mode.",
     },
     {
       moduleName: "solid-core",
@@ -217,14 +225,44 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
-      key: "enableDarkMode",
+      key: "showThemeToggle",
       value: true,
       level: SettingLevel.SystemAdminEditable,
-      label: "Enable Dark Mode",
+      label: "Show Theme Toggle",
       group: "app-settings",
       sortOrder: 120,
       controlType: "boolean",
-      helpText: "Enables dark theme support for frontend surfaces that honor the global appearance setting.",
+      helpText: "Shows the theme toggle in the frontend so users can switch between light and dark themes.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "lightTheme",
+      value: getDefaultThemeKey("light"),
+      level: SettingLevel.SystemAdminEditable,
+      label: "Light Theme",
+      group: "app-settings",
+      sortOrder: 125,
+      controlType: "selectionStatic",
+      options: getThemesByMode("light").map((theme) => ({
+        label: theme.label,
+        value: theme.key,
+      })),
+      helpText: "Selects the theme used whenever the application is in light mode.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "darkTheme",
+      value: getDefaultThemeKey("dark"),
+      level: SettingLevel.SystemAdminEditable,
+      label: "Dark Theme",
+      group: "app-settings",
+      sortOrder: 126,
+      controlType: "selectionStatic",
+      options: getThemesByMode("dark").map((theme) => ({
+        label: theme.label,
+        value: theme.key,
+      })),
+      helpText: "Selects the theme used whenever the application is in dark mode.",
     },
     {
       moduleName: "solid-core",
@@ -493,6 +531,20 @@ const getSolidCoreSettings = (isProd: boolean) =>
         { label: "S3", value: "s3" },
       ],
       helpText: "Default storage implementation used for file handling, such as local disk or S3.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "maxMediaFileSizeMb",
+      value: (() => {
+        const parsedMb = Number(process.env.AB_MEDIA_MAX_FILE_SIZE_MB);
+        return Number.isFinite(parsedMb) && parsedMb > 0 ? parsedMb : 100;
+      })(),
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Max Media File Size (MB)",
+      group: "storage-settings",
+      sortOrder: 45,
+      controlType: "numeric",
+      helpText: "Global upload size limit enforced by Multer under every per-field mediaMaxSizeKb restriction. Read-only here: it's applied once at process start, so changing AB_MEDIA_MAX_FILE_SIZE_MB requires an app restart to take effect - editing this in the admin UI would not do that.",
     },
 
     // aws-s3-settings-provider.service.ts
@@ -1211,6 +1263,77 @@ const getSolidCoreSettings = (isProd: boolean) =>
       sortOrder: 200,
       controlType: "boolean",
     },
+    {
+      moduleName: "solid-core",
+      key: "mpinEnabled",
+      value: false,
+      level: SettingLevel.SystemAdminEditable,
+      label: "Enable MPIN Sign-in",
+      group: "authentication-settings",
+      sortOrder: 210,
+      controlType: "boolean",
+      helpText:
+        "Allows users to set a short device PIN for faster sign-in. Every MPIN route returns 404 while this is off.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "mpinRegex",
+      value: process.env.IAM_MPIN_REGEX ?? "^\\d{4,6}$",
+      level: SettingLevel.SystemAdminEditable,
+      label: "MPIN Format",
+      group: "authentication-settings",
+      sortOrder: 211,
+      controlType: "shortText",
+      helpText:
+        "Regular expression the MPIN must match. Sole authority on MPIN length - the default allows 4 to 6 digits. Predictable PINs (repeated or sequential digits) are rejected separately.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "mpinMaxFailedAttempts",
+      value: parseInt(process.env.IAM_MPIN_MAX_FAILED_ATTEMPTS ?? "5", 10),
+      level: SettingLevel.SystemAdminEditable,
+      label: "MPIN Attempts Before Lockout",
+      group: "authentication-settings",
+      sortOrder: 212,
+      controlType: "numeric",
+      helpText:
+        "Cumulative failed attempts that trigger a temporary lockout. The counter resets only on a successful MPIN sign-in, not when the lockout expires.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "mpinLockoutDuration",
+      value: parseInt(process.env.IAM_MPIN_LOCKOUT_DURATION ?? "900", 10),
+      level: SettingLevel.SystemAdminEditable,
+      label: "MPIN Lockout Duration (seconds)",
+      group: "authentication-settings",
+      sortOrder: 213,
+      controlType: "numeric",
+      helpText: "How long the temporary lockout lasts.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "mpinMaxTotalFailedAttempts",
+      value: parseInt(process.env.IAM_MPIN_MAX_TOTAL_FAILED_ATTEMPTS ?? "10", 10),
+      level: SettingLevel.SystemAdminEditable,
+      label: "MPIN Attempts Before Permanent Deactivation",
+      group: "authentication-settings",
+      sortOrder: 214,
+      controlType: "numeric",
+      helpText:
+        "Cumulative failed attempts that permanently disable MPIN on that device. Must exceed the lockout threshold. The account itself is never locked - the user signs in normally and sets MPIN up again.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "mpinMaxDevicesPerUser",
+      value: parseInt(process.env.IAM_MPIN_MAX_DEVICES_PER_USER ?? "5", 10),
+      level: SettingLevel.SystemAdminEditable,
+      label: "Max MPIN Devices Per User",
+      group: "authentication-settings",
+      sortOrder: 215,
+      controlType: "numeric",
+      helpText:
+        "At the cap the least recently used credential is evicted rather than the setup rejected, so repeated app reinstalls cannot lock a user out of MPIN setup.",
+    },
     // queues-settings-provider.service.ts
     {
       moduleName: "solid-core",
@@ -1473,6 +1596,31 @@ const getSolidCoreSettings = (isProd: boolean) =>
       key: "metaWhatsappAppSecret",
       value: process.env.COMMON_META_WHATSAPP_APP_SECRET,
       level: SettingLevel.SystemEnv,
+    },
+    {
+      moduleName: "solid-core",
+      key: "uiTestDefaultTimeoutMs",
+      value: timeoutFromEnv(process.env.COMMON_UI_TEST_DEFAULT_TIMEOUT_MS, 30000),
+      level: SettingLevel.SystemAdminEditable,
+      label: "UI Test Default Timeout (ms)",
+      group: "testing-settings",
+      sortOrder: 10,
+      controlType: "numeric",
+      helpText: "How long UI test steps wait for an element before failing. Raise this if tests time out on slow screens. Overridden by the --ui-timeout-ms flag and by a per-step timeoutMs.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "uiTestNavigationTimeoutMs",
+      value: timeoutFromEnv(
+        process.env.COMMON_UI_TEST_NAVIGATION_TIMEOUT_MS,
+        timeoutFromEnv(process.env.COMMON_UI_TEST_DEFAULT_TIMEOUT_MS, 30000),
+      ),
+      level: SettingLevel.SystemAdminEditable,
+      label: "UI Test Navigation Timeout (ms)",
+      group: "testing-settings",
+      sortOrder: 20,
+      controlType: "numeric",
+      helpText: "How long the ui.goto step waits for a page to load before failing. Falls back to the UI test default timeout.",
     },
   ] as const satisfies SettingDefinition[];
 

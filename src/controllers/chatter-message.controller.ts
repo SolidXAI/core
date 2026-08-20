@@ -96,6 +96,14 @@ export class ChatterMessageController {
   }
 
   @ApiBearerAuth("jwt")
+  @ApiQuery({ name: 'search', required: false, type: String })
+  @ApiQuery({ name: 'limit', required: false, type: Number })
+  @Get('mentionable-users')
+  async getMentionableUsers(@Query() query: any) {
+    return this.service.getMentionableUsers(query?.search, query?.limit ? +query.limit : undefined);
+  }
+
+  @ApiBearerAuth("jwt")
   @Get(':id')
   async findOne(@Param('id') id: string, @Query() query: any) {
     return this.service.findOne(+id, query);

@@ -15,6 +15,7 @@ import { IS_DASHBOARD_WIDGET_DATA_PROVIDER } from 'src/decorators/dashboard-widg
 import { IS_EXTENSION_USER_CREATION_PROVIDER } from 'src/decorators/extension-user-creation-provider.decorator';
 import { IS_SOLID_DATABASE_MODULE } from 'src/decorators/solid-database-module.decorator';
 import { IS_WA_PROVIDER } from 'src/decorators/whatsapp-provider.decorator';
+import { IS_WORKFLOW_FIELD_DATA_PROVIDER } from 'src/decorators/workflow-field-data-provider.decorator';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { AuditSubscriber } from 'src/subscribers/audit.subscriber';
 import { ComputedEntityFieldSubscriber } from 'src/subscribers/computed-entity-field.subscriber';
@@ -67,6 +68,12 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     const selectionProviders = this.discoveryService.getProviders().filter((provider) => this.isSelectionProvider(provider));
     selectionProviders.forEach((selectionProvider) => {
       this.solidRegistry.registerSelectionProvider(selectionProvider);
+    });
+
+    // Register all IWorkflowFieldDataProvider implementations
+    const workflowFieldDataProviders = this.discoveryService.getProviders().filter((provider) => this.isWorkflowFieldDataProvider(provider));
+    workflowFieldDataProviders.forEach((provider) => {
+      this.solidRegistry.registerWorkflowFieldDataProvider(provider);
     });
 
     // Register all IDashboardWidgetDataProvider implementations
@@ -275,6 +282,18 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     );
 
     return !!isSelectionProvider;
+  }
+
+  private isWorkflowFieldDataProvider(provider: InstanceWrapper) {
+    const { instance } = provider;
+    if (!instance) return false;
+
+    const isWorkflowFieldDataProvider = this.reflector.get<boolean>(
+      IS_WORKFLOW_FIELD_DATA_PROVIDER,
+      instance.constructor,
+    );
+
+    return !!isWorkflowFieldDataProvider;
   }
 
   private isDashboardWidgetDataProvider(provider: InstanceWrapper) {

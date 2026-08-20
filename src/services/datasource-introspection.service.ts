@@ -1680,6 +1680,11 @@ export class DatasourceIntrospectionService {
 
     private getLegacySuperclassFieldName(columnName: string, legacyTableType: LegacyTableType) {
         const normalized = columnName.toLowerCase();
+        // LegacyCommonEntityWithExistingId doesn't declare the draft/publish versioning
+        // columns (see DRAFT_PUBLISH_VERSIONING_FIELD_NAMES), so their ss_-prefixed column
+        // names must not appear here — otherwise a table that still physically has one of
+        // those columns would have it silently treated as superclass-handled and dropped
+        // from introspection instead of being surfaced as a real column.
         const legacyFieldMap: Record<string, string> = {
             ss_created_at: "createdAt",
             ss_updated_at: "updatedAt",

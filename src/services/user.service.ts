@@ -156,10 +156,25 @@ export class UserService extends CRUDService<User> {
     if (!user) {
       throw new Error(ERROR_MESSAGES.USER_NOT_FOUND);
     }
-    if (updateDto.roles != null) {
-      await this.addRolesToUser(user.username, updateDto.roles);
+
+    const { roles, ...userUpdateDto } = updateDto || {};
+    const savedUser = await this.update(
+      id,
+      userUpdateDto,
+      files,
+      true,
+      solidRequestContext,
+    );
+
+    if (roles != null) {
+      await this.addRolesToUser(savedUser.username, roles);
+      return this.repo.findOne({
+        where: { id: savedUser.id },
+        relations: { roles: true },
+      });
     }
-    await this.update(id, updateDto, files, true);
+
+    return savedUser;
   }
 
   async addRoleToUser(username: string, roleName: string): Promise<User> {

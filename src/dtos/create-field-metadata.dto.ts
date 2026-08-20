@@ -1,5 +1,6 @@
 import { ApiProperty } from '@nestjs/swagger';
 import { Transform, Type } from 'class-transformer';
+import { DANGEROUS_EXTENSIONS, MEDIA_CATEGORIES, MediaCategory } from '../constants/media-file-types';
 
 import {
   IsArray,
@@ -7,6 +8,7 @@ import {
   IsEnum,
   IsIn,
   IsInt,
+  IsNotIn,
   IsOptional,
   IsString,
   Matches,
@@ -155,13 +157,7 @@ export enum DecryptWhenType {
   afterTransit = 'after-transit',
 }
 
-export enum MediaType {
-  image = 'image',
-  audio = 'audio',
-  video = 'video',
-  // document = 'document',
-  file = 'file',
-}
+export type MediaType = MediaCategory;
 
 export enum RelationType {
   manyToOne = 'many-to-one',
@@ -308,7 +304,7 @@ export class CreateFieldMetadataDto {
   private: boolean;
 
   @ApiProperty({ description: 'Allowed media types for the field. Only for type=mediaSingle,mediaMultiple', })
-  @IsEnum(MediaType, { each: true })
+  @IsIn([...MEDIA_CATEGORIES], { each: true })
   @IsOptional()
   mediaTypes: MediaType[];
 
@@ -316,6 +312,18 @@ export class CreateFieldMetadataDto {
   @IsInt()
   @IsOptional()
   mediaMaxSizeKb: number;
+
+  @ApiProperty({ description: 'Explicit allowlist of file extensions (e.g. ["pdf","xlsx","png"]) permitted for this field, checked in addition to any mediaTypes category restriction — both must pass if both are set. For a strict allowlist, leave mediaTypes empty and use this alone. Only for type=mediaSingle,mediaMultiple', })
+  @Transform(({ value }) =>
+    Array.isArray(value)
+      ? value.map((ext: any) => String(ext).toLowerCase().trim().replace(/^\./, ''))
+      : value
+  )
+  @IsArray()
+  @IsString({ each: true })
+  @IsNotIn([...DANGEROUS_EXTENSIONS], { each: true })
+  @IsOptional()
+  mediaAllowedExtensions?: string[];
 
   @ApiProperty({ description: 'Configured Media storage provider. Only for type=mediaSingle,mediaMultiple', })
   @IsInt()
