@@ -9,6 +9,8 @@ export function getUserExcludedFields(): string[] {
     "googleId",
     "active",
     "forcePasswordChange",
+    "failedLoginAttempts",
+    "isAllowedToGenerateApiKeys",
     "lastLoginProvider",
     "googleProfilePicture",
     "facebookAccessToken",
