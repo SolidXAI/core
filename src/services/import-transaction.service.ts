@@ -643,7 +643,42 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
         }
       }
     }
+
+    // Some fields are hidden from the import file because users should not
+    // have to enter internal values such as passwordSchemeVersion. The
+    // backend still checks those fields as required, so fill in their default
+    // values here before validation. This lets users import normal details
+    // without exposing or requiring internal fields in the template.
+    for (const field of modelMetadataWithFields.fields) {
+      if (
+        field.required &&
+        field.defaultValue !== null &&
+        field.defaultValue !== undefined &&
+        !(field.name in dtoRecord)
+      ) {
+        dtoRecord[field.name] = this.parseImportDefaultValue(field);
+      }
+    }
+
     return dtoRecord;
+  }
+
+  // Defaults come from metadata as text. Convert them to the type expected by
+  // validation, so values like "1" and "true" are handled as a number and a
+  // boolean instead of being treated as plain text.
+  private parseImportDefaultValue(field: FieldMetadata): any {
+    const defaultValue = field.defaultValue;
+
+    switch (field.type) {
+      case SolidFieldType.boolean:
+        return ['true', '1', 'yes'].includes(String(defaultValue).toLowerCase());
+      case SolidFieldType.int:
+      case SolidFieldType.bigint:
+      case SolidFieldType.decimal:
+        return Number(defaultValue);
+      default:
+        return defaultValue;
+    }
   }
 
   private async populateDtoForACell(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string): Promise<Record<string, any>> {
