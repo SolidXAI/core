@@ -45,10 +45,10 @@ export class MediaFieldCrudManager implements FieldCrudManager {
 
         // Find every media category that supports this extension.
         // An extension can belong to multiple categories, for example .ogg can be audio or video.
-        const extTypes = ext ? EXT_TO_MEDIA_TYPES[ext] : undefined;
+        const extToMediaTypes = ext ? EXT_TO_MEDIA_TYPES[ext] : undefined;
 
         // Reject files whose extension is not part of the supported media definitions.
-        if (!extTypes || extTypes.length === 0) {
+        if (!extToMediaTypes || extToMediaTypes.length === 0) {
             return null;
         }
 
@@ -56,15 +56,15 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         // grant a category on its own. A mimetype that doesn't resolve to anything (e.g.
         // application/octet-stream) has no opinion and is treated as agreeing.
         const mt = (file.mimetype || '').toLowerCase().trim();
-        const mimeType = MIME_TO_MEDIA_TYPE[mt]
+        const mimeToMediaTypes = MIME_TO_MEDIA_TYPE[mt]
             ?? (mt.startsWith('image/') ? 'image' : mt.startsWith('audio/') ? 'audio' : mt.startsWith('video/') ? 'video' : undefined);
         // When the extension is shared, the MIME type identifies the actual category:
         // audio/ogg becomes audio, while video/ogg becomes video.
-        if (mimeType && !extTypes.includes(mimeType)) {
+        if (mimeToMediaTypes && !extToMediaTypes.includes(mimeToMediaTypes)) {
             return null;
         }
 
-        return mimeType || extTypes[0];
+        return mimeToMediaTypes || extToMediaTypes[0];
     }
 
     validate(dto: any, files: Array<Express.Multer.File>): ValidationError[] {
