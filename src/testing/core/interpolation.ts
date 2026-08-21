@@ -1,4 +1,5 @@
 import type { TestContext } from "../contracts/runtime-context.types";
+import { parsePathSegments } from "./path-segments";
 
 const TOKEN_REGEX = /\$\{([^}]+)\}/g;
 
@@ -11,74 +12,6 @@ function getByPath(obj: Record<string, any>, path: string): unknown {
     current = current[part];
   }
   return current;
-}
-
-function parsePathSegments(path: string): string[] {
-  const segments: string[] = [];
-  let buffer = "";
-  let i = 0;
-
-  const pushBuffer = () => {
-    if (buffer) {
-      segments.push(buffer);
-      buffer = "";
-    }
-  };
-
-  while (i < path.length) {
-    const ch = path[i];
-    if (ch === ".") {
-      pushBuffer();
-      i += 1;
-      continue;
-    }
-    if (ch === "[") {
-      pushBuffer();
-      i += 1;
-      if (i >= path.length) break;
-      let quote = "";
-      if (path[i] === '"' || path[i] === "'") {
-        quote = path[i];
-        i += 1;
-      }
-      let value = "";
-      while (i < path.length) {
-        const c = path[i];
-        if (quote) {
-          if (c === "\\" && i + 1 < path.length) {
-            value += path[i + 1];
-            i += 2;
-            continue;
-          }
-          if (c === quote) {
-            i += 1;
-            break;
-          }
-          value += c;
-          i += 1;
-          continue;
-        }
-        if (c === "]") break;
-        value += c;
-        i += 1;
-      }
-      while (i < path.length && path[i] !== "]") {
-        i += 1;
-      }
-      if (i < path.length && path[i] === "]") {
-        i += 1;
-      }
-      if (value) {
-        segments.push(value);
-      }
-      continue;
-    }
-    buffer += ch;
-    i += 1;
-  }
-
-  pushBuffer();
-  return segments;
 }
 
 function getByPathWithBrackets(obj: Record<string, any>, path: string): unknown {
