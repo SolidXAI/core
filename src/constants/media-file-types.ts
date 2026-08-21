@@ -238,9 +238,25 @@ export function isDangerousMediaFile(file?: UploadedFileLike | null): boolean {
  * Single source of truth for extension -> coarse media category. Shared by upload-time
  * validation (MediaFieldCrudManager) and serve-time header hardening (ServeStaticModule), so
  * both agree on which extensions belong to which category and neither drifts out of sync.
- * webm/ogg are shared between AUDIO_EXTENSIONS and VIDEO_EXTENSIONS - last one wins here, they
- * default to 'video' since that's the more common upload case.
+ * Some extensions, such as ogg and webm, are valid for more than one category.
+ * Keep every matching category instead of allowing a later entry to overwrite an earlier one.
  */
+// Example: { ogg: ['audio', 'video'], mp3: ['audio'], jpg: ['image'] }
+export const EXT_TO_MEDIA_TYPES: Record<string, MediaCategory[]> = MEDIA_FILE_TYPES.reduce((acc, fileType) => {
+    // Create an empty category list the first time we see an extension.
+    if (!acc[fileType.extension]) {
+        acc[fileType.extension] = [];
+    }
+
+    // Add the category for this extension, but do not add duplicates.
+    if (!acc[fileType.extension].includes(fileType.mediaType)) {
+        acc[fileType.extension].push(fileType.mediaType);
+    }
+
+    // Return the map so the next media definition can be added to it.
+    return acc;
+}, {} as Record<string, MediaCategory[]>);
+
 export const EXT_TO_MEDIA_TYPE: Record<string, MediaCategory> = {
     ...Object.fromEntries(MEDIA_FILE_TYPES.map((fileType) => [fileType.extension, fileType.mediaType])),
 };
