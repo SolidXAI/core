@@ -607,8 +607,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   //FIXME Currently below method fails if any field in the record is not valid or if the record is not valid. It does not collect the errors for all fields in a record
   private async insertRecord(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata, modelService: CRUDService<any>): Promise<any> {
     // Convert the imported record to a DTO
-    const dto = await this.convertImportedRecordToDto(record, mapping, modelMetadataWithFields);
-    this.applyImportDefaults(dto, modelService);
+    const dto = await this.convertImportedRecordToDto(record, mapping, modelMetadataWithFields, modelService);
     // Use the model service to create the record in the database
     const createdRecord = await modelService.create(dto, [], {}); //FIXME: Need to handle this part alongwith the refactoring of the CRUDService for permissions
     return createdRecord; // Return the created record
@@ -640,7 +639,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     return modelService;
   }
 
-  private async convertImportedRecordToDto(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata) {
+  private async convertImportedRecordToDto(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata, modelService: CRUDService<any>) {
     // Create a new record object
     const dtoRecord: Record<string, any> = {};
 
@@ -661,6 +660,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       }
     }
 
+    this.applyImportDefaults(dtoRecord, modelService);
     return dtoRecord;
   }
 
