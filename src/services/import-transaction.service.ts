@@ -608,9 +608,28 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   private async insertRecord(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata, modelService: CRUDService<any>): Promise<any> {
     // Convert the imported record to a DTO
     const dto = await this.convertImportedRecordToDto(record, mapping, modelMetadataWithFields);
+    this.applyEntityDefaults(dto, modelService);
     // Use the model service to create the record in the database
     const createdRecord = await modelService.create(dto, [], {}); //FIXME: Need to handle this part alongwith the refactoring of the CRUDService for permissions
     return createdRecord; // Return the created record
+  }
+
+  // Import files do not contain hidden internal fields. Read defaults from
+  // the entity definition before CRUD validation. This is the fallback when
+  // an existing database has not refreshed its field metadata defaults, and
+  // keeps the import generic without hardcoding user fields.
+  private applyEntityDefaults(dto: Record<string, any>, modelService: CRUDService<any>): void {
+    for (const column of modelService.repo.metadata.columns) {
+      if (dto[column.propertyName] !== undefined || column.default === undefined) {
+        continue;
+      }
+
+      // Leave SQL expression defaults (such as CURRENT_TIMESTAMP) for the
+      // database instead of putting the expression text into the DTO.
+      if (typeof column.default !== 'function') {
+        dto[column.propertyName] = column.default;
+      }
+    }
   }
 
   private getModelService(modelSingularName: string): CRUDService<any> {
@@ -645,10 +664,10 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     }
 
     // Some fields are hidden from the import file because users should not
-    // have to enter internal values such as passwordSchemeVersion. The
-    // backend still checks those fields as required, so fill in their default
-    // values here before validation. This lets users import normal details
-    // without exposing or requiring internal fields in the template.
+    // have to enter internal values such as passwordSchemeVersion. If the
+    // import metadata contains a default for a required hidden field, add it
+    // to the DTO before validation. Entity defaults are applied afterward as
+    // a fallback when the metadata default is missing.
     for (const field of modelMetadataWithFields.fields) {
       if (
         field.required &&
