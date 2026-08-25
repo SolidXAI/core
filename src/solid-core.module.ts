@@ -12,7 +12,6 @@ import {
 import { MulterModule } from "@nestjs/platform-express";
 import { TypeOrmModule } from "@nestjs/typeorm";
 import { RemoveFieldsCommand } from "./commands/remove-fields.command";
-import { MigrateRemovedFieldsCommand } from "./commands/migrate-removed-fields.command";
 import { FieldMetadataController } from "./controllers/field-metadata.controller";
 import { DashboardController } from "./controllers/dashboard.controller";
 import { MediaStorageProviderMetadataController } from "./controllers/media-storage-provider-metadata.controller";
@@ -50,7 +49,6 @@ import { MediaStorageProviderMetadataService } from "./services/media-storage-pr
 import { MediaService } from "./services/media.service";
 import { MediaDownloadUrlService } from "./services/media-download-url.service";
 import { ModelMetadataService } from "./services/model-metadata.service";
-import { RemovedFieldMigrationService } from "./services/removed-field-migration.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
 import { ModulePackageService } from "./services/module-package.service";
@@ -675,7 +673,6 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     FieldMetadataService,
     DashboardRuntimeService,
     RemoveFieldsCommand,
-    MigrateRemovedFieldsCommand,
     RefreshModelCommand,
     RefreshModuleCommand,
     InfoCommand,
@@ -942,7 +939,6 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     UserViewMetadataRepository,
     ModelMetadataRepository,
     ModuleMetadataRepository,
-    RemovedFieldMigrationService,
     ActionMetadataRepository,
     MediaStorageProviderMetadataRepository,
     FixturesService,
