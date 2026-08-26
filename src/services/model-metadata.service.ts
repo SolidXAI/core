@@ -1541,7 +1541,6 @@ export class ModelMetadataService {
     //Filter out the fields by id
     const fieldsForRemoval = model.fields.filter((field) => options.fieldIdsForRemoval.includes(+field.id));
     const removeOutput = await this.executeRemoveFieldsCommand(model, fieldsForRemoval, options.dryRun);
-    const migrationOutput = await this.executeMigrationRemoveFieldsCommand(model, fieldsForRemoval, options.dryRun);
     // Remove the fields from the database as well. This also checks, if the field is marked for removal
     for (const field of fieldsForRemoval) {
       if (field.isMarkedForRemoval) {
@@ -1578,14 +1577,6 @@ export class ModelMetadataService {
 
     return removeOutput;
   }
-  // model-metadata.service.ts mein naya method add karo
-  // async executeRemoveFieldsWithModel(model: ModelMetadata, fieldNames: string[], dryRun = false,) {
-  //   const fieldsForRemoval = model.fields.filter(
-  //     field => fieldNames.includes(field.name)
-  //   );
-  //   return this.executeRemoveFieldsCommand(model, fieldsForRemoval, dryRun);
-  // }
-
   async generateModelCode(options: CodeGenerationOptions): Promise<string> {
     if (!options.modelId && !options.modelUserKey) {
       throw new BadRequestException(ERROR_MESSAGES.MODEL_REQUIRED_FOR_CODE_GENERATION);
@@ -1632,22 +1623,6 @@ export class ModelMetadataService {
     this.logger.debug(`Schematic output : ${output}`);
     return output;
   }
-
-  private async executeMigrationRemoveFieldsCommand(model: ModelMetadata, fieldsForRemoval: FieldMetadata[], dryRun: boolean = false,): Promise<string> {
-    if (!fieldsForRemoval || fieldsForRemoval.length === 0) {
-      return "";
-    }
-
-    const output = await this.commandService.executeCommandWithArgs({
-      command: 'npx',
-      args: ['@solidxai/solidctl@latest', 'migration', '-n', model.singularName, 'remove-field', ...(dryRun ? [] : ['--apply'])],
-      cwd: path.join(process.cwd(), '..'),
-    });
-
-    this.logger.debug(`Schematic output : ${output}`);
-    return output;
-  }
-
 
   async updateUserKey(data: any) {
     const { modelName, fieldName } = data;
