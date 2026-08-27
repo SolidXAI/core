@@ -307,6 +307,19 @@ Options in `with`:
 - `key` (required)
 - `timeoutMs` (optional, overrides the run-wide UI timeout)
 
+### **Op: `ui.uploadFile`**
+Description: Sets one or more files on a file input.
+
+Options in `with`:
+- `selector` (required, the `<input type="file">`)
+- `filePath` (required, a path or an array of paths)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+Notes:
+- Paths are resolved against the run's working directory, so a relative path is relative to where
+  `solid test run` was invoked.
+- Pass an array to populate a `multiple` input; a single string is the common case.
+
 ### **Op: `ui.waitForManual`**
 Description: Pauses a headed Playwright run so a human can interact with the live browser, then resumes when Enter is pressed in the terminal.
 
@@ -344,6 +357,18 @@ Description: Waits for an element to be visible.
 Options in `with`:
 - `selector` (required)
 - `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+### **Op: `ui.expectHidden`**
+Description: Waits for an element to be hidden — i.e. detached or no longer visible.
+
+Options in `with`:
+- `selector` (required)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+Notes:
+- The counterpart to `ui.expectVisible`: use it to wait for a modal, spinner, toast or overlay to
+  **go away** before the next step acts. Prefer it over `util.sleep` for that — it returns the moment
+  the element disappears instead of always spending the full duration.
 
 ### **Op: `ui.expectText`**
 Description: Asserts the text content of an element.
