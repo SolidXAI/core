@@ -4,7 +4,7 @@
     "displayName": "Solid Core",
     "description": "Solid Core Module",
     "defaultDataSource": "default",
-    "menuIconUrl": null,
+    "menuIconUrl": "media-files-storage/solid-core-menu-icon.png",
     "menuSequenceNumber": 1,
     "isSystem": true,
     "models": [
