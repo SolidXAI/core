@@ -10567,7 +10567,6 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false,
           "import": false,
           "export": false,
           "allowedViews": [
@@ -14959,7 +14958,6 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false,
           "import": false,
           "export": false,
           "allowedViews": [

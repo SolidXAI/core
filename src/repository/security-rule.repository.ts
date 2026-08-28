@@ -102,7 +102,7 @@ export class SecurityRuleRepository extends SolidBaseRepository<SecurityRule> {
     }
 
     private resolveSecurityRuleConfig(configString: string, activeUser: ActiveUserData) {
-        return configString.replace('$activeUserId', activeUser.sub.toString());
+        return configString.replaceAll('$activeUserId', activeUser.sub.toString());
     }
 
     /**

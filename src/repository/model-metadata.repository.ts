@@ -46,7 +46,12 @@ export class ModelMetadataRepository extends SolidBaseRepository<ModelMetadata> 
         }
 
         const result = await super.findOne(options);
-        await this.cacheManager.set(cacheKey, result);
+        // Do not cache negative lookups. A record may be inserted immediately
+        // after a miss (for example during metadata seeding), and a cached null
+        // would make the next lookup incorrectly take the insert path again.
+        if (result !== null) {
+            await this.cacheManager.set(cacheKey, result);
+        }
         return result;
     }
 
