@@ -100,6 +100,7 @@ import { OTPAuthenticationController } from "./controllers/otp-authentication.co
 import { ServiceController } from "./controllers/service.controller";
 import { SmsTemplateController } from "./controllers/sms-template.controller";
 import { TestQueueController } from "./controllers/test-queue.controller";
+import { TestRunController } from "./controllers/test-run.controller";
 import { EmailAttachment } from "./entities/email-attachment.entity";
 import { EmailTemplate } from "./entities/email-template.entity";
 import { MenuItemMetadata } from "./entities/menu-item-metadata.entity";
@@ -117,6 +118,8 @@ import { ApiEmailQueuePublisher } from "./jobs/rabbitmq/api-email-publisher.serv
 import { ApiEmailQueueSubscriber } from "./jobs/rabbitmq/api-email-subscriber.service";
 import { TestQueuePublisherDatabase } from "./jobs/database/test-queue-publisher-database.service";
 import { TestQueueSubscriberDatabase } from "./jobs/database/test-queue-subscriber-database.service";
+import { TestRunQueuePublisherDatabase } from "./jobs/database/test-run-queue-publisher-database.service";
+import { TestRunQueueSubscriberDatabase } from "./jobs/database/test-run-queue-subscriber-database.service";
 import { TestQueuePublisherRedis } from "./jobs/redis/test-queue-publisher-redis.service";
 import { TestQueueSubscriberRedis } from "./jobs/redis/test-queue-subscriber-redis.service";
 import { Msg91WhatsappQueuePublisher } from "./jobs/rabbitmq/msg91-whatsapp-publisher.service";
@@ -626,6 +629,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     SmsTemplateController,
     TestController,
     TestQueueController,
+    TestRunController,
     UserActivityHistoryController,
     UserController,
     UserViewMetadataController,
@@ -802,6 +806,8 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
 
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,
+    TestRunQueuePublisherDatabase,
+    TestRunQueueSubscriberDatabase,
     TestQueuePublisherRedis,
     TestQueueSubscriberRedis,
     ApiEmailQueuePublisherRedis,

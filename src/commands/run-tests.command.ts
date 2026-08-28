@@ -9,6 +9,7 @@ import { runFromMetadata } from 'src/testing/runner/run-from-metadata';
 import type { TestingMetadata } from 'src/testing/contracts/testing-metadata.types';
 import { SpecRegistry } from 'src/testing/core/spec-registry';
 import { SettingService } from 'src/services/setting.service';
+import { WorkflowSecretService } from 'src/services/workflow-secret.service';
 import type { SolidCoreSetting } from 'src/services/settings/default-settings-provider.service';
 
 interface TestRunCommandOptions {
@@ -41,6 +42,7 @@ export class TestRunCommand extends CommandRunner {
   constructor(
     private readonly moduleMetadataHelperService: ModuleMetadataHelperService,
     private readonly settingService: SettingService,
+    private readonly workflowSecretService: WorkflowSecretService,
   ) {
     super();
   }
@@ -134,6 +136,7 @@ export class TestRunCommand extends CommandRunner {
             retries: options?.retries,
           },
           options: { printApiLogs },
+          resolveSecrets: (keys) => this.workflowSecretService.resolveAvailable(keys),
           specs: specEntries.length
             ? (registry) => loadSpecRegistrations(specEntries, metadataPath, registry)
             : undefined,

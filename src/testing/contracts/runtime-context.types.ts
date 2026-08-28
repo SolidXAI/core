@@ -30,6 +30,12 @@ export interface TestContext {
   reporter: Reporter;
   specRegistry?: SpecRegistry;
   testData?: Record<string, Record<string, any>>;
+  env?: Record<string, string>;
+  /**
+   * Secrets referenced by this scenario, resolved server-side before the run.
+   * Scoped per scenario — a scenario never sees another scenario's secrets.
+   */
+  secrets?: Record<string, any>;
   options?: {
     printApiLogs?: boolean;
   };
