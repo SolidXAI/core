@@ -52,7 +52,6 @@ import { ModelMetadataService } from "./services/model-metadata.service";
 import { ModuleMetadataExplorerService } from "./services/module-metadata-explorer.service";
 import { ModuleMetadataService } from "./services/module-metadata.service";
 import { ModulePackageService } from "./services/module-package.service";
-import { ModuleIconAssetService } from "./services/module-icon-asset.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
@@ -672,7 +671,6 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     ModuleMetadataExplorerService,
     ModuleMetadataHelperService,
     ModulePackageService,
-    ModuleIconAssetService,
     MetadataValidationService,
     ModelMetadataService,
     ModelMetadataHelperService,
