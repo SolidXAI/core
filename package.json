@@ -24,7 +24,6 @@
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
-    "postinstall": "target=\"${INIT_CWD:-.}/media-files-storage\"; mkdir -p \"$target\"; if [ ! -f \"$target/solid-core-menu-icon.png\" ]; then cp media-files-storage/solid-core-menu-icon.png \"$target/solid-core-menu-icon.png\"; fi",
     "prepare": "npm run build",
     "prepack": "npm run build"
   },
