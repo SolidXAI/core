@@ -40,6 +40,7 @@ import { User } from "../entities/user.entity";
 import { EventDetails, EventType } from "../interfaces";
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
 import { ActiveSessionStorageService } from "./active-session-storage.service";
+import { AccessTokenDenylistService } from "./access-token-denylist.service";
 import { HashingService } from "./hashing.service";
 import {
   InvalidatedRefreshTokenError,
@@ -77,6 +78,7 @@ export class AuthenticationService {
     private readonly hashingService: HashingService,
     private readonly jwtService: JwtService,
     private readonly activeSessionStorage: ActiveSessionStorageService,
+    private readonly accessTokenDenylist: AccessTokenDenylistService,
     private readonly refreshTokenIdsStorage: RefreshTokenIdsStorageService,
     private readonly httpService: HttpService,
     // private readonly mailService: SMTPEMailService,
@@ -2356,15 +2358,34 @@ export class AuthenticationService {
       }
 
       const userId = payload.sub;
+
       if (allDevices) {
+        // Deliberately not gated on session ownership: "log out everywhere"
+        // treats any verifiable refresh token as sufficient authority, which is
+        // what invalidateAll already accepts.
         await this.refreshTokenIdsStorage.invalidateAll(userId);
-      } else {
+        await this.accessTokenDenylist.revokeAllForUser(userId);
+      } else if (await this.ownsLiveSession(userId, payload, refreshToken)) {
         // Scoped to the bucket this token belongs to, so signing out on one
         // device leaves the others alive. A token with no deviceKey names the
         // single slot, which is the same key as before.
         await this.refreshTokenIdsStorage.invalidate(userId, payload.deviceKey);
+        await this.accessTokenDenylist.revokeSession(
+          userId,
+          await this.resolveRevocationKey(userId, payload),
+        );
+        await this.activeSessionStorage.clearActiveSession(userId);
+      } else {
+        // The token names a session that is already gone - superseded by a
+        // newer login into the same bucket. Acting on it would destroy the
+        // session that replaced it. Nothing to do, but log it: the failure is
+        // otherwise invisible, and a cluster of these means clients are losing
+        // token state and their logouts are no-ops.
+        this.logger.warn(
+          `logout: refresh token does not match the live session for user ${userId}; nothing invalidated`,
+        );
       }
-      await this.activeSessionStorage.clearActiveSession(userId);
+
       const user = await this.userRepository.findOne({
         where: {
           id: userId,
@@ -2385,6 +2406,101 @@ export class AuthenticationService {
         ? err
         : new InternalServerErrorException(ERROR_MESSAGES.LOGOUT_FAILED);
     }
+  }
+
+  /**
+   * Whether this refresh token belongs to the session that currently occupies
+   * its bucket.
+   *
+   * A per-device bucket holds exactly one session - deviceKey is a fresh
+   * randomUUID per login - so a token carrying one is that session by
+   * construction and needs no further proof. Only the bare `user-<id>` bucket
+   * is shared across logins (preventConcurrentLogins on, or a pre-migration
+   * token), and that is the sole case where a stale token can name a session
+   * that has since been replaced. Without this, a laptop whose session was
+   * superseded by a phone login would, on logging out, destroy the phone's
+   * session instead of its own.
+   *
+   * Matches current OR previous, and deliberately does not consult
+   * isWithinGraceWindow: that window governs whether a rotated-out token may
+   * still be exchanged, whereas the question here is only which session the
+   * token belongs to - which stays true however long ago it rotated.
+   *
+   * Missing state means it owns nothing. Safe, because the refresh state and
+   * active-session entry share one cache: if the state is gone the session
+   * entry is too, so the actions being skipped were no-ops anyway.
+   */
+  private async ownsLiveSession(
+    userId: number,
+    payload: { deviceKey?: string },
+    refreshToken: string,
+  ): Promise<boolean> {
+    if (payload.deviceKey) {
+      return true;
+    }
+
+    const state =
+      await this.refreshTokenIdsStorage.getCurrentRefreshTokenState(userId);
+    return (
+      state?.currentRefreshToken === refreshToken ||
+      (!!state?.previousRefreshToken &&
+        state.previousRefreshToken === refreshToken)
+    );
+  }
+
+  /**
+   * The key a session's access tokens are denylisted under. Mirrors how the
+   * access token itself is stamped: deviceKey while concurrent logins are
+   * allowed, sessionId while they are not - and in the latter case only one
+   * session exists, so the recorded active session IS this session's id.
+   *
+   * Must be read before clearActiveSession, which deletes the value it reads.
+   */
+  private async resolveRevocationKey(
+    userId: number,
+    payload: { deviceKey?: string },
+  ): Promise<string | undefined> {
+    return (
+      payload.deviceKey ??
+      (await this.activeSessionStorage.getActiveSession(userId))
+    );
+  }
+
+  /**
+   * Public seam for consuming projects that need a logout of their own shape -
+   * for instance revoking the access token while deliberately leaving the
+   * refresh token valid.
+   *
+   * Verifies the refresh token (signature/audience/issuer enforced, expiry
+   * tolerated), confirms it owns the live session, and returns the key its
+   * access tokens are denylisted under.
+   *
+   *   null                    - unverifiable: forged, malformed, or an access
+   *                             token presented here
+   *   revocationKey undefined - verified, but nothing safe to revoke: either a
+   *                             superseded session, or no session key could be
+   *                             resolved. userId is still returned so the caller
+   *                             can log the event or call revokeAllForUser.
+   *
+   * logout() uses this same method, so the seam cannot silently rot.
+   */
+  async resolveSessionRevocationKey(
+    refreshToken: string,
+  ): Promise<{ userId: number; revocationKey?: string } | null> {
+    const payload = await this.verifyRefreshTokenForLogout(refreshToken);
+    if (!payload?.sub) {
+      return null;
+    }
+
+    const userId = payload.sub;
+    if (!(await this.ownsLiveSession(userId, payload, refreshToken))) {
+      return { userId };
+    }
+
+    return {
+      userId,
+      revocationKey: await this.resolveRevocationKey(userId, payload),
+    };
   }
 
   private async verifyRefreshTokenForLogout(

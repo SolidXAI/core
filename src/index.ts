@@ -348,7 +348,7 @@ export * from './services/selection-providers/list-of-values-selection-providers
 export * from './seeders/permission-metadata-seeder.service'
 export * from './seeders/module-metadata-seeder.service'
 
-// export * from './services/access-token-storage.service'
+export * from './services/access-token-denylist.service'
 export * from './services/action-metadata.service'
 export * from './services/authentication.service'
 export * from './services/bcrypt.service'
@@ -480,6 +480,9 @@ export * from './solid-core.module'
 export * from './winston.logger'
 
 export { ERROR_MESSAGES } from './constants/error-messages'
+// Needed by consuming projects composing their own logout, so they can return
+// the same response body as the built-in one.
+export { SUCCESS_MESSAGES } from './constants/success-messages'
 
 // Named rather than `export *` so the testing internals stay private: consumers only need
 // to provision the browser, which Test Hub does on module init.

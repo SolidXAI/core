@@ -170,6 +170,7 @@ import { GoogleOauthStrategy } from "./passport-strategies/google-oauth.strategy
 import { ApiKeyService } from "./services/api-key.service";
 import { MpinService } from "./services/mpin.service";
 import { ActiveSessionStorageService } from "./services/active-session-storage.service";
+import { AccessTokenDenylistService } from "./services/access-token-denylist.service";
 import { AuthenticationService } from "./services/authentication.service";
 import { MetadataValidationService } from "./services/metadata-validation.service";
 import { BcryptService } from "./services/bcrypt.service";
@@ -782,6 +783,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     ApiKeyService,
     MpinService,
     ActiveSessionStorageService,
+    AccessTokenDenylistService,
     AuthenticationService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,
@@ -1002,6 +1004,9 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     SolidXSendSmsNode,
   ],
   exports: [
+    // Exported for DI, not merely re-exported from index.ts: a consuming
+    // project composing its own logout has to be able to inject this.
+    AccessTokenDenylistService,
     AuthenticationService,
     ChatterMessageDetailsRepository,
     ChatterMessageDetailsService,
