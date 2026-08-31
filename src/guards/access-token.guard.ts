@@ -13,6 +13,7 @@ import { REQUEST_USER_KEY } from "../constants";
 import { PermissionMetadataService } from '../services/permission-metadata.service';
 import { ClsService } from 'nestjs-cls';
 import { ActiveSessionStorageService } from "../services/active-session-storage.service";
+import { AccessTokenDenylistService } from "../services/access-token-denylist.service";
 import { SettingService } from '../services/setting.service';
 import { createHash } from "crypto";
 
@@ -22,6 +23,7 @@ export class AccessTokenGuard implements CanActivate {
     private readonly jwtService: JwtService,
     private readonly permissionsService: PermissionMetadataService,
     private readonly activeSessionStorage: ActiveSessionStorageService,
+    private readonly accessTokenDenylist: AccessTokenDenylistService,
     private readonly settingService: SettingService,
     private readonly cls: ClsService
   ) { }
@@ -46,6 +48,13 @@ export class AccessTokenGuard implements CanActivate {
         token,
         jwtConfiguration
       );
+
+      // Immediate access-token revocation. Runs BEFORE the concurrent-login
+      // check on purpose: rejecting a revoked token first stops it reaching the
+      // adopt-on-empty branch below and reclaiming the active session slot.
+      // No setting check here - isRevoked short-circuits when the feature is
+      // off, without touching the cache.
+      await this.validateNotRevoked(payload, token);
 
       // Prevent Concurrent Login Feature
       await this.validateConcurrentLoginSession(payload, token);
@@ -81,6 +90,45 @@ export class AccessTokenGuard implements CanActivate {
     // Legacy tokens (issued before preventConcurrentLogins was enabled)
     // have no sessionId claim, so derive a stable fallback from the token.
     return createHash('sha256').update(token).digest('hex');
+  }
+
+  /**
+   * The key this token's session is denylisted under.
+   *
+   * Deliberately NOT merged with resolveSessionId above, which differs only by
+   * the deviceKey step. Merging them would change validateConcurrentLoginSession
+   * for tokens issued while preventConcurrentLogins was off that are still live
+   * when it is switched on: those resolve to sha256(token) today and would
+   * resolve to deviceKey instead. The divergence is invisible in normal
+   * operation - that check only runs while the setting is on, and tokens issued
+   * in that state never carry a deviceKey - so the two formulas already agree
+   * for every token it sees. Only toggle-crossover tokens tell them apart.
+   */
+  private resolveRevocationKey(payload: ActiveUserData, token: string): string {
+    return (
+      payload.sessionId ??
+      payload.deviceKey ??
+      createHash('sha256').update(token).digest('hex')
+    );
+  }
+
+  private async validateNotRevoked(payload: ActiveUserData, token: string): Promise<void> {
+    // isRevoked would short-circuit on its own, but resolving the key first can
+    // cost a sha256 for a token carrying neither claim. Checking here keeps the
+    // opted-out path genuinely free.
+    if (!this.accessTokenDenylist.isEnabled()) {
+      return;
+    }
+
+    const revocationKey = this.resolveRevocationKey(payload, token);
+    const revoked = await this.accessTokenDenylist.isRevoked(
+      payload.sub,
+      revocationKey,
+      payload.iat,
+    );
+    if (revoked) {
+      throw new UnauthorizedException(ERROR_MESSAGES.SESSION_INVALID);
+    }
   }
 
   private async validateConcurrentLoginSession(payload: ActiveUserData, token: string,): Promise<void> {

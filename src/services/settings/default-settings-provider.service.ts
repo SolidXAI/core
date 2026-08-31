@@ -1265,6 +1265,18 @@ const getSolidCoreSettings = (isProd: boolean) =>
     },
     {
       moduleName: "solid-core",
+      key: "invalidateAccessTokenOnLogout",
+      value: false,
+      level: SettingLevel.SystemAdminEditable,
+      label: "Invalidate Access Token On Logout",
+      group: "authentication-settings",
+      sortOrder: 205,
+      controlType: "boolean",
+      helpText:
+        "Rejects a session's access token on the next request after logout, instead of letting it live out its remaining lifetime. Adds a cache lookup to every authenticated request, and needs Redis configured to take effect across multiple replicas.",
+    },
+    {
+      moduleName: "solid-core",
       key: "mpinEnabled",
       value: false,
       level: SettingLevel.SystemAdminEditable,
