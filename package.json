@@ -12,7 +12,8 @@
     "solidCore": "dist/cli.js"
   },
   "scripts": {
-    "build": "nest build && tsc-alias",
+    "build": "nest build && tsc-alias && npm run copy-resources",
+    "copy-resources": "copyfiles -u 1 \"resources/**/*\" dist/resources",
     "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\"",
     "start": "nest start",
     "start:dev": "nest start --watch",
@@ -149,6 +150,7 @@
     "@types/qs": "^6.9.15",
     "@types/supertest": "^2.0.12",
     "@types/uuid": "^9.0.8",
+    "copyfiles": "^2.4.1",
     "@typescript-eslint/eslint-plugin": "^6.0.0",
     "@typescript-eslint/parser": "^6.0.0",
     "eslint": "^8.42.0",
