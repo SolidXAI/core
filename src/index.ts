@@ -193,6 +193,7 @@ export * from './entities/workflow-secret.entity'
 
 export * from './enums/auth-type.enum'
 export * from './enums/legacy-table-type.enum'
+export * from './enums/signup-intent.enum'
 export * from './decorators/disallow-in-production.decorator'
 
 export * from './filters/http-exception.filter'

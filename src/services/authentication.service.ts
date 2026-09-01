@@ -36,6 +36,7 @@ import { OTPSignUpDto } from "../dtos/otp-sign-up.dto";
 import { RefreshTokenDto } from "../dtos/refresh-token.dto";
 import { SignInDto } from "../dtos/sign-in.dto";
 import { SignUpDto } from "../dtos/sign-up.dto";
+import { SignupIntent } from "../enums/signup-intent.enum";
 import { User } from "../entities/user.entity";
 import { EventDetails, EventType } from "../interfaces";
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
@@ -66,6 +67,43 @@ interface otp {
   token: string;
   expiresAt: Date;
 }
+
+/** Where a signup's role names come from. */
+enum RolesSource {
+  /** None from the caller: performSignUp applies the configured `defaultRole`. */
+  Default,
+  /** `provider.roles(dto)`, unconditionally. */
+  Provider,
+  /** The caller's own `dto.roles`. */
+  Caller,
+}
+
+/**
+ * The single place that decides, per intent, which entity a signup builds and where
+ * its roles come from.
+ *
+ * `useProvider` is currently computable from `rolesSource` (`Caller` implies false),
+ * but the two answer different questions - "which entity?" and "which roles?" - that
+ * merely coincide across these three intents. Keep both, and change behaviour here
+ * rather than at a call site.
+ */
+const SIGNUP_POLICY: Record<
+  SignupIntent,
+  { useProvider: boolean; rolesSource: RolesSource }
+> = {
+  [SignupIntent.SelfRegistration]: {
+    useProvider: true,
+    rolesSource: RolesSource.Default,
+  },
+  [SignupIntent.ExtensionModel]: {
+    useProvider: true,
+    rolesSource: RolesSource.Provider,
+  },
+  [SignupIntent.CoreUser]: {
+    useProvider: false,
+    rolesSource: RolesSource.Caller,
+  },
+};
 
 @Injectable()
 export class AuthenticationService {
@@ -184,49 +222,62 @@ export class AuthenticationService {
     }
   }
 
-  private static readonly SIGNUP_DTO_KEYS = new Set([
-    "username",
-    "email",
-    "password",
-    "fullName",
-    "mobile",
-    "roles",
-    "forcePasswordChange",
-    "isAllowedToGenerateApiKeys",
-    "failedLoginAttempts",
-  ]);
-
   async signUp(
     signUpDto: SignUpDto & Record<string, any>,
     activeUser: ActiveUserData = null,
+    intent: SignupIntent = SignupIntent.SelfRegistration,
   ): Promise<User> {
-    const hasExtensionFields = Object.keys(signUpDto).some(
-      (k) => !AuthenticationService.SIGNUP_DTO_KEYS.has(k),
-    );
-    if (hasExtensionFields) {
-      const provider = this.solidRegistry.getExtensionUserCreationProvider();
-      if (!provider) {
-        throw new InternalServerErrorException(
-          "No ExtensionUserCreationProvider registered. Register one to handle extension user creation.",
-        );
-      }
-      const entity = await provider.buildExtensionEntity(signUpDto);
-      const effectiveDto = { ...signUpDto, roles: provider.roles(signUpDto) };
-      return this.performSignUp(
-        effectiveDto,
-        entity,
-        provider.repo as Repository<User>,
-        true,
-      );
+    const { useProvider, rolesSource } = SIGNUP_POLICY[intent];
+
+    if (intent === SignupIntent.SelfRegistration) {
+      this.assertPublicRegistrationEnabled();
     }
-    return this.performSignUp(signUpDto, new User(), this.userRepository);
+
+    const { entity, repo } = await this.userService.buildSignupTarget(
+      signUpDto,
+      useProvider,
+    );
+    const roles = this.resolveSignupRoles(signUpDto, rolesSource);
+
+    return this.performSignUp({ ...signUpDto, roles }, entity, repo);
+  }
+
+  private resolveSignupRoles(
+    dto: Record<string, any>,
+    source: RolesSource,
+  ): string[] {
+    switch (source) {
+      case RolesSource.Provider:
+        // Sole authority. `dto.roles` is deliberately not read - not as a preference,
+        // not as a fallback. Reading it would skip roles(), which is where a provider
+        // validates its discriminator, and CreateUserDto types roles as
+        // UpdateRoleMetadataDto[] where performSignUp expects role-name strings.
+        return (
+          this.solidRegistry
+            .getExtensionUserCreationProvider()
+            ?.roles(dto as any) ?? []
+        );
+
+      case RolesSource.Caller:
+        return dto.roles ?? [];
+
+      case RolesSource.Default:
+        // Public signup: the form has no business naming roles. Returning empty lets
+        // performSignUp apply the configured `defaultRole`, rather than adding a
+        // second mechanism for the same thing.
+        if (dto.roles?.length) {
+          this.logger.warn(
+            `Ignoring caller-supplied roles on public registration for "${dto.username}"`,
+          );
+        }
+        return [];
+    }
   }
 
   private async performSignUp<T extends User>(
     signUpDto: SignUpDto,
     entity: T,
     repo: Repository<T>,
-    preferEntityApiKeyFlag: boolean = false,
   ): Promise<T> {
     try {
       await this.assertUniqueSignupIdentifiers(signUpDto);
@@ -249,11 +300,11 @@ export class AuthenticationService {
         activateUserOnRegistration,
         onForcePasswordChange,
       );
+      // An explicitly supplied value wins over whatever the entity carries. The
+      // entity's own flag cannot be trusted as a signal: User initialises it to
+      // false, so "the provider set it" is indistinguishable from "nobody set it".
       const privateDto = signUpDto as { isAllowedToGenerateApiKeys?: boolean };
-      if (
-        !preferEntityApiKeyFlag &&
-        privateDto.isAllowedToGenerateApiKeys !== undefined
-      ) {
+      if (privateDto.isAllowedToGenerateApiKeys !== undefined) {
         user.isAllowedToGenerateApiKeys = privateDto.isAllowedToGenerateApiKeys;
       }
       const savedUser = await repo.save(user);

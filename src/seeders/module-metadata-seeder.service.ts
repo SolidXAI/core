@@ -41,6 +41,7 @@ import { User } from '../entities/user.entity';
 import { MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL } from '../dtos/create-menu-item-metadata.dto';
 import { DEFAULT_SA_PASSWORD } from '../dtos/create-user.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
+import { SignupIntent } from '../enums/signup-intent.enum';
 import {
     ADMIN_ROLE_NAME,
     ALLOWED_TO_EXPORT_ROLE_NAME,
@@ -1564,7 +1565,7 @@ export class ModuleMetadataSeederService {
                     (user as SignUpDto & { isAllowedToGenerateApiKeys?: boolean }).isAllowedToGenerateApiKeys = true;
                 }
 
-                exisitingUser = await this.timeOperation('user-sign-up', () => this.authenticationService.signUp(user), {
+                exisitingUser = await this.timeOperation('user-sign-up', () => this.authenticationService.signUp(user, null, SignupIntent.CoreUser), {
                     component: 'users',
                     serviceCall: 'authenticationService.signUp',
                     details: `username=${user.username}`,
