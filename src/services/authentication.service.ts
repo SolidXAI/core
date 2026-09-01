@@ -610,7 +610,32 @@ export class AuthenticationService {
     }
   }
 
+  /**
+   * Gates *self-service* account creation only - the public register endpoints, where
+   * an anonymous visitor creates their own account. Callers that create a user on
+   * someone else's behalf (the admin console, an extension model's CRUD form, the
+   * seeders) are deliberately unaffected, so turning this off does not disable user
+   * creation across the system.
+   *
+   * Compared against both representations because `getConfigValue` returns the raw
+   * cached value, which is a boolean when it comes from the provider default and a
+   * string once persisted or edited through the Settings screen - see the same
+   * defensive comparison for `mcpEnabled` in setting.service.ts. A plain falsy check
+   * would read `'false'` as truthy and never fire.
+   */
+  private assertPublicRegistrationEnabled(): void {
+    const allowPublicRegistration =
+      this.settingService.getConfigValue<SolidCoreSetting>(
+        "allowPublicRegistration",
+      );
+    if (allowPublicRegistration === false || allowPublicRegistration === "false") {
+      throw new ForbiddenException(ERROR_MESSAGES.PUBLIC_REGISTRATION_DISABLED);
+    }
+  }
+
   async otpInitiateRegistration(signUpDto: OTPSignUpDto) {
+    this.assertPublicRegistrationEnabled();
+
     const isPasswordlessRegistrationEnabled =
       await this.isPasswordlessRegistrationEnabled();
     if (!isPasswordlessRegistrationEnabled) {
