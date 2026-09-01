@@ -229,7 +229,7 @@ export class AuthenticationService {
     preferEntityApiKeyFlag: boolean = false,
   ): Promise<T> {
     try {
-      await this.assertUniqueSignupIdentifiers(signUpDto, repo);
+      await this.assertUniqueSignupIdentifiers(signUpDto);
       await this.metadataValidationService.validateCreateDto("user", signUpDto);
 
       const onForcePasswordChange =
@@ -283,33 +283,41 @@ export class AuthenticationService {
     }
   }
 
-  private async assertUniqueSignupIdentifiers<T extends User>(
+  /**
+   * Always queries the base `User` repository, never the caller's repository.
+   *
+   * `User` is a `@TableInheritance` root, so a child repository scopes every query
+   * to its own discriminator. Checking through one would only compare against users
+   * of the same subtype, and `email`/`mobile` carry non-unique `@Index()` - there is
+   * no database constraint behind them to catch what the query misses. A duplicate
+   * against a base `User` or a sibling subtype would be silently accepted.
+   */
+  private async assertUniqueSignupIdentifiers(
     signUpDto: SignUpDto,
-    repo: Repository<T>,
   ): Promise<void> {
     const username = signUpDto.username?.trim();
     const email = signUpDto.email?.trim();
     const mobile = signUpDto.mobile?.trim();
 
-    const where: FindOptionsWhere<T>[] = [];
+    const where: FindOptionsWhere<User>[] = [];
 
     if (username) {
-      where.push({ username } as FindOptionsWhere<T>);
+      where.push({ username });
     }
 
     if (email) {
-      where.push({ email } as FindOptionsWhere<T>);
+      where.push({ email });
     }
 
     if (mobile) {
-      where.push({ mobile } as FindOptionsWhere<T>);
+      where.push({ mobile });
     }
 
     if (where.length === 0) {
       return;
     }
 
-    const existingUser = await repo.findOne({ where });
+    const existingUser = await this.userRepository.findOne({ where });
 
     if (!existingUser) {
       return;
