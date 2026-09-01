@@ -15,6 +15,7 @@ import { RoleMetadata } from "../entities/role-metadata.entity";
 import { User } from "../entities/user.entity";
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
+import { SolidRegistry } from "src/helpers/solid-registry";
 import { UserRepository } from "src/repository/user.repository";
 import { RoleMetadataRepository } from "src/repository/role-metadata.repository";
 import { HashingService } from "./hashing.service";
@@ -109,6 +110,39 @@ export class UserService extends CRUDService<User> {
     }
 
     return super.deleteMany(ids, solidRequestContext);
+  }
+
+  /**
+   * Resolves which entity a signup should build and which repository it should be
+   * saved through.
+   *
+   * When `useProvider` is set and the app registered an `IExtensionUserCreationProvider`,
+   * the provider builds the entity and owns the repository; otherwise a plain `User`
+   * is saved through the base repository. The caller decides `useProvider` from its
+   * `SignupIntent` - nothing here inspects the DTO.
+   *
+   * The registry is resolved lazily through `moduleRef` rather than injected, mirroring
+   * `CRUDService.tryCreateAsExtensionUser`, to keep this off the DI graph that
+   * AuthenticationService and CRUDService already form a cycle around.
+   */
+  async buildSignupTarget(
+    dto: Record<string, any>,
+    useProvider: boolean,
+  ): Promise<{ entity: User; repo: Repository<User> }> {
+    const provider = useProvider
+      ? this.moduleRef
+          .get(SolidRegistry, { strict: false })
+          ?.getExtensionUserCreationProvider()
+      : null;
+
+    if (!provider) {
+      return { entity: new User(), repo: this.repo };
+    }
+
+    return {
+      entity: await provider.buildExtensionEntity(dto as any),
+      repo: provider.repo as Repository<User>,
+    };
   }
 
   async findOneByEmail(email: string): Promise<User> {

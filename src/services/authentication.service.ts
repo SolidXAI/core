@@ -36,6 +36,7 @@ import { OTPSignUpDto } from "../dtos/otp-sign-up.dto";
 import { RefreshTokenDto } from "../dtos/refresh-token.dto";
 import { SignInDto } from "../dtos/sign-in.dto";
 import { SignUpDto } from "../dtos/sign-up.dto";
+import { SignupIntent } from "../enums/signup-intent.enum";
 import { User } from "../entities/user.entity";
 import { EventDetails, EventType } from "../interfaces";
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
@@ -66,6 +67,43 @@ interface otp {
   token: string;
   expiresAt: Date;
 }
+
+/** Where a signup's role names come from. */
+enum RolesSource {
+  /** None from the caller: performSignUp applies the configured `defaultRole`. */
+  Default,
+  /** `provider.roles(dto)`, unconditionally. */
+  Provider,
+  /** The caller's own `dto.roles`. */
+  Caller,
+}
+
+/**
+ * The single place that decides, per intent, which entity a signup builds and where
+ * its roles come from.
+ *
+ * `useProvider` is currently computable from `rolesSource` (`Caller` implies false),
+ * but the two answer different questions - "which entity?" and "which roles?" - that
+ * merely coincide across these three intents. Keep both, and change behaviour here
+ * rather than at a call site.
+ */
+const SIGNUP_POLICY: Record<
+  SignupIntent,
+  { useProvider: boolean; rolesSource: RolesSource }
+> = {
+  [SignupIntent.SelfRegistration]: {
+    useProvider: true,
+    rolesSource: RolesSource.Default,
+  },
+  [SignupIntent.ExtensionModel]: {
+    useProvider: true,
+    rolesSource: RolesSource.Provider,
+  },
+  [SignupIntent.CoreUser]: {
+    useProvider: false,
+    rolesSource: RolesSource.Caller,
+  },
+};
 
 @Injectable()
 export class AuthenticationService {
@@ -184,52 +222,65 @@ export class AuthenticationService {
     }
   }
 
-  private static readonly SIGNUP_DTO_KEYS = new Set([
-    "username",
-    "email",
-    "password",
-    "fullName",
-    "mobile",
-    "roles",
-    "forcePasswordChange",
-    "isAllowedToGenerateApiKeys",
-    "failedLoginAttempts",
-  ]);
-
   async signUp(
     signUpDto: SignUpDto & Record<string, any>,
     activeUser: ActiveUserData = null,
+    intent: SignupIntent = SignupIntent.SelfRegistration,
   ): Promise<User> {
-    const hasExtensionFields = Object.keys(signUpDto).some(
-      (k) => !AuthenticationService.SIGNUP_DTO_KEYS.has(k),
-    );
-    if (hasExtensionFields) {
-      const provider = this.solidRegistry.getExtensionUserCreationProvider();
-      if (!provider) {
-        throw new InternalServerErrorException(
-          "No ExtensionUserCreationProvider registered. Register one to handle extension user creation.",
-        );
-      }
-      const entity = await provider.buildExtensionEntity(signUpDto);
-      const effectiveDto = { ...signUpDto, roles: provider.roles(signUpDto) };
-      return this.performSignUp(
-        effectiveDto,
-        entity,
-        provider.repo as Repository<User>,
-        true,
-      );
+    const { useProvider, rolesSource } = SIGNUP_POLICY[intent];
+
+    if (intent === SignupIntent.SelfRegistration) {
+      this.assertPublicRegistrationEnabled();
     }
-    return this.performSignUp(signUpDto, new User(), this.userRepository);
+
+    const { entity, repo } = await this.userService.buildSignupTarget(
+      signUpDto,
+      useProvider,
+    );
+    const roles = this.resolveSignupRoles(signUpDto, rolesSource);
+
+    return this.performSignUp({ ...signUpDto, roles }, entity, repo);
+  }
+
+  private resolveSignupRoles(
+    dto: Record<string, any>,
+    source: RolesSource,
+  ): string[] {
+    switch (source) {
+      case RolesSource.Provider:
+        // Sole authority. `dto.roles` is deliberately not read - not as a preference,
+        // not as a fallback. Reading it would skip roles(), which is where a provider
+        // validates its discriminator, and CreateUserDto types roles as
+        // UpdateRoleMetadataDto[] where performSignUp expects role-name strings.
+        return (
+          this.solidRegistry
+            .getExtensionUserCreationProvider()
+            ?.roles(dto as any) ?? []
+        );
+
+      case RolesSource.Caller:
+        return dto.roles ?? [];
+
+      case RolesSource.Default:
+        // Public signup: the form has no business naming roles. Returning empty lets
+        // performSignUp apply the configured `defaultRole`, rather than adding a
+        // second mechanism for the same thing.
+        if (dto.roles?.length) {
+          this.logger.warn(
+            `Ignoring caller-supplied roles on public registration for "${dto.username}"`,
+          );
+        }
+        return [];
+    }
   }
 
   private async performSignUp<T extends User>(
     signUpDto: SignUpDto,
     entity: T,
     repo: Repository<T>,
-    preferEntityApiKeyFlag: boolean = false,
   ): Promise<T> {
     try {
-      await this.assertUniqueSignupIdentifiers(signUpDto, repo);
+      await this.assertUniqueSignupIdentifiers(signUpDto);
       await this.metadataValidationService.validateCreateDto("user", signUpDto);
 
       const onForcePasswordChange =
@@ -249,11 +300,11 @@ export class AuthenticationService {
         activateUserOnRegistration,
         onForcePasswordChange,
       );
+      // An explicitly supplied value wins over whatever the entity carries. The
+      // entity's own flag cannot be trusted as a signal: User initialises it to
+      // false, so "the provider set it" is indistinguishable from "nobody set it".
       const privateDto = signUpDto as { isAllowedToGenerateApiKeys?: boolean };
-      if (
-        !preferEntityApiKeyFlag &&
-        privateDto.isAllowedToGenerateApiKeys !== undefined
-      ) {
+      if (privateDto.isAllowedToGenerateApiKeys !== undefined) {
         user.isAllowedToGenerateApiKeys = privateDto.isAllowedToGenerateApiKeys;
       }
       const savedUser = await repo.save(user);
@@ -283,33 +334,41 @@ export class AuthenticationService {
     }
   }
 
-  private async assertUniqueSignupIdentifiers<T extends User>(
+  /**
+   * Always queries the base `User` repository, never the caller's repository.
+   *
+   * `User` is a `@TableInheritance` root, so a child repository scopes every query
+   * to its own discriminator. Checking through one would only compare against users
+   * of the same subtype, and `email`/`mobile` carry non-unique `@Index()` - there is
+   * no database constraint behind them to catch what the query misses. A duplicate
+   * against a base `User` or a sibling subtype would be silently accepted.
+   */
+  private async assertUniqueSignupIdentifiers(
     signUpDto: SignUpDto,
-    repo: Repository<T>,
   ): Promise<void> {
     const username = signUpDto.username?.trim();
     const email = signUpDto.email?.trim();
     const mobile = signUpDto.mobile?.trim();
 
-    const where: FindOptionsWhere<T>[] = [];
+    const where: FindOptionsWhere<User>[] = [];
 
     if (username) {
-      where.push({ username } as FindOptionsWhere<T>);
+      where.push({ username });
     }
 
     if (email) {
-      where.push({ email } as FindOptionsWhere<T>);
+      where.push({ email });
     }
 
     if (mobile) {
-      where.push({ mobile } as FindOptionsWhere<T>);
+      where.push({ mobile });
     }
 
     if (where.length === 0) {
       return;
     }
 
-    const existingUser = await repo.findOne({ where });
+    const existingUser = await this.userRepository.findOne({ where });
 
     if (!existingUser) {
       return;
@@ -401,7 +460,12 @@ export class AuthenticationService {
     }
     user.username = signUpDto.username;
     user.email = signUpDto.email;
-    user.fullName = signUpDto.fullName;
+    // `fullName` is optional on SignUpDto and the stock signup screen only sends it when
+    // showNameFieldsForRegistration is on, so assigning it unconditionally left every
+    // self-registered user with a null display name. `username` is always present -
+    // non-nullable on the entity and @IsNotEmpty() on the DTO - so it is a safe fallback.
+    // `||` rather than `??`: a form posting an empty string means "not supplied" too.
+    user.fullName = signUpDto.fullName?.trim() || signUpDto.username;
     user.forcePasswordChange = onForcePasswordChange;
     if (signUpDto.mobile) {
       user.mobile = signUpDto.mobile;
@@ -602,7 +666,32 @@ export class AuthenticationService {
     }
   }
 
+  /**
+   * Gates *self-service* account creation only - the public register endpoints, where
+   * an anonymous visitor creates their own account. Callers that create a user on
+   * someone else's behalf (the admin console, an extension model's CRUD form, the
+   * seeders) are deliberately unaffected, so turning this off does not disable user
+   * creation across the system.
+   *
+   * Compared against both representations because `getConfigValue` returns the raw
+   * cached value, which is a boolean when it comes from the provider default and a
+   * string once persisted or edited through the Settings screen - see the same
+   * defensive comparison for `mcpEnabled` in setting.service.ts. A plain falsy check
+   * would read `'false'` as truthy and never fire.
+   */
+  private assertPublicRegistrationEnabled(): void {
+    const allowPublicRegistration =
+      this.settingService.getConfigValue<SolidCoreSetting>(
+        "allowPublicRegistration",
+      );
+    if (allowPublicRegistration === false || allowPublicRegistration === "false") {
+      throw new ForbiddenException(ERROR_MESSAGES.PUBLIC_REGISTRATION_DISABLED);
+    }
+  }
+
   async otpInitiateRegistration(signUpDto: OTPSignUpDto) {
+    this.assertPublicRegistrationEnabled();
+
     const isPasswordlessRegistrationEnabled =
       await this.isPasswordlessRegistrationEnabled();
     if (!isPasswordlessRegistrationEnabled) {
@@ -682,32 +771,54 @@ export class AuthenticationService {
     signUpDto: OTPSignUpDto,
     validationSource: string,
   ): Promise<User> {
-    let user = existingUser;
-    if (isEmpty(user)) {
-      user = this.createUser(signUpDto);
+    if (isEmpty(existingUser)) {
+      // A new registration is saved through whichever repository createUser resolved,
+      // which is the provider's when the app registers one.
+      const { entity: user, repo } = await this.createUser(signUpDto);
       user.active = false; // User will be activated only after OTP verification, hence setting active to false for new user.
       await this.assignRegistrationOtp(validationSource, user);
-      await this.userRepository.save(user);
+      await repo.save(user);
       await this.userService.addRoleToUser(
         user.username,
         this.settingService.getConfigValue<SolidCoreSetting>("defaultRole"),
       );
-    } else {
-      await this.assignRegistrationOtp(validationSource, user);
-      await this.userRepository.save(user);
+      return user;
     }
+
+    // An existing row is saved back through the base repository: `User` is the
+    // inheritance root, so TypeORM hydrated it as its own subclass on the way in and
+    // round-trips the discriminator on the way out.
+    const user = existingUser;
+    await this.assignRegistrationOtp(validationSource, user);
+    await this.userRepository.save(user);
     return user;
   }
 
-  // Create a new user entity.
-  private createUser(signUpDto: OTPSignUpDto) {
-    const user = new User();
-    user.username = signUpDto.username;
-    user.email = signUpDto.email;
-    user.mobile = signUpDto.mobile;
-    user.customPayload = signUpDto.customPayload;
-    user.lastLoginProvider = LoginProvider.OTP;
-    return user;
+  /**
+   * Creates a new user entity for OTP registration - of whichever type this app
+   * registers its users as, since passwordless signup is self-registration like any
+   * other. Returns the repository alongside it, because a provider-built entity has
+   * to be saved through the provider's own repository.
+   */
+  private async createUser(
+    signUpDto: OTPSignUpDto,
+  ): Promise<{ entity: User; repo: Repository<User> }> {
+    const { useProvider } = SIGNUP_POLICY[SignupIntent.SelfRegistration];
+    const { entity, repo } = await this.userService.buildSignupTarget(
+      signUpDto,
+      useProvider,
+    );
+
+    entity.username = signUpDto.username;
+    entity.email = signUpDto.email;
+    entity.mobile = signUpDto.mobile;
+    // OTPSignUpDto declares no `fullName`, so username is the only source here. Mirrors
+    // the fallback in populateForSignup, which this path does not go through.
+    entity.fullName = signUpDto.username;
+    entity.customPayload = signUpDto.customPayload;
+    entity.lastLoginProvider = LoginProvider.OTP;
+
+    return { entity, repo };
   }
 
   // Generate the validation tokens for the user i.e (system configured + user provided)
