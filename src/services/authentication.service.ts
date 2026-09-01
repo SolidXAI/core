@@ -766,32 +766,51 @@ export class AuthenticationService {
     signUpDto: OTPSignUpDto,
     validationSource: string,
   ): Promise<User> {
-    let user = existingUser;
-    if (isEmpty(user)) {
-      user = this.createUser(signUpDto);
+    if (isEmpty(existingUser)) {
+      // A new registration is saved through whichever repository createUser resolved,
+      // which is the provider's when the app registers one.
+      const { entity: user, repo } = await this.createUser(signUpDto);
       user.active = false; // User will be activated only after OTP verification, hence setting active to false for new user.
       await this.assignRegistrationOtp(validationSource, user);
-      await this.userRepository.save(user);
+      await repo.save(user);
       await this.userService.addRoleToUser(
         user.username,
         this.settingService.getConfigValue<SolidCoreSetting>("defaultRole"),
       );
-    } else {
-      await this.assignRegistrationOtp(validationSource, user);
-      await this.userRepository.save(user);
+      return user;
     }
+
+    // An existing row is saved back through the base repository: `User` is the
+    // inheritance root, so TypeORM hydrated it as its own subclass on the way in and
+    // round-trips the discriminator on the way out.
+    const user = existingUser;
+    await this.assignRegistrationOtp(validationSource, user);
+    await this.userRepository.save(user);
     return user;
   }
 
-  // Create a new user entity.
-  private createUser(signUpDto: OTPSignUpDto) {
-    const user = new User();
-    user.username = signUpDto.username;
-    user.email = signUpDto.email;
-    user.mobile = signUpDto.mobile;
-    user.customPayload = signUpDto.customPayload;
-    user.lastLoginProvider = LoginProvider.OTP;
-    return user;
+  /**
+   * Creates a new user entity for OTP registration - of whichever type this app
+   * registers its users as, since passwordless signup is self-registration like any
+   * other. Returns the repository alongside it, because a provider-built entity has
+   * to be saved through the provider's own repository.
+   */
+  private async createUser(
+    signUpDto: OTPSignUpDto,
+  ): Promise<{ entity: User; repo: Repository<User> }> {
+    const { useProvider } = SIGNUP_POLICY[SignupIntent.SelfRegistration];
+    const { entity, repo } = await this.userService.buildSignupTarget(
+      signUpDto,
+      useProvider,
+    );
+
+    entity.username = signUpDto.username;
+    entity.email = signUpDto.email;
+    entity.mobile = signUpDto.mobile;
+    entity.customPayload = signUpDto.customPayload;
+    entity.lastLoginProvider = LoginProvider.OTP;
+
+    return { entity, repo };
   }
 
   // Generate the validation tokens for the user i.e (system configured + user provided)
