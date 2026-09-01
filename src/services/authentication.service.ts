@@ -812,9 +812,8 @@ export class AuthenticationService {
     entity.username = signUpDto.username;
     entity.email = signUpDto.email;
     entity.mobile = signUpDto.mobile;
-    // OTPSignUpDto declares no `fullName`, so username is the only source here. Mirrors
-    // the fallback in populateForSignup, which this path does not go through.
-    entity.fullName = signUpDto.username;
+    // OTPSignUpDto declares no `fullName`, so username is the only source here. Mirrors the fallback in populateForSignup, which this path does not go through.
+    entity.fullName = signUpDto.fullName?.trim() || signUpDto.username;
     entity.customPayload = signUpDto.customPayload;
     entity.lastLoginProvider = LoginProvider.OTP;
 
