@@ -460,7 +460,12 @@ export class AuthenticationService {
     }
     user.username = signUpDto.username;
     user.email = signUpDto.email;
-    user.fullName = signUpDto.fullName;
+    // `fullName` is optional on SignUpDto and the stock signup screen only sends it when
+    // showNameFieldsForRegistration is on, so assigning it unconditionally left every
+    // self-registered user with a null display name. `username` is always present -
+    // non-nullable on the entity and @IsNotEmpty() on the DTO - so it is a safe fallback.
+    // `||` rather than `??`: a form posting an empty string means "not supplied" too.
+    user.fullName = signUpDto.fullName?.trim() || signUpDto.username;
     user.forcePasswordChange = onForcePasswordChange;
     if (signUpDto.mobile) {
       user.mobile = signUpDto.mobile;
@@ -807,6 +812,9 @@ export class AuthenticationService {
     entity.username = signUpDto.username;
     entity.email = signUpDto.email;
     entity.mobile = signUpDto.mobile;
+    // OTPSignUpDto declares no `fullName`, so username is the only source here. Mirrors
+    // the fallback in populateForSignup, which this path does not go through.
+    entity.fullName = signUpDto.username;
     entity.customPayload = signUpDto.customPayload;
     entity.lastLoginProvider = LoginProvider.OTP;
 
