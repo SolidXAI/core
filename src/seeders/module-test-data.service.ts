@@ -476,7 +476,14 @@ export class ModuleTestDataService {
         continue;
       }
 
-      await authService.signUp({ ...user }, null, SignupIntent.CoreUser);
+      // The flag is seeder metadata, not user data - keep it out of the DTO the
+      // provider and performSignUp see.
+      const { isExtensionUser, ...signUpDto } = user;
+      await authService.signUp(
+        signUpDto,
+        null,
+        isExtensionUser ? SignupIntent.ExtensionModel : SignupIntent.CoreUser,
+      );
       this.logger.log(`Created test user "${user.username}"${user.roles?.length ? ` with roles [${user.roles.join(', ')}]` : ''}`);
     }
   }
