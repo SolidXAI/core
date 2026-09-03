@@ -6,10 +6,7 @@ import { CreateWorkflowExecutionDto } from '../dtos/create-workflow-execution.dt
 import { UpdateWorkflowExecutionDto } from '../dtos/update-workflow-execution.dto';
 import { WorkflowRuntimeService } from '../services/workflow/workflow-runtime.service';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('workflow-execution')

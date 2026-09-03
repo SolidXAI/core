@@ -4,11 +4,10 @@ import { IsEnum, IsOptional } from "class-validator";
 import { PaginationQueryDto } from "./pagination-query.dto";
 import { Timestamp } from "typeorm";
 import { BasicGroupFilterDto } from "./basic-group-filters.dto";
+import { ShowSoftDeleted } from "../enums/show-soft-deleted.enum";
 
-export enum SoftDeleteFilter {
-    INCLUSIVE = "inclusive",
-    EXCLUSIVE = "exclusive",
-}
+// Backwards-compatible alias for consumers using the older DTO name.
+export { ShowSoftDeleted as SoftDeleteFilter } from "../enums/show-soft-deleted.enum";
 
 export class BasicFilterDto extends PaginationQueryDto {
 
@@ -41,12 +40,12 @@ export class BasicFilterDto extends PaginationQueryDto {
     // readonly filters: any[];
 
     @IsOptional()
-    @IsEnum(SoftDeleteFilter)
+    @IsEnum(ShowSoftDeleted)
     @ApiProperty({
         description: "showSoftDeleted",
-        enum: SoftDeleteFilter,
+        enum: ShowSoftDeleted,
     })
-    readonly showSoftDeleted?: SoftDeleteFilter;
+    readonly showSoftDeleted?: ShowSoftDeleted;
 
     @IsOptional()
     @ApiProperty({ description: "populateGroup" })

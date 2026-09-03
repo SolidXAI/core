@@ -9,10 +9,7 @@ import { ActiveUser } from 'src/decorators/active-user.decorator';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 import { setFileDownloadHeaders } from 'src/helpers/file-download.helper';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('import-transaction')

@@ -5,10 +5,7 @@ import { ListOfValuesService } from '../services/list-of-values.service';
 import { CreateListOfValuesDto } from '../dtos/create-list-of-values.dto';
 import { UpdateListOfValuesDto } from '../dtos/update-list-of-values.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('list-of-values')

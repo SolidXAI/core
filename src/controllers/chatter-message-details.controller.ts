@@ -5,10 +5,7 @@ import { ChatterMessageDetailsService } from '../services/chatter-message-detail
 import { CreateChatterMessageDetailsDto } from '../dtos/create-chatter-message-details.dto';
 import { UpdateChatterMessageDetailsDto } from '../dtos/update-chatter-message-details.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('chatter-message-details')

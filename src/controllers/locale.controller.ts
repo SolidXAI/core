@@ -7,10 +7,7 @@ import { LocaleService } from 'src/services/locale.service';
 import { CreateLocaleDto } from 'src/dtos/create-locale.dto';
 import { UpdateLocaleDto } from 'src/dtos/update-locale.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('locale')

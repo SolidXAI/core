@@ -8,10 +8,7 @@ import { ExecuteWorkflowDto } from '../dtos/execute-workflow.dto';
 import { WorkflowNodeRegistryService } from '../services/workflow/workflow-node-registry.service';
 import { ValidateWorkflowDefinitionDto } from '../dtos/validate-workflow-definition.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('workflow-definition')

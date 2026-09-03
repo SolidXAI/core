@@ -5,10 +5,7 @@ import { SavedFiltersService } from '../services/saved-filters.service';
 import { CreateSavedFiltersDto } from '../dtos/create-saved-filters.dto';
 import { UpdateSavedFiltersDto } from '../dtos/update-saved-filters.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('saved-filters')

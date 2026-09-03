@@ -12,10 +12,7 @@ import { Response } from 'express';
 import { getLowercaseFileExtension, INLINE_SAFE_EXTENSIONS } from 'src/constants/media-file-types';
 import { setFileDownloadHeaders } from 'src/helpers/file-download.helper';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('media')

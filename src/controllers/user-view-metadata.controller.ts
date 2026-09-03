@@ -8,10 +8,7 @@ import { UpsertUserViewMetadataDto } from 'src/dtos/upsert-user-view-metadata.dt
 import { ActiveUser } from 'src/decorators/active-user.decorator';
 import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('user-view-metadata')
