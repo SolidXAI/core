@@ -142,8 +142,8 @@ export class ModuleMetadataService {
         throw new BadRequestException('Dangerous file types are not allowed for the menu icon.');
       }
       const fileStoragePath = this.getFullFilePathForDisk(this.getFileName(files[0]));
-      this.fileService.copy(files[0].path, fileStoragePath);
-      this.fileService.delete(files[0].path);
+      await this.fileService.copy(files[0].path, fileStoragePath);
+      await this.fileService.delete(files[0].path);
       createDto.menuIconUrl = fileStoragePath;
     }
     const moduleMetadata = this.moduleMetadataRepo.create(createDto);
@@ -250,8 +250,8 @@ export class ModuleMetadataService {
       }
 
       const fileStoragePath = this.getFullFilePathForDisk(this.getFileName(files[0]));
-      this.fileService.copy(files[0].path, fileStoragePath);
-      this.fileService.delete(files[0].path);
+      await this.fileService.copy(files[0].path, fileStoragePath);
+      await this.fileService.delete(files[0].path);
       module.menuIconUrl = fileStoragePath;
     }
     return manager.save(ModuleMetadata, module);

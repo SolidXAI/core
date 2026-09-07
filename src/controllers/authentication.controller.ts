@@ -13,6 +13,7 @@ import { SsoExchangeDto } from '../dtos/sso-exchange.dto';
 import { SignInDto } from '../dtos/sign-in.dto';
 import { RegisterPrivateDto } from '../dtos/register-private.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
+import { SignupIntent } from '../enums/signup-intent.enum';
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
 import { ApiKeyService } from '../services/api-key.service';
 import { AuthenticationService } from '../services/authentication.service';
@@ -35,13 +36,15 @@ export class AuthenticationController {
     // @SkipThrottle({ login: false, short: true, burst: true, sustained: true }) //Enable the login throttle only
     @Post('register')
     signUp(@Body() signUpDto: SignUpDto) {
-        return this.authService.signUp(signUpDto);
+        return this.authService.signUp(signUpDto, null, SignupIntent.SelfRegistration);
     }
 
     @ApiBearerAuth("jwt")
     @Post('register-private')
     signUpPrivate(@Body() signUpDto: RegisterPrivateDto, @ActiveUser() activeUser: ActiveUserData) {
-        return this.authService.signUp(signUpDto, activeUser);
+        // The admin console's user form posts here, and carries no extension-model
+        // fields - so this creates a plain core user, with the roles the admin chose.
+        return this.authService.signUp(signUpDto, activeUser, SignupIntent.CoreUser);
     }
 
     @Public()

@@ -8,6 +8,21 @@
 - `reporter/`: reporting interfaces + console reporter
 - `runner/`: lifecycle helpers + metadata runner
 
+## Browser Setup
+UI scenarios need a Chromium build. The npm `playwright` package ships no install script, so
+the binary is fetched separately.
+
+- **By default it is lazy.** The first test run that selects a UI scenario downloads Chromium
+  (~150MB) before the run starts, then reuses it. Runs filtered to API-only scenarios never
+  download anything, and neither do projects that have no UI scenarios.
+- **To fetch it at install time instead**, set `COMMON_UI_TEST_BROWSERS_EAGER_INSTALL=true`
+  either in the API project's `.env` or as a real environment variable. Useful for CI images.
+  A failed download never fails the install. Note that `npm install --ignore-scripts` skips
+  this entirely, in which case the lazy path still applies.
+- **In Docker**, browsers land in `~/.cache/ms-playwright` (Linux). A multi-stage build that
+  installs as `root` but runs as another user must set `PLAYWRIGHT_BROWSERS_PATH` to a shared
+  location, or the runtime user will not find the binary.
+
 ## Metadata Shape
 `TestingMetadata` lives under `testing` in module metadata JSON files.
 
@@ -252,11 +267,14 @@ Options in `with`:
 - `timeoutMs` (optional, overrides the run-wide UI navigation timeout)
 
 ### **Op: `ui.expectUrl`**
-Description: Asserts the current page URL.
+Description: Waits for the page URL to match, then asserts it. Backed by `page.waitForURL`, so an
+assertion placed straight after a navigating click does not race the navigation. Returns
+immediately when the URL already matches.
 
 Options in `with`:
 - `equals` (optional)
 - `contains` (optional)
+- `timeoutMs` (optional, overrides the run-wide UI navigation timeout)
 
 ### **Op: `ui.fill`**
 Description: Fills an input or editable element.
@@ -288,6 +306,19 @@ Options in `with`:
 - `selector` (required)
 - `key` (required)
 - `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+### **Op: `ui.uploadFile`**
+Description: Sets one or more files on a file input.
+
+Options in `with`:
+- `selector` (required, the `<input type="file">`)
+- `filePath` (required, a path or an array of paths)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+Notes:
+- Paths are resolved against the run's working directory, so a relative path is relative to where
+  `solid test run` was invoked.
+- Pass an array to populate a `multiple` input; a single string is the common case.
 
 ### **Op: `ui.waitForManual`**
 Description: Pauses a headed Playwright run so a human can interact with the live browser, then resumes when Enter is pressed in the terminal.
@@ -326,6 +357,18 @@ Description: Waits for an element to be visible.
 Options in `with`:
 - `selector` (required)
 - `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+### **Op: `ui.expectHidden`**
+Description: Waits for an element to be hidden — i.e. detached or no longer visible.
+
+Options in `with`:
+- `selector` (required)
+- `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+Notes:
+- The counterpart to `ui.expectVisible`: use it to wait for a modal, spinner, toast or overlay to
+  **go away** before the next step acts. Prefer it over `util.sleep` for that — it returns the moment
+  the element disappears instead of always spending the full duration.
 
 ### **Op: `ui.expectText`**
 Description: Asserts the text content of an element.

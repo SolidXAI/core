@@ -41,6 +41,7 @@ import { User } from '../entities/user.entity';
 import { MENU_ROLE_JOIN_TABLE_NAME, MENU_ROLE_JOIN_TABLE_NAME_MENU_COL, MENU_ROLE_JOIN_TABLE_NAME_ROLE_COL } from '../dtos/create-menu-item-metadata.dto';
 import { DEFAULT_SA_PASSWORD } from '../dtos/create-user.dto';
 import { SignUpDto } from '../dtos/sign-up.dto';
+import { SignupIntent } from '../enums/signup-intent.enum';
 import {
     ADMIN_ROLE_NAME,
     ALLOWED_TO_EXPORT_ROLE_NAME,
@@ -86,6 +87,33 @@ import { EventDetails, EventType, ModuleMetadataSeederEventPayload } from 'src/i
  * - View/action preload + in-memory no-op detection so unchanged rows skip save() entirely.
  * - Menu entity no-op detection, though menu relation lookups are still mostly serial and remain a future candidate.
  */
+
+/**
+ * A user entry in seed metadata.
+ *
+ * The array is genuinely mixed: core seeds `sa` (a technical user), while an app's
+ * module metadata can seed its own users - an "Operations User" and the like, which
+ * are app users and belong on the extension entity. One intent for the whole list
+ * cannot express that, so each entry declares its own.
+ *
+ * Extends SignUpDto with an index signature because a flagged entry carries the
+ * extension model's own fields (`userType`, relation keys) straight through to the
+ * provider.
+ */
+type SeedUserSpec = SignUpDto & {
+    /**
+     * Seed through the registered IExtensionUserCreationProvider, producing the app's
+     * extension entity instead of a base `User`. Absent means a base `User`, so
+     * existing metadata is unaffected.
+     *
+     * `roles` is ignored on a flagged entry - the provider derives them from the
+     * extension fields, as it does on the model's own CRUD form.
+     */
+    isExtensionUser?: boolean;
+    isAllowedToGenerateApiKeys?: boolean;
+    [key: string]: any;
+};
+
 @Injectable()
 export class ModuleMetadataSeederService {
     private readonly adminPermissionExclusionPrefixes = [
@@ -758,7 +786,7 @@ export class ModuleMetadataSeederService {
 
     // Ok
     private async seedUsers(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        const users = this.getSeedArray<SignUpDto>(overallMetadata?.users);
+        const users = this.getSeedArray<SeedUserSpec>(overallMetadata?.users);
         // usersDetail = users;
         await this.timeOperation('handle-users', () => this.handleSeedUsers(users), {
             moduleName: overallMetadata?.moduleMetadata?.name,
@@ -1543,13 +1571,13 @@ export class ModuleMetadataSeederService {
     }
 
     // OK
-    private async handleSeedUsers(users: SignUpDto[]) {
+    private async handleSeedUsers(users: SeedUserSpec[]) {
         if (!users) {
             return;
         }
 
         for (let l = 0; l < users.length; l++) {
-            const user: SignUpDto = users[l];
+            const user: SeedUserSpec = users[l];
             const isSystemAdminUser = user.username === 'sa';
             let exisitingUser = await this.timeOperation('user-find-by-username', () => this.userService.findOneByUsername(user.username), {
                 component: 'users',
@@ -1561,10 +1589,15 @@ export class ModuleMetadataSeederService {
                     user.password = DEFAULT_SA_PASSWORD;
                 }
                 if (isSystemAdminUser) {
-                    (user as SignUpDto & { isAllowedToGenerateApiKeys?: boolean }).isAllowedToGenerateApiKeys = true;
+                    user.isAllowedToGenerateApiKeys = true;
                 }
 
-                exisitingUser = await this.timeOperation('user-sign-up', () => this.authenticationService.signUp(user), {
+                // The flag is seeder metadata, not user data - keep it out of the DTO
+                // the provider and performSignUp see.
+                const { isExtensionUser, ...signUpDto } = user;
+                const intent = isExtensionUser ? SignupIntent.ExtensionModel : SignupIntent.CoreUser;
+
+                exisitingUser = await this.timeOperation('user-sign-up', () => this.authenticationService.signUp(signUpDto, null, intent), {
                     component: 'users',
                     serviceCall: 'authenticationService.signUp',
                     details: `username=${user.username}`,

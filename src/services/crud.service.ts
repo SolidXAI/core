@@ -3,6 +3,7 @@ import { DiscoveryService, ModuleRef } from "@nestjs/core";
 import { isArray } from "class-validator";
 import { CommonEntity } from "../entities/common.entity";
 import { User } from "../entities/user.entity";
+import { SignupIntent } from "../enums/signup-intent.enum";
 import { SolidBaseRepository } from "../repository/solid-base.repository";
 import { SettingService } from "./setting.service";
 import { ERROR_MESSAGES } from "src/constants/error-messages";
@@ -113,7 +114,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         }
         const { AuthenticationService } = await import('./authentication.service');
         const authService = this.moduleRef.get(AuthenticationService, { strict: false });
-        return authService.signUp(createDto) as unknown as T;
+        return authService.signUp(createDto, null, SignupIntent.ExtensionModel) as unknown as T;
     }
 
     async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {

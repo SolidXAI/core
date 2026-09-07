@@ -607,10 +607,26 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
   //FIXME Currently below method fails if any field in the record is not valid or if the record is not valid. It does not collect the errors for all fields in a record
   private async insertRecord(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata, modelService: CRUDService<any>): Promise<any> {
     // Convert the imported record to a DTO
-    const dto = await this.convertImportedRecordToDto(record, mapping, modelMetadataWithFields);
+    const dto = await this.convertImportedRecordToDto(record, mapping, modelMetadataWithFields, modelService);
     // Use the model service to create the record in the database
     const createdRecord = await modelService.create(dto, [], {}); //FIXME: Need to handle this part alongwith the refactoring of the CRUDService for permissions
     return createdRecord; // Return the created record
+  }
+
+  // Import files do not contain hidden internal fields. Add the entity's
+  // defaults before CRUD validation so those fields do not fail as missing.
+  private applyImportDefaults(dto: Record<string, any>, modelService: CRUDService<any>): void {
+    for (const column of modelService.repo.metadata.columns) {
+      if (dto[column.propertyName] !== undefined || column.default === undefined) {
+        continue;
+      }
+
+      // Leave SQL expression defaults (such as CURRENT_TIMESTAMP) for the
+      // database instead of putting the expression text into the DTO.
+      if (typeof column.default !== 'function') {
+        dto[column.propertyName] = column.default;
+      }
+    }
   }
 
   private getModelService(modelSingularName: string): CRUDService<any> {
@@ -623,7 +639,7 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
     return modelService;
   }
 
-  private async convertImportedRecordToDto(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata) {
+  private async convertImportedRecordToDto(record: Record<string, any>, mapping: ImportMapping[], modelMetadataWithFields: ModelMetadata, modelService: CRUDService<any>) {
     // Create a new record object
     const dtoRecord: Record<string, any> = {};
 
@@ -644,41 +660,8 @@ export class ImportTransactionService extends CRUDService<ImportTransaction> {
       }
     }
 
-    // Some fields are hidden from the import file because users should not
-    // have to enter internal values such as passwordSchemeVersion. The
-    // backend still checks those fields as required, so fill in their default
-    // values here before validation. This lets users import normal details
-    // without exposing or requiring internal fields in the template.
-    for (const field of modelMetadataWithFields.fields) {
-      if (
-        field.required &&
-        field.defaultValue !== null &&
-        field.defaultValue !== undefined &&
-        !(field.name in dtoRecord)
-      ) {
-        dtoRecord[field.name] = this.parseImportDefaultValue(field);
-      }
-    }
-
+    this.applyImportDefaults(dtoRecord, modelService);
     return dtoRecord;
-  }
-
-  // Defaults come from metadata as text. Convert them to the type expected by
-  // validation, so values like "1" and "true" are handled as a number and a
-  // boolean instead of being treated as plain text.
-  private parseImportDefaultValue(field: FieldMetadata): any {
-    const defaultValue = field.defaultValue;
-
-    switch (field.type) {
-      case SolidFieldType.boolean:
-        return ['true', '1', 'yes'].includes(String(defaultValue).toLowerCase());
-      case SolidFieldType.int:
-      case SolidFieldType.bigint:
-      case SolidFieldType.decimal:
-        return Number(defaultValue);
-      default:
-        return defaultValue;
-    }
   }
 
   private async populateDtoForACell(dtoRecord: Record<string, any>, fieldMetadata: FieldMetadata, record: Record<string, any>, key: string): Promise<Record<string, any>> {

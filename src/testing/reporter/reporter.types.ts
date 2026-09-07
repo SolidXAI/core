@@ -1,10 +1,13 @@
 import type { StepPhase } from "../contracts/runtime-context.types";
-import type { OpStep, ScenarioSpec } from "../contracts/testing-metadata.types";
+import type { OpStep, ScenarioSpec, ScenarioType } from "../contracts/testing-metadata.types";
 import type { SolidTestSpecResult } from "../contracts/test-spec.types";
 
 export interface Reporter {
   onRunStart?(args: {
     total: number;
+    startedAt: string;
+    scenarioIds: string[];
+    scenarios?: Array<{ id: string; name?: string; type: ScenarioType }>;
   }): void;
   onScenarioStart(scenario: ScenarioSpec): void;
   onScenarioEnd(
@@ -32,6 +35,12 @@ export interface Reporter {
   }): void;
   attach?(args: {
     scenarioId: string;
+    name: string;
+    contentType: string;
+    data: Buffer | string;
+  }): void;
+  /** Attach a run-level artifact (e.g. the whole-run video), emitted on run.end. */
+  attachRunArtifact?(args: {
     name: string;
     contentType: string;
     data: Buffer | string;

@@ -193,6 +193,7 @@ export * from './entities/workflow-secret.entity'
 
 export * from './enums/auth-type.enum'
 export * from './enums/legacy-table-type.enum'
+export * from './enums/signup-intent.enum'
 export * from './decorators/disallow-in-production.decorator'
 
 export * from './filters/http-exception.filter'
@@ -319,6 +320,15 @@ export * from './jobs/redis/smtp-email-subscriber-redis.service'
 export * from './jobs/redis/test-queue-publisher-redis.service'
 export * from './jobs/redis/test-queue-options-redis'
 export * from './jobs/redis/test-queue-subscriber-redis.service'
+export * from './jobs/database/test-run-queue-publisher-database.service'
+export * from './jobs/database/test-run-queue-subscriber-database.service'
+export * from './controllers/test-run.controller'
+export * from './dtos/test-run-request.dto'
+export * from './testing/reporter/lifecycle-events.types'
+export * from './testing/reporter/lifecycle-webhook-reporter'
+export * from './testing/reporter/artifact-sink'
+export * from './testing/reporter/file-service-artifact-sink'
+export * from './services/file/file-service.interface'
 export * from './jobs/redis/three60-whatsapp-publisher-redis.service'
 export * from './jobs/redis/three60-whatsapp-queue-options-redis'
 export * from './jobs/redis/three60-whatsapp-subscriber-redis.service'
@@ -339,7 +349,7 @@ export * from './services/selection-providers/list-of-values-selection-providers
 export * from './seeders/permission-metadata-seeder.service'
 export * from './seeders/module-metadata-seeder.service'
 
-// export * from './services/access-token-storage.service'
+export * from './services/access-token-denylist.service'
 export * from './services/action-metadata.service'
 export * from './services/authentication.service'
 export * from './services/bcrypt.service'
@@ -471,3 +481,14 @@ export * from './solid-core.module'
 export * from './winston.logger'
 
 export { ERROR_MESSAGES } from './constants/error-messages'
+// Needed by consuming projects composing their own logout, so they can return
+// the same response body as the built-in one.
+export { SUCCESS_MESSAGES } from './constants/success-messages'
+
+// Named rather than `export *` so the testing internals stay private: consumers only need
+// to provision the browser, which Test Hub does on module init.
+export {
+  ensureChromiumInstalled,
+  isChromiumInstalled,
+  cancelChromiumInstall,
+} from './testing/adapters/ui/browser-provisioner'

@@ -4,7 +4,7 @@
     "displayName": "Solid Core",
     "description": "Solid Core Module",
     "defaultDataSource": "default",
-    "menuIconUrl": null,
+    "menuIconUrl": "media-files-storage/solid-core-menu-icon.png",
     "menuSequenceNumber": 1,
     "isSystem": true,
     "models": [
@@ -14958,6 +14958,7 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
+          "delete": false,
           "import": false,
           "export": false,
           "allowedViews": [
@@ -15089,7 +15090,8 @@
           "label": "User Activity History",
           "className": "grid",
           "showAddFormButton": false,
-          "showEditFormButton": false
+          "showEditFormButton": false,
+          "showDeleteFormButton": false
         },
         "children": [
           {

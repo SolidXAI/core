@@ -38,6 +38,14 @@ export interface ActiveUserData {
   roles: string[];
 
   /**
+   * Standard JWT "issued at", in whole seconds. Stamped automatically by
+   * signAsync on every token - declared here only because it was never typed.
+   * Compared against a revocation instant to decide whether this token predates
+   * a logout.
+   */
+  iat?: number;
+
+  /**
    * The subject's (user) permissions.
    * These are not part of the JWT token, we query them from the database each time the access-token guard is run. 
    * So basically each time an authenticated request is initiated, we end up loading all the users permissions.

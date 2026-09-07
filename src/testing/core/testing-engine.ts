@@ -39,6 +39,9 @@ export class TestingEngine {
       let scenarioError: unknown;
 
       reporter.onScenarioStart(scenario);
+      // Start a clean capture window for this scenario (UI adapter buffers console/network
+      // events; they're only flushed to the reporter if the scenario fails below).
+      ctx.ui?.resetCapture();
 
       try {
         const execute = async () => {
@@ -60,6 +63,25 @@ export class TestingEngine {
       } catch (err: any) {
         scenarioError = err;
       } finally {
+        // On failure, flush the UI adapter's captured artifacts (console + network) BEFORE
+        // onScenarioEnd — the lifecycle reporter snapshots the attached artifacts inside
+        // onScenarioEnd. No page (e.g. API scenarios) → nothing captured.
+        if (scenarioError && ctx.ui?.page && reporter.attach) {
+          try {
+            const artifacts = await ctx.ui.collectFailureArtifacts();
+            for (const a of artifacts) {
+              reporter.attach({
+                scenarioId: ctx.scenarioId,
+                name: a.name,
+                contentType: a.contentType,
+                data: a.data,
+              });
+            }
+          } catch {
+            // Artifact capture is best-effort; never let it mask the scenario error.
+          }
+        }
+
         const durationMs = Date.now() - scenarioStart;
         reporter.onScenarioEnd(scenario, {
           ok: !scenarioError,

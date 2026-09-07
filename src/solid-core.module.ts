@@ -100,6 +100,7 @@ import { OTPAuthenticationController } from "./controllers/otp-authentication.co
 import { ServiceController } from "./controllers/service.controller";
 import { SmsTemplateController } from "./controllers/sms-template.controller";
 import { TestQueueController } from "./controllers/test-queue.controller";
+import { TestRunController } from "./controllers/test-run.controller";
 import { EmailAttachment } from "./entities/email-attachment.entity";
 import { EmailTemplate } from "./entities/email-template.entity";
 import { MenuItemMetadata } from "./entities/menu-item-metadata.entity";
@@ -117,6 +118,8 @@ import { ApiEmailQueuePublisher } from "./jobs/rabbitmq/api-email-publisher.serv
 import { ApiEmailQueueSubscriber } from "./jobs/rabbitmq/api-email-subscriber.service";
 import { TestQueuePublisherDatabase } from "./jobs/database/test-queue-publisher-database.service";
 import { TestQueueSubscriberDatabase } from "./jobs/database/test-queue-subscriber-database.service";
+import { TestRunQueuePublisherDatabase } from "./jobs/database/test-run-queue-publisher-database.service";
+import { TestRunQueueSubscriberDatabase } from "./jobs/database/test-run-queue-subscriber-database.service";
 import { TestQueuePublisherRedis } from "./jobs/redis/test-queue-publisher-redis.service";
 import { TestQueueSubscriberRedis } from "./jobs/redis/test-queue-subscriber-redis.service";
 import { Msg91WhatsappQueuePublisher } from "./jobs/rabbitmq/msg91-whatsapp-publisher.service";
@@ -167,6 +170,7 @@ import { GoogleOauthStrategy } from "./passport-strategies/google-oauth.strategy
 import { ApiKeyService } from "./services/api-key.service";
 import { MpinService } from "./services/mpin.service";
 import { ActiveSessionStorageService } from "./services/active-session-storage.service";
+import { AccessTokenDenylistService } from "./services/access-token-denylist.service";
 import { AuthenticationService } from "./services/authentication.service";
 import { MetadataValidationService } from "./services/metadata-validation.service";
 import { BcryptService } from "./services/bcrypt.service";
@@ -626,6 +630,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     SmsTemplateController,
     TestController,
     TestQueueController,
+    TestRunController,
     UserActivityHistoryController,
     UserController,
     UserViewMetadataController,
@@ -778,6 +783,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     ApiKeyService,
     MpinService,
     ActiveSessionStorageService,
+    AccessTokenDenylistService,
     AuthenticationService,
     GoogleAuthenticationController,
     RefreshTokenIdsStorageService,
@@ -802,6 +808,8 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
 
     TestQueuePublisherDatabase,
     TestQueueSubscriberDatabase,
+    TestRunQueuePublisherDatabase,
+    TestRunQueueSubscriberDatabase,
     TestQueuePublisherRedis,
     TestQueueSubscriberRedis,
     ApiEmailQueuePublisherRedis,
@@ -996,6 +1004,9 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     SolidXSendSmsNode,
   ],
   exports: [
+    // Exported for DI, not merely re-exported from index.ts: a consuming
+    // project composing its own logout has to be able to inject this.
+    AccessTokenDenylistService,
     AuthenticationService,
     ChatterMessageDetailsRepository,
     ChatterMessageDetailsService,

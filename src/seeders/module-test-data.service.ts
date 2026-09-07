@@ -10,6 +10,7 @@ import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { CreateModuleMetadataDto } from 'src/dtos/create-module-metadata.dto';
 import { CreateModelMetadataDto } from 'src/dtos/create-model-metadata.dto';
 import { MediaStorageProviderType } from 'src/dtos/create-media-storage-provider-metadata.dto';
+import { SignupIntent } from 'src/enums/signup-intent.enum';
 import { getDynamicModuleNamesBasedOnMetadata } from 'src/helpers/module.helper';
 import { SolidRegistry } from 'src/helpers/solid-registry';
 import { InternationalisationHelperService } from 'src/services/internationalisation-helper.service';
@@ -475,7 +476,14 @@ export class ModuleTestDataService {
         continue;
       }
 
-      await authService.signUp({ ...user });
+      // The flag is seeder metadata, not user data - keep it out of the DTO the
+      // provider and performSignUp see.
+      const { isExtensionUser, ...signUpDto } = user;
+      await authService.signUp(
+        signUpDto,
+        null,
+        isExtensionUser ? SignupIntent.ExtensionModel : SignupIntent.CoreUser,
+      );
       this.logger.log(`Created test user "${user.username}"${user.roles?.length ? ` with roles [${user.roles.join(', ')}]` : ''}`);
     }
   }
