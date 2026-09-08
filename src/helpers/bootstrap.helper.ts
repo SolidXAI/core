@@ -179,8 +179,18 @@ export async function bootstrapSolidApp(
     }),
   );
 
-  // Swagger
-  if (swagger !== false) {
+  // Swagger is available in non-production environments only. Treat both the
+  // Solid ENV value and the standard Node.js NODE_ENV value as production
+  // markers so deployments cannot expose the docs by omitting one of them.
+  const isProduction = [process.env.ENV, process.env.NODE_ENV]
+    .filter(Boolean)
+    .some(
+      (value) =>
+        value?.toLowerCase() === "prod" ||
+        value?.toLowerCase() === "production",
+    );
+
+  if (swagger !== false && !isProduction) {
     const { title = process.env.SOLID_APP_NAME, description = process.env.SOLID_APP_DESCRIPTION, version = '1.0' } = swagger;
     const swaggerConfig = new DocumentBuilder()
       .setTitle(title)
