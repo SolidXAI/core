@@ -53,8 +53,8 @@ export interface SolidSwaggerOptions {
 export interface SolidBootstrapOptions {
   /** Global API prefix. Defaults to 'api'. Set to '' to disable. */
   globalPrefix?: string;
-  /** Swagger configuration. Set to false to disable Swagger entirely. */
-  swagger?: SolidSwaggerOptions | false;
+  /** Swagger configuration. Set to true to enable everywhere or false to disable entirely. */
+  swagger?: SolidSwaggerOptions | boolean;
   /** Permissions-Policy header overrides (merged with defaults). */
   permissionsPolicyOverrides?: Partial<PermissionsPolicyConfig>;
   /** Security header overrides, including iframe frame-ancestor allowlists. */
@@ -92,9 +92,13 @@ export async function bootstrapSolidApp(
 ): Promise<NestExpressApplication> {
   registerGlobalProcessHandlers();
 
+  const isProduction = [process.env.ENV]
+    .filter(Boolean)
+    .some((value) => value?.toLowerCase() === Environment.Production);
+
   const {
     globalPrefix = 'api',
-    swagger = {},
+    swagger = isProduction ? false : true,
     permissionsPolicyOverrides = {},
     security = {},
     verboseBootstrap = false,
@@ -180,18 +184,9 @@ export async function bootstrapSolidApp(
     }),
   );
 
-  // Swagger is available in non-production environments only. Treat both the
-  // Solid ENV value and the standard Node.js NODE_ENV value as production
-  // markers so deployments cannot expose the docs by omitting one of them.
-  const isProduction = [process.env.ENV]
-    .filter(Boolean)
-    .some(
-      (value) =>
-        value?.toLowerCase() === Environment.Production
-    );
-
-  if (swagger !== false && !isProduction) {
-    const { title = process.env.SOLID_APP_NAME, description = process.env.SOLID_APP_DESCRIPTION, version = '1.0' } = swagger;
+  if (swagger !== false) {
+    const swaggerOptions = typeof swagger === 'object' ? swagger : {};
+    const { title = process.env.SOLID_APP_NAME, description = process.env.SOLID_APP_DESCRIPTION, version = '1.0' } = swaggerOptions;
     const swaggerConfig = new DocumentBuilder()
       .setTitle(title)
       .setDescription(description)
