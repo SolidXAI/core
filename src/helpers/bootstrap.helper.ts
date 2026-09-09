@@ -20,6 +20,7 @@ import {
   SolidSecurityOptions,
 } from './security.helper';
 import { parseBooleanEnv } from './environment.helper';
+import { Environment } from 'src/decorators/disallow-in-production.decorator';
 
 // ---- Shared process handlers ----
 
@@ -182,12 +183,11 @@ export async function bootstrapSolidApp(
   // Swagger is available in non-production environments only. Treat both the
   // Solid ENV value and the standard Node.js NODE_ENV value as production
   // markers so deployments cannot expose the docs by omitting one of them.
-  const isProduction = [process.env.ENV, process.env.NODE_ENV]
+  const isProduction = [process.env.ENV]
     .filter(Boolean)
     .some(
       (value) =>
-        value?.toLowerCase() === "prod" ||
-        value?.toLowerCase() === "production",
+        value?.toLowerCase() === Environment.Production
     );
 
   if (swagger !== false && !isProduction) {
