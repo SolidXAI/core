@@ -92,13 +92,9 @@ export async function bootstrapSolidApp(
 ): Promise<NestExpressApplication> {
   registerGlobalProcessHandlers();
 
-  const isProduction = [process.env.ENV]
-    .filter(Boolean)
-    .some((value) => value?.toLowerCase() === Environment.Production);
-
   const {
     globalPrefix = 'api',
-    swagger = isProduction ? false : true,
+    swagger,
     permissionsPolicyOverrides = {},
     security = {},
     verboseBootstrap = false,
@@ -184,7 +180,15 @@ export async function bootstrapSolidApp(
     }),
   );
 
-  if (swagger !== false) {
+  const isProduction = [process.env.ENV,]
+    .filter(Boolean)
+    .some(
+      (value) =>
+        value?.toLowerCase() === Environment.Production 
+    );
+
+  const swaggerEnabled = swagger === undefined ? !isProduction : swagger !== false;
+  if (swaggerEnabled) {
     const swaggerOptions = typeof swagger === 'object' ? swagger : {};
     const { title = process.env.SOLID_APP_NAME, description = process.env.SOLID_APP_DESCRIPTION, version = '1.0' } = swaggerOptions;
     const swaggerConfig = new DocumentBuilder()
