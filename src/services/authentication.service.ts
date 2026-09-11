@@ -730,7 +730,7 @@ export class AuthenticationService {
     }
 
     try {
-      const user = await this.upsertUserWithRegistrationVerificationTokens(
+      const user = await this.resolveUserForOtpRegistration(
         existingUser,
         signUpDto,
         validationSource,
@@ -787,7 +787,7 @@ export class AuthenticationService {
     );
   }
 
-  private async upsertUserWithRegistrationVerificationTokens(
+  private async resolveUserForOtpRegistration(
     existingUser: User,
     signUpDto: OTPSignUpDto,
     validationSource: string,
