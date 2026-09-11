@@ -808,16 +808,19 @@ export class AuthenticationService {
       await this.assignRegistrationOtp(validationSource, user);
       await repo.save(user);
 
-      if (roles.length) {
-        await this.userService.addRolesToUser(user.username, roles);
-      } else {
-        // The provider named none, or there is no provider: fall back to the configured
-        // default, matching what performSignUp does on the password paths.
-        await this.userService.addRoleToUser(
-          user.username,
-          this.settingService.getConfigValue<SolidCoreSetting>("defaultRole"),
-        );
-      }
+      // The provider named none, or there is no provider: fall back to the configured
+      // default, matching what performSignUp does on the password paths. Built as a
+      // fresh array rather than mutating `roles` - RolesSource.Provider can return
+      // whatever reference the provider's roles() handed back.
+      const defaultRole = this.settingService.getConfigValue<SolidCoreSetting>("defaultRole");
+      const effectiveRoles = roles.length ? roles : [defaultRole].filter(Boolean);
+
+      // initializeRolesForNewUser always grants "Internal User" - the baseline every
+      // other signup path gets via handlePostSignup - which this branch previously
+      // skipped entirely by calling addRolesToUser/addRoleToUser directly. Without it
+      // an OTP-registered user could not even read their own User record: the
+      // "Internal User" role is what carries that security rule.
+      await this.userService.initializeRolesForNewUser(effectiveRoles, user);
       return user;
     }
 
