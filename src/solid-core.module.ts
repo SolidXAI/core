@@ -541,16 +541,26 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
           res.setHeader("X-Content-Type-Options", "nosniff");
 
           // Only a small allowlist of media types is ever safe to render inline. Everything
-          // else (including svg, html, and any other uploaded file) is forced to download
+          // else (including html and any other uploaded file) is forced to download
           // rather than be displayed/executed by the browser, regardless of what mimetype or
           // extension it was uploaded with.
           // basename first: getLowercaseFileExtension takes a file name, not a path, so a
           // directory containing a dot must not be mistaken for the extension. An
           // extensionless file yields undefined, which is not inline-safe - so it correctly
           // falls through to the forced-download branch.
-          if (!INLINE_SAFE_EXTENSIONS.has(getLowercaseFileExtension(basename(path)) ?? '')) {
+          const ext = getLowercaseFileExtension(basename(path)) ?? '';
+          if (!INLINE_SAFE_EXTENSIONS.has(ext)) {
             res.setHeader("Content-Type", "application/octet-stream");
             res.setHeader("Content-Disposition", "attachment");
+          }
+
+          // svg is only ever inline-safe (see INLINE_SAFE_EXTENSIONS) once it can also render
+          // as an active document (<script>, event handlers). <img>/CSS never execute it, but
+          // a direct navigation to this URL would - so pin it to a locked-down document: no
+          // script, no network, and `sandbox` gives it an opaque origin so even a parser bypass
+          // can't reach app cookies or storage.
+          if (ext === 'svg') {
+            res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox");
           }
         },
       },

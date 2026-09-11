@@ -9,7 +9,7 @@ import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { UpdateMediaDto } from 'src/dtos/update-media.dto';
 import { MediaService } from 'src/services/media.service';
 import { Response } from 'express';
-import { getLowercaseFileExtension, INLINE_SAFE_EXTENSIONS } from 'src/constants/media-file-types';
+import { EXTENSION_TO_MIME_TYPE, getLowercaseFileExtension, INLINE_SAFE_EXTENSIONS } from 'src/constants/media-file-types';
 import { setFileDownloadHeaders } from 'src/helpers/file-download.helper';
 
 import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
@@ -100,15 +100,30 @@ export class MediaController {
     // types is ever safe to render inline. Anything else is forced to download rather than be
     // displayed/executed, regardless of the mimetype the record was stored with - nosniff
     // alone would not help here, since it faithfully honours a declared text/html.
-    const isInlineSafe = INLINE_SAFE_EXTENSIONS.has(getLowercaseFileExtension(fileName) ?? '');
+    const ext = getLowercaseFileExtension(fileName) ?? '';
+    const isInlineSafe = INLINE_SAFE_EXTENSIONS.has(ext);
     const requestedInline = disposition !== 'attachment';
+
+    // The served mimetype is derived from the extension rather than trusting the stored
+    // mimeType (which is the client-declared Content-Type at upload time, and so is spoofable):
+    // a file named logo.png could otherwise have been uploaded with Content-Type: image/svg+xml
+    // and stored that way, which would bypass an extension-only check below.
+    const effectiveMimeType = isInlineSafe ? (EXTENSION_TO_MIME_TYPE[ext] ?? mimeType) : 'application/octet-stream';
 
     setFileDownloadHeaders(res, {
       fileName,
-      mimeType: isInlineSafe ? mimeType : 'application/octet-stream',
+      mimeType: effectiveMimeType,
       disposition: requestedInline && isInlineSafe ? 'inline' : 'attachment',
       crossOriginResourcePolicy: true,
     });
+
+    // See the matching comment in solid-core.module.ts's setHeaders: <img>/CSS never execute
+    // svg script, but a direct navigation to this URL would, so pin it to a locked-down
+    // document. Keyed on the extension (which now drives effectiveMimeType above too), not on
+    // the stored mimeType, so the spoofed-Content-Type case above is covered as well.
+    if (ext === 'svg') {
+      res.setHeader("Content-Security-Policy", "default-src 'none'; style-src 'unsafe-inline'; img-src data:; sandbox");
+    }
 
     stream.pipe(res);
   }
