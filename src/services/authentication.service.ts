@@ -55,7 +55,6 @@ import { MetadataValidationService } from "./metadata-validation.service";
 import { UserService } from "./user.service";
 import { SmsFactory } from "src/factories/sms.factory";
 import { WhatsAppFactory } from "src/factories/whatsapp.factory";
-import { SolidRegistry } from "src/helpers/solid-registry";
 
 enum LoginProvider {
   LOCAL = "local",
@@ -150,7 +149,6 @@ export class AuthenticationService {
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly solidRegistry: SolidRegistry,
   ) {
     // this.mailService = this.mailServiceFactory.getMailService();
   }
@@ -281,11 +279,12 @@ export class AuthenticationService {
         // roles(), which is where a provider validates its discriminator, and
         // CreateUserDto types roles as UpdateRoleMetadataDto[] where performSignUp
         // expects role-name strings. [] here falls through to `defaultRole`.
-        return (
-          this.solidRegistry
-            .getExtensionUserCreationProvider()
-            ?.roles(dto as any) ?? []
-        );
+        //
+        // Delegated to UserService.resolveProviderRoles - the one place that calls
+        // provider.roles() - rather than looking up the registry here too, which is
+        // what UserService.resolveSelfRegistrationRoles (the OAuth callers' equivalent
+        // of this switch) also needs and previously duplicated.
+        return this.userService.resolveProviderRoles(dto);
 
       case RolesSource.Caller:
         return dto.roles ?? [];
@@ -730,7 +729,7 @@ export class AuthenticationService {
     }
 
     try {
-      const user = await this.upsertUserWithRegistrationVerificationTokens(
+      const user = await this.resolveUserForOtpRegistration(
         existingUser,
         signUpDto,
         validationSource,
@@ -787,7 +786,7 @@ export class AuthenticationService {
     );
   }
 
-  private async upsertUserWithRegistrationVerificationTokens(
+  private async resolveUserForOtpRegistration(
     existingUser: User,
     signUpDto: OTPSignUpDto,
     validationSource: string,
@@ -808,16 +807,19 @@ export class AuthenticationService {
       await this.assignRegistrationOtp(validationSource, user);
       await repo.save(user);
 
-      if (roles.length) {
-        await this.userService.addRolesToUser(user.username, roles);
-      } else {
-        // The provider named none, or there is no provider: fall back to the configured
-        // default, matching what performSignUp does on the password paths.
-        await this.userService.addRoleToUser(
-          user.username,
-          this.settingService.getConfigValue<SolidCoreSetting>("defaultRole"),
-        );
-      }
+      // The provider named none, or there is no provider: fall back to the configured
+      // default, matching what performSignUp does on the password paths. Built as a
+      // fresh array rather than mutating `roles` - RolesSource.Provider can return
+      // whatever reference the provider's roles() handed back.
+      const defaultRole = this.settingService.getConfigValue<SolidCoreSetting>("defaultRole");
+      const effectiveRoles = roles.length ? roles : [defaultRole].filter(Boolean);
+
+      // initializeRolesForNewUser always grants "Internal User" - the baseline every
+      // other signup path gets via handlePostSignup - which this branch previously
+      // skipped entirely by calling addRolesToUser/addRoleToUser directly. Without it
+      // an OTP-registered user could not even read their own User record: the
+      // "Internal User" role is what carries that security rule.
+      await this.userService.initializeRolesForNewUser(effectiveRoles, user);
       return user;
     }
 
