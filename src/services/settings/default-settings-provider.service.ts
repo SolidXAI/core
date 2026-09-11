@@ -7,6 +7,7 @@ import {
   SettingLevel,
 } from "src/interfaces";
 import { getDefaultThemeKey, getThemesByMode } from "src/theme/theme-registry";
+import { DANGEROUS_EXTENSIONS } from "src/constants/media-file-types";
 
 export const DEFAULT_MEDIA_UPLOAD_DIR = "media-uploads";
 export const DEFAULT_MEDIA_FILE_STORAGE_DIR = "media-files-storage";
@@ -545,6 +546,17 @@ const getSolidCoreSettings = (isProd: boolean) =>
       sortOrder: 45,
       controlType: "numeric",
       helpText: "Global upload size limit enforced by Multer under every per-field mediaMaxSizeKb restriction. Read-only here: it's applied once at process start, so changing AB_MEDIA_MAX_FILE_SIZE_MB requires an app restart to take effect - editing this in the admin UI would not do that.",
+    },
+    {
+      moduleName: "solid-core",
+      key: "dangerousExtensions",
+      value: [...DANGEROUS_EXTENSIONS].join(','),
+      level: SettingLevel.SystemAdminReadonly,
+      label: "Blocked Upload Extensions",
+      group: "storage-settings",
+      sortOrder: 46,
+      controlType: "shortText",
+      helpText: "File extensions rejected on every upload path, regardless of field configuration. Read-only here: it's applied once at process start. To change it, copy this value into AB_DANGEROUS_EXTENSIONS, edit it, and restart - note that variable REPLACES this list rather than adding to it, so any extension you leave out becomes an accepted upload type.",
     },
 
     // aws-s3-settings-provider.service.ts
