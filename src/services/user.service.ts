@@ -315,17 +315,22 @@ export class UserService extends CRUDService<User> {
 
     // if we are unable to find a user then we need to create one.
     if (!user) {
-      const user = new User();
-      user.username = oauthUserDto.email;
-      user.email = oauthUserDto.email;
-      user.fullName = oauthUserDto.name;
-      user.lastLoginProvider = oauthUserDto.provider;
-      user.accessCode = oauthUserDto.accessCode;
-      user.googleAccessToken = oauthUserDto.accessToken;
-      user.googleId = oauthUserDto.providerId;
-      user.googleProfilePicture = oauthUserDto.picture;
+      // Social sign-in provisions an app user, so it is built the same way public
+      // signup and OTP registration are: through the registered extension-user
+      // provider when there is one. Roles stay on `defaultRole` below rather than
+      // asking the provider - OauthUserDto has no field that could ever carry a
+      // discriminator, so a provider requiring one would break every new sign-in.
+      const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
+      entity.username = oauthUserDto.email;
+      entity.email = oauthUserDto.email;
+      entity.fullName = oauthUserDto.name;
+      entity.lastLoginProvider = oauthUserDto.provider;
+      entity.accessCode = oauthUserDto.accessCode;
+      entity.googleAccessToken = oauthUserDto.accessToken;
+      entity.googleId = oauthUserDto.providerId;
+      entity.googleProfilePicture = oauthUserDto.picture;
 
-      const savedUser = await this.repo.save(user);
+      const savedUser = await repo.save(entity);
 
       // Initialize the user roles
       await this.initializeRolesForNewUser(
@@ -390,17 +395,19 @@ export class UserService extends CRUDService<User> {
         // facebookProviderFallback,
       );
 
-      const newUser = new User();
-      newUser.username = username;
-      newUser.email = email;
-      newUser.fullName = oauthUserDto.name;
-      newUser.lastLoginProvider = oauthUserDto.provider;
-      newUser.accessCode = oauthUserDto.accessCode;
-      newUser.facebookAccessToken = oauthUserDto.accessToken;
-      newUser.facebookId = oauthUserDto.providerId;
-      newUser.facebookProfilePicture = oauthUserDto.picture;
+      // See resolveUserOnOauthGoogle for why this goes through the extension-user
+      // provider and why roles still come from `defaultRole` rather than the provider.
+      const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
+      entity.username = username;
+      entity.email = email;
+      entity.fullName = oauthUserDto.name;
+      entity.lastLoginProvider = oauthUserDto.provider;
+      entity.accessCode = oauthUserDto.accessCode;
+      entity.facebookAccessToken = oauthUserDto.accessToken;
+      entity.facebookId = oauthUserDto.providerId;
+      entity.facebookProfilePicture = oauthUserDto.picture;
 
-      const savedUser = await this.repo.save(newUser);
+      const savedUser = await repo.save(entity);
 
       await this.initializeRolesForNewUser(
         [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
@@ -432,17 +439,19 @@ export class UserService extends CRUDService<User> {
     });
 
     if (!user) {
-      const newUser = new User();
-      newUser.username = oauthUserDto.email;
-      newUser.email = oauthUserDto.email;
-      newUser.fullName = oauthUserDto.name;
-      newUser.lastLoginProvider = oauthUserDto.provider;
-      newUser.accessCode = oauthUserDto.accessCode;
-      newUser.microsoftAccessToken = oauthUserDto.accessToken;
-      newUser.microsoftId = oauthUserDto.providerId;
-      newUser.microsoftProfilePicture = oauthUserDto.picture;
+      // See resolveUserOnOauthGoogle for why this goes through the extension-user
+      // provider and why roles still come from `defaultRole` rather than the provider.
+      const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
+      entity.username = oauthUserDto.email;
+      entity.email = oauthUserDto.email;
+      entity.fullName = oauthUserDto.name;
+      entity.lastLoginProvider = oauthUserDto.provider;
+      entity.accessCode = oauthUserDto.accessCode;
+      entity.microsoftAccessToken = oauthUserDto.accessToken;
+      entity.microsoftId = oauthUserDto.providerId;
+      entity.microsoftProfilePicture = oauthUserDto.picture;
 
-      const savedUser = await this.repo.save(newUser);
+      const savedUser = await repo.save(entity);
 
       await this.initializeRolesForNewUser(
         [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
@@ -476,17 +485,19 @@ export class UserService extends CRUDService<User> {
     });
 
     if (!user) {
-      const newUser = new User();
-      newUser.username = oauthUserDto.email;
-      newUser.email = oauthUserDto.email;
-      newUser.fullName = oauthUserDto.name;
-      newUser.lastLoginProvider = oauthUserDto.provider;
-      newUser.accessCode = oauthUserDto.accessCode;
-      newUser.microsoftActiveDirectoryAccessToken = oauthUserDto.accessToken;
-      newUser.microsoftActiveDirectoryId = oauthUserDto.providerId;
-      newUser.microsoftActiveDirectoryProfilePicture = oauthUserDto.picture;
+      // See resolveUserOnOauthGoogle for why this goes through the extension-user
+      // provider and why roles still come from `defaultRole` rather than the provider.
+      const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
+      entity.username = oauthUserDto.email;
+      entity.email = oauthUserDto.email;
+      entity.fullName = oauthUserDto.name;
+      entity.lastLoginProvider = oauthUserDto.provider;
+      entity.accessCode = oauthUserDto.accessCode;
+      entity.microsoftActiveDirectoryAccessToken = oauthUserDto.accessToken;
+      entity.microsoftActiveDirectoryId = oauthUserDto.providerId;
+      entity.microsoftActiveDirectoryProfilePicture = oauthUserDto.picture;
 
-      const savedUser = await this.repo.save(newUser);
+      const savedUser = await repo.save(entity);
 
       await this.initializeRolesForNewUser(
         [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
