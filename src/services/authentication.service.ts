@@ -55,7 +55,6 @@ import { MetadataValidationService } from "./metadata-validation.service";
 import { UserService } from "./user.service";
 import { SmsFactory } from "src/factories/sms.factory";
 import { WhatsAppFactory } from "src/factories/whatsapp.factory";
-import { SolidRegistry } from "src/helpers/solid-registry";
 
 enum LoginProvider {
   LOCAL = "local",
@@ -150,7 +149,6 @@ export class AuthenticationService {
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly solidRegistry: SolidRegistry,
   ) {
     // this.mailService = this.mailServiceFactory.getMailService();
   }
@@ -281,11 +279,12 @@ export class AuthenticationService {
         // roles(), which is where a provider validates its discriminator, and
         // CreateUserDto types roles as UpdateRoleMetadataDto[] where performSignUp
         // expects role-name strings. [] here falls through to `defaultRole`.
-        return (
-          this.solidRegistry
-            .getExtensionUserCreationProvider()
-            ?.roles(dto as any) ?? []
-        );
+        //
+        // Delegated to UserService.resolveProviderRoles - the one place that calls
+        // provider.roles() - rather than looking up the registry here too, which is
+        // what UserService.resolveSelfRegistrationRoles (the OAuth callers' equivalent
+        // of this switch) also needs and previously duplicated.
+        return this.userService.resolveProviderRoles(dto);
 
       case RolesSource.Caller:
         return dto.roles ?? [];

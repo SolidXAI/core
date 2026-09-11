@@ -146,6 +146,28 @@ export class UserService extends CRUDService<User> {
   }
 
   /**
+   * Asks the registered extension-user provider for role names, treating "no provider
+   * registered" and "provider named none for this DTO" identically as [].
+   *
+   * The one place that actually calls `IExtensionUserCreationProvider.roles()`.
+   * `resolveSelfRegistrationRoles` below and `AuthenticationService.resolveSignupRoles`'s
+   * `Provider` branch both delegate here rather than each re-deriving "look up the
+   * registry, call roles(), default to []". Lives on `UserService` - not on
+   * `SolidRegistry`, which stays a pure lookup/storage layer for every provider kind it
+   * holds - because `AuthenticationService` already injects `UserService` directly
+   * (mirrors `buildSignupTarget`, and the DI cycle runs the other way: `UserService`
+   * cannot inject `AuthenticationService` back).
+   */
+  resolveProviderRoles(dto: Record<string, any>): string[] {
+    return (
+      this.moduleRef
+        .get(SolidRegistry, { strict: false })
+        ?.getExtensionUserCreationProvider()
+        ?.roles(dto as any) ?? []
+    );
+  }
+
+  /**
    * Role names for a self-provisioning user, mirroring SignupIntent.SelfRegistration's
    * policy on the password/OTP paths: ask the extension-user provider first, and fall
    * back to the configured `defaultRole` when it names none - either because there is
@@ -158,11 +180,7 @@ export class UserService extends CRUDService<User> {
    * places on providers beyond what self-registration already requires.
    */
   private resolveSelfRegistrationRoles(dto: Record<string, any>): string[] {
-    const roles =
-      this.moduleRef
-        .get(SolidRegistry, { strict: false })
-        ?.getExtensionUserCreationProvider()
-        ?.roles(dto as any) ?? [];
+    const roles = this.resolveProviderRoles(dto);
     if (roles.length) {
       return roles;
     }
