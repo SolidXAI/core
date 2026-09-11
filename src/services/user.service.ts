@@ -145,6 +145,31 @@ export class UserService extends CRUDService<User> {
     };
   }
 
+  /**
+   * Role names for a self-provisioning user, mirroring SignupIntent.SelfRegistration's
+   * policy on the password/OTP paths: ask the extension-user provider first, and fall
+   * back to the configured `defaultRole` when it names none - either because there is
+   * no provider, or the provider declines to name any for this DTO.
+   *
+   * Safe to call for OAuth even though `OauthUserDto` carries no discriminator field:
+   * a provider whose `roles()` requires one already needs to default it for public
+   * register/OTP to work at all (see the extending-users docs), and once it does,
+   * this resolves the same way automatically - there is no separate obligation OAuth
+   * places on providers beyond what self-registration already requires.
+   */
+  private resolveSelfRegistrationRoles(dto: Record<string, any>): string[] {
+    const roles =
+      this.moduleRef
+        .get(SolidRegistry, { strict: false })
+        ?.getExtensionUserCreationProvider()
+        ?.roles(dto as any) ?? [];
+    if (roles.length) {
+      return roles;
+    }
+    const defaultRole = this.settingService.getConfigValue<SolidCoreSetting>("defaultRole");
+    return defaultRole ? [defaultRole] : [];
+  }
+
   async findOneByEmail(email: string): Promise<User> {
     return await this.repo.findOne({
       where: {
@@ -315,11 +340,11 @@ export class UserService extends CRUDService<User> {
 
     // if we are unable to find a user then we need to create one.
     if (!user) {
-      // Social sign-in provisions an app user, so it is built the same way public
-      // signup and OTP registration are: through the registered extension-user
-      // provider when there is one. Roles stay on `defaultRole` below rather than
-      // asking the provider - OauthUserDto has no field that could ever carry a
-      // discriminator, so a provider requiring one would break every new sign-in.
+      // Social sign-in provisions an app user, so it is built and roled the same way
+      // public signup and OTP registration are: entity through the registered
+      // extension-user provider when there is one (see buildSignupTarget), roles
+      // through resolveSelfRegistrationRoles below, which asks that same provider
+      // first and falls back to `defaultRole`.
       const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
       entity.username = oauthUserDto.email;
       entity.email = oauthUserDto.email;
@@ -334,7 +359,7 @@ export class UserService extends CRUDService<User> {
 
       // Initialize the user roles
       await this.initializeRolesForNewUser(
-        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        this.resolveSelfRegistrationRoles(oauthUserDto),
         savedUser,
       );
     }
@@ -395,8 +420,8 @@ export class UserService extends CRUDService<User> {
         // facebookProviderFallback,
       );
 
-      // See resolveUserOnOauthGoogle for why this goes through the extension-user
-      // provider and why roles still come from `defaultRole` rather than the provider.
+      // See resolveUserOnOauthGoogle for why entity and roles both go through the
+      // extension-user provider first, falling back to a plain User / `defaultRole`.
       const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
       entity.username = username;
       entity.email = email;
@@ -410,7 +435,7 @@ export class UserService extends CRUDService<User> {
       const savedUser = await repo.save(entity);
 
       await this.initializeRolesForNewUser(
-        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        this.resolveSelfRegistrationRoles(oauthUserDto),
         savedUser,
       );
       return savedUser;
@@ -439,8 +464,8 @@ export class UserService extends CRUDService<User> {
     });
 
     if (!user) {
-      // See resolveUserOnOauthGoogle for why this goes through the extension-user
-      // provider and why roles still come from `defaultRole` rather than the provider.
+      // See resolveUserOnOauthGoogle for why entity and roles both go through the
+      // extension-user provider first, falling back to a plain User / `defaultRole`.
       const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
       entity.username = oauthUserDto.email;
       entity.email = oauthUserDto.email;
@@ -454,7 +479,7 @@ export class UserService extends CRUDService<User> {
       const savedUser = await repo.save(entity);
 
       await this.initializeRolesForNewUser(
-        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        this.resolveSelfRegistrationRoles(oauthUserDto),
         savedUser,
       );
     } else {
@@ -485,8 +510,8 @@ export class UserService extends CRUDService<User> {
     });
 
     if (!user) {
-      // See resolveUserOnOauthGoogle for why this goes through the extension-user
-      // provider and why roles still come from `defaultRole` rather than the provider.
+      // See resolveUserOnOauthGoogle for why entity and roles both go through the
+      // extension-user provider first, falling back to a plain User / `defaultRole`.
       const { entity, repo } = await this.buildSignupTarget(oauthUserDto, true);
       entity.username = oauthUserDto.email;
       entity.email = oauthUserDto.email;
@@ -500,7 +525,7 @@ export class UserService extends CRUDService<User> {
       const savedUser = await repo.save(entity);
 
       await this.initializeRolesForNewUser(
-        [this.settingService.getConfigValue<SolidCoreSetting>("defaultRole")],
+        this.resolveSelfRegistrationRoles(oauthUserDto),
         savedUser,
       );
     } else {
