@@ -14960,7 +14960,7 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false,
+          "export": true,
           "allowedViews": [
             "list",
             "tree"
@@ -15029,7 +15029,7 @@
           "edit": false,
           "delete": false,
           "import": false,
-          "export": false,
+          "export": true,
           "allowedViews": [
             "list",
             "tree"
