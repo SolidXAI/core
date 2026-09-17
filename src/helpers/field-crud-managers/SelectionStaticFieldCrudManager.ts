@@ -26,7 +26,7 @@ export class SelectionStaticFieldCrudManager implements FieldCrudManager {
                 return [
                     {
                         field: this.options.fieldName,
-                        error: `Field: ${this.options.fieldName} must be a valid array`,
+                        error: `Field: ${this.options.fieldName} must be a valid string representation of a JSON array of selection values. Allowed values: '${this.formatAllowedValues()}'. Received: ${this.formatValue(fieldValue)}`,
                     },
                 ];
             }
@@ -43,7 +43,7 @@ export class SelectionStaticFieldCrudManager implements FieldCrudManager {
             }
 
             // Apply validations to each value
-            const allErrors = await Promise.all(values.map((val) => this.applyValidations(val)));
+            const allErrors = await Promise.all(values.map((val) => this.applyValidations(val, values)));
             return allErrors.flat();
         } else {
             // For non-multi-select, apply validations to the single field value
@@ -69,20 +69,45 @@ export class SelectionStaticFieldCrudManager implements FieldCrudManager {
     }
     
 
-    private applyValidations(fieldValue: any): ValidationError[] {
+    private applyValidations(fieldValue: any, receivedValue: any = fieldValue): ValidationError[] {
         const errors: ValidationError[] = [];
         this.isApplyRequiredValidation() && isEmpty(fieldValue) ? errors.push({ field: this.options.fieldName, error: `Field: ${this.options.fieldName} is required` }) : "no errors";
         if (isNotEmpty(fieldValue)) {
-            errors.push(...this.applyFormatValidations(fieldValue));
+            errors.push(...this.applyFormatValidations(fieldValue, receivedValue));
         }
         return errors;
     }
 
-    private applyFormatValidations(fieldValue: any): ValidationError[] {
+    private applyFormatValidations(fieldValue: any, receivedValue: any = fieldValue): ValidationError[] {
         const errors: ValidationError[] = [];
-        !this.isValidSelectionValueType(fieldValue, this.options.selectionValueType) ? errors.push({ field: this.options.fieldName, error: 'Field value is invalid' }) : "no errors";
-        !this.isValidSelectionStaticValue(fieldValue, this.options.selectionValueType, this.options.selectionStaticValues) ? errors.push({ field: this.options.fieldName, error: 'Field value is invalid' }) : "no errors";
+        const allowedValues = this.formatAllowedValues();
+        const received = this.formatValue(receivedValue);
+        !this.isValidSelectionValueType(fieldValue, this.options.selectionValueType) ? errors.push({
+            field: this.options.fieldName,
+            error: `Field: ${this.options.fieldName} has an invalid selection value type. Expected ${this.options.selectionValueType}. Allowed values: ${allowedValues}. Received: ${received}`,
+        }) : "no errors";
+        !this.isValidSelectionStaticValue(fieldValue, this.options.selectionValueType, this.options.selectionStaticValues) ? errors.push({
+            field: this.options.fieldName,
+            error: `Field: ${this.options.fieldName} contains an invalid selection value. Allowed values: ${allowedValues}. Received: ${received}`,
+        }) : "no errors";
         return errors;
+    }
+
+    private formatAllowedValues(): string {
+        const values = this.options.selectionStaticValues.map((value) => {
+            const rawValue = value.split(":")[0];
+            return this.options.selectionValueType === SelectionValueType.int ? Number(rawValue) : rawValue;
+        });
+        return this.formatValue(values);
+    }
+
+    private formatValue(value: any): string {
+        try {
+            const formatted = JSON.stringify(value);
+            return formatted === undefined ? String(value) : formatted;
+        } catch {
+            return String(value);
+        }
     }
 
     transformForCreate(dto: any): any {
