@@ -5,10 +5,7 @@ import { WorkflowExecutionArtifactService } from '../services/workflow-execution
 import { CreateWorkflowExecutionArtifactDto } from '../dtos/create-workflow-execution-artifact.dto';
 import { UpdateWorkflowExecutionArtifactDto } from '../dtos/update-workflow-execution-artifact.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('workflow-execution-artifact')

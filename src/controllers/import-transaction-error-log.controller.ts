@@ -5,10 +5,7 @@ import { ImportTransactionErrorLogService } from '../services/import-transaction
 import { CreateImportTransactionErrorLogDto } from '../dtos/create-import-transaction-error-log.dto';
 import { UpdateImportTransactionErrorLogDto } from '../dtos/update-import-transaction-error-log.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('import-transaction-error-log')

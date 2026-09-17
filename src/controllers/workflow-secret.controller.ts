@@ -5,10 +5,7 @@ import { WorkflowSecretService } from '../services/workflow-secret.service';
 import { CreateWorkflowSecretDto } from '../dtos/create-workflow-secret.dto';
 import { UpdateWorkflowSecretDto } from '../dtos/update-workflow-secret.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('workflow-secret')

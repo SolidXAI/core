@@ -10,10 +10,7 @@ import { SolidRequestContextDecorator } from 'src/decorators/solid-request-conte
 import { SolidRequestContextDto } from 'src/dtos/solid-request-context.dto';
 import { Public } from 'src/decorators/public.decorator';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('chatter-message')

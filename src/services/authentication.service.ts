@@ -55,7 +55,6 @@ import { MetadataValidationService } from "./metadata-validation.service";
 import { UserService } from "./user.service";
 import { SmsFactory } from "src/factories/sms.factory";
 import { WhatsAppFactory } from "src/factories/whatsapp.factory";
-import { SolidRegistry } from "src/helpers/solid-registry";
 
 enum LoginProvider {
   LOCAL = "local",
@@ -70,9 +69,18 @@ interface otp {
 
 /** Where a signup's role names come from. */
 enum RolesSource {
-  /** None from the caller: performSignUp applies the configured `defaultRole`. */
+  /**
+   * Ask nobody; returning [] lets performSignUp apply the configured `defaultRole`.
+   *
+   * No intent maps here today - it is kept for paths that deliberately bypass the
+   * provider. OAuth is the live example: its DTO can never carry a discriminator, so
+   * it takes `defaultRole` outright (currently inline in UserService).
+   */
   Default,
-  /** `provider.roles(dto)`, unconditionally. */
+  /**
+   * `provider.roles(dto)` - and nothing else. Yields [] when no provider is registered
+   * or when the provider declines to name any, which falls through to `defaultRole`.
+   */
   Provider,
   /** The caller's own `dto.roles`. */
   Caller,
@@ -82,10 +90,18 @@ enum RolesSource {
  * The single place that decides, per intent, which entity a signup builds and where
  * its roles come from.
  *
- * `useProvider` is currently computable from `rolesSource` (`Caller` implies false),
- * but the two answer different questions - "which entity?" and "which roles?" - that
- * merely coincide across these three intents. Keep both, and change behaviour here
- * rather than at a call site.
+ * Where an extension user provider is registered it is the authority on that app's user
+ * roles, so every provider-backed intent asks it. `defaultRole` is the *fallback* for
+ * when it names none - or when there is no provider at all - not the rule.
+ *
+ * SelfRegistration and ExtensionModel resolve identically today. They stay separate
+ * intents because only SelfRegistration is gated on `allowPublicRegistration`, and
+ * because "an anonymous visitor signing themselves up" and "an admin creating a user
+ * from the model's own form" are different things that may yet need to diverge.
+ *
+ * `useProvider` is computable from `rolesSource` today (`Caller` implies false), but the
+ * two answer different questions - "which entity?" and "which roles?" - that merely
+ * coincide across these intents. Keep both, and change behaviour here, not at a call site.
  */
 const SIGNUP_POLICY: Record<
   SignupIntent,
@@ -93,7 +109,7 @@ const SIGNUP_POLICY: Record<
 > = {
   [SignupIntent.SelfRegistration]: {
     useProvider: true,
-    rolesSource: RolesSource.Default,
+    rolesSource: RolesSource.Provider,
   },
   [SignupIntent.ExtensionModel]: {
     useProvider: true,
@@ -133,7 +149,6 @@ export class AuthenticationService {
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
-    private readonly solidRegistry: SolidRegistry,
   ) {
     // this.mailService = this.mailServiceFactory.getMailService();
   }
@@ -246,30 +261,35 @@ export class AuthenticationService {
     dto: Record<string, any>,
     source: RolesSource,
   ): string[] {
+    // Only `Caller` reads dto.roles. Anywhere else, roles in the body are ignored -
+    // which is what keeps an anonymous caller from naming their own on a @Public()
+    // endpoint - so say so rather than dropping them silently.
+    if (source !== RolesSource.Caller && dto.roles?.length) {
+      this.logger.warn(
+        `Ignoring caller-supplied roles for "${dto.username}": roles on this path come from ` +
+          (source === RolesSource.Provider
+            ? "the extension user provider"
+            : "the configured defaultRole"),
+      );
+    }
+
     switch (source) {
       case RolesSource.Provider:
-        // Sole authority. `dto.roles` is deliberately not read - not as a preference,
-        // not as a fallback. Reading it would skip roles(), which is where a provider
-        // validates its discriminator, and CreateUserDto types roles as
-        // UpdateRoleMetadataDto[] where performSignUp expects role-name strings.
-        return (
-          this.solidRegistry
-            .getExtensionUserCreationProvider()
-            ?.roles(dto as any) ?? []
-        );
+        // Sole authority. Reading dto.roles as a preference or fallback would skip
+        // roles(), which is where a provider validates its discriminator, and
+        // CreateUserDto types roles as UpdateRoleMetadataDto[] where performSignUp
+        // expects role-name strings. [] here falls through to `defaultRole`.
+        //
+        // Delegated to UserService.resolveProviderRoles - the one place that calls
+        // provider.roles() - rather than looking up the registry here too, which is
+        // what UserService.resolveSelfRegistrationRoles (the OAuth callers' equivalent
+        // of this switch) also needs and previously duplicated.
+        return this.userService.resolveProviderRoles(dto);
 
       case RolesSource.Caller:
         return dto.roles ?? [];
 
       case RolesSource.Default:
-        // Public signup: the form has no business naming roles. Returning empty lets
-        // performSignUp apply the configured `defaultRole`, rather than adding a
-        // second mechanism for the same thing.
-        if (dto.roles?.length) {
-          this.logger.warn(
-            `Ignoring caller-supplied roles on public registration for "${dto.username}"`,
-          );
-        }
         return [];
     }
   }
@@ -709,7 +729,7 @@ export class AuthenticationService {
     }
 
     try {
-      const user = await this.upsertUserWithRegistrationVerificationTokens(
+      const user = await this.resolveUserForOtpRegistration(
         existingUser,
         signUpDto,
         validationSource,
@@ -766,22 +786,40 @@ export class AuthenticationService {
     );
   }
 
-  private async upsertUserWithRegistrationVerificationTokens(
+  private async resolveUserForOtpRegistration(
     existingUser: User,
     signUpDto: OTPSignUpDto,
     validationSource: string,
   ): Promise<User> {
     if (isEmpty(existingUser)) {
+      // Resolved before anything is written: where a provider requires its discriminator
+      // roles() throws, and that should surface as a rejected request rather than as a
+      // half-registered user with no roles.
+      const roles = this.resolveSignupRoles(
+        signUpDto,
+        SIGNUP_POLICY[SignupIntent.SelfRegistration].rolesSource,
+      );
+
       // A new registration is saved through whichever repository createUser resolved,
       // which is the provider's when the app registers one.
       const { entity: user, repo } = await this.createUser(signUpDto);
       user.active = false; // User will be activated only after OTP verification, hence setting active to false for new user.
       await this.assignRegistrationOtp(validationSource, user);
       await repo.save(user);
-      await this.userService.addRoleToUser(
-        user.username,
-        this.settingService.getConfigValue<SolidCoreSetting>("defaultRole"),
-      );
+
+      // The provider named none, or there is no provider: fall back to the configured
+      // default, matching what performSignUp does on the password paths. Built as a
+      // fresh array rather than mutating `roles` - RolesSource.Provider can return
+      // whatever reference the provider's roles() handed back.
+      const defaultRole = this.settingService.getConfigValue<SolidCoreSetting>("defaultRole");
+      const effectiveRoles = roles.length ? roles : [defaultRole].filter(Boolean);
+
+      // initializeRolesForNewUser always grants "Internal User" - the baseline every
+      // other signup path gets via handlePostSignup - which this branch previously
+      // skipped entirely by calling addRolesToUser/addRoleToUser directly. Without it
+      // an OTP-registered user could not even read their own User record: the
+      // "Internal User" role is what carries that security rule.
+      await this.userService.initializeRolesForNewUser(effectiveRoles, user);
       return user;
     }
 
@@ -812,9 +850,8 @@ export class AuthenticationService {
     entity.username = signUpDto.username;
     entity.email = signUpDto.email;
     entity.mobile = signUpDto.mobile;
-    // OTPSignUpDto declares no `fullName`, so username is the only source here. Mirrors
-    // the fallback in populateForSignup, which this path does not go through.
-    entity.fullName = signUpDto.username;
+    // OTPSignUpDto declares no `fullName`, so username is the only source here. Mirrors the fallback in populateForSignup, which this path does not go through.
+    entity.fullName = signUpDto.fullName?.trim() || signUpDto.username;
     entity.customPayload = signUpDto.customPayload;
     entity.lastLoginProvider = LoginProvider.OTP;
 

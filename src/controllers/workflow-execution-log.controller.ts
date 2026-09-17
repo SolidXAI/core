@@ -5,10 +5,7 @@ import { WorkflowExecutionLogService } from '../services/workflow-execution-log.
 import { CreateWorkflowExecutionLogDto } from '../dtos/create-workflow-execution-log.dto';
 import { UpdateWorkflowExecutionLogDto } from '../dtos/update-workflow-execution-log.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('workflow-execution-log')

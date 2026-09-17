@@ -1,17 +1,26 @@
-import { IsEmail, IsEnum, IsJSON, IsNotEmpty, IsOptional } from 'class-validator';
+import { IsEmail, IsEnum, IsJSON, IsNotEmpty, IsOptional, IsString } from 'class-validator';
 
 import { PasswordlessRegistrationValidateWhatSources } from "../constants";
+import { ApiProperty } from '@nestjs/swagger';
 
 export class OTPSignUpDto {
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    fullName: string;
+
     @IsNotEmpty()
+    @ApiProperty()
     username: string;
 
     @IsOptional()
     @IsEmail()
+    @ApiProperty()
     email: string;
 
     @IsOptional()
     @IsNotEmpty()
+    @ApiProperty()
     mobile: string;
 
     @IsOptional()
@@ -19,5 +28,6 @@ export class OTPSignUpDto {
     validationSources: PasswordlessRegistrationValidateWhatSources[] = [];
 
     @IsOptional()
+    @ApiProperty()
     customPayload: any;
 }

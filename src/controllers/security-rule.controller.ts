@@ -5,10 +5,7 @@ import { SecurityRuleService } from '../services/security-rule.service';
 import { CreateSecurityRuleDto } from '../dtos/create-security-rule.dto';
 import { UpdateSecurityRuleDto } from '../dtos/update-security-rule.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('security-rule')

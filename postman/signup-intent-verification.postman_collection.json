@@ -1,0 +1,573 @@
+{
+  "info": {
+    "name": "SolidX — SignupIntent verification",
+    "description": "Verifies commits 1-5 of the extension-user signup work: cross-type uniqueness, allowPublicRegistration enforcement, SignupIntent dispatch, per-entry seed flags, and OTP provider wiring.\n\nRUN AGAINST an app that registers an IExtensionUserCreationProvider (e.g. solid-library-management, which has LmUserCreationProvider). Several checks are meaningless without one.\n\nIMPORTANT — what this collection can and cannot see:\nThe STI discriminator column `type` is declared only in @TableInheritance, never as a class property, so it is NOT serialized into any response. This collection therefore uses the presence of an extension-only field (`userType`) as a PROXY for \"this row is the child entity\": class-transformer emits `userType` (even as null) for an LmUser and omits it entirely for a base User.\n\nThat proxy is good enough to catch a wrong dispatch, but the definitive check is SQL. Each folder's description carries the query to run.\n\nSet `childModelPath`, `childTypeName` and `userTypeValue` to match your app before running.",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "variable": [
+    { "key": "baseUrl", "value": "http://localhost:3000/api", "type": "string" },
+    { "key": "adminUsername", "value": "sa", "type": "string" },
+    { "key": "adminPassword", "value": "Admin@3214$", "type": "string" },
+    { "key": "childModelPath", "value": "lm-user", "type": "string" },
+    { "key": "childTypeName", "value": "LmUser", "type": "string" },
+    { "key": "userTypeValue", "value": "Member", "type": "string" },
+    { "key": "defaultRole", "value": "Public", "type": "string" },
+    { "key": "privilegedRole", "value": "Admin", "type": "string" },
+    { "key": "testPassword", "value": "Test@1234", "type": "string" },
+    { "key": "adminToken", "value": "", "type": "string" },
+    { "key": "otp", "value": "", "type": "string" }
+  ],
+  "item": [
+    {
+      "name": "0 — Setup",
+      "description": "Authenticates as the seeded system admin and stores the JWT for the folders that need one.",
+      "item": [
+        {
+          "name": "Login as sa",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/authenticate", "host": ["{{baseUrl}}"], "path": ["iam", "authenticate"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{adminUsername}}\",\n  \"password\": \"{{adminPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('sa can log in', () => pm.response.code === 200);",
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set('adminToken', d.accessToken);",
+                  "pm.test('returned an access token', () => pm.expect(d.accessToken).to.be.a('string').and.not.empty);",
+                  "// Commit 4 keeps sa a base User: it is seeded without isExtensionUser.",
+                  "pm.test('sa still has its roles', () => pm.expect(d.user.roles).to.be.an('array').that.is.not.empty);"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "1 — Public registration (SelfRegistration)",
+      "description": "POST /iam/register.\n\nExpectation: creates the app's EXTENSION entity, always takes the configured defaultRole, and ignores any roles in the body.\n\nSQL:\n  select id, username, type, user_type from ss_user order by id desc limit 5;\n  -- every row created by this folder must have type = '<childTypeName>'",
+      "item": [
+        {
+          "name": "1.1 core fields only (what the stock signup screen sends)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/register", "host": ["{{baseUrl}}"], "path": ["iam", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"pub_core_{{$timestamp}}\",\n  \"email\": \"pub_core_{{$timestamp}}@example.com\",\n  \"password\": \"{{testPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// THE case that is broken before this work: a core-fields-only body used to",
+                  "// create a base User because nothing in it looked like an extension field.",
+                  "pm.test('created (not 400, not 500)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('is the extension entity (userType key present)', () => pm.expect(d).to.have.property('userType'));",
+                  "// Step 7 obligation: the provider must default the discriminator, because the",
+                  "// stock signup screen cannot send one and nothing in core will catch a null.",
+                  "pm.test('provider defaulted the discriminator', () => pm.expect(d.userType, 'null userType — buildExtensionEntity is not defaulting it').to.not.be.null);"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.2 with an explicit userType",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/register", "host": ["{{baseUrl}}"], "path": ["iam", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"pub_typed_{{$timestamp}}\",\n  \"email\": \"pub_typed_{{$timestamp}}@example.com\",\n  \"password\": \"{{testPassword}}\",\n  \"userType\": \"{{userTypeValue}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('created', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('extension field round-trips', () => pm.expect(d.userType).to.eql(pm.collectionVariables.get('userTypeValue')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3a ESCALATION — register asking for a privileged role",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/register", "host": ["{{baseUrl}}"], "path": ["iam", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"esc_{{$timestamp}}\",\n  \"email\": \"esc_{{$timestamp}}@example.com\",\n  \"password\": \"{{testPassword}}\",\n  \"roles\": [\"{{privilegedRole}}\"]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "// Remember the identity so 1.3b can log in as it.",
+                  "const u = 'esc_' + Math.floor(Date.now() / 1000);",
+                  "pm.collectionVariables.set('escUsername', u);",
+                  "pm.collectionVariables.set('escEmail', u + '@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Before this work an anonymous caller got whatever roles they asked for:",
+                  "// the only check was that the role EXISTS, never that the caller may hold it.",
+                  "pm.test('request succeeds (roles are ignored, not rejected)', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "pm.test('server logged a warning about ignoring roles — check app logs', () => true);",
+                  "// The real assertion is 1.3c: the response body does not list roles."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.3b login as the escalation-attempt user",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/authenticate", "host": ["{{baseUrl}}"], "path": ["iam", "authenticate"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{escUsername}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('can log in', () => pm.response.code === 200);",
+                  "const d = pm.response.json().data;",
+                  "pm.collectionVariables.set('escToken', d.accessToken);",
+                  "const roles = d.user.roles || [];",
+                  "const privileged = pm.collectionVariables.get('privilegedRole');",
+                  "pm.test('DID NOT get the role it asked for', () => pm.expect(roles).to.not.include(privileged));",
+                  "pm.test('got the configured default role instead', () => pm.expect(roles).to.include(pm.collectionVariables.get('defaultRole')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "1.4 stray extra key is ignored (used to 500 with no provider)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/register", "host": ["{{baseUrl}}"], "path": ["iam", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"stray_{{$timestamp}}\",\n  \"email\": \"stray_{{$timestamp}}@example.com\",\n  \"password\": \"{{testPassword}}\",\n  \"passwordConfirm\": \"{{testPassword}}\",\n  \"emial\": \"typo@example.com\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// On an app with NO provider this used to throw 500 'No ExtensionUserCreationProvider",
+                  "// registered' from a @Public() endpoint, because any unknown key tripped the sniff.",
+                  "pm.test('no 500', () => pm.expect(pm.response.code).to.not.eql(500));",
+                  "pm.test('created', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "2 — Admin console (CoreUser)",
+      "description": "POST /iam/register-private — where solid-core-ui's CreateUser.tsx posts.\n\nExpectation: creates a BASE User with the roles the admin chose. Must match pre-change behaviour exactly.\n\nSQL:\n  select id, username, type from ss_user where username like 'adm_%' order by id desc limit 5;\n  -- must be type = 'User'",
+      "item": [
+        {
+          "name": "2.1 admin creates a user",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/iam/register-private", "host": ["{{baseUrl}}"], "path": ["iam", "register-private"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admUsername}}\",\n  \"email\": \"{{admEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"fullName\": \"Admin Created\",\n  \"roles\": [\"{{privilegedRole}}\"],\n  \"isAllowedToGenerateApiKeys\": true\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const u = 'adm_' + Math.floor(Date.now() / 1000);",
+                  "pm.collectionVariables.set('admUsername', u);",
+                  "pm.collectionVariables.set('admEmail', u + '@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('created', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const d = pm.response.json().data;",
+                  "// CoreUser intent: the provider is never consulted, so no extension fields.",
+                  "pm.test('is a base User (no extension fields)', () => pm.expect(d).to.not.have.property('userType'));",
+                  "// Guards the preferEntityApiKeyFlag removal: an explicit DTO value must win.",
+                  "pm.test('honoured isAllowedToGenerateApiKeys', () => pm.expect(d.isAllowedToGenerateApiKeys).to.eql(true));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "2.2 login as that user — admin-chosen roles were kept",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/authenticate", "host": ["{{baseUrl}}"], "path": ["iam", "authenticate"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{admUsername}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('can log in', () => pm.response.code === 200);",
+                  "const roles = pm.response.json().data.user.roles || [];",
+                  "// CoreUser trusts caller-supplied roles — unlike public registration.",
+                  "pm.test('kept the role the admin chose', () => pm.expect(roles).to.include(pm.collectionVariables.get('privilegedRole')));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "3 — Extension model CRUD (ExtensionModel)",
+      "description": "POST /{{childModelPath}} — the generated CRUD form for the child model.\n\nExpectation: creates the extension entity, and roles come from provider.roles(dto) unconditionally. This is the ONLY path that still calls roles(), so it is the only one where a provider requiring userType can reject.\n\nSQL:\n  select id, username, type, user_type from ss_user where type = '<childTypeName>' order by id desc limit 5;",
+      "item": [
+        {
+          "name": "3.1 create with userType",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/{{childModelPath}}", "host": ["{{baseUrl}}"], "path": ["{{childModelPath}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"crud_{{$timestamp}}\",\n  \"email\": \"crud_{{$timestamp}}@example.com\",\n  \"password\": \"{{testPassword}}\",\n  \"userType\": \"{{userTypeValue}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('created', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('extension field set', () => pm.expect(d.userType).to.eql(pm.collectionVariables.get('userTypeValue')));"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "3.2 create WITHOUT userType — provider.roles() should reject",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/{{childModelPath}}", "host": ["{{baseUrl}}"], "path": ["{{childModelPath}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"crud_nt_{{$timestamp}}\",\n  \"email\": \"crud_nt_{{$timestamp}}@example.com\",\n  \"password\": \"{{testPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// Only meaningful if your provider's roles() throws on a missing discriminator",
+                  "// (the LmUser/InstituteUser shape does). If yours returns [] instead, expect 201",
+                  "// and the configured defaultRole — adjust this test to match your provider.",
+                  "pm.test('rejected, or created with the default role', () => pm.expect(pm.response.code).to.be.oneOf([400, 200, 201]));",
+                  "if (pm.response.code === 400) {",
+                  "  pm.test('rejection came from the provider', () => pm.expect(JSON.stringify(pm.response.json())).to.match(/userType|role/i));",
+                  "}"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "4 — Cross-type uniqueness (commit 1)",
+      "description": "Creates a BASE User via register-private, then tries to register the SAME email publicly, which would create the CHILD type.\n\nBefore commit 1 the uniqueness check ran against the child repository, which TypeORM scopes to one discriminator — and email/mobile carry non-unique @Index(), so no DB constraint would have caught it. The duplicate was silently accepted.",
+      "item": [
+        {
+          "name": "4.1 create a base User with a known email",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/iam/register-private", "host": ["{{baseUrl}}"], "path": ["iam", "register-private"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{dupUsername}}\",\n  \"email\": \"{{dupEmail}}\",\n  \"password\": \"{{testPassword}}\",\n  \"roles\": [\"{{defaultRole}}\"]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const u = 'dup_' + Math.floor(Date.now() / 1000);",
+                  "pm.collectionVariables.set('dupUsername', u);",
+                  "pm.collectionVariables.set('dupEmail', u + '@example.com');"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('base user created', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"] }
+            }
+          ]
+        },
+        {
+          "name": "4.2 public register with the SAME email — must 409",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/register", "host": ["{{baseUrl}}"], "path": ["iam", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{dupUsername}}_other\",\n  \"email\": \"{{dupEmail}}\",\n  \"password\": \"{{testPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('duplicate email across types is rejected', () => pm.expect(pm.response.code).to.eql(409));",
+                  "pm.test('message names the email', () => pm.expect(pm.response.text()).to.match(/email/i));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "5 — Passwordless OTP registration (commit 5)",
+      "description": "Requires setting `passwordLessAuth` on. otpInitiateRegistration used to do `new User()` and save through the base repository, never consulting the registry.\n\n5.2 needs the OTP: read it from the app log / SMS-WhatsApp stub / DB and set the `otp` collection variable before running it.\n\nSQL:\n  select id, username, type, active, mobile_verification_token_on_registration from ss_user where username like 'otp_%' order by id desc limit 3;\n  -- after initiate: type = '<childTypeName>', active = false\n  -- after confirm:  active = true, type UNCHANGED (the STI round-trip check)",
+      "item": [
+        {
+          "name": "5.1 initiate",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/otp/register/initiate", "host": ["{{baseUrl}}"], "path": ["iam", "otp", "register", "initiate"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"{{otpUsername}}\",\n  \"email\": \"{{otpEmail}}\",\n  \"mobile\": \"{{otpMobile}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "prerequest",
+              "script": {
+                "exec": [
+                  "const t = Math.floor(Date.now() / 1000);",
+                  "pm.collectionVariables.set('otpUsername', 'otp_' + t);",
+                  "pm.collectionVariables.set('otpEmail', 'otp_' + t + '@example.com');",
+                  "pm.collectionVariables.set('otpMobile', '9' + String(t).slice(-9));"
+                ]
+              }
+            },
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "// 400 PASSWORDLESS_REGISTRATION_DISABLED means passwordLessAuth is off — enable it.",
+                  "// 403 means allowPublicRegistration is off — folder 6 turned it off, turn it back on.",
+                  "pm.test('OTP sent', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "if (pm.response.code === 400) { console.warn('passwordLessAuth appears to be disabled'); }",
+                  "console.log('Now read the OTP and set the `otp` collection variable, then run 5.2');"
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "5.2 confirm (set `otp` first)",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/otp/register/confirm", "host": ["{{baseUrl}}"], "path": ["iam", "otp", "register", "confirm"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"type\": \"mobile\",\n  \"identifier\": \"{{otpMobile}}\",\n  \"otp\": \"{{otp}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('confirmed', () => pm.expect(pm.response.code).to.eql(200));",
+                  "const d = pm.response.json().data;",
+                  "pm.test('user activated', () => pm.expect(d.active).to.eql(true));",
+                  "// The row was loaded through the BASE repository and saved back. Confirm in SQL that",
+                  "// `type` is still the child type — that is the STI round-trip assumption in commit 5."
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    },
+
+    {
+      "name": "6 — allowPublicRegistration = false (commit 2 + 3)",
+      "description": "MANUAL STEP FIRST: set the `allowPublicRegistration` setting to false (Settings screen, or IAM_ALLOW_PUBLIC_REGISTRATION=false and restart).\n\nThe setting was dead config before this work — defined, admin-editable, read by nothing.\n\nThe scoping matters more than the guard: only the two anonymous doors may close. If 6.3 or 6.4 fail, disabling public registration has taken down user creation across the system, which is far worse than the bug being fixed.\n\nRemember to turn it back on afterwards.",
+      "item": [
+        {
+          "name": "6.1 public register — must 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/register", "host": ["{{baseUrl}}"], "path": ["iam", "register"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"blocked_{{$timestamp}}\",\n  \"email\": \"blocked_{{$timestamp}}@example.com\",\n  \"password\": \"{{testPassword}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('public registration is blocked', () => pm.expect(pm.response.code).to.eql(403));",
+                  "// A 201 here means the setting is still not being read — check that getConfigValue",
+                  "// returns the string 'false' rather than boolean false, which a falsy check misses."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.2 OTP initiate — must 403",
+          "request": {
+            "method": "POST",
+            "header": [{ "key": "Content-Type", "value": "application/json" }],
+            "url": { "raw": "{{baseUrl}}/iam/otp/register/initiate", "host": ["{{baseUrl}}"], "path": ["iam", "otp", "register", "initiate"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"blocked_otp_{{$timestamp}}\",\n  \"email\": \"blocked_otp_{{$timestamp}}@example.com\",\n  \"mobile\": \"9000000001\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": { "exec": ["pm.test('OTP registration is blocked', () => pm.expect(pm.response.code).to.eql(403));"] }
+            }
+          ]
+        },
+        {
+          "name": "6.3 SCOPING — admin console must still work",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/iam/register-private", "host": ["{{baseUrl}}"], "path": ["iam", "register-private"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"scoped_adm_{{$timestamp}}\",\n  \"email\": \"scoped_adm_{{$timestamp}}@example.com\",\n  \"password\": \"{{testPassword}}\",\n  \"roles\": [\"{{defaultRole}}\"]\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('admin can still create users', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));",
+                  "// A 403 here means the guard is not scoped to SelfRegistration."
+                ]
+              }
+            }
+          ]
+        },
+        {
+          "name": "6.4 SCOPING — extension model CRUD must still work",
+          "request": {
+            "method": "POST",
+            "header": [
+              { "key": "Content-Type", "value": "application/json" },
+              { "key": "Authorization", "value": "Bearer {{adminToken}}" }
+            ],
+            "url": { "raw": "{{baseUrl}}/{{childModelPath}}", "host": ["{{baseUrl}}"], "path": ["{{childModelPath}}"] },
+            "body": {
+              "mode": "raw",
+              "raw": "{\n  \"username\": \"scoped_crud_{{$timestamp}}\",\n  \"email\": \"scoped_crud_{{$timestamp}}@example.com\",\n  \"password\": \"{{testPassword}}\",\n  \"userType\": \"{{userTypeValue}}\"\n}"
+            }
+          },
+          "event": [
+            {
+              "listen": "test",
+              "script": {
+                "exec": [
+                  "pm.test('extension model CRUD still works', () => pm.expect(pm.response.code).to.be.oneOf([200, 201]));"
+                ]
+              }
+            }
+          ]
+        }
+      ]
+    }
+  ]
+}

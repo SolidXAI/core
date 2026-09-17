@@ -5,10 +5,7 @@ import { ModelSequenceService } from '../services/model-sequence.service';
 import { CreateModelSequenceDto } from '../dtos/create-model-sequence.dto';
 import { UpdateModelSequenceDto } from '../dtos/update-model-sequence.dto';
 
-enum ShowSoftDeleted {
-  INCLUSIVE = "inclusive",
-  EXCLUSIVE = "exclusive",
-}
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
 @Controller('model-sequence')
