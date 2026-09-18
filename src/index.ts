@@ -29,6 +29,7 @@ export * from './decorators/security-rule-config-provider.decorator'
 export * from './decorators/sms-provider.decorator'
 export * from './decorators/settings-provider.decorator'
 export * from './decorators/extension-user-creation-provider.decorator'
+export * from './decorators/whatsapp-provider.decorator'
 export * from './decorators/workflow-node-provider.decorator'
 export * from './decorators/workflow-field-data-provider.decorator'
 
