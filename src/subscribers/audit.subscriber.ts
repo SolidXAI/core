@@ -98,18 +98,25 @@ export class AuditSubscriber implements EntitySubscriberInterface {
             return null;
         }
 
-        const relations: Record<string, boolean> = {};
-
-        auditRelationFields.forEach(field => {
-            relations[field.name] = true;
-        });
-
         const relationBefore = event.entity?.[AUDIT_BEFORE_SNAPSHOT] ?? null;
 
-        const relationAfter = await event.queryRunner.manager.getRepository(event.metadata.target as any).findOne({
+        // Same fix as CRUDService.prepareManyToManyAuditSnapshot: load each audit-tracked
+        // relation independently instead of joining them all into one query, so the row
+        // count of one relation doesn't multiply against every other joined relation.
+        const targetRepo = event.queryRunner.manager.getRepository(event.metadata.target as any);
+        const relationAfter = await targetRepo.findOne({
             where: { id: entityId } as any,
-            relations: relations as any,
         });
+
+        if (relationAfter) {
+            for (const field of auditRelationFields) {
+                (relationAfter as any)[field.name] = await event.queryRunner.manager
+                    .createQueryBuilder()
+                    .relation(event.metadata.target as any, field.name)
+                    .of(entityId)
+                    .loadMany();
+            }
+        }
 
         if (relationBefore && relationAfter) {
             auditRelationFields.forEach(field => {
