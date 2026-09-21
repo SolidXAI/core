@@ -85,6 +85,27 @@ export class SolidCoreErrorCodesProvider implements IErrorCodeProvider {
                     httpStatus: 400,
                 },
             },
+            // Login extension rules sit at the same priority as the MPIN rules,
+            // above the generic session rules, so a denial or an unavailable
+            // check is never misreported as a session problem.
+            {
+                code: 'solidx-login-denied-by-extension',
+                priority: 120,
+                match: (txt) => txt.includes(ERROR_MESSAGES.LOGIN_DENIED_BY_EXTENSION.toLowerCase()),
+                meta: {
+                    message: ERROR_MESSAGES.LOGIN_DENIED_BY_EXTENSION,
+                    httpStatus: 401,
+                },
+            },
+            {
+                code: 'solidx-login-extension-unavailable',
+                priority: 120,
+                match: (txt) => txt.includes(ERROR_MESSAGES.LOGIN_EXTENSION_UNAVAILABLE.toLowerCase()),
+                meta: {
+                    message: ERROR_MESSAGES.LOGIN_EXTENSION_UNAVAILABLE,
+                    httpStatus: 503,
+                },
+            },
             {
                 code: 'solidx-mcp-server-unavailable',
                 priority: 100,
