@@ -4,6 +4,24 @@ import { MqMessageRepository } from "src/repository/mq-message.repository";
 import { IDashboardWidgetDataProvider, IDashboardWidgetDataProviderContext, IDashboardWidgetDataResponseEnvelope } from "src/interfaces";
 import { applyMqDashboardFilters } from "src/services/dashboard-providers/mq-dashboard-provider-utils";
 
+type RecentFailureRecord = {
+    id: any;
+    messageId: any;
+    queueName: any;
+    stage: any;
+    retryCount: any;
+    elapsedMillis: any;
+    startedAt: any;
+    finishedAt: any;
+    error: any;
+    createdAt: any;
+};
+
+type TableColumn = {
+    field: keyof RecentFailureRecord;
+    header: string;
+};
+
 @DashboardWidgetDataProvider()
 @Injectable()
 export class MqDashboardRecentFailuresProvider implements IDashboardWidgetDataProvider {
@@ -22,7 +40,7 @@ export class MqDashboardRecentFailuresProvider implements IDashboardWidgetDataPr
     async getData(
         widgetDefinition: Record<string, any>,
         ctxt: IDashboardWidgetDataProviderContext,
-    ): Promise<IDashboardWidgetDataResponseEnvelope<any>> {
+    ): Promise<IDashboardWidgetDataResponseEnvelope<{ columns: TableColumn[]; records: RecentFailureRecord[] }>> {
         const limit = Math.min(Math.max(Number(ctxt?.providerContext?.limit ?? 25), 1), 200);
         const errorMaxLength = Math.max(Number(ctxt?.providerContext?.errorMaxLength ?? 160), 0);
 
@@ -47,20 +65,20 @@ export class MqDashboardRecentFailuresProvider implements IDashboardWidgetDataPr
             .take(limit)
             .getRawMany<Record<string, any>>();
 
-        const columns = [
-            "id",
-            "messageId",
-            "queueName",
-            "stage",
-            "retryCount",
-            "elapsedMillis",
-            "startedAt",
-            "finishedAt",
-            "error",
-            "createdAt",
+        const columns: TableColumn[] = [
+            { field: "id", header: "ID" },
+            { field: "messageId", header: "Message ID" },
+            { field: "queueName", header: "Queue Name" },
+            { field: "stage", header: "Stage" },
+            { field: "retryCount", header: "Retry Count" },
+            { field: "elapsedMillis", header: "Elapsed Millis" },
+            { field: "startedAt", header: "Started At" },
+            { field: "finishedAt", header: "Finished At" },
+            { field: "error", header: "Error" },
+            { field: "createdAt", header: "Created At" },
         ];
 
-        const records = rows.map((row) => ({
+        const records: RecentFailureRecord[] = rows.map((row) => ({
             id: row.id ?? null,
             messageId: row.messageId ?? row.messageid ?? null,
             queueName: row.queueName ?? row.queuename ?? null,
