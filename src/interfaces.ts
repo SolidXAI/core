@@ -293,6 +293,97 @@ export interface IExtensionUserCreationProvider<T extends User = User, TDto exte
   roles(dto: TDto): string[];
 }
 
+// ---------------------------------------------------------------------------
+// Login extension providers
+// ---------------------------------------------------------------------------
+
+/** The authentication entry point that produced this attempt. */
+export enum LoginExtensionChannel {
+  PASSWORD = "password",
+  OTP = "otp",
+}
+
+export type LoginExtensionFailurePolicy = "fail-open" | "fail-closed";
+
+export interface ILoginExtensionContext {
+  /** Which entry point is asking. */
+  channel: LoginExtensionChannel;
+  /** Correlates the log lines emitted for one attempt. */
+  attemptId: string;
+  /** When the attempt reached the extension chain. */
+  startedAt: Date;
+}
+
+export interface ILoginExtensionResult {
+  /**
+   * `false` denies the login. Any other value - including a malformed result -
+   * allows it, so a provider bug cannot silently lock everyone out. A provider
+   * that cannot reach its backing system must throw, not return `{ allow: true }`;
+   * throwing is what the failure policy acts on.
+   */
+  allow: boolean;
+  /**
+   * Operator-facing reason. Written to the server log, never returned to the
+   * client: a third party's denial reason leaks account state.
+   */
+  reason?: string;
+  /**
+   * Canonical client-facing code. Contribute it from an `IErrorCodeProvider`
+   * so the global exception filter does not rewrite it.
+   */
+  errorCode?: ErrorCode;
+  /** Client-facing message. Still subject to `ErrorMapperService` rewriting. */
+  message?: string;
+}
+
+/**
+ * Extends login with checks the primary authentication mechanism cannot make -
+ * typically the live state of the same identity in a third-party system.
+ *
+ * Core calls `verifyLogin` only after the primary credential has been proven
+ * and before any token is minted, so a provider can only turn a successful
+ * login into a failure, never the reverse.
+ *
+ * Runs on the password and OTP login paths only. OAuth, MPIN, token refresh
+ * and SSO code exchange do not invoke the chain.
+ */
+export interface ILoginExtensionProvider<
+  TUser extends User = User,
+  TContext extends ILoginExtensionContext = ILoginExtensionContext,
+> {
+  /** Registry identity and log label. */
+  name(): string;
+
+  help(): string;
+
+  /** Higher runs first. Defaults to 0. Mirrors `ErrorRule.priority`. */
+  priority?: number;
+
+  /**
+   * Deadline applied to `supports` and `verifyLogin` individually. Defaults to
+   * `DEFAULT_LOGIN_EXTENSION_TIMEOUT_MS` (5000), so a provider's worst case is
+   * twice this value. Exceeding it is treated as a failure, not a denial.
+   */
+  timeoutMs?: number;
+
+  /**
+   * What happens when `verifyLogin` throws or times out. Defaults to
+   * `fail-closed`: a check that cannot reach its backing system denies the
+   * login rather than silently waving it through. Providers that must never
+   * be able to lock the product out should set `fail-open` explicitly.
+   */
+  failurePolicy?: LoginExtensionFailurePolicy;
+
+  /** Return false to skip this attempt entirely. Defaults to true. */
+  supports?(user: TUser, ctxt: TContext): boolean | Promise<boolean>;
+
+  /**
+   * Return `{ allow: false }` to deny. Throwing signals a malfunction and is
+   * governed by the failure policy.
+   */
+  verifyLogin(user: TUser, ctxt: TContext): Promise<ILoginExtensionResult>;
+}
+
 export interface IMail<TResponse = unknown> {
   sendEmail(
     to: string,

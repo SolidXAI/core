@@ -8,6 +8,7 @@ import {
   InternalServerErrorException,
   Logger,
   NotFoundException,
+  ServiceUnavailableException,
   UnauthorizedException,
 } from "@nestjs/common";
 import { EventEmitter2 } from "@nestjs/event-emitter";
@@ -38,8 +39,15 @@ import { SignInDto } from "../dtos/sign-in.dto";
 import { SignUpDto } from "../dtos/sign-up.dto";
 import { SignupIntent } from "../enums/signup-intent.enum";
 import { User } from "../entities/user.entity";
-import { EventDetails, EventType } from "../interfaces";
+import {
+  EventDetails,
+  EventType,
+  ILoginExtensionContext,
+  ILoginExtensionProvider,
+  LoginExtensionChannel,
+} from "../interfaces";
 import { ActiveUserData } from "../interfaces/active-user-data.interface";
+import { SolidRegistry } from "../helpers/solid-registry";
 import { ActiveSessionStorageService } from "./active-session-storage.service";
 import { AccessTokenDenylistService } from "./access-token-denylist.service";
 import { HashingService } from "./hashing.service";
@@ -121,6 +129,19 @@ const SIGNUP_POLICY: Record<
   },
 };
 
+/** Deadline for a single login extension provider, unless it overrides it. */
+const DEFAULT_LOGIN_EXTENSION_TIMEOUT_MS = 5000;
+
+/** A registered login extension provider denied this attempt. */
+export class LoginExtensionDeniedException extends UnauthorizedException {}
+
+/**
+ * A login extension provider malfunctioned or timed out while its failure
+ * policy was fail-closed. 503, not 401: the credential was fine, the
+ * dependency was not, and the client should retry.
+ */
+export class LoginExtensionUnavailableException extends ServiceUnavailableException {}
+
 @Injectable()
 export class AuthenticationService {
   private readonly logger = new Logger(AuthenticationService.name);
@@ -146,6 +167,7 @@ export class AuthenticationService {
     private readonly userActivityHistoryService: UserActivityHistoryService,
     private readonly ssoCodeStorage: SsoCodeStorageService,
     private readonly metadataValidationService: MetadataValidationService,
+    private readonly solidRegistry: SolidRegistry,
 
     @InjectDataSource()
     private readonly dataSource: DataSource,
@@ -205,6 +227,117 @@ export class AuthenticationService {
       where: { verificationTokenOnForgotPassword: token },
       relations: { roles: true },
     });
+  }
+
+  /**
+   * Runs the registered login extension chain for a user whose primary
+   * credential has already been proven.
+   *
+   * Every call site invokes this after that path's credential check has
+   * passed and before any token is minted, so the chain can only convert a
+   * successful login into a failure - never the other way round.
+   */
+  async runLoginExtensions(
+    user: User,
+    ctxt: Omit<ILoginExtensionContext, "attemptId" | "startedAt">,
+  ): Promise<void> {
+    const wrappers = this.solidRegistry.getLoginExtensionProviders();
+
+    // Guardrail: with no provider registered this is the entire cost of the
+    // feature - one array read. No log line, nothing observable in any login
+    // path. Do not "simplify" this early return away: it is what makes
+    // absence structurally different from a provider that errors.
+    if (wrappers.length === 0) return;
+
+    const context: ILoginExtensionContext = {
+      attemptId: randomUUID(),
+      startedAt: new Date(),
+      ...ctxt,
+    };
+
+    const providers = wrappers
+      .map((w) => w.instance as ILoginExtensionProvider)
+      .filter(Boolean)
+      .sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0));
+
+    for (const provider of providers) {
+      const providerName =
+        provider.name?.() ?? provider.constructor?.name ?? "unknown";
+      const timeoutMs = provider.timeoutMs ?? DEFAULT_LOGIN_EXTENSION_TIMEOUT_MS;
+      try {
+        // supports() is allowed to be async, so it gets the same deadline as
+        // verifyLogin. Without it a hanging predicate hangs the login, which
+        // is exactly what the timeout exists to prevent. The budget applies
+        // per call, so a provider's worst case is twice `timeoutMs`.
+        if (provider.supports) {
+          const supported = await this.withLoginExtensionTimeout(
+            Promise.resolve(provider.supports(user, context)),
+            timeoutMs,
+            providerName,
+          );
+          if (!supported) continue;
+        }
+
+        const result = await this.withLoginExtensionTimeout(
+          provider.verifyLogin(user, context),
+          timeoutMs,
+          providerName,
+        );
+
+        if (result?.allow === false) {
+          this.logger.warn(
+            `Login denied by ${providerName} for user ${user.id} ` +
+              `[attempt=${context.attemptId} channel=${context.channel}]: ` +
+              `${result.reason ?? "no reason given"}`,
+          );
+          throw new LoginExtensionDeniedException(
+            result.message ?? ERROR_MESSAGES.LOGIN_DENIED_BY_EXTENSION,
+          );
+        }
+      } catch (e: any) {
+        // Our own denial is a decision, not a malfunction, and is never
+        // fail-opened.
+        if (e instanceof LoginExtensionDeniedException) throw e;
+
+        const policy = provider.failurePolicy ?? "fail-closed";
+        this.logger.error(
+          `Login extension ${providerName} failed ` +
+            `[attempt=${context.attemptId} policy=${policy}]: ${e?.message}`,
+          e?.stack,
+        );
+        if (policy === "fail-open") continue;
+        throw new LoginExtensionUnavailableException(
+          ERROR_MESSAGES.LOGIN_EXTENSION_UNAVAILABLE,
+        );
+      }
+    }
+  }
+
+  /**
+   * A provider that ignores its own timeouts must not be able to hang login,
+   * so the deadline is enforced here rather than trusted to the provider.
+   */
+  private withLoginExtensionTimeout<T>(
+    work: Promise<T>,
+    ms: number,
+    providerName: string,
+  ): Promise<T> {
+    if (!(ms > 0)) return work;
+    let timer: NodeJS.Timeout;
+    return Promise.race([
+      work.finally(() => clearTimeout(timer)),
+      new Promise<never>((_, reject) => {
+        timer = setTimeout(
+          () =>
+            reject(
+              new Error(
+                `Login extension ${providerName} timed out after ${ms}ms`,
+              ),
+            ),
+          ms,
+        );
+      }),
+    ]);
   }
 
   private async validateUserForPasswordLogin(
@@ -1237,9 +1370,13 @@ export class AuthenticationService {
     if (!user) {
       throw new UnauthorizedException(ERROR_MESSAGES.INVALID_CREDENTIALS);
     }
-    await this.validateUserForPasswordLogin(user, signInDto.password);
+    await this.  validateUserForPasswordLogin(user, signInDto.password);
     await this.rehashPasswordIfRequired(user, signInDto.password);
     await this.resetFailedAttempts(user);
+
+    await this.runLoginExtensions(user, {
+      channel: LoginExtensionChannel.PASSWORD,
+    });
 
     const tokens = await this.generateTokens(user);
 
@@ -1550,6 +1687,9 @@ export class AuthenticationService {
       if (otp !== dummyOtp) {
         throw new UnauthorizedException(ERROR_MESSAGES.INVALID_OTP);
       }
+      await this.runLoginExtensions(user, {
+        channel: LoginExtensionChannel.OTP,
+      });
       return this.buildLoginTokenResponse(user);
     }
 
@@ -1561,8 +1701,14 @@ export class AuthenticationService {
     }
 
     await this.clearLoginOtp(user, type);
-    await this.userActivityHistoryService.logEvent("login", user);
+    // Reset before the chain runs, matching signIn: failedLoginAttempts counts
+    // attempts against the *credential*, and the OTP was correct. A denial from
+    // an external system is not a wrong OTP and must not leave the counter up.
     await this.resetFailedAttempts(user);
+    await this.runLoginExtensions(user, {
+      channel: LoginExtensionChannel.OTP,
+    });
+    await this.userActivityHistoryService.logEvent("login", user);
     return this.buildLoginTokenResponse(user);
   }
 
