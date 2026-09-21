@@ -263,24 +263,10 @@ export class AuthenticationService {
     for (const provider of providers) {
       const providerName =
         provider.name?.() ?? provider.constructor?.name ?? "unknown";
-      const timeoutMs = provider.timeoutMs ?? DEFAULT_LOGIN_EXTENSION_TIMEOUT_MS;
       try {
-        // supports() is allowed to be async, so it gets the same deadline as
-        // verifyLogin. Without it a hanging predicate hangs the login, which
-        // is exactly what the timeout exists to prevent. The budget applies
-        // per call, so a provider's worst case is twice `timeoutMs`.
-        if (provider.supports) {
-          const supported = await this.withLoginExtensionTimeout(
-            Promise.resolve(provider.supports(user, context)),
-            timeoutMs,
-            providerName,
-          );
-          if (!supported) continue;
-        }
-
         const result = await this.withLoginExtensionTimeout(
           provider.verifyLogin(user, context),
-          timeoutMs,
+          provider.timeoutMs ?? DEFAULT_LOGIN_EXTENSION_TIMEOUT_MS,
           providerName,
         );
 

@@ -360,9 +360,9 @@ export interface ILoginExtensionProvider<
   priority?: number;
 
   /**
-   * Deadline applied to `supports` and `verifyLogin` individually. Defaults to
-   * `DEFAULT_LOGIN_EXTENSION_TIMEOUT_MS` (5000), so a provider's worst case is
-   * twice this value. Exceeding it is treated as a failure, not a denial.
+   * Deadline for `verifyLogin`. Defaults to
+   * `DEFAULT_LOGIN_EXTENSION_TIMEOUT_MS` (5000). Exceeding it is treated as a
+   * failure, not a denial.
    */
   timeoutMs?: number;
 
@@ -374,12 +374,14 @@ export interface ILoginExtensionProvider<
    */
   failurePolicy?: LoginExtensionFailurePolicy;
 
-  /** Return false to skip this attempt entirely. Defaults to true. */
-  supports?(user: TUser, ctxt: TContext): boolean | Promise<boolean>;
-
   /**
    * Return `{ allow: false }` to deny. Throwing signals a malfunction and is
    * governed by the failure policy.
+   *
+   * This is the only entry point, so a provider that does not apply to a given
+   * user returns `{ allow: true }` early rather than being filtered out
+   * beforehand. That keeps every outbound call this provider makes under the
+   * one deadline above.
    */
   verifyLogin(user: TUser, ctxt: TContext): Promise<ILoginExtensionResult>;
 }
