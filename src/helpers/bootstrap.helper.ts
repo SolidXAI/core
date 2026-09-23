@@ -274,15 +274,19 @@ export async function bootstrapSolidCli(
     if (idx !== -1) process.argv.splice(idx, 1);
   }
 
-  const appModule = await appModuleFactory();
-  process.env.SOLID_CLI_RUNNING = 'true';
-
-  // @ts-ignore
-  const app = await CommandFactory.createWithoutRunning(appModule, {
-    logger: showLogs ? ['debug', 'error', 'fatal', 'log', 'verbose', 'warn'] : false,
-  });
-
   try {
+    const appModule = await appModuleFactory();
+    process.env.SOLID_CLI_RUNNING = 'true';
+
+    // @ts-ignore
+    const app = await CommandFactory.createWithoutRunning(appModule, {
+      // Keep normal CLI runs quiet, but never hide errors. Seeders and other CLI
+      // commands often catch domain/database errors and report them through the
+      // Nest logger; disabling the logger entirely would leave the wrapper with
+      // only the generic non-zero exit status.
+      logger: showLogs ? ['debug', 'error', 'fatal', 'log', 'verbose', 'warn'] : ['error', 'fatal'],
+    });
+
     await CommandFactory.runApplication(app);
   } catch (e) {
     console.error('CLI exited abruptly due to an error:', e);

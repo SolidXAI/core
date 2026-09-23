@@ -64,8 +64,7 @@ export class SeedCommand extends CommandRunner {
       .map((seeder) => seeder.instance)
       .pop();
     if (!seeder) {
-      this.logger.error(`Seeder service ${options.seeder} not found. Does your service have a seed() method?`);
-      return;
+      throw new Error(`Seeder service ${options.seeder} not found. Does your service have a seed() method?`);
     }
     this.logger.log(`Running the seed() method for seeder: ${seeder.constructor.name}`);
     await seeder.seed(parsedConf);
