@@ -8,6 +8,7 @@ interface SeedCommandOptions {
   modulesToSeed?: string;
   prune?: boolean;
   skipHooks?: boolean;
+  verbose?: boolean;
 }
 
 @Command({ name: 'seed', description: 'Install seed data for a given module' })
@@ -91,6 +92,11 @@ export class SeedCommand extends CommandRunner {
 
   @Option({ flags: '--skip-hooks', description: 'Skip emitting pre-seed and post-seed lifecycle hooks/events.' })
   parseSkipHooks(): boolean {
+    return true;
+  }
+
+  @Option({ flags: '-v, --verbose', description: 'Show detailed Nest/Winston logs during seeding.' })
+  parseVerbose(): boolean {
     return true;
   }
 }
