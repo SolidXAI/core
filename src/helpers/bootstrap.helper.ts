@@ -70,6 +70,18 @@ export interface SolidBootstrapOptions {
    * object graph can retain several times the raw byte size.
    */
   bodyLimit?: string;
+  /**
+   * When true, the original request bytes are captured onto `request.rawBody` (a `Buffer`)
+   * alongside the normal parsed `request.body`, for JSON and urlencoded requests. Needed to verify
+   * a webhook's HMAC signature (GitHub, GitLab, Stripe, ...): the signature is computed over the
+   * exact bytes the sender transmitted, and `JSON.stringify(request.body)` is not guaranteed to
+   * reproduce them byte-for-byte (key order, numeric formatting, unicode escaping can all differ).
+   *
+   * Defaults to false — capturing every request body a second time has a real memory cost at scale,
+   * and only a route that actually verifies a signature needs it. Opt in per application, not per
+   * route: NestJS wires this at `NestFactory.create()` time, before any route exists to opt out.
+   */
+  captureRawBody?: boolean;
 }
 
 /**
@@ -98,6 +110,7 @@ export async function bootstrapSolidApp(
     security = {},
     verboseBootstrap = false,
     bodyLimit = '10mb',
+    captureRawBody = false,
   } = options;
 
   const startTime = Date.now();
@@ -106,6 +119,12 @@ export async function bootstrapSolidApp(
     // Nest's default parsers are registered during init() with a 100kb limit, ahead of
     // any module middleware. Disable them so the parsers below own the limit outright.
     bodyParser: false,
+    // Raw-body capture is threaded through by NestApplication.useBodyParser() from THIS option —
+    // not from any argument passed to the useBodyParser() calls below. It must be requested here,
+    // at creation time, or request.rawBody is never populated no matter how useBodyParser is called
+    // later (verified against the installed @nestjs/core: NestApplication#useBodyParser reads
+    // `this.appOptions.rawBody` itself and ignores any rawBody-shaped argument a caller supplies).
+    rawBody: captureRawBody,
     logger: WinstonModule.createLogger({ ...createWinstonLoggerConfig(), level: verboseBootstrap ? 'debug' : 'error' }),
   });
 
