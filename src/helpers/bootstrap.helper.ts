@@ -20,6 +20,7 @@ import {
   SolidSecurityOptions,
 } from './security.helper';
 import { parseBooleanEnv } from './environment.helper';
+import { Environment } from 'src/decorators/disallow-in-production.decorator';
 
 // ---- Shared process handlers ----
 
@@ -52,8 +53,8 @@ export interface SolidSwaggerOptions {
 export interface SolidBootstrapOptions {
   /** Global API prefix. Defaults to 'api'. Set to '' to disable. */
   globalPrefix?: string;
-  /** Swagger configuration. Set to false to disable Swagger entirely. */
-  swagger?: SolidSwaggerOptions | false;
+  /** Swagger configuration. Set to true to enable everywhere or false to disable entirely. */
+  swagger?: SolidSwaggerOptions | boolean;
   /** Permissions-Policy header overrides (merged with defaults). */
   permissionsPolicyOverrides?: Partial<PermissionsPolicyConfig>;
   /** Security header overrides, including iframe frame-ancestor allowlists. */
@@ -93,7 +94,7 @@ export async function bootstrapSolidApp(
 
   const {
     globalPrefix = 'api',
-    swagger = {},
+    swagger,
     permissionsPolicyOverrides = {},
     security = {},
     verboseBootstrap = false,
@@ -179,9 +180,17 @@ export async function bootstrapSolidApp(
     }),
   );
 
-  // Swagger
-  if (swagger !== false) {
-    const { title = process.env.SOLID_APP_NAME, description = process.env.SOLID_APP_DESCRIPTION, version = '1.0' } = swagger;
+  const isProduction = [process.env.ENV,]
+    .filter(Boolean)
+    .some(
+      (value) =>
+        value?.toLowerCase() === Environment.Production 
+    );
+
+  const swaggerEnabled = swagger === undefined ? !isProduction : swagger !== false;
+  if (swaggerEnabled) {
+    const swaggerOptions = typeof swagger === 'object' ? swagger : {};
+    const { title = process.env.SOLID_APP_NAME, description = process.env.SOLID_APP_DESCRIPTION, version = '1.0' } = swaggerOptions;
     const swaggerConfig = new DocumentBuilder()
       .setTitle(title)
       .setDescription(description)
