@@ -180,6 +180,23 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         });
     }
 
+    private async loadFieldsHierarchy(model: ModelMetadata, updateDto: any): Promise<FieldMetadata[]> {
+        const fieldsToProcess = [...model.fields];
+        if (!model.isChild) {
+            return fieldsToProcess;
+        }
+
+        const modelMetadataHelperService = this.moduleRef.get(ModelMetadataHelperService, { strict: false });
+        const existingFieldIds = new Set(fieldsToProcess.map(field => field.id));
+        const hierarchyFields = await modelMetadataHelperService.loadFieldHierarchy(model.singularName);
+        const requestedInheritedFields = hierarchyFields.filter(field =>
+            !existingFieldIds.has(field.id) &&
+            field.name in updateDto
+        );
+
+        return [...fieldsToProcess, ...requestedInheritedFields];
+    }
+
     private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean, isPartialUpdate: boolean = false, isUpdate: boolean = false, entityId?: number) {
         const fieldManager: FieldCrudManager = await this.fieldCrudManager(field, this.entityManager, isPartialUpdate, isUpdate, entityId);
         const validationErrors = fieldManager.validate(dto, files);
@@ -250,7 +267,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         await this.prepareManyToManyAuditSnapshot(entity,id,model.singularName);
         let hasMediaFields = false;
 
-        const fieldsToProcess = [...model.fields];
+        const fieldsToProcess = await this.loadFieldsHierarchy(model, updateDto);
 
         // 2. Loop through the fields with a switch statement
         // 3. Handle the fields based on field type
