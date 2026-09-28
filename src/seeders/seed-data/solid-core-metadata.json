@@ -8000,6 +8000,7 @@
         "ViewMetadataController.findOne",
         "ActionMetadataController.findMany",
         "ActionMetadataController.findOne",
+        "UserViewMetadataController.create",
         "UserViewMetadataController.upsert",
         "UserViewMetadataController.findMany",
         "UserViewMetadataController.findOne",
@@ -13203,7 +13204,35 @@
           "edit": false,
           "delete": false,
           "groupBy": "stage",
-          "draggable": false
+          "draggable": false,
+          "enableCardSelection": true,
+          "headerButtons": [
+            {
+              "attrs": {
+                "label": "Quick filters",
+                "action": "MqMessageKanbanQuickFilterHeaderAction",
+                "icon": "si-filter",
+                "actionInContextMenu": false,
+                "openInPopup": true,
+                "closable": true,
+                "popupWidth": "480px",
+                "customComponentIsSystem": true
+              }
+            }
+          ],
+          "rowButtons": [
+            {
+              "attrs": {
+                "label": "View details",
+                "action": "MqMessageDetailsKanbanCardAction",
+                "icon": "si-eye",
+                "actionInContextMenu": true,
+                "openInPopup": true,
+                "closable": true,
+                "popupWidth": "720px"
+              }
+            }
+          ]
         },
         "children": [
           {
