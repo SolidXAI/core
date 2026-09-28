@@ -8000,7 +8000,7 @@
         "ViewMetadataController.findOne",
         "ActionMetadataController.findMany",
         "ActionMetadataController.findOne",
-        "UserViewMetadataController.Create",
+        "UserViewMetadataController.create",
         "UserViewMetadataController.upsert",
         "UserViewMetadataController.findMany",
         "UserViewMetadataController.findOne",
