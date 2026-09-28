@@ -110,10 +110,18 @@ export class DraftPublishHelperService {
         isPartialUpdate: boolean,
         model: ModelMetadata,
     ): Promise<T> {
+        // Many-to-many links are copied onto the new version with a single INSERT ... SELECT on
+        // the join table (see copyManyToManyLinks) rather than loaded as entities and re-saved
+        // through the relation: a relation with tens of thousands of links (e.g. banner target
+        // users) otherwise makes TypeORM's cascade diffing O(n²) and blocks the event loop.
         const relationNames = this.getVersionedRelationNames(model);
+        const manyToManyRelationNames = relationNames.filter(name =>
+            context.repo.metadata.findRelationWithPropertyPath(name)?.isManyToMany
+        );
+        const loadedRelationNames = relationNames.filter(name => !manyToManyRelationNames.includes(name));
         const sourceEntity = await context.repo.findOne({
             where: { id } as unknown as FindOptionsWhere<T>,
-            relations: relationNames as any,
+            relations: loadedRelationNames as any,
         });
 
         if (!sourceEntity) {
@@ -133,13 +141,19 @@ export class DraftPublishHelperService {
             hasMediaFields = transformed.hasMediaFields;
         }
 
-        const newVersionPayload = this.buildNewVersionPayload(context.repo, sourceEntity, relationNames);
+        const newVersionPayload = this.buildNewVersionPayload(context.repo, sourceEntity, loadedRelationNames);
+        const submittedFieldNames = new Set<string>();
 
         for (const field of model.fields) {
             if (this.wasFieldSubmitted(submittedDto, field) && Object.prototype.hasOwnProperty.call(transformedDto, field.name)) {
                 newVersionPayload[field.name] = transformedDto[field.name];
+                submittedFieldNames.add(field.name);
             }
         }
+
+        // A submitted many-to-many value is saved through the payload as before; only the
+        // untouched ones are carried over from the source version.
+        const manyToManyRelationNamesToCopy = manyToManyRelationNames.filter(name => !submittedFieldNames.has(name));
 
         const chainId = sourceEntity.initialEntityVersionId || sourceEntity.id;
         newVersionPayload.initialEntityVersionId = chainId;
@@ -164,6 +178,10 @@ export class DraftPublishHelperService {
             let persistedVersion = await transactionalRepo.save(newVersion) as unknown as T;
             persistedVersion.publishedTracker = this.createPublishedVersionTracker(persistedVersion.id);
             persistedVersion = await transactionalRepo.save(persistedVersion as any) as unknown as T;
+
+            for (const relationName of manyToManyRelationNamesToCopy) {
+                await this.copyManyToManyLinks(manager, context.repo, relationName, sourceEntity.id, persistedVersion.id);
+            }
 
             await this.cloneMediaForVersion(context, model, sourceEntity.id, persistedVersion, files, manager);
 
@@ -518,6 +536,39 @@ export class DraftPublishHelperService {
         }
 
         return newVersionPayload;
+    }
+
+    /**
+     * Duplicate every join-table row linking `sourceEntityId` through `relationName` so it links
+     * `targetEntityId` instead, entirely in the database. Handles both the owning and the inverse
+     * side of the relation, since the source entity's column sits on a different side of the
+     * junction for each.
+     */
+    private async copyManyToManyLinks<T extends CommonEntity>(
+        manager: EntityManager,
+        repo: SolidBaseRepository<T>,
+        relationName: string,
+        sourceEntityId: number,
+        targetEntityId: number,
+    ): Promise<void> {
+        const relation = repo.metadata.findRelationWithPropertyPath(relationName);
+        const junction = relation?.junctionEntityMetadata;
+        if (!relation || !junction) return;
+
+        const [entityColumns, relatedColumns] = relation.isOwning
+            ? [junction.ownerColumns, junction.inverseColumns]
+            : [junction.inverseColumns, junction.ownerColumns];
+        const driver = manager.connection.driver;
+        const table = junction.tablePath.split('.').map(part => driver.escape(part)).join('.');
+        const entityColumn = driver.escape(entityColumns[0].databaseName);
+        const relatedColumn = driver.escape(relatedColumns[0].databaseName);
+
+        await manager.query(
+            `INSERT INTO ${table} (${entityColumn}, ${relatedColumn}) ` +
+            `SELECT ${driver.createParameter('targetEntityId', 0)}, ${relatedColumn} FROM ${table} ` +
+            `WHERE ${entityColumn} = ${driver.createParameter('sourceEntityId', 1)}`,
+            [targetEntityId, sourceEntityId],
+        );
     }
 
     private async cloneMediaForVersion<T extends CommonEntity>(

@@ -458,7 +458,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.messageBodyMentions = postDto.messageBodyMentions;
         chatterMessage.coModelEntityId = postDto.coModelEntityId;
         chatterMessage.coModelName = coModelName;
-        chatterMessage.modelUserKey = postDto.modelUserKey ?? null;
+        chatterMessage.modelUserKey = this.toUserKeyString(postDto.modelUserKey);
         // Left unset otherwise, so the @CreateDateColumn default still applies.
         if (options.createdAt) {
             chatterMessage.createdAt = options.createdAt;
@@ -537,7 +537,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.coModelEntityId = entity.id;
         chatterMessage.coModelName = model?.singularName;
         chatterMessage.modelDisplayName = model?.displayName;
-        chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
+        chatterMessage.modelUserKey = this.toUserKeyString(entity[model?.userKeyField?.name]);
         chatterMessage.messageBody = `New ${model?.displayName} created`;
         this.stampMessageAuditFields(chatterMessage, userId);
 
@@ -649,7 +649,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.coModelEntityId = entity?.id;
         chatterMessage.coModelName = model?.singularName;
         chatterMessage.modelDisplayName = model.displayName;
-        chatterMessage.modelUserKey = entity[model?.userKeyField?.name];
+        chatterMessage.modelUserKey = this.toUserKeyString(entity[model?.userKeyField?.name]);
         chatterMessage.messageBody = `${model?.displayName} updated`;
         this.stampMessageAuditFields(chatterMessage, userId);
 
@@ -707,7 +707,7 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
         chatterMessage.coModelEntityId = databaseEntity?.id;
         chatterMessage.coModelName = model?.singularName;
         chatterMessage.modelDisplayName = model?.displayName;
-        chatterMessage.modelUserKey = databaseEntity[model?.userKeyField?.name];
+        chatterMessage.modelUserKey = this.toUserKeyString(databaseEntity[model?.userKeyField?.name]);
         chatterMessage.messageBody = `${model?.displayName} deleted`;
 
         this.stampMessageAuditFields(chatterMessage, userId);
@@ -1145,5 +1145,11 @@ export class ChatterMessageService extends CRUDService<ChatterMessage> {
             },
             records: entities
         };
+    }
+
+    // model_user_key is a varchar column, but a model's user key field can be numeric (e.g. an int `id`).
+    // Drivers like mssql reject non-string values for string parameters, so always persist it as a string.
+    private toUserKeyString(value: unknown): string | null {
+        return value === null || value === undefined ? null : String(value);
     }
 }
