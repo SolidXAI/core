@@ -314,7 +314,9 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
                     (auditBeforeEntity as any)[field.name] = await this.repo.manager
                         .createQueryBuilder()
                         .relation(this.repo.target, field.name)
-                        .of(id)
+                        // Pass the loaded entity, not the scalar id: legacy entities (e.g. LegacyCommonEntityWithGeneratedId)
+                        // keep `id` as a non-primary column, and TypeORM maps a scalar to the actual primary column.
+                        .of(auditBeforeEntity)
                         .loadMany();
                 }
                 Object.defineProperty(entity, AUDIT_BEFORE_SNAPSHOT, {

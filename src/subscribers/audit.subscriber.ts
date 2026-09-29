@@ -113,7 +113,8 @@ export class AuditSubscriber implements EntitySubscriberInterface {
                 (relationAfter as any)[field.name] = await event.queryRunner.manager
                     .createQueryBuilder()
                     .relation(event.metadata.target as any, field.name)
-                    .of(entityId)
+                    // Entity, not scalar id — see CRUDService.prepareManyToManyAuditSnapshot.
+                    .of(relationAfter)
                     .loadMany();
             }
         }

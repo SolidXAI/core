@@ -110,10 +110,16 @@ export class DraftPublishHelperService {
         isPartialUpdate: boolean,
         model: ModelMetadata,
     ): Promise<T> {
-        const relationNames = this.getVersionedRelationNames(model);
+        // Many-to-many relations are not loaded: re-saving thousands of links through TypeORM is
+        // O(n²) and blocks the API. They are copied in SQL instead (copyManyToManyLinksToNewVersion).
+        const allRelations = this.getVersionedRelationNames(model);
+        const manyToManyRelations = allRelations.filter(name =>
+            context.repo.metadata.findRelationWithPropertyPath(name)?.isManyToMany
+        );
+        const relationsToLoad = allRelations.filter(name => !manyToManyRelations.includes(name));
         const sourceEntity = await context.repo.findOne({
             where: { id } as unknown as FindOptionsWhere<T>,
-            relations: relationNames as any,
+            relations: relationsToLoad as any,
         });
 
         if (!sourceEntity) {
@@ -133,13 +139,18 @@ export class DraftPublishHelperService {
             hasMediaFields = transformed.hasMediaFields;
         }
 
-        const newVersionPayload = this.buildNewVersionPayload(context.repo, sourceEntity, relationNames);
+        const newVersionPayload = this.buildNewVersionPayload(context.repo, sourceEntity, relationsToLoad);
+        const fieldsSentInRequest = new Set<string>();
 
         for (const field of model.fields) {
             if (this.wasFieldSubmitted(submittedDto, field) && Object.prototype.hasOwnProperty.call(transformedDto, field.name)) {
                 newVersionPayload[field.name] = transformedDto[field.name];
+                fieldsSentInRequest.add(field.name);
             }
         }
+
+        // Relations sent in the request are saved from the payload; only the untouched ones are copied.
+        const manyToManyRelationsToCopy = manyToManyRelations.filter(name => !fieldsSentInRequest.has(name));
 
         const chainId = sourceEntity.initialEntityVersionId || sourceEntity.id;
         newVersionPayload.initialEntityVersionId = chainId;
@@ -164,6 +175,11 @@ export class DraftPublishHelperService {
             let persistedVersion = await transactionalRepo.save(newVersion) as unknown as T;
             persistedVersion.publishedTracker = this.createPublishedVersionTracker(persistedVersion.id);
             persistedVersion = await transactionalRepo.save(persistedVersion as any) as unknown as T;
+
+            // Same transaction, so a failure rolls back the new version and its links together.
+            for (const relationName of manyToManyRelationsToCopy) {
+                await this.copyManyToManyLinksToNewVersion(manager, context.repo, relationName, sourceEntity.id, persistedVersion.id);
+            }
 
             await this.cloneMediaForVersion(context, model, sourceEntity.id, persistedVersion, files, manager);
 
@@ -518,6 +534,42 @@ export class DraftPublishHelperService {
         }
 
         return newVersionPayload;
+    }
+
+    /**
+     * Copies the join-table rows of the published version onto the new version in one SQL
+     * statement, e.g.:
+     *   INSERT INTO "join_table" ("falcon_banner_id", "falcon_banner_user_id")
+     *   SELECT 48, "falcon_banner_user_id" FROM "join_table" WHERE "falcon_banner_id" = 47
+     * Postgres only, as draft-publish is Postgres-only for now.
+     */
+    private async copyManyToManyLinksToNewVersion<T extends CommonEntity>(
+        manager: EntityManager,
+        repo: SolidBaseRepository<T>,
+        relationName: string,
+        publishedVersionId: number,
+        newVersionId: number,
+    ): Promise<void> {
+        const relation = repo.metadata.findRelationWithPropertyPath(relationName);
+        const joinTable = relation?.junctionEntityMetadata;
+        if (!relation || !joinTable) return;
+
+        // On the owning side (@JoinTable) this record's id is in ownerColumns; on the inverse side it's reversed.
+        const [thisRecordColumns, linkedRecordColumns] = relation.isOwning
+            ? [joinTable.ownerColumns, joinTable.inverseColumns]
+            : [joinTable.inverseColumns, joinTable.ownerColumns];
+
+        // tablePath may be "schema.table", so quote each part. [0]: Solid entities have a single-column id.
+        const joinTableName = joinTable.tablePath.split('.').map(part => `"${part}"`).join('.');
+        const thisRecordColumn = `"${thisRecordColumns[0].databaseName}"`;
+        const linkedRecordColumn = `"${linkedRecordColumns[0].databaseName}"`;
+
+        await manager.query(
+            `INSERT INTO ${joinTableName} (${thisRecordColumn}, ${linkedRecordColumn}) ` +
+            `SELECT $1, ${linkedRecordColumn} FROM ${joinTableName} ` +
+            `WHERE ${thisRecordColumn} = $2`,
+            [newVersionId, publishedVersionId],
+        );
     }
 
     private async cloneMediaForVersion<T extends CommonEntity>(
