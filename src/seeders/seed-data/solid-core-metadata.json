@@ -5216,6 +5216,28 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "attachments",
+            "displayName": "Attachments",
+            "description": "Files the user attached to a UserMessage event in the SolidX Agent chat.",
+            "type": "mediaMultiple",
+            "ormType": "varchar",
+            "isSystem": true,
+            "mediaTypes": [
+              "image",
+              "file"
+            ],
+            "mediaMaxSizeKb": 5120,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "mediaStorageProviderUserKey": "default-filesystem"
           }
         ]
       },
@@ -8039,6 +8061,7 @@
         "AgentSessionController.findOne",
         "AgentEventController.findMany",
         "AgentEventController.findOne",
+        "AgentEventController.uploadAttachments",
         "McpAuditLogController.findMany",
         "McpAuditLogController.findOne",
         "DashboardController.getDefinition",

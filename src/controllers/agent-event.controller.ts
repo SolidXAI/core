@@ -4,6 +4,8 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { CreateAgentEventDto } from 'src/dtos/create-agent-event.dto';
 import { UpdateAgentEventDto } from 'src/dtos/update-agent-event.dto';
 import { AgentEventService } from 'src/services/agent-event.service';
+import { ActiveUser } from 'src/decorators/active-user.decorator';
+import { ActiveUserData } from 'src/interfaces/active-user-data.interface';
 
 @ApiTags('Solid Core')
 @Controller('agent-event')
@@ -15,6 +17,19 @@ export class AgentEventController {
   @UseInterceptors(AnyFilesInterceptor())
   create(@Body() createDto: CreateAgentEventDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.create(createDto, files);
+  }
+
+  /**
+   * Stores files the user attached to a SolidX Agent chat message on that `UserMessage` event
+   * (media field `attachments`, via its configured media storage provider). Called by the agent
+   * with the user's own token right after it records the event; only the session's owner (or an
+   * Admin) may attach. Returns the event with its attachment media.
+   */
+  @ApiBearerAuth('jwt')
+  @Post(':id/attachments')
+  @UseInterceptors(AnyFilesInterceptor())
+  uploadAttachments(@Param('id') id: number, @UploadedFiles() files: Array<Express.Multer.File>, @ActiveUser() activeUser: ActiveUserData) {
+    return this.service.uploadAttachments(+id, files, activeUser);
   }
 
   @ApiBearerAuth('jwt')
