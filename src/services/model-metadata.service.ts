@@ -3,6 +3,7 @@ import { InjectDataSource } from '@nestjs/typeorm';
 import * as fs from 'fs/promises'; // Use the Promise-based version of fs for async/await
 import { existsSync } from 'fs';
 import * as path from 'path';
+import { createHash } from 'crypto';
 import { DataSource, EntityManager, In, Repository, SelectQueryBuilder } from 'typeorm';
 import { CreateModelMetadataDto } from '../dtos/create-model-metadata.dto';
 import { ModelMetadata } from '../entities/model-metadata.entity';
@@ -27,6 +28,9 @@ import { UserViewMetadata } from '../entities/user-view-metadata.entity';
 import { PermissionMetadata } from '../entities/permission-metadata.entity';
 import { RoleMetadata } from '../entities/role-metadata.entity';
 import { ViewMetadata } from '../entities/view-metadata.entity';
+import { DashboardUserLayout } from '../entities/dashboard-user-layout.entity';
+import { SecurityRule } from '../entities/security-rule.entity';
+import { SavedFilters } from '../entities/saved-filters.entity';
 import { CommandService } from '../helpers/command.service';
 import {
   REFRESH_MODEL_COMMAND,
@@ -533,46 +537,182 @@ export class ModelMetadataService {
     }
   }
 
-  async removeBySingularName(singularName: string) {
-    try {
-      const entity = await this.findOneBySingularName(singularName);
-      await this.cleanupOnDelete(entity.id);
-      const r = await this.modelMetadataRepo.remove(entity);
-      return r;
-    } catch (error: any) {
-    }
-  }
-
-  async deleteMany(ids: number[]): Promise<any> {
-    if (!ids || ids.length === 0) {
-      throw new Error(ERROR_MESSAGES.DELETE_IDS_REQUIRED);
-    }
-    const removedEntities = [];
-    for (let i = 0; i < ids.length; i++) {
-      const id = ids[i]
-      const entity = await this.modelMetadataRepo.findOne({
-        where: {
-          //@ts-ignore
-          id: id,
-        }
-      });
-      // if (!entity) {
-      //   throw new Error(`Entity with id ${ id } not found`);
-      // }
-      await this.cleanupOnDelete(entity.id);
-      const r = await this.modelMetadataRepo.remove(entity);
-      removedEntities.push(r);
-    }
-
-    return removedEntities
+  async previewDelete(id: number) {
+    const model = await this.modelMetadataRepo.findOne({ where: { id }, relations: ['module', 'fields'] });
+    if (!model) throw new NotFoundException(ERROR_MESSAGES.ENTITY_NOT_FOUND(`#${id}`));
+    const plan = await this.buildDeletePlan(model);
+    const planHash = createHash('sha256').update(JSON.stringify(plan.fingerprint)).digest('hex');
+    return { model: { id: model.id, singularName: model.singularName, displayName: model.displayName }, planHash, changes: plan.changes };
   }
 
   @DisallowInProduction()
-  async remove(id: number) {
-    const entity = await this.findOne(id);
-    await this.cleanupOnDelete(entity.id);
-    const r = await this.modelMetadataRepo.remove(entity);
-    return r
+  async applyDelete(id: number, expectedPlanHash: string) {
+    if (!expectedPlanHash) throw new BadRequestException('A confirmed delete preview is required.');
+    const model = await this.modelMetadataRepo.findOne({ where: { id }, relations: ['module', 'fields'] });
+    if (!model) throw new NotFoundException(ERROR_MESSAGES.ENTITY_NOT_FOUND(`#${id}`));
+    const currentPlan = await this.buildDeletePlan(model);
+    const currentHash = createHash('sha256').update(JSON.stringify(currentPlan.fingerprint)).digest('hex');
+    if (currentHash !== expectedPlanHash) {
+      throw new BadRequestException({ message: 'The delete inventory changed. Review the refreshed preview before applying.', preview: { model: { id: model.id, singularName: model.singularName, displayName: model.displayName }, planHash: currentHash, changes: currentPlan.changes } });
+    }
+    await this.cleanupOnDelete(model.id);
+    return this.modelMetadataRepo.remove(model);
+  }
+
+  private async buildDeletePlan(model: ModelMetadata) {
+    const viewRepo = this.dataSource.getRepository(ViewMetadata);
+    const views = await viewRepo.find({ where: { model: { id: model.id } } });
+    const viewIds = views.map(view => view.id);
+    const userViews = viewIds.length ? await this.dataSource.getRepository(UserViewMetadata).find({ where: { viewMetadata: { id: In(viewIds) } }, relations: ['user', 'viewMetadata'] }) : [];
+    const actionRepo = this.dataSource.getRepository(ActionMetadata);
+    const actions = await actionRepo.find({ where: [{ model: { id: model.id } }, ...(viewIds.length ? [{ view: { id: In(viewIds) } }] : [])] });
+    const actionIds = actions.map(action => action.id);
+    const menus = await this.findMenusForActionIds(actionIds);
+    const transactionRepo = this.dataSource.getRepository(ImportTransaction);
+    const transactions = await transactionRepo.find({ where: { modelMetadata: { id: model.id } } });
+    const importErrorLogs = transactions.length ? await this.dataSource.getRepository(ImportTransactionErrorLog).find({ where: { importTransaction: { id: In(transactions.map(row => row.id)) } }, select: ['id'] }) : [];
+    const errorLogs = importErrorLogs.length;
+    const permissions = await this.dataSource.getRepository(PermissionMetadata).createQueryBuilder('permission').leftJoinAndSelect('permission.roles', 'role').where('permission.name LIKE :pattern', { pattern: `${classify(model.singularName)}Controller.%` }).getMany();
+    const securityRules = await this.dataSource.getRepository(SecurityRule).find({ where: { modelMetadata: { id: model.id } }, relations: ['role'] });
+    const savedFilters = await this.dataSource.getRepository(SavedFilters).find({ where: [{ model: { id: model.id } }, ...(viewIds.length ? [{ view: { id: In(viewIds) } }] : [])] });
+    const relatedFields = await this.dataSource.getRepository(FieldMetadata).find({ where: { relationCoModelSingularName: model.singularName }, relations: ['model', 'model.module'] });
+    const childModels = await this.modelMetadataRepo.find({ where: { parentModel: { id: model.id } } });
+    const metadataPath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(model.module?.name);
+    const metadata = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(metadataPath);
+    const root = metadata?.moduleMetadata ?? metadata;
+    const sections = metadata && ['views', 'actions', 'menus', 'dashboards', 'securityRules', 'savedFilters', 'permissions', 'roles'].some(key => Array.isArray(metadata[key])) ? metadata : root;
+    const dashboardNames = (sections?.dashboards ?? []).filter((entry: any) => this.metadataReferencesModel(entry, model.singularName)).map((entry: any) => entry.name).filter(Boolean);
+    const layouts = dashboardNames.length && model.module?.id
+      ? await this.dataSource.getRepository(DashboardUserLayout).find({ where: { module: { id: model.module.id }, dashboardName: In(dashboardNames) }, relations: ['user'] })
+      : [];
+    const modulePath = await this.moduleMetadataHelperService.getModulePath(model.module?.name);
+    const generatedFiles = modulePath ? [
+      `${modulePath}/entities/${kebabCase(model.singularName)}.entity.ts`,
+      `${modulePath}/dtos/create-${kebabCase(model.singularName)}.dto.ts`,
+      `${modulePath}/dtos/update-${kebabCase(model.singularName)}.dto.ts`,
+      `${modulePath}/repositories/${kebabCase(model.singularName)}.repository.ts`,
+      `${modulePath}/services/${kebabCase(model.singularName)}.service.ts`,
+      `${modulePath}/controllers/${kebabCase(model.singularName)}.controller.ts`,
+    ].filter(file => existsSync(file)) : [];
+    const relatedSourceFiles: string[] = [];
+    const relatedMetadataFiles: string[] = [];
+    const apiRoot = this.resolveSolidApiRoot();
+    const modelKebab = kebabCase(model.singularName);
+    if (apiRoot) {
+      const scan = async (directory: string): Promise<void> => {
+        const entries = await fs.readdir(directory, { withFileTypes: true }).catch(() => []);
+        for (const entry of entries) {
+          if (entry.isDirectory()) {
+            if (!['node_modules', 'dist', 'coverage', '.git'].includes(entry.name)) await scan(path.join(directory, entry.name));
+          } else if (entry.isFile() && /\.tsx?$/.test(entry.name)) {
+            const file = path.join(directory, entry.name);
+            const content = await fs.readFile(file, 'utf8').catch(() => '');
+            if (content.includes(`/${modelKebab}.entity`) || content.includes(`/create-${modelKebab}.dto`) || content.includes(`/update-${modelKebab}.dto`)) relatedSourceFiles.push(file);
+          } else if (entry.isFile() && /-metadata\.json$/.test(entry.name)) {
+            const file = path.join(directory, entry.name);
+            const content = await fs.readFile(file, 'utf8').catch(() => '');
+            try {
+              const parsed = JSON.parse(content);
+              const relatedNames = [...views, ...actions, ...menus].map(item => item.name).filter(Boolean);
+              if (this.metadataReferencesModel(parsed, model.singularName) || content.includes(`${classify(model.singularName)}Controller.`) || relatedNames.some(name => content.includes(`"${name}"`))) relatedMetadataFiles.push(file);
+            } catch {
+              // Invalid metadata is omitted from the preview and will be logged by the cleanup helper.
+            }
+          }
+        }
+      };
+      await scan(path.join(apiRoot, 'src'));
+    }
+    for (const field of relatedFields) {
+      if (!field.model) continue;
+      const ownerModulePath = await this.moduleMetadataHelperService.getModulePath(field.model.module?.name);
+      const ownerKebab = kebabCase(field.model.singularName);
+      for (const file of [path.join(ownerModulePath, 'entities', `${ownerKebab}.entity.ts`), path.join(ownerModulePath, 'dtos', `create-${ownerKebab}.dto.ts`), path.join(ownerModulePath, 'dtos', `update-${ownerKebab}.dto.ts`)]) {
+        if (existsSync(file) && !relatedSourceFiles.includes(file)) relatedSourceFiles.push(file);
+      }
+    }
+    const changes = [
+      { category: 'Generated code', description: 'Delete generated model entity, DTO, repository, service, and controller files.', count: generatedFiles.length, items: generatedFiles },
+      { category: 'Metadata database', description: 'Delete model and cascading field metadata.', count: 1 + (model.fields?.length ?? 0), items: [`${model.singularName} (${model.fields?.length ?? 0} fields)`] },
+      { category: 'Views, actions, menus', description: 'Delete associated user views, views, actions, and menus including role links.', count: views.length + userViews.length + actions.length + menus.length, items: [...views.map(v => `view: ${v.name}`), ...userViews.map(v => `user view: ${v.viewMetadata?.name ?? v.id} (user ${v.user?.id ?? 'unknown'})`), ...actions.map(a => `action: ${a.name}`), ...menus.map(m => `menu: ${m.name} (roles: ${(m.roles ?? []).map(role => role.name).join(', ') || 'none'})`)] },
+      { category: 'Imports', description: 'Delete import transactions and their error logs.', count: transactions.length + errorLogs, items: [`${transactions.length} transactions`, `${errorLogs} error logs`] },
+      { category: 'Permissions and security', description: 'Delete model permissions and their role links, plus model security rules.', count: permissions.length + securityRules.length, items: [...permissions.map(p => `permission: ${p.name} (roles: ${(p.roles ?? []).map(role => role.name).join(', ') || 'none'})`), ...securityRules.map(r => `security rule: ${r.name} (role: ${r.role?.name ?? 'unknown'})`)] },
+      { category: 'Saved filters', description: 'Delete filters scoped to this model or its views.', count: savedFilters.length, items: savedFilters.map(f => f.name) },
+      { category: 'Dashboards', description: 'Delete model-referencing dashboard definitions and saved user layouts.', count: dashboardNames.length + layouts.length, items: [...dashboardNames.map(name => `dashboard: ${name}`), ...layouts.map(layout => `layout: ${layout.dashboardName} (user ${layout.user?.id ?? 'unknown'})`)] },
+      { category: 'TypeScript references', description: 'Remove generated registrations and model references in app/database modules, DTOs, and related entity properties.', count: relatedSourceFiles.length, items: relatedSourceFiles },
+      { category: 'Related model metadata', description: 'Remove relation fields and parent-model links that point at this model.', count: relatedFields.length + childModels.length + relatedMetadataFiles.length, items: [...relatedFields.map(field => `${field.model?.singularName ?? 'model'}.${field.name}`), ...childModels.map(child => `${child.singularName}.parentModel`), ...relatedMetadataFiles] },
+      { category: 'Manual follow-up', description: 'Drop the model data table manually after reviewing its relations. This API will not drop the table.', count: 1, items: [`${model.tableName ?? model.singularName} database table`] },
+    ];
+    const fileFingerprints = await Promise.all(relatedSourceFiles.map(async file => [file, createHash('sha256').update(await fs.readFile(file)).digest('hex')]));
+    const metadataFileFingerprints = await Promise.all(relatedMetadataFiles.map(async file => [file, createHash('sha256').update(await fs.readFile(file)).digest('hex')]));
+    const fingerprint = { modelId: model.id, modelName: model.singularName, fieldIds: model.fields?.map(field => field.id), metadataPath, metadataContent: metadata ? JSON.stringify(metadata) : null, views: views.map(v => ({ id: v.id, name: v.name })), userViews: userViews.map(v => ({ id: v.id, userId: v.user?.id, viewId: v.viewMetadata?.id })), actions: actions.map(a => ({ id: a.id, name: a.name })), menus: menus.map(m => ({ id: m.id, name: m.name, roleIds: (m.roles ?? []).map(role => role.id).sort() })), transactions: transactions.map(t => t.id), errorLogs: importErrorLogs.map(log => log.id), permissions: permissions.map(p => ({ id: p.id, name: p.name, roleIds: (p.roles ?? []).map(role => role.id).sort() })), securityRules: securityRules.map(r => ({ id: r.id, name: r.name, roleId: r.role?.id })), savedFilters: savedFilters.map(f => ({ id: f.id, name: f.name })), dashboards: dashboardNames, layouts: layouts.map(l => ({ id: l.id, dashboardName: l.dashboardName })), relatedFields: relatedFields.map(field => ({ id: field.id, name: field.name, modelId: field.model?.id })), childModels: childModels.map(child => ({ id: child.id, name: child.singularName })), files: generatedFiles, relatedSourceFiles: fileFingerprints, relatedMetadataFiles: metadataFileFingerprints };
+    return { changes, fingerprint };
+  }
+
+  private metadataReferencesModel(value: any, singularName: string): boolean {
+    if (Array.isArray(value)) return value.some(item => this.metadataReferencesModel(item, singularName));
+    if (!value || typeof value !== 'object') return false;
+    return Object.entries(value).some(([key, child]) =>
+      (['modelUserKey', 'modelMetadataUserKey', 'model', 'modelName', 'entityName', 'singularName', 'relationCoModelSingularName', 'parentModelUserKey'].includes(key) && child === singularName) || this.metadataReferencesModel(child, singularName));
+  }
+
+  private async cleanupOtherModuleMetadataFiles(
+    currentFile: string,
+    model: ModelMetadata,
+    removedActionNames: Set<string>,
+    removedMenuNames: Set<string>,
+    removedViewNames: Set<string>,
+  ) {
+    const apiRoot = this.resolveSolidApiRoot();
+    if (!apiRoot) return;
+    const metadataFiles: string[] = [];
+    const scan = async (directory: string): Promise<void> => {
+      const entries = await fs.readdir(directory, { withFileTypes: true }).catch(() => []);
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          if (!['node_modules', 'dist', 'coverage', '.git'].includes(entry.name)) await scan(path.join(directory, entry.name));
+        } else if (entry.isFile() && /-metadata\.json$/.test(entry.name)) metadataFiles.push(path.join(directory, entry.name));
+      }
+    };
+    await scan(path.join(apiRoot, 'src'));
+    for (const file of metadataFiles) {
+      if (path.resolve(file) === path.resolve(currentFile)) continue;
+      const metadata = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(file);
+      if (!metadata) continue;
+      const moduleMetadata = metadata?.moduleMetadata ?? metadata;
+      const sections = ['views', 'actions', 'menus', 'dashboards', 'securityRules', 'savedFilters', 'permissions', 'roles'].some(key => Array.isArray(metadata[key])) ? metadata : moduleMetadata;
+      const before = JSON.stringify(metadata);
+      if (Array.isArray(moduleMetadata?.models)) {
+        moduleMetadata.models = moduleMetadata.models.filter((entry: any) => entry?.singularName !== model.singularName);
+        for (const entry of moduleMetadata.models) {
+          if (entry?.parentModelUserKey === model.singularName) entry.parentModelUserKey = null;
+          if (entry?.parentModel === model.singularName) entry.parentModel = null;
+          if (Array.isArray(entry?.fields)) entry.fields = entry.fields.filter((field: any) => field?.relationCoModelSingularName !== model.singularName);
+        }
+      }
+      const views = Array.isArray(sections?.views) ? sections.views : null;
+      if (views) sections.views = views.filter((view: any) => view?.modelUserKey !== model.singularName && !removedViewNames.has(view?.name));
+      const actions = Array.isArray(sections?.actions) ? sections.actions : null;
+      if (actions) sections.actions = actions.filter((action: any) => action?.modelUserKey !== model.singularName && !removedActionNames.has(action?.name) && !removedViewNames.has(action?.viewUserKey));
+      let menus = Array.isArray(sections?.menus) ? [...sections.menus] : null;
+      let changed = true;
+      while (menus && changed) {
+        changed = false;
+        menus = menus.filter((menu: any) => {
+          const remove = menu?.modelUserKey === model.singularName || removedMenuNames.has(menu?.name) || removedActionNames.has(menu?.actionUserKey) || removedMenuNames.has(menu?.parentMenuItemUserKey);
+          if (remove) { changed = true; return false; }
+          return true;
+        });
+      }
+      if (menus) sections.menus = menus;
+      if (Array.isArray(sections?.dashboards)) sections.dashboards = sections.dashboards.filter((dashboard: any) => !this.metadataReferencesModel(dashboard, model.singularName));
+      if (Array.isArray(sections?.securityRules)) sections.securityRules = sections.securityRules.filter((rule: any) => rule?.modelMetadataUserKey !== model.singularName && rule?.modelUserKey !== model.singularName);
+      if (Array.isArray(sections?.savedFilters)) sections.savedFilters = sections.savedFilters.filter((filter: any) => filter?.modelUserKey !== model.singularName && !removedViewNames.has(filter?.viewUserKey));
+      const prefix = `${classify(model.singularName)}Controller.`;
+      if (Array.isArray(sections?.permissions)) sections.permissions = sections.permissions.filter((permission: any) => typeof permission !== 'string' ? typeof permission?.name !== 'string' || !permission.name.startsWith(prefix) : !permission.startsWith(prefix));
+      if (Array.isArray(sections.roles)) sections.roles = sections.roles.map((role: any) => Array.isArray(role?.permissions) ? { ...role, permissions: role.permissions.filter((permission: string) => !permission.startsWith(prefix)) } : role);
+      if (JSON.stringify(metadata) !== before) await fs.writeFile(file, JSON.stringify(metadata, null, 2));
+    }
   }
 
   async cleanupOnDelete(modelEntityId: number) {
@@ -646,23 +786,27 @@ export class ModelMetadataService {
       }
     }
 
+    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.module?.name);
+    const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
+    const rootMetadata = metaData?.moduleMetadata ?? metaData;
+    const metadataSections = metaData && ['views', 'actions', 'menus', 'dashboards', 'securityRules', 'savedFilters', 'permissions', 'roles'].some(key => Array.isArray(metaData[key])) ? metaData : rootMetadata;
+    const dashboardsForModel = (metadataSections?.dashboards ?? []).filter((item: any) => this.metadataReferencesModel(item, modelEntity.singularName));
+    const removedDashboardNames = new Set<string>(dashboardsForModel.map((item: any) => item?.name).filter(Boolean));
+    const existingViewIds = (await this.dataSource.getRepository(ViewMetadata).find({ where: { model: { id: modelEntity.id } }, select: ['id'] })).map(view => view.id);
+    const removedRelatedFields = await this.cleanupAssociatedModelScopedRecords(modelEntity, removedDashboardNames, existingViewIds);
+
     const { removedActionNames, removedMenuNames, removedViewNames } = await this.cleanupAssociatedViewsActionsAndMenus(modelEntity.id);
     await this.cleanupAssociatedImports(modelEntity.id);
     await this.cleanupAssociatedPermissions(modelEntity.singularName);
     await this.clearModelReferencesBeforeDelete(modelEntity);
 
-    // <moduleName>-metadata.json | Remove references to this model in the model metadata, menu, action & view sections. | Automatic
-    const filePath = await this.moduleMetadataHelperService.getModuleMetadataFilePath(modelEntity.module?.name);
-    const metaData = await this.moduleMetadataHelperService.getModuleMetadataConfiguration(filePath);
+    // <moduleName>-metadata.json | Remove references to this model in model, menu, action, view and related sections.
+    const removedActionNameSet = new Set(removedActionNames);
+    const removedMenuNameSet = new Set(removedMenuNames);
+    const removedViewNameSet = new Set(removedViewNames);
     if (metaData) {
       const moduleMetadata = metaData?.moduleMetadata ?? metaData;
-      const vamMetadata =
-        Array.isArray(metaData?.views) || Array.isArray(metaData?.actions) || Array.isArray(metaData?.menus)
-          ? metaData
-          : moduleMetadata;
-      const removedActionNameSet = new Set(removedActionNames);
-      const removedMenuNameSet = new Set(removedMenuNames);
-      const removedViewNameSet = new Set(removedViewNames);
+      const vamMetadata = metadataSections;
 
       const existingModels = Array.isArray(moduleMetadata?.models) ? moduleMetadata.models : [];
       const existingModelIndex = existingModels.findIndex(
@@ -672,6 +816,13 @@ export class ModelMetadataService {
       // Remove the model to be deleted from the metadata
       if (existingModelIndex !== -1) {
         existingModels.splice(existingModelIndex, 1);
+      }
+      for (const existingModel of existingModels) {
+        if (existingModel?.parentModelUserKey === modelEntity.singularName) existingModel.parentModelUserKey = null;
+        if (existingModel?.parentModel === modelEntity.singularName) existingModel.parentModel = null;
+        if (Array.isArray(existingModel?.fields)) {
+          existingModel.fields = existingModel.fields.filter((field: any) => field?.relationCoModelSingularName !== modelEntity.singularName);
+        }
       }
 
       // Remove references to this model in the menu, action & view sections.
@@ -721,9 +872,21 @@ export class ModelMetadataService {
       }
       vamMetadata.menus = pendingMenus;
 
+      // These metadata sections are module-scoped, so remove only entries that reference this model.
+      const dashboards = Array.isArray(vamMetadata?.dashboards) ? vamMetadata.dashboards : [];
+      vamMetadata.dashboards = dashboards.filter((item: any) => !this.metadataReferencesModel(item, modelEntity.singularName));
+      vamMetadata.securityRules = (Array.isArray(vamMetadata?.securityRules) ? vamMetadata.securityRules : []).filter((item: any) => item?.modelMetadataUserKey !== modelEntity.singularName && item?.modelUserKey !== modelEntity.singularName);
+      vamMetadata.savedFilters = (Array.isArray(vamMetadata?.savedFilters) ? vamMetadata.savedFilters : []).filter((item: any) => item?.modelUserKey !== modelEntity.singularName && !removedViewNameSet.has(item?.viewUserKey));
+      const controllerPrefix = `${classify(modelEntity.singularName)}Controller.`;
+      vamMetadata.permissions = (Array.isArray(vamMetadata?.permissions) ? vamMetadata.permissions : []).filter((item: any) => typeof item !== 'string' ? typeof item?.name !== 'string' || !item.name.startsWith(controllerPrefix) : !item.startsWith(controllerPrefix));
+      if (Array.isArray(vamMetadata.roles)) {
+        vamMetadata.roles = vamMetadata.roles.map((role: any) => Array.isArray(role?.permissions) ? { ...role, permissions: role.permissions.filter((permission: string) => !permission.startsWith(controllerPrefix)) } : role);
+      }
+
       const updatedContent = JSON.stringify(metaData, null, 2);
       await fs.writeFile(filePath, updatedContent);
     }
+    await this.cleanupOtherModuleMetadataFiles(filePath, modelEntity, removedActionNameSet, removedMenuNameSet, removedViewNameSet);
 
     // <moduleName>.module.ts | Remove all references and imports of the deleted model files. | Automatic
     if (modulePath) {
@@ -744,10 +907,30 @@ export class ModelMetadataService {
       }
     }
 
-    await this.cleanupAssociatedTypeormDatasourceFiles(modelEntity, modulePath);
+    await this.cleanupAssociatedTypeormDatasourceFiles(modelEntity, modulePath, removedRelatedFields);
 
     // - | Drop database table | Removes the database table from the DB, this is a very risky step. Best to review all relations to other models etc and then do this manually | Manual (X)
 
+  }
+
+  private async cleanupAssociatedModelScopedRecords(model: ModelMetadata, dashboardNames: Set<string>, viewIds: number[]) {
+    const relatedFields = await this.dataSource.getRepository(FieldMetadata).find({ where: { relationCoModelSingularName: model.singularName }, relations: ['model', 'model.module'] });
+    if (relatedFields.length) await this.dataSource.getRepository(FieldMetadata).remove(relatedFields);
+
+    const savedFilterRepo = this.dataSource.getRepository(SavedFilters);
+    const savedFilters = await savedFilterRepo.find({ where: [{ model: { id: model.id } }, ...(viewIds.length ? [{ view: { id: In(viewIds) } }] : [])] });
+    if (savedFilters.length) await savedFilterRepo.remove(savedFilters);
+
+    const securityRuleRepo = this.dataSource.getRepository(SecurityRule);
+    const securityRules = await securityRuleRepo.find({ where: { modelMetadata: { id: model.id } } });
+    if (securityRules.length) await securityRuleRepo.remove(securityRules);
+
+    if (dashboardNames.size && model.module?.id) {
+      const layoutRepo = this.dataSource.getRepository(DashboardUserLayout);
+      const layouts = await layoutRepo.find({ where: { module: { id: model.module.id }, dashboardName: In([...dashboardNames]) } });
+      if (layouts.length) await layoutRepo.remove(layouts);
+    }
+    return relatedFields;
   }
 
   private resolveSolidApiRoot(): string | null {
@@ -767,11 +950,7 @@ export class ModelMetadataService {
     return null;
   }
 
-  private async cleanupAssociatedTypeormDatasourceFiles(modelEntity: ModelMetadata, modulePath?: string | null) {
-    if (!modulePath) {
-      return;
-    }
-
+  private async cleanupAssociatedTypeormDatasourceFiles(modelEntity: ModelMetadata, modulePath?: string | null, relatedFields: FieldMetadata[] = []) {
     const solidApiRoot = this.resolveSolidApiRoot();
     if (!solidApiRoot) {
       this.logger.warn(`Unable to locate consuming solid-api workspace while cleaning datasource files for model '${modelEntity.singularName}'`);
@@ -779,29 +958,49 @@ export class ModelMetadataService {
     }
 
     const srcRoot = path.join(solidApiRoot, 'src');
-    const srcEntries = await fs.readdir(srcRoot).catch(() => []);
-    const datasourceFiles = srcEntries
-      .filter((entry) => /^typeorm-.*-datasource\.ts$/.test(entry))
-      .map((entry) => path.join(srcRoot, entry));
-
-    if (datasourceFiles.length === 0) {
+    const candidateFiles: string[] = [];
+    const scan = async (directory: string): Promise<void> => {
+      const entries = await fs.readdir(directory, { withFileTypes: true }).catch(() => []);
+      for (const entry of entries) {
+        if (entry.isDirectory()) {
+          if (!['node_modules', 'dist', 'coverage', '.git'].includes(entry.name)) await scan(path.join(directory, entry.name));
+        } else if (entry.isFile() && /\.tsx?$/.test(entry.name)) candidateFiles.push(path.join(directory, entry.name));
+      }
+    };
+    await scan(srcRoot);
+    if (candidateFiles.length === 0) {
       return;
     }
 
-    const moduleDirName = path.basename(modulePath);
+    const moduleDirName = modulePath ? path.basename(modulePath) : kebabCase(modelEntity.module?.name ?? '');
     const entityClassName = classify(modelEntity.singularName);
     const entityImportPath = `./${moduleDirName}/entities/${kebabCase(modelEntity.singularName)}.entity`;
 
-    this.logger.log(`Scanning ${datasourceFiles.length} TypeORM datasource file(s) for model '${modelEntity.singularName}' cleanup`);
+    this.logger.log(`Scanning ${candidateFiles.length} TypeScript file(s) for model '${modelEntity.singularName}' references`);
 
     try {
       this.solidTsMorphService.begin();
-      for (const datasourceFile of datasourceFiles) {
-        this.solidTsMorphService.cleanupTypeormDatasourceEntity(
+      for (const datasourceFile of candidateFiles) {
+        this.solidTsMorphService.removeDeletedModelReferences(
           datasourceFile,
-          entityImportPath,
-          entityClassName,
+          [`/${kebabCase(modelEntity.singularName)}.entity`, `/create-${kebabCase(modelEntity.singularName)}.dto`, `/update-${kebabCase(modelEntity.singularName)}.dto`],
+          [classify(modelEntity.singularName), `${classify(modelEntity.singularName)}CreateDto`, `${classify(modelEntity.singularName)}UpdateDto`],
         );
+        this.solidTsMorphService.cleanupTypeormDatasourceEntity(datasourceFile, entityImportPath, entityClassName);
+      }
+      const relatedModels = new Map<number, ModelMetadata>();
+      for (const field of relatedFields) if (field.model) relatedModels.set(field.model.id, field.model);
+      for (const relatedModel of relatedModels.values()) {
+        const relatedModulePath = await this.moduleMetadataHelperService.getModulePath(relatedModel.module?.name);
+        if (!relatedModulePath) continue;
+        const relatedModelName = kebabCase(relatedModel.singularName);
+        const affectedFiles = [
+          path.join(relatedModulePath, 'entities', `${relatedModelName}.entity.ts`),
+          path.join(relatedModulePath, 'dtos', `create-${relatedModelName}.dto.ts`),
+          path.join(relatedModulePath, 'dtos', `update-${relatedModelName}.dto.ts`),
+        ];
+        const fieldNames = relatedFields.filter(field => field.model?.id === relatedModel.id).map(field => field.name);
+        for (const file of affectedFiles) this.solidTsMorphService.removePropertiesByName(file, fieldNames);
       }
       await this.solidTsMorphService.commit();
     } catch (error: any) {

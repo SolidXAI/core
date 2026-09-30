@@ -40,9 +40,9 @@ export class AgentEventService extends CRUDService<AgentEvent> {
       throw new BadRequestException('Attachments can only be added to UserMessage events');
     }
 
-    const session = await this.entityManager.getRepository(AgentSession).findOne({ where: { sessionId: event.sessionId } });
+    const session = await this.entityManager.getRepository(AgentSession).findOne({ where: { id: event.session.id } });
     const isAdmin = !!activeUser?.roles?.includes('Admin');
-    if (!isAdmin && (!session || session.userId !== activeUser?.sub)) {
+    if (!isAdmin && (!session || session.user.id !== activeUser?.sub)) {
       throw new ForbiddenException('You can only attach files to your own conversations');
     }
 
