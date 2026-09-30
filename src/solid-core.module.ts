@@ -471,6 +471,57 @@ import { SolidXSendEmailNode } from './services/workflow/nodes/solidx-send-email
 import { SolidXSendSmsNode } from './services/workflow/nodes/solidx-send-sms.node';
 import { SwitchNode } from './services/workflow/nodes/switch.node';
 
+//Agent hub
+
+import { AgentRegistry } from "./entities/agent-registry.entity";
+import { AgentToolRegistry } from "./entities/agent-tool-registry.entity";
+import { AgentSkillRegistry } from "./entities/agent-skill-registry.entity";
+import { AgentTool } from "./entities/agent-tool.entity";
+import { AgentSkill } from "./entities/agent-skill.entity";
+import { AgentSecret } from "./entities/agent-secret.entity";
+import { AgentProcess } from "./entities/agent-process.entity";
+import { AgentHubSession } from "./entities/agent-hub-session.entity";
+import { AgentJob } from "./entities/agent-job.entity";
+import { AgentRole } from "./entities/agent-role.entity";
+import { AgenthubSessionCheckpoint } from "./entities/agenthub-session-checkpoint.entity";
+import { AgentHumanRequest } from "./entities/agent-human-request.entity";
+import { AgentRegistryController } from "./controllers/agent-registry.controller";
+import { AgentToolRegistryController } from "./controllers/agent-tool-registry.controller";
+import { AgentSkillRegistryController } from "./controllers/agent-skill-registry.controller";
+import { AgentToolController } from "./controllers/agent-tool.controller";
+import { AgentSkillController } from "./controllers/agent-skill.controller";
+import { AgentRoleController } from "./controllers/agent-role.controller";
+import { AgentSecretController } from "./controllers/agent-secret.controller";
+import { AgentProcessController } from "./controllers/agent-process.controller";
+import { AgentHubSessionController } from "./controllers/agent-hub-session.controller";
+import { AgentJobController } from "./controllers/agent-job.controller";
+import { AgenthubSessionCheckpointController } from "./controllers/agenthub-session-checkpoint.controller";
+import { AgentHumanRequestController } from "./controllers/agent-human-request.controller";
+import { AgentHumanRequestRepository } from "./repository/agent-human-request.repository";
+import { AgentHumanRequestService } from "./services/agent-human-request.service";
+import { AgenthubSessionCheckpointRepository } from "./repository/agenthub-session-checkpoint.repository";
+import { AgenthubSessionCheckpointService } from "./services/agenthub-session-checkpoint.service";
+import { AgentHubSessionRepository } from "./repository/agent-hub-session.repository";
+import { AgentJobRepository } from "./repository/agent-job.repository";
+import { AgentProcessRepository } from "./repository/agent-process.repository";
+import { AgentRegistryRepository } from "./repository/agent-registry.repository";
+import { AgentRoleRepository } from "./repository/agent-role.repository";
+import { AgentSecretRepository } from "./repository/agent-secret.repository";
+import { AgentSkillRepository } from "./repository/agent-skill.repository";
+import { AgentToolRepository } from "./repository/agent-tool.repository";
+import { AgentSkillRegistryRepository } from "./repository/agent-skill-registry.repository";
+import { AgentToolRegistryRepository } from "./repository/agent-tool-registry.repository";
+import { AgentHubSessionService } from "./services/agent-hub-session.service";
+import { AgentJobService } from "./services/agent-job.service";
+import { AgentProcessService } from "./services/agent-process.service";
+import { AgentRegistryService } from "./services/agent-registry.service";
+import { AgentRoleService } from "./services/agent-role.service";
+import { AgentSecretService } from "./services/agent-secret.service";
+import { AgentSkillService } from "./services/agent-skill.service";
+import { AgentToolService } from "./services/agent-tool.service";
+import { AgentSkillRegistryService } from "./services/agent-skill-registry.service";
+import { AgentToolRegistryService } from "./services/agent-tool-registry.service";
+
 @Global()
 @Module({
   imports: [
@@ -518,8 +569,22 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
       WorkflowExecutionArtifact,
       WorkflowTriggerExecution,
       Secret,
-    ]),
 
+      //Agent hub
+
+      AgentRegistry,
+      AgentToolRegistry,
+      AgentSkillRegistry,
+      AgentTool,
+      AgentSkill,
+      AgentRole,
+      AgentSecret,
+      AgentProcess,
+      AgentHubSession,
+      AgentJob,
+      AgenthubSessionCheckpoint,
+      AgentHumanRequest
+    ]),
     CacheModule.registerAsync(CacheManagerOptions),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
@@ -654,6 +719,18 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowExecutionArtifactController,
     WorkflowTriggerExecutionController,
     SecretController,
+    AgentRegistryController,
+    AgentToolRegistryController,
+    AgentSkillRegistryController,
+    AgentToolController,
+    AgentSkillController,
+    AgentRoleController,
+    AgentSecretController,
+    AgentProcessController,
+    AgentHubSessionController,
+    AgentJobController,
+    AgenthubSessionCheckpointController,
+    AgentHumanRequestController
   ],
   providers: [
     {
@@ -1012,6 +1089,32 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     SolidXDeleteNode,
     SolidXSendEmailNode,
     SolidXSendSmsNode,
+
+    //Agent hub
+    AgentRegistryService,
+    AgentRegistryRepository,
+    AgentToolRegistryService,
+    AgentToolRegistryRepository,
+    AgentSkillRegistryService,
+    AgentSkillRegistryRepository,
+    AgentToolService,
+    AgentToolRepository,
+    AgentSkillService,
+    AgentSkillRepository,
+    AgentRoleService,
+    AgentRoleRepository,
+    AgentSecretService,
+    AgentSecretRepository,
+    AgentProcessService,
+    AgentProcessRepository,
+    AgentHubSessionService,
+    AgentHubSessionRepository,
+    AgentJobService,
+    AgentJobRepository,
+    AgenthubSessionCheckpointService,
+    AgenthubSessionCheckpointRepository,
+    AgentHumanRequestService,
+    AgentHumanRequestRepository
   ],
   exports: [
     // Exported for DI, not merely re-exported from index.ts: a consuming
@@ -1090,4 +1193,4 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
 // Body-size limits live in bootstrapSolidApp (see SolidBootstrapOptions.bodyLimit).
 // They cannot be applied here: module middleware is registered in registerRouter(),
 // which runs after Nest's own parser middleware, so anything set here never takes effect.
-export class SolidCoreModule {}
+export class SolidCoreModule { }

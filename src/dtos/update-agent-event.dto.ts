@@ -7,9 +7,14 @@ export class UpdateAgentEventDto {
   id: number;
 
   @IsOptional()
-  @IsString()
+  @IsInt()
   @ApiProperty()
-  sessionId: string;
+  sessionId: number;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty()
+  sessionUserKey: string;
 
   @IsOptional()
   @IsInt()

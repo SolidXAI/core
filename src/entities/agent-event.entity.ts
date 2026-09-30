@@ -1,12 +1,10 @@
-import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { CommonEntity } from 'src/entities/common.entity';
 import { getColumnType } from 'src/helpers/typeorm-db-helper';
+import { AgentHubSession } from './agent-hub-session.entity';
 
 @Entity({ name: 'ss_agent_events' })
 export class AgentEvent extends CommonEntity {
-  @Index()
-  @Column({ })
-  sessionId: string;
 
   @Column({ })
   turnNumber: number;
@@ -49,7 +47,12 @@ export class AgentEvent extends CommonEntity {
   @Column({ nullable: true })
   outputTokens: number;
 
-    @Index()
+  @Index()
   @Column({ nullable: true })
   modelUsed: string;
+
+  @ManyToOne(() => AgentHubSession, { onDelete: "SET NULL", nullable: true })
+  @JoinColumn()
+  session: AgentHubSession;
+
 }
