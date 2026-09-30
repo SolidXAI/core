@@ -5100,6 +5100,23 @@
             "max": null,
             "regexPattern": null,
             "regexPatternNotMatchingErrorMsg": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+            
+          },
+          {
+            "name": "attachments",
+            "displayName": "Attachments",
+            "description": "Files the user attached to a UserMessage event in the SolidX Agent chat.",
+            "type": "mediaMultiple",
+            "ormType": "varchar",
+            "isSystem": true,
+            "mediaTypes": [
+              "image",
+              "file"
+            ],
+            "mediaMaxSizeKb": 5120,
             "required": false,
             "unique": false,
             "index": false,
@@ -5110,7 +5127,8 @@
             "columnName": null,
             "isUserKey": false,
             "enableAuditTracking": true,
-            "isPrimaryKey": false
+            "isPrimaryKey": false,
+            "mediaStorageProviderUserKey": "default-filesystem"
           }
         ]
       },
@@ -11001,6 +11019,7 @@
         "AgentSessionController.findOne",
         "AgentEventController.findMany",
         "AgentEventController.findOne",
+        "AgentEventController.uploadAttachments",
         "McpAuditLogController.findMany",
         "McpAuditLogController.findOne",
         "DashboardController.getDefinition",
