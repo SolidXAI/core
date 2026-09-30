@@ -282,6 +282,50 @@ export class PlaywrightAdapter {
     }
   }
 
+  /**
+   * Multi-tab support. The onboarding flow needs a second site (the BI OTP portal)
+   * open at the same time as the in-progress SPA, without destroying it. Opening a
+   * new tab keeps the original page alive on the context; switching just re-points
+   * `this.page` so every existing ui.* step targets the active tab.
+   */
+  async openTab(url?: string, timeoutMs?: number): Promise<void> {
+    if (!this.context) throw new Error("Cannot open a tab before the browser context is started.");
+    const page = await this.context.newPage();
+    this.attachCaptureListeners(page);
+    this.page = page;
+    if (url) {
+      await page.goto(this.resolveUrl(url), {
+        timeout: this.resolveNavigationTimeout(timeoutMs),
+        waitUntil: "domcontentloaded",
+      });
+    }
+  }
+
+  /** Switch the active page to the tab at `index` (0 = first/onboarding tab). */
+  switchTab(index: number): void {
+    if (!this.context) throw new Error("No browser context; cannot switch tabs.");
+    const pages = this.context.pages();
+    if (index < 0 || index >= pages.length) {
+      throw new Error(`switchTab: index ${index} out of range (open tabs: ${pages.length}).`);
+    }
+    this.page = pages[index];
+  }
+
+  /** Number of currently open tabs. */
+  tabCount(): number {
+    return this.context ? this.context.pages().length : 0;
+  }
+
+  /** Close the active tab and make the first remaining tab active. */
+  async closeTab(): Promise<void> {
+    if (!this.context || !this.page) return;
+    const current = this.page;
+    const pages = this.context.pages();
+    if (pages.length <= 1) return; // never close the last tab
+    await current.close();
+    this.page = this.context.pages()[0];
+  }
+
   resolveUrl(url: string): string {
     if (isAbsoluteUrl(url)) return url;
     if (this.baseUrl) {
