@@ -2846,6 +2846,9 @@ export class AuthenticationService {
         // forcePasswordChange: user.forcePasswordChange,
         id: user.id,
         roles: user.roles.map((role) => role.name),
+        // Lets the admin UI decide whether to show the SolidX Agent launcher
+        // without calling the agent; the agent enforces the same permission.
+        canUseAgent: !!activeUser.permissions?.includes("agent:invoke"),
       },
       // Null-guarded because the cache entry now carries a TTL: once it
       // expires - or after a logout followed by a call with a still-valid
