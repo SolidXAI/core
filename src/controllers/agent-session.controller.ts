@@ -1,27 +1,27 @@
 import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { AgentHubSessionService } from '../services/agent-hub-session.service';
-import { CreateAgentHubSessionDto } from '../dtos/create-agent-hub-session.dto';
-import { UpdateAgentHubSessionDto } from '../dtos/update-agent-hub-session.dto';
+import { AgentSessionService } from '../services/agent-session.service';
+import { CreateAgentSessionDto } from '../dtos/create-agent-session.dto';
+import { UpdateAgentSessionDto } from '../dtos/update-agent-session.dto';
 import { ShowSoftDeleted } from '@solidxai/core';
 
 @ApiTags('Agent Hub')
-@Controller('agent-hub-session')
-export class AgentHubSessionController {
-  constructor(private readonly service: AgentHubSessionService) {}
+@Controller('agent-session')
+export class AgentSessionController {
+  constructor(private readonly service: AgentSessionService) {}
 
   @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateAgentHubSessionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  create(@Body() createDto: CreateAgentSessionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.create(createDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateAgentHubSessionDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+  insertMany(@Body() createDtos: CreateAgentSessionDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
     return this.service.insertMany(createDtos, filesArray);
   }
 
@@ -29,14 +29,14 @@ export class AgentHubSessionController {
   @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateAgentHubSessionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  update(@Param('id') id: number, @Body() updateDto: UpdateAgentSessionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Patch(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateAgentHubSessionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateAgentSessionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files, true);
   }
 

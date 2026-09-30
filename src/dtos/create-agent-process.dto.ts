@@ -3,7 +3,7 @@ import { IsInt } from 'class-validator';
 import { IsOptional } from 'class-validator';
 import { IsString, IsNotEmpty, IsJSON, IsDate, ValidateNested, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
-import { UpdateAgentHubSessionDto } from './update-agent-hub-session.dto';
+import { UpdateAgentSessionDto } from './update-agent-session.dto';
 
 export class CreateAgentProcessDto {
     @IsOptional()
@@ -85,16 +85,16 @@ export class CreateAgentProcessDto {
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => UpdateAgentHubSessionDto)
-    agentHubSessions: UpdateAgentHubSessionDto[];
+    @Type(() => UpdateAgentSessionDto)
+    agentSessions: UpdateAgentSessionDto[];
 
     @IsOptional()
     @IsArray()
     @ApiProperty()
-    agentHubSessionsIds: number[];
+    agentSessionsIds: number[];
 
     @IsString()
     @IsOptional()
     @ApiProperty()
-    agentHubSessionsCommand: string;
+    agentSessionsCommand: string;
 }

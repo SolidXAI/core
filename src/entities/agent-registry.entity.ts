@@ -5,7 +5,7 @@ import { AgentSkill } from './agent-skill.entity';
 import { AgentRole } from './agent-role.entity';
 import { AgentSecret } from './agent-secret.entity';
 import { AgentProcess } from './agent-process.entity';
-import { AgentHubSession } from './agent-hub-session.entity';
+import { AgentSession } from './agent-session.entity';
 import { AgentJob } from './agent-job.entity'
 
 @Entity('ss_agent_registry')
@@ -59,8 +59,8 @@ export class AgentRegistry extends CommonEntity {
     @OneToMany(() => AgentProcess, agentProcess => agentProcess.agent, { cascade: true })
     agentProcesses: AgentProcess[];
 
-    @OneToMany(() => AgentHubSession, agentHubSession => agentHubSession.agent, { cascade: true })
-    agentHubSessions: AgentHubSession[];
+    @OneToMany(() => AgentSession, agentSession => agentSession.agent, { cascade: true })
+    agentSessions: AgentSession[];
 
     @OneToMany(() => AgentJob, agentJob => agentJob.agent, { cascade: true })
     agentJobs: AgentJob[];

@@ -4877,7 +4877,7 @@
             "relationType": "many-to-one",
             "relationCoModelFieldName": "agentEvents",
             "relationCreateInverse": false,
-            "relationCoModelSingularName": "agentHubSession",
+            "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "agent-hub",
             "relationCascade": "set null",
@@ -8220,7 +8220,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "agentHubSessions",
+            "name": "agentSessions",
             "displayName": "Agent Sessions",
             "description": null,
             "type": "relation",
@@ -8229,7 +8229,7 @@
             "relationType": "one-to-many",
             "relationCoModelFieldName": "agent",
             "relationCreateInverse": false,
-            "relationCoModelSingularName": "agentHubSession",
+            "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "agent-hub",
             "relationCascade": "set null",
@@ -9418,7 +9418,7 @@
             "isUserKey": true
           },
           {
-            "name": "agentHubSessions",
+            "name": "agentSessions",
             "displayName": "Agent Sessions",
             "description": null,
             "type": "relation",
@@ -9427,7 +9427,7 @@
             "relationType": "one-to-many",
             "relationCoModelFieldName": "process",
             "relationCreateInverse": false,
-            "relationCoModelSingularName": "agentHubSession",
+            "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "agent-hub",
             "relationCascade": "set null",
@@ -9448,10 +9448,10 @@
         "userKeyFieldUserKey": "processId"
       },
       {
-        "singularName": "agentHubSession",
-        "pluralName": "agentHubSessions",
+        "singularName": "agentSession",
+        "pluralName": "agentSessions",
         "displayName": "Agent Session",
-        "tableName": "ss_agent_hub_session",
+        "tableName": "ss_agent_session",
         "dataSource": "default",
         "dataSourceType": "postgres",
         "userKeyFieldUserKey": "sessionId",
@@ -9467,7 +9467,7 @@
             "computedFieldTriggerConfig": [
               {
                 "moduleName": "agent-hub",
-                "modelName": "agentHubSession",
+                "modelName": "agentSession",
                 "operations": [
                   "after-insert"
                 ]
@@ -9493,7 +9493,7 @@
             "ormType": "integer",
             "isSystem": true,
             "relationType": "many-to-one",
-            "relationCoModelFieldName": "agentHubSessions",
+            "relationCoModelFieldName": "agentSessions",
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentRegistry",
             "relationCoModelColumnName": null,
@@ -9520,7 +9520,7 @@
             "ormType": "integer",
             "isSystem": true,
             "relationType": "many-to-one",
-            "relationCoModelFieldName": "agentHubSessions",
+            "relationCoModelFieldName": "agentSessions",
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentProcess",
             "relationCoModelColumnName": null,
@@ -9920,7 +9920,7 @@
             "relationType": "many-to-one",
             "relationCoModelFieldName": "agentJobs",
             "relationCreateInverse": false,
-            "relationCoModelSingularName": "agentHubSession",
+            "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "agent-hub",
             "relationCascade": "set null",
@@ -10356,7 +10356,7 @@
             "relationType": "many-to-one",
             "relationCoModelFieldName": "agenthubSessionCheckpoints",
             "relationCreateInverse": false,
-            "relationCoModelSingularName": "agentHubSession",
+            "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "agent-hub",
             "relationCascade": "set null",
@@ -10525,7 +10525,7 @@
             "relationType": "many-to-one",
             "relationCoModelFieldName": "agentHumanRequests",
             "relationCreateInverse": false,
-            "relationCoModelSingularName": "agentHubSession",
+            "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "agent-hub",
             "relationCascade": "set null",
@@ -12095,29 +12095,29 @@
     },
     {
       "displayName": "Agent Session List Action",
-      "name": "agentHubSession-list-action",
+      "name": "agentSession-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "agentHubSession-list-view",
+      "viewUserKey": "agentSession-list-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "agentHubSession"
+      "modelUserKey": "agentSession"
     },
     {
       "displayName": "Agent Session Tree View Action",
-      "name": "agentHubSession-tree-action",
+      "name": "agentSession-tree-action",
       "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "agentHubSession-tree-view",
+      "viewUserKey": "agentSession-tree-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "agentHubSession"
+      "modelUserKey": "agentSession"
     },
     {
       "displayName": "Agent Job List Action",
@@ -12684,9 +12684,9 @@
     },
     {
       "displayName": "Agent Session",
-      "name": "agentHubSession-menu-item",
+      "name": "agentSession-menu-item",
       "sequenceNumber": 5,
-      "actionUserKey": "agentHubSession-list-action",
+      "actionUserKey": "agentSession-list-action",
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item",
       "iconName": "chat"
@@ -25393,12 +25393,12 @@
       }
     },
     {
-      "name": "agentHubSession-list-view",
+      "name": "agentSession-list-view",
       "displayName": "Agent Session",
       "type": "list",
       "context": "{}",
       "moduleUserKey": "agent-hub",
-      "modelUserKey": "agentHubSession",
+      "modelUserKey": "agentSession",
       "layout": {
         "type": "list",
         "attrs": {
@@ -25528,12 +25528,12 @@
       }
     },
     {
-      "name": "agentHubSession-form-view",
+      "name": "agentSession-form-view",
       "displayName": "Agent Session",
       "type": "form",
       "context": "{}",
       "moduleUserKey": "agent-hub",
-      "modelUserKey": "agentHubSession",
+      "modelUserKey": "agentSession",
       "layout": {
         "type": "form",
         "attrs": {
@@ -25666,12 +25666,12 @@
       }
     },
     {
-      "name": "agentHubSession-tree-view",
+      "name": "agentSession-tree-view",
       "displayName": "Agent Session",
       "type": "tree",
       "context": "{}",
       "moduleUserKey": "agent-hub",
-      "modelUserKey": "agentHubSession",
+      "modelUserKey": "agentSession",
       "layout": {
         "type": "tree",
         "attrs": {

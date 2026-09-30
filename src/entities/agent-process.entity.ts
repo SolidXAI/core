@@ -1,7 +1,7 @@
 import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, JoinColumn, ManyToOne, Column, Index, OneToMany } from 'typeorm';
 import { AgentRegistry } from './agent-registry.entity';
-import { AgentHubSession } from './agent-hub-session.entity'
+import { AgentSession } from './agent-session.entity'
 
 @Entity('ss_agent_process')
 export class AgentProcess extends CommonEntity {
@@ -55,6 +55,6 @@ export class AgentProcess extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     processId: string;
 
-    @OneToMany(() => AgentHubSession, agentHubSession => agentHubSession.process, { cascade: true })
-    agentHubSessions: AgentHubSession[];
+    @OneToMany(() => AgentSession, agentSession => agentSession.process, { cascade: true })
+    agentSessions: AgentSession[];
 }

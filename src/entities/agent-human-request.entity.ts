@@ -1,13 +1,13 @@
 import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, JoinColumn, ManyToOne, Column } from 'typeorm';
-import { AgentHubSession } from './agent-hub-session.entity';
+import { AgentSession } from './agent-session.entity';
 import { AgentJob } from './agent-job.entity'
 
 @Entity('ss_agent_human_request')
 export class AgentHumanRequest extends CommonEntity {
-    @ManyToOne(() => AgentHubSession, { onDelete: "SET NULL", nullable: true })
+    @ManyToOne(() => AgentSession, { onDelete: "SET NULL", nullable: true })
     @JoinColumn()
-    session: AgentHubSession;
+    session: AgentSession;
 
     @ManyToOne(() => AgentJob, { onDelete: "SET NULL", nullable: true })
     @JoinColumn()

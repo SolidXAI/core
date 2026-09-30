@@ -1,7 +1,7 @@
 import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { CommonEntity } from 'src/entities/common.entity';
 import { getColumnType } from 'src/helpers/typeorm-db-helper';
-import { AgentHubSession } from './agent-hub-session.entity';
+import { AgentSession } from './agent-session.entity';
 
 @Entity({ name: 'ss_agent_events' })
 export class AgentEvent extends CommonEntity {
@@ -51,8 +51,8 @@ export class AgentEvent extends CommonEntity {
   @Column({ nullable: true })
   modelUsed: string;
 
-  @ManyToOne(() => AgentHubSession, { onDelete: "SET NULL", nullable: true })
+  @ManyToOne(() => AgentSession, { onDelete: "SET NULL", nullable: true })
   @JoinColumn()
-  session: AgentHubSession;
+  session: AgentSession;
 
 }

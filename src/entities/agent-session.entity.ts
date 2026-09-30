@@ -8,8 +8,8 @@ import { AgentEvent } from './agent-event.entity';
 import { AgenthubSessionCheckpoint } from './agenthub-session-checkpoint.entity';
 import { AgentHumanRequest } from './agent-human-request.entity';
 
-@Entity('ss_agent_hub_session')
-export class AgentHubSession extends CommonEntity {
+@Entity('ss_agent_session')
+export class AgentSession extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar", nullable: true })
     sessionId: string;

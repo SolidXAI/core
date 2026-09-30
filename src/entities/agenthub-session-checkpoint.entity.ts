@@ -1,12 +1,12 @@
 import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, JoinColumn, ManyToOne, Column } from 'typeorm';
-import { AgentHubSession } from './agent-hub-session.entity'
+import { AgentSession } from './agent-session.entity'
 
 @Entity('ss_agenthub_session_checkpoint')
 export class AgenthubSessionCheckpoint extends CommonEntity {
-    @ManyToOne(() => AgentHubSession, { onDelete: "SET NULL", nullable: true })
+    @ManyToOne(() => AgentSession, { onDelete: "SET NULL", nullable: true })
     @JoinColumn()
-    session: AgentHubSession;
+    session: AgentSession;
 
     @Column({ type: "integer" })
     seq: number;

@@ -1,14 +1,16 @@
+import { IsInt,IsOptional, IsString, IsNotEmpty, IsJSON, IsNumber, IsDate, ValidateNested, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt } from 'class-validator';
-import { IsOptional } from 'class-validator';
-import { IsString, IsNotEmpty, IsJSON, IsNumber, IsDate, ValidateNested, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 import { UpdateAgentJobDto } from './update-agent-job.dto';
 import { UpdateAgentEventDto } from './update-agent-event.dto';
 import { UpdateAgenthubSessionCheckpointDto } from './update-agenthub-session-checkpoint.dto';
 import { UpdateAgentHumanRequestDto } from './update-agent-human-request.dto';
 
-export class CreateAgentHubSessionDto {
+export class UpdateAgentSessionDto {
+    @IsOptional()
+    @IsInt()
+    id: number;
+
     @IsOptional()
     @IsInt()
     @ApiProperty()
@@ -30,6 +32,7 @@ export class CreateAgentHubSessionDto {
     processUserKey: string;
 
     @IsNotEmpty()
+    @IsOptional()
     @IsString()
     @ApiProperty()
     trigger: string;
@@ -45,31 +48,37 @@ export class CreateAgentHubSessionDto {
     userUserKey: string;
 
     @IsNotEmpty()
+    @IsOptional()
     @IsString()
     @ApiProperty({ description: "queued: Background session waiting for its first job to be claimed; active: Interactive session open, waiting for the user's next message; running: A turn is executing; awaiting_input: Parked on a request_human_input question; awaiting_approval: Parked on a tool approval; completed, failed, cancelled, expired: Terminal." })
-    status: string = "queued";
+    status: string;
 
     @IsNotEmpty()
+    @IsOptional()
     @IsString()
     @ApiProperty()
-    inputs: string = "{}";
+    inputs: string;
 
     @IsNotEmpty()
+    @IsOptional()
     @IsInt()
     @ApiProperty()
     config_version: number;
 
     @IsNotEmpty()
+    @IsOptional()
     @IsInt()
     @ApiProperty()
-    turn_count: number = 0;
+    turn_count: number;
 
     @IsNotEmpty()
+    @IsOptional()
     @IsInt()
     @ApiProperty()
-    total_steps: number = 0;
+    total_steps: number;
 
     @IsNotEmpty()
+    @IsOptional()
     @IsNumber()
     @ApiProperty()
     total_cost: number;

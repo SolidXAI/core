@@ -3,18 +3,18 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { ModuleRef  } from "@nestjs/core";
 import { EntityManager } from 'typeorm';
 import { CRUDService } from '@solidxai/core';
-import { AgentHubSession } from '../entities/agent-hub-session.entity';
-import { AgentHubSessionRepository } from '../repositories/agent-hub-session.repository';
+import { AgentSession } from '../entities/agent-session.entity';
+import { AgentSessionRepository } from '../repositories/agent-session.repository';
 
 @Injectable()
-export class AgentHubSessionService extends CRUDService<AgentHubSession>{
+export class AgentSessionService extends CRUDService<AgentSession>{
   constructor(
     @InjectEntityManager("default")
     readonly entityManager: EntityManager,
-    readonly repo: AgentHubSessionRepository,
+    readonly repo: AgentSessionRepository,
     readonly moduleRef: ModuleRef,
       
  ) {
-   super(entityManager, repo, 'agentHubSession', 'agent-hub', moduleRef);
+   super(entityManager, repo, 'agentSession', 'agent-hub', moduleRef);
  }
 }

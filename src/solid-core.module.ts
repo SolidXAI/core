@@ -476,7 +476,7 @@ import { AgentTool } from "./entities/agent-tool.entity";
 import { AgentSkill } from "./entities/agent-skill.entity";
 import { AgentSecret } from "./entities/agent-secret.entity";
 import { AgentProcess } from "./entities/agent-process.entity";
-import { AgentHubSession } from "./entities/agent-hub-session.entity";
+import { AgentSession } from "./entities/agent-session.entity";
 import { AgentJob } from "./entities/agent-job.entity";
 import { AgentRole } from "./entities/agent-role.entity";
 import { AgenthubSessionCheckpoint } from "./entities/agenthub-session-checkpoint.entity";
@@ -489,7 +489,7 @@ import { AgentSkillController } from "./controllers/agent-skill.controller";
 import { AgentRoleController } from "./controllers/agent-role.controller";
 import { AgentSecretController } from "./controllers/agent-secret.controller";
 import { AgentProcessController } from "./controllers/agent-process.controller";
-import { AgentHubSessionController } from "./controllers/agent-hub-session.controller";
+import { AgentSessionController } from "./controllers/agent-session.controller";
 import { AgentJobController } from "./controllers/agent-job.controller";
 import { AgenthubSessionCheckpointController } from "./controllers/agenthub-session-checkpoint.controller";
 import { AgentHumanRequestController } from "./controllers/agent-human-request.controller";
@@ -497,7 +497,7 @@ import { AgentHumanRequestRepository } from "./repository/agent-human-request.re
 import { AgentHumanRequestService } from "./services/agent-human-request.service";
 import { AgenthubSessionCheckpointRepository } from "./repository/agenthub-session-checkpoint.repository";
 import { AgenthubSessionCheckpointService } from "./services/agenthub-session-checkpoint.service";
-import { AgentHubSessionRepository } from "./repository/agent-hub-session.repository";
+import { AgentSessionRepository } from "./repository/agent-session.repository";
 import { AgentJobRepository } from "./repository/agent-job.repository";
 import { AgentProcessRepository } from "./repository/agent-process.repository";
 import { AgentRegistryRepository } from "./repository/agent-registry.repository";
@@ -507,7 +507,7 @@ import { AgentSkillRepository } from "./repository/agent-skill.repository";
 import { AgentToolRepository } from "./repository/agent-tool.repository";
 import { AgentSkillRegistryRepository } from "./repository/agent-skill-registry.repository";
 import { AgentToolRegistryRepository } from "./repository/agent-tool-registry.repository";
-import { AgentHubSessionService } from "./services/agent-hub-session.service";
+import { AgentSessionService } from "./services/agent-session.service";
 import { AgentJobService } from "./services/agent-job.service";
 import { AgentProcessService } from "./services/agent-process.service";
 import { AgentRegistryService } from "./services/agent-registry.service";
@@ -575,7 +575,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
       AgentRole,
       AgentSecret,
       AgentProcess,
-      AgentHubSession,
+      AgentSession,
       AgentJob,
       AgenthubSessionCheckpoint,
       AgentHumanRequest
@@ -721,7 +721,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentRoleController,
     AgentSecretController,
     AgentProcessController,
-    AgentHubSessionController,
+    AgentSessionController,
     AgentJobController,
     AgenthubSessionCheckpointController,
     AgentHumanRequestController
@@ -1099,8 +1099,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentSecretRepository,
     AgentProcessService,
     AgentProcessRepository,
-    AgentHubSessionService,
-    AgentHubSessionRepository,
+    AgentSessionService,
+    AgentSessionRepository,
     AgentJobService,
     AgentJobRepository,
     AgenthubSessionCheckpointService,

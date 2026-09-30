@@ -6,7 +6,7 @@ import { UpdateAgentSkillDto } from './update-agent-skill.dto';
 import { UpdateAgentRoleDto } from './update-agent-role.dto';
 import { UpdateAgentSecretDto } from './update-agent-secret.dto';
 import { UpdateAgentProcessDto } from './update-agent-process.dto';
-import { UpdateAgentHubSessionDto } from './update-agent-hub-session.dto';
+import { UpdateAgentSessionDto } from './update-agent-session.dto';
 import { UpdateAgentJobDto } from './update-agent-job.dto';
 
 export class UpdateAgentRegistryDto {
@@ -169,18 +169,18 @@ export class UpdateAgentRegistryDto {
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => UpdateAgentHubSessionDto)
-    agentHubSessions: UpdateAgentHubSessionDto[];
+    @Type(() => UpdateAgentSessionDto)
+    agentSessions: UpdateAgentSessionDto[];
 
     @IsOptional()
     @IsArray()
     @ApiProperty()
-    agentHubSessionsIds: number[];
+    agentSessionsIds: number[];
 
     @IsString()
     @IsOptional()
     @ApiProperty()
-    agentHubSessionsCommand: string;
+    agentSessionsCommand: string;
 
     @IsOptional()
     @ApiProperty()

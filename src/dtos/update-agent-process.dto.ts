@@ -1,7 +1,7 @@
 import { IsInt,IsOptional, IsString, IsNotEmpty, IsJSON, IsDate, ValidateNested, IsArray } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { UpdateAgentHubSessionDto } from './update-agent-hub-session.dto';
+import { UpdateAgentSessionDto } from './update-agent-session.dto';
 
 export class UpdateAgentProcessDto {
     @IsOptional()
@@ -97,16 +97,16 @@ export class UpdateAgentProcessDto {
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => UpdateAgentHubSessionDto)
-    agentHubSessions: UpdateAgentHubSessionDto[];
+    @Type(() => UpdateAgentSessionDto)
+    agentSessions: UpdateAgentSessionDto[];
 
     @IsOptional()
     @IsArray()
     @ApiProperty()
-    agentHubSessionsIds: number[];
+    agentSessionsIds: number[];
 
     @IsString()
     @IsOptional()
     @ApiProperty()
-    agentHubSessionsCommand: string;
+    agentSessionsCommand: string;
 }
