@@ -1,19 +1,13 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, IsNotEmpty, IsDate } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsDate } from 'class-validator';
 
-export class UpdateWorkflowSecretDto {
-    @IsOptional()
-    @IsInt()
-    id: number;
-
+export class CreateSecretDto {
     @IsNotEmpty()
-    @IsOptional()
     @IsString()
     @ApiProperty({ description: "Global secret key used in workflow expressions, for example smtp.password." })
     key: string;
 
     @IsNotEmpty()
-    @IsOptional()
     @IsString()
     @ApiProperty({ description: "Human-facing secret name shown in the admin UI." })
     displayName: string;
@@ -24,22 +18,19 @@ export class UpdateWorkflowSecretDto {
     description: string;
 
     @IsNotEmpty()
-    @IsOptional()
     @IsString()
     @ApiProperty({ description: "Plain value supplied by an admin. It is encrypted before storage." })
     value: string;
 
     @IsNotEmpty()
-    @IsOptional()
     @IsString()
     @ApiProperty({ description: "How the decrypted value should be coerced for workflow runtime usage." })
-    valueType: string;
+    valueType: string = "string";
 
     @IsNotEmpty()
-    @IsOptional()
     @IsString()
     @ApiProperty({ description: "Secret lifecycle status." })
-    status: string;
+    status: string = "active";
 
     @IsOptional()
     @IsDate()

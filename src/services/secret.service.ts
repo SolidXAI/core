@@ -3,32 +3,32 @@ import { InjectEntityManager } from '@nestjs/typeorm';
 import { ModuleRef } from "@nestjs/core";
 import { EntityManager, In } from 'typeorm';
 import { CRUDService } from 'src/services/crud.service';
-import { WorkflowSecret } from '../entities/workflow-secret.entity';
-import { WorkflowSecretRepository } from '../repository/workflow-secret.repository';
+import { Secret } from '../entities/secret.entity';
+import { SecretRepository } from '../repository/secret.repository';
 import { EncryptionService } from './encryption.service';
 
 const MASKED_SECRET_VALUE = "********";
 
 @Injectable()
-export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
-  private readonly logger = new Logger(WorkflowSecretService.name);
+export class SecretService extends CRUDService<Secret> {
+  private readonly logger = new Logger(SecretService.name);
   private readonly encryptionService: EncryptionService | null;
 
   constructor(
     @InjectEntityManager("default")
     readonly entityManager: EntityManager,
-    readonly repo: WorkflowSecretRepository,
+    readonly repo: SecretRepository,
     readonly moduleRef: ModuleRef,
   ) {
-    super(entityManager, repo, 'workflowSecret', 'solid-core', moduleRef);
+    super(entityManager, repo, 'secret', 'solid-core', moduleRef);
     const encKey = process.env.APP_ENCRYPTION_KEY;
     this.encryptionService = encKey ? new EncryptionService(encKey) : null;
     if (!encKey) {
-      this.logger.warn('APP_ENCRYPTION_KEY is not set — workflow secrets cannot be encrypted or decrypted');
+      this.logger.warn('APP_ENCRYPTION_KEY is not set — secrets cannot be encrypted or decrypted');
     }
   }
 
-  async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<WorkflowSecret> {
+  async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<Secret> {
     const preparedDto = this.prepareSecretForSave(createDto, true);
     const saved = await super.create(preparedDto, files, solidRequestContext);
     return this.maskSecret(saved);
@@ -41,13 +41,13 @@ export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
     isPartialUpdate = false,
     solidRequestContext: any = {},
     isUpdate = false,
-  ): Promise<WorkflowSecret> {
+  ): Promise<Secret> {
     const preparedDto = this.prepareSecretForSave(updateDto, false);
     const saved = await super.update(id, preparedDto, files, isPartialUpdate, solidRequestContext, isUpdate);
     return this.maskSecret(saved);
   }
 
-  async createMany(createDtos: any[], solidRequestContext: any = {}): Promise<WorkflowSecret[]> {
+  async createMany(createDtos: any[], solidRequestContext: any = {}): Promise<Secret[]> {
     const preparedDtos = createDtos.map((dto) => this.prepareSecretForSave(dto, true));
     const saved = await super.createMany(preparedDtos, solidRequestContext);
     return saved.map((secret) => this.maskSecret(secret));
@@ -57,7 +57,7 @@ export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
     const response = await super.find(basicFilterDto, solidRequestContext);
     return {
       ...response,
-      records: (response.records ?? []).map((secret: WorkflowSecret) => this.maskSecret(secret)),
+      records: (response.records ?? []).map((secret: Secret) => this.maskSecret(secret)),
     };
   }
 
@@ -66,7 +66,7 @@ export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
     return this.maskSecret(secret);
   }
 
-  async getWorkflowSecretsContext(): Promise<Record<string, any>> {
+  async getSecretsContext(): Promise<Record<string, any>> {
     const secrets = await this.repo.find({
       where: { status: "active" } as any,
     });
@@ -77,7 +77,7 @@ export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
         this.assignSecretPath(context, secret.key, this.decryptAndCoerce(secret));
         secret.lastAccessedAt = new Date();
       } catch (error) {
-        this.logger.warn(`Failed to resolve workflow secret "${secret.key}": ${error instanceof Error ? error.message : String(error)}`);
+        this.logger.warn(`Failed to resolve secret "${secret.key}": ${error instanceof Error ? error.message : String(error)}`);
       }
     }
 
@@ -153,7 +153,7 @@ export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
     const hasNewValue = rawValue !== undefined && rawValue !== null && rawValue !== MASKED_SECRET_VALUE;
 
     if (requireValue && !hasNewValue) {
-      throw new BadRequestException('Workflow secret value is required.');
+      throw new BadRequestException('Secret value is required.');
     }
 
     if (hasNewValue) {
@@ -168,15 +168,15 @@ export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
 
   private encrypt(value: string): string {
     if (!this.encryptionService) {
-      throw new BadRequestException('APP_ENCRYPTION_KEY must be set before workflow secrets can be saved.');
+      throw new BadRequestException('APP_ENCRYPTION_KEY must be set before secrets can be saved.');
     }
 
     return this.encryptionService.isEncrypted(value) ? value : this.encryptionService.encrypt(value);
   }
 
-  private decryptAndCoerce(secret: WorkflowSecret): any {
+  private decryptAndCoerce(secret: Secret): any {
     if (!this.encryptionService) {
-      throw new BadRequestException('APP_ENCRYPTION_KEY must be set before workflow secrets can be used.');
+      throw new BadRequestException('APP_ENCRYPTION_KEY must be set before secrets can be used.');
     }
 
     const decryptedValue = this.encryptionService.decrypt(secret.value);
@@ -211,7 +211,7 @@ export class WorkflowSecretService extends CRUDService<WorkflowSecret> {
     cursor[parts[parts.length - 1]] = value;
   }
 
-  private maskSecret(secret: WorkflowSecret): WorkflowSecret {
+  private maskSecret(secret: Secret): Secret {
     if (secret) {
       secret.value = MASKED_SECRET_VALUE;
     }

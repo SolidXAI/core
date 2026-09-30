@@ -4,16 +4,16 @@ import { SolidBaseRepository } from './solid-base.repository';
 import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { WorkflowSecret } from '../entities/workflow-secret.entity';
+import { Secret } from '../entities/secret.entity';
 
 @Injectable()
-export class WorkflowSecretRepository extends SolidBaseRepository<WorkflowSecret> {
+export class SecretRepository extends SolidBaseRepository<Secret> {
     constructor(
         @InjectDataSource("default")
         readonly dataSource: DataSource,
         readonly requestContextService: RequestContextService,
         readonly securityRuleRepository: SecurityRuleRepository,
     ) {
-        super(WorkflowSecret, dataSource, requestContextService, securityRuleRepository);
+        super(Secret, dataSource, requestContextService, securityRuleRepository);
     }
 }

@@ -1,42 +1,42 @@
 import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { WorkflowSecretService } from '../services/workflow-secret.service';
-import { CreateWorkflowSecretDto } from '../dtos/create-workflow-secret.dto';
-import { UpdateWorkflowSecretDto } from '../dtos/update-workflow-secret.dto';
+import { SecretService } from '../services/secret.service';
+import { CreateSecretDto } from '../dtos/create-secret.dto';
+import { UpdateSecretDto } from '../dtos/update-secret.dto';
 
 import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Solid Core')
-@Controller('workflow-secret')
-export class WorkflowSecretController {
-  constructor(private readonly service: WorkflowSecretService) {}
+@Controller('secret')
+export class SecretController {
+  constructor(private readonly service: SecretService) {}
 
   @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateWorkflowSecretDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  create(@Body() createDto: CreateSecretDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.create(createDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateWorkflowSecretDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+  insertMany(@Body() createDtos: CreateSecretDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
     return this.service.insertMany(createDtos, filesArray);
   }
 
   @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateWorkflowSecretDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  update(@Param('id') id: number, @Body() updateDto: UpdateSecretDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Patch(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateWorkflowSecretDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateSecretDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files, true);
   }
 

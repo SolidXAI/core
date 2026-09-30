@@ -7771,13 +7771,13 @@
         "moduleUserKey": "solid-core"
       },
       {
-        "singularName": "workflowSecret",
-        "pluralName": "workflowSecrets",
-        "displayName": "Workflow Secret",
+        "singularName": "secret",
+        "pluralName": "secrets",
+        "displayName": "Secret",
         "description": "Stores encrypted global secrets available to workflow expressions.",
         "dataSource": "default",
         "dataSourceType": "postgres",
-        "tableName": "ss_workflow_secret",
+        "tableName": "ss_secret",
         "userKeyFieldUserKey": "key",
         "isChild": false,
         "parentModelUserKey": null,
@@ -9051,30 +9051,30 @@
       "modelUserKey": "workflowTriggerExecution"
     },
     {
-      "displayName": "Workflow Secret List Action",
-      "name": "workflowSecret-list-action",
+      "displayName": "Secret List Action",
+      "name": "secret-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "workflowSecret-list-view",
+      "viewUserKey": "secret-list-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "workflowSecret"
+      "modelUserKey": "secret"
     },
     {
-      "displayName": "Workflow Secret Tree View Action",
-      "name": "workflowSecret-tree-action",
+      "displayName": "Secret Tree View Action",
+      "name": "secret-tree-action",
       "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "workflowSecret-tree-view",
+      "viewUserKey": "secret-tree-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "workflowSecret"
+      "modelUserKey": "secret"
     }
   ],
   "menus": [
@@ -9475,11 +9475,11 @@
     },
     {
       "displayName": "Secrets",
-      "name": "workflowSecret-menu-item",
-      "sequenceNumber": 4,
-      "actionUserKey": "workflowSecret-list-action",
+      "name": "secret-menu-item",
+      "sequenceNumber": 9,
+      "actionUserKey": "secret-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "workflow-menu-item",
+      "parentMenuItemUserKey": "other-menu-item",
       "iconName": "key"
     }
   ],
@@ -20191,12 +20191,12 @@
       }
     },
     {
-      "name": "workflowSecret-list-view",
-      "displayName": "Workflow Secret",
+      "name": "secret-list-view",
+      "displayName": "Secret",
       "type": "list",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "workflowSecret",
+      "modelUserKey": "secret",
       "layout": {
         "type": "list",
         "attrs": {
@@ -20287,12 +20287,12 @@
       }
     },
     {
-      "name": "workflowSecret-tree-view",
-      "displayName": "Workflow Secret",
+      "name": "secret-tree-view",
+      "displayName": "Secret",
       "type": "tree",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "workflowSecret",
+      "modelUserKey": "secret",
       "layout": {
         "type": "tree",
         "attrs": {
@@ -20354,17 +20354,17 @@
       }
     },
     {
-      "name": "workflowSecret-form-view",
-      "displayName": "Workflow Secret",
+      "name": "secret-form-view",
+      "displayName": "Secret",
       "type": "form",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "workflowSecret",
+      "modelUserKey": "secret",
       "layout": {
         "type": "form",
         "attrs": {
           "name": "form-1",
-          "label": "Workflow Secret",
+          "label": "Secret",
           "className": "grid"
         },
         "children": [
@@ -20377,20 +20377,20 @@
               {
                 "type": "notebook",
                 "attrs": {
-                  "name": "workflow-secret-notebook"
+                  "name": "secret-notebook"
                 },
                 "children": [
                   {
                     "type": "page",
                     "attrs": {
-                      "name": "workflow-secret-basic-info",
+                      "name": "secret-basic-info",
                       "label": "Basic Info"
                     },
                     "children": [
                       {
                         "type": "group",
                         "attrs": {
-                          "name": "workflow-secret-identity",
+                          "name": "secret-identity",
                           "label": "Identity",
                           "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                         },
@@ -20418,7 +20418,7 @@
                       {
                         "type": "group",
                         "attrs": {
-                          "name": "workflow-secret-value",
+                          "name": "secret-value",
                           "label": "Secret",
                           "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                         },
@@ -20448,14 +20448,14 @@
                   {
                     "type": "page",
                     "attrs": {
-                      "name": "workflow-secret-usage",
+                      "name": "secret-usage",
                       "label": "Usage"
                     },
                     "children": [
                       {
                         "type": "group",
                         "attrs": {
-                          "name": "workflow-secret-usage-group",
+                          "name": "secret-usage-group",
                           "label": "Usage",
                           "className": "col-12 sm:col-12 md:col-6 lg:col-6"
                         },

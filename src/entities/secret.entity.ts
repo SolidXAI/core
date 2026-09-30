@@ -2,8 +2,8 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, Column, Index } from 'typeorm';
 import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
-@Entity('ss_workflow_secret')
-export class WorkflowSecret extends CommonEntity {
+@Entity('ss_secret')
+export class Secret extends CommonEntity {
     @Index({ unique: true })
     @Column({ type: "varchar" })
     key: string;
