@@ -122,9 +122,49 @@ function resolveToken(token: string, ctx: TestContext): TokenResolution {
   throw new Error(`Unknown interpolation token: "${token}"`);
 }
 
+// Apply an inline pipe transform to a resolved value.
+// Supported: `path | match:REGEX` (returns capture group 1 if present, else the
+// whole match) and `path | default:VALUE` (fallback when the match is empty).
+function applyTransform(value: unknown, name: string, arg: string | undefined): unknown {
+  if (name === "match") {
+    if (!arg) throw new Error('Transform "match" requires a regex argument');
+    const str = typeof value === "string" ? value : JSON.stringify(value);
+    const re = new RegExp(arg);
+    const m = str.match(re);
+    if (!m) throw new Error(`Transform "match:${arg}" found no match in resolved value`);
+    return m[1] !== undefined ? m[1] : m[0];
+  }
+  if (name === "default") {
+    return value === undefined || value === null || value === "" ? arg : value;
+  }
+  throw new Error(`Unknown interpolation transform: "${name}"`);
+}
+
+// Split a token into its base (before the first `|`) and an ordered list of
+// transforms. Each transform is `name:arg` (arg may itself contain `:`).
+function resolveTokenWithTransforms(token: string, ctx: TestContext): TokenResolution {
+  const pipeIdx = token.indexOf("|");
+  if (pipeIdx === -1) {
+    return resolveToken(token, ctx);
+  }
+  const base = token.slice(0, pipeIdx).trim();
+  const rest = token.slice(pipeIdx + 1);
+  const resolved = resolveToken(base, ctx);
+  let value = resolved.value;
+  for (const rawTransform of rest.split("|")) {
+    const t = rawTransform.trim();
+    if (!t) continue;
+    const colon = t.indexOf(":");
+    const name = (colon === -1 ? t : t.slice(0, colon)).trim();
+    const arg = colon === -1 ? undefined : t.slice(colon + 1).trim();
+    value = applyTransform(value, name, arg);
+  }
+  return { value, raw: false };
+}
+
 export function interpolateString(input: string, ctx: TestContext): string {
   return input.replace(TOKEN_REGEX, (_match, token: string) => {
-    const resolved = resolveToken(token, ctx);
+    const resolved = resolveTokenWithTransforms(token, ctx);
     return typeof resolved.value === "string"
       ? resolved.value
       : JSON.stringify(resolved.value);
@@ -135,7 +175,7 @@ export function interpolateDeep<T>(input: T, ctx: TestContext): T {
   if (typeof input === "string") {
     const tokenMatch = input.match(/^\$\{([^}]+)\}$/);
     if (tokenMatch) {
-      const resolved = resolveToken(tokenMatch[1], ctx);
+      const resolved = resolveTokenWithTransforms(tokenMatch[1], ctx);
       if (resolved.raw) {
         return resolved.value as T;
       }
