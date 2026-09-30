@@ -4879,7 +4879,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -8131,7 +8131,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentTool",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": false,
             "unique": false,
@@ -8158,7 +8158,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentSkill",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": false,
             "unique": false,
@@ -8185,7 +8185,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentRole",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": false,
             "unique": false,
@@ -8212,7 +8212,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentSecret",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": false,
             "unique": false,
@@ -8239,7 +8239,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentProcess",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -8266,7 +8266,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -8293,7 +8293,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentJob",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -8476,7 +8476,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentTool",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": false,
             "unique": false,
@@ -8602,7 +8602,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentSkill",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": false,
             "unique": false,
@@ -8646,7 +8646,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentRegistry",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": true,
             "unique": false,
@@ -8673,7 +8673,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentToolRegistry",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": true,
             "unique": false,
@@ -8716,7 +8716,7 @@
             "computedFieldValueType": "string",
             "computedFieldTriggerConfig": [
               {
-                "moduleName": "agent-hub",
+                "moduleName": "solid-core",
                 "modelName": "agentTool",
                 "operations": [
                   "before-insert",
@@ -8766,7 +8766,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentRegistry",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": true,
             "unique": false,
@@ -8793,7 +8793,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentSkillRegistry",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": true,
             "unique": false,
@@ -8836,7 +8836,7 @@
             "computedFieldValueType": "string",
             "computedFieldTriggerConfig": [
               {
-                "moduleName": "agent-hub",
+                "moduleName": "solid-core",
                 "modelName": "agentSkill",
                 "operations": [
                   "before-insert",
@@ -8886,7 +8886,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentRegistry",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": true,
             "unique": false,
@@ -8938,7 +8938,7 @@
             "computedFieldValueType": "string",
             "computedFieldTriggerConfig": [
               {
-                "moduleName": "agent-hub",
+                "moduleName": "solid-core",
                 "modelName": "agentRole",
                 "operations": [
                   "before-insert",
@@ -8988,7 +8988,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentRegistry",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "cascade",
             "required": true,
             "unique": false,
@@ -9064,7 +9064,7 @@
             "computedFieldValueType": "string",
             "computedFieldTriggerConfig": [
               {
-                "moduleName": "agent-hub",
+                "moduleName": "solid-core",
                 "modelName": "agentSecret",
                 "operations": [
                   "before-insert",
@@ -9114,7 +9114,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentRegistry",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -9433,7 +9433,7 @@
             "computedFieldValueType": "string",
             "computedFieldTriggerConfig": [
               {
-                "moduleName": "agent-hub",
+                "moduleName": "solid-core",
                 "modelName": "agentProcess",
                 "operations": [
                   "after-insert"
@@ -9464,7 +9464,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -9501,7 +9501,7 @@
             "computedFieldValueType": "string",
             "computedFieldTriggerConfig": [
               {
-                "moduleName": "agent-hub",
+                "moduleName": "solid-core",
                 "modelName": "agentSession",
                 "operations": [
                   "after-insert"
@@ -9532,7 +9532,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentRegistry",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -9559,7 +9559,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentProcess",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -9922,7 +9922,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentJob",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -9949,7 +9949,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentEvent",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -9976,7 +9976,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agenthubSessionCheckpoint",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -10003,7 +10003,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentHumanRequest",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -10047,7 +10047,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -10074,7 +10074,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentRegistry",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -10438,7 +10438,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentHumanRequest",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -10483,7 +10483,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -10622,7 +10622,7 @@
             "enableAuditTracking": true
           }
         ],
-        "moduleUserKey": "agent-hub"
+        "moduleUserKey": "solid-core"
       },
       {
         "singularName": "agentHumanRequest",
@@ -10652,7 +10652,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -10679,7 +10679,7 @@
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentJob",
             "relationCoModelColumnName": null,
-            "relationModelModuleName": "agent-hub",
+            "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
             "required": false,
             "unique": false,
@@ -10927,7 +10927,7 @@
             "enableAuditTracking": true
           }
         ],
-        "moduleUserKey": "agent-hub"
+        "moduleUserKey": "solid-core"
       }
     ]
   },
@@ -25839,6 +25839,31 @@
                         "type": "field",
                         "attrs": {
                           "name": "fast_model_key"
+                        }
+                      }
+                    ]
+                  }
+                ]
+              },
+              {
+                "type": "row",
+                "attrs": {
+                  "name": "agent-events-row"
+                },
+                "children": [
+                  {
+                    "type": "column",
+                    "attrs": {
+                      "name": "agent-events-col",
+                      "label": "",
+                      "className": "col-12 sm:col-12 md:col-12 lg:col-12"
+                    },
+                    "children": [
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "agentEvents",
+                          "showLabel": false
                         }
                       }
                     ]
