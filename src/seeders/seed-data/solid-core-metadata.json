@@ -5065,17 +5065,52 @@
             "isSystem": true
           },
           {
-            "name": "modelUsed",
-            "displayName": "Model Used",
+            "name": "reasoning_model_key",
+            "displayName": "Reasoning Model Key",
+            "description": null,
             "type": "shortText",
-            "columnName": "model_used",
-            "length": 255,
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
             "required": false,
             "unique": false,
-            "index": true,
+            "index": false,
             "private": false,
             "encrypt": false,
-            "isSystem": true
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "fast_model_key",
+            "displayName": "Fast Model Key",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
           }
         ]
       },
@@ -9786,6 +9821,54 @@
             "enableAuditTracking": true
           },
           {
+            "name": "reasoning_model_key",
+            "displayName": "Reasoning Model Key",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "fast_model_key",
+            "displayName": "Fast Model Key",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
             "name": "agentJobs",
             "displayName": "Agent Jobs",
             "description": null,
@@ -10872,6 +10955,8 @@
         "ListOfValuesController.findMany",
         "ListOfValuesController.findOne",
         "SettingController.getAllSettings",
+        "AgentSessionController.findMany",
+        "AgentSessionController.findOne",
         "AgentEventController.findMany",
         "AgentEventController.findOne",
         "McpAuditLogController.findMany",
@@ -18804,9 +18889,13 @@
           {
             "type": "field",
             "attrs": {
-              "name": "modelUsed",
-              "label": "Model Used",
-              "isSearchable": true
+              "name": "reasoning_model_key"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "fast_model_key"
             }
           },
           {
@@ -18919,7 +19008,13 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "modelUsed"
+                                  "name": "reasoning_model_key"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "fast_model_key"
                                 }
                               },
                               {
@@ -25523,6 +25618,18 @@
               "name": "ended_at",
               "sortable": true
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "reasoning_model_key"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "fast_model_key"
+            }
           }
         ]
       }
@@ -25655,6 +25762,18 @@
                         "attrs": {
                           "name": "last_active_at"
                         }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "reasoning_model_key"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "fast_model_key"
+                        }
                       }
                     ]
                   }
@@ -25781,6 +25900,18 @@
             "type": "field",
             "attrs": {
               "name": "ended_at"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "reasoning_model_key"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "fast_model_key"
             }
           }
         ]

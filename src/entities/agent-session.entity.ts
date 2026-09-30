@@ -59,6 +59,12 @@ export class AgentSession extends CommonEntity {
     @Column({ type: "timestamptz", nullable: true })
     ended_at: Date;
 
+    @Column({ type: "varchar", nullable: true })
+    reasoning_model_key: string;
+
+    @Column({ type: "varchar", nullable: true })
+    fast_model_key: string;
+
     @OneToMany(() => AgentJob, agentJob => agentJob.session, { cascade: true })
     agentJobs: AgentJob[];
 

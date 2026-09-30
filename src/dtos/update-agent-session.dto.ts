@@ -94,6 +94,16 @@ export class UpdateAgentSessionDto {
     ended_at: Date;
 
     @IsOptional()
+    @IsString()
+    @ApiProperty()
+    reasoning_model_key: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    fast_model_key: string;
+
+    @IsOptional()
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })

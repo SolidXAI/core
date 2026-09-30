@@ -84,5 +84,10 @@ export class UpdateAgentEventDto {
   @IsOptional()
   @IsString()
   @ApiProperty()
-  modelUsed: string;
+  reasoning_model_key: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty()
+  fast_model_key: string;
 }
