@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.19-beta.3] - 2026-09-30
+
+### Added
+
+- implement secret management functionality with CRUD operations and update related services and controllers
+
+### Other
+
+- Fix/draft publish (#181)
+- extnuser change password fix (#179)
+
 ## [0.1.19-beta.2] - 2026-09-29
 
 ### Added
