@@ -1,5 +1,16 @@
 # Changelog
 
+## [0.1.19-beta.2] - 2026-09-29
+
+### Added
+
+- add header buttons for message summary in kanban and global search
+- enhance kanban card with quick filters and view details buttons
+
+### Other
+
+- Fix/draft publish (postrgres specific fix - db compatible PR to be raised later) (#178)
+
 ## [0.1.19-beta.1] - 2026-09-28
 
 ### Other

@@ -541,8 +541,7 @@ export class DraftPublishHelperService {
      * statement, e.g.:
      *   INSERT INTO "join_table" ("falcon_banner_id", "falcon_banner_user_id")
      *   SELECT 48, "falcon_banner_user_id" FROM "join_table" WHERE "falcon_banner_id" = 47
-     * Identifiers and parameters go through the connection's driver, so the statement is
-     * valid on every supported database (Postgres, MSSQL, MySQL).
+     * Postgres only, as draft-publish is Postgres-only for now.
      */
     private async copyManyToManyLinksToNewVersion<T extends CommonEntity>(
         manager: EntityManager,
@@ -560,21 +559,17 @@ export class DraftPublishHelperService {
             ? [joinTable.ownerColumns, joinTable.inverseColumns]
             : [joinTable.inverseColumns, joinTable.ownerColumns];
 
-        const driver = manager.connection.driver;
-        // tablePath may be "schema.table" (or "db.schema.table" on MSSQL), so escape each part.
-        // [0]: Solid entities have a single-column id.
-        const joinTableName = joinTable.tablePath.split('.').map(part => driver.escape(part)).join('.');
-        const thisRecordColumn = driver.escape(thisRecordColumns[0].databaseName);
-        const linkedRecordColumn = driver.escape(linkedRecordColumns[0].databaseName);
+        // tablePath may be "schema.table", so quote each part. [0]: Solid entities have a single-column id.
+        const joinTableName = joinTable.tablePath.split('.').map(part => `"${part}"`).join('.');
+        const thisRecordColumn = `"${thisRecordColumns[0].databaseName}"`;
+        const linkedRecordColumn = `"${linkedRecordColumns[0].databaseName}"`;
 
-        const [sql, parameters] = driver.escapeQueryWithParameters(
+        await manager.query(
             `INSERT INTO ${joinTableName} (${thisRecordColumn}, ${linkedRecordColumn}) ` +
-            `SELECT :newVersionId, ${linkedRecordColumn} FROM ${joinTableName} ` +
-            `WHERE ${thisRecordColumn} = :publishedVersionId`,
-            { newVersionId, publishedVersionId },
-            {},
+            `SELECT $1, ${linkedRecordColumn} FROM ${joinTableName} ` +
+            `WHERE ${thisRecordColumn} = $2`,
+            [newVersionId, publishedVersionId],
         );
-        await manager.query(sql, parameters);
     }
 
     private async cloneMediaForVersion<T extends CommonEntity>(

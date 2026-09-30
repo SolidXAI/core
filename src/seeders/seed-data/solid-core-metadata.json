@@ -13028,7 +13028,22 @@
           "enableGlobalSearch": true,
           "create": false,
           "edit": false,
-          "delete": false
+          "delete": false,
+          "headerButtons": [
+            {
+              "attrs": {
+                "label": "Selected message summary",
+                "action": "MqMessageSelectedRecordsSummaryHeaderAction",
+                "icon": "si-chart-bar",
+                "actionInContextMenu": true,
+                "openInPopup": true,
+                "closable": true,
+                "popupWidth": "min(760px, calc(100vw - 32px))",
+                "requiresSelection": true,
+                "customComponentIsSystem": true
+              }
+            }
+          ]
         },
         "children": [
           {
@@ -13204,7 +13219,48 @@
           "edit": false,
           "delete": false,
           "groupBy": "stage",
-          "draggable": false
+          "draggable": false,
+          "enableCardSelection": true,
+          "headerButtons": [
+            {
+              "attrs": {
+                "label": "Selected message summary",
+                "action": "MqMessageKanbanSelectedRecordsSummaryHeaderAction",
+                "icon": "si-chart-bar",
+                "actionInContextMenu": true,
+                "openInPopup": true,
+                "closable": true,
+                "popupWidth": "min(760px, calc(100vw - 32px))",
+                "requiresSelection": true,
+                "customComponentIsSystem": true
+              }
+            },
+            {
+              "attrs": {
+                "label": "Quick filters",
+                "action": "MqMessageKanbanQuickFilterHeaderAction",
+                "icon": "si-filter",
+                "actionInContextMenu": true,
+                "openInPopup": true,
+                "closable": true,
+                "popupWidth": "480px",
+                "customComponentIsSystem": true
+              }
+            }
+          ],
+          "rowButtons": [
+            {
+              "attrs": {
+                "label": "View details",
+                "action": "MqMessageDetailsKanbanCardAction",
+                "icon": "si-eye",
+                "actionInContextMenu": true,
+                "openInPopup": true,
+                "closable": true,
+                "popupWidth": "720px"
+              }
+            }
+          ]
         },
         "children": [
           {
