@@ -221,7 +221,6 @@ import { LocaleController } from './controllers/locale.controller';
 import { RoleMetadataController } from './controllers/role-metadata.controller';
 import { SavedFiltersController } from './controllers/saved-filters.controller';
 import { ScheduledJobController } from './controllers/scheduled-job.controller';
-import { AgentSessionController } from './controllers/agent-session.controller';
 import { AgentEventController } from './controllers/agent-event.controller';
 import { McpAuditLogController } from './controllers/mcp-audit-log.controller';
 import { SecurityRuleController } from './controllers/security-rule.controller';
@@ -242,7 +241,6 @@ import { Locale } from './entities/locale.entity';
 import { RoleMetadata } from './entities/role-metadata.entity';
 import { SavedFilters } from './entities/saved-filters.entity';
 import { ScheduledJob } from './entities/scheduled-job.entity';
-import { AgentSession } from './entities/agent-session.entity';
 import { AgentEvent } from './entities/agent-event.entity';
 import { McpAuditLog } from './entities/mcp-audit-log.entity';
 import { SecurityRule } from './entities/security-rule.entity';
@@ -314,7 +312,6 @@ import { PermissionMetadataRepository } from './repository/permission-metadata.r
 import { RoleMetadataRepository } from './repository/role-metadata.repository';
 import { SavedFiltersRepository } from './repository/saved-filters.repository';
 import { ScheduledJobRepository } from './repository/scheduled-job.repository';
-import { AgentSessionRepository } from './repository/agent-session.repository';
 import { AgentEventRepository } from './repository/agent-event.repository';
 import { McpAuditLogRepository } from './repository/mcp-audit-log.repository';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
@@ -364,7 +361,6 @@ import { RequestContextService } from './services/request-context.service';
 import { RoleMetadataService } from './services/role-metadata.service';
 import { SavedFiltersService } from './services/saved-filters.service';
 import { ScheduledJobService } from './services/scheduled-job.service';
-import { AgentSessionService } from './services/agent-session.service';
 import { AgentEventService } from './services/agent-event.service';
 import { McpAuditLogService } from './services/mcp-audit-log.service';
 import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
@@ -549,7 +545,6 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
       RoleMetadata,
       SavedFilters,
       ScheduledJob,
-      AgentSession,
       AgentEvent,
       McpAuditLog,
       SecurityRule,
@@ -695,7 +690,6 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     RoleMetadataController,
     SavedFiltersController,
     ScheduledJobController,
-    AgentSessionController,
     AgentEventController,
     McpAuditLogController,
     SecurityRuleController,
@@ -1000,10 +994,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
 
     ViewMetadataRepository,
     ScheduledJobRepository,
-    AgentSessionRepository,
     AgentEventRepository,
     McpAuditLogRepository,
-    AgentSessionService,
     AgentEventService,
     McpAuditLogService,
     ScheduledJobSubscriber,
