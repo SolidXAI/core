@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AgentToolRegistryService } from '../services/agent-tool-registry.service';
 import { CreateAgentToolRegistryDto } from '../dtos/create-agent-tool-registry.dto';
 import { UpdateAgentToolRegistryDto } from '../dtos/update-agent-tool-registry.dto';
-import { ShowSoftDeleted } from '@solidxai/core';
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Agent Hub')
 @Controller('agent-tool-registry')

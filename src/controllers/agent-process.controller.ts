@@ -4,7 +4,7 @@ import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AgentProcessService } from '../services/agent-process.service';
 import { CreateAgentProcessDto } from '../dtos/create-agent-process.dto';
 import { UpdateAgentProcessDto } from '../dtos/update-agent-process.dto';
-import { ShowSoftDeleted } from '@solidxai/core';
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Agent Hub')
 @Controller('agent-process')

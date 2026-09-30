@@ -2,9 +2,9 @@ import { Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ModuleRef  } from "@nestjs/core";
 import { EntityManager } from 'typeorm';
-import { CRUDService } from '@solidxai/core';
+import { CRUDService } from './crud.service';
 import { AgentTool } from '../entities/agent-tool.entity';
-import { AgentToolRepository } from '../repositories/agent-tool.repository';
+import { AgentToolRepository } from '../repository/agent-tool.repository';
 
 @Injectable()
 export class AgentToolService extends CRUDService<AgentTool>{

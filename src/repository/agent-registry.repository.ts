@@ -1,7 +1,7 @@
 import { Injectable } from '@nestjs/common';
-import { SecurityRuleRepository } from '@solidxai/core';
-import { SolidBaseRepository } from '@solidxai/core' ;
-import { RequestContextService } from '@solidxai/core';
+import { SecurityRuleRepository } from './security-rule.repository';
+import { SolidBaseRepository } from './solid-base.repository';
+import { RequestContextService } from 'src/services/request-context.service';
 import { DataSource } from 'typeorm';
 import { InjectDataSource } from '@nestjs/typeorm';
 import { AgentRegistry } from '../entities/agent-registry.entity';
