@@ -79,6 +79,18 @@ export class UpdateAgentSessionDto {
 
     @IsNotEmpty()
     @IsOptional()
+    @IsInt()
+    @ApiProperty()
+    total_input_tokens: number;
+
+    @IsNotEmpty()
+    @IsOptional()
+    @IsInt()
+    @ApiProperty()
+    total_output_tokens: number;
+
+    @IsNotEmpty()
+    @IsOptional()
     @IsNumber()
     @ApiProperty()
     total_cost: number;

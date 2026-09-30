@@ -9727,6 +9727,48 @@
             "isPrimaryKey": false
           },
           {
+            "name": "total_input_tokens",
+            "displayName": "Total Input Tokens",
+            "description": null,
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": true,
+            "defaultValue": 0,
+            "min": null,
+            "max": null,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "total_output_tokens",
+            "displayName": "Total Output Tokens",
+            "description": null,
+            "type": "int",
+            "ormType": "integer",
+            "isSystem": true,
+            "defaultValue": 0,
+            "min": null,
+            "max": null,
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
             "name": "total_cost",
             "displayName": "Total Cost",
             "description": null,
@@ -23627,7 +23669,7 @@
       "displayName": "Agent Registry",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentRegistry",
       "layout": {
         "type": "list",
@@ -23745,7 +23787,7 @@
       "displayName": "Agent Registry",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentRegistry",
       "layout": {
         "type": "form",
@@ -23865,7 +23907,7 @@
       "displayName": "Agent Registry",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentRegistry",
       "layout": {
         "type": "tree",
@@ -23965,7 +24007,7 @@
       "displayName": "Agent Tool Registry",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentToolRegistry",
       "layout": {
         "type": "list",
@@ -24047,7 +24089,7 @@
       "displayName": "Agent Tool Registry",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentToolRegistry",
       "layout": {
         "type": "form",
@@ -24137,7 +24179,7 @@
       "displayName": "Agent Tool Registry",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentToolRegistry",
       "layout": {
         "type": "tree",
@@ -24204,7 +24246,7 @@
       "displayName": "Agent Skill Registry",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSkillRegistry",
       "layout": {
         "type": "list",
@@ -24264,7 +24306,7 @@
       "displayName": "Agent Skill Registry",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSkillRegistry",
       "layout": {
         "type": "form",
@@ -24342,7 +24384,7 @@
       "displayName": "Agent Skill Registry",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSkillRegistry",
       "layout": {
         "type": "tree",
@@ -24397,7 +24439,7 @@
       "displayName": "Agent Tool",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentTool",
       "layout": {
         "type": "list",
@@ -24452,7 +24494,7 @@
       "displayName": "Agent Tool",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentTool",
       "layout": {
         "type": "form",
@@ -24524,7 +24566,7 @@
       "displayName": "Agent Tool",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentTool",
       "layout": {
         "type": "tree",
@@ -24573,7 +24615,7 @@
       "displayName": "Agent Skill",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSkill",
       "layout": {
         "type": "list",
@@ -24628,7 +24670,7 @@
       "displayName": "Agent Skill",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSkill",
       "layout": {
         "type": "form",
@@ -24700,7 +24742,7 @@
       "displayName": "Agent Skill",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSkill",
       "layout": {
         "type": "tree",
@@ -24749,7 +24791,7 @@
       "displayName": "Agent Role",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentRole",
       "layout": {
         "type": "list",
@@ -24798,7 +24840,7 @@
       "displayName": "Agent Role",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentRole",
       "layout": {
         "type": "form",
@@ -24864,7 +24906,7 @@
       "displayName": "Agent Role",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentRole",
       "layout": {
         "type": "tree",
@@ -24907,7 +24949,7 @@
       "displayName": "Agent Secret",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSecret",
       "layout": {
         "type": "list",
@@ -24962,7 +25004,7 @@
       "displayName": "Agent Secret",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSecret",
       "layout": {
         "type": "form",
@@ -25034,7 +25076,7 @@
       "displayName": "Agent Secret",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSecret",
       "layout": {
         "type": "tree",
@@ -25083,7 +25125,7 @@
       "displayName": "Agent Process",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentProcess",
       "layout": {
         "type": "list",
@@ -25227,7 +25269,7 @@
       "displayName": "Agent Process",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentProcess",
       "layout": {
         "type": "form",
@@ -25371,7 +25413,7 @@
       "displayName": "Agent Process",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentProcess",
       "layout": {
         "type": "tree",
@@ -25492,7 +25534,7 @@
       "displayName": "Agent Session",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSession",
       "layout": {
         "type": "list",
@@ -25588,6 +25630,18 @@
           {
             "type": "field",
             "attrs": {
+              "name": "total_input_tokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "total_output_tokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "total_cost",
               "sortable": true
             }
@@ -25639,7 +25693,7 @@
       "displayName": "Agent Session",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSession",
       "layout": {
         "type": "form",
@@ -25754,6 +25808,18 @@
                       {
                         "type": "field",
                         "attrs": {
+                          "name": "total_input_tokens"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "total_output_tokens"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
                           "name": "error"
                         }
                       },
@@ -25789,7 +25855,7 @@
       "displayName": "Agent Session",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentSession",
       "layout": {
         "type": "tree",
@@ -25875,6 +25941,18 @@
           {
             "type": "field",
             "attrs": {
+              "name": "total_input_tokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "total_output_tokens"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "total_cost"
             }
           },
@@ -25922,7 +26000,7 @@
       "displayName": "Agent Job",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentJob",
       "layout": {
         "type": "list",
@@ -26067,7 +26145,7 @@
       "displayName": "Agent Job",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentJob",
       "layout": {
         "type": "form",
@@ -26235,7 +26313,7 @@
       "displayName": "Agent Job",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentJob",
       "layout": {
         "type": "tree",
@@ -26380,7 +26458,7 @@
       "displayName": "Agenthub Session Checkpoint",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agenthubSessionCheckpoint",
       "layout": {
         "type": "list",
@@ -26453,7 +26531,7 @@
       "displayName": "Agenthub Session Checkpoint",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agenthubSessionCheckpoint",
       "layout": {
         "type": "form",
@@ -26549,7 +26627,7 @@
       "displayName": "Agenthub Session Checkpoint",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agenthubSessionCheckpoint",
       "layout": {
         "type": "tree",
@@ -26622,7 +26700,7 @@
       "displayName": "Agent Human Request",
       "type": "list",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentHumanRequest",
       "layout": {
         "type": "list",
@@ -26743,7 +26821,7 @@
       "displayName": "Agent Human Request",
       "type": "form",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentHumanRequest",
       "layout": {
         "type": "form",
@@ -26875,7 +26953,7 @@
       "displayName": "Agent Human Request",
       "type": "tree",
       "context": "{}",
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentHumanRequest",
       "layout": {
         "type": "tree",
@@ -27185,7 +27263,7 @@
   ],
   "modelSequences": [
     {
-      "moduleUserKey": "agent-hub",
+      "moduleUserKey": "solid-core",
       "modelUserKey": "agentProcess",
       "fieldUserKey": "processId",
       "sequenceName": "agent-process-id-sequence",

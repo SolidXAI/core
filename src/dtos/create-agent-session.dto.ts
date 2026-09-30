@@ -70,6 +70,16 @@ export class CreateAgentSessionDto {
     total_steps: number = 0;
 
     @IsNotEmpty()
+    @IsInt()
+    @ApiProperty()
+    total_input_tokens: number = 0;
+
+    @IsNotEmpty()
+    @IsInt()
+    @ApiProperty()
+    total_output_tokens: number = 0;
+
+    @IsNotEmpty()
     @IsNumber()
     @ApiProperty()
     total_cost: number;

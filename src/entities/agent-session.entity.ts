@@ -44,6 +44,12 @@ export class AgentSession extends CommonEntity {
     @Column({ type: "integer", default: 0 })
     total_steps: number = 0;
 
+    @Column({ type: "integer", default: 0 })
+    total_input_tokens: number = 0;
+
+    @Column({ type: "integer", default: 0 })
+    total_output_tokens: number = 0;
+
     @Column({ type: "decimal" })
     total_cost: number = 0;
 
