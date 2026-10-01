@@ -8369,6 +8369,46 @@
             "isPrimaryKey": false
           },
           {
+            "name": "description",
+            "displayName": "Description",
+            "description": null,
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": true,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "defaultValue": "",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "tags",
+            "displayName": "Tags",
+            "description": null,
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": true,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "defaultValue": "[]",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
             "name": "type",
             "displayName": "Type",
             "description": null,
@@ -12348,11 +12388,11 @@
       "name": "agentSkillRegistry-custom-create-action",
       "type": "custom",
       "domain": "",
-      "context": "",
-      "customComponent": "/admin/core/solid-core/agentSkillRegistry/custom-form/new",
+      "context": "{}",
+      "customComponent": "/admin/core/solid-core/agent-skill-registry/editor/new",
       "customIsModal": false,
       "serverEndpoint": "",
-      "viewUserKey": "",
+      "viewUserKey": "agentSkillRegistry-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "agentSkillRegistry"
     },
@@ -12361,11 +12401,11 @@
       "name": "agentSkillRegistry-custom-edit-action",
       "type": "custom",
       "domain": "",
-      "context": "",
-      "customComponent": "/admin/core/solid-core/agentSkillRegistry/custom-form/:id",
+      "context": "{}",
+      "customComponent": "/admin/core/solid-core/agent-skill-registry/editor",
       "customIsModal": false,
       "serverEndpoint": "",
-      "viewUserKey": "",
+      "viewUserKey": "agentSkillRegistry-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "agentSkillRegistry"
     },
@@ -12374,11 +12414,11 @@
       "name": "agentToolRegistry-custom-create-action",
       "type": "custom",
       "domain": "",
-      "context": "",
-      "customComponent": "/admin/core/solid-core/agentToolRegistry/custom-form/new",
+      "context": "{}",
+      "customComponent": "/admin/core/solid-core/agent-tool-registry/editor/new",
       "customIsModal": false,
       "serverEndpoint": "",
-      "viewUserKey": "",
+      "viewUserKey": "agentToolRegistry-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "agentToolRegistry"
     },
@@ -12387,11 +12427,11 @@
       "name": "agentToolRegistry-custom-edit-action",
       "type": "custom",
       "domain": "",
-      "context": "",
-      "customComponent": "/admin/core/solid-core/agentToolRegistry/custom-form/:id",
+      "context": "{}",
+      "customComponent": "/admin/core/solid-core/agent-tool-registry/editor",
       "customIsModal": false,
       "serverEndpoint": "",
-      "viewUserKey": "",
+      "viewUserKey": "agentToolRegistry-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "agentToolRegistry"
     }
@@ -24112,78 +24152,41 @@
       "modelUserKey": "agentToolRegistry",
       "layout": {
         "type": "form",
-        "attrs": {
-          "name": "form-1",
-          "label": "Agent Tool Registry",
-          "className": "grid"
-        },
+        "attrs": { "name": "form-1", "label": "Agent Tool Registry", "className": "grid" },
         "children": [
           {
             "type": "sheet",
-            "attrs": {
-              "name": "sheet-1"
-            },
+            "attrs": { "name": "sheet-1" },
             "children": [
               {
-                "type": "row",
-                "attrs": {
-                  "name": "sheet-1"
-                },
+                "type": "notebook",
+                "attrs": { "name": "notebook-1" },
                 "children": [
                   {
-                    "type": "column",
-                    "attrs": {
-                      "name": "group-1",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                    },
+                    "type": "page",
+                    "attrs": { "name": "general-info", "label": "General Info" },
                     "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "name"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "source_code"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "status"
-                        }
-                      }
+                      { "type": "field", "attrs": { "name": "name" } },
+                      { "type": "field", "attrs": { "name": "description" } },
+                      { "type": "field", "attrs": { "name": "tags" } },
+                      { "type": "field", "attrs": { "name": "type" } },
+                      { "type": "field", "attrs": { "name": "status" } }
                     ]
                   },
                   {
-                    "type": "column",
-                    "attrs": {
-                      "name": "group-2",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
-                    },
+                    "type": "page",
+                    "attrs": { "name": "tool", "label": "Tool" },
                     "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "type"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "checksum"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "last_load_error"
-                        }
-                      }
+                      { "type": "field", "attrs": { "name": "source_code" } },
+                      { "type": "field", "attrs": { "name": "checksum" } },
+                      { "type": "field", "attrs": { "name": "last_load_error" } }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": { "name": "agents", "label": "Agents" },
+                    "children": [
+                      { "type": "field", "attrs": { "name": "agentTools" } }
                     ]
                   }
                 ]
@@ -24342,52 +24345,78 @@
             },
             "children": [
               {
-                "type": "row",
+                "type": "notebook",
                 "attrs": {
-                  "name": "sheet-1"
+                  "name": "agent-skill-registry-notebook"
                 },
                 "children": [
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-1",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                      "name": "agent-skill-registry-general-info",
+                      "label": "General Info"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "group",
                         "attrs": {
-                          "name": "name"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "body"
-                        }
+                          "name": "agent-skill-registry-general-fields",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12"
+                        },
+                        "children": [
+                          { "type": "field", "attrs": { "name": "name" } },
+                          { "type": "field", "attrs": { "name": "description" } },
+                          { "type": "field", "attrs": { "name": "tags" } }
+                        ]
                       }
                     ]
                   },
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-2",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                      "name": "agent-skill-registry-skill",
+                      "label": "Skill"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "group",
                         "attrs": {
-                          "name": "description"
-                        }
-                      },
+                          "name": "agent-skill-registry-skill-body",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12 min-h-0 h-full"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "body",
+                              "showLabel": false,
+                              "className": "field w-full px-2 pt-2 min-h-0 h-full",
+                              "height": "calc(100vh - 260px)"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "agent-skill-registry-agents",
+                      "label": "Agents"
+                    },
+                    "children": [
                       {
-                        "type": "field",
+                        "type": "group",
                         "attrs": {
-                          "name": "tags"
-                        }
+                          "name": "agent-skill-registry-agent-list",
+                          "label": "Associated Agents",
+                          "className": "col-12 sm:col-12 md:col-12 lg:col-12"
+                        },
+                        "children": [
+                          { "type": "field", "attrs": { "name": "agentSkills" } }
+                        ]
                       }
                     ]
                   }
