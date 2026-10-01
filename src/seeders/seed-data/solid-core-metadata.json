@@ -4946,7 +4946,7 @@
           {
             "name": "eventData",
             "displayName": "Event Data",
-            "type": "json",
+            "type": "longText",
             "columnName": "event_data",
             "required": false,
             "unique": false,
@@ -4983,7 +4983,7 @@
           {
             "name": "toolArguments",
             "displayName": "Tool Arguments",
-            "type": "json",
+            "type": "longText",
             "columnName": "tool_arguments",
             "required": false,
             "unique": false,
@@ -4995,7 +4995,7 @@
           {
             "name": "toolOutput",
             "displayName": "Tool Output",
-            "type": "json",
+            "type": "longText",
             "columnName": "tool_output",
             "required": false,
             "unique": false,
@@ -5103,7 +5103,6 @@
             "isUserKey": false,
             "enableAuditTracking": true,
             "isPrimaryKey": false
-            
           },
           {
             "name": "attachments",
@@ -19144,8 +19143,7 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "toolArguments",
-                                  "viewWidget": "SolidJsonFormViewWidget"
+                                  "name": "toolArguments"
                                 }
                               }
                             ]
@@ -19178,8 +19176,7 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "toolOutput",
-                                  "viewWidget": "SolidJsonFormViewWidget"
+                                  "name": "toolOutput"
                                 }
                               }
                             ]
@@ -19212,8 +19209,7 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "eventData",
-                                  "viewWidget": "SolidJsonFormViewWidget"
+                                  "name": "eventData"
                                 }
                               }
                             ]
