@@ -12890,7 +12890,7 @@
       "iconName": "key"
     },
     {
-      "displayName": "Agent Registry",
+      "displayName": "Agents",
       "name": "agentRegistry-menu-item",
       "sequenceNumber": 2,
       "actionUserKey": "agentRegistry-list-action",
@@ -12899,7 +12899,7 @@
       "iconName": "smart_toy"
     },
     {
-      "displayName": "Agent Tool Registry",
+      "displayName": "Tools",
       "name": "agentToolRegistry-menu-item",
       "sequenceNumber": 3,
       "actionUserKey": "agentToolRegistry-list-action",
@@ -12908,7 +12908,7 @@
       "iconName": "build"
     },
     {
-      "displayName": "Agent Skill Registry",
+      "displayName": "Skills",
       "name": "agentSkillRegistry-menu-item",
       "sequenceNumber": 4,
       "actionUserKey": "agentSkillRegistry-list-action",
@@ -12917,7 +12917,7 @@
       "iconName": "psychology"
     },
     {
-      "displayName": "Agent Process",
+      "displayName": "Processes",
       "name": "agentProcess-menu-item",
       "sequenceNumber": 6,
       "actionUserKey": "agentProcess-list-action",
@@ -12926,7 +12926,7 @@
       "iconName": "dns"
     },
     {
-      "displayName": "Agent Session",
+      "displayName": "Sessions",
       "name": "agentSession-menu-item",
       "sequenceNumber": 5,
       "actionUserKey": "agentSession-list-action",
@@ -12935,7 +12935,7 @@
       "iconName": "chat"
     },
     {
-      "displayName": "Agent Human Request",
+      "displayName": "Human Requests",
       "name": "agentHumanRequest-menu-item",
       "sequenceNumber": 7,
       "actionUserKey": "agentHumanRequest-list-action",
