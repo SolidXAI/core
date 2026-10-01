@@ -52,19 +52,19 @@ export class UpdateAgentHumanRequestDto {
     @IsOptional()
     @IsString()
     @ApiProperty()
-    tool_call_id: string;
+    toolCallId: string;
 
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
-    tool_name: string;
+    toolName: string;
 
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
-    tool_arguments: string;
+    toolArguments: string;
 
     @IsNotEmpty()
     @IsOptional()
@@ -80,10 +80,10 @@ export class UpdateAgentHumanRequestDto {
     @IsOptional()
     @IsString()
     @ApiProperty()
-    answered_by: string;
+    answeredBy: string;
 
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    answered_at: Date;
+    answeredAt: Date;
 }

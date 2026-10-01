@@ -18,31 +18,31 @@ export class AgentRegistry extends CommonEntity {
     title: string;
 
     @Column({ type: "text" })
-    system_prompt: string;
+    systemPrompt: string;
 
     @Column({ type: "text", default: "{}" })
-    required_inputs: string = "{}";
+    requiredInputs: string = "{}";
 
     @Column({ type: "varchar" })
-    reasoning_model_key: string;
+    reasoningModelKey: string;
 
     @Column({ type: "varchar" })
-    fast_model_key: string;
+    fastModelKey: string;
 
     @Column({ type: "varchar", default: "draft" })
     status: string = "draft";
 
     @Column({ type: "integer" })
-    step_limit: number = 100;
+    stepLimit: number = 100;
 
     @Column({ type: "integer" })
-    turn_step_limit: number = 20;
+    turnStepLimit: number = 20;
 
     @Column({ type: "decimal", default: 3 })
-    cost_limit: number = 3;
+    costLimit: number = 3;
 
     @Column({ type: "integer" })
-    config_version: number = 1;
+    configVersion: number = 1;
 
     @OneToMany(() => AgentTool, agentTool => agentTool.agentRegistry, { cascade: true })
     agentTools: AgentTool[];

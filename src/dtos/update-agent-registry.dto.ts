@@ -30,25 +30,25 @@ export class UpdateAgentRegistryDto {
     @IsOptional()
     @IsString()
     @ApiProperty()
-    system_prompt: string;
+    systemPrompt: string;
 
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
-    required_inputs: string;
+    requiredInputs: string;
 
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
-    reasoning_model_key: string;
+    reasoningModelKey: string;
 
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
-    fast_model_key: string;
+    fastModelKey: string;
 
     @IsNotEmpty()
     @IsOptional()
@@ -60,25 +60,25 @@ export class UpdateAgentRegistryDto {
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    step_limit: number;
+    stepLimit: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    turn_step_limit: number;
+    turnStepLimit: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsNumber()
     @ApiProperty()
-    cost_limit: number;
+    costLimit: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    config_version: number;
+    configVersion: number;
 
     @IsOptional()
     @ApiProperty()

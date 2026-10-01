@@ -11,17 +11,26 @@ export class AgentToolRegistry extends CommonEntity {
     @Column({ type: "varchar" })
     type: string;
 
-    @Column({ type: "text" })
-    source_code: string = "";
+    @Column({ type: "varchar", nullable: true })
+    iconName?: string;
 
-    @Column({ type: "varchar" })
-    checksum: string = "";
+    @Column({ type: "text" })
+    description: string;
+
+    @Column({ type: "text", default: "[]" })
+    tags: string = "[]";
+
+    @Column({ type: "text" })
+    sourceCode: string = "";
+
+    @Column({ type: "varchar", nullable: true })
+    checksum?: string;
 
     @Column({ type: "varchar", default: "active" })
     status: string = "active";
 
     @Column({ type: "text", nullable: true })
-    last_load_error: string;
+    lastLoadError: string;
 
     @OneToMany(() => AgentTool, agentTool => agentTool.agentToolRegistry, { cascade: true })
     agentTools: AgentTool[];

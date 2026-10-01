@@ -24,22 +24,22 @@ export class CreateAgentRegistryDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    system_prompt: string;
+    systemPrompt: string;
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    required_inputs: string = "{}";
+    requiredInputs: string = "{}";
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    reasoning_model_key: string;
+    reasoningModelKey: string;
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    fast_model_key: string;
+    fastModelKey: string;
 
     @IsNotEmpty()
     @IsString()
@@ -49,22 +49,22 @@ export class CreateAgentRegistryDto {
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    step_limit: number;
+    stepLimit: number;
 
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    turn_step_limit: number;
+    turnStepLimit: number;
 
     @IsNotEmpty()
     @IsNumber()
     @ApiProperty()
-    cost_limit: number = 3;
+    costLimit: number = 3;
 
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    config_version: number;
+    configVersion: number;
 
     @IsOptional()
     @ApiProperty()

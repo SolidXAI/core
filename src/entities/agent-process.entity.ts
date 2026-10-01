@@ -19,37 +19,37 @@ export class AgentProcess extends CommonEntity {
     pid: number;
 
     @Column({ type: "varchar" })
-    ws_url: string = "";
+    wsUrl: string = "";
 
     @Column({ type: "varchar", default: "starting" })
     status: string = "starting";
 
     @Column({ type: "integer" })
-    config_version: number = 0;
+    configVersion: number = 0;
 
     @Column({ type: "integer" })
-    open_sessions: number = 0;
+    openSessions: number = 0;
 
     @Column({ type: "integer" })
-    running_turns: number = 0;
+    runningTurns: number = 0;
 
     @Column({ type: "integer" })
-    max_sessions: number = 50;
+    maxSessions: number = 50;
 
     @Column({ type: "integer" })
-    max_running_turns: number = 8;
+    maxRunningTurns: number = 8;
 
     @Column({ type: "text", default: "{}" })
-    load_report: string = "{}";
+    loadReport: string = "{}";
 
     @Column({ type: "timestamptz", default: () => "now()" })
-    started_at: Date = new Date();
+    startedAt: Date = new Date();
 
     @Column({ type: "timestamptz", nullable: true })
-    heartbeat_at: Date;
+    heartbeatAt: Date;
 
     @Column({ type: "timestamptz", nullable: true })
-    stopped_at: Date;
+    stoppedAt: Date;
 
     @Index({ unique: true })
     @Column({ type: "varchar", nullable: true })

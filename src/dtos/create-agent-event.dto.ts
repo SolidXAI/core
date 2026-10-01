@@ -80,12 +80,12 @@ export class CreateAgentEventDto {
   @IsOptional()
   @IsString()
   @ApiProperty()
-  reasoning_model_key: string;
+  reasoningModelKey: string;
 
   @IsOptional()
   @IsString()
   @ApiProperty()
-  fast_model_key: string;
+  fastModelKey: string;
 
   @IsOptional()
   @IsDate()

@@ -39,7 +39,7 @@ export class UpdateAgentProcessDto {
     @IsOptional()
     @IsString()
     @ApiProperty()
-    ws_url: string;
+    wsUrl: string;
 
     @IsNotEmpty()
     @IsOptional()
@@ -51,47 +51,47 @@ export class UpdateAgentProcessDto {
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    config_version: number;
+    configVersion: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    open_sessions: number;
+    openSessions: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    running_turns: number;
+    runningTurns: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    max_sessions: number;
+    maxSessions: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    max_running_turns: number;
+    maxRunningTurns: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
-    load_report: string;
+    loadReport: string;
 
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    heartbeat_at: Date;
+    heartbeatAt: Date;
 
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    stopped_at: Date;
+    stoppedAt: Date;
 
     @IsOptional()
     @ApiProperty()

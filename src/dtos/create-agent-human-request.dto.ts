@@ -47,17 +47,17 @@ export class CreateAgentHumanRequestDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    tool_call_id: string;
+    toolCallId: string;
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    tool_name: string;
+    toolName: string;
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    tool_arguments: string;
+    toolArguments: string;
 
     @IsNotEmpty()
     @IsString()
@@ -72,10 +72,10 @@ export class CreateAgentHumanRequestDto {
     @IsOptional()
     @IsString()
     @ApiProperty()
-    answered_by: string;
+    answeredBy: string;
 
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    answered_at: Date;
+    answeredAt: Date;
 }

@@ -26,7 +26,7 @@ export class UpdateAgenthubSessionCheckpointDto {
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    turn_number: number;
+    turnNumber: number;
 
     @IsNotEmpty()
     @IsOptional()
@@ -43,7 +43,7 @@ export class UpdateAgenthubSessionCheckpointDto {
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    n_calls: number;
+    nCalls: number;
 
     @IsNotEmpty()
     @IsOptional()

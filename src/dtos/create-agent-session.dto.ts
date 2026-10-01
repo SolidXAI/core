@@ -57,32 +57,32 @@ export class CreateAgentSessionDto {
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    config_version: number;
+    configVersion: number;
 
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    turn_count: number = 0;
+    turnCount: number = 0;
 
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    total_steps: number = 0;
+    totalSteps: number = 0;
 
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    total_input_tokens: number = 0;
+    totalInputTokens: number = 0;
 
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    total_output_tokens: number = 0;
+    totalOutputTokens: number = 0;
 
     @IsNotEmpty()
     @IsNumber()
     @ApiProperty()
-    total_cost: number;
+    totalCost: number;
 
     @IsOptional()
     @IsString()
@@ -92,17 +92,17 @@ export class CreateAgentSessionDto {
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    ended_at: Date;
+    endedAt: Date;
 
     @IsOptional()
     @IsString()
     @ApiProperty()
-    reasoning_model_key: string;
+    reasoningModelKey: string;
 
     @IsOptional()
     @IsString()
     @ApiProperty()
-    fast_model_key: string;
+    fastModelKey: string;
 
     @IsOptional()
     @ApiProperty()

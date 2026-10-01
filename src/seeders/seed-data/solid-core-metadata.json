@@ -5065,7 +5065,7 @@
             "isSystem": true
           },
           {
-            "name": "reasoning_model_key",
+            "name": "reasoningModelKey",
             "displayName": "Reasoning Model Key",
             "description": null,
             "type": "shortText",
@@ -5089,7 +5089,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "fast_model_key",
+            "name": "fastModelKey",
             "displayName": "Fast Model Key",
             "description": null,
             "type": "shortText",
@@ -7944,7 +7944,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "system_prompt",
+            "name": "systemPrompt",
             "displayName": "System Prompt",
             "description": null,
             "type": "longText",
@@ -7964,7 +7964,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "required_inputs",
+            "name": "requiredInputs",
             "displayName": "Required Inputs",
             "description": null,
             "type": "longText",
@@ -7981,7 +7981,7 @@
             "defaultValue": "{}"
           },
           {
-            "name": "reasoning_model_key",
+            "name": "reasoningModelKey",
             "displayName": "Reasoning Model Key",
             "description": null,
             "type": "shortText",
@@ -8005,7 +8005,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "fast_model_key",
+            "name": "fastModelKey",
             "displayName": "Fast Model Key",
             "description": null,
             "type": "shortText",
@@ -8054,7 +8054,7 @@
             "isMultiSelect": false
           },
           {
-            "name": "step_limit",
+            "name": "stepLimit",
             "displayName": "Step Limit",
             "description": null,
             "type": "int",
@@ -8075,7 +8075,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "turn_step_limit",
+            "name": "turnStepLimit",
             "displayName": "Turn Step Limit",
             "description": null,
             "type": "int",
@@ -8096,7 +8096,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "cost_limit",
+            "name": "costLimit",
             "displayName": "Cost Limit",
             "description": null,
             "type": "decimal",
@@ -8116,7 +8116,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "config_version",
+            "name": "configVersion",
             "displayName": "Config Version",
             "description": null,
             "type": "int",
@@ -8368,6 +8368,22 @@
             "isPrimaryKey": false
           },
           {
+            "name": "iconName",
+            "displayName": "Icon",
+            "description": "Material Symbol name used to represent this registry item.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
             "name": "description",
             "displayName": "Description",
             "description": null,
@@ -8433,7 +8449,7 @@
             "isMultiSelect": false
           },
           {
-            "name": "source_code",
+            "name": "sourceCode",
             "displayName": "Source Code",
             "description": null,
             "type": "longText",
@@ -8459,12 +8475,12 @@
             "type": "shortText",
             "ormType": "varchar",
             "isSystem": true,
-            "defaultValue": "",
+            "defaultValue": null,
             "min": null,
             "max": null,
             "regexPattern": null,
             "regexPatternNotMatchingErrorMsg": null,
-            "required": true,
+            "required": false,
             "unique": false,
             "index": false,
             "private": false,
@@ -8502,7 +8518,7 @@
             "isMultiSelect": false
           },
           {
-            "name": "last_load_error",
+            "name": "lastLoadError",
             "displayName": "Last Load Error",
             "description": null,
             "type": "longText",
@@ -8589,6 +8605,22 @@
             "isUserKey": false,
             "enableAuditTracking": true,
             "isPrimaryKey": false
+          },
+          {
+            "name": "iconName",
+            "displayName": "Icon",
+            "description": "Material Symbol name used to represent this registry item.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": null,
+            "enableAuditTracking": true
           },
           {
             "name": "description",
@@ -9253,7 +9285,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "ws_url",
+            "name": "wsUrl",
             "displayName": "WebSocket URL",
             "description": null,
             "type": "shortText",
@@ -9305,7 +9337,7 @@
             "isMultiSelect": false
           },
           {
-            "name": "config_version",
+            "name": "configVersion",
             "displayName": "Config Version",
             "description": null,
             "type": "int",
@@ -9326,7 +9358,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "open_sessions",
+            "name": "openSessions",
             "displayName": "Open Sessions",
             "description": null,
             "type": "int",
@@ -9347,7 +9379,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "running_turns",
+            "name": "runningTurns",
             "displayName": "Running Turns",
             "description": null,
             "type": "int",
@@ -9368,7 +9400,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "max_sessions",
+            "name": "maxSessions",
             "displayName": "Max Sessions",
             "description": null,
             "type": "int",
@@ -9389,7 +9421,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "max_running_turns",
+            "name": "maxRunningTurns",
             "displayName": "Max Running Turns",
             "description": null,
             "type": "int",
@@ -9410,7 +9442,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "load_report",
+            "name": "loadReport",
             "displayName": "Load Report",
             "description": null,
             "type": "longText",
@@ -9427,7 +9459,7 @@
             "defaultValue": "{}"
           },
           {
-            "name": "started_at",
+            "name": "startedAt",
             "displayName": "Started At",
             "description": null,
             "type": "datetime",
@@ -9445,7 +9477,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "heartbeat_at",
+            "name": "heartbeatAt",
             "displayName": "Heartbeat At",
             "description": null,
             "type": "datetime",
@@ -9463,7 +9495,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "stopped_at",
+            "name": "stoppedAt",
             "displayName": "Stopped At",
             "description": null,
             "type": "datetime",
@@ -9721,7 +9753,7 @@
             "defaultValue": "{}"
           },
           {
-            "name": "config_version",
+            "name": "configVersion",
             "displayName": "Config Version",
             "description": null,
             "type": "int",
@@ -9742,7 +9774,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "turn_count",
+            "name": "turnCount",
             "displayName": "Turn Count",
             "description": null,
             "type": "int",
@@ -9763,7 +9795,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "total_steps",
+            "name": "totalSteps",
             "displayName": "Total Steps",
             "description": null,
             "type": "int",
@@ -9784,7 +9816,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "total_input_tokens",
+            "name": "totalInputTokens",
             "displayName": "Total Input Tokens",
             "description": null,
             "type": "int",
@@ -9805,7 +9837,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "total_output_tokens",
+            "name": "totalOutputTokens",
             "displayName": "Total Output Tokens",
             "description": null,
             "type": "int",
@@ -9826,7 +9858,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "total_cost",
+            "name": "totalCost",
             "displayName": "Total Cost",
             "description": null,
             "type": "decimal",
@@ -9866,7 +9898,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "started_at",
+            "name": "startedAt",
             "displayName": "Started At",
             "description": null,
             "type": "datetime",
@@ -9884,7 +9916,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "last_active_at",
+            "name": "lastActiveAt",
             "displayName": "Last Active At",
             "description": null,
             "type": "datetime",
@@ -9902,7 +9934,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "ended_at",
+            "name": "endedAt",
             "displayName": "Ended At",
             "description": null,
             "type": "datetime",
@@ -9920,7 +9952,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "reasoning_model_key",
+            "name": "reasoningModelKey",
             "displayName": "Reasoning Model Key",
             "description": null,
             "type": "shortText",
@@ -9944,7 +9976,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "fast_model_key",
+            "name": "fastModelKey",
             "displayName": "Fast Model Key",
             "description": null,
             "type": "shortText",
@@ -10188,7 +10220,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "caller_snapshot",
+            "name": "callerSnapshot",
             "displayName": "Caller Snapshot",
             "description": null,
             "type": "longText",
@@ -10225,7 +10257,7 @@
             "isMultiSelect": false
           },
           {
-            "name": "lease_token",
+            "name": "leaseToken",
             "displayName": "Lease Token",
             "description": null,
             "type": "shortText",
@@ -10249,7 +10281,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "lease_expires_at",
+            "name": "leaseExpiresAt",
             "displayName": "Lease Expires At",
             "description": null,
             "type": "datetime",
@@ -10288,7 +10320,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "idempotency_key",
+            "name": "idempotencyKey",
             "displayName": "Idempotency Key",
             "description": null,
             "type": "longText",
@@ -10308,7 +10340,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "webhook_url",
+            "name": "webhookUrl",
             "displayName": "Webhook URL",
             "description": null,
             "type": "longText",
@@ -10328,7 +10360,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "webhook_secret",
+            "name": "webhookSecret",
             "displayName": "Webhook Secret",
             "description": null,
             "type": "longText",
@@ -10348,7 +10380,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "timeout_seconds",
+            "name": "timeoutSeconds",
             "displayName": "Timeout Seconds",
             "description": null,
             "type": "int",
@@ -10369,7 +10401,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "max_steps",
+            "name": "maxSteps",
             "displayName": "Max Steps",
             "description": null,
             "type": "int",
@@ -10430,7 +10462,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "queued_at",
+            "name": "queuedAt",
             "displayName": "Queued At",
             "description": null,
             "type": "datetime",
@@ -10448,7 +10480,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "started_at",
+            "name": "startedAt",
             "displayName": "Started At",
             "description": null,
             "type": "datetime",
@@ -10466,7 +10498,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "finished_at",
+            "name": "finishedAt",
             "displayName": "Finished At",
             "description": null,
             "type": "datetime",
@@ -10577,7 +10609,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "turn_number",
+            "name": "turnNumber",
             "displayName": "Turn Number",
             "description": null,
             "type": "int",
@@ -10638,7 +10670,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "n_calls",
+            "name": "nCalls",
             "displayName": "N Calls",
             "description": null,
             "type": "int",
@@ -10836,7 +10868,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "tool_call_id",
+            "name": "toolCallId",
             "displayName": "Tool Call ID",
             "description": null,
             "type": "longText",
@@ -10856,7 +10888,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "tool_name",
+            "name": "toolName",
             "displayName": "Tool Name",
             "description": null,
             "type": "longText",
@@ -10876,7 +10908,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "tool_arguments",
+            "name": "toolArguments",
             "displayName": "Tool Arguments",
             "description": null,
             "type": "longText",
@@ -10942,7 +10974,7 @@
             "enableAuditTracking": true
           },
           {
-            "name": "answered_by",
+            "name": "answeredBy",
             "displayName": "Answered By",
             "description": null,
             "type": "shortText",
@@ -10966,7 +10998,7 @@
             "isPrimaryKey": false
           },
           {
-            "name": "answered_at",
+            "name": "answeredAt",
             "displayName": "Answered At",
             "description": null,
             "type": "datetime",
@@ -12110,6 +12142,19 @@
       "modelUserKey": "agentToolRegistry"
     },
     {
+      "displayName": "Agent Tool Registry Card Action",
+      "name": "agentToolRegistry-card-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentToolRegistry-card-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentToolRegistry"
+    },
+    {
       "displayName": "Agent Tool Registry Tree View Action",
       "name": "agentToolRegistry-tree-action",
       "type": "solid",
@@ -12132,6 +12177,19 @@
       "customIsModal": true,
       "serverEndpoint": "",
       "viewUserKey": "agentSkillRegistry-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentSkillRegistry"
+    },
+    {
+      "displayName": "Agent Skill Registry Card Action",
+      "name": "agentSkillRegistry-card-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentSkillRegistry-card-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "agentSkillRegistry"
     },
@@ -18989,13 +19047,13 @@
           {
             "type": "field",
             "attrs": {
-              "name": "reasoning_model_key"
+              "name": "reasoningModelKey"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "fast_model_key"
+              "name": "fastModelKey"
             }
           },
           {
@@ -19108,13 +19166,13 @@
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "reasoning_model_key"
+                                  "name": "reasoningModelKey"
                                 }
                               },
                               {
                                 "type": "field",
                                 "attrs": {
-                                  "name": "fast_model_key"
+                                  "name": "fastModelKey"
                                 }
                               },
                               {
@@ -23766,19 +23824,19 @@
           {
             "type": "field",
             "attrs": {
-              "name": "system_prompt"
+              "name": "systemPrompt"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "required_inputs"
+              "name": "requiredInputs"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "reasoning_model_key",
+              "name": "reasoningModelKey",
               "sortable": true,
               "isSearchable": true
             }
@@ -23786,7 +23844,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "fast_model_key",
+              "name": "fastModelKey",
               "sortable": true,
               "isSearchable": true
             }
@@ -23809,28 +23867,28 @@
           {
             "type": "field",
             "attrs": {
-              "name": "step_limit",
+              "name": "stepLimit",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "turn_step_limit",
+              "name": "turnStepLimit",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "cost_limit",
+              "name": "costLimit",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "config_version",
+              "name": "configVersion",
               "sortable": true
             }
           }
@@ -23881,13 +23939,13 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "system_prompt"
+                          "name": "systemPrompt"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "reasoning_model_key"
+                          "name": "reasoningModelKey"
                         }
                       },
                       {
@@ -23899,13 +23957,13 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "turn_step_limit"
+                          "name": "turnStepLimit"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "config_version"
+                          "name": "configVersion"
                         }
                       }
                     ]
@@ -23927,25 +23985,25 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "required_inputs"
+                          "name": "requiredInputs"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "fast_model_key"
+                          "name": "fastModelKey"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "step_limit"
+                          "name": "stepLimit"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "cost_limit"
+                          "name": "costLimit"
                         }
                       }
                     ]
@@ -24003,25 +24061,25 @@
           {
             "type": "field",
             "attrs": {
-              "name": "system_prompt"
+              "name": "systemPrompt"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "required_inputs"
+              "name": "requiredInputs"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "reasoning_model_key"
+              "name": "reasoningModelKey"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "fast_model_key"
+              "name": "fastModelKey"
             }
           },
           {
@@ -24033,25 +24091,25 @@
           {
             "type": "field",
             "attrs": {
-              "name": "step_limit"
+              "name": "stepLimit"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "turn_step_limit"
+              "name": "turnStepLimit"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "cost_limit"
+              "name": "costLimit"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "config_version"
+              "name": "configVersion"
             }
           }
         ]
@@ -24098,6 +24156,16 @@
           {
             "type": "field",
             "attrs": {
+              "name": "iconName",
+              "label": "Icon",
+              "isSearchable": false,
+              "sortable": false,
+              "viewWidget": "SolidIconNameListViewWidget"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "type",
               "isSearchable": true,
               "sortable": true
@@ -24106,7 +24174,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "source_code"
+              "name": "sourceCode"
             }
           },
           {
@@ -24133,8 +24201,66 @@
           {
             "type": "field",
             "attrs": {
-              "name": "last_load_error"
+              "name": "lastLoadError"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentToolRegistry-card-view",
+      "displayName": "Agent Tool Cards",
+      "type": "card",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentToolRegistry",
+      "layout": {
+        "type": "card",
+        "attrs": {
+          "pagination": true,
+          "pageSize": 24,
+          "pageSizeOptions": [12, 24, 48],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "createAction": "agentToolRegistry-custom-create-action",
+          "editAction": "agentToolRegistry-custom-edit-action",
+          "allowedViews": ["list", "card"]
+        },
+        "children": [
+          {
+            "type": "card",
+            "attrs": {
+              "name": "Agent Tool",
+              "cardWidget": "AgentRegistryCardWidget"
+            },
+            "children": [
+              {
+                "type": "field",
+                "attrs": { "name": "iconName" }
+              },
+              {
+                "type": "field",
+                "attrs": { "name": "name" }
+              },
+              {
+                "type": "field",
+                "attrs": { "name": "description" }
+              },
+              {
+                "type": "field",
+                "attrs": { "name": "tags" }
+              },
+              {
+                "type": "field",
+                "attrs": { "name": "type" }
+              },
+              {
+                "type": "field",
+                "attrs": { "name": "status" }
+              }
+            ]
           }
         ]
       }
@@ -24163,6 +24289,7 @@
                     "attrs": { "name": "general-info", "label": "General Info" },
                     "children": [
                       { "type": "field", "attrs": { "name": "name" } },
+                      { "type": "field", "attrs": { "name": "iconName", "editWidget": "SolidIconEditWidget", "viewWidget": "SolidIconViewWidget" } },
                       { "type": "field", "attrs": { "name": "description" } },
                       { "type": "field", "attrs": { "name": "tags" } },
                       { "type": "field", "attrs": { "name": "type" } },
@@ -24173,9 +24300,9 @@
                     "type": "page",
                     "attrs": { "name": "tool", "label": "Tool" },
                     "children": [
-                      { "type": "field", "attrs": { "name": "source_code" } },
+                      { "type": "field", "attrs": { "name": "sourceCode" } },
                       { "type": "field", "attrs": { "name": "checksum" } },
-                      { "type": "field", "attrs": { "name": "last_load_error" } }
+                      { "type": "field", "attrs": { "name": "lastLoadError" } }
                     ]
                   },
                   {
@@ -24235,7 +24362,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "source_code"
+              "name": "sourceCode"
             }
           },
           {
@@ -24253,7 +24380,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "last_load_error"
+              "name": "lastLoadError"
             }
           }
         ]
@@ -24300,6 +24427,16 @@
           {
             "type": "field",
             "attrs": {
+              "name": "iconName",
+              "label": "Icon",
+              "isSearchable": false,
+              "sortable": false,
+              "viewWidget": "SolidIconNameListViewWidget"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "description"
             }
           },
@@ -24315,6 +24452,56 @@
               "name": "tags",
               "isSearchable": true
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentSkillRegistry-card-view",
+      "displayName": "Agent Skill Cards",
+      "type": "card",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentSkillRegistry",
+      "layout": {
+        "type": "card",
+        "attrs": {
+          "pagination": true,
+          "pageSize": 24,
+          "pageSizeOptions": [12, 24, 48],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "createAction": "agentSkillRegistry-custom-create-action",
+          "editAction": "agentSkillRegistry-custom-edit-action",
+          "allowedViews": ["list", "card"]
+        },
+        "children": [
+          {
+            "type": "card",
+            "attrs": {
+              "name": "Agent Skill",
+              "cardWidget": "AgentRegistryCardWidget"
+            },
+            "children": [
+              {
+                "type": "field",
+                "attrs": { "name": "iconName" }
+              },
+              {
+                "type": "field",
+                "attrs": { "name": "name" }
+              },
+              {
+                "type": "field",
+                "attrs": { "name": "description" }
+              },
+              {
+                "type": "field",
+                "attrs": { "name": "tags" }
+              }
+            ]
           }
         ]
       }
@@ -24362,6 +24549,7 @@
                         },
                         "children": [
                           { "type": "field", "attrs": { "name": "name" } },
+                          { "type": "field", "attrs": { "name": "iconName", "editWidget": "SolidIconEditWidget", "viewWidget": "SolidIconViewWidget" } },
                           { "type": "field", "attrs": { "name": "description" } },
                           { "type": "field", "attrs": { "name": "tags" } }
                         ]
@@ -25223,7 +25411,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "ws_url",
+              "name": "wsUrl",
               "isSearchable": true
             }
           },
@@ -25238,62 +25426,62 @@
           {
             "type": "field",
             "attrs": {
-              "name": "config_version",
+              "name": "configVersion",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "open_sessions",
+              "name": "openSessions",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "running_turns",
+              "name": "runningTurns",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "max_sessions",
+              "name": "maxSessions",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "max_running_turns",
+              "name": "maxRunningTurns",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "load_report"
+              "name": "loadReport"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "started_at",
+              "name": "startedAt",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "heartbeat_at",
+              "name": "heartbeatAt",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "stopped_at",
+              "name": "stoppedAt",
               "sortable": true
             }
           },
@@ -25358,37 +25546,37 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "ws_url"
+                          "name": "wsUrl"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "config_version"
+                          "name": "configVersion"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "running_turns"
+                          "name": "runningTurns"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "max_running_turns"
+                          "name": "maxRunningTurns"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "started_at"
+                          "name": "startedAt"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "stopped_at"
+                          "name": "stoppedAt"
                         }
                       }
                     ]
@@ -25422,25 +25610,25 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "open_sessions"
+                          "name": "openSessions"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "max_sessions"
+                          "name": "maxSessions"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "load_report"
+                          "name": "loadReport"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "heartbeat_at"
+                          "name": "heartbeatAt"
                         }
                       }
                     ]
@@ -25507,7 +25695,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "ws_url"
+              "name": "wsUrl"
             }
           },
           {
@@ -25519,55 +25707,55 @@
           {
             "type": "field",
             "attrs": {
-              "name": "config_version"
+              "name": "configVersion"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "open_sessions"
+              "name": "openSessions"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "running_turns"
+              "name": "runningTurns"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "max_sessions"
+              "name": "maxSessions"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "max_running_turns"
+              "name": "maxRunningTurns"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "load_report"
+              "name": "loadReport"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "started_at"
+              "name": "startedAt"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "heartbeat_at"
+              "name": "heartbeatAt"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "stopped_at"
+              "name": "stoppedAt"
             }
           }
         ]
@@ -25653,40 +25841,40 @@
           {
             "type": "field",
             "attrs": {
-              "name": "config_version",
+              "name": "configVersion",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "turn_count",
+              "name": "turnCount",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "total_steps",
+              "name": "totalSteps",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "total_input_tokens"
+              "name": "totalInputTokens"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "total_output_tokens"
+              "name": "totalOutputTokens"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "total_cost",
+              "name": "totalCost",
               "sortable": true
             }
           },
@@ -25699,34 +25887,34 @@
           {
             "type": "field",
             "attrs": {
-              "name": "started_at",
+              "name": "startedAt",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "last_active_at",
+              "name": "lastActiveAt",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "ended_at",
+              "name": "endedAt",
               "sortable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "reasoning_model_key"
+              "name": "reasoningModelKey"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "fast_model_key"
+              "name": "fastModelKey"
             }
           }
         ]
@@ -25788,25 +25976,25 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "turn_count"
+                          "name": "turnCount"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "total_cost"
+                          "name": "totalCost"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "started_at"
+                          "name": "startedAt"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "ended_at"
+                          "name": "endedAt"
                         }
                       }
                     ]
@@ -25840,25 +26028,25 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "config_version"
+                          "name": "configVersion"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "total_steps"
+                          "name": "totalSteps"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "total_input_tokens"
+                          "name": "totalInputTokens"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "total_output_tokens"
+                          "name": "totalOutputTokens"
                         }
                       },
                       {
@@ -25870,19 +26058,19 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "last_active_at"
+                          "name": "lastActiveAt"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "reasoning_model_key"
+                          "name": "reasoningModelKey"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "fast_model_key"
+                          "name": "fastModelKey"
                         }
                       }
                     ]
@@ -25992,37 +26180,37 @@
           {
             "type": "field",
             "attrs": {
-              "name": "config_version"
+              "name": "configVersion"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "turn_count"
+              "name": "turnCount"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "total_steps"
+              "name": "totalSteps"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "total_input_tokens"
+              "name": "totalInputTokens"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "total_output_tokens"
+              "name": "totalOutputTokens"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "total_cost"
+              "name": "totalCost"
             }
           },
           {
@@ -26034,31 +26222,31 @@
           {
             "type": "field",
             "attrs": {
-              "name": "started_at"
+              "name": "startedAt"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "last_active_at"
+              "name": "lastActiveAt"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "ended_at"
+              "name": "endedAt"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "reasoning_model_key"
+              "name": "reasoningModelKey"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "fast_model_key"
+              "name": "fastModelKey"
             }
           }
         ]
@@ -26119,7 +26307,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "caller_snapshot"
+              "name": "callerSnapshot"
             }
           },
           {
@@ -26131,13 +26319,13 @@
           {
             "type": "field",
             "attrs": {
-              "name": "lease_token"
+              "name": "leaseToken"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "lease_expires_at"
+              "name": "leaseExpiresAt"
             }
           },
           {
@@ -26149,31 +26337,31 @@
           {
             "type": "field",
             "attrs": {
-              "name": "idempotency_key"
+              "name": "idempotencyKey"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "webhook_url"
+              "name": "webhookUrl"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "webhook_secret"
+              "name": "webhookSecret"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "timeout_seconds"
+              "name": "timeoutSeconds"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "max_steps"
+              "name": "maxSteps"
             }
           },
           {
@@ -26191,19 +26379,19 @@
           {
             "type": "field",
             "attrs": {
-              "name": "queued_at"
+              "name": "queuedAt"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "started_at"
+              "name": "startedAt"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "finished_at"
+              "name": "finishedAt"
             }
           }
         ]
@@ -26259,13 +26447,13 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "caller_snapshot"
+                          "name": "callerSnapshot"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "lease_token"
+                          "name": "leaseToken"
                         }
                       },
                       {
@@ -26277,13 +26465,13 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "webhook_url"
+                          "name": "webhookUrl"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "timeout_seconds"
+                          "name": "timeoutSeconds"
                         }
                       },
                       {
@@ -26295,13 +26483,13 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "queued_at"
+                          "name": "queuedAt"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "finished_at"
+                          "name": "finishedAt"
                         }
                       }
                     ]
@@ -26335,25 +26523,25 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "lease_expires_at"
+                          "name": "leaseExpiresAt"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "idempotency_key"
+                          "name": "idempotencyKey"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "webhook_secret"
+                          "name": "webhookSecret"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "max_steps"
+                          "name": "maxSteps"
                         }
                       },
                       {
@@ -26365,7 +26553,7 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "started_at"
+                          "name": "startedAt"
                         }
                       }
                     ]
@@ -26432,7 +26620,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "caller_snapshot"
+              "name": "callerSnapshot"
             }
           },
           {
@@ -26444,13 +26632,13 @@
           {
             "type": "field",
             "attrs": {
-              "name": "lease_token"
+              "name": "leaseToken"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "lease_expires_at"
+              "name": "leaseExpiresAt"
             }
           },
           {
@@ -26462,31 +26650,31 @@
           {
             "type": "field",
             "attrs": {
-              "name": "idempotency_key"
+              "name": "idempotencyKey"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "webhook_url"
+              "name": "webhookUrl"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "webhook_secret"
+              "name": "webhookSecret"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "timeout_seconds"
+              "name": "timeoutSeconds"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "max_steps"
+              "name": "maxSteps"
             }
           },
           {
@@ -26504,19 +26692,19 @@
           {
             "type": "field",
             "attrs": {
-              "name": "queued_at"
+              "name": "queuedAt"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "started_at"
+              "name": "startedAt"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "finished_at"
+              "name": "finishedAt"
             }
           }
         ]
@@ -26565,7 +26753,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "turn_number"
+              "name": "turnNumber"
             }
           },
           {
@@ -26583,7 +26771,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "n_calls"
+              "name": "nCalls"
             }
           },
           {
@@ -26639,7 +26827,7 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "turn_number"
+                          "name": "turnNumber"
                         }
                       },
                       {
@@ -26679,7 +26867,7 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "n_calls"
+                          "name": "nCalls"
                         }
                       }
                     ]
@@ -26734,7 +26922,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "turn_number"
+              "name": "turnNumber"
             }
           },
           {
@@ -26752,7 +26940,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "n_calls"
+              "name": "nCalls"
             }
           },
           {
@@ -26835,21 +27023,21 @@
           {
             "type": "field",
             "attrs": {
-              "name": "tool_call_id",
+              "name": "toolCallId",
               "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "tool_name",
+              "name": "toolName",
               "isSearchable": true
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "tool_arguments"
+              "name": "toolArguments"
             }
           },
           {
@@ -26870,7 +27058,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "answered_by",
+              "name": "answeredBy",
               "isSearchable": true,
               "sortable": true
             }
@@ -26878,7 +27066,7 @@
           {
             "type": "field",
             "attrs": {
-              "name": "answered_at",
+              "name": "answeredAt",
               "sortable": true
             }
           }
@@ -26941,13 +27129,13 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "tool_call_id"
+                          "name": "toolCallId"
                         }
                       },
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "tool_arguments"
+                          "name": "toolArguments"
                         }
                       },
                       {
@@ -26959,7 +27147,7 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "answered_at"
+                          "name": "answeredAt"
                         }
                       }
                     ]
@@ -26993,7 +27181,7 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "tool_name"
+                          "name": "toolName"
                         }
                       },
                       {
@@ -27005,7 +27193,7 @@
                       {
                         "type": "field",
                         "attrs": {
-                          "name": "answered_by"
+                          "name": "answeredBy"
                         }
                       }
                     ]
@@ -27084,19 +27272,19 @@
           {
             "type": "field",
             "attrs": {
-              "name": "tool_call_id"
+              "name": "toolCallId"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "tool_name"
+              "name": "toolName"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "tool_arguments"
+              "name": "toolArguments"
             }
           },
           {
@@ -27114,13 +27302,13 @@
           {
             "type": "field",
             "attrs": {
-              "name": "answered_by"
+              "name": "answeredBy"
             }
           },
           {
             "type": "field",
             "attrs": {
-              "name": "answered_at"
+              "name": "answeredAt"
             }
           }
         ]

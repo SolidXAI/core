@@ -12,7 +12,7 @@ export class AgenthubSessionCheckpoint extends CommonEntity {
     seq: number;
 
     @Column({ type: "integer" })
-    turn_number: number;
+    turnNumber: number;
 
     @Column({ type: "text" })
     messages: string;
@@ -21,7 +21,7 @@ export class AgenthubSessionCheckpoint extends CommonEntity {
     pending: string;
 
     @Column({ type: "integer", default: 0 })
-    n_calls: number = 0;
+    nCalls: number = 0;
 
     @Column({ type: "double precision" })
     cost: number;

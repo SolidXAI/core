@@ -26,13 +26,13 @@ export class AgentHumanRequest extends CommonEntity {
     context: string;
 
     @Column({ type: "text" })
-    tool_call_id: string;
+    toolCallId: string;
 
     @Column({ type: "text" })
-    tool_name: string;
+    toolName: string;
 
     @Column({ type: "text" })
-    tool_arguments: string;
+    toolArguments: string;
 
     @Column({ type: "varchar", default: "pending" })
     status: string = "pending";
@@ -41,8 +41,8 @@ export class AgentHumanRequest extends CommonEntity {
     answer: string;
 
     @Column({ type: "varchar", nullable: true })
-    answered_by: string;
+    answeredBy: string;
 
     @Column({ type: "timestamptz", nullable: true })
-    answered_at: Date;
+    answeredAt: Date;
 }

@@ -48,10 +48,10 @@ export class AgentEvent extends CommonEntity {
   outputTokens: number;
 
   @Column({ type: "varchar", nullable: true })
-  reasoning_model_key: string;
+  reasoningModelKey: string;
 
   @Column({ type: "varchar", nullable: true })
-  fast_model_key: string;
+  fastModelKey: string;
 
   @ManyToOne(() => AgentSession, { onDelete: "SET NULL", nullable: true })
   @JoinColumn()

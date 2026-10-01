@@ -15,15 +15,30 @@ export class CreateAgentToolRegistryDto {
     @ApiProperty()
     type: string;
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsString()
-    @ApiProperty()
-    source_code: string;
+    @ApiProperty({ required: false })
+    iconName?: string;
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    checksum: string;
+    description: string;
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty()
+    tags: string = "[]";
+
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty()
+    sourceCode: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false })
+    checksum?: string;
 
     @IsNotEmpty()
     @IsString()
@@ -33,7 +48,7 @@ export class CreateAgentToolRegistryDto {
     @IsOptional()
     @IsString()
     @ApiProperty()
-    last_load_error: string;
+    lastLoadError: string;
 
     @IsOptional()
     @ApiProperty()

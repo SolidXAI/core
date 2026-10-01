@@ -34,7 +34,7 @@ export class CreateAgentProcessDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    ws_url: string;
+    wsUrl: string;
 
     @IsNotEmpty()
     @IsString()
@@ -44,42 +44,42 @@ export class CreateAgentProcessDto {
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    config_version: number;
+    configVersion: number;
 
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    open_sessions: number;
+    openSessions: number;
 
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    running_turns: number;
+    runningTurns: number;
 
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    max_sessions: number;
+    maxSessions: number;
 
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    max_running_turns: number;
+    maxRunningTurns: number;
 
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    load_report: string = "{}";
+    loadReport: string = "{}";
 
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    heartbeat_at: Date;
+    heartbeatAt: Date;
 
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    stopped_at: Date;
+    stoppedAt: Date;
 
     @IsOptional()
     @ApiProperty()

@@ -22,7 +22,7 @@ export class CreateAgenthubSessionCheckpointDto {
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    turn_number: number;
+    turnNumber: number;
 
     @IsNotEmpty()
     @IsString()
@@ -37,7 +37,7 @@ export class CreateAgenthubSessionCheckpointDto {
     @IsNotEmpty()
     @IsInt()
     @ApiProperty()
-    n_calls: number = 0;
+    nCalls: number = 0;
 
     @IsNotEmpty()
     @IsNumber()

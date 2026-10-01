@@ -63,37 +63,37 @@ export class UpdateAgentSessionDto {
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    config_version: number;
+    configVersion: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    turn_count: number;
+    turnCount: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    total_steps: number;
+    totalSteps: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    total_input_tokens: number;
+    totalInputTokens: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    total_output_tokens: number;
+    totalOutputTokens: number;
 
     @IsNotEmpty()
     @IsOptional()
     @IsNumber()
     @ApiProperty()
-    total_cost: number;
+    totalCost: number;
 
     @IsOptional()
     @IsString()
@@ -103,17 +103,17 @@ export class UpdateAgentSessionDto {
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    ended_at: Date;
+    endedAt: Date;
 
     @IsOptional()
     @IsString()
     @ApiProperty()
-    reasoning_model_key: string;
+    reasoningModelKey: string;
 
     @IsOptional()
     @IsString()
     @ApiProperty()
-    fast_model_key: string;
+    fastModelKey: string;
 
     @IsOptional()
     @ApiProperty()

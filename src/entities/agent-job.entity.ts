@@ -21,34 +21,34 @@ export class AgentJob extends CommonEntity {
     input: string;
 
     @Column({ type: "text" })
-    caller_snapshot: string;
+    callerSnapshot: string;
 
     @Column({ type: "varchar", default: "queued" })
     status: string = "queued";
 
     @Column({ type: "varchar", nullable: true })
-    lease_token: string;
+    leaseToken: string;
 
     @Column({ type: "timestamptz", nullable: true })
-    lease_expires_at: Date;
+    leaseExpiresAt: Date;
 
     @Column({ type: "integer", default: 0 })
     attempts: number = 0;
 
     @Column({ type: "text", nullable: true })
-    idempotency_key: string;
+    idempotencyKey: string;
 
     @Column({ type: "text", nullable: true })
-    webhook_url: string;
+    webhookUrl: string;
 
     @Column({ type: "text", nullable: true })
-    webhook_secret: string;
+    webhookSecret: string;
 
     @Column({ type: "integer", nullable: true })
-    timeout_seconds: number;
+    timeoutSeconds: number;
 
     @Column({ type: "integer", nullable: true })
-    max_steps: number;
+    maxSteps: number;
 
     @Column({ type: "text", nullable: true })
     result: string;
@@ -57,13 +57,13 @@ export class AgentJob extends CommonEntity {
     error: string;
 
     @Column({ type: "timestamptz", default: () => "now()" })
-    queued_at: Date = new Date();
+    queuedAt: Date = new Date();
 
     @Column({ type: "timestamptz", nullable: true })
-    started_at: Date;
+    startedAt: Date;
 
     @Column({ type: "timestamptz", nullable: true })
-    finished_at: Date;
+    finishedAt: Date;
 
     @OneToMany(() => AgentHumanRequest, agentHumanRequest => agentHumanRequest.job, { cascade: true })
     agentHumanRequests: AgentHumanRequest[];

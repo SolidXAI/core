@@ -20,17 +20,33 @@ export class UpdateAgentToolRegistryDto {
     @ApiProperty()
     type: string;
 
-    @IsNotEmpty()
     @IsOptional()
     @IsString()
-    @ApiProperty()
-    source_code: string;
+    @ApiProperty({ required: false })
+    iconName?: string;
 
     @IsNotEmpty()
     @IsOptional()
     @IsString()
     @ApiProperty()
-    checksum: string;
+    description: string;
+
+    @IsNotEmpty()
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    tags: string;
+
+    @IsNotEmpty()
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    sourceCode: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false })
+    checksum?: string;
 
     @IsNotEmpty()
     @IsOptional()
@@ -41,7 +57,7 @@ export class UpdateAgentToolRegistryDto {
     @IsOptional()
     @IsString()
     @ApiProperty()
-    last_load_error: string;
+    lastLoadError: string;
 
     @IsOptional()
     @ApiProperty()

@@ -39,7 +39,7 @@ export class CreateAgentJobDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    caller_snapshot: string;
+    callerSnapshot: string;
 
     @IsNotEmpty()
     @IsString()
@@ -49,12 +49,12 @@ export class CreateAgentJobDto {
     @IsOptional()
     @IsString()
     @ApiProperty()
-    lease_token: string;
+    leaseToken: string;
 
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    lease_expires_at: Date;
+    leaseExpiresAt: Date;
 
     @IsNotEmpty()
     @IsInt()
@@ -64,27 +64,27 @@ export class CreateAgentJobDto {
     @IsOptional()
     @IsString()
     @ApiProperty()
-    idempotency_key: string;
+    idempotencyKey: string;
 
     @IsOptional()
     @IsString()
     @ApiProperty()
-    webhook_url: string;
+    webhookUrl: string;
 
     @IsOptional()
     @IsString()
     @ApiProperty()
-    webhook_secret: string;
+    webhookSecret: string;
 
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    timeout_seconds: number;
+    timeoutSeconds: number;
 
     @IsOptional()
     @IsInt()
     @ApiProperty()
-    max_steps: number;
+    maxSteps: number;
 
     @IsOptional()
     @IsString()
@@ -99,12 +99,12 @@ export class CreateAgentJobDto {
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    started_at: Date;
+    startedAt: Date;
 
     @IsOptional()
     @IsDate()
     @ApiProperty()
-    finished_at: Date;
+    finishedAt: Date;
 
     @IsOptional()
     @ApiProperty()

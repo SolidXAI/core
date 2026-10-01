@@ -36,40 +36,40 @@ export class AgentSession extends CommonEntity {
     inputs: string = "{}";
 
     @Column({ type: "integer" })
-    config_version: number;
+    configVersion: number;
 
     @Column({ type: "integer", default: 0 })
-    turn_count: number = 0;
+    turnCount: number = 0;
 
     @Column({ type: "integer", default: 0 })
-    total_steps: number = 0;
+    totalSteps: number = 0;
 
     @Column({ type: "integer", default: 0 })
-    total_input_tokens: number = 0;
+    totalInputTokens: number = 0;
 
     @Column({ type: "integer", default: 0 })
-    total_output_tokens: number = 0;
+    totalOutputTokens: number = 0;
 
     @Column({ type: "decimal" })
-    total_cost: number = 0;
+    totalCost: number = 0;
 
     @Column({ type: "text", nullable: true })
     error: string;
 
     @Column({ type: "timestamptz", default: () => "now()" })
-    started_at: Date = new Date();
+    startedAt: Date = new Date();
 
     @Column({ type: "timestamptz", default: () => "now()" })
-    last_active_at: Date = new Date();
+    lastActiveAt: Date = new Date();
 
     @Column({ type: "timestamptz", nullable: true })
-    ended_at: Date;
+    endedAt: Date;
 
     @Column({ type: "varchar", nullable: true })
-    reasoning_model_key: string;
+    reasoningModelKey: string;
 
     @Column({ type: "varchar", nullable: true })
-    fast_model_key: string;
+    fastModelKey: string;
 
     @OneToMany(() => AgentJob, agentJob => agentJob.session, { cascade: true })
     agentJobs: AgentJob[];
