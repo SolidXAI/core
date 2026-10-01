@@ -148,7 +148,7 @@ export class AuthenticationController {
         return this.apiKeyService.updateKey(id, activeUser.sub, dto);
     }
 
-    @Public()
+    // @Public()
     @ApiHeader({ name: 'solidx-api-key', required: true, description: 'API key for authenticating the request' })
     @Get('api-keys/me')
     async apiKeyMe(@Headers('solidx-api-key') apiKey: string) {

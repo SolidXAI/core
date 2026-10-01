@@ -4956,6 +4956,19 @@
             "isSystem": true
           },
           {
+            "name": "context",
+            "displayName": "Context",
+            "description": "Context supplied with the agent event.",
+            "type": "longText",
+            "columnName": "context",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
+          },
+          {
             "name": "content",
             "displayName": "Content",
             "type": "longText",

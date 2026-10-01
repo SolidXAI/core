@@ -39,6 +39,11 @@ export class UpdateAgentEventDto {
   @IsOptional()
   @IsString()
   @ApiProperty()
+  context: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty()
   content: string;
 
   @IsOptional()

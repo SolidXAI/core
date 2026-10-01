@@ -20,6 +20,9 @@ export class AgentEvent extends CommonEntity {
   eventData: string;
 
   @Column({ nullable: true, ...getColumnType('longText') })
+  context: string;
+
+  @Column({ nullable: true, ...getColumnType('longText') })
   content: string;
 
   @Index()
