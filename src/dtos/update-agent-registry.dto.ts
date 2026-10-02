@@ -84,11 +84,10 @@ export class UpdateAgentRegistryDto {
     @ApiProperty()
     costLimit: number;
 
-    @IsNotEmpty()
     @IsOptional()
     @IsInt()
-    @ApiProperty()
-    configVersion: number;
+    @ApiProperty({ required: false })
+    configVersion?: number;
 
     @IsOptional()
     @ApiProperty()

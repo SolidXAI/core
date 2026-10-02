@@ -8201,7 +8201,7 @@
             "defaultValue": "1",
             "min": null,
             "max": null,
-            "required": true,
+            "required": false,
             "unique": false,
             "index": false,
             "private": false,
@@ -23911,7 +23911,11 @@
           "edit": true,
           "delete": true,
           "createAction": "agentRegistry-custom-create-action",
-          "editAction": "agentRegistry-custom-edit-action"
+          "editAction": "agentRegistry-custom-edit-action",
+          "allowedViews": [
+            "list",
+            "card"
+          ]
         },
         "children": [
           {
@@ -24006,6 +24010,53 @@
               "name": "configVersion",
               "sortable": true
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentRegistry-card-view",
+      "displayName": "Agent Cards",
+      "type": "card",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentRegistry",
+      "layout": {
+        "type": "card",
+        "attrs": {
+          "pagination": true,
+          "pageSize": 24,
+          "pageSizeOptions": [
+            12,
+            24,
+            48
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "createAction": "agentRegistry-custom-create-action",
+          "editAction": "agentRegistry-custom-edit-action",
+          "allowedViews": [
+            "list",
+            "card"
+          ]
+        },
+        "children": [
+          {
+            "type": "card",
+            "attrs": {
+              "name": "Agent",
+              "cardWidget": "AgentRegistryCardWidget"
+            },
+            "children": [
+              { "type": "field", "attrs": { "name": "iconName" } },
+              { "type": "field", "attrs": { "name": "name" } },
+              { "type": "field", "attrs": { "name": "title" } },
+              { "type": "field", "attrs": { "name": "description" } },
+              { "type": "field", "attrs": { "name": "requiredInputs" } },
+              { "type": "field", "attrs": { "name": "status" } }
+            ]
           }
         ]
       }

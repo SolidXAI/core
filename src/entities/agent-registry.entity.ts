@@ -47,8 +47,8 @@ export class AgentRegistry extends CommonEntity {
     @Column({ type: "decimal", default: 3 })
     costLimit: number = 3;
 
-    @Column({ type: "integer" })
-    configVersion: number = 1;
+    @Column({ type: "integer", nullable: true, default: 1 })
+    configVersion?: number = 1;
 
     @OneToMany(() => AgentTool, agentTool => agentTool.agentRegistry, { cascade: true })
     agentTools: AgentTool[];

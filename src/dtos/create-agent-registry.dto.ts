@@ -71,10 +71,10 @@ export class CreateAgentRegistryDto {
     @ApiProperty()
     costLimit: number = 3;
 
-    @IsNotEmpty()
+    @IsOptional()
     @IsInt()
-    @ApiProperty()
-    configVersion: number;
+    @ApiProperty({ required: false })
+    configVersion?: number;
 
     @IsOptional()
     @ApiProperty()
