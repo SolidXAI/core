@@ -1,7 +1,7 @@
 import { IsInt,IsOptional, IsString, IsNotEmpty, IsNumber } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 
-export class UpdateAgenthubSessionCheckpointDto {
+export class UpdateAgentSessionCheckpointDto {
     @IsOptional()
     @IsInt()
     id: number;

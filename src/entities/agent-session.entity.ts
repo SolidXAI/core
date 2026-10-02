@@ -5,7 +5,7 @@ import { AgentRegistry } from './agent-registry.entity';
 import { AgentProcess } from './agent-process.entity';
 import { AgentJob } from './agent-job.entity';
 import { AgentEvent } from './agent-event.entity';
-import { AgenthubSessionCheckpoint } from './agenthub-session-checkpoint.entity';
+import { AgentSessionCheckpoint } from './agent-session-checkpoint.entity';
 import { AgentHumanRequest } from './agent-human-request.entity';
 
 @Entity('ss_agent_session')
@@ -77,8 +77,8 @@ export class AgentSession extends CommonEntity {
     @OneToMany(() => AgentEvent, agentEvent => agentEvent.session, { cascade: true })
     agentEvents: AgentEvent[];
 
-    @OneToMany(() => AgenthubSessionCheckpoint, agenthubSessionCheckpoint => agenthubSessionCheckpoint.session, { cascade: true })
-    agenthubSessionCheckpoints: AgenthubSessionCheckpoint[];
+    @OneToMany(() => AgentSessionCheckpoint, agentSessionCheckpoint => agentSessionCheckpoint.session, { cascade: true })
+    agentSessionCheckpoints: AgentSessionCheckpoint[];
 
     @OneToMany(() => AgentHumanRequest, agentHumanRequest => agentHumanRequest.session, { cascade: true })
     agentHumanRequests: AgentHumanRequest[];

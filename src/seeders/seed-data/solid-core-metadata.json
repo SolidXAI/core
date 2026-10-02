@@ -10092,8 +10092,8 @@
             "enableAuditTracking": true
           },
           {
-            "name": "agenthubSessionCheckpoints",
-            "displayName": "Agenthub Session Checkpoints",
+            "name": "agentSessionCheckpoints",
+            "displayName": "Agent Session Checkpoints",
             "description": null,
             "type": "relation",
             "ormType": "integer",
@@ -10101,7 +10101,7 @@
             "relationType": "one-to-many",
             "relationCoModelFieldName": "session",
             "relationCreateInverse": false,
-            "relationCoModelSingularName": "agenthubSessionCheckpoint",
+            "relationCoModelSingularName": "agentSessionCheckpoint",
             "relationCoModelColumnName": null,
             "relationModelModuleName": "solid-core",
             "relationCascade": "set null",
@@ -10584,13 +10584,13 @@
         ]
       },
       {
-        "singularName": "agenthubSessionCheckpoint",
-        "pluralName": "agenthubSessionCheckpoints",
-        "displayName": "Agenthub Session Checkpoint",
+        "singularName": "agentSessionCheckpoint",
+        "pluralName": "agentSessionCheckpoints",
+        "displayName": "Agent Session Checkpoint",
         "description": "",
         "dataSource": "default",
         "dataSourceType": "postgres",
-        "tableName": "ss_agenthub_session_checkpoint",
+        "tableName": "ss_agent_session_checkpoint",
         "isChild": false,
         "isSystem": true,
         "enableSoftDelete": false,
@@ -10607,7 +10607,7 @@
             "ormType": "integer",
             "isSystem": true,
             "relationType": "many-to-one",
-            "relationCoModelFieldName": "agenthubSessionCheckpoints",
+            "relationCoModelFieldName": "agentSessionCheckpoints",
             "relationCreateInverse": false,
             "relationCoModelSingularName": "agentSession",
             "relationCoModelColumnName": null,
@@ -12428,30 +12428,30 @@
       "modelUserKey": "agentJob"
     },
     {
-      "displayName": "Agenthub Session Checkpoint List Action",
-      "name": "agenthubSessionCheckpoint-list-action",
+      "displayName": "Agent Session Checkpoint List Action",
+      "name": "agentSessionCheckpoint-list-action",
       "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "agenthubSessionCheckpoint-list-view",
+      "viewUserKey": "agentSessionCheckpoint-list-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "agenthubSessionCheckpoint"
+      "modelUserKey": "agentSessionCheckpoint"
     },
     {
-      "displayName": "Agenthub Session Checkpoint Tree View Action",
-      "name": "agenthubSessionCheckpoint-tree-action",
+      "displayName": "Agent Session Checkpoint Tree View Action",
+      "name": "agentSessionCheckpoint-tree-action",
       "type": "solid",
       "domain": "",
       "context": "",
       "customComponent": "",
       "customIsModal": true,
       "serverEndpoint": "",
-      "viewUserKey": "agenthubSessionCheckpoint-tree-view",
+      "viewUserKey": "agentSessionCheckpoint-tree-view",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "agenthubSessionCheckpoint"
+      "modelUserKey": "agentSessionCheckpoint"
     },
     {
       "displayName": "Agent Human Request List Action",
@@ -26750,12 +26750,12 @@
       }
     },
     {
-      "name": "agenthubSessionCheckpoint-list-view",
-      "displayName": "Agenthub Session Checkpoint",
+      "name": "agentSessionCheckpoint-list-view",
+      "displayName": "Agent Session Checkpoint",
       "type": "list",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "agenthubSessionCheckpoint",
+      "modelUserKey": "agentSessionCheckpoint",
       "layout": {
         "type": "list",
         "attrs": {
@@ -26823,17 +26823,17 @@
       }
     },
     {
-      "name": "agenthubSessionCheckpoint-form-view",
-      "displayName": "Agenthub Session Checkpoint",
+      "name": "agentSessionCheckpoint-form-view",
+      "displayName": "Agent Session Checkpoint",
       "type": "form",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "agenthubSessionCheckpoint",
+      "modelUserKey": "agentSessionCheckpoint",
       "layout": {
         "type": "form",
         "attrs": {
           "name": "form-1",
-          "label": "Agenthub Session Checkpoint",
+          "label": "Agent Session Checkpoint",
           "className": "grid"
         },
         "children": [
@@ -26919,12 +26919,12 @@
       }
     },
     {
-      "name": "agenthubSessionCheckpoint-tree-view",
-      "displayName": "Agenthub Session Checkpoint",
+      "name": "agentSessionCheckpoint-tree-view",
+      "displayName": "Agent Session Checkpoint",
       "type": "tree",
       "context": "{}",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "agenthubSessionCheckpoint",
+      "modelUserKey": "agentSessionCheckpoint",
       "layout": {
         "type": "tree",
         "attrs": {

@@ -479,7 +479,7 @@ import { AgentProcess } from "./entities/agent-process.entity";
 import { AgentSession } from "./entities/agent-session.entity";
 import { AgentJob } from "./entities/agent-job.entity";
 import { AgentRole } from "./entities/agent-role.entity";
-import { AgenthubSessionCheckpoint } from "./entities/agenthub-session-checkpoint.entity";
+import { AgentSessionCheckpoint } from "./entities/agent-session-checkpoint.entity";
 import { AgentHumanRequest } from "./entities/agent-human-request.entity";
 import { AgentRegistryController } from "./controllers/agent-registry.controller";
 import { AgentToolRegistryController } from "./controllers/agent-tool-registry.controller";
@@ -491,12 +491,12 @@ import { AgentSecretController } from "./controllers/agent-secret.controller";
 import { AgentProcessController } from "./controllers/agent-process.controller";
 import { AgentSessionController } from "./controllers/agent-session.controller";
 import { AgentJobController } from "./controllers/agent-job.controller";
-import { AgenthubSessionCheckpointController } from "./controllers/agenthub-session-checkpoint.controller";
+import { AgentSessionCheckpointController } from "./controllers/agent-session-checkpoint.controller";
 import { AgentHumanRequestController } from "./controllers/agent-human-request.controller";
 import { AgentHumanRequestRepository } from "./repository/agent-human-request.repository";
 import { AgentHumanRequestService } from "./services/agent-human-request.service";
-import { AgenthubSessionCheckpointRepository } from "./repository/agenthub-session-checkpoint.repository";
-import { AgenthubSessionCheckpointService } from "./services/agenthub-session-checkpoint.service";
+import { AgentSessionCheckpointRepository } from "./repository/agent-session-checkpoint.repository";
+import { AgentSessionCheckpointService } from "./services/agent-session-checkpoint.service";
 import { AgentSessionRepository } from "./repository/agent-session.repository";
 import { AgentJobRepository } from "./repository/agent-job.repository";
 import { AgentProcessRepository } from "./repository/agent-process.repository";
@@ -577,7 +577,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
       AgentProcess,
       AgentSession,
       AgentJob,
-      AgenthubSessionCheckpoint,
+      AgentSessionCheckpoint,
       AgentHumanRequest
     ]),
     CacheModule.registerAsync(CacheManagerOptions),
@@ -723,7 +723,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentProcessController,
     AgentSessionController,
     AgentJobController,
-    AgenthubSessionCheckpointController,
+    AgentSessionCheckpointController,
     AgentHumanRequestController
   ],
   providers: [
@@ -1103,8 +1103,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentSessionRepository,
     AgentJobService,
     AgentJobRepository,
-    AgenthubSessionCheckpointService,
-    AgenthubSessionCheckpointRepository,
+    AgentSessionCheckpointService,
+    AgentSessionCheckpointRepository,
     AgentHumanRequestService,
     AgentHumanRequestRepository
   ],

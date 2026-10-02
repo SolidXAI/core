@@ -3,7 +3,7 @@ import { IsInt } from 'class-validator';
 import { IsOptional } from 'class-validator';
 import { IsString, IsNotEmpty, IsNumber } from 'class-validator';
 
-export class CreateAgenthubSessionCheckpointDto {
+export class CreateAgentSessionCheckpointDto {
     @IsOptional()
     @IsInt()
     @ApiProperty()

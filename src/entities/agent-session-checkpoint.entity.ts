@@ -2,8 +2,8 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, JoinColumn, ManyToOne, Column } from 'typeorm';
 import { AgentSession } from './agent-session.entity'
 
-@Entity('ss_agenthub_session_checkpoint')
-export class AgenthubSessionCheckpoint extends CommonEntity {
+@Entity('ss_agent_session_checkpoint')
+export class AgentSessionCheckpoint extends CommonEntity {
     @ManyToOne(() => AgentSession, { onDelete: "SET NULL", nullable: true })
     @JoinColumn()
     session: AgentSession;

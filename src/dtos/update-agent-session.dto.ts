@@ -3,7 +3,7 @@ import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { UpdateAgentJobDto } from './update-agent-job.dto';
 import { UpdateAgentEventDto } from './update-agent-event.dto';
-import { UpdateAgenthubSessionCheckpointDto } from './update-agenthub-session-checkpoint.dto';
+import { UpdateAgentSessionCheckpointDto } from './update-agent-session-checkpoint.dto';
 import { UpdateAgentHumanRequestDto } from './update-agent-human-request.dto';
 
 export class UpdateAgentSessionDto {
@@ -153,18 +153,18 @@ export class UpdateAgentSessionDto {
     @ApiProperty()
     @IsArray()
     @ValidateNested({ each: true })
-    @Type(() => UpdateAgenthubSessionCheckpointDto)
-    agenthubSessionCheckpoints: UpdateAgenthubSessionCheckpointDto[];
+    @Type(() => UpdateAgentSessionCheckpointDto)
+    agentSessionCheckpoints: UpdateAgentSessionCheckpointDto[];
 
     @IsOptional()
     @IsArray()
     @ApiProperty()
-    agenthubSessionCheckpointsIds: number[];
+    agentSessionCheckpointsIds: number[];
 
     @IsString()
     @IsOptional()
     @ApiProperty()
-    agenthubSessionCheckpointsCommand: string;
+    agentSessionCheckpointsCommand: string;
 
     @IsOptional()
     @ApiProperty()

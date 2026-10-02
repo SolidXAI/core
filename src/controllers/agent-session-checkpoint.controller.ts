@@ -1,27 +1,27 @@
 import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { AgenthubSessionCheckpointService } from '../services/agenthub-session-checkpoint.service';
-import { CreateAgenthubSessionCheckpointDto } from '../dtos/create-agenthub-session-checkpoint.dto';
-import { UpdateAgenthubSessionCheckpointDto } from '../dtos/update-agenthub-session-checkpoint.dto';
+import { AgentSessionCheckpointService } from '../services/agent-session-checkpoint.service';
+import { CreateAgentSessionCheckpointDto } from '../dtos/create-agent-session-checkpoint.dto';
+import { UpdateAgentSessionCheckpointDto } from '../dtos/update-agent-session-checkpoint.dto';
 import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
 @ApiTags('Agent Hub')
-@Controller('agenthub-session-checkpoint')
-export class AgenthubSessionCheckpointController {
-  constructor(private readonly service: AgenthubSessionCheckpointService) {}
+@Controller('agent-session-checkpoint')
+export class AgentSessionCheckpointController {
+  constructor(private readonly service: AgentSessionCheckpointService) {}
 
   @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateAgenthubSessionCheckpointDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  create(@Body() createDto: CreateAgentSessionCheckpointDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.create(createDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateAgenthubSessionCheckpointDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+  insertMany(@Body() createDtos: CreateAgentSessionCheckpointDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
     return this.service.insertMany(createDtos, filesArray);
   }
 
@@ -29,14 +29,14 @@ export class AgenthubSessionCheckpointController {
   @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateAgenthubSessionCheckpointDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  update(@Param('id') id: number, @Body() updateDto: UpdateAgentSessionCheckpointDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Patch(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateAgenthubSessionCheckpointDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateAgentSessionCheckpointDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files, true);
   }
 
