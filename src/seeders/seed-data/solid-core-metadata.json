@@ -19160,7 +19160,8 @@
             "type": "field",
             "attrs": {
               "name": "eventType",
-              "isSearchable": true
+              "isSearchable": true,
+              "viewWidget": "AgentEventOutcomeListWidget"
             }
           },
           {
@@ -24067,8 +24068,10 @@
               { "type": "field", "attrs": { "name": "name" } },
               { "type": "field", "attrs": { "name": "title" } },
               { "type": "field", "attrs": { "name": "description" } },
-              { "type": "field", "attrs": { "name": "requiredInputs" } },
-              { "type": "field", "attrs": { "name": "status" } }
+              { "type": "field", "attrs": { "name": "reasoningModelKey" } },
+              { "type": "field", "attrs": { "name": "fastModelKey" } },
+              { "type": "field", "attrs": { "name": "status" } },
+              { "type": "field", "attrs": { "name": "configVersion" } }
             ]
           }
         ]
@@ -24456,6 +24459,12 @@
                 "type": "field",
                 "attrs": {
                   "name": "status"
+                }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "lastLoadError"
                 }
               }
             ]
@@ -26251,161 +26260,187 @@
             },
             "children": [
               {
-                "type": "row",
+                "type": "notebook",
                 "attrs": {
-                  "name": "sheet-1"
+                  "name": "agent-session-notebook"
                 },
                 "children": [
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-1",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                      "name": "general-info",
+                      "label": "General info"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "row",
                         "attrs": {
-                          "name": "process"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "user"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "inputs"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "turnCount"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "totalCost"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "startedAt"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "endedAt"
-                        }
+                          "name": "sheet-1"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-1",
+                              "label": "",
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "process"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "user"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "inputs"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "turnCount"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "totalCost"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "startedAt"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "endedAt"
+                                }
+                              }
+                            ]
+                          },
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "group-2",
+                              "label": "",
+                              "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "agent"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "trigger"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "status"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "configVersion"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "totalSteps"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "totalInputTokens"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "totalOutputTokens"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "error"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "lastActiveAt"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "reasoningModelKey"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "fastModelKey"
+                                }
+                              }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   },
                   {
-                    "type": "column",
+                    "type": "page",
                     "attrs": {
-                      "name": "group-2",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                      "name": "events",
+                      "label": "Events"
                     },
                     "children": [
                       {
-                        "type": "field",
+                        "type": "row",
                         "attrs": {
-                          "name": "agent"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "trigger"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "status"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "configVersion"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "totalSteps"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "totalInputTokens"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "totalOutputTokens"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "error"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "lastActiveAt"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "reasoningModelKey"
-                        }
-                      },
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "fastModelKey"
-                        }
-                      }
-                    ]
-                  }
-                ]
-              },
-              {
-                "type": "row",
-                "attrs": {
-                  "name": "agent-events-row"
-                },
-                "children": [
-                  {
-                    "type": "column",
-                    "attrs": {
-                      "name": "agent-events-col",
-                      "label": "",
-                      "className": "col-12 sm:col-12 md:col-12 lg:col-12"
-                    },
-                    "children": [
-                      {
-                        "type": "field",
-                        "attrs": {
-                          "name": "agentEvents",
-                          "showLabel": false
-                        }
+                          "name": "agent-events-row"
+                        },
+                        "children": [
+                          {
+                            "type": "column",
+                            "attrs": {
+                              "name": "agent-events-col",
+                              "label": "",
+                              "className": "col-12 sm:col-12 md:col-12 lg:col-12"
+                            },
+                            "children": [
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "agentEvents",
+                                  "showLabel": false
+                                }
+                              }
+                            ]
+                          }
+                        ]
                       }
                     ]
                   }

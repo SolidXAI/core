@@ -2,12 +2,12 @@ import { Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ModuleRef  } from "@nestjs/core";
 import { EntityManager } from 'typeorm';
-import { CRUDService } from './crud.service';
+import { AgentConfigLinkService } from './agent-config-version.service';
 import { AgentSkill } from '../entities/agent-skill.entity';
 import { AgentSkillRepository } from '../repository/agent-skill.repository';
 
 @Injectable()
-export class AgentSkillService extends CRUDService<AgentSkill>{
+export class AgentSkillService extends AgentConfigLinkService<AgentSkill>{
   constructor(
     @InjectEntityManager("default")
     readonly entityManager: EntityManager,
@@ -15,6 +15,6 @@ export class AgentSkillService extends CRUDService<AgentSkill>{
     readonly moduleRef: ModuleRef,
       
  ) {
-   super(entityManager, repo, 'agentSkill', 'agent-hub', moduleRef);
+   super(entityManager, repo, 'agentSkill', moduleRef, AgentSkill);
  }
 }
