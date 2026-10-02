@@ -26,6 +26,16 @@ export class UpdateAgentRegistryDto {
     @ApiProperty()
     title: string;
 
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false })
+    description?: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false })
+    iconName?: string;
+
     @IsNotEmpty()
     @IsOptional()
     @IsString()

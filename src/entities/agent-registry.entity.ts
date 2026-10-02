@@ -17,6 +17,12 @@ export class AgentRegistry extends CommonEntity {
     @Column({ type: "varchar" })
     title: string;
 
+    @Column({ type: "text", nullable: true })
+    description: string;
+
+    @Column({ type: "varchar", nullable: true })
+    iconName: string;
+
     @Column({ type: "text" })
     systemPrompt: string;
 

@@ -7971,6 +7971,54 @@
             "isPrimaryKey": false
           },
           {
+            "name": "iconName",
+            "displayName": "Icon",
+            "description": null,
+            "type": "shortText",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "description": null,
+            "type": "longText",
+            "ormType": "text",
+            "isSystem": true,
+            "defaultValue": null,
+            "min": null,
+            "max": null,
+            "regexPattern": null,
+            "regexPatternNotMatchingErrorMsg": null,
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "isUserKey": false,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
             "name": "systemPrompt",
             "displayName": "System Prompt",
             "description": null,
@@ -12530,6 +12578,32 @@
       "viewUserKey": "agentToolRegistry-list-view",
       "moduleUserKey": "solid-core",
       "modelUserKey": "agentToolRegistry"
+    },
+    {
+      "displayName": "Agent Create",
+      "name": "agentRegistry-custom-create-action",
+      "type": "custom",
+      "domain": "",
+      "context": "{}",
+      "customComponent": "/admin/core/solid-core/agent-registry/editor/new",
+      "customIsModal": false,
+      "serverEndpoint": "",
+      "viewUserKey": "agentRegistry-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentRegistry"
+    },
+    {
+      "displayName": "Agent Edit",
+      "name": "agentRegistry-custom-edit-action",
+      "type": "custom",
+      "domain": "",
+      "context": "{}",
+      "customComponent": "/admin/core/solid-core/agent-registry/editor",
+      "customIsModal": false,
+      "serverEndpoint": "",
+      "viewUserKey": "agentRegistry-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentRegistry"
     }
   ],
   "menus": [
@@ -23835,7 +23909,9 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true
+          "delete": true,
+          "createAction": "agentRegistry-custom-create-action",
+          "editAction": "agentRegistry-custom-edit-action"
         },
         "children": [
           {
@@ -24074,8 +24150,8 @@
           "create": true,
           "edit": true,
           "delete": true,
-          "createAction": "agentToolRegistry-custom-create-action",
-          "editAction": "agentToolRegistry-custom-edit-action",
+          "createAction": "agentRegistry-custom-create-action",
+          "editAction": "agentRegistry-custom-edit-action",
           "viewAction": "agentToolRegistry-custom-view-action"
         },
         "children": [
@@ -24258,14 +24334,21 @@
         "attrs": {
           "pagination": true,
           "pageSize": 24,
-          "pageSizeOptions": [12, 24, 48],
+          "pageSizeOptions": [
+            12,
+            24,
+            48
+          ],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
           "delete": true,
           "createAction": "agentToolRegistry-custom-create-action",
           "editAction": "agentToolRegistry-custom-edit-action",
-          "allowedViews": ["list", "card"]
+          "allowedViews": [
+            "list",
+            "card"
+          ]
         },
         "children": [
           {
@@ -24277,27 +24360,39 @@
             "children": [
               {
                 "type": "field",
-                "attrs": { "name": "iconName" }
+                "attrs": {
+                  "name": "iconName"
+                }
               },
               {
                 "type": "field",
-                "attrs": { "name": "name" }
+                "attrs": {
+                  "name": "name"
+                }
               },
               {
                 "type": "field",
-                "attrs": { "name": "description" }
+                "attrs": {
+                  "name": "description"
+                }
               },
               {
                 "type": "field",
-                "attrs": { "name": "tags" }
+                "attrs": {
+                  "name": "tags"
+                }
               },
               {
                 "type": "field",
-                "attrs": { "name": "type" }
+                "attrs": {
+                  "name": "type"
+                }
               },
               {
                 "type": "field",
-                "attrs": { "name": "status" }
+                "attrs": {
+                  "name": "status"
+                }
               }
             ]
           }
@@ -24313,42 +24408,111 @@
       "modelUserKey": "agentToolRegistry",
       "layout": {
         "type": "form",
-        "attrs": { "name": "form-1", "label": "Agent Tool Registry", "className": "grid" },
+        "attrs": {
+          "name": "form-1",
+          "label": "Agent Tool Registry",
+          "className": "grid"
+        },
         "children": [
           {
             "type": "sheet",
-            "attrs": { "name": "sheet-1" },
+            "attrs": {
+              "name": "sheet-1"
+            },
             "children": [
               {
                 "type": "notebook",
-                "attrs": { "name": "notebook-1" },
+                "attrs": {
+                  "name": "notebook-1"
+                },
                 "children": [
                   {
                     "type": "page",
-                    "attrs": { "name": "general-info", "label": "General Info" },
+                    "attrs": {
+                      "name": "general-info",
+                      "label": "General Info"
+                    },
                     "children": [
-                      { "type": "field", "attrs": { "name": "name" } },
-                      { "type": "field", "attrs": { "name": "iconName", "editWidget": "SolidIconEditWidget", "viewWidget": "SolidIconViewWidget" } },
-                      { "type": "field", "attrs": { "name": "description" } },
-                      { "type": "field", "attrs": { "name": "tags" } },
-                      { "type": "field", "attrs": { "name": "type" } },
-                      { "type": "field", "attrs": { "name": "status" } }
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "name"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "iconName",
+                          "editWidget": "SolidIconEditWidget",
+                          "viewWidget": "SolidIconViewWidget"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "description"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "tags"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "type"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "status"
+                        }
+                      }
                     ]
                   },
                   {
                     "type": "page",
-                    "attrs": { "name": "tool", "label": "Tool" },
+                    "attrs": {
+                      "name": "tool",
+                      "label": "Tool"
+                    },
                     "children": [
-                      { "type": "field", "attrs": { "name": "sourceCode" } },
-                      { "type": "field", "attrs": { "name": "checksum" } },
-                      { "type": "field", "attrs": { "name": "lastLoadError" } }
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "sourceCode"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "checksum"
+                        }
+                      },
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "lastLoadError"
+                        }
+                      }
                     ]
                   },
                   {
                     "type": "page",
-                    "attrs": { "name": "agents", "label": "Agents" },
+                    "attrs": {
+                      "name": "agents",
+                      "label": "Agents"
+                    },
                     "children": [
-                      { "type": "field", "attrs": { "name": "agentTools" } }
+                      {
+                        "type": "field",
+                        "attrs": {
+                          "name": "agentTools"
+                        }
+                      }
                     ]
                   }
                 ]
@@ -24507,14 +24671,21 @@
         "attrs": {
           "pagination": true,
           "pageSize": 24,
-          "pageSizeOptions": [12, 24, 48],
+          "pageSizeOptions": [
+            12,
+            24,
+            48
+          ],
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
           "delete": true,
           "createAction": "agentSkillRegistry-custom-create-action",
           "editAction": "agentSkillRegistry-custom-edit-action",
-          "allowedViews": ["list", "card"]
+          "allowedViews": [
+            "list",
+            "card"
+          ]
         },
         "children": [
           {
@@ -24526,19 +24697,27 @@
             "children": [
               {
                 "type": "field",
-                "attrs": { "name": "iconName" }
+                "attrs": {
+                  "name": "iconName"
+                }
               },
               {
                 "type": "field",
-                "attrs": { "name": "name" }
+                "attrs": {
+                  "name": "name"
+                }
               },
               {
                 "type": "field",
-                "attrs": { "name": "description" }
+                "attrs": {
+                  "name": "description"
+                }
               },
               {
                 "type": "field",
-                "attrs": { "name": "tags" }
+                "attrs": {
+                  "name": "tags"
+                }
               }
             ]
           }
@@ -24587,10 +24766,32 @@
                           "className": "col-12 sm:col-12 md:col-12 lg:col-12"
                         },
                         "children": [
-                          { "type": "field", "attrs": { "name": "name" } },
-                          { "type": "field", "attrs": { "name": "iconName", "editWidget": "SolidIconEditWidget", "viewWidget": "SolidIconViewWidget" } },
-                          { "type": "field", "attrs": { "name": "description" } },
-                          { "type": "field", "attrs": { "name": "tags" } }
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "name"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "iconName",
+                              "editWidget": "SolidIconEditWidget",
+                              "viewWidget": "SolidIconViewWidget"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "description"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "tags"
+                            }
+                          }
                         ]
                       }
                     ]
@@ -24638,7 +24839,12 @@
                           "className": "col-12 sm:col-12 md:col-12 lg:col-12"
                         },
                         "children": [
-                          { "type": "field", "attrs": { "name": "agentSkills" } }
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "agentSkills"
+                            }
+                          }
                         ]
                       }
                     ]

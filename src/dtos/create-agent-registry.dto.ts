@@ -21,6 +21,16 @@ export class CreateAgentRegistryDto {
     @ApiProperty()
     title: string;
 
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false })
+    description?: string;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false })
+    iconName?: string;
+
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
