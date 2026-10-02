@@ -510,6 +510,7 @@ import { AgentToolRegistryRepository } from "./repository/agent-tool-registry.re
 import { AgentSessionService } from "./services/agent-session.service";
 import { AgentJobService } from "./services/agent-job.service";
 import { AgentProcessService } from "./services/agent-process.service";
+import { AgentHubProcessManagerService } from "./services/agent-hub-process-manager.service";
 import { AgentRegistryService } from "./services/agent-registry.service";
 import { AgentRoleService } from "./services/agent-role.service";
 import { AgentSecretService } from "./services/agent-secret.service";
@@ -1098,6 +1099,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentSecretService,
     AgentSecretRepository,
     AgentProcessService,
+    AgentHubProcessManagerService,
     AgentProcessRepository,
     AgentSessionService,
     AgentSessionRepository,

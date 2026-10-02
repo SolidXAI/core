@@ -1,4 +1,4 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, Headers, UnauthorizedException } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AgentProcessService } from '../services/agent-process.service';
@@ -10,6 +10,32 @@ import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 @Controller('agent-process')
 export class AgentProcessController {
   constructor(private readonly service: AgentProcessService) {}
+
+  private requireAuthorization(authorization?: string) {
+    if (!authorization?.startsWith('Bearer ')) {
+      throw new UnauthorizedException('A SolidX bearer token is required.');
+    }
+    return authorization;
+  }
+
+  /** Proxies runtime process state from AgentHub; SolidX remains the browser-facing API. */
+  @ApiBearerAuth("jwt")
+  @Get('/manager/processes')
+  listRuntimeProcesses(@Headers('authorization') authorization?: string) {
+    return this.service.listRuntimeProcesses(this.requireAuthorization(authorization));
+  }
+
+  @ApiBearerAuth("jwt")
+  @Post('/manager/processes/:processId/stop')
+  stopRuntimeProcess(@Param('processId') processId: string, @Headers('authorization') authorization?: string) {
+    return this.service.stopRuntimeProcess(processId, this.requireAuthorization(authorization));
+  }
+
+  @ApiBearerAuth("jwt")
+  @Post('/manager/processes/:processId/restart')
+  restartRuntimeProcess(@Param('processId') processId: string, @Headers('authorization') authorization?: string) {
+    return this.service.restartRuntimeProcess(processId, this.requireAuthorization(authorization));
+  }
 
   @ApiBearerAuth("jwt")
   @Post()

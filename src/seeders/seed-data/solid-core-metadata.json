@@ -25687,50 +25687,60 @@
             50
           ],
           "enableGlobalSearch": true,
-          "create": true,
-          "edit": true,
-          "delete": true
+          "create": false,
+          "edit": false,
+          "delete": false,
+          "rowButtons": [
+            {
+              "attrs": {
+                "label": "Stop process",
+                "icon": "pi pi-stop-circle",
+                "action": "stopAgentHubProcessRowAction",
+                "openInPopup": false,
+                "actionInContextMenu": false,
+                "visibleWhenField": "status",
+                "visibleWhenFieldIn": ["ready"],
+                "confirmTitle": "Stop agent process?",
+                "confirmMessage": "This process will stop accepting new work and drain its active sessions before exiting.",
+                "confirmLabel": "Stop process",
+                "successSummary": "Process draining",
+                "successMessage": "The process is draining and will stop when its active work is clear.",
+                "customComponentIsSystem": true
+              }
+            },
+            {
+              "attrs": {
+                "label": "Restart agent",
+                "icon": "pi pi-refresh",
+                "action": "restartAgentHubProcessRowAction",
+                "openInPopup": false,
+                "actionInContextMenu": false,
+                "visibleWhenField": "status",
+                "visibleWhenFieldIn": ["ready", "stopped", "dead", "failed"],
+                "confirmTitle": "Restart agent on latest config?",
+                "confirmMessage": "A new process will start with the latest agent config, then existing processes will drain.",
+                "confirmLabel": "Restart agent",
+                "successSummary": "Agent restarted",
+                "successMessage": "A process is running with the latest agent config. Older processes are draining.",
+                "customComponentIsSystem": true
+              }
+            }
+          ]
         },
         "children": [
           {
             "type": "field",
             "attrs": {
-              "name": "id"
+              "name": "processId",
+              "isSearchable": true,
+              "sortable": true,
+              "viewWidget": "AgentProcessNeedsRestartListWidget"
             }
           },
           {
             "type": "field",
             "attrs": {
               "name": "agent"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "host",
-              "isSearchable": true,
-              "sortable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "port",
-              "sortable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "pid",
-              "sortable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "wsUrl",
-              "isSearchable": true
             }
           },
           {
@@ -25765,26 +25775,6 @@
           {
             "type": "field",
             "attrs": {
-              "name": "maxSessions",
-              "sortable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "maxRunningTurns",
-              "sortable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "loadReport"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
               "name": "startedAt",
               "sortable": true
             }
@@ -25793,21 +25783,6 @@
             "type": "field",
             "attrs": {
               "name": "heartbeatAt",
-              "sortable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "stoppedAt",
-              "sortable": true
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "processId",
-              "isSearchable": true,
               "sortable": true
             }
           }
@@ -25826,7 +25801,11 @@
         "attrs": {
           "name": "form-1",
           "label": "Agent Process",
-          "className": "grid"
+          "className": "grid",
+          "readonly": true,
+          "showAddFormButton": false,
+          "showEditFormButton": false,
+          "showDeleteFormButton": false
         },
         "children": [
           {
