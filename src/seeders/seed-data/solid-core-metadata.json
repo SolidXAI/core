@@ -12203,6 +12203,19 @@
       "modelUserKey": "agentRegistry"
     },
     {
+      "displayName": "Agent Registry Card Action",
+      "name": "agentRegistry-card-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentRegistry-card-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentRegistry"
+    },
+    {
       "displayName": "Agent Registry Tree View Action",
       "name": "agentRegistry-tree-action",
       "type": "solid",
@@ -24406,7 +24419,7 @@
             "type": "card",
             "attrs": {
               "name": "Agent Tool",
-              "cardWidget": "AgentRegistryCardWidget"
+              "cardWidget": "AgentResourceCardWidget"
             },
             "children": [
               {
@@ -24743,7 +24756,7 @@
             "type": "card",
             "attrs": {
               "name": "Agent Skill",
-              "cardWidget": "AgentRegistryCardWidget"
+              "cardWidget": "AgentResourceCardWidget"
             },
             "children": [
               {
