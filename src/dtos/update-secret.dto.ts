@@ -1,5 +1,5 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsInt, IsOptional, IsString, IsNotEmpty, IsDate } from 'class-validator';
+import { IsInt, IsOptional, IsString, IsNotEmpty, IsDate, IsBoolean } from 'class-validator';
 
 export class UpdateSecretDto {
     @IsOptional()
@@ -28,6 +28,11 @@ export class UpdateSecretDto {
     @IsString()
     @ApiProperty({ description: "Plain value supplied by an admin. It is encrypted before storage." })
     value: string;
+
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty({ description: "Whether this secret should be redacted." })
+    redact: boolean;
 
     @IsNotEmpty()
     @IsOptional()

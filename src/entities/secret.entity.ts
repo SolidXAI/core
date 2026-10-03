@@ -18,6 +18,9 @@ export class Secret extends CommonEntity {
     @Column({ type: "text" })
     value: string;
 
+    @Column({ type: "boolean", default: true })
+    redact: boolean = true;
+
     @Index()
     @Column({ type: "varchar", default: "string" })
     valueType: string = "string";

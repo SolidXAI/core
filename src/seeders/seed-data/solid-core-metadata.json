@@ -7820,6 +7820,23 @@
             "isPrimaryKey": false
           },
           {
+            "name": "redact",
+            "displayName": "Redact",
+            "description": "Whether this secret should be redacted.",
+            "type": "boolean",
+            "ormType": "boolean",
+            "isSystem": true,
+            "defaultValue": "true",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isPrimaryKey": false
+          },
+          {
             "name": "valueType",
             "displayName": "Value Type",
             "description": "How the decrypted value should be coerced for workflow runtime usage.",
@@ -23671,6 +23688,13 @@
           {
             "type": "field",
             "attrs": {
+              "name": "redact",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "valueType",
               "sortable": true,
               "isSearchable": true
@@ -23848,6 +23872,12 @@
                             "type": "field",
                             "attrs": {
                               "name": "value"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "redact"
                             }
                           },
                           {
