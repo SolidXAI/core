@@ -36,6 +36,6 @@ export class AgentProcessService extends CRUDService<AgentProcess>{
     if (!process?.agent?.id) {
       throw new NotFoundException('The process is not linked to an agent and cannot be restarted.');
     }
-    return this.processManager.restartAgent(process.agent.id, authorization);
+    return this.processManager.restartProcess(processId, process.agent.id, authorization);
   }
 }
