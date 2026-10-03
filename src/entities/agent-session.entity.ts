@@ -18,6 +18,7 @@ export class AgentSession extends CommonEntity {
     @JoinColumn()
     agent: AgentRegistry;
 
+    // The most recent process that hosted this session; it remains linked after shutdown.
     @ManyToOne(() => AgentProcess, { onDelete: "SET NULL", nullable: true })
     @JoinColumn()
     process: AgentProcess;

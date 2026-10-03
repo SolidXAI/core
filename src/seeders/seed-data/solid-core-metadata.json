@@ -25716,7 +25716,7 @@
                 "openInPopup": false,
                 "actionInContextMenu": false,
                 "visibleWhenField": "status",
-                "visibleWhenFieldIn": ["ready", "stopped", "dead", "failed"],
+                "visibleWhenFieldIn": ["ready"],
                 "confirmTitle": "Restart agent on latest config?",
                 "confirmMessage": "A new process will start with the latest agent config, then existing processes will drain.",
                 "confirmLabel": "Restart agent",
@@ -25748,7 +25748,17 @@
             "attrs": {
               "name": "status",
               "isSearchable": true,
-              "sortable": true
+              "sortable": true,
+              "viewWidget": "PillWidget",
+              "pillColorMap": {
+                "starting": "#fef3c7",
+                "ready": "#dcfce7",
+                "draining": "#fed7aa",
+                "stopped": "#e5e7eb",
+                "dead": "#fee2e2",
+                "failed": "#fee2e2",
+                "default": "#e5e7eb"
+              }
             }
           },
           {

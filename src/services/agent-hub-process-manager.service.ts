@@ -56,4 +56,17 @@ export class AgentHubProcessManagerService {
   restartAgent(agentId: number, authorization: string): Promise<{ id: string; status: string }> {
     return this.request('POST', `/api/agents/${agentId}/restart`, authorization);
   }
+
+  async restartProcess(processId: string, agentId: number, authorization: string): Promise<{ id: string; status: string }> {
+    const processes = await this.listProcesses(authorization);
+    const process = processes.find((item) => String(item.id) === processId);
+    if (!process) throw new NotFoundException('Runtime process was not found.');
+    if (process.status !== 'ready') {
+      throw new ConflictException(`Only a ready process can restart its agent (current status: ${process.status}).`);
+    }
+    if (Number(process.agentId) !== agentId) {
+      throw new ConflictException('The process is no longer linked to this agent.');
+    }
+    return this.restartAgent(agentId, authorization);
+  }
 }
