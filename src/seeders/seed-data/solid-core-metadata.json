@@ -9766,6 +9766,27 @@
             "enableAuditTracking": true
           },
           {
+            "name": "runtime",
+            "displayName": "Runtime",
+            "description": "Runtime that created or hosted this session.",
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": null,
+            "selectionStaticValues": "solidx:SolidX,agentHub:AgentHub",
+            "selectionValueType": "string",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
             "name": "trigger",
             "displayName": "Trigger",
             "description": null,
@@ -26149,6 +26170,13 @@
           {
             "type": "field",
             "attrs": {
+              "name": "runtime",
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "trigger",
               "isSearchable": true,
               "sortable": true,
@@ -26309,6 +26337,14 @@
                                 "type": "field",
                                 "attrs": {
                                   "name": "process"
+                                }
+                              },
+                              {
+                                "type": "field",
+                                "attrs": {
+                                  "name": "runtime",
+                                  "disabled": true,
+                                  "readOnly": true
                                 }
                               },
                               {
@@ -26514,6 +26550,13 @@
             "type": "field",
             "attrs": {
               "name": "process"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "runtime",
+              "sortable": true
             }
           },
           {

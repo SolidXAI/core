@@ -26,6 +26,10 @@ export class AgentSession extends CommonEntity {
     @Column({ type: "varchar" })
     trigger: string;
 
+    // Runtime that created/hosted this session; nullable for legacy rows where it is unknown.
+    @Column({ type: "varchar", nullable: true })
+    runtime: "solidx" | "agentHub" | null;
+
     @ManyToOne(() => User, { onDelete: "RESTRICT", nullable: false })
     @JoinColumn()
     user: User;

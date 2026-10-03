@@ -1,4 +1,4 @@
-import { IsInt,IsOptional, IsString, IsNotEmpty, IsJSON, IsNumber, IsDate, ValidateNested, IsArray } from 'class-validator';
+import { IsInt,IsOptional, IsString, IsNotEmpty, IsJSON, IsNumber, IsDate, ValidateNested, IsArray, IsIn } from 'class-validator';
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { UpdateAgentJobDto } from './update-agent-job.dto';
@@ -36,6 +36,12 @@ export class UpdateAgentSessionDto {
     @IsString()
     @ApiProperty()
     trigger: string;
+
+    @IsOptional()
+    @IsString()
+    @IsIn(["solidx", "agentHub"])
+    @ApiProperty({ enum: ["solidx", "agentHub"], required: false })
+    runtime: "solidx" | "agentHub";
 
     @IsOptional()
     @IsInt()
