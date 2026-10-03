@@ -364,11 +364,11 @@ export class ModuleMetadataService {
     this.logger.log(`Cleaning up for module: ${moduleEntity.name}.`);
 
     const modulePath = await this.moduleMetadataHelperService.getModulePath(moduleEntity.name);
-    const solidUiModulePath = await this.moduleMetadataHelperService.getSolidUiModulePath(moduleEntity.name);
+    const solidUiModuleCleanupPaths = await this.moduleMetadataHelperService.getSolidUiModuleCleanupPaths(moduleEntity.name);
     if (modulePath) {
 
       this.logger.log(`Module path: ${modulePath}`);
-      this.logger.log(`Solid UI module path: ${solidUiModulePath}`);
+      this.logger.log(`Solid UI module cleanup paths: ${solidUiModuleCleanupPaths.join(', ')}`);
 
       // Metadata file to be deleted
       const moduleMetadataPAth = await this.moduleMetadataHelperService.getModuleMetadataFolderPath(moduleEntity.name)
@@ -376,7 +376,7 @@ export class ModuleMetadataService {
 
       try {
         await fs.rm(modulePath, { recursive: true, force: true });
-        if (solidUiModulePath) {
+        for (const solidUiModulePath of solidUiModuleCleanupPaths) {
           await fs.rm(solidUiModulePath, { recursive: true, force: true });
           this.logger.log(`Deleted solid-ui module path: ${solidUiModulePath}`);
         }
