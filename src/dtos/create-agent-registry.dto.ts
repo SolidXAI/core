@@ -39,7 +39,7 @@ export class CreateAgentRegistryDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    requiredInputs: string = "{}";
+    requiredInputs: string = "[]";
 
     @IsNotEmpty()
     @IsString()

@@ -26,8 +26,9 @@ export class AgentRegistry extends CommonEntity {
     @Column({ type: "text" })
     systemPrompt: string;
 
-    @Column({ type: "text", default: "{}" })
-    requiredInputs: string = "{}";
+    /** JSON array of { name, description, dataType } required by AgentHub. */
+    @Column({ type: "text", default: "[]" })
+    requiredInputs: string = "[]";
 
     @Column({ type: "varchar" })
     reasoningModelKey: string;

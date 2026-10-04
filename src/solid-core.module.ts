@@ -482,6 +482,7 @@ import { AgentRole } from "./entities/agent-role.entity";
 import { AgentSessionCheckpoint } from "./entities/agent-session-checkpoint.entity";
 import { AgentHumanRequest } from "./entities/agent-human-request.entity";
 import { AgentRegistryController } from "./controllers/agent-registry.controller";
+import { AgentEmbedController } from './controllers/agent-embed.controller';
 import { AgentToolRegistryController } from "./controllers/agent-tool-registry.controller";
 import { AgentSkillRegistryController } from "./controllers/agent-skill-registry.controller";
 import { AgentToolController } from "./controllers/agent-tool.controller";
@@ -715,6 +716,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     WorkflowTriggerExecutionController,
     SecretController,
     AgentRegistryController,
+    AgentEmbedController,
     AgentToolRegistryController,
     AgentSkillRegistryController,
     AgentToolController,
