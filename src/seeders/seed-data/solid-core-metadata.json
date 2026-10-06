@@ -8700,6 +8700,31 @@
             "isPrimaryKey": false
           },
           {
+            "name": "type",
+            "displayName": "Type",
+            "description": null,
+            "type": "selectionStatic",
+            "ormType": "varchar",
+            "isSystem": true,
+            "defaultValue": "custom",
+            "selectionStaticValues": [
+              "solidx:SolidX",
+              "thirdparty:Third Party",
+              "custom:Custom"
+            ],
+            "selectionValueType": "string",
+            "required": true,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "encryptionType": null,
+            "decryptWhen": null,
+            "columnName": null,
+            "enableAuditTracking": true,
+            "isMultiSelect": false
+          },
+          {
             "name": "iconName",
             "displayName": "Icon",
             "description": "Material Symbol name used to represent this registry item.",
@@ -24764,6 +24789,14 @@
           {
             "type": "field",
             "attrs": {
+              "name": "type",
+              "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "description"
             }
           },
@@ -24842,6 +24875,12 @@
                 "attrs": {
                   "name": "tags"
                 }
+              },
+              {
+                "type": "field",
+                "attrs": {
+                  "name": "type"
+                }
               }
             ]
           }
@@ -24914,6 +24953,12 @@
                             "type": "field",
                             "attrs": {
                               "name": "tags"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "type"
                             }
                           }
                         ]
@@ -25012,6 +25057,12 @@
             "type": "field",
             "attrs": {
               "name": "name"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "type"
             }
           },
           {

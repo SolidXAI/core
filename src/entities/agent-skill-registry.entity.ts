@@ -8,6 +8,9 @@ export class AgentSkillRegistry extends CommonEntity {
     @Column({ type: "varchar" })
     name: string;
 
+    @Column({ type: "varchar", default: "custom" })
+    type: string = "custom";
+
     @Column({ type: "varchar", nullable: true })
     iconName?: string;
 

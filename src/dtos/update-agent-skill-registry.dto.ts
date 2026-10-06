@@ -14,6 +14,12 @@ export class UpdateAgentSkillRegistryDto {
     @ApiProperty()
     name: string;
 
+    @IsNotEmpty()
+    @IsOptional()
+    @IsString()
+    @ApiProperty()
+    type: string;
+
     @IsOptional()
     @IsString()
     @ApiProperty({ required: false })

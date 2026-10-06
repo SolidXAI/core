@@ -1,5 +1,6 @@
+import { BadRequestException } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
-import { EntityManager, EntityTarget, In } from 'typeorm';
+import { EntityManager, EntityTarget, FindOptionsWhere, In } from 'typeorm';
 import { CommonEntity } from '../entities/common.entity';
 import { AgentRegistry } from '../entities/agent-registry.entity';
 import { CRUDService } from './crud.service';
@@ -87,7 +88,7 @@ export abstract class AgentConfigLinkService<T extends CommonEntity> extends CRU
   }
 }
 
-export abstract class AgentConfigCatalogService<T extends CommonEntity> extends CRUDService<T> {
+export abstract class AgentConfigCatalogService<T extends CommonEntity & { type: string }> extends CRUDService<T> {
   constructor(
     entityManager: EntityManager,
     repo: SolidBaseRepository<T>,
@@ -103,6 +104,14 @@ export abstract class AgentConfigCatalogService<T extends CommonEntity> extends 
     return agentIdsForCatalog(this.entityManager, this.linkEntity, this.catalogRelation, catalogIds);
   }
 
+  // SolidX catalog rows are seeded by the agent hub runtime and are read-only.
+  private async assertEditable(ids: number[]) {
+    const locked = await this.repo.find({ where: { id: In(ids), type: 'solidx' } as FindOptionsWhere<T>, select: { id: true } as any });
+    if (locked.length) {
+      throw new BadRequestException(`SolidX ${this.modelName} records cannot be modified. Invalid Ids ${locked.map((row) => row.id).join(', ')}.`);
+    }
+  }
+
   override async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
     const saved = await super.create(createDto, files, solidRequestContext);
     await bumpAgentConfigVersions(this.entityManager, await this.agentIds([saved.id]));
@@ -116,6 +125,7 @@ export abstract class AgentConfigCatalogService<T extends CommonEntity> extends 
   }
 
   override async update(id: number, updateDto: any, files: Express.Multer.File[] = [], isPartialUpdate = false, solidRequestContext: any = {}, isUpdate = false): Promise<T> {
+    await this.assertEditable([id]);
     const before = await this.agentIds([id]);
     const saved = await super.update(id, updateDto, files, isPartialUpdate, solidRequestContext, isUpdate);
     const after = await this.agentIds([saved.id]);
@@ -124,6 +134,7 @@ export abstract class AgentConfigCatalogService<T extends CommonEntity> extends 
   }
 
   override async delete(id: number, solidRequestContext: any = {}) {
+    await this.assertEditable([id]);
     const agentIds = await this.agentIds([id]);
     const result = await super.delete(id, solidRequestContext);
     await bumpAgentConfigVersions(this.entityManager, agentIds);
@@ -131,6 +142,7 @@ export abstract class AgentConfigCatalogService<T extends CommonEntity> extends 
   }
 
   override async deleteMany(ids: number[], solidRequestContext: any = {}) {
+    await this.assertEditable(ids);
     const agentIds = await this.agentIds(ids);
     const result = await super.deleteMany(ids, solidRequestContext);
     await bumpAgentConfigVersions(this.entityManager, agentIds);

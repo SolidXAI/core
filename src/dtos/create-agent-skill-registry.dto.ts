@@ -10,6 +10,11 @@ export class CreateAgentSkillRegistryDto {
     @ApiProperty()
     name: string;
 
+    @IsNotEmpty()
+    @IsString()
+    @ApiProperty()
+    type: string = "custom";
+
     @IsOptional()
     @IsString()
     @ApiProperty({ required: false })
