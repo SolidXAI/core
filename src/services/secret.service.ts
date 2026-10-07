@@ -143,6 +143,16 @@ export class SecretService extends CRUDService<Secret> {
     }, {} as Record<string, any>);
   }
 
+  async findAvailableKeys(keys: string[]): Promise<string[]> {
+    const uniqueKeys = Array.from(new Set((keys ?? []).filter(Boolean)));
+    if (uniqueKeys.length === 0) return [];
+    const secrets = await this.repo.find({
+      where: { key: In(uniqueKeys), status: "active" } as any,
+      select: { key: true } as any,
+    });
+    return secrets.map((secret) => secret.key);
+  }
+
   /**
    * Resolves several secrets in a single query, returning a flat map keyed by the
    * literal keys requested.

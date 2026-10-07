@@ -21,7 +21,7 @@ function fixture() {
   const repo = { findOne: jest.fn(async () => ({ ...row })) };
   const transaction = { findOne: jest.fn(async () => ({ ...row })), save: jest.fn(async (_entity, saved) => saved) };
   const entityManager = { transaction: jest.fn(async (fn) => fn(transaction)) };
-  const service = new AgentToolRegistryService(entityManager as any, repo as any, {} as any);
+  const service = new AgentToolRegistryService(entityManager as any, repo as any, {} as any, {} as any);
   return { row, repo, transaction, entityManager, service };
 }
 
