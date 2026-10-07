@@ -1,5 +1,11 @@
 # Changelog
 
+## [0.1.19-beta.5] - 2026-10-07
+
+### Other
+
+- Set default status to inactive for agent tool registry and update related service logic
+
 ## [0.1.19-beta.4] - 2026-10-07
 
 ### Added
