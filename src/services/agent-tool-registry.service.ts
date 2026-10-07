@@ -48,21 +48,32 @@ export class AgentToolRegistryService extends AgentConfigCatalogService<AgentToo
       && existsSync(join(configuredSourceRoot, 'src', 'agenthub', 'tools', 'tool_lifecycle_check.py'))
       ? configuredSourceRoot
       : undefined;
-    const solidxVenv = { root: join(homedir(), '.solidx', 'agenthub-venv'), sourceRoot };
-    const localVenv = process.env.SOLIDX_AGENTHUB_RUNTIME_PATH
-      ? { root: join(process.env.SOLIDX_AGENTHUB_RUNTIME_PATH, '.venv'), sourceRoot }
-      : undefined;
-    const preference = process.env.SOLIDX_AGENTHUB_RUNTIME_PREFERENCE?.trim().toLowerCase() || 'solidx';
-    if (preference !== 'solidx' && preference !== 'local') {
-      throw new ServiceUnavailableException('SOLIDX_AGENTHUB_RUNTIME_PREFERENCE must be "solidx" or "local".');
-    }
-    const candidates = (preference === 'local' ? [localVenv, solidxVenv] : [solidxVenv, localVenv])
-      .filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== undefined);
+    const candidates = [
+      { root: join(homedir(), '.solidx', 'agenthub-venv'), sourceRoot },
+      ...(process.env.SOLIDX_AGENTHUB_RUNTIME_PATH
+        ? [{ root: join(process.env.SOLIDX_AGENTHUB_RUNTIME_PATH, '.venv'), sourceRoot }]
+        : []),
+    ];
     for (const candidate of candidates) {
       const python = join(candidate.root, process.platform === 'win32' ? 'Scripts' : 'bin', binary);
       if (existsSync(python)) return { python, runtimeRoot: candidate.root, sourceRoot: candidate.sourceRoot };
     }
     throw new ServiceUnavailableException('AgentHub runtime virtual environment was not found.');
+  }
+
+  private lifecycleDatabaseUrl(): string {
+    const options = this.entityManager.connection.options as any;
+    if (options.type !== 'postgres') {
+      throw new ServiceUnavailableException('Tool checks require Core to use PostgreSQL.');
+    }
+    if (options.url) return options.url;
+    const host = String(options.host ?? 'localhost');
+    const formattedHost = host.includes(':') && !host.startsWith('[') ? `[${host}]` : host;
+    const credentials = options.username
+      ? `${encodeURIComponent(String(options.username))}:${encodeURIComponent(String(options.password ?? ''))}@`
+      : '';
+    const ssl = options.ssl ? '?sslmode=require' : '';
+    return `postgresql://${credentials}${formattedHost}:${options.port ?? 5432}/${encodeURIComponent(String(options.database))}${ssl}`;
   }
 
   private async runLifecycleScript(request: Record<string, unknown>): Promise<Record<string, any>> {
@@ -72,7 +83,7 @@ export class AgentToolRegistryService extends AgentConfigCatalogService<AgentToo
       PATH: process.env.PATH ?? '',
       VIRTUAL_ENV: runner.runtimeRoot,
       HOME: homedir(),
-      DATABASE_URL: process.env.DATABASE_URL,
+      DATABASE_URL: this.lifecycleDatabaseUrl(),
       ...(process.env.SYSTEMROOT ? { SYSTEMROOT: process.env.SYSTEMROOT } : {}),
       ...(runner.sourceRoot ? { PYTHONPATH: join(runner.sourceRoot, 'src') } : {}),
     };
