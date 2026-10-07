@@ -48,12 +48,16 @@ export class AgentToolRegistryService extends AgentConfigCatalogService<AgentToo
       && existsSync(join(configuredSourceRoot, 'src', 'agenthub', 'tools', 'tool_lifecycle_check.py'))
       ? configuredSourceRoot
       : undefined;
-    const candidates = [
-      { root: join(homedir(), '.solidx', 'agenthub-venv'), sourceRoot },
-      ...(process.env.SOLIDX_AGENTHUB_RUNTIME_PATH
-        ? [{ root: join(process.env.SOLIDX_AGENTHUB_RUNTIME_PATH, '.venv'), sourceRoot }]
-        : []),
-    ];
+    const solidxVenv = { root: join(homedir(), '.solidx', 'agenthub-venv'), sourceRoot };
+    const localVenv = process.env.SOLIDX_AGENTHUB_RUNTIME_PATH
+      ? { root: join(process.env.SOLIDX_AGENTHUB_RUNTIME_PATH, '.venv'), sourceRoot }
+      : undefined;
+    const preference = process.env.SOLIDX_AGENTHUB_RUNTIME_PREFERENCE?.trim().toLowerCase() || 'solidx';
+    if (preference !== 'solidx' && preference !== 'local') {
+      throw new ServiceUnavailableException('SOLIDX_AGENTHUB_RUNTIME_PREFERENCE must be "solidx" or "local".');
+    }
+    const candidates = (preference === 'local' ? [localVenv, solidxVenv] : [solidxVenv, localVenv])
+      .filter((candidate): candidate is NonNullable<typeof candidate> => candidate !== undefined);
     for (const candidate of candidates) {
       const python = join(candidate.root, process.platform === 'win32' ? 'Scripts' : 'bin', binary);
       if (existsSync(python)) return { python, runtimeRoot: candidate.root, sourceRoot: candidate.sourceRoot };
