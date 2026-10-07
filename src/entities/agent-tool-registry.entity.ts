@@ -26,8 +26,8 @@ export class AgentToolRegistry extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     checksum?: string;
 
-    @Column({ type: "varchar", default: "active" })
-    status: string = "active";
+    @Column({ type: "varchar", default: "inactive" })
+    status: string = "inactive";
 
     @Column({ type: "text", nullable: true })
     lastLoadError: string;

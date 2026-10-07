@@ -43,7 +43,7 @@ export class CreateAgentToolRegistryDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    status: string = "active";
+    status: string = "inactive";
 
     @IsOptional()
     @IsString()
