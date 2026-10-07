@@ -1,11 +1,11 @@
-import { Injectable } from '@nestjs/common';
+import { ConflictException, Injectable } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { ModuleRef  } from "@nestjs/core";
+import { ModuleRef } from '@nestjs/core';
 import { EntityManager } from 'typeorm';
 import { createHash } from 'node:crypto';
+import { AgentTool } from '../entities/agent-tool.entity';
 import { AgentConfigCatalogService } from './agent-config-version.service';
 import { AgentToolRegistry } from '../entities/agent-tool-registry.entity';
-import { AgentTool } from '../entities/agent-tool.entity';
 import { AgentToolRegistryRepository } from '../repository/agent-tool-registry.repository';
 import { CreateAgentToolRegistryDto } from '../dtos/create-agent-tool-registry.dto';
 import { UpdateAgentToolRegistryDto } from '../dtos/update-agent-tool-registry.dto';
@@ -17,13 +17,12 @@ export class AgentToolRegistryService extends AgentConfigCatalogService<AgentToo
     readonly entityManager: EntityManager,
     readonly repo: AgentToolRegistryRepository,
     readonly moduleRef: ModuleRef,
-      
- ) {
+  ) {
    super(entityManager, repo, 'agentToolRegistry', moduleRef, AgentTool, 'agentToolRegistry');
  }
 
   private withChecksum<T extends { type?: string; sourceCode?: string; checksum?: string }>(dto: T, existing?: AgentToolRegistry): T {
-    if ((dto.type ?? existing?.type) !== 'custom') return dto;
+    if (!['custom', 'thirdparty'].includes(dto.type ?? existing?.type)) return dto;
 
     const sourceCode = dto.sourceCode ?? existing?.sourceCode;
     if (typeof sourceCode !== 'string') return dto;
@@ -35,11 +34,15 @@ export class AgentToolRegistryService extends AgentConfigCatalogService<AgentToo
   }
 
   override async create(createDto: CreateAgentToolRegistryDto, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<AgentToolRegistry> {
-    return super.create(this.withChecksum(createDto), files, solidRequestContext);
+    return super.create(this.withChecksum({ ...createDto, status: 'inactive', lastLoadError: null }), files, solidRequestContext);
+  }
+
+  override async createMany(createDtos: CreateAgentToolRegistryDto[], solidRequestContext: any = {}): Promise<AgentToolRegistry[]> {
+    return super.createMany(createDtos.map((dto) => this.withChecksum({ ...dto, status: 'inactive', lastLoadError: null })), solidRequestContext);
   }
 
   override async insertMany(createDtos: CreateAgentToolRegistryDto[], filesArray: Express.Multer.File[][] = [], solidRequestContext: any = {}): Promise<AgentToolRegistry[]> {
-    return super.insertMany(createDtos.map((dto) => this.withChecksum(dto)), filesArray, solidRequestContext);
+    return super.insertMany(createDtos.map((dto) => this.withChecksum({ ...dto, status: 'inactive', lastLoadError: null })), filesArray, solidRequestContext);
   }
 
   override async update(
@@ -51,6 +54,19 @@ export class AgentToolRegistryService extends AgentConfigCatalogService<AgentToo
     isUpdate = false,
   ): Promise<AgentToolRegistry> {
     const existing = await this.repo.findOne({ where: { id } });
-    return super.update(id, this.withChecksum(updateDto, existing ?? undefined), files, isPartialUpdate, solidRequestContext, isUpdate);
+    const changed = existing && ['sourceCode', 'name', 'type'].some(
+      (key) => updateDto[key] !== undefined && updateDto[key] !== existing[key],
+    );
+    if (!changed && updateDto.status === 'active' && existing?.status !== 'active'
+        && existing && ['custom', 'thirdparty'].includes(existing.type)) {
+      const checkedChecksum = createHash('sha256').update(existing.sourceCode ?? '', 'utf8').digest('hex');
+      if (updateDto.checksum !== checkedChecksum) {
+        throw new ConflictException('Tool source changed after checks. Run configuration and initialization again.');
+      }
+    }
+    const dto = changed ? { ...updateDto, status: 'inactive', lastLoadError: null } : updateDto;
+    return super.update(id, this.withChecksum(dto, existing ?? undefined), files, isPartialUpdate, solidRequestContext, isUpdate);
   }
+
+
 }

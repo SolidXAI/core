@@ -8592,7 +8592,7 @@
             "type": "selectionStatic",
             "ormType": "varchar",
             "isSystem": true,
-            "defaultValue": "active",
+            "defaultValue": "inactive",
             "selectionStaticValues": [
               "active:Active",
               "inactive:Inactive",
