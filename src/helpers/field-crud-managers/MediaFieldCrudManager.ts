@@ -58,8 +58,13 @@ export class MediaFieldCrudManager implements FieldCrudManager {
         const mt = (file.mimetype || '').toLowerCase().trim();
         const mimeToMediaTypes = MIME_TO_MEDIA_TYPE[mt]
             ?? (mt.startsWith('image/') ? 'image' : mt.startsWith('audio/') ? 'audio' : mt.startsWith('video/') ? 'video' : undefined);
-        // When the extension is shared, the MIME type identifies the actual category:
-        // audio/ogg becomes audio, while video/ogg becomes video.
+        // Shared extensions like .ogg may be reported with either audio or video MIME types.
+        const allowedType = extToMediaTypes.length > 1
+            && extToMediaTypes.find(mediaType => this.options.mediaTypes.includes(mediaType));
+        if (allowedType) {
+            return allowedType;
+        }
+
         if (mimeToMediaTypes && !extToMediaTypes.includes(mimeToMediaTypes)) {
             return null;
         }
