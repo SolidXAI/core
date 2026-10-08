@@ -2,6 +2,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, JoinColumn, ManyToOne, Column } from 'typeorm';
 import { AgentSession } from './agent-session.entity';
 import { AgentJob } from './agent-job.entity'
+import { getColumnType } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_agent_human_request')
 export class AgentHumanRequest extends CommonEntity {
@@ -43,6 +44,6 @@ export class AgentHumanRequest extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     answeredBy: string;
 
-    @Column({ type: "timestamptz", nullable: true })
+    @Column({ ...getColumnType('datetimeWithTimezone'), nullable: true })
     answeredAt: Date;
 }

@@ -56,6 +56,14 @@ const DATE_TIME_MAP: Record<DatasourceType, ColumnOptions> = {
     [DatasourceType.oracle]: { type: "timestamp" },
 };
 
+const DATE_TIME_WITH_TIMEZONE_MAP: Record<DatasourceType, ColumnOptions> = {
+    [DatasourceType.postgres]: { type: "timestamptz" },
+    [DatasourceType.mssql]: { type: "datetimeoffset" },
+    [DatasourceType.mysql]: { type: "datetime" },
+    [DatasourceType.mariadb]: { type: "datetime" },
+    [DatasourceType.oracle]: { type: "timestamp with time zone" },
+};
+
 const solidCoreDbType: DatasourceType =
     Object.values(DatasourceType).includes(process.env.SOLID_CORE_DB_TYPE as DatasourceType)
         ? (process.env.SOLID_CORE_DB_TYPE as DatasourceType)
@@ -94,7 +102,22 @@ export function getColumnType(solidType: string): ColumnOptions {
         case "datetime":
             return DATE_TIME_MAP[solidCoreDbType];
 
+        case "datetimeWithTimezone":
+            return DATE_TIME_WITH_TIMEZONE_MAP[solidCoreDbType];
+
         default:
             return {};
+    }
+}
+
+export function getCurrentTimestampDefault(): string {
+    switch (solidCoreDbType) {
+        case DatasourceType.mssql:
+            return "SYSDATETIMEOFFSET()";
+        case DatasourceType.mysql:
+        case DatasourceType.mariadb:
+            return "CURRENT_TIMESTAMP";
+        default:
+            return "now()";
     }
 }
