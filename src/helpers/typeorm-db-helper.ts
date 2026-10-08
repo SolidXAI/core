@@ -40,6 +40,14 @@ const DECIMAL_MAP: Record<DatasourceType, ColumnOptions> = {
     [DatasourceType.oracle]: { type: "float" },
 };
 
+const BOOLEAN_MAP: Record<DatasourceType, ColumnOptions> = {
+    [DatasourceType.postgres]: { type: "boolean" },
+    [DatasourceType.mssql]: { type: "bit" },
+    [DatasourceType.mysql]: { type: "boolean" },
+    [DatasourceType.mariadb]: { type: "boolean" },
+    [DatasourceType.oracle]: { type: "number", precision: 1 },
+};
+
 const DATE_TIME_MAP: Record<DatasourceType, ColumnOptions> = {
     [DatasourceType.postgres]: { type: "timestamp" },
     [DatasourceType.mssql]: { type: "datetime2" },
@@ -79,6 +87,9 @@ export function getColumnType(solidType: string): ColumnOptions {
 
         case "decimal":
             return DECIMAL_MAP[solidCoreDbType];
+
+        case "boolean":
+            return BOOLEAN_MAP[solidCoreDbType];
 
         case "datetime":
             return DATE_TIME_MAP[solidCoreDbType];
