@@ -221,7 +221,6 @@ import { LocaleController } from './controllers/locale.controller';
 import { RoleMetadataController } from './controllers/role-metadata.controller';
 import { SavedFiltersController } from './controllers/saved-filters.controller';
 import { ScheduledJobController } from './controllers/scheduled-job.controller';
-import { AgentSessionController } from './controllers/agent-session.controller';
 import { AgentEventController } from './controllers/agent-event.controller';
 import { McpAuditLogController } from './controllers/mcp-audit-log.controller';
 import { SecurityRuleController } from './controllers/security-rule.controller';
@@ -242,7 +241,6 @@ import { Locale } from './entities/locale.entity';
 import { RoleMetadata } from './entities/role-metadata.entity';
 import { SavedFilters } from './entities/saved-filters.entity';
 import { ScheduledJob } from './entities/scheduled-job.entity';
-import { AgentSession } from './entities/agent-session.entity';
 import { AgentEvent } from './entities/agent-event.entity';
 import { McpAuditLog } from './entities/mcp-audit-log.entity';
 import { SecurityRule } from './entities/security-rule.entity';
@@ -314,7 +312,6 @@ import { PermissionMetadataRepository } from './repository/permission-metadata.r
 import { RoleMetadataRepository } from './repository/role-metadata.repository';
 import { SavedFiltersRepository } from './repository/saved-filters.repository';
 import { ScheduledJobRepository } from './repository/scheduled-job.repository';
-import { AgentSessionRepository } from './repository/agent-session.repository';
 import { AgentEventRepository } from './repository/agent-event.repository';
 import { McpAuditLogRepository } from './repository/mcp-audit-log.repository';
 import { SecurityRuleRepository } from './repository/security-rule.repository';
@@ -364,7 +361,6 @@ import { RequestContextService } from './services/request-context.service';
 import { RoleMetadataService } from './services/role-metadata.service';
 import { SavedFiltersService } from './services/saved-filters.service';
 import { ScheduledJobService } from './services/scheduled-job.service';
-import { AgentSessionService } from './services/agent-session.service';
 import { AgentEventService } from './services/agent-event.service';
 import { McpAuditLogService } from './services/mcp-audit-log.service';
 import { SchedulerServiceImpl } from './services/scheduled-jobs/scheduler.service';
@@ -419,14 +415,14 @@ import { WorkflowStepExecution } from './entities/workflow-step-execution.entity
 import { WorkflowExecutionLog } from './entities/workflow-execution-log.entity';
 import { WorkflowExecutionArtifact } from './entities/workflow-execution-artifact.entity';
 import { WorkflowTriggerExecution } from './entities/workflow-trigger-execution.entity';
-import { WorkflowSecret } from './entities/workflow-secret.entity';
+import { Secret } from './entities/secret.entity';
 import { WorkflowDefinitionController } from './controllers/workflow-definition.controller';
 import { WorkflowExecutionController } from './controllers/workflow-execution.controller';
 import { WorkflowStepExecutionController } from './controllers/workflow-step-execution.controller';
 import { WorkflowExecutionLogController } from './controllers/workflow-execution-log.controller';
 import { WorkflowExecutionArtifactController } from './controllers/workflow-execution-artifact.controller';
 import { WorkflowTriggerExecutionController } from './controllers/workflow-trigger-execution.controller';
-import { WorkflowSecretController } from './controllers/workflow-secret.controller';
+import { SecretController } from './controllers/secret.controller';
 import { WorkflowDefinitionService } from './services/workflow-definition.service';
 import { WorkflowDefinitionMetadataSyncService } from './services/workflow/workflow-definition-metadata-sync.service';
 import { WorkflowExecutionService } from './services/workflow-execution.service';
@@ -434,14 +430,14 @@ import { WorkflowStepExecutionService } from './services/workflow-step-execution
 import { WorkflowExecutionLogService } from './services/workflow-execution-log.service';
 import { WorkflowExecutionArtifactService } from './services/workflow-execution-artifact.service';
 import { WorkflowTriggerExecutionService } from './services/workflow-trigger-execution.service';
-import { WorkflowSecretService } from './services/workflow-secret.service';
+import { SecretService } from './services/secret.service';
 import { WorkflowDefinitionRepository } from './repository/workflow-definition.repository';
 import { WorkflowExecutionRepository } from './repository/workflow-execution.repository';
 import { WorkflowStepExecutionRepository } from './repository/workflow-step-execution.repository';
 import { WorkflowExecutionLogRepository } from './repository/workflow-execution-log.repository';
 import { WorkflowExecutionArtifactRepository } from './repository/workflow-execution-artifact.repository';
 import { WorkflowTriggerExecutionRepository } from './repository/workflow-trigger-execution.repository';
-import { WorkflowSecretRepository } from './repository/workflow-secret.repository';
+import { SecretRepository } from './repository/secret.repository';
 import { WorkflowDefinitionValidatorService } from './services/workflow/workflow-definition-validator.service';
 import { WorkflowExecutionWriterService } from './services/workflow/workflow-execution-writer.service';
 import { WorkflowExpressionService } from './services/workflow/workflow-expression.service';
@@ -471,6 +467,59 @@ import { SolidXSendEmailNode } from './services/workflow/nodes/solidx-send-email
 import { SolidXSendSmsNode } from './services/workflow/nodes/solidx-send-sms.node';
 import { SwitchNode } from './services/workflow/nodes/switch.node';
 
+//Agent hub
+
+import { AgentRegistry } from "./entities/agent-registry.entity";
+import { AgentToolRegistry } from "./entities/agent-tool-registry.entity";
+import { AgentSkillRegistry } from "./entities/agent-skill-registry.entity";
+import { AgentTool } from "./entities/agent-tool.entity";
+import { AgentSkill } from "./entities/agent-skill.entity";
+import { AgentSecret } from "./entities/agent-secret.entity";
+import { AgentProcess } from "./entities/agent-process.entity";
+import { AgentSession } from "./entities/agent-session.entity";
+import { AgentJob } from "./entities/agent-job.entity";
+import { AgentRole } from "./entities/agent-role.entity";
+import { AgentSessionCheckpoint } from "./entities/agent-session-checkpoint.entity";
+import { AgentHumanRequest } from "./entities/agent-human-request.entity";
+import { AgentRegistryController } from "./controllers/agent-registry.controller";
+import { AgentEmbedController } from './controllers/agent-embed.controller';
+import { AgentToolRegistryController } from "./controllers/agent-tool-registry.controller";
+import { AgentSkillRegistryController } from "./controllers/agent-skill-registry.controller";
+import { AgentToolController } from "./controllers/agent-tool.controller";
+import { AgentSkillController } from "./controllers/agent-skill.controller";
+import { AgentRoleController } from "./controllers/agent-role.controller";
+import { AgentSecretController } from "./controllers/agent-secret.controller";
+import { AgentProcessController } from "./controllers/agent-process.controller";
+import { AgentSessionController } from "./controllers/agent-session.controller";
+import { AgentJobController } from "./controllers/agent-job.controller";
+import { AgentSessionCheckpointController } from "./controllers/agent-session-checkpoint.controller";
+import { AgentHumanRequestController } from "./controllers/agent-human-request.controller";
+import { AgentHumanRequestRepository } from "./repository/agent-human-request.repository";
+import { AgentHumanRequestService } from "./services/agent-human-request.service";
+import { AgentSessionCheckpointRepository } from "./repository/agent-session-checkpoint.repository";
+import { AgentSessionCheckpointService } from "./services/agent-session-checkpoint.service";
+import { AgentSessionRepository } from "./repository/agent-session.repository";
+import { AgentJobRepository } from "./repository/agent-job.repository";
+import { AgentProcessRepository } from "./repository/agent-process.repository";
+import { AgentRegistryRepository } from "./repository/agent-registry.repository";
+import { AgentRoleRepository } from "./repository/agent-role.repository";
+import { AgentSecretRepository } from "./repository/agent-secret.repository";
+import { AgentSkillRepository } from "./repository/agent-skill.repository";
+import { AgentToolRepository } from "./repository/agent-tool.repository";
+import { AgentSkillRegistryRepository } from "./repository/agent-skill-registry.repository";
+import { AgentToolRegistryRepository } from "./repository/agent-tool-registry.repository";
+import { AgentSessionService } from "./services/agent-session.service";
+import { AgentJobService } from "./services/agent-job.service";
+import { AgentProcessService } from "./services/agent-process.service";
+import { AgentHubProcessManagerService } from "./services/agent-hub-process-manager.service";
+import { AgentRegistryService } from "./services/agent-registry.service";
+import { AgentRoleService } from "./services/agent-role.service";
+import { AgentSecretService } from "./services/agent-secret.service";
+import { AgentSkillService } from "./services/agent-skill.service";
+import { AgentToolService } from "./services/agent-tool.service";
+import { AgentSkillRegistryService } from "./services/agent-skill-registry.service";
+import { AgentToolRegistryService } from "./services/agent-tool-registry.service";
+
 @Global()
 @Module({
   imports: [
@@ -498,7 +547,6 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
       RoleMetadata,
       SavedFilters,
       ScheduledJob,
-      AgentSession,
       AgentEvent,
       McpAuditLog,
       SecurityRule,
@@ -517,9 +565,23 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
       WorkflowExecutionLog,
       WorkflowExecutionArtifact,
       WorkflowTriggerExecution,
-      WorkflowSecret,
-    ]),
+      Secret,
 
+      //Agent hub
+
+      AgentRegistry,
+      AgentToolRegistry,
+      AgentSkillRegistry,
+      AgentTool,
+      AgentSkill,
+      AgentRole,
+      AgentSecret,
+      AgentProcess,
+      AgentSession,
+      AgentJob,
+      AgentSessionCheckpoint,
+      AgentHumanRequest
+    ]),
     CacheModule.registerAsync(CacheManagerOptions),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
@@ -630,7 +692,6 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     RoleMetadataController,
     SavedFiltersController,
     ScheduledJobController,
-    AgentSessionController,
     AgentEventController,
     McpAuditLogController,
     SecurityRuleController,
@@ -653,7 +714,20 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowExecutionLogController,
     WorkflowExecutionArtifactController,
     WorkflowTriggerExecutionController,
-    WorkflowSecretController,
+    SecretController,
+    AgentRegistryController,
+    AgentEmbedController,
+    AgentToolRegistryController,
+    AgentSkillRegistryController,
+    AgentToolController,
+    AgentSkillController,
+    AgentRoleController,
+    AgentSecretController,
+    AgentProcessController,
+    AgentSessionController,
+    AgentJobController,
+    AgentSessionCheckpointController,
+    AgentHumanRequestController
   ],
   providers: [
     {
@@ -923,10 +997,8 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
 
     ViewMetadataRepository,
     ScheduledJobRepository,
-    AgentSessionRepository,
     AgentEventRepository,
     McpAuditLogRepository,
-    AgentSessionService,
     AgentEventService,
     McpAuditLogService,
     ScheduledJobSubscriber,
@@ -984,8 +1056,8 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     WorkflowExecutionArtifactRepository,
     WorkflowTriggerExecutionService,
     WorkflowTriggerExecutionRepository,
-    WorkflowSecretService,
-    WorkflowSecretRepository,
+    SecretService,
+    SecretRepository,
     WorkflowInvocationService,
     WorkflowRuntimeService,
     WorkflowExecutionWriterService,
@@ -1012,6 +1084,33 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
     SolidXDeleteNode,
     SolidXSendEmailNode,
     SolidXSendSmsNode,
+
+    //Agent hub
+    AgentRegistryService,
+    AgentRegistryRepository,
+    AgentToolRegistryService,
+    AgentToolRegistryRepository,
+    AgentSkillRegistryService,
+    AgentSkillRegistryRepository,
+    AgentToolService,
+    AgentToolRepository,
+    AgentSkillService,
+    AgentSkillRepository,
+    AgentRoleService,
+    AgentRoleRepository,
+    AgentSecretService,
+    AgentSecretRepository,
+    AgentProcessService,
+    AgentHubProcessManagerService,
+    AgentProcessRepository,
+    AgentSessionService,
+    AgentSessionRepository,
+    AgentJobService,
+    AgentJobRepository,
+    AgentSessionCheckpointService,
+    AgentSessionCheckpointRepository,
+    AgentHumanRequestService,
+    AgentHumanRequestRepository
   ],
   exports: [
     // Exported for DI, not merely re-exported from index.ts: a consuming
@@ -1090,4 +1189,4 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
 // Body-size limits live in bootstrapSolidApp (see SolidBootstrapOptions.bodyLimit).
 // They cannot be applied here: module middleware is registered in registerRouter(),
 // which runs after Nest's own parser middleware, so anything set here never takes effect.
-export class SolidCoreModule {}
+export class SolidCoreModule { }

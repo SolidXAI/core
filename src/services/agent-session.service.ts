@@ -1,19 +1,20 @@
 import { Injectable } from '@nestjs/common';
-import { ModuleRef } from '@nestjs/core';
 import { InjectEntityManager } from '@nestjs/typeorm';
-import { AgentSession } from 'src/entities/agent-session.entity';
-import { AgentSessionRepository } from 'src/repository/agent-session.repository';
+import { ModuleRef  } from "@nestjs/core";
 import { EntityManager } from 'typeorm';
 import { CRUDService } from './crud.service';
+import { AgentSession } from '../entities/agent-session.entity';
+import { AgentSessionRepository } from '../repository/agent-session.repository';
 
 @Injectable()
-export class AgentSessionService extends CRUDService<AgentSession> {
+export class AgentSessionService extends CRUDService<AgentSession>{
   constructor(
-    @InjectEntityManager()
+    @InjectEntityManager("default")
     readonly entityManager: EntityManager,
     readonly repo: AgentSessionRepository,
     readonly moduleRef: ModuleRef,
-  ) {
-    super(entityManager, repo, 'agentSession', 'solid-core', moduleRef);
-  }
+      
+ ) {
+   super(entityManager, repo, 'agentSession', 'agent-hub', moduleRef);
+ }
 }

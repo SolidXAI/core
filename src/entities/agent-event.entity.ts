@@ -1,12 +1,10 @@
-import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity, Index, JoinColumn, ManyToOne } from 'typeorm';
 import { CommonEntity } from 'src/entities/common.entity';
 import { getColumnType } from 'src/helpers/typeorm-db-helper';
+import { AgentSession } from './agent-session.entity';
 
 @Entity({ name: 'ss_agent_events' })
 export class AgentEvent extends CommonEntity {
-  @Index()
-  @Column({ })
-  sessionId: string;
 
   @Column({ })
   turnNumber: number;
@@ -18,8 +16,11 @@ export class AgentEvent extends CommonEntity {
   @Column({ })
   eventType: string;
 
-  @Column({ type: "simple-json", nullable: true, ...getColumnType('simpleJsonLargeText') })
-  eventData: any;
+  @Column({ nullable: true, ...getColumnType('longText') })
+  eventData: string;
+
+  @Column({ nullable: true, ...getColumnType('longText') })
+  context: string;
 
   @Column({ nullable: true, ...getColumnType('longText') })
   content: string;
@@ -28,10 +29,10 @@ export class AgentEvent extends CommonEntity {
   @Column({ nullable: true })
   toolName: string;
 
-  @Column({ type: "simple-json", nullable: true, ...getColumnType('simpleJsonLargeText') })
+  @Column({ nullable: true, ...getColumnType('longText') })
   toolArguments: string;
 
-  @Column({ type: "simple-json", nullable: true, ...getColumnType('simpleJsonLargeText') })
+  @Column({ nullable: true, ...getColumnType('longText') })
   toolOutput: string;
 
   @Column({ nullable: true })
@@ -49,7 +50,14 @@ export class AgentEvent extends CommonEntity {
   @Column({ nullable: true })
   outputTokens: number;
 
-    @Index()
-  @Column({ nullable: true })
-  modelUsed: string;
+  @Column({ type: "varchar", nullable: true })
+  reasoningModelKey: string;
+
+  @Column({ type: "varchar", nullable: true })
+  fastModelKey: string;
+
+  @ManyToOne(() => AgentSession, { onDelete: "SET NULL", nullable: true })
+  @JoinColumn()
+  session: AgentSession;
+
 }

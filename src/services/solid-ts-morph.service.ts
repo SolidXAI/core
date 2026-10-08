@@ -366,6 +366,68 @@ export class SolidTsMorphService {
         return { removedIdentifiers, staged: true, skipped: false };
     }
 
+    removeDeletedModelReferences(filePath: string, importPathFragments: string[], classNames: string[]): { staged: boolean; removedImports: number; removedProperties: number } {
+        const abs = this.resolveRepoPath(filePath);
+        if (!existsSync(abs)) return { staged: false, removedImports: 0, removedProperties: 0 };
+        const sourceFile = this.project.getSourceFile(abs) ?? this.project.createSourceFile(abs, readFileSync(abs, "utf8"), { overwrite: true });
+        const targetNames = new Set<string>();
+        let matchedTargetImport = false;
+        let removedImports = 0;
+        for (const declaration of [...sourceFile.getImportDeclarations()]) {
+            const spec = declaration.getModuleSpecifierValue().replace(/\\/g, "/");
+            if (!importPathFragments.some(fragment => spec.includes(fragment))) continue;
+            matchedTargetImport = true;
+            for (const named of [...declaration.getNamedImports()]) {
+                targetNames.add(named.getAliasNode()?.getText() ?? named.getName());
+                named.remove();
+            }
+            const defaultImport = declaration.getDefaultImport();
+            if (defaultImport) {
+                targetNames.add(defaultImport.getText());
+                declaration.removeDefaultImport();
+            }
+            const namespaceImport = declaration.getNamespaceImport();
+            if (namespaceImport) {
+                targetNames.add(namespaceImport.getText());
+                declaration.removeNamespaceImport();
+            }
+            if (declaration.getNamedImports().length === 0 && !declaration.getDefaultImport() && !declaration.getNamespaceImport()) {
+                declaration.remove();
+                removedImports++;
+            }
+        }
+
+        if (matchedTargetImport) classNames.forEach(name => targetNames.add(name));
+
+        const hasNestModule = matchedTargetImport && sourceFile.getClasses().some(cls => cls.getDecorators().some(decorator => decorator.getName() === "Module"));
+        const moduleMembers = hasNestModule ? this.removeModuleMembers(filePath, targetNames) : { staged: false, skipped: true };
+
+        let removedProperties = 0;
+        for (const property of matchedTargetImport ? [...sourceFile.getDescendantsOfKind(SyntaxKind.PropertyDeclaration)] : []) {
+            const typeText = property.getTypeNode()?.getText() ?? "";
+            const decoratorText = property.getDecorators().map(decorator => decorator.getText()).join(" ");
+            if ([...targetNames].some(name => new RegExp(`\\b${name}\\b`).test(typeText) || new RegExp(`\\b${name}\\b`).test(decoratorText))) {
+                property.remove();
+                removedProperties++;
+            }
+        }
+        if (removedImports || removedProperties || moduleMembers.staged) this.dirtySourceFiles.add(abs);
+        return { staged: Boolean(removedImports || removedProperties || moduleMembers.staged), removedImports, removedProperties };
+    }
+
+    removePropertiesByName(filePath: string, propertyNames: string[]): { staged: boolean; removedProperties: number } {
+        const abs = this.resolveRepoPath(filePath);
+        if (!existsSync(abs) || propertyNames.length === 0) return { staged: false, removedProperties: 0 };
+        const sourceFile = this.project.getSourceFile(abs) ?? this.project.createSourceFile(abs, readFileSync(abs, "utf8"), { overwrite: true });
+        const names = new Set(propertyNames);
+        let removedProperties = 0;
+        for (const property of [...sourceFile.getDescendantsOfKind(SyntaxKind.PropertyDeclaration)]) {
+            if (names.has(property.getName())) { property.remove(); removedProperties++; }
+        }
+        if (removedProperties) this.dirtySourceFiles.add(abs);
+        return { staged: removedProperties > 0, removedProperties };
+    }
+
     //Removes the given identifier names from all @Module decorator array properties
     removeModuleMembers(
         filePath: string,
@@ -407,11 +469,21 @@ export class SolidTsMorphService {
             const elements = arr.getElements();
             for (let i = elements.length - 1; i >= 0; i--) {
                 const elemText = elements[i].getText().trim();
-                // Match direct identifiers (e.g. TestService) or call expressions that reference them (e.g. TypeOrmModule.forFeature([Test])).
-                const shouldRemove = identifiers.has(elemText) ||
-                    [...identifiers].some(id => new RegExp(`\\b${id}\\b`).test(elemText));
-                if (shouldRemove) {
+                if (identifiers.has(elemText)) {
                     arr.removeElement(i);
+                    continue;
+                }
+                // Preserve calls such as TypeOrmModule.forFeature([OtherEntity, DeletedEntity]);
+                // remove only the matching registration from their nested arrays.
+                const nestedArrays = elements[i].getDescendantsOfKind(SyntaxKind.ArrayLiteralExpression);
+                for (const nestedArray of nestedArrays) {
+                    const nestedElements = nestedArray.getElements();
+                    for (let nestedIndex = nestedElements.length - 1; nestedIndex >= 0; nestedIndex--) {
+                        if (identifiers.has(nestedElements[nestedIndex].getText().trim())) {
+                            nestedArray.removeElement(nestedIndex);
+                            this.dirtySourceFiles.add(abs);
+                        }
+                    }
                 }
             }
         }
@@ -508,8 +580,14 @@ export class SolidTsMorphService {
         }
 
         const entitiesDeclaration = sourceFile.getVariableDeclaration("entities");
-        const entitiesArray = entitiesDeclaration?.getInitializerIfKind(SyntaxKind.ArrayLiteralExpression);
-        if (entitiesArray) {
+        const entitiesArrays = [
+            entitiesDeclaration?.getInitializerIfKind(SyntaxKind.ArrayLiteralExpression),
+            ...sourceFile.getDescendantsOfKind(SyntaxKind.PropertyAssignment)
+                .filter(property => property.getName() === "entities")
+                .map(property => property.getInitializerIfKind(SyntaxKind.ArrayLiteralExpression)),
+        ].filter(Boolean);
+        for (const entitiesArray of entitiesArrays) {
+          if (!entitiesArray) continue;
             const elements = entitiesArray.getElements();
             for (let i = elements.length - 1; i >= 0; i--) {
                 if (elements[i].getText().replace(/\s+/g, "") === entityClassName) {

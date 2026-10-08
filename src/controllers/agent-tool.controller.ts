@@ -1,42 +1,42 @@
 import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { WorkflowSecretService } from '../services/workflow-secret.service';
-import { CreateWorkflowSecretDto } from '../dtos/create-workflow-secret.dto';
-import { UpdateWorkflowSecretDto } from '../dtos/update-workflow-secret.dto';
-
+import { AgentToolService } from '../services/agent-tool.service';
+import { CreateAgentToolDto } from '../dtos/create-agent-tool.dto';
+import { UpdateAgentToolDto } from '../dtos/update-agent-tool.dto';
 import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
-@ApiTags('Solid Core')
-@Controller('workflow-secret')
-export class WorkflowSecretController {
-  constructor(private readonly service: WorkflowSecretService) {}
+@ApiTags('Agent Hub')
+@Controller('agent-tool')
+export class AgentToolController {
+  constructor(private readonly service: AgentToolService) {}
 
   @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
-  create(@Body() createDto: CreateWorkflowSecretDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  create(@Body() createDto: CreateAgentToolDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.create(createDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
-  insertMany(@Body() createDtos: CreateWorkflowSecretDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
+  insertMany(@Body() createDtos: CreateAgentToolDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
     return this.service.insertMany(createDtos, filesArray);
   }
+
 
   @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  update(@Param('id') id: number, @Body() updateDto: UpdateWorkflowSecretDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  update(@Param('id') id: number, @Body() updateDto: UpdateAgentToolDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files);
   }
 
   @ApiBearerAuth("jwt")
   @Patch(':id')
   @UseInterceptors(AnyFilesInterceptor())
-  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateWorkflowSecretDto, @UploadedFiles() files: Array<Express.Multer.File>) {
+  partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateAgentToolDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files, true);
   }
 
@@ -51,20 +51,21 @@ export class WorkflowSecretController {
   async recover(@Param('id') id: number) {
     return this.service.recover(id);
   }
-
+    
   @ApiBearerAuth("jwt")
   @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({ name: 'fields', required: false, type: Array })
-  @ApiQuery({ name: 'sort', required: false, type: Array })
+  @ApiQuery({ name: 'sort', required: false, type: Array }) 
   @ApiQuery({ name: 'groupBy', required: false, type: Array })
   @ApiQuery({ name: 'populate', required: false, type: Array })
   @ApiQuery({ name: 'populateMedia', required: false, type: Array })
   @ApiQuery({ name: 'filters', required: false, type: Array })
+
   @Get()
-  async findMany(@Query() query: any) {
-    return this.service.find(query);
+  async findMany(@Query() query: any) { 
+    return this.service.find(query);  
   }
 
   @ApiBearerAuth("jwt")
@@ -84,4 +85,7 @@ export class WorkflowSecretController {
   async delete(@Param('id') id: number) {
     return this.service.delete(id);
   }
+
+
+
 }

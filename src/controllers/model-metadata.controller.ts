@@ -1,4 +1,4 @@
-import { Body, Controller, Delete, Get, Logger, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
+import { BadRequestException, Body, Controller, Delete, Get, Logger, Param, ParseIntPipe, Post, Put, Query } from '@nestjs/common';
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { Public } from 'src/decorators/public.decorator';
 import { BasicFilterDto } from '../dtos/basic-filters.dto';
@@ -102,15 +102,26 @@ export class ModelMetadataController {
     }
 
     @ApiBearerAuth("jwt")
+    @Post(':id/delete-preview')
+    async deletePreview(@Param('id', ParseIntPipe) id: number) {
+        return this.modelMetadataService.previewDelete(id);
+    }
+
+    @ApiBearerAuth("jwt")
+    @Post(':id/delete-confirmed')
+    async deleteConfirmed(@Param('id', ParseIntPipe) id: number, @Body() body: { planHash: string }) {
+        return this.modelMetadataService.applyDelete(id, body?.planHash);
+    }
+
     @Delete('/bulk')
-    async deleteMany(@Body() ids: number[]) {
-        return this.modelMetadataService.deleteMany(ids);
+    async deleteMany() {
+        throw new BadRequestException('Bulk model deletion is disabled. Preview and confirm deletion for each model individually.');
     }
 
     @ApiBearerAuth("jwt")
     @Delete(':id')
-    async delete(@Param('id') id: number) {
-        return this.modelMetadataService.remove(id);
+    async delete() {
+        throw new BadRequestException('Model deletion requires a delete preview and explicit confirmation.');
     }
 
 

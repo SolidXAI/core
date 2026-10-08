@@ -7,7 +7,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
-import { IDashboardWidgetDataProvider, IErrorCodeProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule, IWorkflowFieldDataProvider } from "../interfaces";
+import { IDashboardWidgetDataProvider, IErrorCodeProvider, ILoginExtensionProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule, IWorkflowFieldDataProvider } from "../interfaces";
 import { ObjectLiteral } from 'typeorm';
 
 type ControllerMetadata = {
@@ -86,6 +86,7 @@ export class SolidRegistry {
   private securityRuleConfigProviders: Set<InstanceWrapper> = new Set();
   private errorCodeProviders: Set<InstanceWrapper> = new Set();
   private settingsProviders: Set<InstanceWrapper> = new Set();
+  private loginExtensionProviders: Set<InstanceWrapper> = new Set();
   private auditableModels: Set<string> = new Set();
 
   registerExtensionUserCreationProvider(provider: InstanceWrapper): void {
@@ -104,6 +105,10 @@ export class SolidRegistry {
 
   registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
     this.errorCodeProviders.add(errorCodeProvider);
+  }
+
+  registerLoginExtensionProvider(loginExtensionProvider: InstanceWrapper): void {
+    this.loginExtensionProviders.add(loginExtensionProvider);
   }
 
   registerWhatsappProvider(whatsappProvider: InstanceWrapper): void {
@@ -282,6 +287,19 @@ export class SolidRegistry {
     for (let i = 0; i < providers.length; i++) {
       const p = providers[i];
       if (p.instance?.name?.() === name) return p.instance as IErrorCodeProvider;
+    }
+    return undefined;
+  }
+
+  getLoginExtensionProviders(): Array<InstanceWrapper> {
+    return Array.from(this.loginExtensionProviders);
+  }
+
+  getLoginExtensionProviderInstance(name: string): ILoginExtensionProvider | undefined {
+    const providers = this.getLoginExtensionProviders();
+    for (let i = 0; i < providers.length; i++) {
+      const p = providers[i];
+      if (p.instance?.name?.() === name) return p.instance as ILoginExtensionProvider;
     }
     return undefined;
   }
