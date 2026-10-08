@@ -2,6 +2,7 @@ import { CommonEntity } from 'src/entities/common.entity';
 import { Entity, JoinColumn, ManyToOne, Column, Index, OneToMany } from 'typeorm';
 import { AgentRegistry } from './agent-registry.entity';
 import { AgentSession } from './agent-session.entity'
+import { getColumnType, getCurrentTimestampDefault } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_agent_process')
 export class AgentProcess extends CommonEntity {
@@ -42,13 +43,13 @@ export class AgentProcess extends CommonEntity {
     @Column({ type: "text", default: "{}" })
     loadReport: string = "{}";
 
-    @Column({ type: "timestamptz", default: () => "now()" })
+    @Column({ ...getColumnType('datetimeWithTimezone'), default: () => getCurrentTimestampDefault() })
     startedAt: Date = new Date();
 
-    @Column({ type: "timestamptz", nullable: true })
+    @Column({ ...getColumnType('datetimeWithTimezone'), nullable: true })
     heartbeatAt: Date;
 
-    @Column({ type: "timestamptz", nullable: true })
+    @Column({ ...getColumnType('datetimeWithTimezone'), nullable: true })
     stoppedAt: Date;
 
     @Index({ unique: true })
