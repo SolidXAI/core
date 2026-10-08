@@ -1,5 +1,14 @@
 # Changelog
 
+## [0.1.20-beta.0] - 2026-10-08
+
+### Added
+
+- add Agent Hub Tag functionality
+- refactor agent tool lifecycle environment handling and add PostgreSQL URL generation
+- enhance agent tool lifecycle preference handling and validation
+- add checkTool method and lifecycle script for agent tools; enhance SecretService with findAvailableKeys
+
 ## [0.1.19] - 2026-10-08
 
 ### Added
