@@ -1106,6 +1106,9 @@ export class ModuleMetadataSeederService {
 
         for (let i = 0; i < emailTemplates.length; i++) {
             const emailTemplate = emailTemplates[i];
+            // Resolve the optional module relation through CRUDService's standard
+            // many-to-one user-key convention. Older seed files remain valid.
+            (emailTemplate as any).moduleUserKey = moduleName;
             // this.logger.log(`Found ${emailTemplate.name} email template`);
 
             // We need to load the actual template contents. 
@@ -1182,6 +1185,9 @@ export class ModuleMetadataSeederService {
 
         for (let i = 0; i < smsTemplates.length; i++) {
             const smsTemplate = smsTemplates[i];
+            // Resolve the optional module relation through CRUDService's standard
+            // many-to-one user-key convention. Older seed files remain valid.
+            (smsTemplate as any).moduleUserKey = moduleName;
             // this.logger.log(`Found ${smsTemplate.name} sms template`);
 
             // We need to load the actual template contents. 

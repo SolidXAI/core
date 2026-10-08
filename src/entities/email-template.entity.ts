@@ -1,7 +1,8 @@
 import { CommonEntity } from 'src/entities/common.entity';
-import { Column, Entity, OneToMany, Index } from 'typeorm';
+import { Column, Entity, OneToMany, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { EmailAttachment } from './email-attachment.entity';
 import { getColumnType } from 'src/helpers/typeorm-db-helper';
+import { ModuleMetadata } from './module-metadata.entity';
 
 @Entity("ss_email_template")
 export class EmailTemplate extends CommonEntity {
@@ -23,4 +24,9 @@ export class EmailTemplate extends CommonEntity {
     attachments: EmailAttachment[];
     @Column({ name: "type", type: "varchar", nullable: true })
     type: string;
+
+    @Index()
+    @ManyToOne(() => ModuleMetadata, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })
+    module: ModuleMetadata;
 }

@@ -3692,6 +3692,22 @@
             "encrypt": false,
             "columnName": "active",
             "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ]
       },
@@ -3895,6 +3911,22 @@
             "private": false,
             "encrypt": false,
             "columnName": "active",
+            "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
             "isSystem": true
           }
         ]
@@ -18126,6 +18158,15 @@
               "name": "active",
               "isSearchable": false
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "label": "Module",
+              "sortable": true,
+              "isSearchable": true
+            }
           }
         ]
       }
@@ -18236,6 +18277,13 @@
                               "name": "active",
                               "label": "Active"
                             }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "module",
+                              "label": "Module"
+                            }
                           }
                         ]
                       }
@@ -18321,6 +18369,15 @@
             "attrs": {
               "name": "smsProviderTemplateId",
               "label": "Template Provider Id",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "label": "Module",
               "sortable": true,
               "isSearchable": true
             }
@@ -18432,6 +18489,13 @@
                             "attrs": {
                               "name": "active",
                               "label": "Active"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "module",
+                              "label": "Module"
                             }
                           }
                         ]

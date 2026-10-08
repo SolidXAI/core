@@ -1,6 +1,7 @@
 import { CommonEntity } from 'src/entities/common.entity';
-import { Column, Entity, Index } from 'typeorm';
+import { Column, Entity, Index, ManyToOne, JoinColumn } from 'typeorm';
 import { getColumnType } from 'src/helpers/typeorm-db-helper';
+import { ModuleMetadata } from './module-metadata.entity';
 
 @Entity("ss_sms_template")
 export class SmsTemplate extends CommonEntity {
@@ -21,4 +22,9 @@ export class SmsTemplate extends CommonEntity {
     active: boolean = true;
     @Column({ name: "type", type: "varchar", nullable: true })
     type: string;
+
+    @Index()
+    @ManyToOne(() => ModuleMetadata, { nullable: true, onDelete: 'SET NULL' })
+    @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })
+    module: ModuleMetadata;
 }

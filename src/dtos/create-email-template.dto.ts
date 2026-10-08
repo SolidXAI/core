@@ -1,4 +1,4 @@
-import { IsArray, IsBoolean, IsEmail, IsNotEmpty, IsOptional, MaxLength, MinLength, ValidateNested, Matches, IsString } from 'class-validator';
+import { IsArray, IsBoolean, IsEmail, IsNotEmpty, IsOptional, MaxLength, MinLength, ValidateNested, Matches, IsString, IsInt } from 'class-validator';
 import { CreateEmailAttachmentDto } from './create-email-attachment.dto';
 import { Type } from 'class-transformer';
 import { ApiProperty } from '@nestjs/swagger';
@@ -45,4 +45,14 @@ export class CreateEmailTemplateDto {
     @IsString()
     @ApiProperty()
     type: string;
+
+    @IsOptional()
+    @IsInt()
+    @ApiProperty({ required: false, description: 'Related module id' })
+    moduleId?: number;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false, description: 'Related module user key' })
+    moduleUserKey?: string;
 }
