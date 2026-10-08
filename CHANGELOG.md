@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.1.20-beta.1] - 2026-10-08
+
+### Added
+
+- enhance boolean column type handling in entities and update rel… (#186)
+- add module relation to email and SMS templates; update DTOs and seed data
+
 ## [0.1.20-beta.0] - 2026-10-08
 
 ### Added
