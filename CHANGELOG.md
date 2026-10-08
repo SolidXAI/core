@@ -1,5 +1,78 @@
 # Changelog
 
+## [0.1.20-beta.0] - 2026-10-08
+
+### Added
+
+- add Agent Hub Tag functionality
+- refactor agent tool lifecycle environment handling and add PostgreSQL URL generation
+- enhance agent tool lifecycle preference handling and validation
+- add checkTool method and lifecycle script for agent tools; enhance SecretService with findAvailableKeys
+
+## [0.1.19] - 2026-10-08
+
+### Added
+
+- add total_input_tokens and total_output_tokens fields to agent session DTOs and entity
+- add reasoning_model_key and fast_model_key to DTOs and entities and remove modelused form events
+- Refactor Agent Hub to Agent Session
+- add agent hub services, repositories, and controllers
+- implement secret management functionality with CRUD operations and update related services and controllers
+- add header buttons for message summary in kanban and global search
+- enhance kanban card with quick filters and view details buttons
+- add UserViewMetadataController.Create action to metadata cause normal user cannot see the layout switch option on ui
+- add verbose option to seed command for detailed logging
+- add login extension providers for external login checks (#175)
+- add whatsapp provider decorator export
+
+### Fixed
+
+- update relationModelModuleName from 'agent-hub' to 'solid-core' in metadata
+- throw error for missing seeder service in seed command refactor: improve logging behavior in CLI bootstrap process
+- enhance validation error messages for selection fields
+
+### Changed
+
+- update import paths for repositories and services to use local references
+- remove agent session related exports and references from core module and metadata
+- optimize many-to-many relation loading for audit tracking
+
+### Other
+
+- Set default status to inactive for agent tool registry and update related service logic
+- Add type field to agent skill registry DTOs and entity; update metadata for seeding
+- Enhance agent chat UI: add control bar with minimize, dock, and maximize options
+- Add AgentEmbedController and SDK asset: implement endpoint for serving the embed SDK with dynamic UI origin
+- Add runtime field to agent session DTOs and entity: implement optional selection for runtime source and update metadata
+- Refactor DTOs for media creation and update: standardize formatting and improve code readability
+- Add redact field to secret DTOs and entity: implement optional boolean for redaction and update metadata
+- Add process management capabilities: implement restartProcess method in AgentHubProcessManagerService and update AgentProcessService to utilize it for restarting linked processes.
+- Implement AgentHub process management: add service for API interactions, enhance agent process service with runtime process management methods, and update controller for process operations.
+- Enhance agent configuration management: implement configVersion updates in services and repositories, add checksum handling for agent tools, and integrate agent ID retrieval for catalog operations.
+- Add agent registry card action and update card widget references
+- Refactor agent registry DTOs and entity: make configVersion optional and update metadata; modify solid-core metadata for card view
+- Add optional fields for description and iconName in agent registry DTOs and entity; update metadata
+- Implement Agent Session Checkpoint functionality with CRUD operations and update related DTOs and entities
+- Enable audit tracking for various fields in solid-core metadata
+- Add context field to agent event DTOs and entity; update metadata
+- Update display names in agent menu items for consistency
+- Refactor code structure for improved readability and maintainability
+- solidxAgentHubBackendUrl
+- Add description and tags fields to agent skill registry; update component paths and view keys
+- Refactor agent event entity to change data types from JSON to longText for eventData, toolArguments, and toolOutput
+- Implement model deletion preview and confirmation; enhance agent event handling
+- changes
+- Solid agent interface changes
+- Solid agent interface changes
+- Fix/draft publish (#181)
+- extnuser change password fix (#179)
+- Fix/draft publish (postrgres specific fix - db compatible PR to be raised later) (#178)
+- changelog  cleanup
+- fix for breaking seed
+- add captureRawBody, needed to verify webhook signatures (#177)
+- add captureRawBody, needed to verify webhook signatures
+- data provider return column as object (#176)
+
 ## [0.1.19-beta.5] - 2026-10-07
 
 ### Other

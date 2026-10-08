@@ -1,5 +1,6 @@
 import { CommonEntity } from 'src/entities/common.entity';
-import { Entity, Column, Index, OneToMany } from 'typeorm';
+import { Entity, Column, Index, JoinTable, ManyToMany, OneToMany } from 'typeorm';
+import { AgentHubTag } from './agent-hub-tag.entity';
 import { AgentSkill } from './agent-skill.entity'
 
 @Entity('ss_agent_skill_registry')
@@ -20,8 +21,9 @@ export class AgentSkillRegistry extends CommonEntity {
     @Column({ type: "text" })
     body: string;
 
-    @Column({ type: "text", default: "{}" })
-    tags: string = "{}";
+    @ManyToMany(() => AgentHubTag, tag => tag.skills, { cascade: ['insert', 'update'] })
+    @JoinTable()
+    tags: AgentHubTag[];
 
     @OneToMany(() => AgentSkill, agentSkill => agentSkill.agentSkillRegistry, { cascade: true })
     agentSkills: AgentSkill[];

@@ -9,6 +9,7 @@ import { UpdateAgentSecretDto } from './update-agent-secret.dto';
 import { UpdateAgentProcessDto } from './update-agent-process.dto';
 import { UpdateAgentSessionDto } from './update-agent-session.dto';
 import { UpdateAgentJobDto } from './update-agent-job.dto';
+import { UpdateAgentHubTagDto } from './update-agent-hub-tag.dto';
 
 export class CreateAgentRegistryDto {
     @IsNotEmpty()
@@ -75,6 +76,25 @@ export class CreateAgentRegistryDto {
     @IsInt()
     @ApiProperty({ required: false })
     configVersion?: number;
+
+    @IsOptional()
+    @ApiProperty({ required: false })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => UpdateAgentHubTagDto)
+    tags: UpdateAgentHubTagDto[];
+
+    @IsOptional()
+    @IsArray()
+    @Type(() => Number)
+    @IsInt({ each: true })
+    @ApiProperty({ required: false })
+    tagsIds: number[];
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({ required: false })
+    tagsCommand: string;
 
     @IsOptional()
     @ApiProperty()
