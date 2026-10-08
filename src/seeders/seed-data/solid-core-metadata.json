@@ -7924,6 +7924,95 @@
         "moduleUserKey": "solid-core"
       },
       {
+        "singularName": "agentHubTag",
+        "pluralName": "agentHubTags",
+        "displayName": "Agent Hub Tags",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_agent_hub_tag",
+        "userKeyFieldUserKey": "name",
+        "isChild": false,
+        "isSystem": true,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "isUserKey": true,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "skills",
+            "displayName": "Skills",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentSkillRegistry",
+            "relationCoModelFieldName": "tags",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": false,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "tools",
+            "displayName": "Tools",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentToolRegistry",
+            "relationCoModelFieldName": "tags",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": false,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "agents",
+            "displayName": "Agents",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentRegistry",
+            "relationCoModelFieldName": "tags",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": false,
+            "enableAuditTracking": true
+          }
+        ]
+      },
+      {
         "singularName": "agentRegistry",
         "pluralName": "agentRegistries",
         "displayName": "Agent Registry",
@@ -8230,6 +8319,25 @@
             "isPrimaryKey": false
           },
           {
+            "name": "tags",
+            "displayName": "Tags",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentHubTag",
+            "relationCoModelFieldName": "agents",
+            "relationCreateInverse": true,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": true,
+            "enableAuditTracking": true
+          },
+          {
             "name": "agentTools",
             "displayName": "Agent Tools",
             "description": null,
@@ -8497,26 +8605,6 @@
             "enableAuditTracking": true
           },
           {
-            "name": "tags",
-            "displayName": "Tags",
-            "description": null,
-            "type": "longText",
-            "ormType": "text",
-            "isSystem": true,
-            "regexPattern": null,
-            "regexPatternNotMatchingErrorMsg": null,
-            "defaultValue": "[]",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "enableAuditTracking": true
-          },
-          {
             "name": "type",
             "displayName": "Type",
             "description": null,
@@ -8628,6 +8716,25 @@
             "encryptionType": null,
             "decryptWhen": null,
             "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "tags",
+            "displayName": "Tags",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentHubTag",
+            "relationCoModelFieldName": "tools",
+            "relationCreateInverse": true,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": true,
             "enableAuditTracking": true
           },
           {
@@ -8782,21 +8889,22 @@
           },
           {
             "name": "tags",
-            "enableAuditTracking": true,
             "displayName": "Tags",
-            "description": null,
-            "type": "longText",
-            "ormType": "text",
-            "isSystem": true,
-            "required": true,
+            "type": "relation",
+            "required": false,
             "unique": false,
             "index": false,
             "private": false,
             "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "defaultValue": "{}"
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentHubTag",
+            "relationCoModelFieldName": "skills",
+            "relationCreateInverse": true,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": true,
+            "enableAuditTracking": true
           },
           {
             "name": "agentSkills",
@@ -12370,6 +12478,19 @@
       "modelUserKey": "agentSkillRegistry"
     },
     {
+      "displayName": "Agent Hub Tags List Action",
+      "name": "agentHubTag-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentHubTag-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentHubTag"
+    },
+    {
       "displayName": "Agent Tool List Action",
       "name": "agentTool-list-action",
       "type": "solid",
@@ -13122,6 +13243,15 @@
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item",
       "iconName": "chat"
+    },
+    {
+      "displayName": "Tags",
+      "name": "agentHubTag-menu-item",
+      "sequenceNumber": 8,
+      "actionUserKey": "agentHubTag-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "agent-menu-item",
+      "iconName": "sell"
     },
     {
       "displayName": "Human Requests",
@@ -24734,6 +24864,190 @@
             "attrs": {
               "name": "lastLoadError"
             }
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentHubTag-list-view",
+      "displayName": "Agent Hub Tags",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentHubTag",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "allowedViews": [
+            "list"
+          ]
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentHubTag-form-view",
+      "displayName": "Agent Hub Tag",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentHubTag",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Agent Hub Tag",
+          "className": "grid",
+          "showAddFormButton": true,
+          "showEditFormButton": true
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "details",
+                      "label": "Details"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "details-fields",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "name"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "skills",
+                      "label": "Skills"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "skills-fields",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "skills",
+                              "editWidget": "DefaultRelationManyToManyCheckBoxFormEditWidget",
+                              "showLabel": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "tools",
+                      "label": "Tools"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "tools-fields",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "tools",
+                              "editWidget": "DefaultRelationManyToManyCheckBoxFormEditWidget",
+                              "showLabel": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "agents",
+                      "label": "Agents"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "agents-fields",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "agents",
+                              "editWidget": "DefaultRelationManyToManyCheckBoxFormEditWidget",
+                              "showLabel": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
           }
         ]
       }

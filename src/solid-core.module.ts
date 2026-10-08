@@ -472,6 +472,7 @@ import { SwitchNode } from './services/workflow/nodes/switch.node';
 import { AgentRegistry } from "./entities/agent-registry.entity";
 import { AgentToolRegistry } from "./entities/agent-tool-registry.entity";
 import { AgentSkillRegistry } from "./entities/agent-skill-registry.entity";
+import { AgentHubTag } from "./entities/agent-hub-tag.entity";
 import { AgentTool } from "./entities/agent-tool.entity";
 import { AgentSkill } from "./entities/agent-skill.entity";
 import { AgentSecret } from "./entities/agent-secret.entity";
@@ -485,6 +486,7 @@ import { AgentRegistryController } from "./controllers/agent-registry.controller
 import { AgentEmbedController } from './controllers/agent-embed.controller';
 import { AgentToolRegistryController } from "./controllers/agent-tool-registry.controller";
 import { AgentSkillRegistryController } from "./controllers/agent-skill-registry.controller";
+import { AgentHubTagController } from "./controllers/agent-hub-tag.controller";
 import { AgentToolController } from "./controllers/agent-tool.controller";
 import { AgentSkillController } from "./controllers/agent-skill.controller";
 import { AgentRoleController } from "./controllers/agent-role.controller";
@@ -507,6 +509,7 @@ import { AgentSecretRepository } from "./repository/agent-secret.repository";
 import { AgentSkillRepository } from "./repository/agent-skill.repository";
 import { AgentToolRepository } from "./repository/agent-tool.repository";
 import { AgentSkillRegistryRepository } from "./repository/agent-skill-registry.repository";
+import { AgentHubTagRepository } from "./repository/agent-hub-tag.repository";
 import { AgentToolRegistryRepository } from "./repository/agent-tool-registry.repository";
 import { AgentSessionService } from "./services/agent-session.service";
 import { AgentJobService } from "./services/agent-job.service";
@@ -518,6 +521,7 @@ import { AgentSecretService } from "./services/agent-secret.service";
 import { AgentSkillService } from "./services/agent-skill.service";
 import { AgentToolService } from "./services/agent-tool.service";
 import { AgentSkillRegistryService } from "./services/agent-skill-registry.service";
+import { AgentHubTagService } from "./services/agent-hub-tag.service";
 import { AgentToolRegistryService } from "./services/agent-tool-registry.service";
 
 @Global()
@@ -572,6 +576,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
       AgentRegistry,
       AgentToolRegistry,
       AgentSkillRegistry,
+      AgentHubTag,
       AgentTool,
       AgentSkill,
       AgentRole,
@@ -719,6 +724,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentEmbedController,
     AgentToolRegistryController,
     AgentSkillRegistryController,
+    AgentHubTagController,
     AgentToolController,
     AgentSkillController,
     AgentRoleController,
@@ -1092,6 +1098,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentToolRegistryRepository,
     AgentSkillRegistryService,
     AgentSkillRegistryRepository,
+    AgentHubTagService,
+    AgentHubTagRepository,
     AgentToolService,
     AgentToolRepository,
     AgentSkillService,
