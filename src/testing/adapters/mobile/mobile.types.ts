@@ -59,6 +59,25 @@ export interface MobileDriver {
   deleteSession(): Promise<void>;
 }
 
+/**
+ * The mobile part of a run request (`POST /test-runs`): the adapter options that can travel as JSON.
+ * Recording and capture come from the request's own recordVideo and capture fields.
+ */
+export type MobileRunOptionsInput = Pick<
+  MobileAdapterOptions,
+  | "appiumUrl"
+  | "udid"
+  | "platformName"
+  | "appSource"
+  | "appPath"
+  | "appPackage"
+  | "appActivity"
+  | "defaultTimeoutMs"
+  | "navigationTimeoutMs"
+  | "strictLocators"
+  | "extraCapabilities"
+>;
+
 /** Options handed to WebdriverIO's `remote()`. */
 export interface MobileRemoteOptions {
   protocol: string;
