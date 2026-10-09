@@ -59,7 +59,9 @@ A run needs `RunnerOptions.mobile`, or the `mobile` block of `POST /test-runs`:
   `navigationTimeoutMs` (app launch). A step's own `timeoutMs` overrides both.
 - All mobile scenarios in a run share one device session, in file order.
 - The whole run is recorded, but the video (`run.mp4`) is only kept when the run fails. A failed scenario
-  also gets the device log (`console.json`) and a screenshot (`screenshot.png`).
+  also gets the device log (`console.json`) and a screenshot (`screenshot.png`). The device log is filtered
+  to what is useful: warnings and errors from anything, the app's own lines, and the React Native, crash and
+  WebView tags. Each entry's `type` is read from the Android priority in the log line; the newest 500 are kept.
 
 **Start every mobile scenario with `mobile.launch` and `"clearData": true`.** An app remembers things
 between scenarios (who is logged in, the cart), so one scenario can break the next. Leave `clearData` out

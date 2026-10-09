@@ -275,16 +275,17 @@ describe("MobileAdapter", () => {
     it("collects the device log as console.json and a screenshot as screenshot.png", async () => {
       const { adapter, driver } = setup({ capture: { console: true } });
       driver.logs = [
-        { level: "SEVERE", message: "boom" },
-        { level: "INFO", message: "hi" },
+        { level: "ALL", message: "10-09 09:49:37.434   363  3815 E AndroidRuntime: boom" },
+        { level: "ALL", message: "10-09 09:49:37.500   363  3815 I resolv  : system noise" },
+        { level: "ALL", message: "10-09 09:49:37.600   363  3815 W com.acme.app: hmm" },
       ];
       await adapter.start();
       const artifacts = await adapter.collectFailureArtifacts();
       const log = artifacts.find((a) => a.name === "console.json")!;
       expect(log.contentType).toBe("application/json");
       expect(JSON.parse(log.data as string)).toEqual([
-        { type: "severe", text: "boom" },
-        { type: "info", text: "hi" },
+        { type: "error", text: "10-09 09:49:37.434   363  3815 E AndroidRuntime: boom" },
+        { type: "warning", text: "10-09 09:49:37.600   363  3815 W com.acme.app: hmm" },
       ]);
       const shot = artifacts.find((a) => a.name === "screenshot.png")!;
       expect(shot.contentType).toBe("image/png");
@@ -294,12 +295,12 @@ describe("MobileAdapter", () => {
 
     it("keeps only the newest 500 log entries", async () => {
       const { adapter, driver } = setup({ capture: { console: true } });
-      driver.logs = Array.from({ length: 700 }, (_, i) => ({ level: "INFO", message: `m${i}` }));
+      driver.logs = Array.from({ length: 700 }, (_, i) => ({ level: "ALL", message: `10-09 09:49:37.434   363  3815 E Tag: m${i}` }));
       await adapter.start();
       const artifacts = await adapter.collectFailureArtifacts();
       const entries = JSON.parse(artifacts.find((a) => a.name === "console.json")!.data as string);
       expect(entries).toHaveLength(500);
-      expect(entries[0].text).toBe("m200");
+      expect(entries[0].text).toContain("m200");
     });
 
     it("skips console.json when there is no log, and does not capture the log when capture is off", async () => {

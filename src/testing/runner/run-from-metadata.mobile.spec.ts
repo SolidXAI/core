@@ -73,7 +73,7 @@ describe("runFromMetadata with mobile scenarios", () => {
   it("on failure attaches the device log and a screenshot to the scenario, and the recording to the run", async () => {
     const driver = new FakeDriver();
     // The first read happens when the scenario starts and drains older entries; the entry appears during the scenario.
-    const reads: Array<Array<{ level: string; message: string }>> = [[], [{ level: "SEVERE", message: "crash" }]];
+    const reads: Array<Array<{ level: string; message: string }>> = [[], [{ level: "ALL", message: "10-09 09:49:37.434   363  3815 E AndroidRuntime: crash" }]];
     driver.getLogs = async () => reads.shift() ?? [];
     const { options } = mobileOptions(driver);
     const reporter = new RecordingReporter();
