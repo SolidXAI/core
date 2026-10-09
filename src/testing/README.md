@@ -61,7 +61,8 @@ A run needs `RunnerOptions.mobile`, or the `mobile` block of `POST /test-runs`:
 - The whole run is recorded, but the video (`run.mp4`) is only kept when the run fails. Android records 180 s per
   file, so a long run is recorded in chunks. Install `ffmpeg` on the Appium machine to get them merged; without it
   you get the most recent chunk (up to 3 minutes), which is the part leading up to the failure. A failed scenario
-  also gets the device log (`console.json`) and a screenshot (`screenshot.png`). The device log is filtered
+  also gets the device log (`console.json`). A screenshot (`screenshot.png`) is only attached when the run's
+  `capture.screenshotOnFailure` is on, because it is a binary upload. The device log is filtered
   to what is useful: warnings and errors from anything, the app's own lines, and the React Native, crash and
   WebView tags. Each entry's `type` is read from the Android priority in the log line; the newest 500 are kept.
 

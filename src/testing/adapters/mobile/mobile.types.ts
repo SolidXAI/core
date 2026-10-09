@@ -111,8 +111,12 @@ export interface MobileAdapterOptions {
   strictLocators?: boolean;
   /** Record the whole run. The recording is only kept when the run fails (D15). */
   recordVideo?: boolean;
-  /** Capture the device log for failed scenarios (D16). */
-  capture?: { console?: boolean };
+  /**
+   * What to attach to a failed scenario (D16). The device log is text and is kept with the scenario. A screenshot is a
+   * binary upload, off unless asked for: Test Hub's visual record of a failure is the run video, and an upload nothing
+   * refers to would only fill the file store.
+   */
+  capture?: { console?: boolean; screenshot?: boolean };
   /** Extra Appium capabilities, merged last. */
   extraCapabilities?: Record<string, unknown>;
   /** Test hook: replaces the WebdriverIO `remote()` call. */

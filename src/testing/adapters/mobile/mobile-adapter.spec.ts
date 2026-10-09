@@ -272,7 +272,7 @@ describe("MobileAdapter", () => {
       expect(on.driver.callsTo("getLogs")[0].args).toEqual(["logcat"]);
     });
 
-    it("collects the device log as console.json and a screenshot as screenshot.png", async () => {
+    it("collects the device log as console.json", async () => {
       const { adapter, driver } = setup({ capture: { console: true } });
       driver.logs = [
         { level: "ALL", message: "10-09 09:49:37.434   363  3815 E AndroidRuntime: boom" },
@@ -287,6 +287,17 @@ describe("MobileAdapter", () => {
         { type: "error", text: "10-09 09:49:37.434   363  3815 E AndroidRuntime: boom" },
         { type: "warning", text: "10-09 09:49:37.600   363  3815 W com.acme.app: hmm" },
       ]);
+      // A screenshot is a binary upload nothing refers to, so it is not taken unless asked for.
+      expect(artifacts.map((a) => a.name)).toEqual(["console.json"]);
+      expect(driver.callsTo("takeScreenshot")).toHaveLength(0);
+    });
+
+    it("takes a screenshot of the failing screen when capture.screenshot is on", async () => {
+      const { adapter, driver } = setup({ capture: { console: true, screenshot: true } });
+      driver.logs = [{ level: "ALL", message: "10-09 09:49:37.434   363  3815 E AndroidRuntime: boom" }];
+      await adapter.start();
+      const artifacts = await adapter.collectFailureArtifacts();
+      expect(artifacts.map((a) => a.name)).toEqual(["console.json", "screenshot.png"]);
       const shot = artifacts.find((a) => a.name === "screenshot.png")!;
       expect(shot.contentType).toBe("image/png");
       expect(Buffer.isBuffer(shot.data)).toBe(true);
@@ -306,7 +317,7 @@ describe("MobileAdapter", () => {
     it("skips console.json when there is no log, and does not capture the log when capture is off", async () => {
       const empty = setup({ capture: { console: true } });
       await empty.adapter.start();
-      expect((await empty.adapter.collectFailureArtifacts()).map((a) => a.name)).toEqual(["screenshot.png"]);
+      expect(await empty.adapter.collectFailureArtifacts()).toEqual([]);
 
       const off = setup();
       await off.adapter.start();

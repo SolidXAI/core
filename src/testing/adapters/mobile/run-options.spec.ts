@@ -32,3 +32,16 @@ describe("toMobileAdapterOptions", () => {
     expect(result.somethingElse).toBeUndefined();
   });
 });
+
+describe("toMobileAdapterOptions: screenshots", () => {
+  const base = { appiumUrl: "http://localhost:4723", udid: "u", appSource: "installed" as const, appPackage: "com.acme.app", appActivity: ".A" };
+
+  it("does not take a failure screenshot unless the run asks for one", () => {
+    expect(toMobileAdapterOptions(base).capture?.screenshot).toBe(false);
+    expect(toMobileAdapterOptions(base, { capture: { screenshotOnFailure: false } }).capture?.screenshot).toBe(false);
+  });
+
+  it("follows the run's screenshotOnFailure setting", () => {
+    expect(toMobileAdapterOptions(base, { capture: { screenshotOnFailure: true } }).capture?.screenshot).toBe(true);
+  });
+});
