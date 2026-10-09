@@ -1,5 +1,15 @@
 # Changelog
 
+## [0.1.20-beta.2] - 2026-10-09
+
+### Added
+
+- add documentation for AgentHub agent configuration, data model, and runtime verification
+
+### Fixed
+
+- update defaultValue type from integer to string for consistency (#187)
+
 ## [0.1.20-beta.1] - 2026-10-08
 
 ### Added
