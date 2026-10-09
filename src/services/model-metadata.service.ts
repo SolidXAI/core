@@ -1380,7 +1380,7 @@ export class ModelMetadataService {
       actionUserKey: actionName,
       moduleUserKey: `${model.module.name}`,
       parentMenuItemUserKey: "",
-      iconName: ""
+      iconName: "menu"
     };
 
     const modelListview = {

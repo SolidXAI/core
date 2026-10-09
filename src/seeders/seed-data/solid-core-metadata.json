@@ -15291,7 +15291,7 @@
           ],
           "enableGlobalSearch": true,
           "create": false,
-          "edit": false,
+          "edit": true,
           "delete": false,
           "import": false,
           "export": false,
