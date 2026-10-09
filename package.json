@@ -85,7 +85,11 @@
     "xlsx": "^0.18.5",
     "yaml": "^2.9.0"
   },
-  "peerDependenciesMeta": {},
+  "peerDependenciesMeta": {
+    "webdriverio": {
+      "optional": true
+    }
+  },
   "peerDependencies": {
     "@nestjs/axios": "^3.0.2",
     "@nestjs/cache-manager": "^2.2.2",
@@ -109,7 +113,8 @@
     "reflect-metadata": "^0.2.2",
     "typeorm": "^0.3.20",
     "typeorm-naming-strategies": "^4.1.0",
-    "winston": "^3.17.0"
+    "winston": "^3.17.0",
+    "webdriverio": "^10.0.1"
   },
   "devDependencies": {
     "@angular-devkit/schematics": "^19.2.6",
