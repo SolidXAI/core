@@ -251,6 +251,36 @@ describe("MobileAdapter", () => {
       await expect(adapter.launch()).rejects.toThrow("com.acme.app did not reach the foreground within 7000 ms");
     });
 
+    it("starts the app again when Android stops it while it is starting", async () => {
+      const { adapter, driver } = setup();
+      // Background (starting), then killed, then up after the second start.
+      driver.appStates = [3, 1, 4];
+      await adapter.start();
+      await adapter.launch();
+      const scripts = driver.callsTo("execute").map((call) => call.args[0]);
+      expect(scripts.filter((script) => script === "mobile: activateApp")).toHaveLength(2);
+    });
+
+    it("gives up after two more starts and says what the app was doing", async () => {
+      const { adapter, driver } = setup({ navigationTimeoutMs: 7000 });
+      driver.appState = 1;
+      await adapter.start();
+      await expect(adapter.launch()).rejects.toThrow(
+        "did not reach the foreground within 7000 ms (last state: not running, started again 2 times). The app was started but stopped again; the device may be overloaded. See the device log.",
+      );
+      const scripts = driver.callsTo("execute").map((call) => call.args[0]);
+      expect(scripts.filter((script) => script === "mobile: activateApp")).toHaveLength(3);
+    });
+
+    it("does not start it again when it is merely slow", async () => {
+      const { adapter, driver } = setup();
+      driver.appStates = [3, 3, 4];
+      await adapter.start();
+      await adapter.launch();
+      const scripts = driver.callsTo("execute").map((call) => call.args[0]);
+      expect(scripts.filter((script) => script === "mobile: activateApp")).toHaveLength(1);
+    });
+
     it("terminate stops the app", async () => {
       const { adapter, driver } = setup();
       await adapter.start();
