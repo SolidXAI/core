@@ -54,6 +54,7 @@ export class MobileAdapter {
   private readonly strictLocators: boolean;
   private readonly recordVideo: boolean;
   private readonly captureConsole: boolean;
+  private readonly captureScreenshot: boolean;
   private driver?: MobileDriver;
   private recording = false;
   private runVideo?: FailureArtifact;
@@ -67,6 +68,7 @@ export class MobileAdapter {
     this.strictLocators = opts.strictLocators ?? true;
     this.recordVideo = opts.recordVideo ?? true;
     this.captureConsole = opts.capture?.console ?? false;
+    this.captureScreenshot = opts.capture?.screenshot ?? false;
   }
 
   /** An explicit per-step value wins, otherwise the run-wide default applies. */
@@ -202,7 +204,7 @@ export class MobileAdapter {
     }
   }
 
-  /** Device log and a screenshot for a failed scenario. Each part is best-effort. */
+  /** The device log, and a screenshot when asked for, for a failed scenario. Each part is best-effort. */
   async collectFailureArtifacts(): Promise<FailureArtifact[]> {
     if (!this.driver) return [];
     const artifacts: FailureArtifact[] = [];
@@ -219,13 +221,15 @@ export class MobileAdapter {
       }
     }
 
-    try {
-      const png = await this.driver.takeScreenshot();
-      if (png) {
-        artifacts.push({ name: "screenshot.png", contentType: "image/png", data: Buffer.from(png, "base64") });
+    if (this.captureScreenshot) {
+      try {
+        const png = await this.driver.takeScreenshot();
+        if (png) {
+          artifacts.push({ name: "screenshot.png", contentType: "image/png", data: Buffer.from(png, "base64") });
+        }
+      } catch {
+        // Best-effort.
       }
-    } catch {
-      // Best-effort.
     }
 
     return artifacts;

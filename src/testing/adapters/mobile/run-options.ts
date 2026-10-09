@@ -6,7 +6,7 @@ import type { MobileAdapterOptions, MobileRunOptionsInput } from "./mobile.types
  */
 export function toMobileAdapterOptions(
   input: MobileRunOptionsInput,
-  run: { recordVideo?: boolean; capture?: { console?: boolean } } = {},
+  run: { recordVideo?: boolean; capture?: { console?: boolean; screenshotOnFailure?: boolean } } = {},
 ): MobileAdapterOptions {
   return {
     appiumUrl: input.appiumUrl,
@@ -21,6 +21,6 @@ export function toMobileAdapterOptions(
     strictLocators: input.strictLocators,
     extraCapabilities: input.extraCapabilities,
     recordVideo: run.recordVideo ?? true,
-    capture: { console: run.capture?.console ?? true },
+    capture: { console: run.capture?.console ?? true, screenshot: run.capture?.screenshotOnFailure ?? false },
   };
 }

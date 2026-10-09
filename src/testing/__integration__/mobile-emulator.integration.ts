@@ -109,7 +109,7 @@ async function main() {
     ]);
   });
 
-  await check("a failing scenario gets a screenshot, and the run gets the recording", async () => {
+  await check("a failing scenario still gets the recording, and no screenshot is uploaded", async () => {
     const failing: ScenarioSpec = {
       id: "rn-fails",
       type: "mobile",
@@ -124,7 +124,7 @@ async function main() {
       /No element matches \{ by: "accessibilityId", value: "does-not-exist" \} after 3000 ms/,
     );
     const names = reporter.attachments.filter((a) => a.scenarioId === "rn-fails").map((a) => a.name);
-    assert.ok(names.includes("screenshot.png"), `screenshot.png missing, got: ${names.join(", ")}`);
+    assert.ok(!names.includes("screenshot.png"), `screenshot.png should not be attached by default, got: ${names.join(", ")}`);
     assert.deepEqual(reporter.runArtifacts.map((a) => a.name), ["run.mp4"]);
     assert.ok(reporter.runArtifacts[0].bytes > 1000, "recording looks empty");
     console.log(`      attachments: ${names.join(", ")}; recording ${reporter.runArtifacts[0].bytes} bytes`);

@@ -56,7 +56,7 @@ describe("runFromMetadata with mobile scenarios", () => {
     expect(factory).toHaveBeenCalledTimes(1);
   });
 
-  it("on failure attaches the device log and a screenshot to the scenario, and the recording to the run", async () => {
+  it("on failure attaches the device log to the scenario, and the recording to the run, but no screenshot unless asked", async () => {
     const driver = new FakeDriver();
     // The first read happens when the scenario starts and drains older entries; the entry appears during the scenario.
     const reads: Array<Array<{ level: string; message: string }>> = [[], [{ level: "ALL", message: "10-09 09:49:37.434   363  3815 E AndroidRuntime: crash" }]];
@@ -67,10 +67,7 @@ describe("runFromMetadata with mobile scenarios", () => {
     await expect(runFromMetadata({ scenarios: [failing], mobile: options, reporter })).rejects.toThrow("No element matches");
 
     expect(reporter.scenarioEnds).toEqual([{ id: "mobile-fail", ok: false }]);
-    expect(reporter.attachments).toEqual([
-      { scenarioId: "mobile-fail", name: "console.json" },
-      { scenarioId: "mobile-fail", name: "screenshot.png" },
-    ]);
+    expect(reporter.attachments).toEqual([{ scenarioId: "mobile-fail", name: "console.json" }]);
     expect(reporter.runArtifacts.map((a) => a.name)).toEqual(["run.mp4"]);
     expect(reporter.runEnd).toMatchObject({ ok: false, failed: 1 });
     expect(driver.callsTo("deleteSession")).toHaveLength(1);
