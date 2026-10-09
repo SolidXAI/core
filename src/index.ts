@@ -578,3 +578,6 @@ export {
   isChromiumInstalled,
   cancelChromiumInstall,
 } from './testing/adapters/ui/browser-provisioner'
+
+// The mobile block of a run request. The adapter and steps stay private, like the UI ones.
+export type { MobileRunOptionsInput } from './testing/adapters/mobile/mobile.types'
