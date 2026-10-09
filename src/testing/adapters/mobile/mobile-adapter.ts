@@ -14,8 +14,13 @@ import type {
 /** Keep the device log bounded, like the UI adapter's console buffer. */
 const MAX_LOGCAT_ENTRIES = 500;
 
-/** Two-thirds scale and a modest bit rate keep a run's recording small (D15). */
-const RECORDING_OPTIONS = { videoSize: "720x1600", bitRate: 2_000_000, timeLimit: "180" };
+/**
+ * Two-thirds scale and a modest bit rate keep a run's recording small (D15). Android records at most 180 s
+ * per file, so a longer limit makes Appium record in 180 s chunks. It merges them at the end when `ffmpeg`
+ * is installed; without it, Appium returns the most recent chunk, which is the part that matters when a run
+ * fails. With a limit of 180 the recording would stop after the first chunk and miss the failure.
+ */
+const RECORDING_OPTIONS = { videoSize: "720x1600", bitRate: 2_000_000, timeLimit: "1800" };
 
 const ELEMENT_POLL_MS = 500;
 

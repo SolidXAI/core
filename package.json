@@ -26,7 +26,8 @@
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
     "test:e2e": "jest --config ./test/jest-e2e.json",
     "prepare": "npm run build",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "test:mobile": "ts-node -r tsconfig-paths/register src/testing/__integration__/mobile-emulator.integration.ts"
   },
   "author": "Oswald Rodrigues <oswald@logicloop.io>",
   "license": "BUSL-1.1",

@@ -50,7 +50,7 @@ describe("MobileAdapter", () => {
       expect(driver.callsTo("startRecordingScreen")[0].args[0]).toEqual({
         videoSize: "720x1600",
         bitRate: 2_000_000,
-        timeLimit: "180",
+        timeLimit: "1800",
       });
 
       const failing = setup();
