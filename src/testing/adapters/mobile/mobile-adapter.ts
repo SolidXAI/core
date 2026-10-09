@@ -26,6 +26,16 @@ const ELEMENT_POLL_MS = 500;
 
 /** Android app states from `mobile: queryAppState`. 4 means running in the foreground. */
 const APP_STATE_FOREGROUND = 4;
+const APP_STATE_NOT_RUNNING = 1;
+const APP_STATE_NAMES: Record<number, string> = {
+  0: "not installed",
+  1: "not running",
+  2: "background, suspended",
+  3: "background",
+  4: "foreground",
+};
+/** How often `launch` starts an app again after Android stopped it while it was starting. */
+const MAX_LAUNCH_RESTARTS = 2;
 
 async function defaultDriverFactory(options: MobileRemoteOptions): Promise<MobileDriver> {
   // The module name is a variable so TypeScript does not try to resolve this optional peer.
@@ -179,14 +189,41 @@ export class MobileAdapter {
       await driver.execute("mobile: clearApp", { appId });
     }
     await driver.execute("mobile: activateApp", { appId });
-    await driver.waitUntil(
-      async () => (await driver.execute("mobile: queryAppState", { appId })) === APP_STATE_FOREGROUND,
-      {
-        timeout,
-        timeoutMsg: `${appId} did not reach the foreground within ${timeout} ms`,
-        interval: ELEMENT_POLL_MS,
-      },
-    );
+
+    // Android gives a starting app about ten seconds to attach and kills it otherwise, which is likely on a device that
+    // has only just booted or is short of memory. The app then reads "not running", so start it again a few times.
+    let lastState: number | undefined;
+    let polls = 0;
+    let restarts = 0;
+    try {
+      await driver.waitUntil(
+        async () => {
+          lastState = Number(await driver.execute("mobile: queryAppState", { appId }));
+          polls += 1;
+          if (lastState === APP_STATE_FOREGROUND) return true;
+          if (lastState === APP_STATE_NOT_RUNNING && polls > 1 && restarts < MAX_LAUNCH_RESTARTS) {
+            restarts += 1;
+            await driver.execute("mobile: activateApp", { appId });
+          }
+          return false;
+        },
+        {
+          timeout,
+          timeoutMsg: `${appId} did not reach the foreground within ${timeout} ms`,
+          interval: ELEMENT_POLL_MS,
+        },
+      );
+    } catch (error: any) {
+      const detail = [
+        lastState !== undefined ? `last state: ${APP_STATE_NAMES[lastState] ?? lastState}` : "",
+        restarts ? `started again ${restarts} time${restarts === 1 ? "" : "s"}` : "",
+      ].filter(Boolean).join(", ");
+      const hint =
+        lastState === APP_STATE_NOT_RUNNING
+          ? " The app was started but stopped again; the device may be overloaded. See the device log."
+          : "";
+      throw new Error(`${error?.message ?? error}${detail ? ` (${detail})` : ""}.${hint}`);
+    }
   }
 
   async terminate(): Promise<void> {

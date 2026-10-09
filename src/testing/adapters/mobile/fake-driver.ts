@@ -39,6 +39,8 @@ export class FakeDriver implements MobileDriver {
   screenshotBase64 = Buffer.from("png-bytes").toString("base64");
   recordingBase64 = Buffer.from("mp4-bytes").toString("base64");
   appState = 4;
+  /** States returned by `mobile: queryAppState`, one per call, before `appState` takes over. */
+  appStates: number[] = [];
   keyboardShown = false;
   windowSize = { width: 1080, height: 2400 };
   /** Methods listed here throw when called. */
@@ -76,7 +78,7 @@ export class FakeDriver implements MobileDriver {
   }
   async execute(script: string, ...args: unknown[]) {
     this.record("execute", [script, ...args]);
-    return script === "mobile: queryAppState" ? this.appState : undefined;
+    return script === "mobile: queryAppState" ? (this.appStates.length ? this.appStates.shift() : this.appState) : undefined;
   }
   async back() { this.record("back", []); }
   async isKeyboardShown() { this.record("isKeyboardShown", []); return this.keyboardShown; }
