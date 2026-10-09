@@ -46,6 +46,21 @@ export class ModuleMetadataHelperService {
         return path.resolve(process.cwd(), '..', 'solid-ui', 'src', dashModuleName);
     }
 
+    async getSolidUiModuleCleanupPaths(moduleName: string): Promise<string[]> {
+        if (!moduleName) {
+            return [];
+        }
+
+        const dashModuleName = kebabCase(moduleName);
+        const solidUiSrcPath = path.resolve(process.cwd(), '..', 'solid-ui', 'src');
+
+        return [
+            path.join(solidUiSrcPath, dashModuleName),
+            path.join(solidUiSrcPath, `${dashModuleName}.ui-module.ts`),
+            path.join(solidUiSrcPath, `${dashModuleName}.ui-module.tsx`),
+        ];
+    }
+
     private resolveModuleMetadataFolderPath(moduleName: string): string {
         const dashModuleName = kebabCase(moduleName);
         return path.resolve(process.cwd(), 'src', dashModuleName, 'metadata');
