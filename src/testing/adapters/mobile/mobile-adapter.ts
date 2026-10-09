@@ -2,6 +2,7 @@ import { DEFAULT_UI_TIMEOUT_MS } from "../ui/playwright-adapter";
 import type { FailureArtifact } from "../ui/playwright-adapter";
 import { buildCapabilities } from "./capabilities";
 import { resolveLocator } from "./locator";
+import { toConsoleEntries } from "./logcat";
 import type { ResolvedLocator } from "./locator";
 import type {
   MobileAdapterOptions,
@@ -204,10 +205,7 @@ export class MobileAdapter {
     if (this.captureConsole) {
       try {
         const entries = await this.driver.getLogs("logcat");
-        const mapped = entries.slice(-MAX_LOGCAT_ENTRIES).map((entry) => ({
-          type: String(entry.level ?? "info").toLowerCase(),
-          text: String(entry.message ?? ""),
-        }));
+        const mapped = toConsoleEntries(entries, this.opts.appPackage, MAX_LOGCAT_ENTRIES);
         if (mapped.length) {
           artifacts.push({ name: "console.json", contentType: "application/json", data: JSON.stringify(mapped) });
         }
