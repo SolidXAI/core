@@ -218,6 +218,14 @@ describe("MobileAdapter", () => {
     });
   });
 
+  describe("describeLocator", () => {
+    it("returns the printable label, and rejects an invalid locator", () => {
+      const { adapter } = setup();
+      expect(adapter.describeLocator({ by: "id", value: "edit", index: 2 })).toBe('{ by: "id", value: "edit", index: 2 }');
+      expect(() => adapter.describeLocator("edit")).toThrow("locator must be an object");
+    });
+  });
+
   describe("launch and terminate", () => {
     it("terminates, then activates, and waits for the foreground", async () => {
       const { adapter, driver } = setup();

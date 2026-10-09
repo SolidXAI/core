@@ -228,6 +228,11 @@ export class MobileAdapter {
     return artifacts;
   }
 
+  /** Printable form of a locator for error messages, e.g. `{ by: "accessibilityId", value: "Save" }`. */
+  describeLocator(locator: unknown): string {
+    return this.resolve(locator).label;
+  }
+
   /** Whole-run recording, available after {@link stop} when it was asked to keep the video. */
   getRunVideo(): FailureArtifact | undefined {
     return this.runVideo;
