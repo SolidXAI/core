@@ -1,22 +1,8 @@
 import { FakeDriver, FakeElement } from "../adapters/mobile/fake-driver";
 import type { MobileAdapterOptions } from "../adapters/mobile/mobile.types";
 import type { ScenarioSpec } from "../contracts/testing-metadata.types";
-import type { Reporter } from "../reporter/reporter.types";
+import { RecordingReporter } from "./recording-reporter";
 import { runFromMetadata } from "./run-from-metadata";
-
-class RecordingReporter implements Reporter {
-  scenarioEnds: Array<{ id: string; ok: boolean }> = [];
-  attachments: Array<{ scenarioId: string; name: string }> = [];
-  runArtifacts: string[] = [];
-  runEnd?: { ok: boolean; passed: number; failed: number };
-  onScenarioStart() {}
-  onScenarioEnd(scenario: ScenarioSpec, result: { ok: boolean }) { this.scenarioEnds.push({ id: scenario.id, ok: result.ok }); }
-  onStepStart() {}
-  onStepEnd() {}
-  attach(args: { scenarioId: string; name: string }) { this.attachments.push({ scenarioId: args.scenarioId, name: args.name }); }
-  attachRunArtifact(args: { name: string }) { this.runArtifacts.push(args.name); }
-  onRunEnd(args: { ok: boolean; passed: number; failed: number }) { this.runEnd = args; }
-}
 
 function mobileOptions(driver: FakeDriver) {
   const factory = jest.fn(async () => driver);
@@ -85,7 +71,7 @@ describe("runFromMetadata with mobile scenarios", () => {
       { scenarioId: "mobile-fail", name: "console.json" },
       { scenarioId: "mobile-fail", name: "screenshot.png" },
     ]);
-    expect(reporter.runArtifacts).toEqual(["run.mp4"]);
+    expect(reporter.runArtifacts.map((a) => a.name)).toEqual(["run.mp4"]);
     expect(reporter.runEnd).toMatchObject({ ok: false, failed: 1 });
     expect(driver.callsTo("deleteSession")).toHaveLength(1);
   });
