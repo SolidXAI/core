@@ -3,7 +3,7 @@
 ## Folder Structure
 - `contracts/`: metadata + runtime context types
 - `core/`: engine, registry, interpolation, utilities
-- `adapters/`: API (axios) and UI (Playwright) adapters
+- `adapters/`: API (axios), UI (Playwright) and mobile (Appium) adapters
 - `steps/`: step implementations grouped by domain
 - `reporter/`: reporting interfaces + console reporter
 - `runner/`: lifecycle helpers + metadata runner
@@ -22,6 +22,53 @@ the binary is fetched separately.
 - **In Docker**, browsers land in `~/.cache/ms-playwright` (Linux). A multi-stage build that
   installs as `root` but runs as another user must set `PLAYWRIGHT_BROWSERS_PATH` to a shared
   location, or the runtime user will not find the binary.
+
+## Mobile Setup
+Mobile scenarios (`"type": "mobile"`, ops `mobile.*`) drive an Android emulator or phone through an
+[Appium](https://appium.io) server. They are optional: nothing here is needed unless you run one.
+
+- **Appium 3** with the **UiAutomator2** driver (`appium driver install uiautomator2`), started on the
+  machine the device is attached to (`appium --port 4723`).
+- **Android SDK** with `platform-tools`, `emulator` and **`build-tools`**. Appium needs the build-tools'
+  `aapt2` to install an uploaded APK; its own doctor does not report this. Restart Appium after
+  installing SDK packages, because it caches where the tools are.
+- **`webdriverio`** installed in the app that runs the tests (`npm i webdriverio@^10.0.1`). It is an
+  optional peer dependency of this package, loaded only when a mobile scenario starts. Its current
+  release declares Node 22.19 or newer.
+- **A device.** Every run names its device (`udid` from `adb devices`). Core never lets Appium pick one,
+  and does not boot emulators: the caller (Test Hub) does that and passes the device serial.
+
+A run needs `RunnerOptions.mobile`, or the `mobile` block of `POST /test-runs`:
+
+```json
+{
+  "mobile": {
+    "appiumUrl": "http://localhost:4723",
+    "udid": "emulator-5554",
+    "appSource": "installed",
+    "appPackage": "com.acme.app",
+    "appActivity": ".MainActivity"
+  }
+}
+```
+
+- `appSource: "upload"` installs the APK at `appPath` (an absolute path on the Appium machine) and clears
+  the app's data at session start. `"installed"` opens an app that is already on the device and keeps its
+  data, restarting it so each session starts on its home screen.
+- Timeouts follow the UI adapter: `defaultTimeoutMs` (element waits, default 30 s) and
+  `navigationTimeoutMs` (app launch). A step's own `timeoutMs` overrides both.
+- All mobile scenarios in a run share one device session, in file order.
+- The whole run is recorded, but the video (`run.mp4`) is only kept when the run fails. Android records 180 s per
+  file, so a long run is recorded in chunks. Install `ffmpeg` on the Appium machine to get them merged; without it
+  you get the most recent chunk (up to 3 minutes), which is the part leading up to the failure. A failed scenario
+  also gets the device log (`console.json`). A screenshot (`screenshot.png`) is only attached when the run's
+  `capture.screenshotOnFailure` is on, because it is a binary upload. The device log is filtered
+  to what is useful: warnings and errors from anything, the app's own lines, and the React Native, crash and
+  WebView tags. Each entry's `type` is read from the Android priority in the log line; the newest 500 are kept.
+
+**Start every mobile scenario with `mobile.launch` and `"clearData": true`.** An app remembers things
+between scenarios (who is logged in, the cart), so one scenario can break the next. Leave `clearData` out
+only when a scenario deliberately relies on state prepared outside the test.
 
 ## Metadata Shape
 `TestingMetadata` lives under `testing` in module metadata JSON files.
@@ -378,6 +425,65 @@ Options in `with`:
 - `equals` (optional)
 - `contains` (optional)
 - `timeoutMs` (optional, overrides the run-wide UI timeout)
+
+### **Mobile ops (`mobile.*`)**
+Every op that takes a `locator` waits for the element to be displayed first. `with.timeoutMs` (or the
+step's `timeoutMs`) overrides the wait. `locator` is an object:
+
+```json
+{ "by": "accessibilityId", "value": "Login button" }
+```
+
+| `by` | Finds | Notes |
+|---|---|---|
+| `accessibilityId` | Android `content-desc`; React Native `accessibilityLabel` / `testID` | Preferred when unique |
+| `id` | Resource id | A bare id gets the app package prefixed (`edit` becomes `<package>:id/edit`). React Native apps have none. |
+| `text` / `textContains` | Visible text | Exact / partial |
+| `description` | `content-desc` through UiSelector | |
+| `uiautomator` | A raw `new UiSelector()...` expression | Escape hatch |
+| `xpath` | An XPath | Last resort; slower and fragile |
+
+Add `"index": 1` (0-based) to pick one match. A locator that matches more than one element **fails the
+step** unless it has an `index`. An `"android": { "by": ..., "value": ... }` block replaces `by`/`value`
+on Android; `"ios"` is reserved and ignored.
+
+| Op | `with` | Does |
+|---|---|---|
+| `mobile.launch` | `clearData` (optional, default false) | Stops the app, optionally wipes its data, starts it |
+| `mobile.reset` | – | `mobile.launch` with `clearData: true` |
+| `mobile.terminate` | – | Stops the app |
+| `mobile.tap` | `locator` | Taps the element |
+| `mobile.type` | `locator`, `text`, `clear` (default true) | Sets the text; `clear: false` appends |
+| `mobile.clear` | `locator` | Clears the field |
+| `mobile.swipe` | `direction` (up/down/left/right), `percent` (0.1 to 1, default 0.75), `locator` (optional) | Swipes on the element, or the screen |
+| `mobile.scrollTo` | `locator`, `direction` (down/up, default down), `maxSwipes` (default 10) | Swipes until the element shows |
+| `mobile.back` | – | Presses Back |
+| `mobile.hideKeyboard` | – | Hides the keyboard if it is shown |
+| `mobile.expectVisible` | `locator` | Passes when the element is displayed in time |
+| `mobile.expectHidden` | `locator` | Passes when no match is displayed in time |
+| `mobile.expectText` | `locator` and exactly one of `equals`, `contains`, `matches` (a regex) | Compares the element's text; returns it |
+| `mobile.getText` | `locator` | Returns the element's text (use `saveAs`) |
+
+`api.*`, `assert.*`, `util.*` and `test.spec` ops can be mixed in, for example to check the backend after a
+tap. `ui.*` ops cannot be used in a mobile scenario.
+
+Example:
+```json
+{
+  "id": "rn-login-happy-path",
+  "type": "mobile",
+  "steps": [
+    { "given": { "op": "mobile.launch", "with": { "clearData": true } } },
+    { "when": { "op": "mobile.tap", "with": { "locator": { "by": "accessibilityId", "value": "open menu" } } } },
+    { "and": { "op": "mobile.tap", "with": { "locator": { "by": "accessibilityId", "value": "menu item log in" } } } },
+    { "and": { "op": "mobile.type", "with": { "locator": { "by": "accessibilityId", "value": "Username input field" }, "text": "bob@example.com" } } },
+    { "and": { "op": "mobile.type", "with": { "locator": { "by": "accessibilityId", "value": "Password input field" }, "text": "${secret:RN_DEMO_PASSWORD}" } } },
+    { "and": { "op": "mobile.hideKeyboard" } },
+    { "and": { "op": "mobile.tap", "with": { "locator": { "by": "accessibilityId", "value": "Login button" } } } },
+    { "then": { "op": "mobile.expectVisible", "with": { "locator": { "by": "accessibilityId", "value": "products screen" } } } }
+  ]
+}
+```
 
 ### **Op: `assert.equals`**
 Description: Asserts strict equality between two values.
