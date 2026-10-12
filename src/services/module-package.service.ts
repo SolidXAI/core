@@ -1037,6 +1037,10 @@ export class ModulePackageService {
             if (!version) {
                 throw new BadRequestException(`"${explicitVersion}" is not a valid semver version.`);
             }
+            // An explicit version only sets the initial version; versioned modules move forward with a bump.
+            if (currentVersion && version !== currentVersion) {
+                throw new BadRequestException(`This module is already at v${currentVersion}. Choose a patch, minor or major bump instead.`);
+            }
             return version;
         }
 
