@@ -1733,8 +1733,8 @@ export class ModuleMetadataSeederService {
     private async seedModuleModelFields(moduleMetadata: CreateModuleMetadataDto): Promise<{ pruned: number; upserted: number }> {
         const fieldMetadataRepo = this.dataSource.getRepository(FieldMetadata);
 
-        // First we create the module. 
-        const module = await this.timeOperation('module-upsert', () => this.moduleMetadataService.upsert(moduleMetadata), {
+        // First we create the module. The version is set explicitly so a metadata file without one clears a stale value.
+        const module = await this.timeOperation('module-upsert', () => this.moduleMetadataService.upsert({ ...moduleMetadata, version: moduleMetadata.version ?? null }), {
             moduleName: moduleMetadata.name,
             component: 'module-model-fields',
             serviceCall: 'moduleMetadataService.upsert',

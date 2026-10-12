@@ -49,4 +49,9 @@ export class CreateModuleMetadataDto {
     @IsNumber()
     menuSequenceNumber? :number
 
+    @ApiProperty({ description: "Semver version of the module, owned by the module metadata file and set when exporting a module package." })
+    @IsOptional()
+    @IsString()
+    version?: string | null;
+
 }
