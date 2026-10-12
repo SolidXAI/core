@@ -11635,17 +11635,17 @@
       "modelUserKey": "chatterMessage"
     },
     {
-      "displayName": "Chatter Message Details List Action",
-      "name": "chatterMessageDetails-list-action",
-      "type": "solid",
+      "displayName": "Archived Chatter Messages",
+      "name": "chatterArchivedMessages-action",
+      "type": "custom",
       "domain": "",
       "context": "",
-      "customComponent": "",
+      "customComponent": "/admin/core/solid-core/chatter/archived",
       "customIsModal": false,
       "serverEndpoint": "",
-      "viewUserKey": "chatterMessageDetails-list-view",
+      "viewUserKey": "",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "chatterMessageDetails"
+      "modelUserKey": "chatterMessage"
     },
     {
       "displayName": "locale List Action",
@@ -13107,13 +13107,31 @@
       "iconName": "filter_list_alt"
     },
     {
-      "displayName": "Chatter Message",
+      "displayName": "Chatter",
+      "name": "chatter-menu-item",
+      "sequenceNumber": 10,
+      "actionUserKey": "",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "",
+      "iconName": "forum"
+    },
+    {
+      "displayName": "Messages",
       "name": "chatterMessage-menu-item",
-      "sequenceNumber": 5,
+      "sequenceNumber": 1,
       "actionUserKey": "chatterMessage-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item",
+      "parentMenuItemUserKey": "chatter-menu-item",
       "iconName": "forum"
+    },
+    {
+      "displayName": "Archived Messages",
+      "name": "chatterArchivedMessages-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "chatterArchivedMessages-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "chatter-menu-item",
+      "iconName": "inventory_2"
     },
     {
       "displayName": "Locale",
@@ -28281,6 +28299,22 @@
       "nextRunAt": null,
       "dayOfWeek": "[\"Monday\",\"Tuesday\",\"Wednesday\",\"Thursday\",\"Friday\",\"Saturday\",\"Sunday\"]",
       "job": "WorkflowScheduledTriggerJobService",
+      "moduleUserKey": "solid-core"
+    },
+    {
+      "scheduleName": "Chatter Message Archiver",
+      "isActive": true,
+      "frequency": "Daily",
+      "startTime": "01:00:00",
+      "endTime": null,
+      "startDate": null,
+      "endDate": null,
+      "dayOfMonth": 0,
+      "lastRunAt": null,
+      "nextRunAt": null,
+      "dayOfWeek": "[\"Monday\",\"Tuesday\",\"Wednesday\",\"Thursday\",\"Friday\",\"Saturday\",\"Sunday\"]",
+      "job": "ChatterMessageArchiveService",
+      "cronExpression": null,
       "moduleUserKey": "solid-core"
     }
   ],

@@ -211,6 +211,7 @@ import { ScheduleModule } from "@nestjs/schedule";
 import { ClsModule } from "nestjs-cls";
 import { ChatterMessageDetailsController } from "./controllers/chatter-message-details.controller";
 import { ChatterMessageController } from "./controllers/chatter-message.controller";
+import { ChatterMessageArchiveController } from './controllers/chatter-message-archive.controller';
 
 import { ExportTemplateController } from './controllers/export-template.controller';
 import { ExportTransactionController } from './controllers/export-transaction.controller';
@@ -327,6 +328,7 @@ import { PermissionMetadataSeederService } from './seeders/permission-metadata-s
 import { SystemFieldsSeederService } from './seeders/system-fields-seeder.service';
 import { ChatterMessageDetailsService } from './services/chatter-message-details.service';
 import { ChatterMessageService } from './services/chatter-message.service';
+import { ChatterMessageArchiveService } from './services/chatter-message-archive.service';
 import { ConcatComputedFieldProvider } from './services/computed-fields/concat-computed-field-provider.service';
 import { AlphaNumExternalIdComputationProvider } from './services/computed-fields/entity/alpha-num-external-id-computed-field-provider';
 import { ConcatEntityComputedFieldProvider } from './services/computed-fields/entity/concat-entity-computed-field-provider.service';
@@ -664,6 +666,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     ActionMetadataController,
     AuthenticationController,
     ChatterMessageController,
+    ChatterMessageArchiveController,
     ChatterMessageDetailsController,
     EmailTemplateController,
     ExportTemplateController,
@@ -973,6 +976,7 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     RequestContextService,
     SavedFiltersService,
     ChatterMessageService,
+    ChatterMessageArchiveService,
     ChatterMessageDetailsService,
     LocaleService,
     AuditSubscriber,

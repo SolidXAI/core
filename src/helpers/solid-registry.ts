@@ -8,6 +8,7 @@ import { Locale } from 'src/entities/locale.entity';
 import { SecurityRule } from 'src/entities/security-rule.entity';
 import { IScheduledJob } from 'src/services/scheduled-jobs/scheduled-job.interface';
 import { IDashboardWidgetDataProvider, IErrorCodeProvider, ILoginExtensionProvider, ISecurityRuleConfigProvider, ISelectionProvider, ISelectionProviderContext, ISolidDatabaseModule, IWorkflowFieldDataProvider } from "../interfaces";
+import { IChatterMessageArchive } from '../interfaces/chatter-message-archive.interface';
 import { ObjectLiteral } from 'typeorm';
 
 type ControllerMetadata = {
@@ -68,6 +69,7 @@ export interface ComputedFieldMetadata<TContext = any> {
 export class SolidRegistry {
   private readonly logger = new Logger(SolidRegistry.name);
   private extensionUserCreationProvider: InstanceWrapper | null = null;
+  private chatterMessageArchiveProvider: InstanceWrapper | null = null;
   private seeders: Set<InstanceWrapper> = new Set();
   private scheduledJobProviders: Set<InstanceWrapper> = new Set();
   private selectionProviders: Set<InstanceWrapper> = new Set();
@@ -101,6 +103,18 @@ export class SolidRegistry {
 
   getExtensionUserCreationProvider<T extends User = User>(): IExtensionUserCreationProvider<T, any> | null {
     return (this.extensionUserCreationProvider?.instance as IExtensionUserCreationProvider<T, any>) ?? null;
+  }
+
+  registerChatterMessageArchiveProvider(provider: InstanceWrapper): void {
+    if (this.chatterMessageArchiveProvider && this.chatterMessageArchiveProvider !== provider) {
+      this.logger.error(`Only one ChatterMessageArchiveProvider is supported; keeping ${this.chatterMessageArchiveProvider.name} and ignoring ${provider.name}`);
+      return;
+    }
+    this.chatterMessageArchiveProvider = provider;
+  }
+
+  getChatterMessageArchiveProvider(): IChatterMessageArchive | null {
+    return (this.chatterMessageArchiveProvider?.instance as IChatterMessageArchive) ?? null;
   }
 
   registerErrorCodeProvider(errorCodeProvider: InstanceWrapper): void {
