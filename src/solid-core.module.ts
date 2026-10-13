@@ -384,6 +384,9 @@ import { ListOfValuesSubscriber } from './subscribers/list-of-values.subscriber'
 import { ScheduledJobSubscriber } from './subscribers/scheduled-job.subscriber';
 import { SecurityRuleSubscriber } from './subscribers/security-rule.subscriber';
 import { ViewMetadataSubsciber } from './subscribers/view-metadata.subscriber';
+import { AgentRegistrySubscriber } from './subscribers/agent-registry.subscriber';
+import { AgentToolRegistrySubscriber } from './subscribers/agent-tool-registry.subscriber';
+import { AgentSkillRegistrySubscriber } from './subscribers/agent-skill-registry.subscriber';
 import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
 import { McpCommand } from './commands/mcp.command';
 import { FixturesService } from './services/fixtures.service';
@@ -968,6 +971,9 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     FileS3StorageProvider,
     MediaRepository,
     ViewMetadataSubsciber,
+    AgentRegistrySubscriber,
+    AgentToolRegistrySubscriber,
+    AgentSkillRegistrySubscriber,
     SavedFiltersService,
     UserViewMetadataService,
     SecurityRuleService,

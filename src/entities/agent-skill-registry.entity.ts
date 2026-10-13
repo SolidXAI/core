@@ -1,5 +1,6 @@
 import { CommonEntity } from 'src/entities/common.entity';
-import { Entity, Column, Index, JoinTable, ManyToMany, OneToMany } from 'typeorm';
+import { Entity, Column, Index, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
+import { ModuleMetadata } from 'src/entities/module-metadata.entity';
 import { AgentHubTag } from './agent-hub-tag.entity';
 import { AgentSkill } from './agent-skill.entity'
 
@@ -20,6 +21,11 @@ export class AgentSkillRegistry extends CommonEntity {
 
     @Column({ type: "text" })
     body: string;
+
+    @Index()
+    @ManyToOne(() => ModuleMetadata, { onDelete: "SET NULL", nullable: true })
+    @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })
+    module: ModuleMetadata;
 
     @ManyToMany(() => AgentHubTag, tag => tag.skills, { cascade: ['insert', 'update'] })
     @JoinTable()

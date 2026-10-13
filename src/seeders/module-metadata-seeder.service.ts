@@ -34,6 +34,11 @@ import solidCoreMetadata from './seed-data/solid-core-metadata.json';
 import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ActionMetadata } from '../entities/action-metadata.entity';
+import { AgentRegistry } from '../entities/agent-registry.entity';
+import { AgentSkill } from '../entities/agent-skill.entity';
+import { AgentSkillRegistry } from '../entities/agent-skill-registry.entity';
+import { AgentTool } from '../entities/agent-tool.entity';
+import { AgentToolRegistry } from '../entities/agent-tool-registry.entity';
 import { MenuItemMetadata } from '../entities/menu-item-metadata.entity';
 import { ModuleMetadata } from '../entities/module-metadata.entity';
 import { RoleMetadata } from '../entities/role-metadata.entity';
@@ -301,6 +306,10 @@ export class ModuleMetadataSeederService {
                         this.logger.log(`Seeding Views`);
                         const viewCounts = await this.timeOperation('seed-views', () => this.seedViews(overallMetadata), { moduleName: moduleMetadata.name, component: 'views' });
                         console.log(`${this.formatSeedResult(moduleMetadata.name, 'Views', viewCounts)}`);
+
+                        currentStep = 'seedAgentHubRegistries';
+                        const agentHubCounts = await this.timeOperation('seed-agenthub-registries', () => this.seedAgentHubRegistries(overallMetadata), { moduleName: moduleMetadata.name, component: 'agenthub-registries' });
+                        console.log(`${this.formatSeedResult(moduleMetadata.name, 'AgentHub Registries', agentHubCounts)}`);
 
                         currentStep = 'seedActions';
                         this.logger.log(`Seeding Actions`);
@@ -782,6 +791,129 @@ export class ModuleMetadataSeederService {
             serviceCall: 'handleSeedViews',
         });
         return { pruned, upserted: views.length };
+    }
+
+    private async seedAgentHubRegistries(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
+        const agents = this.getSeedArray<any>(overallMetadata?.agenthubAgents);
+        const tools = this.getSeedArray<any>(overallMetadata?.agenthubTools);
+        const skills = this.getSeedArray<any>(overallMetadata?.agenthubSkills);
+        if (!agents.length && !tools.length && !skills.length) {
+            return { pruned: 0, upserted: 0 };
+        }
+        const moduleName = overallMetadata?.moduleMetadata?.name;
+        const module = await this.getModuleByUserKeyCached(moduleName);
+        if (!module) {
+            throw new Error(`Cannot seed AgentHub registries: module ${moduleName} was not found.`);
+        }
+
+        const skillCount = await this.seedAgentHubSkills(skills, module);
+        const toolCount = await this.seedAgentHubTools(tools, module);
+        const agentCount = await this.seedAgentHubAgents(agents, module);
+        return { pruned: 0, upserted: agentCount + toolCount + skillCount };
+    }
+
+    private async seedAgentHubAgents(agents: any[], defaultModule: ModuleMetadata): Promise<number> {
+        const repo = this.dataSource.getRepository(AgentRegistry);
+        const skillRepo = this.dataSource.getRepository(AgentSkillRegistry);
+        const toolRepo = this.dataSource.getRepository(AgentToolRegistry);
+        const agentSkillRepo = this.dataSource.getRepository(AgentSkill);
+        const agentToolRepo = this.dataSource.getRepository(AgentTool);
+        let upserted = 0;
+        for (const record of agents) {
+            const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
+            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true }, withDeleted: true });
+            if (existing?.deletedAt) continue;
+            const { tags, moduleUserKey, agentSkills = [], agentTools = [], ...data } = record;
+            let agent = existing;
+            if (existing) {
+                if (!existing.module) {
+                    await repo.update(existing.id, { module: recordModule });
+                    upserted++;
+                }
+            } else {
+                agent = await repo.save(repo.create({ ...data, module: recordModule } as AgentRegistry));
+                upserted++;
+            }
+
+            for (const link of agentSkills) {
+                const skill = await skillRepo.findOneBy({ name: link.name });
+                if (!skill) throw new Error(`Cannot link agent ${record.name}: skill ${link.name} was not found.`);
+                const linked = await agentSkillRepo.findOneBy({ agentRegistry: { id: agent.id }, agentSkillRegistry: { id: skill.id } });
+                if (!linked) {
+                    await agentSkillRepo.save(agentSkillRepo.create({
+                        agentRegistry: agent,
+                        agentSkillRegistry: skill,
+                        alwaysInclude: link.alwaysInclude ?? true,
+                    }));
+                }
+            }
+            for (const link of agentTools) {
+                const tool = await toolRepo.findOneBy({ name: link.name });
+                if (!tool) throw new Error(`Cannot link agent ${record.name}: tool ${link.name} was not found.`);
+                const linked = await agentToolRepo.findOneBy({ agentRegistry: { id: agent.id }, agentToolRegistry: { id: tool.id } });
+                if (!linked) {
+                    await agentToolRepo.save(agentToolRepo.create({
+                        agentRegistry: agent,
+                        agentToolRegistry: tool,
+                        requiresApproval: link.requiresApproval ?? false,
+                    }));
+                }
+            }
+        }
+        return upserted;
+    }
+
+    private async seedAgentHubTools(tools: any[], defaultModule: ModuleMetadata): Promise<number> {
+        const repo = this.dataSource.getRepository(AgentToolRegistry);
+        let upserted = 0;
+        for (const record of tools) {
+            const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
+            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true }, withDeleted: true });
+            if (existing) {
+                if (!existing.module) {
+                    await repo.update(existing.id, { module: recordModule });
+                    upserted++;
+                }
+                continue;
+            }
+            const { tags, moduleUserKey, ...data } = record;
+            if (typeof data.sourceCode === 'string' && !data.checksum) {
+                data.checksum = createHash('sha256').update(data.sourceCode).digest('hex');
+            }
+            await repo.save(repo.create({ ...data, module: recordModule }));
+            upserted++;
+        }
+        return upserted;
+    }
+
+    private async seedAgentHubSkills(skills: any[], defaultModule: ModuleMetadata): Promise<number> {
+        const repo = this.dataSource.getRepository(AgentSkillRegistry);
+        let upserted = 0;
+        for (const record of skills) {
+            const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
+            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true }, withDeleted: true });
+            if (existing) {
+                if (!existing.module) {
+                    await repo.update(existing.id, { module: recordModule });
+                    upserted++;
+                }
+                continue;
+            }
+            const { tags, moduleUserKey, ...data } = record;
+            await repo.save(repo.create({ ...data, module: recordModule }));
+            upserted++;
+        }
+        return upserted;
+    }
+
+    private async getAgentHubSeedModule(record: any, defaultModule: ModuleMetadata): Promise<ModuleMetadata> {
+        const module = record.moduleUserKey && record.moduleUserKey !== defaultModule.name
+            ? await this.getModuleByUserKeyCached(record.moduleUserKey)
+            : defaultModule;
+        if (!module) {
+            throw new Error(`Cannot seed AgentHub registry ${record.name}: module ${record.moduleUserKey} was not found.`);
+        }
+        return module;
     }
 
     // Ok

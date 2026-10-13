@@ -1,5 +1,6 @@
 import { CommonEntity } from 'src/entities/common.entity';
-import { Entity, Column, Index, JoinTable, ManyToMany, OneToMany } from 'typeorm';
+import { Entity, Column, Index, JoinColumn, JoinTable, ManyToMany, ManyToOne, OneToMany } from 'typeorm';
+import { ModuleMetadata } from 'src/entities/module-metadata.entity';
 import { AgentHubTag } from './agent-hub-tag.entity';
 import { AgentTool } from './agent-tool.entity'
 
@@ -29,6 +30,11 @@ export class AgentToolRegistry extends CommonEntity {
 
     @Column({ type: "text", nullable: true })
     lastLoadError: string;
+
+    @Index()
+    @ManyToOne(() => ModuleMetadata, { onDelete: "SET NULL", nullable: true })
+    @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })
+    module: ModuleMetadata;
 
     @ManyToMany(() => AgentHubTag, tag => tag.tools, { cascade: ['insert', 'update'] })
     @JoinTable()

@@ -104,7 +104,7 @@ export abstract class AgentConfigCatalogService<T extends CommonEntity & { type:
     return agentIdsForCatalog(this.entityManager, this.linkEntity, this.catalogRelation, catalogIds);
   }
 
-  // SolidX catalog rows are seeded by the agent hub runtime and are read-only.
+  // SolidX catalog rows are seeded by Core and are read-only.
   private async assertEditable(ids: number[]) {
     const locked = await this.repo.find({ where: { id: In(ids), type: 'solidx' } as FindOptionsWhere<T>, select: { id: true } as any });
     if (locked.length) {

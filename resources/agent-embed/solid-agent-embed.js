@@ -1,13 +1,19 @@
-/* SolidX AgentHub Embed SDK v2. No dependencies; credentials stay in memory. */
+/* SolidX AgentHub Embed SDK v3. No dependencies; credentials stay in memory.
+ * mode: "popup" (default) owns its launcher and floating window.
+ * mode: "inline" fills the supplied container; the host owns its layout.
+ */
 (function (global) {
   "use strict";
-  if (global.SolidAgentEmbed && global.SolidAgentEmbed.version === 2) return;
+  if (global.SolidAgentEmbed && global.SolidAgentEmbed.version === 3) return;
   var channel = "solidx-agent-embed";
   var hostedUiOrigin = __SOLIDX_AGENT_EMBED_UI_ORIGIN__;
   function debug(instanceId, event, details) {
     if (global.console && typeof global.console.info === "function") global.console.info("[agent-embed][sdk] " + event, Object.assign({ instanceId: instanceId }, details || {}));
   }
   function mount(options) {
+    var mode = options.mode || "popup";
+    if (mode !== "popup" && mode !== "inline") throw new Error("mode must be popup or inline.");
+    var inline = mode === "inline";
     var container = typeof options.container === "string" ? document.querySelector(options.container) : options.container;
     if (!container || !container.appendChild) throw new Error("Provide an existing container element.");
     if (!Number.isSafeInteger(options.agentId) || options.agentId <= 0) throw new Error("Provide a valid agentId.");
@@ -25,28 +31,32 @@
     var destroyed = false, initialized = false, locked = false, open = false, windowMode = "popup", ready = false, tokenFlight = null;
     var pending = new Map();
     var controller = null, loadTimer = null;
-    var launcherHost = document.createElement("span");
-    container.appendChild(launcherHost);
-    var launcherRoot = launcherHost.attachShadow({ mode: "open" });
-    var button = document.createElement("button");
-    button.type = "button";
-    button.textContent = options.label || "Chat with us";
-    button.setAttribute("aria-expanded", "false");
-    button.setAttribute("aria-haspopup", "dialog");
-    var buttonStyle = document.createElement("style");
-    buttonStyle.textContent = "button{font:600 14px system-ui;cursor:pointer;border:0;border-radius:999px;padding:12px 18px;color:white;background:#202c44}button:focus-visible{outline:3px solid #779bff;outline-offset:3px}";
-    launcherRoot.append(buttonStyle, button);
-    var popoverHost = document.createElement("div");
-    popoverHost.style.cssText = "position:fixed;z-index:2147483000;display:none;";
-    document.body.appendChild(popoverHost);
-    var root = popoverHost.attachShadow({ mode: "open" });
+    var launcherHost = null, button = null;
+    if (!inline) {
+      launcherHost = document.createElement("span");
+      container.appendChild(launcherHost);
+      var launcherRoot = launcherHost.attachShadow({ mode: "open" });
+      button = document.createElement("button");
+      button.type = "button";
+      button.textContent = options.label || "Chat with us";
+      button.setAttribute("aria-expanded", "false");
+      button.setAttribute("aria-haspopup", "dialog");
+      var buttonStyle = document.createElement("style");
+      buttonStyle.textContent = "button{font:600 14px system-ui;cursor:pointer;border:0;border-radius:999px;padding:12px 18px;color:white;background:#202c44}button:focus-visible{outline:3px solid #779bff;outline-offset:3px}";
+      launcherRoot.append(buttonStyle, button);
+    }
+    var surfaceHost = document.createElement("div");
+    surfaceHost.style.cssText = inline ? "display:none;width:100%;height:100%;min-height:0;" : "position:fixed;z-index:2147483000;display:none;";
+    (inline ? container : document.body).appendChild(surfaceHost);
+    var root = surfaceHost.attachShadow({ mode: "open" });
     var style = document.createElement("style");
     style.textContent = ":host{font:14px system-ui;color:#172033}section{position:relative;height:100%;display:flex;flex-direction:column;background:#fff;border:1px solid #d8dee8;border-radius:14px;box-shadow:0 16px 60px #0003;overflow:hidden;box-sizing:border-box}button{font:inherit;cursor:pointer;border:0;border-radius:8px}button:focus-visible{outline:2px solid #779bff;outline-offset:2px}.control-bar{position:relative;z-index:2;flex:0 0 34px;display:flex;align-items:center;justify-content:center;background:#f8fafc;border-bottom:1px solid #e7ecf2}.control-group{display:flex;align-items:center;gap:1px;padding:2px;border:1px solid #29364d;border-radius:999px;background:#172033;box-shadow:0 3px 8px #17203326}.window-control{width:25px;height:25px;display:grid;place-items:center;padding:0;border-radius:50%;background:transparent;color:#fff;transition:background .15s,transform .15s}.window-control:hover{background:#ffffff24;transform:scale(1.04)}.window-control svg{width:13px;height:13px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}iframe{flex:1;min-height:0;width:100%;border:0;background:#fff}.embed-status{position:absolute;z-index:5;top:44px;left:12px;right:12px;padding:10px 12px;border:1px solid #f0d0ca;border-radius:10px;background:#fff8f6;color:#a13b2b;box-shadow:0 5px 18px #17203314;font-size:13px;line-height:1.45}";
+    if (inline) style.textContent += "section{border:0;border-radius:0;box-shadow:none}.embed-status{top:12px}";
     var panel = document.createElement("section");
-    panel.setAttribute("role", "dialog");
+    panel.setAttribute("role", inline ? "region" : "dialog");
     panel.setAttribute("aria-label", options.title || "Agent chat");
     panel.id = "chat-" + id;
-    button.setAttribute("aria-controls", panel.id);
+    if (button) button.setAttribute("aria-controls", panel.id);
     var controlBar = document.createElement("div");
     controlBar.className = "control-bar";
     var controlGroup = document.createElement("div");
@@ -71,7 +81,8 @@
     status.className = "embed-status";
     status.setAttribute("role", "alert");
     status.style.display = "none";
-    panel.append(controlBar, status);
+    if (!inline) panel.appendChild(controlBar);
+    panel.appendChild(status);
     root.append(style, panel);
     var frame = document.createElement("iframe");
     frame.title = options.title || "Agent chat";
@@ -88,36 +99,36 @@
       if (!destroyed && frame.contentWindow) frame.contentWindow.postMessage(Object.assign({ channel: channel, version: 1, instanceId: id, type: type }, data || {}), embedUrl.origin);
     }
     function position() {
-      if (!open) return;
+      if (!open || inline) return;
       if (windowMode === "fullscreen") {
         var inset = 16;
-        popoverHost.style.width = "calc(100vw - " + inset * 2 + "px)";
-        popoverHost.style.height = "calc(100dvh - " + inset * 2 + "px)";
-        popoverHost.style.left = inset + "px";
-        popoverHost.style.right = "auto";
-        popoverHost.style.top = inset + "px";
+        surfaceHost.style.width = "calc(100vw - " + inset * 2 + "px)";
+        surfaceHost.style.height = "calc(100dvh - " + inset * 2 + "px)";
+        surfaceHost.style.left = inset + "px";
+        surfaceHost.style.right = "auto";
+        surfaceHost.style.top = inset + "px";
         return;
       }
       if (windowMode === "dock-left" || windowMode === "dock-right") {
         var dockInset = 12;
         var dockWidth = Math.min(Math.max(280, Number(options.width) || 420), Math.max(1, innerWidth - dockInset * 2));
-        popoverHost.style.width = dockWidth + "px";
-        popoverHost.style.height = "calc(100dvh - " + dockInset * 2 + "px)";
-        popoverHost.style.left = windowMode === "dock-left" ? dockInset + "px" : "auto";
-        popoverHost.style.right = windowMode === "dock-right" ? dockInset + "px" : "auto";
-        popoverHost.style.top = dockInset + "px";
+        surfaceHost.style.width = dockWidth + "px";
+        surfaceHost.style.height = "calc(100dvh - " + dockInset * 2 + "px)";
+        surfaceHost.style.left = windowMode === "dock-left" ? dockInset + "px" : "auto";
+        surfaceHost.style.right = windowMode === "dock-right" ? dockInset + "px" : "auto";
+        surfaceHost.style.top = dockInset + "px";
         return;
       }
-      popoverHost.style.right = "auto";
+      surfaceHost.style.right = "auto";
       var bounds = button.getBoundingClientRect();
       var width = Math.min(Math.max(240, Number(options.width) || 420), Math.max(1, innerWidth - 24));
       var height = Math.min(Math.max(240, Number(options.height) || 600), Math.max(1, innerHeight - 24));
       var left = Math.max(12, Math.min(bounds.right - width, innerWidth - width - 12));
       var top = bounds.top >= height + 20 ? bounds.top - height - 8 : Math.min(bounds.bottom + 8, innerHeight - height - 12);
-      popoverHost.style.width = width + "px";
-      popoverHost.style.height = height + "px";
-      popoverHost.style.left = left + "px";
-      popoverHost.style.top = Math.max(12, top) + "px";
+      surfaceHost.style.width = width + "px";
+      surfaceHost.style.height = height + "px";
+      surfaceHost.style.left = left + "px";
+      surfaceHost.style.top = Math.max(12, top) + "px";
     }
     function fetchToken() {
       if (tokenFlight) { debug(id, "token request deduplicated"); return tokenFlight; }
@@ -175,16 +186,22 @@
     function show() {
       if (destroyed) throw new Error("This embed was destroyed.");
       open = true;
-      popoverHost.style.display = "block";
-      button.setAttribute("aria-expanded", "true");
+      surfaceHost.style.display = "block";
+      if (button) button.setAttribute("aria-expanded", "true");
       position();
       if (!initialized) {
         initialized = true; debug(id, "opening hosted iframe", { iframeUrl: embedUrl.href }); frame.src = embedUrl.href; panel.appendChild(frame);
         loadTimer = setTimeout(function () { if (!ready) emitError(new Error("The hosted chat did not load. Check its URL and framing policy.")); }, 20000);
       }
-      closeButton.focus();
+      if (!inline) closeButton.focus();
     }
-    function hide() { open = false; popoverHost.style.display = "none"; button.setAttribute("aria-expanded", "false"); button.focus(); }
+    function hide() {
+      if (!open) return;
+      open = false;
+      surfaceHost.style.display = "none";
+      if (button) { button.setAttribute("aria-expanded", "false"); button.focus(); }
+      if (typeof options.onClose === "function") options.onClose();
+    }
     function toggleMaximize() {
       windowMode = windowMode === "fullscreen" ? "popup" : "fullscreen";
       maximizeButton.innerHTML = windowMode === "fullscreen"
@@ -197,16 +214,18 @@
     function dock(side) { windowMode = side; position(); }
     function escape(event) { if (open && event.key === "Escape") hide(); }
     function toggle() { open ? hide() : show(); }
-    button.addEventListener("click", toggle);
-    closeButton.addEventListener("click", hide);
-    minimizeButton.addEventListener("click", hide);
-    dockLeftButton.addEventListener("click", function () { dock("dock-left"); });
-    dockRightButton.addEventListener("click", function () { dock("dock-right"); });
-    maximizeButton.addEventListener("click", toggleMaximize);
+    if (!inline) {
+      button.addEventListener("click", toggle);
+      closeButton.addEventListener("click", hide);
+      minimizeButton.addEventListener("click", hide);
+      dockLeftButton.addEventListener("click", function () { dock("dock-left"); });
+      dockRightButton.addEventListener("click", function () { dock("dock-right"); });
+      maximizeButton.addEventListener("click", toggleMaximize);
+      global.addEventListener("resize", position);
+      global.addEventListener("scroll", position, true);
+      global.addEventListener("keydown", escape);
+    }
     global.addEventListener("message", receive);
-    global.addEventListener("resize", position);
-    global.addEventListener("scroll", position, true);
-    global.addEventListener("keydown", escape);
     return {
       open: show,
       close: hide,
@@ -234,9 +253,10 @@
         global.removeEventListener("resize", position);
         global.removeEventListener("scroll", position, true);
         global.removeEventListener("keydown", escape);
-        launcherHost.remove(); popoverHost.remove();
+        if (launcherHost) launcherHost.remove();
+        surfaceHost.remove();
       }
     };
   }
-  global.SolidAgentEmbed = { version: 2, mount: mount };
+  global.SolidAgentEmbed = { version: 3, mount: mount };
 })(window);
