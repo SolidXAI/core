@@ -180,6 +180,23 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         });
     }
 
+    private async loadFieldsHierarchy(model: ModelMetadata, updateDto: any): Promise<FieldMetadata[]> {
+        const fieldsToProcess = [...model.fields];
+        if (!model.isChild) {
+            return fieldsToProcess;
+        }
+
+        const modelMetadataHelperService = this.moduleRef.get(ModelMetadataHelperService, { strict: false });
+        const existingFieldIds = new Set(fieldsToProcess.map(field => field.id));
+        const hierarchyFields = await modelMetadataHelperService.loadFieldHierarchy(model.singularName);
+        const requestedInheritedFields = hierarchyFields.filter(field =>
+            !existingFieldIds.has(field.id) &&
+            field.name in updateDto
+        );
+
+        return [...fieldsToProcess, ...requestedInheritedFields];
+    }
+
     private async validateAndTransformDto(field: FieldMetadata, dto: any, files: Express.Multer.File[], hasMediaFields: boolean, isPartialUpdate: boolean = false, isUpdate: boolean = false, entityId?: number) {
         const fieldManager: FieldCrudManager = await this.fieldCrudManager(field, this.entityManager, isPartialUpdate, isUpdate, entityId);
         const validationErrors = fieldManager.validate(dto, files);
@@ -250,7 +267,7 @@ export class CRUDService<T extends CommonEntity> { // Add two generic value i.e 
         await this.prepareManyToManyAuditSnapshot(entity,id,model.singularName);
         let hasMediaFields = false;
 
-        const fieldsToProcess = [...model.fields];
+        const fieldsToProcess = await this.loadFieldsHierarchy(model, updateDto);
 
         // 2. Loop through the fields with a switch statement
         // 3. Handle the fields based on field type
@@ -300,15 +317,25 @@ private async prepareManyToManyAuditSnapshot(entity: T,id: number,modelSingularN
             field.relationType !== 'one-to-many'
         );
         if (auditRelationFields.length > 0) {
-            const relations: any = {};
-            auditRelationFields.forEach(field => relations[field.name] = true);
+            // Fetch each audit-tracked relation independently rather than joining all of
+            // them into a single query: for an entity with several many-to-many
+            // relations, one combined query multiplies row counts across every joined
+            // relation at once and can blow past the statement timeout as data grows.
             const auditBeforeEntity = await this.repo.findOne({
                 where: {
                     id: id,
                 } as unknown as FindOptionsWhere<T>,
-                relations: relations as any,
             });
             if (auditBeforeEntity) {
+                for (const field of auditRelationFields) {
+                    (auditBeforeEntity as any)[field.name] = await this.repo.manager
+                        .createQueryBuilder()
+                        .relation(this.repo.target, field.name)
+                        // Pass the loaded entity, not the scalar id: legacy entities (e.g. LegacyCommonEntityWithGeneratedId)
+                        // keep `id` as a non-primary column, and TypeORM maps a scalar to the actual primary column.
+                        .of(auditBeforeEntity)
+                        .loadMany();
+                }
                 Object.defineProperty(entity, AUDIT_BEFORE_SNAPSHOT, {
                     configurable: true,
                     enumerable: false,

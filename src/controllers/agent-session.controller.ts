@@ -1,70 +1,91 @@
-import { Body, Controller, Delete, Get, Param, Patch, Post, Put, Query, UploadedFiles, UseInterceptors } from '@nestjs/common';
-import { AnyFilesInterceptor } from '@nestjs/platform-express';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
+import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
-import { CreateAgentSessionDto } from 'src/dtos/create-agent-session.dto';
-import { UpdateAgentSessionDto } from 'src/dtos/update-agent-session.dto';
-import { AgentSessionService } from 'src/services/agent-session.service';
+import { AgentSessionService } from '../services/agent-session.service';
+import { CreateAgentSessionDto } from '../dtos/create-agent-session.dto';
+import { UpdateAgentSessionDto } from '../dtos/update-agent-session.dto';
+import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
 
-@ApiTags('Solid Core')
+@ApiTags('Agent Hub')
 @Controller('agent-session')
 export class AgentSessionController {
   constructor(private readonly service: AgentSessionService) {}
 
-  @ApiBearerAuth('jwt')
+  @ApiBearerAuth("jwt")
   @Post()
   @UseInterceptors(AnyFilesInterceptor())
   create(@Body() createDto: CreateAgentSessionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.create(createDto, files);
   }
 
-  @ApiBearerAuth('jwt')
+  @ApiBearerAuth("jwt")
   @Post('/bulk')
   @UseInterceptors(AnyFilesInterceptor())
   insertMany(@Body() createDtos: CreateAgentSessionDto[], @UploadedFiles() filesArray: Express.Multer.File[][] = []) {
     return this.service.insertMany(createDtos, filesArray);
   }
 
-  @ApiBearerAuth('jwt')
+
+  @ApiBearerAuth("jwt")
   @Put(':id')
   @UseInterceptors(AnyFilesInterceptor())
   update(@Param('id') id: number, @Body() updateDto: UpdateAgentSessionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files);
   }
 
-  @ApiBearerAuth('jwt')
+  @ApiBearerAuth("jwt")
   @Patch(':id')
   @UseInterceptors(AnyFilesInterceptor())
   partialUpdate(@Param('id') id: number, @Body() updateDto: UpdateAgentSessionDto, @UploadedFiles() files: Array<Express.Multer.File>) {
     return this.service.update(id, updateDto, files, true);
   }
 
-  @ApiBearerAuth('jwt')
+  @ApiBearerAuth("jwt")
+  @Post('/bulk-recover')
+  async recoverMany(@Body() ids: number[]) {
+    return this.service.recoverMany(ids);
+  }
+
+  @ApiBearerAuth("jwt")
+  @Get('/recover/:id')
+  async recover(@Param('id') id: number) {
+    return this.service.recover(id);
+  }
+    
+  @ApiBearerAuth("jwt")
+  @ApiQuery({ name: 'showSoftDeleted', required: false, enum: ShowSoftDeleted })
   @ApiQuery({ name: 'limit', required: false, type: Number })
   @ApiQuery({ name: 'offset', required: false, type: Number })
   @ApiQuery({ name: 'fields', required: false, type: Array })
-  @ApiQuery({ name: 'sort', required: false, type: Array })
+  @ApiQuery({ name: 'sort', required: false, type: Array }) 
+  @ApiQuery({ name: 'groupBy', required: false, type: Array })
   @ApiQuery({ name: 'populate', required: false, type: Array })
+  @ApiQuery({ name: 'populateMedia', required: false, type: Array })
   @ApiQuery({ name: 'filters', required: false, type: Array })
+
   @Get()
-  findMany(@Query() query: any) {
-    return this.service.find(query);
+  async findMany(@Query() query: any) { 
+    return this.service.find(query);  
   }
 
-  @ApiBearerAuth('jwt')
+  @ApiBearerAuth("jwt")
   @Get(':id')
-  findOne(@Param('id') id: string, @Query() query: any) {
+  async findOne(@Param('id') id: string, @Query() query: any) {
     return this.service.findOne(+id, query);
   }
 
-  @ApiBearerAuth('jwt')
+  @ApiBearerAuth("jwt")
   @Delete('/bulk')
-  deleteMany(@Body() ids: number[]) {
+  async deleteMany(@Body() ids: number[]) {
     return this.service.deleteMany(ids);
   }
 
-  @ApiBearerAuth('jwt')
+  @ApiBearerAuth("jwt")
   @Delete(':id')
-  delete(@Param('id') id: number) {
+  async delete(@Param('id') id: number) {
     return this.service.delete(id);
   }
+
+
+
 }

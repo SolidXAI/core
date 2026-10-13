@@ -2,10 +2,15 @@ import { ApiProperty } from '@nestjs/swagger';
 import { IsDate, IsInt, IsNotEmpty, IsNumber, IsOptional, IsString } from 'class-validator';
 
 export class CreateAgentEventDto {
-  @IsNotEmpty()
-  @IsString()
+  @IsOptional()
+  @IsInt()
   @ApiProperty()
-  sessionId: string;
+  sessionId: number;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty()
+  sessionUserKey: string;
 
   @IsNotEmpty()
   @IsInt()
@@ -26,6 +31,11 @@ export class CreateAgentEventDto {
   @IsString()
   @ApiProperty()
   eventData: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty()
+  context: string;
 
   @IsOptional()
   @IsString()
@@ -75,7 +85,12 @@ export class CreateAgentEventDto {
   @IsOptional()
   @IsString()
   @ApiProperty()
-  modelUsed: string;
+  reasoningModelKey: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty()
+  fastModelKey: string;
 
   @IsOptional()
   @IsDate()

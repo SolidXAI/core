@@ -7,9 +7,14 @@ export class UpdateAgentEventDto {
   id: number;
 
   @IsOptional()
-  @IsString()
+  @IsInt()
   @ApiProperty()
-  sessionId: string;
+  sessionId: number;
+
+  @IsString()
+  @IsOptional()
+  @ApiProperty()
+  sessionUserKey: string;
 
   @IsOptional()
   @IsInt()
@@ -30,6 +35,11 @@ export class UpdateAgentEventDto {
   @IsString()
   @ApiProperty()
   eventData: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty()
+  context: string;
 
   @IsOptional()
   @IsString()
@@ -79,5 +89,10 @@ export class UpdateAgentEventDto {
   @IsOptional()
   @IsString()
   @ApiProperty()
-  modelUsed: string;
+  reasoningModelKey: string;
+
+  @IsOptional()
+  @IsString()
+  @ApiProperty()
+  fastModelKey: string;
 }

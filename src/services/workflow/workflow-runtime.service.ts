@@ -15,7 +15,7 @@ import { WorkflowExecutionWriterService } from './workflow-execution-writer.serv
 import { WorkflowExpressionService } from './workflow-expression.service';
 import { WorkflowDefinitionValidatorService } from './workflow-definition-validator.service';
 import { WorkflowNodeRegistryService } from './workflow-node-registry.service';
-import { WorkflowSecretService } from '../workflow-secret.service';
+import { SecretService } from '../secret.service';
 import { PublisherFactory } from '../queues/publisher-factory.service';
 import { WorkflowExecutionQueuePayload } from '../../types/workflow-execution-queue.types';
 import YAML from 'yaml';
@@ -31,7 +31,7 @@ export class WorkflowRuntimeService {
     private readonly expression: WorkflowExpressionService,
     private readonly writer: WorkflowExecutionWriterService,
     private readonly validator: WorkflowDefinitionValidatorService,
-    private readonly workflowSecretService: WorkflowSecretService,
+    private readonly secretService: SecretService,
     private readonly workflowExecutionPublisherFactory: PublisherFactory<WorkflowExecutionQueuePayload>,
   ) {}
 
@@ -150,7 +150,7 @@ export class WorkflowRuntimeService {
 
     const definitionDsl = this.assertDefinitionYaml(definition.definitionYaml);
     this.validator.validate(definitionDsl);
-    const secrets = await this.workflowSecretService.getWorkflowSecretsContext();
+    const secrets = await this.secretService.getSecretsContext();
     const input = this.resolveWorkflowInput(definitionDsl, request, secrets);
     const variables = this.resolveWorkflowVariables(definitionDsl, request, input, secrets);
     const effectiveRequest: WorkflowExecutionRequest = {

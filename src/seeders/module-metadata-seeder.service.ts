@@ -1106,6 +1106,9 @@ export class ModuleMetadataSeederService {
 
         for (let i = 0; i < emailTemplates.length; i++) {
             const emailTemplate = emailTemplates[i];
+            // Resolve the optional module relation through CRUDService's standard
+            // many-to-one user-key convention. Older seed files remain valid.
+            (emailTemplate as any).moduleUserKey = moduleName;
             // this.logger.log(`Found ${emailTemplate.name} email template`);
 
             // We need to load the actual template contents. 
@@ -1182,6 +1185,9 @@ export class ModuleMetadataSeederService {
 
         for (let i = 0; i < smsTemplates.length; i++) {
             const smsTemplate = smsTemplates[i];
+            // Resolve the optional module relation through CRUDService's standard
+            // many-to-one user-key convention. Older seed files remain valid.
+            (smsTemplate as any).moduleUserKey = moduleName;
             // this.logger.log(`Found ${smsTemplate.name} sms template`);
 
             // We need to load the actual template contents. 
@@ -1727,8 +1733,8 @@ export class ModuleMetadataSeederService {
     private async seedModuleModelFields(moduleMetadata: CreateModuleMetadataDto): Promise<{ pruned: number; upserted: number }> {
         const fieldMetadataRepo = this.dataSource.getRepository(FieldMetadata);
 
-        // First we create the module. 
-        const module = await this.timeOperation('module-upsert', () => this.moduleMetadataService.upsert(moduleMetadata), {
+        // First we create the module. The version is set explicitly so a metadata file without one clears a stale value.
+        const module = await this.timeOperation('module-upsert', () => this.moduleMetadataService.upsert({ ...moduleMetadata, version: moduleMetadata.version ?? null }), {
             moduleName: moduleMetadata.name,
             component: 'module-model-fields',
             serviceCall: 'moduleMetadataService.upsert',

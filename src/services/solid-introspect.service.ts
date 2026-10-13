@@ -13,6 +13,7 @@ import { IS_SECURITY_RULE_CONFIG_PROVIDER } from 'src/decorators/security-rule-c
 import { IS_SELECTION_PROVIDER } from 'src/decorators/selection-provider.decorator';
 import { IS_DASHBOARD_WIDGET_DATA_PROVIDER } from 'src/decorators/dashboard-widget-data-provider.decorator';
 import { IS_EXTENSION_USER_CREATION_PROVIDER } from 'src/decorators/extension-user-creation-provider.decorator';
+import { IS_LOGIN_EXTENSION_PROVIDER } from 'src/decorators/login-extension-provider.decorator';
 import { IS_SOLID_DATABASE_MODULE } from 'src/decorators/solid-database-module.decorator';
 import { IS_WA_PROVIDER } from 'src/decorators/whatsapp-provider.decorator';
 import { IS_WORKFLOW_FIELD_DATA_PROVIDER } from 'src/decorators/workflow-field-data-provider.decorator';
@@ -26,6 +27,7 @@ import { CRUDService } from './crud.service';
 import { IS_SETTINGS_PROVIDER } from 'src/decorators/settings-provider.decorator';
 import { IS_SMS_PROVIDER } from 'src/decorators/sms-provider.decorator';
 import { SettingService } from 'src/services/setting.service';
+import { IS_CHATTER_MESSAGE_ARCHIVE_PROVIDER } from 'src/decorators/chatter-message-archive-provider.decorator';
 
 export const coreSubscriberClasses = [
   AuditSubscriber,
@@ -62,6 +64,12 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     const errorCodeProviders = this.discoveryService.getProviders().filter((provider) => this.isErrorCodeProvider(provider));
     errorCodeProviders.forEach((errorCodeProvider) => {
       this.solidRegistry.registerErrorCodeProvider(errorCodeProvider);
+    });
+
+    // Register all ILoginExtensionProvider implementations
+    const loginExtensionProviders = this.discoveryService.getProviders().filter((provider) => this.isLoginExtensionProvider(provider));
+    loginExtensionProviders.forEach((loginExtensionProvider) => {
+      this.solidRegistry.registerLoginExtensionProvider(loginExtensionProvider);
     });
 
     // Register all ISelectionProvider implementations
@@ -150,6 +158,11 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     extensionUserCreationProviders.forEach((provider) => {
       this.solidRegistry.registerExtensionUserCreationProvider(provider);
     });
+
+    const chatterArchiveProviders = this.discoveryService.getProviders().filter((provider) => {
+      return !!provider.instance && !!this.reflector.get<boolean>(IS_CHATTER_MESSAGE_ARCHIVE_PROVIDER, provider.instance.constructor);
+    });
+    chatterArchiveProviders.forEach(provider => this.solidRegistry.registerChatterMessageArchiveProvider(provider));
 
     // Register the core subscribers against all the configured database modules / datasources
     await this.bootstrapCoreTypeOrmSubscribers(solidDatabaseModules);
@@ -312,6 +325,12 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     const { instance } = provider;
     if (!instance) return false;
     return !!this.reflector.get<boolean>(IS_EXTENSION_USER_CREATION_PROVIDER, instance.constructor);
+  }
+
+  private isLoginExtensionProvider(provider: InstanceWrapper): boolean {
+    const { instance } = provider;
+    if (!instance) return false;
+    return !!this.reflector.get<boolean>(IS_LOGIN_EXTENSION_PROVIDER, instance.constructor);
   }
 
   private isSettingsProvider(provider: InstanceWrapper) {

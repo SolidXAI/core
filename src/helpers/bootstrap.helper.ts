@@ -20,6 +20,7 @@ import {
   SolidSecurityOptions,
 } from './security.helper';
 import { parseBooleanEnv } from './environment.helper';
+import { Environment } from 'src/decorators/disallow-in-production.decorator';
 
 // ---- Shared process handlers ----
 
@@ -52,8 +53,8 @@ export interface SolidSwaggerOptions {
 export interface SolidBootstrapOptions {
   /** Global API prefix. Defaults to 'api'. Set to '' to disable. */
   globalPrefix?: string;
-  /** Swagger configuration. Set to false to disable Swagger entirely. */
-  swagger?: SolidSwaggerOptions | false;
+  /** Swagger configuration. Set to true to enable everywhere or false to disable entirely. */
+  swagger?: SolidSwaggerOptions | boolean;
   /** Permissions-Policy header overrides (merged with defaults). */
   permissionsPolicyOverrides?: Partial<PermissionsPolicyConfig>;
   /** Security header overrides, including iframe frame-ancestor allowlists. */
@@ -70,6 +71,18 @@ export interface SolidBootstrapOptions {
    * object graph can retain several times the raw byte size.
    */
   bodyLimit?: string;
+  /**
+   * When true, the original request bytes are captured onto `request.rawBody` (a `Buffer`)
+   * alongside the normal parsed `request.body`, for JSON and urlencoded requests. Needed to verify
+   * a webhook's HMAC signature (GitHub, GitLab, Stripe, ...): the signature is computed over the
+   * exact bytes the sender transmitted, and `JSON.stringify(request.body)` is not guaranteed to
+   * reproduce them byte-for-byte (key order, numeric formatting, unicode escaping can all differ).
+   *
+   * Defaults to false — capturing every request body a second time has a real memory cost at scale,
+   * and only a route that actually verifies a signature needs it. Opt in per application, not per
+   * route: NestJS wires this at `NestFactory.create()` time, before any route exists to opt out.
+   */
+  captureRawBody?: boolean;
 }
 
 /**
@@ -93,11 +106,12 @@ export async function bootstrapSolidApp(
 
   const {
     globalPrefix = 'api',
-    swagger = {},
+    swagger,
     permissionsPolicyOverrides = {},
     security = {},
     verboseBootstrap = false,
     bodyLimit = '10mb',
+    captureRawBody = false,
   } = options;
 
   const startTime = Date.now();
@@ -106,6 +120,12 @@ export async function bootstrapSolidApp(
     // Nest's default parsers are registered during init() with a 100kb limit, ahead of
     // any module middleware. Disable them so the parsers below own the limit outright.
     bodyParser: false,
+    // Raw-body capture is threaded through by NestApplication.useBodyParser() from THIS option —
+    // not from any argument passed to the useBodyParser() calls below. It must be requested here,
+    // at creation time, or request.rawBody is never populated no matter how useBodyParser is called
+    // later (verified against the installed @nestjs/core: NestApplication#useBodyParser reads
+    // `this.appOptions.rawBody` itself and ignores any rawBody-shaped argument a caller supplies).
+    rawBody: captureRawBody,
     logger: WinstonModule.createLogger({ ...createWinstonLoggerConfig(), level: verboseBootstrap ? 'debug' : 'error' }),
   });
 
@@ -179,9 +199,17 @@ export async function bootstrapSolidApp(
     }),
   );
 
-  // Swagger
-  if (swagger !== false) {
-    const { title = process.env.SOLID_APP_NAME, description = process.env.SOLID_APP_DESCRIPTION, version = '1.0' } = swagger;
+  const isProduction = [process.env.ENV,]
+    .filter(Boolean)
+    .some(
+      (value) =>
+        value?.toLowerCase() === Environment.Production 
+    );
+
+  const swaggerEnabled = swagger === undefined ? !isProduction : swagger !== false;
+  if (swaggerEnabled) {
+    const swaggerOptions = typeof swagger === 'object' ? swagger : {};
+    const { title = process.env.SOLID_APP_NAME, description = process.env.SOLID_APP_DESCRIPTION, version = '1.0' } = swaggerOptions;
     const swaggerConfig = new DocumentBuilder()
       .setTitle(title)
       .setDescription(description)
@@ -274,15 +302,19 @@ export async function bootstrapSolidCli(
     if (idx !== -1) process.argv.splice(idx, 1);
   }
 
-  const appModule = await appModuleFactory();
-  process.env.SOLID_CLI_RUNNING = 'true';
-
-  // @ts-ignore
-  const app = await CommandFactory.createWithoutRunning(appModule, {
-    logger: showLogs ? ['debug', 'error', 'fatal', 'log', 'verbose', 'warn'] : false,
-  });
-
   try {
+    const appModule = await appModuleFactory();
+    process.env.SOLID_CLI_RUNNING = 'true';
+
+    // @ts-ignore
+    const app = await CommandFactory.createWithoutRunning(appModule, {
+      // Keep normal CLI runs quiet, but never hide errors. Seeders and other CLI
+      // commands often catch domain/database errors and report them through the
+      // Nest logger; disabling the logger entirely would leave the wrapper with
+      // only the generic non-zero exit status.
+      logger: showLogs ? ['debug', 'error', 'fatal', 'log', 'verbose', 'warn'] : ['error', 'fatal'],
+    });
+
     await CommandFactory.runApplication(app);
   } catch (e) {
     console.error('CLI exited abruptly due to an error:', e);

@@ -1,7 +1,7 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsNotEmpty, IsOptional, IsString, IsDate } from 'class-validator';
+import { IsNotEmpty, IsOptional, IsString, IsDate, IsBoolean } from 'class-validator';
 
-export class CreateWorkflowSecretDto {
+export class CreateSecretDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty({ description: "Global secret key used in workflow expressions, for example smtp.password." })
@@ -21,6 +21,11 @@ export class CreateWorkflowSecretDto {
     @IsString()
     @ApiProperty({ description: "Plain value supplied by an admin. It is encrypted before storage." })
     value: string;
+
+    @IsOptional()
+    @IsBoolean()
+    @ApiProperty({ description: "Whether this secret should be redacted." })
+    redact: boolean = true;
 
     @IsNotEmpty()
     @IsString()

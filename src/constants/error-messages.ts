@@ -33,6 +33,8 @@ export const ERROR_MESSAGES = {
 
     INVALID_CREDENTIALS: 'Invalid credentials',
     LOGIN_FAILED: 'Login Failed',
+    LOGIN_DENIED_BY_EXTENSION: 'Login was denied by an external verification check.',
+    LOGIN_EXTENSION_UNAVAILABLE: 'An external verification check is temporarily unavailable. Please try again.',
     OLD_PASSWORD_INCORRECT: 'You have specified an incorrect old password.',
     INVALID_NEW_PASSWORD: 'Invalid new password.',
     PASSWORDS_DO_NOT_MATCH: 'New passwords are not matching.',

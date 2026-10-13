@@ -4,6 +4,7 @@ import {
     Param,
     Post,
     Body,
+    Query,
     Res,
     UploadedFiles,
     UseInterceptors,
@@ -12,9 +13,11 @@ import { AnyFilesInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
 import { Response } from 'express';
 import { ConfirmModulePackageImportDto } from 'src/dtos/confirm-module-package-import.dto';
+import { ExportModulePackageDto } from 'src/dtos/export-module-package.dto';
 import { RunModulePackageBuildDto } from 'src/dtos/run-module-package-build.dto';
 import { setFileDownloadHeaders } from 'src/helpers/file-download.helper';
 import { RunModulePackageSeedDto } from 'src/dtos/run-module-package-seed.dto';
+import { ValidateModulePackageImportDto } from 'src/dtos/validate-module-package-import.dto';
 import { ModulePackageService } from 'src/services/module-package.service';
 
 @Controller('module-packages')
@@ -29,8 +32,9 @@ export class ModulePackageController {
     @UseInterceptors(AnyFilesInterceptor())
     async validateImportPackage(
         @UploadedFiles() files: Array<Express.Multer.File>,
+        @Body() dto: ValidateModulePackageImportDto,
     ) {
-        return this.modulePackageService.validateUpload(files?.[0]);
+        return this.modulePackageService.validateUpload(files?.[0], dto?.expectedModuleName);
     }
 
     @ApiBearerAuth('jwt')
@@ -45,9 +49,29 @@ export class ModulePackageController {
     }
 
     @ApiBearerAuth('jwt')
+    @Post('export/:moduleName')
+    async exportModulePackageWithVersion(
+        @Param('moduleName') moduleName: string,
+        @Body() dto: ExportModulePackageDto,
+        @Res() res: Response,
+    ) {
+        const archive = await this.modulePackageService.exportModulePackage(moduleName, dto);
+        setFileDownloadHeaders(res, { fileName: archive.fileName, mimeType: archive.mimeType });
+        res.sendFile(archive.filePath);
+    }
+
+    @ApiBearerAuth('jwt')
     @Get('import/resumable/latest')
     async getLatestResumableImport() {
         return this.modulePackageService.getLatestResumableImport();
+    }
+
+    @ApiBearerAuth('jwt')
+    @Get('backups/latest')
+    async getLatestBackup(
+        @Query('moduleName') moduleName: string,
+    ) {
+        return this.modulePackageService.getLatestBackup(moduleName);
     }
 
     @ApiBearerAuth('jwt')
@@ -63,6 +87,14 @@ export class ModulePackageController {
         @Body() dto: ConfirmModulePackageImportDto,
     ) {
         return this.modulePackageService.confirmImport(id, dto);
+    }
+
+    @ApiBearerAuth('jwt')
+    @Post('import/:id/restore')
+    async restoreBackup(
+        @Param('id') id: string,
+    ) {
+        return this.modulePackageService.restoreBackup(id);
     }
 
     @ApiBearerAuth('jwt')
