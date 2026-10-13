@@ -566,6 +566,51 @@ export class ModulePackageService {
         }
     }
 
+    // The most recent update backup of a module that has not been restored yet, so a finished update can still be rolled back.
+    @DisallowInProduction()
+    async getLatestBackup(moduleNameInput: string) {
+        const moduleName = (moduleNameInput ?? '').trim();
+        if (!moduleName) {
+            throw new BadRequestException('A module name is required to look up its backup.');
+        }
+
+        await this.cleanupModulePackageTransactions();
+
+        const candidates: ModulePackageStatusFile[] = [];
+        for (const entry of await this.readDirSafe(this.getModulePackageImportsRoot())) {
+            if (!entry.isDirectory() || !/^[a-zA-Z0-9-]+$/.test(entry.name)) {
+                continue;
+            }
+
+            try {
+                const transaction = await this.loadTransaction(entry.name);
+                if (
+                    transaction.moduleName === moduleName
+                    && transaction.backup
+                    && !transaction.restoredFromBackup
+                    && this.isRestorableStatus(transaction.status)
+                    && await this.pathExists(transaction.backup.path)
+                ) {
+                    candidates.push(transaction);
+                }
+            } catch (error) {
+                continue;
+            }
+        }
+
+        candidates.sort((left, right) => new Date(right.backup!.createdAt).getTime() - new Date(left.backup!.createdAt).getTime());
+        const latest = candidates[0];
+        if (!latest) {
+            return null;
+        }
+
+        const installedState = await this.resolveInstalledState(moduleName);
+        return {
+            ...this.toStatusResponse(latest),
+            currentVersion: installedState.version,
+        };
+    }
+
     @DisallowInProduction()
     async restoreBackup(transactionKey: string) {
         const transaction = await this.loadTransaction(transactionKey);
@@ -576,8 +621,7 @@ export class ModulePackageService {
             throw new BadRequestException('This module package transaction has no backup to restore.');
         }
 
-        const restorableStatuses = [ModulePackageStatus.failed, ModulePackageStatus.completed] as string[];
-        if (!this.isResumableStatus(transaction.status) && !restorableStatuses.includes(transaction.status)) {
+        if (!this.isRestorableStatus(transaction.status)) {
             throw new BadRequestException(`A backup cannot be restored while the transaction is ${transaction.status}.`);
         }
 
@@ -1294,6 +1338,11 @@ export class ModulePackageService {
             ModulePackageStatus.seed_failed,
             ModulePackageStatus.restore_running,
         ].includes(status as ModulePackageStatus);
+    }
+
+    private isRestorableStatus(status: string | null | undefined) {
+        return this.isResumableStatus(status)
+            || [ModulePackageStatus.failed, ModulePackageStatus.completed].includes(status as ModulePackageStatus);
     }
 
     private async createWorkingDir(transactionKey: string) {

@@ -4,6 +4,7 @@ import {
     Param,
     Post,
     Body,
+    Query,
     Res,
     UploadedFiles,
     UseInterceptors,
@@ -63,6 +64,14 @@ export class ModulePackageController {
     @Get('import/resumable/latest')
     async getLatestResumableImport() {
         return this.modulePackageService.getLatestResumableImport();
+    }
+
+    @ApiBearerAuth('jwt')
+    @Get('backups/latest')
+    async getLatestBackup(
+        @Query('moduleName') moduleName: string,
+    ) {
+        return this.modulePackageService.getLatestBackup(moduleName);
     }
 
     @ApiBearerAuth('jwt')

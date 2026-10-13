@@ -13416,6 +13416,21 @@
                 ],
                 "popupWidth": "min(1180px, calc(100vw - 32px))"
               }
+            },
+            {
+              "attrs": {
+                "className": "p-button-text",
+                "icon": "pi pi-history",
+                "label": "Restore Previous Version",
+                "action": "RestoreModulePackageRowAction",
+                "openInPopup": true,
+                "actionInContextMenu": true,
+                "customComponentIsSystem": true,
+                "env": [
+                  "dev"
+                ],
+                "popupWidth": "min(560px, calc(100vw - 32px))"
+              }
             }
           ],
           "import": false,
