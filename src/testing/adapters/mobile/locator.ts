@@ -1,4 +1,4 @@
-import type { MobileLocatorBy, MobileLocatorCore } from "./mobile.types";
+import type { MobileLocatorBy, MobileLocatorCore, MobilePlatform } from "./mobile.types";
 
 export const MOBILE_LOCATOR_BYS: readonly MobileLocatorBy[] = [
   "accessibilityId",
@@ -7,6 +7,8 @@ export const MOBILE_LOCATOR_BYS: readonly MobileLocatorBy[] = [
   "textContains",
   "description",
   "uiautomator",
+  "iosPredicate",
+  "iosClassChain",
   "xpath",
 ];
 
@@ -29,6 +31,9 @@ function uiSelectorString(value: string): string {
   return value.replace(/\\/g, "\\\\").replace(/"/g, '\\"');
 }
 
+/** Inside an NSPredicate string literal, backslashes and double quotes are escaped the same way. */
+const predicateString = uiSelectorString;
+
 function toCore(input: Record<string, unknown>): MobileLocatorCore {
   const { by, value, index } = input;
   if (typeof by !== "string" || !MOBILE_LOCATOR_BYS.includes(by as MobileLocatorBy)) {
@@ -44,19 +49,25 @@ function toCore(input: Record<string, unknown>): MobileLocatorCore {
 }
 
 /**
- * Turns a scenario locator into a WebdriverIO selector (D5). The `android` override, when present,
- * replaces by/value/index; `ios` is ignored on Android.
+ * Turns a scenario locator into a WebdriverIO selector (D5, D33). The override for the running platform (`android` or
+ * `ios`), when present, replaces by/value/index; the other platform's override is ignored.
  */
-export function resolveLocator(input: unknown, ctx: { appPackage: string }): ResolvedLocator {
+export function resolveLocator(
+  input: unknown,
+  ctx: { appPackage: string; platform?: MobilePlatform },
+): ResolvedLocator {
   if (!isPlainObject(input)) {
     throw new Error(`locator must be an object like ${EXAMPLE}`);
   }
+  const ios = ctx.platform === "iOS";
+  const overrideKey = ios ? "ios" : "android";
   let source: Record<string, unknown> = input;
-  if (input.android !== undefined) {
-    if (!isPlainObject(input.android)) {
-      throw new Error(`locator.android must be an object like ${EXAMPLE}`);
+  if (input[overrideKey] !== undefined) {
+    const override = input[overrideKey];
+    if (!isPlainObject(override)) {
+      throw new Error(`locator.${overrideKey} must be an object like ${EXAMPLE}`);
     }
-    source = input.android;
+    source = override;
   }
   const { by, value, index } = toCore(source);
 
@@ -66,20 +77,36 @@ export function resolveLocator(input: unknown, ctx: { appPackage: string }): Res
       selector = `~${value}`;
       break;
     case "id":
-      // A bare id gets the app package prefixed. Ids that already carry one (android:id/text1) are kept.
-      selector = `id=${value.includes(":") ? value : `${ctx.appPackage}:id/${value}`}`;
+      // iOS has no resource ids: the accessibility identifier is the closest thing, so the same value is used.
+      // On Android a bare id gets the app package prefixed; ids that already carry one (android:id/text1) are kept.
+      selector = ios ? `~${value}` : `id=${value.includes(":") ? value : `${ctx.appPackage}:id/${value}`}`;
       break;
     case "text":
-      selector = `android=new UiSelector().text("${uiSelectorString(value)}")`;
+      selector = ios
+        ? `-ios predicate string:label == "${predicateString(value)}" OR value == "${predicateString(value)}"`
+        : `android=new UiSelector().text("${uiSelectorString(value)}")`;
       break;
     case "textContains":
-      selector = `android=new UiSelector().textContains("${uiSelectorString(value)}")`;
+      selector = ios
+        ? `-ios predicate string:label CONTAINS "${predicateString(value)}" OR value CONTAINS "${predicateString(value)}"`
+        : `android=new UiSelector().textContains("${uiSelectorString(value)}")`;
       break;
     case "description":
-      selector = `android=new UiSelector().description("${uiSelectorString(value)}")`;
+      selector = ios ? `~${value}` : `android=new UiSelector().description("${uiSelectorString(value)}")`;
       break;
     case "uiautomator":
+      if (ios) {
+        throw new Error('locator.by "uiautomator" only works on Android; on iOS use "iosPredicate" or "iosClassChain"');
+      }
       selector = `android=${value}`;
+      break;
+    case "iosPredicate":
+      if (!ios) throw new Error('locator.by "iosPredicate" only works on iOS; on Android use "uiautomator"');
+      selector = `-ios predicate string:${value}`;
+      break;
+    case "iosClassChain":
+      if (!ios) throw new Error('locator.by "iosClassChain" only works on iOS; on Android use "uiautomator"');
+      selector = `-ios class chain:${value}`;
       break;
     case "xpath":
       selector = value;

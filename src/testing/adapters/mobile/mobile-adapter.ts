@@ -313,7 +313,7 @@ export class MobileAdapter {
   }
 
   private resolve(locator: unknown): ResolvedLocator {
-    return resolveLocator(locator, { appPackage: this.opts.appPackage });
+    return resolveLocator(locator, { appPackage: this.opts.appPackage, platform: this.opts.platformName });
   }
 
   private async findResolved(resolved: ResolvedLocator, timeout: number): Promise<MobileElement> {

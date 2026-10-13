@@ -5,7 +5,12 @@ export type MobileLocatorBy =
   | "textContains"
   | "description"
   | "uiautomator"
+  | "iosPredicate"
+  | "iosClassChain"
   | "xpath";
+
+/** Which Appium driver a session uses. Absent means Android. */
+export type MobilePlatform = "Android" | "iOS";
 
 export interface MobileLocatorCore {
   by: MobileLocatorBy;
@@ -17,7 +22,7 @@ export interface MobileLocatorCore {
 export interface MobileLocator extends MobileLocatorCore {
   /** Used instead of by/value/index when running on Android. */
   android?: MobileLocatorCore;
-  /** Reserved for the iOS track; ignored on Android. */
+  /** Used instead of by/value/index when running on iOS. */
   ios?: MobileLocatorCore;
 }
 
@@ -68,10 +73,14 @@ export type MobileRunOptionsInput = Pick<
   | "appiumUrl"
   | "udid"
   | "platformName"
+  | "simulator"
   | "appSource"
   | "appPath"
   | "appPackage"
   | "appActivity"
+  | "appProcessName"
+  | "wdaDerivedDataPath"
+  | "wdaPrebuilt"
   | "defaultTimeoutMs"
   | "navigationTimeoutMs"
   | "strictLocators"
@@ -93,16 +102,27 @@ export interface MobileRemoteOptions {
 export interface MobileAdapterOptions {
   /** Appium server, e.g. http://localhost:4723. */
   appiumUrl: string;
-  /** Device serial from `adb devices`. Always required: Appium must never pick a device itself. */
+  /** Device serial from `adb devices`, or the simulator's UDID. Always required: Appium must never pick a device itself. */
   udid: string;
-  platformName?: "Android";
+  platformName?: MobilePlatform;
+  /** The device is an iOS Simulator (the UDID is its UDID). Lets a reset grant permissions with `simctl` (D28). */
+  simulator?: boolean;
   appSource: MobileAppSource;
-  /** Absolute path to the APK on this machine. Required when appSource is "upload". */
+  /**
+   * Absolute path to the build on this machine: the APK, or the Simulator `.app`. Required when appSource is "upload".
+   * On iOS it is also what a reset reinstalls, so it may be set for an "installed" app that has a build (D27).
+   */
   appPath?: string;
-  /** Always required. Used for launch, reset, terminate and bare-id locators. */
+  /** The app id: the Android package, or the iOS bundle id (D30). Always required. Used for launch, reset, terminate. */
   appPackage: string;
-  /** Launch activity. Required when appSource is "installed". */
+  /** Launch activity. Required on Android when appSource is "installed"; unused on iOS. */
   appActivity?: string;
+  /** iOS: the app's executable name (`CFBundleExecutable`), to pick its lines out of the device log (D38). */
+  appProcessName?: string;
+  /** iOS: where WebDriverAgent is built and cached, so later sessions start fast (D34). */
+  wdaDerivedDataPath?: string;
+  /** iOS: WebDriverAgent is already built in `wdaDerivedDataPath`. */
+  wdaPrebuilt?: boolean;
   /** Element waits. Defaults to DEFAULT_UI_TIMEOUT_MS, the same as the UI adapter (D7). */
   defaultTimeoutMs?: number;
   /** App launch and screen changes. Defaults to defaultTimeoutMs, like the UI adapter (D7). */

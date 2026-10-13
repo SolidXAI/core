@@ -45,3 +45,34 @@ describe("toMobileAdapterOptions: screenshots", () => {
     expect(toMobileAdapterOptions(base, { capture: { screenshotOnFailure: true } }).capture?.screenshot).toBe(true);
   });
 });
+
+describe("toMobileAdapterOptions: iOS", () => {
+  const ios: MobileRunOptionsInput = {
+    appiumUrl: "http://localhost:4723",
+    udid: "1674E718-0EBA-4568-9644-F18E0DDF7705",
+    platformName: "iOS",
+    simulator: true,
+    appSource: "upload",
+    appPath: "/builds/Sample.app",
+    appPackage: "io.solidx.testhub.sample",
+    appProcessName: "SampleApp",
+    wdaDerivedDataPath: "/w/xcode-27.0",
+    wdaPrebuilt: true,
+  };
+
+  it("copies the iOS fields", () => {
+    expect(toMobileAdapterOptions(ios)).toMatchObject(ios);
+  });
+
+  it("rejects an unknown platform", () => {
+    expect(() => toMobileAdapterOptions({ ...ios, platformName: "Windows" as never })).toThrow(
+      'platformName must be "Android" or "iOS", got "Windows"',
+    );
+  });
+
+  it("accepts a run with no platform, which means Android", () => {
+    const { platformName, ...android } = ios;
+    expect(platformName).toBe("iOS");
+    expect(toMobileAdapterOptions(android).platformName).toBeUndefined();
+  });
+});

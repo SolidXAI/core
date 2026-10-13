@@ -102,7 +102,7 @@ describe("resolveLocator", () => {
 
     it("rejects an unknown or missing by", () => {
       expect(() => resolveLocator({ by: "css", value: "x" }, ctx)).toThrow(
-        "locator.by must be one of: accessibilityId, id, text, textContains, description, uiautomator, xpath",
+        "locator.by must be one of: accessibilityId, id, text, textContains, description, uiautomator, iosPredicate, iosClassChain, xpath",
       );
       expect(() => resolveLocator({ value: "x" }, ctx)).toThrow("locator.by must be one of");
     });
@@ -116,5 +116,85 @@ describe("resolveLocator", () => {
         "locator.index must be a whole number >= 0",
       );
     });
+  });
+});
+
+describe("resolveLocator: iOS", () => {
+  const ios = { appPackage: "io.solidx.testhub.sample", platform: "iOS" as const };
+
+  it.each(["accessibilityId", "id", "description"] as const)("maps %s to ~value", (by) => {
+    expect(resolveLocator({ by, value: "Login button" }, ios).selector).toBe("~Login button");
+  });
+
+  it("maps text and textContains to predicates over label and value", () => {
+    expect(resolveLocator({ by: "text", value: "Save" }, ios).selector).toBe(
+      '-ios predicate string:label == "Save" OR value == "Save"',
+    );
+    expect(resolveLocator({ by: "textContains", value: "Sav" }, ios).selector).toBe(
+      '-ios predicate string:label CONTAINS "Sav" OR value CONTAINS "Sav"',
+    );
+  });
+
+  it("escapes quotes and backslashes in predicates", () => {
+    expect(resolveLocator({ by: "text", value: 'say "hi" \\ now' }, ios).selector).toBe(
+      '-ios predicate string:label == "say \\"hi\\" \\\\ now" OR value == "say \\"hi\\" \\\\ now"',
+    );
+  });
+
+  it("maps the raw iOS strategies", () => {
+    expect(resolveLocator({ by: "iosPredicate", value: 'name BEGINSWITH "com.apple"' }, ios).selector).toBe(
+      '-ios predicate string:name BEGINSWITH "com.apple"',
+    );
+    expect(resolveLocator({ by: "iosClassChain", value: "**/XCUIElementTypeButton[`label == 'Save'`]" }, ios).selector).toBe(
+      "-ios class chain:**/XCUIElementTypeButton[`label == 'Save'`]",
+    );
+  });
+
+  it("maps xpath through unchanged and keeps the index", () => {
+    const result = resolveLocator({ by: "xpath", value: "(//XCUIElementTypeButton)[2]", index: 1 }, ios);
+    expect(result.selector).toBe("(//XCUIElementTypeButton)[2]");
+    expect(result.index).toBe(1);
+  });
+
+  it("refuses uiautomator on iOS, naming the replacement", () => {
+    expect(() => resolveLocator({ by: "uiautomator", value: "new UiSelector()" }, ios)).toThrow(
+      'locator.by "uiautomator" only works on Android; on iOS use "iosPredicate" or "iosClassChain"',
+    );
+  });
+
+  it("refuses the iOS strategies on Android, naming the replacement", () => {
+    const android = { appPackage: "com.acme.app" };
+    expect(() => resolveLocator({ by: "iosPredicate", value: "name == 'x'" }, android)).toThrow(
+      'locator.by "iosPredicate" only works on iOS; on Android use "uiautomator"',
+    );
+    expect(() => resolveLocator({ by: "iosClassChain", value: "**/X" }, { ...android, platform: "Android" })).toThrow(
+      'locator.by "iosClassChain" only works on iOS',
+    );
+  });
+
+  it("uses the ios override on iOS and ignores the android one", () => {
+    const locator = {
+      by: "id",
+      value: "username_field",
+      android: { by: "text", value: "Username" },
+      ios: { by: "accessibilityId", value: "Username input field" },
+    };
+    expect(resolveLocator(locator, ios).selector).toBe("~Username input field");
+  });
+
+  it("uses the android override on Android and ignores the ios one", () => {
+    const locator = {
+      by: "accessibilityId",
+      value: "Username input field",
+      android: { by: "id", value: "username_field" },
+      ios: { by: "text", value: "Username" },
+    };
+    expect(resolveLocator(locator, { appPackage: "com.acme.app" }).selector).toBe("id=com.acme.app:id/username_field");
+  });
+
+  it("rejects a malformed ios override", () => {
+    expect(() => resolveLocator({ by: "accessibilityId", value: "x", ios: "nope" }, ios)).toThrow(
+      "locator.ios must be an object like",
+    );
   });
 });
