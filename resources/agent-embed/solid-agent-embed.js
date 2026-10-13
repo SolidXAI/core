@@ -11,7 +11,7 @@
     if (global.console && typeof global.console.info === "function") global.console.info("[agent-embed][sdk] " + event, Object.assign({ instanceId: instanceId }, details || {}));
   }
   function mount(options) {
-    var mode = options.mode || "popup";
+    var mode = options.mode === undefined ? "popup" : options.mode;
     if (mode !== "popup" && mode !== "inline") throw new Error("mode must be popup or inline.");
     var inline = mode === "inline";
     var container = typeof options.container === "string" ? document.querySelector(options.container) : options.container;
@@ -57,31 +57,34 @@
     panel.setAttribute("aria-label", options.title || "Agent chat");
     panel.id = "chat-" + id;
     if (button) button.setAttribute("aria-controls", panel.id);
-    var controlBar = document.createElement("div");
-    controlBar.className = "control-bar";
-    var controlGroup = document.createElement("div");
-    controlGroup.className = "control-group";
-    function makeControl(label, title, icon) {
-      var control = document.createElement("button");
-      control.type = "button";
-      control.className = "window-control";
-      control.setAttribute("aria-label", label);
-      control.title = title;
-      control.innerHTML = icon;
-      return control;
+    var minimizeButton, dockLeftButton, maximizeButton, dockRightButton, closeButton;
+    if (!inline) {
+      var controlBar = document.createElement("div");
+      controlBar.className = "control-bar";
+      var controlGroup = document.createElement("div");
+      controlGroup.className = "control-group";
+      function makeControl(label, title, icon) {
+        var control = document.createElement("button");
+        control.type = "button";
+        control.className = "window-control";
+        control.setAttribute("aria-label", label);
+        control.title = title;
+        control.innerHTML = icon;
+        return control;
+      }
+      minimizeButton = makeControl("Minimize agent chat", "Minimize chat", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>');
+      dockLeftButton = makeControl("Dock agent chat left", "Dock left", '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>');
+      maximizeButton = makeControl("Make agent chat full screen", "Full screen", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>');
+      dockRightButton = makeControl("Dock agent chat right", "Dock right", '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg>');
+      closeButton = makeControl("Close agent chat", "Close chat", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>');
+      controlGroup.append(minimizeButton, dockLeftButton, maximizeButton, dockRightButton, closeButton);
+      controlBar.appendChild(controlGroup);
+      panel.appendChild(controlBar);
     }
-    var minimizeButton = makeControl("Minimize agent chat", "Minimize chat", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M5 12h14"/></svg>');
-    var dockLeftButton = makeControl("Dock agent chat left", "Dock left", '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M9 4v16"/></svg>');
-    var maximizeButton = makeControl("Make agent chat full screen", "Full screen", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 3H5a2 2 0 0 0-2 2v3M16 3h3a2 2 0 0 1 2 2v3M21 16v3a2 2 0 0 1-2 2h-3M3 16v3a2 2 0 0 0 2 2h3"/></svg>');
-    var dockRightButton = makeControl("Dock agent chat right", "Dock right", '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M15 4v16"/></svg>');
-    var closeButton = makeControl("Close agent chat", "Close chat", '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M18 6 6 18"/></svg>');
-    controlGroup.append(minimizeButton, dockLeftButton, maximizeButton, dockRightButton, closeButton);
-    controlBar.appendChild(controlGroup);
     var status = document.createElement("div");
     status.className = "embed-status";
     status.setAttribute("role", "alert");
     status.style.display = "none";
-    if (!inline) panel.appendChild(controlBar);
     panel.appendChild(status);
     root.append(style, panel);
     var frame = document.createElement("iframe");
