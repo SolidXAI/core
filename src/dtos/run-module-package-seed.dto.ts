@@ -9,4 +9,12 @@ export class RunModulePackageSeedDto {
     @IsOptional()
     @IsBoolean()
     seedGlobalMetadata?: boolean = false;
+
+    @ApiPropertyOptional({
+        description: 'Remove metadata (views, menus, actions, ...) that is no longer present in the module metadata file.',
+        default: false,
+    })
+    @IsOptional()
+    @IsBoolean()
+    prune?: boolean = false;
 }

@@ -105,6 +105,19 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "version",
+            "displayName": "Version",
+            "description": "Semver version of the module. Owned by the module metadata file and set when exporting or importing a module package.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 64,
+            "required": false,
+            "unique": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
           }
         ]
       },
@@ -13405,6 +13418,37 @@
                 ],
                 "popupWidth": "32vw"
               }
+            },
+            {
+              "attrs": {
+                "className": "p-button-text",
+                "icon": "pi pi-refresh",
+                "label": "Update Module",
+                "action": "UpdateModulePackageRowAction",
+                "openInPopup": true,
+                "actionInContextMenu": true,
+                "customComponentIsSystem": true,
+                "closable": false,
+                "env": [
+                  "dev"
+                ],
+                "popupWidth": "min(1180px, calc(100vw - 32px))"
+              }
+            },
+            {
+              "attrs": {
+                "className": "p-button-text",
+                "icon": "pi pi-history",
+                "label": "Restore Previous Version",
+                "action": "RestoreModulePackageRowAction",
+                "openInPopup": true,
+                "actionInContextMenu": true,
+                "customComponentIsSystem": true,
+                "env": [
+                  "dev"
+                ],
+                "popupWidth": "min(560px, calc(100vw - 32px))"
+              }
             }
           ],
           "import": false,
@@ -13455,6 +13499,12 @@
             "type": "field",
             "attrs": {
               "name": "isSystem"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "version"
             }
           }
         ]
@@ -13535,6 +13585,14 @@
                     "type": "field",
                     "attrs": {
                       "name": "isSystem"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "version",
+                      "disabled": true,
+                      "readonly": true
                     }
                   }
                 ]

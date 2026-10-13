@@ -30,4 +30,7 @@ export class ModuleMetadata extends CommonEntity {
 
     @Column({ default: false })
     isSystem: boolean;
+
+    @Column({ type: "varchar", nullable: true })
+    version: string | null;
 }
