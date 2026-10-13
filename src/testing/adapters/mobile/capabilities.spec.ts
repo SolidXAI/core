@@ -148,3 +148,15 @@ describe("buildCapabilities: iOS", () => {
     expect(() => buildCapabilities({ ...ios, appPackage: "" })).toThrow("appPackage is required");
   });
 });
+
+describe("buildCapabilities: iOS first build", () => {
+  const ios: MobileAdapterOptions = {
+    appiumUrl: "http://localhost:4723", udid: "U", platformName: "iOS", appSource: "installed", appPackage: "io.solidx.testhub.sample",
+  };
+
+  it("gives WebDriverAgent longer to start until it has been built", () => {
+    expect(buildCapabilities(ios)["appium:wdaLaunchTimeout"]).toBe(480_000);
+    expect(buildCapabilities({ ...ios, wdaDerivedDataPath: "/w", wdaPrebuilt: false })["appium:wdaLaunchTimeout"]).toBe(480_000);
+    expect(buildCapabilities({ ...ios, wdaDerivedDataPath: "/w", wdaPrebuilt: true })["appium:wdaLaunchTimeout"]).toBe(240_000);
+  });
+});

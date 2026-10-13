@@ -40,6 +40,19 @@ describe("MobileAdapter on iOS", () => {
     });
   });
 
+  describe("session start timeout", () => {
+    it("waits longer for the first session, which builds WebDriverAgent, than for later ones", async () => {
+      const first = setup();
+      const factory = jest.fn(async () => first.driver);
+      const firstAdapter = new MobileAdapter({ ...first.adapter["opts" as never] as MobileAdapterOptions, driverFactory: factory });
+      await firstAdapter.start();
+      expect((factory.mock.calls[0] as any[])[0].connectionRetryTimeout).toBe(600_000);
+      const built = jest.fn(async () => first.driver);
+      await new MobileAdapter({ ...first.adapter["opts" as never] as MobileAdapterOptions, wdaPrebuilt: true, driverFactory: built }).start();
+      expect((built.mock.calls[0] as any[])[0].connectionRetryTimeout).toBe(240_000);
+    });
+  });
+
   describe("launch", () => {
     it("uses bundleId for every app command", async () => {
       const { adapter, driver } = setup();

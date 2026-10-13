@@ -156,7 +156,8 @@ export class MobileAdapter {
       capabilities: buildCapabilities(this.opts),
       logLevel: "error",
       connectionRetryCount: 0,
-      connectionRetryTimeout: 240_000,
+      // Starting a session waits for the device, and on iOS the first one for WebDriverAgent to build (D34).
+      connectionRetryTimeout: this.ios && !this.opts.wdaPrebuilt ? 600_000 : 240_000,
     };
 
     const factory = this.opts.driverFactory ?? defaultDriverFactory;

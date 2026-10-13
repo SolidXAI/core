@@ -59,7 +59,8 @@ function iosCapabilities(o: MobileAdapterOptions): Record<string, unknown> {
     "appium:udid": o.udid,
     "appium:newCommandTimeout": 120,
     "appium:autoAcceptAlerts": true,
-    "appium:wdaLaunchTimeout": 240_000,
+    // The first session builds WebDriverAgent, which took 4.5 minutes on a small Mac; later ones reuse it (D34).
+    "appium:wdaLaunchTimeout": o.wdaPrebuilt ? 240_000 : 480_000,
   };
   if (o.wdaDerivedDataPath) {
     caps["appium:derivedDataPath"] = o.wdaDerivedDataPath;
