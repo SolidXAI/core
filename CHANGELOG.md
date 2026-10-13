@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.20-beta.3] - 2026-10-13
+
+### Added
+
+- add Chatter Message Archive functionality with controller, service, and metadata updates
+- disable Swagger in production environments (#168)
+
+### Changed
+
+- enhance requiredInputs structure and validation in AgentHub integration
+
+### Other
+
+- Update solidx modules (#190)
+- New tab op changes
+- menuItemMetaData edit:true and default icon added for menu (#184)
+
 ## [0.1.20-beta.2] - 2026-10-09
 
 ### Added
