@@ -1,8 +1,11 @@
 import { DEFAULT_UI_TIMEOUT_MS } from "../ui/playwright-adapter";
 import type { FailureArtifact } from "../ui/playwright-adapter";
 import { buildCapabilities } from "./capabilities";
+import { execFile } from "node:child_process";
 import { resolveLocator } from "./locator";
 import { toConsoleEntries } from "./logcat";
+import { appIdArg, isIos } from "./platform";
+import { toSyslogConsoleEntries } from "./syslog";
 import type { ResolvedLocator } from "./locator";
 import type {
   MobileAdapterOptions,
@@ -20,11 +23,32 @@ const MAX_LOGCAT_ENTRIES = 500;
  * is installed; without it, Appium returns the most recent chunk, which is the part that matters when a run
  * fails. With a limit of 180 the recording would stop after the first chunk and miss the failure.
  */
-const RECORDING_OPTIONS = { videoSize: "720x1600", bitRate: 2_000_000, timeLimit: "1800" };
+const ANDROID_RECORDING_OPTIONS = { videoSize: "720x1600", bitRate: 2_000_000, timeLimit: "1800" };
+
+/**
+ * iOS records through ffmpeg, which must be installed. The default codec, mjpeg, does not play in a browser, and the
+ * hardware encoder produced an empty file, so libx264 it is. The scale halves the screen, keeping even dimensions (D37).
+ */
+const IOS_RECORDING_OPTIONS = {
+  videoType: "libx264",
+  videoFps: 10,
+  timeLimit: "1800",
+  videoScale: "trunc(iw/4)*2:trunc(ih/4)*2",
+};
+
+const SIMCTL_TIMEOUT_MS = 15_000;
+const SIMULATOR_ID_RE = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
+const BUNDLE_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
+
+function defaultRunCommand(file: string, args: string[]): Promise<void> {
+  return new Promise((resolve, reject) => {
+    execFile(file, args, { timeout: SIMCTL_TIMEOUT_MS }, (error) => (error ? reject(error) : resolve()));
+  });
+}
 
 const ELEMENT_POLL_MS = 500;
 
-/** Android app states from `mobile: queryAppState`. 4 means running in the foreground. */
+/** App states from `mobile: queryAppState`, the same numbers on both platforms. 4 means running in the foreground. */
 const APP_STATE_FOREGROUND = 4;
 const APP_STATE_NOT_RUNNING = 1;
 const APP_STATE_NAMES: Record<number, string> = {
@@ -55,7 +79,7 @@ async function defaultDriverFactory(options: MobileRemoteOptions): Promise<Mobil
 }
 
 /**
- * Drives one Android device or emulator through an Appium server. Mirrors PlaywrightAdapter: one
+ * Drives one Android or iOS device, emulator or simulator through an Appium server. Mirrors PlaywrightAdapter: one
  * session per run, shared by every mobile scenario, started lazily and stopped when the run ends.
  */
 export class MobileAdapter {
@@ -68,9 +92,14 @@ export class MobileAdapter {
   private driver?: MobileDriver;
   private recording = false;
   private runVideo?: FailureArtifact;
+  /** The first launch of a session grants permissions on a simulator even without a reset (D28). */
+  private launchedOnce = false;
+  private readonly logType: "logcat" | "syslog";
 
   /** Set when screen recording could not start; the run continues without a video. */
   public recordingError?: string;
+  /** Set when a simulator could not be told to allow permissions; the app may then show a permission prompt. */
+  public grantError?: string;
 
   constructor(private readonly opts: MobileAdapterOptions) {
     this.defaultTimeoutMs = opts.defaultTimeoutMs ?? DEFAULT_UI_TIMEOUT_MS;
@@ -79,6 +108,12 @@ export class MobileAdapter {
     this.recordVideo = opts.recordVideo ?? true;
     this.captureConsole = opts.capture?.console ?? false;
     this.captureScreenshot = opts.capture?.screenshot ?? false;
+    this.logType = isIos(opts) ? "syslog" : "logcat";
+  }
+
+  /** Whether this session drives an iOS device or simulator. */
+  get ios(): boolean {
+    return isIos(this.opts);
   }
 
   /** An explicit per-step value wins, otherwise the run-wide default applies. */
@@ -129,7 +164,7 @@ export class MobileAdapter {
 
     if (this.recordVideo) {
       try {
-        await this.driver.startRecordingScreen(RECORDING_OPTIONS);
+        await this.driver.startRecordingScreen(this.ios ? IOS_RECORDING_OPTIONS : ANDROID_RECORDING_OPTIONS);
         this.recording = true;
       } catch (error: any) {
         this.recordingError = String(error?.message ?? error).split("\n")[0];
@@ -178,17 +213,27 @@ export class MobileAdapter {
     );
   }
 
-  /** Stops the app, optionally wipes its data, then starts it and waits until it is in the foreground. */
-  async launch(opts: { clearData?: boolean; timeoutMs?: number } = {}): Promise<void> {
+  /**
+   * Stops the app, optionally wipes its data, then starts it and waits until it is in the foreground. On iOS a wipe is a
+   * reinstall of the build (D27): `clearApp` leaves an app's preferences behind. On a simulator, permissions are granted
+   * after the app is installed and before it starts, because the permission prompt cannot be accepted by the session (D28).
+   */
+  async launch(opts: { clearData?: boolean; timeoutMs?: number; grantPermissions?: boolean } = {}): Promise<void> {
     const driver = this.getDriver();
     const appId = this.opts.appPackage;
+    const idArg = appIdArg(this.opts);
     const timeout = this.resolveNavigationTimeout(opts.timeoutMs);
 
-    await driver.execute("mobile: terminateApp", { appId });
+    await driver.execute("mobile: terminateApp", idArg);
     if (opts.clearData) {
-      await driver.execute("mobile: clearApp", { appId });
+      if (this.ios) await this.reinstall();
+      else await driver.execute("mobile: clearApp", idArg);
     }
-    await driver.execute("mobile: activateApp", { appId });
+    if (this.opts.simulator && opts.grantPermissions !== false && (opts.clearData || !this.launchedOnce)) {
+      await this.grantPermissions();
+    }
+    this.launchedOnce = true;
+    await driver.execute("mobile: activateApp", idArg);
 
     // Android gives a starting app about ten seconds to attach and kills it otherwise, which is likely on a device that
     // has only just booted or is short of memory. The app then reads "not running", so start it again a few times.
@@ -198,12 +243,12 @@ export class MobileAdapter {
     try {
       await driver.waitUntil(
         async () => {
-          lastState = Number(await driver.execute("mobile: queryAppState", { appId }));
+          lastState = Number(await driver.execute("mobile: queryAppState", idArg));
           polls += 1;
           if (lastState === APP_STATE_FOREGROUND) return true;
           if (lastState === APP_STATE_NOT_RUNNING && polls > 1 && restarts < MAX_LAUNCH_RESTARTS) {
             restarts += 1;
-            await driver.execute("mobile: activateApp", { appId });
+            await driver.execute("mobile: activateApp", idArg);
           }
           return false;
         },
@@ -227,7 +272,36 @@ export class MobileAdapter {
   }
 
   async terminate(): Promise<void> {
-    await this.getDriver().execute("mobile: terminateApp", { appId: this.opts.appPackage });
+    await this.getDriver().execute("mobile: terminateApp", appIdArg(this.opts));
+  }
+
+  /** iOS reset: remove the app and install the build again, which clears everything `clearApp` leaves behind (D27). */
+  private async reinstall(): Promise<void> {
+    const driver = this.getDriver();
+    const appPath = this.opts.appPath;
+    if (!appPath) {
+      throw new Error("Clearing data needs a build to reinstall. Upload the build on the application.");
+    }
+    try {
+      await driver.execute("mobile: removeApp", { bundleId: this.opts.appPackage });
+      await driver.execute("mobile: installApp", { app: appPath });
+    } catch (error: any) {
+      throw new Error(`Could not reinstall ${this.opts.appPackage} to clear its data: ${String(error?.message ?? error).split("\n")[0]}`);
+    }
+  }
+
+  /**
+   * `autoAcceptAlerts` denies permission prompts, so a simulator is told to allow everything before the app starts.
+   * Best-effort: a failure leaves the prompt, and the scenario fails where the prompt gets in the way.
+   */
+  private async grantPermissions(): Promise<void> {
+    const { udid, appPackage } = this.opts;
+    if (!SIMULATOR_ID_RE.test(udid) || !BUNDLE_ID_RE.test(appPackage)) return;
+    try {
+      await (this.opts.runCommand ?? defaultRunCommand)("xcrun", ["simctl", "privacy", udid, "grant", "all", appPackage]);
+    } catch (error: any) {
+      this.grantError = String(error?.message ?? error).split("\n")[0];
+    }
   }
 
   /** Starts a clean capture window for the next scenario. Best-effort: never throws. */
@@ -235,7 +309,7 @@ export class MobileAdapter {
     if (!this.driver || !this.captureConsole) return;
     try {
       // Reading the device log drains it, so the next read only returns newer entries.
-      await this.driver.getLogs("logcat");
+      await this.driver.getLogs(this.logType);
     } catch {
       // Not every device exposes the log; a failed drain must never fail a scenario.
     }
@@ -248,8 +322,10 @@ export class MobileAdapter {
 
     if (this.captureConsole) {
       try {
-        const entries = await this.driver.getLogs("logcat");
-        const mapped = toConsoleEntries(entries, this.opts.appPackage, MAX_LOGCAT_ENTRIES);
+        const entries = await this.driver.getLogs(this.logType);
+        const mapped = this.ios
+          ? toSyslogConsoleEntries(entries, { processName: this.opts.appProcessName, bundleId: this.opts.appPackage }, MAX_LOGCAT_ENTRIES)
+          : toConsoleEntries(entries, this.opts.appPackage, MAX_LOGCAT_ENTRIES);
         if (mapped.length) {
           artifacts.push({ name: "console.json", contentType: "application/json", data: JSON.stringify(mapped) });
         }

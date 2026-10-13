@@ -33,11 +33,34 @@ export function registerActionSteps(registry: StepRegistry): void {
   });
 
   registry.register("mobile.back", async (ctx: TestContext) => {
-    await requireMobile(ctx, "mobile.back").getDriver().back();
+    const mobile = requireMobile(ctx, "mobile.back");
+    const driver = mobile.getDriver();
+    if (mobile.ios) {
+      // iOS has no system back. The driver taps the navigation bar's back button, and does nothing, successfully, when
+      // there is none, which would hide a failing scenario; the root screen of an app can have a bar with no button (D35).
+      const buttons = await driver.$$("-ios class chain:**/XCUIElementTypeNavigationBar/XCUIElementTypeButton");
+      if (buttons.length === 0) {
+        throw new Error(
+          "mobile.back: this screen has no back button on iOS. Tap the screen's own back control instead.",
+        );
+      }
+    }
+    await driver.back();
   });
 
   registry.register("mobile.hideKeyboard", async (ctx: TestContext) => {
-    const driver = requireMobile(ctx, "mobile.hideKeyboard").getDriver();
+    const mobile = requireMobile(ctx, "mobile.hideKeyboard");
+    const driver = mobile.getDriver();
+    if (mobile.ios) {
+      // The Simulator reports a keyboard as shown even after it is hidden, so it cannot be asked first. The driver says
+      // so when it finds no key to dismiss it with, which means there was nothing to hide.
+      try {
+        await driver.hideKeyboard();
+      } catch (error: any) {
+        if (!String(error?.message ?? error).includes("dismiss the keyboard")) throw error;
+      }
+      return;
+    }
     // Hiding a keyboard that is not shown is an error on some devices, so check first.
     if (await driver.isKeyboardShown()) {
       await driver.hideKeyboard();

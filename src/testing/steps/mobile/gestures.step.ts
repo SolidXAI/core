@@ -3,6 +3,7 @@ import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
 import { StepRegistry } from "../../core/step-registry";
 import { requireLocator, requireMobile, stepTimeout } from "./shared";
+import { swipeLine } from "./swipe-line";
 
 const DIRECTIONS = ["up", "down", "left", "right"] as const;
 type Direction = (typeof DIRECTIONS)[number];
@@ -45,6 +46,11 @@ async function swipe(
       width: Math.round(screen.width * (1 - 2 * SCREEN_MARGIN)),
       height: Math.round(screen.height * (1 - 2 * SCREEN_MARGIN)),
     };
+  }
+  if (mobile.ios) {
+    // XCUITest swipes the whole screen or an element; dragging along the same path swipes inside any area.
+    await driver.execute("mobile: dragFromToForDuration", { ...swipeLine(bounds, direction, percent), duration: 0.25 });
+    return;
   }
   await driver.execute("mobile: swipeGesture", { ...bounds, direction, percent });
 }

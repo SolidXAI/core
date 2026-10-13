@@ -45,6 +45,10 @@ export class FakeDriver implements MobileDriver {
   windowSize = { width: 1080, height: 2400 };
   /** Methods listed here throw when called. */
   failing = new Set<string>();
+  /** The message a failing method throws, when it is not the default. */
+  failureMessages = new Map<string, string>();
+  /** `execute` scripts listed here throw when called, for example "mobile: removeApp". */
+  failingScripts = new Set<string>();
 
   add(selector: string, ...elements: FakeElement[]): FakeElement[] {
     this.elements.set(selector, [...(this.elements.get(selector) ?? []), ...elements]);
@@ -57,7 +61,7 @@ export class FakeDriver implements MobileDriver {
 
   private record(method: string, args: unknown[]) {
     this.calls.push({ method, args });
-    if (this.failing.has(method)) throw new Error(`${method} failed`);
+    if (this.failing.has(method)) throw new Error(this.failureMessages.get(method) ?? `${method} failed`);
   }
 
   async $(selector: string) {
@@ -78,6 +82,7 @@ export class FakeDriver implements MobileDriver {
   }
   async execute(script: string, ...args: unknown[]) {
     this.record("execute", [script, ...args]);
+    if (this.failingScripts.has(script)) throw new Error(`${script} failed`);
     return script === "mobile: queryAppState" ? (this.appStates.length ? this.appStates.shift() : this.appState) : undefined;
   }
   async back() { this.record("back", []); }

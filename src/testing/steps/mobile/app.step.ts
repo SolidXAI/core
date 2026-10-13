@@ -7,7 +7,9 @@ export function registerAppSteps(registry: StepRegistry): void {
   registry.register("mobile.launch", async (ctx: TestContext, step: OpStep) => {
     const mobile = requireMobile(ctx, "mobile.launch");
     const clearData = optionalBoolean(step, "clearData", "mobile.launch") ?? false;
-    await mobile.launch({ clearData, timeoutMs: stepTimeout(step) });
+    // Only a simulator grants permissions; false leaves the permission prompt for a test of a denial (D28).
+    const grantPermissions = optionalBoolean(step, "grantPermissions", "mobile.launch");
+    await mobile.launch({ clearData, grantPermissions, timeoutMs: stepTimeout(step) });
   });
 
   registry.register("mobile.reset", async (ctx: TestContext, step: OpStep) => {

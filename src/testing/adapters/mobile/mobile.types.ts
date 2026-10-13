@@ -139,6 +139,8 @@ export interface MobileAdapterOptions {
   capture?: { console?: boolean; screenshot?: boolean };
   /** Extra Appium capabilities, merged last. */
   extraCapabilities?: Record<string, unknown>;
+  /** Test hook: replaces running `xcrun simctl`, which grants a simulator's permissions. */
+  runCommand?: (file: string, args: string[]) => Promise<void>;
   /** Test hook: replaces the WebdriverIO `remote()` call. */
   driverFactory?: (options: MobileRemoteOptions) => Promise<MobileDriver>;
 }
