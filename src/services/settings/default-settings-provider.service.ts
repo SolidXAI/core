@@ -24,6 +24,17 @@ const getSolidCoreSettings = (isProd: boolean) =>
   [
     {
       moduleName: "solid-core",
+      key: "CHATTER_MESSAGES_TO_ARCHIVE_AFTER_DAYS",
+      value: 180,
+      level: SettingLevel.SystemAdminEditable,
+      label: "Archive Chatter Messages After (Days)",
+      group: "chatter-settings",
+      sortOrder: 10,
+      controlType: "numeric",
+      helpText: "Messages older than this many days are moved to the configured chatter archive store. Set to 0 to archive all messages on the next run.",
+    },
+    {
+      moduleName: "solid-core",
       key: "iamGoogleOAuthEnabled",
       value: false,
       level: SettingLevel.SystemAdminEditable,

@@ -2,6 +2,7 @@ import { IsInt,IsOptional, IsString, IsNotEmpty, ValidateNested, IsArray } from 
 import { ApiProperty } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
 import { UpdateAgentToolDto } from './update-agent-tool.dto';
+import { UpdateAgentHubTagDto } from './update-agent-hub-tag.dto';
 
 export class UpdateAgentToolRegistryDto {
     @IsOptional()
@@ -35,12 +36,6 @@ export class UpdateAgentToolRegistryDto {
     @IsOptional()
     @IsString()
     @ApiProperty()
-    tags: string;
-
-    @IsNotEmpty()
-    @IsOptional()
-    @IsString()
-    @ApiProperty()
     sourceCode: string;
 
     @IsOptional()
@@ -58,6 +53,25 @@ export class UpdateAgentToolRegistryDto {
     @IsString()
     @ApiProperty()
     lastLoadError: string;
+
+    @IsOptional()
+    @ApiProperty({ required: false })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => UpdateAgentHubTagDto)
+    tags: UpdateAgentHubTagDto[];
+
+    @IsOptional()
+    @IsArray()
+    @Type(() => Number)
+    @IsInt({ each: true })
+    @ApiProperty({ required: false })
+    tagsIds: number[];
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({ required: false })
+    tagsCommand: string;
 
     @IsOptional()
     @ApiProperty()

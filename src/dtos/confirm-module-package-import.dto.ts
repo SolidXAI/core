@@ -1,5 +1,5 @@
 import { ApiPropertyOptional } from '@nestjs/swagger';
-import { IsBoolean, IsOptional } from 'class-validator';
+import { IsBoolean, IsOptional, IsString } from 'class-validator';
 
 export class ConfirmModulePackageImportDto {
     @ApiPropertyOptional({
@@ -9,4 +9,20 @@ export class ConfirmModulePackageImportDto {
     @IsOptional()
     @IsBoolean()
     overwriteExisting?: boolean = false;
+
+    @ApiPropertyOptional({
+        description: 'Update mode only. The incoming package version the user approved; must match the previewed version (null for an unversioned package).',
+        nullable: true,
+    })
+    @IsOptional()
+    @IsString()
+    confirmedVersion?: string | null;
+
+    @ApiPropertyOptional({
+        description: 'Update mode only. Required when the update is a reinstall, a downgrade or a legacy (unversioned) package.',
+        default: false,
+    })
+    @IsOptional()
+    @IsBoolean()
+    acknowledgeVersionChange?: boolean = false;
 }

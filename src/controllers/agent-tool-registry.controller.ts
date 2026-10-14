@@ -41,6 +41,12 @@ export class AgentToolRegistryController {
   }
 
   @ApiBearerAuth("jwt")
+  @Post(':id/check')
+  check(@Param('id') id: string, @Body() body: { phase?: string; checksum?: string }) {
+    return this.service.checkTool(+id, body?.phase ?? '', body?.checksum ?? '');
+  }
+
+  @ApiBearerAuth("jwt")
   @Post('/bulk-recover')
   async recoverMany(@Body() ids: number[]) {
     return this.service.recoverMany(ids);

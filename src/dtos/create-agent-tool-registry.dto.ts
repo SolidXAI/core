@@ -1,8 +1,9 @@
 import { ApiProperty } from '@nestjs/swagger';
-import { IsString } from 'class-validator';
+import { IsInt, IsString } from 'class-validator';
 import { IsNotEmpty, IsOptional, ValidateNested, IsArray } from 'class-validator';
 import { Type } from 'class-transformer';
 import { UpdateAgentToolDto } from './update-agent-tool.dto';
+import { UpdateAgentHubTagDto } from './update-agent-hub-tag.dto';
 
 export class CreateAgentToolRegistryDto {
     @IsNotEmpty()
@@ -28,11 +29,6 @@ export class CreateAgentToolRegistryDto {
     @IsNotEmpty()
     @IsString()
     @ApiProperty()
-    tags: string = "[]";
-
-    @IsNotEmpty()
-    @IsString()
-    @ApiProperty()
     sourceCode: string;
 
     @IsOptional()
@@ -49,6 +45,25 @@ export class CreateAgentToolRegistryDto {
     @IsString()
     @ApiProperty()
     lastLoadError: string;
+
+    @IsOptional()
+    @ApiProperty({ required: false })
+    @IsArray()
+    @ValidateNested({ each: true })
+    @Type(() => UpdateAgentHubTagDto)
+    tags: UpdateAgentHubTagDto[];
+
+    @IsOptional()
+    @IsArray()
+    @Type(() => Number)
+    @IsInt({ each: true })
+    @ApiProperty({ required: false })
+    tagsIds: number[];
+
+    @IsString()
+    @IsOptional()
+    @ApiProperty({ required: false })
+    tagsCommand: string;
 
     @IsOptional()
     @ApiProperty()

@@ -1,5 +1,86 @@
 # Changelog
 
+## [0.1.20] - 2026-10-14
+
+### Added
+
+- add Chatter Message Archive functionality with controller, service, and metadata updates
+- disable Swagger in production environments (#168)
+- add documentation for AgentHub agent configuration, data model, and runtime verification
+- enhance boolean column type handling in entities and update rel… (#186)
+- add module relation to email and SMS templates; update DTOs and seed data
+- add Agent Hub Tag functionality
+- refactor agent tool lifecycle environment handling and add PostgreSQL URL generation
+- enhance agent tool lifecycle preference handling and validation
+- add checkTool method and lifecycle script for agent tools; enhance SecretService with findAvailableKeys
+
+### Fixed
+
+- update defaultValue type from integer to string for consistency (#187)
+
+### Changed
+
+- enhance requiredInputs structure and validation in AgentHub integration
+
+### Maintenance
+
+- exclude CLAUDE.md and .claude/ from npm package (#191)
+
+### Other
+
+- Update solidx modules (#190)
+- New tab op changes
+- menuItemMetaData edit:true and default icon added for menu (#184)
+
+## [0.1.20-beta.4] - 2026-10-13
+
+### Maintenance
+
+- exclude CLAUDE.md and .claude/ from npm package (#191)
+
+## [0.1.20-beta.3] - 2026-10-13
+
+### Added
+
+- add Chatter Message Archive functionality with controller, service, and metadata updates
+- disable Swagger in production environments (#168)
+
+### Changed
+
+- enhance requiredInputs structure and validation in AgentHub integration
+
+### Other
+
+- Update solidx modules (#190)
+- New tab op changes
+- menuItemMetaData edit:true and default icon added for menu (#184)
+
+## [0.1.20-beta.2] - 2026-10-09
+
+### Added
+
+- add documentation for AgentHub agent configuration, data model, and runtime verification
+
+### Fixed
+
+- update defaultValue type from integer to string for consistency (#187)
+
+## [0.1.20-beta.1] - 2026-10-08
+
+### Added
+
+- enhance boolean column type handling in entities and update rel… (#186)
+- add module relation to email and SMS templates; update DTOs and seed data
+
+## [0.1.20-beta.0] - 2026-10-08
+
+### Added
+
+- add Agent Hub Tag functionality
+- refactor agent tool lifecycle environment handling and add PostgreSQL URL generation
+- enhance agent tool lifecycle preference handling and validation
+- add checkTool method and lifecycle script for agent tools; enhance SecretService with findAvailableKeys
+
 ## [0.1.19] - 2026-10-08
 
 ### Added

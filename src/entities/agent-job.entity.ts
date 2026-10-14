@@ -3,6 +3,7 @@ import { Entity, JoinColumn, ManyToOne, Column, OneToMany } from 'typeorm';
 import { AgentSession } from './agent-session.entity';
 import { AgentRegistry } from './agent-registry.entity';
 import { AgentHumanRequest } from './agent-human-request.entity';
+import { getColumnType, getCurrentTimestampDefault } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_agent_job')
 export class AgentJob extends CommonEntity {
@@ -29,7 +30,7 @@ export class AgentJob extends CommonEntity {
     @Column({ type: "varchar", nullable: true })
     leaseToken: string;
 
-    @Column({ type: "timestamptz", nullable: true })
+    @Column({ ...getColumnType('datetimeWithTimezone'), nullable: true })
     leaseExpiresAt: Date;
 
     @Column({ type: "integer", default: 0 })
@@ -56,13 +57,13 @@ export class AgentJob extends CommonEntity {
     @Column({ type: "text", nullable: true })
     error: string;
 
-    @Column({ type: "timestamptz", default: () => "now()" })
+    @Column({ ...getColumnType('datetimeWithTimezone'), default: () => getCurrentTimestampDefault() })
     queuedAt: Date = new Date();
 
-    @Column({ type: "timestamptz", nullable: true })
+    @Column({ ...getColumnType('datetimeWithTimezone'), nullable: true })
     startedAt: Date;
 
-    @Column({ type: "timestamptz", nullable: true })
+    @Column({ ...getColumnType('datetimeWithTimezone'), nullable: true })
     finishedAt: Date;
 
     @OneToMany(() => AgentHumanRequest, agentHumanRequest => agentHumanRequest.job, { cascade: true })

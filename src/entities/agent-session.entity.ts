@@ -7,6 +7,7 @@ import { AgentJob } from './agent-job.entity';
 import { AgentEvent } from './agent-event.entity';
 import { AgentSessionCheckpoint } from './agent-session-checkpoint.entity';
 import { AgentHumanRequest } from './agent-human-request.entity';
+import { getColumnType, getCurrentTimestampDefault } from 'src/helpers/typeorm-db-helper';
 
 @Entity('ss_agent_session')
 export class AgentSession extends CommonEntity {
@@ -61,13 +62,13 @@ export class AgentSession extends CommonEntity {
     @Column({ type: "text", nullable: true })
     error: string;
 
-    @Column({ type: "timestamptz", default: () => "now()" })
+    @Column({ ...getColumnType('datetimeWithTimezone'), default: () => getCurrentTimestampDefault() })
     startedAt: Date = new Date();
 
-    @Column({ type: "timestamptz", default: () => "now()" })
+    @Column({ ...getColumnType('datetimeWithTimezone'), default: () => getCurrentTimestampDefault() })
     lastActiveAt: Date = new Date();
 
-    @Column({ type: "timestamptz", nullable: true })
+    @Column({ ...getColumnType('datetimeWithTimezone'), nullable: true })
     endedAt: Date;
 
     @Column({ type: "varchar", nullable: true })

@@ -18,7 +18,7 @@ export class Secret extends CommonEntity {
     @Column({ type: "text" })
     value: string;
 
-    @Column({ type: "boolean", default: true })
+    @Column({ ...getColumnType('boolean'), default: true })
     redact: boolean = true;
 
     @Index()

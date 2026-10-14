@@ -105,6 +105,19 @@
             "private": false,
             "encrypt": false,
             "isSystem": true
+          },
+          {
+            "name": "version",
+            "displayName": "Version",
+            "description": "Semver version of the module. Owned by the module metadata file and set when exporting or importing a module package.",
+            "type": "shortText",
+            "ormType": "varchar",
+            "length": 64,
+            "required": false,
+            "unique": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true
           }
         ]
       },
@@ -3692,6 +3705,22 @@
             "encrypt": false,
             "columnName": "active",
             "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ]
       },
@@ -3895,6 +3924,22 @@
             "private": false,
             "encrypt": false,
             "columnName": "active",
+            "isSystem": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
             "isSystem": true
           }
         ]
@@ -7924,6 +7969,95 @@
         "moduleUserKey": "solid-core"
       },
       {
+        "singularName": "agentHubTag",
+        "pluralName": "agentHubTags",
+        "displayName": "Agent Hub Tags",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_agent_hub_tag",
+        "userKeyFieldUserKey": "name",
+        "isChild": false,
+        "isSystem": true,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": true,
+            "unique": true,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "isUserKey": true,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "skills",
+            "displayName": "Skills",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentSkillRegistry",
+            "relationCoModelFieldName": "tags",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": false,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "tools",
+            "displayName": "Tools",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentToolRegistry",
+            "relationCoModelFieldName": "tags",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": false,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "agents",
+            "displayName": "Agents",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentRegistry",
+            "relationCoModelFieldName": "tags",
+            "relationCreateInverse": false,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": false,
+            "enableAuditTracking": true
+          }
+        ]
+      },
+      {
         "singularName": "agentRegistry",
         "pluralName": "agentRegistries",
         "displayName": "Agent Registry",
@@ -8230,6 +8364,25 @@
             "isPrimaryKey": false
           },
           {
+            "name": "tags",
+            "displayName": "Tags",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentHubTag",
+            "relationCoModelFieldName": "agents",
+            "relationCreateInverse": true,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": true,
+            "enableAuditTracking": true
+          },
+          {
             "name": "agentTools",
             "displayName": "Agent Tools",
             "description": null,
@@ -8497,26 +8650,6 @@
             "enableAuditTracking": true
           },
           {
-            "name": "tags",
-            "displayName": "Tags",
-            "description": null,
-            "type": "longText",
-            "ormType": "text",
-            "isSystem": true,
-            "regexPattern": null,
-            "regexPatternNotMatchingErrorMsg": null,
-            "defaultValue": "[]",
-            "required": true,
-            "unique": false,
-            "index": false,
-            "private": false,
-            "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "enableAuditTracking": true
-          },
-          {
             "name": "type",
             "displayName": "Type",
             "description": null,
@@ -8628,6 +8761,25 @@
             "encryptionType": null,
             "decryptWhen": null,
             "columnName": null,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "tags",
+            "displayName": "Tags",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentHubTag",
+            "relationCoModelFieldName": "tools",
+            "relationCreateInverse": true,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": true,
             "enableAuditTracking": true
           },
           {
@@ -8782,21 +8934,22 @@
           },
           {
             "name": "tags",
-            "enableAuditTracking": true,
             "displayName": "Tags",
-            "description": null,
-            "type": "longText",
-            "ormType": "text",
-            "isSystem": true,
-            "required": true,
+            "type": "relation",
+            "required": false,
             "unique": false,
             "index": false,
             "private": false,
             "encrypt": false,
-            "encryptionType": null,
-            "decryptWhen": null,
-            "columnName": null,
-            "defaultValue": "{}"
+            "relationType": "many-to-many",
+            "relationCoModelSingularName": "agentHubTag",
+            "relationCoModelFieldName": "skills",
+            "relationCreateInverse": true,
+            "relationCascade": "set null",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true,
+            "isRelationManyToManyOwner": true,
+            "enableAuditTracking": true
           },
           {
             "name": "agentSkills",
@@ -9929,7 +10082,7 @@
             "type": "int",
             "ormType": "integer",
             "isSystem": true,
-            "defaultValue": 0,
+            "defaultValue": "0",
             "min": null,
             "max": null,
             "required": true,
@@ -9950,7 +10103,7 @@
             "type": "int",
             "ormType": "integer",
             "isSystem": true,
-            "defaultValue": 0,
+            "defaultValue": "0",
             "min": null,
             "max": null,
             "required": true,
@@ -9971,7 +10124,7 @@
             "type": "int",
             "ormType": "integer",
             "isSystem": true,
-            "defaultValue": 0,
+            "defaultValue": "0",
             "min": null,
             "max": null,
             "required": true,
@@ -9992,7 +10145,7 @@
             "type": "int",
             "ormType": "integer",
             "isSystem": true,
-            "defaultValue": 0,
+            "defaultValue": "0",
             "min": null,
             "max": null,
             "required": true,
@@ -10013,7 +10166,7 @@
             "type": "decimal",
             "ormType": "decimal",
             "isSystem": true,
-            "defaultValue": 0,
+            "defaultValue": "0",
             "min": null,
             "max": null,
             "required": true,
@@ -10455,7 +10608,7 @@
             "type": "int",
             "ormType": "integer",
             "isSystem": true,
-            "defaultValue": 0,
+            "defaultValue": "0",
             "min": null,
             "max": null,
             "required": true,
@@ -10826,7 +10979,7 @@
             "type": "int",
             "ormType": "integer",
             "isSystem": true,
-            "defaultValue": 0,
+            "defaultValue": "0",
             "min": null,
             "max": null,
             "required": true,
@@ -10847,7 +11000,7 @@
             "type": "decimal",
             "ormType": "double precision",
             "isSystem": true,
-            "defaultValue": 0,
+            "defaultValue": "0",
             "min": null,
             "max": null,
             "required": true,
@@ -11495,17 +11648,17 @@
       "modelUserKey": "chatterMessage"
     },
     {
-      "displayName": "Chatter Message Details List Action",
-      "name": "chatterMessageDetails-list-action",
-      "type": "solid",
+      "displayName": "Archived Chatter Messages",
+      "name": "chatterArchivedMessages-action",
+      "type": "custom",
       "domain": "",
       "context": "",
-      "customComponent": "",
+      "customComponent": "/admin/core/solid-core/chatter/archived",
       "customIsModal": false,
       "serverEndpoint": "",
-      "viewUserKey": "chatterMessageDetails-list-view",
+      "viewUserKey": "",
       "moduleUserKey": "solid-core",
-      "modelUserKey": "chatterMessageDetails"
+      "modelUserKey": "chatterMessage"
     },
     {
       "displayName": "locale List Action",
@@ -12370,6 +12523,19 @@
       "modelUserKey": "agentSkillRegistry"
     },
     {
+      "displayName": "Agent Hub Tags List Action",
+      "name": "agentHubTag-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentHubTag-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentHubTag"
+    },
+    {
       "displayName": "Agent Tool List Action",
       "name": "agentTool-list-action",
       "type": "solid",
@@ -12954,13 +13120,31 @@
       "iconName": "filter_list_alt"
     },
     {
-      "displayName": "Chatter Message",
+      "displayName": "Chatter",
+      "name": "chatter-menu-item",
+      "sequenceNumber": 10,
+      "actionUserKey": "",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "",
+      "iconName": "forum"
+    },
+    {
+      "displayName": "Messages",
       "name": "chatterMessage-menu-item",
-      "sequenceNumber": 5,
+      "sequenceNumber": 1,
       "actionUserKey": "chatterMessage-list-action",
       "moduleUserKey": "solid-core",
-      "parentMenuItemUserKey": "other-menu-item",
+      "parentMenuItemUserKey": "chatter-menu-item",
       "iconName": "forum"
+    },
+    {
+      "displayName": "Archived Messages",
+      "name": "chatterArchivedMessages-menu-item",
+      "sequenceNumber": 2,
+      "actionUserKey": "chatterArchivedMessages-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "chatter-menu-item",
+      "iconName": "inventory_2"
     },
     {
       "displayName": "Locale",
@@ -13124,6 +13308,15 @@
       "iconName": "chat"
     },
     {
+      "displayName": "Tags",
+      "name": "agentHubTag-menu-item",
+      "sequenceNumber": 8,
+      "actionUserKey": "agentHubTag-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "agent-menu-item",
+      "iconName": "sell"
+    },
+    {
       "displayName": "Human Requests",
       "name": "agentHumanRequest-menu-item",
       "sequenceNumber": 7,
@@ -13225,6 +13418,37 @@
                 ],
                 "popupWidth": "32vw"
               }
+            },
+            {
+              "attrs": {
+                "className": "p-button-text",
+                "icon": "pi pi-refresh",
+                "label": "Update Module",
+                "action": "UpdateModulePackageRowAction",
+                "openInPopup": true,
+                "actionInContextMenu": true,
+                "customComponentIsSystem": true,
+                "closable": false,
+                "env": [
+                  "dev"
+                ],
+                "popupWidth": "min(1180px, calc(100vw - 32px))"
+              }
+            },
+            {
+              "attrs": {
+                "className": "p-button-text",
+                "icon": "pi pi-history",
+                "label": "Restore Previous Version",
+                "action": "RestoreModulePackageRowAction",
+                "openInPopup": true,
+                "actionInContextMenu": true,
+                "customComponentIsSystem": true,
+                "env": [
+                  "dev"
+                ],
+                "popupWidth": "min(560px, calc(100vw - 32px))"
+              }
             }
           ],
           "import": false,
@@ -13275,6 +13499,12 @@
             "type": "field",
             "attrs": {
               "name": "isSystem"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "version"
             }
           }
         ]
@@ -13355,6 +13585,14 @@
                     "type": "field",
                     "attrs": {
                       "name": "isSystem"
+                    }
+                  },
+                  {
+                    "type": "field",
+                    "attrs": {
+                      "name": "version",
+                      "disabled": true,
+                      "readonly": true
                     }
                   }
                 ]
@@ -15129,7 +15367,7 @@
           ],
           "enableGlobalSearch": true,
           "create": false,
-          "edit": false,
+          "edit": true,
           "delete": false,
           "import": false,
           "export": false,
@@ -18126,6 +18364,15 @@
               "name": "active",
               "isSearchable": false
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "label": "Module",
+              "sortable": true,
+              "isSearchable": true
+            }
           }
         ]
       }
@@ -18236,6 +18483,13 @@
                               "name": "active",
                               "label": "Active"
                             }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "module",
+                              "label": "Module"
+                            }
                           }
                         ]
                       }
@@ -18321,6 +18575,15 @@
             "attrs": {
               "name": "smsProviderTemplateId",
               "label": "Template Provider Id",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module",
+              "label": "Module",
               "sortable": true,
               "isSearchable": true
             }
@@ -18432,6 +18695,13 @@
                             "attrs": {
                               "name": "active",
                               "label": "Active"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "module",
+                              "label": "Module"
                             }
                           }
                         ]
@@ -24739,6 +25009,190 @@
       }
     },
     {
+      "name": "agentHubTag-list-view",
+      "displayName": "Agent Hub Tags",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentHubTag",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [
+            10,
+            25,
+            50
+          ],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "allowedViews": [
+            "list"
+          ]
+        },
+        "children": [
+          {
+            "type": "field",
+            "attrs": {
+              "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "name",
+              "isSearchable": true,
+              "sortable": true
+            }
+          }
+        ]
+      }
+    },
+    {
+      "name": "agentHubTag-form-view",
+      "displayName": "Agent Hub Tag",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentHubTag",
+      "layout": {
+        "type": "form",
+        "attrs": {
+          "name": "form-1",
+          "label": "Agent Hub Tag",
+          "className": "grid",
+          "showAddFormButton": true,
+          "showEditFormButton": true
+        },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": {
+              "name": "sheet-1"
+            },
+            "children": [
+              {
+                "type": "notebook",
+                "attrs": {
+                  "name": "notebook-1"
+                },
+                "children": [
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "details",
+                      "label": "Details"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "details-fields",
+                          "label": "",
+                          "className": "col-12 sm:col-12 md:col-6 lg:col-6"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "name"
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "skills",
+                      "label": "Skills"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "skills-fields",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "skills",
+                              "editWidget": "DefaultRelationManyToManyCheckBoxFormEditWidget",
+                              "showLabel": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "tools",
+                      "label": "Tools"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "tools-fields",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "tools",
+                              "editWidget": "DefaultRelationManyToManyCheckBoxFormEditWidget",
+                              "showLabel": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  {
+                    "type": "page",
+                    "attrs": {
+                      "name": "agents",
+                      "label": "Agents"
+                    },
+                    "children": [
+                      {
+                        "type": "group",
+                        "attrs": {
+                          "name": "agents-fields",
+                          "label": "",
+                          "className": "col-12"
+                        },
+                        "children": [
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "agents",
+                              "editWidget": "DefaultRelationManyToManyCheckBoxFormEditWidget",
+                              "showLabel": false
+                            }
+                          }
+                        ]
+                      }
+                    ]
+                  }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "name": "agentSkillRegistry-list-view",
       "displayName": "Skills List View",
       "type": "list",
@@ -27903,6 +28357,22 @@
       "nextRunAt": null,
       "dayOfWeek": "[\"Monday\",\"Tuesday\",\"Wednesday\",\"Thursday\",\"Friday\",\"Saturday\",\"Sunday\"]",
       "job": "WorkflowScheduledTriggerJobService",
+      "moduleUserKey": "solid-core"
+    },
+    {
+      "scheduleName": "Chatter Message Archiver",
+      "isActive": true,
+      "frequency": "Daily",
+      "startTime": "01:00:00",
+      "endTime": null,
+      "startDate": null,
+      "endDate": null,
+      "dayOfMonth": 0,
+      "lastRunAt": null,
+      "nextRunAt": null,
+      "dayOfWeek": "[\"Monday\",\"Tuesday\",\"Wednesday\",\"Thursday\",\"Friday\",\"Saturday\",\"Sunday\"]",
+      "job": "ChatterMessageArchiveService",
+      "cronExpression": null,
       "moduleUserKey": "solid-core"
     }
   ],

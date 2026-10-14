@@ -27,6 +27,7 @@ import { CRUDService } from './crud.service';
 import { IS_SETTINGS_PROVIDER } from 'src/decorators/settings-provider.decorator';
 import { IS_SMS_PROVIDER } from 'src/decorators/sms-provider.decorator';
 import { SettingService } from 'src/services/setting.service';
+import { IS_CHATTER_MESSAGE_ARCHIVE_PROVIDER } from 'src/decorators/chatter-message-archive-provider.decorator';
 
 export const coreSubscriberClasses = [
   AuditSubscriber,
@@ -157,6 +158,11 @@ export class SolidIntrospectService implements OnApplicationBootstrap {
     extensionUserCreationProviders.forEach((provider) => {
       this.solidRegistry.registerExtensionUserCreationProvider(provider);
     });
+
+    const chatterArchiveProviders = this.discoveryService.getProviders().filter((provider) => {
+      return !!provider.instance && !!this.reflector.get<boolean>(IS_CHATTER_MESSAGE_ARCHIVE_PROVIDER, provider.instance.constructor);
+    });
+    chatterArchiveProviders.forEach(provider => this.solidRegistry.registerChatterMessageArchiveProvider(provider));
 
     // Register the core subscribers against all the configured database modules / datasources
     await this.bootstrapCoreTypeOrmSubscribers(solidDatabaseModules);
