@@ -18,6 +18,8 @@ import { Logger } from '@nestjs/common';
 import { EncryptionService } from './encryption.service';
 import { sanitizeStoredMediaFileName } from './media-storage.utils';
 import { isDangerousMediaFile } from 'src/constants/media-file-types';
+import { SETTINGS_PROVIDER_NAMESPACE } from 'src/decorators/settings-provider.decorator';
+import { buildSettingKey, validateSettingNamespace } from 'src/helpers/setting-key.helper';
 
 
 @Injectable()
@@ -124,18 +126,32 @@ export class SettingService {
     const seenKeys = new Map<string, { setting: SettingDefinition; providerName?: string }>();
     for (const wrapper of allSettingsProviders) {
       const instance = wrapper.instance as ISettingsProvider;
-      // if (!instance?.getSettings) continue;
+      const providerName = String(wrapper.name ?? wrapper.metatype?.name ?? 'unknown');
+      const namespace = wrapper.metatype
+        ? Reflect.getMetadata(SETTINGS_PROVIDER_NAMESPACE, wrapper.metatype) as string | undefined
+        : undefined;
+
+      if (namespace !== undefined) {
+        validateSettingNamespace(namespace);
+      }
+
       for (const setting of instance.getSettings()) {
-        const existing = seenKeys.get(setting.key);
+        const effectiveKey = namespace === undefined
+          ? setting.key
+          : buildSettingKey(namespace, setting.key);
+
+        const existing = seenKeys.get(effectiveKey);
         if (existing) {
           throw new Error(
-            `Duplicate setting key detected: ${setting.key}. ` +
-            `First: ${JSON.stringify(existing.setting)} from provider: ${existing.providerName ?? "unknown"}. ` +
-            `Second: ${JSON.stringify(setting)} from provider: ${wrapper.name ?? "unknown"}.`
+            `Duplicate effective setting key "${effectiveKey}": ` +
+            `${existing.providerName ?? 'unknown'} and ${providerName}.`,
           );
         }
-        seenKeys.set(setting.key, { setting, providerName: wrapper.name });
-        settings.push(setting);
+        const resolvedSetting = namespace === undefined
+          ? setting
+          : { ...setting, key: effectiveKey };
+        seenKeys.set(effectiveKey, { setting: resolvedSetting, providerName });
+        settings.push(resolvedSetting);
       }
     }
 
@@ -472,6 +488,21 @@ export class SettingService {
     // const getAllSettings = this.getAllSettingsFromProviders();
     // const settingValue = getAllSettings.find(i => (i.key == settingKey))
     // return settingValue?.value;
+  }
+
+  /**
+   * Returns a setting accessor scoped to a namespaced settings provider.
+   * Legacy, unnamespaced settings should continue to use getConfigValue().
+   */
+  forModule(namespace: string) {
+    validateSettingNamespace(namespace);
+    return {
+      get: <T = never>(localKey: NoInfer<T>) => {
+        const settingKey = buildSettingKey(namespace, localKey as string);
+        const cachedSetting = this.settingsByKey.get(settingKey);
+        return cachedSetting?.value ?? null;
+      },
+    };
   }
 
   async getMcpUrl(getMcpUrlDto: GetMcpUrlDto, solidRequestContext: any = {}): Promise<any> {
