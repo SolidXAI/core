@@ -4,8 +4,10 @@
  */
 (function (global) {
   "use strict";
-  if (global.SolidAgentEmbed && global.SolidAgentEmbed.version === 3) return;
+  if (global.SolidAgentEmbed && global.SolidAgentEmbed.version >= 4) return;
   var channel = "solidx-agent-embed";
+  var publicProtocolVersion = 2;
+  var maxContextBytes = 32 * 1024;
   var hostedUiOrigin = __SOLIDX_AGENT_EMBED_UI_ORIGIN__;
   function debug(instanceId, event, details) {
     if (global.console && typeof global.console.info === "function") global.console.info("[agent-embed][sdk] " + event, Object.assign({ instanceId: instanceId }, details || {}));
@@ -30,6 +32,7 @@
     var inputs = JSON.parse(JSON.stringify(options.inputs || {}));
     var destroyed = false, initialized = false, locked = false, open = false, windowMode = "popup", ready = false, tokenFlight = null;
     var pending = new Map();
+    var listeners = new Map(), beforeSendListeners = [], contextSnapshots = new Map(), listenerOrder = 0, eventSequence = 0;
     var controller = null, loadTimer = null;
     var launcherHost = null, button = null;
     if (!inline) {
@@ -101,6 +104,102 @@
     function post(type, data) {
       if (!destroyed && frame.contentWindow) frame.contentWindow.postMessage(Object.assign({ channel: channel, version: 1, instanceId: id, type: type }, data || {}), embedUrl.origin);
     }
+    function isPlainObject(value) { return !!value && typeof value === "object" && !Array.isArray(value) && Object.getPrototypeOf(value) === Object.prototype; }
+    function payloadSize(value) {
+      var encoded = JSON.stringify(value);
+      return new TextEncoder().encode(encoded).length;
+    }
+    function isJsonValue(value, depth) {
+      if (depth > 16) return false;
+      if (value === null || typeof value === "string" || typeof value === "boolean") return true;
+      if (typeof value === "number") return Number.isFinite(value);
+      if (Array.isArray(value)) return value.length <= 1024 && value.every(function (item) { return isJsonValue(item, depth + 1); });
+      if (!isPlainObject(value)) return false;
+      return Object.keys(value).every(function (key) { return isJsonValue(value[key], depth + 1); });
+    }
+    function emit(event, payload) {
+      var notification = Object.assign({ protocolVersion: publicProtocolVersion, instanceId: id, agentId: options.agentId,
+        eventId: crypto.randomUUID(), sequence: ++eventSequence, occurredAt: new Date().toISOString() }, payload || {});
+      (listeners.get(event) || []).slice().forEach(function (entry) {
+        try { entry.listener(notification); } catch (error) { debug(id, "public listener failed", { event: event, message: error && error.message }); }
+      });
+    }
+    function collectBeforeSend(request) {
+      if (!isPlainObject(request) || typeof request.text !== "string" || !["composer", "sdk", "prefill", "widget"].includes(request.source)
+          || !Array.isArray(request.attachments) || request.attachments.length > 5 || payloadSize(request) > 256 * 1024) return Promise.reject(new Error("Invalid before-send request."));
+      if (!request.attachments.every(function (item) { return isPlainObject(item) && typeof item.name === "string"
+          && typeof item.mimeType === "string" && Number.isFinite(item.size) && item.size >= 0; }))
+        return Promise.reject(new Error("Invalid attachment descriptors in before-send request."));
+      request.attachments.forEach(function (item) { Object.freeze(item); });
+      Object.freeze(request.attachments);
+      Object.freeze(request);
+      var controller = new AbortController();
+      var timeout = Math.min(Math.max(1, Number(options.beforeSendTimeoutMs) || 3000), 10000);
+      var timer = setTimeout(function () { controller.abort(); }, timeout);
+      var aborted = new Promise(function (_, reject) {
+        controller.signal.addEventListener("abort", function () { reject(new Error("Host context preparation timed out.")); }, { once: true });
+      });
+      var namespaces = Object.create(null);
+      return Promise.race([beforeSendListeners.slice().sort(function (a, b) { return a.priority - b.priority || a.order - b.order; })
+        .reduce(function (chain, entry) {
+          return chain.then(function () {
+            if (controller.signal.aborted) throw new Error("Host context preparation timed out.");
+            var listenerTimeout = Math.min(Math.max(1, Number(entry.timeoutMs) || timeout), timeout);
+            var listenerTimer;
+            return Promise.race([
+              Promise.resolve(entry.listener(request, controller.signal)),
+              new Promise(function (_, reject) { listenerTimer = setTimeout(function () {
+                controller.abort(); reject(new Error("Host context listener timed out: " + entry.namespace));
+              }, listenerTimeout); })
+            ]).finally(function () { clearTimeout(listenerTimer); }).then(function (result) {
+              if (controller.signal.aborted) throw new Error("Host context preparation timed out.");
+              if (!isPlainObject(result)) throw new Error("Before-send listeners must return a context contribution.");
+              if (result.cancelled === true) throw new Error(typeof result.reason === "string" ? result.reason : "Message preparation was cancelled.");
+              if (!("context" in result) || !isJsonValue(result.context, 0) || typeof result.revision !== "string"
+                  || result.revision.length > 256
+                  || (result.displaySummary !== undefined && (typeof result.displaySummary !== "string" || result.displaySummary.length > 1024)))
+                throw new Error("A before-send listener returned an invalid contribution.");
+              if (Object.prototype.hasOwnProperty.call(namespaces, entry.namespace)) throw new Error("A context namespace was contributed more than once.");
+              var contextCopy = JSON.parse(JSON.stringify(result.context));
+              namespaces[entry.namespace] = { context: contextCopy, revision: result.revision,
+                ...(result.displaySummary !== undefined ? { displaySummary: result.displaySummary } : {}) };
+            });
+          });
+        }, Promise.resolve())
+        .then(function () {
+          contextSnapshots.forEach(function (snapshot, namespace) {
+            if (!Object.prototype.hasOwnProperty.call(namespaces, namespace)
+                && !beforeSendListeners.some(function (entry) { return entry.namespace === namespace; })) namespaces[namespace] = snapshot;
+          });
+          (options.requiredNamespaces || []).forEach(function (namespace) {
+            if (!Object.prototype.hasOwnProperty.call(namespaces, namespace)) throw new Error("Required context is unavailable: " + namespace);
+          });
+          var value = { schemaVersion: 1, namespaces: namespaces };
+          if (payloadSize(value) > maxContextBytes) throw new Error("Prepared message context exceeds 32 KiB.");
+          return value;
+        })
+        .finally(function () { clearTimeout(timer); }), aborted]).finally(function () { clearTimeout(timer); });
+    }
+    function runBeforeSend(data) {
+      var requestId = data.requestId;
+      if (typeof requestId !== "string" || data.protocolVersion !== publicProtocolVersion) return;
+      Promise.resolve().then(function () { return collectBeforeSend(data.request); }).then(function (messageContext) {
+        post("before_send_result", { protocolVersion: publicProtocolVersion, requestId: requestId, ok: true, message_context: messageContext });
+      }).catch(function (error) {
+        post("before_send_result", { protocolVersion: publicProtocolVersion, requestId: requestId, ok: false,
+          error: String(error && error.message || "Message context could not be prepared.").slice(0, 1024) });
+      });
+    }
+    function sendCommand(command, payload) {
+      if (destroyed) return Promise.reject(new Error("This embed was destroyed."));
+      if (!ready) return Promise.reject(new Error("The hosted chat is not ready."));
+      var requestId = crypto.randomUUID();
+      return new Promise(function (resolve, reject) {
+        var timer = setTimeout(function () { pending.delete(requestId); reject(new Error("Embed command timed out.")); }, 10000);
+        pending.set(requestId, { timer: timer, resolve: resolve, reject: reject });
+        post("command", { protocolVersion: publicProtocolVersion, requestId: requestId, command: command, payload: payload || {} });
+      });
+    }
     function position() {
       if (!open || inline) return;
       if (windowMode === "fullscreen") {
@@ -164,7 +263,7 @@
     function receive(event) {
       var data = event.data;
       if (destroyed) return;
-      if (event.source !== frame.contentWindow || event.origin !== embedUrl.origin || !data
+      if (event.source !== frame.contentWindow || event.origin !== embedUrl.origin || !isPlainObject(data)
           || data.channel !== channel || data.version !== 1 || data.instanceId !== id) {
         debug(id, "ignored postMessage", { sourceMatchesFrame: event.source === frame.contentWindow,
           originMatchesHostedUi: event.origin === embedUrl.origin, hasData: !!data,
@@ -173,13 +272,30 @@
         return;
       }
       debug(id, "received iframe message", { type: data.type, requestId: data.requestId });
-      if (data.type === "ready") { ready = true; clearTimeout(loadTimer); debug(id, "iframe ready"); }
+      if (data.type === "ready") {
+        var frameCapabilities = Array.isArray(data.capabilities) ? data.capabilities : [];
+        var missing = (options.requiredCapabilities || []).filter(function (name) { return !frameCapabilities.includes(name); });
+        if (missing.length) { emitError(new Error("This hosted chat needs an upgrade. Missing capabilities: " + missing.join(", "))); return; }
+        ready = true;
+        clearTimeout(loadTimer);
+        emit("onReady", { protocolVersion: publicProtocolVersion, instanceId: id, agentId: options.agentId, capabilities: frameCapabilities });
+        debug(id, "iframe ready", { protocolVersion: publicProtocolVersion, capabilities: frameCapabilities });
+      }
       else if (data.type === "close") hide();
+      else if (data.type === "before_send_request") runBeforeSend(data);
+      else if (data.type === "public_event" && data.protocolVersion === publicProtocolVersion
+          && typeof data.event === "string" && isPlainObject(data.payload) && payloadSize(data.payload) <= 64 * 1024) {
+        emit(data.event, data.payload);
+      }
+      else if (data.type === "command_result" && data.protocolVersion === publicProtocolVersion) {
+        var command = pending.get(data.requestId);
+        if (command) { clearTimeout(command.timer); pending.delete(data.requestId); data.ok ? command.resolve(data.result) : command.reject(new Error(data.error || "Embed command failed.")); }
+      }
       else if (data.type === "token_request") {
         fetchToken().then(function (auth) { debug(id, "sending token bootstrap to iframe", { requestId: data.requestId, inputsCount: Object.keys(inputs).length }); post("token", { requestId: data.requestId, auth: auth, inputs: inputs }); })
           .catch(function (error) { post("token_error", { requestId: data.requestId, error: error.message }); emitError(error); });
-      } else if (data.type === "authenticated") { status.style.display = "none"; }
-      else if (data.type === "error") emitError(new Error(data.error));
+      } else if (data.type === "authenticated") { status.style.display = "none"; emit("onAuthenticationStateChanged", { state: "authenticated" }); }
+      else if (data.type === "error") { emit("onAuthenticationStateChanged", { state: "failed", code: "embed_error" }); emitError(new Error(data.error)); }
       else if (data.type === "inputs_locked") locked = !!data.locked;
       else if (data.type === "inputs_result") {
         var request = pending.get(data.requestId);
@@ -188,7 +304,9 @@
     }
     function show() {
       if (destroyed) throw new Error("This embed was destroyed.");
+      if (open) return;
       open = true;
+      emit("onPanelVisibilityChanged", { visible: true, reason: "open" });
       surfaceHost.style.display = "block";
       if (button) button.setAttribute("aria-expanded", "true");
       position();
@@ -201,6 +319,7 @@
     function hide() {
       if (!open) return;
       open = false;
+      emit("onPanelVisibilityChanged", { visible: false, reason: "close" });
       surfaceHost.style.display = "none";
       if (button) { button.setAttribute("aria-expanded", "false"); button.focus(); }
       if (typeof options.onClose === "function") options.onClose();
@@ -232,6 +351,67 @@
     return {
       open: show,
       close: hide,
+      on: function (eventName, listener, hookOptions) {
+        if (destroyed) throw new Error("This embed was destroyed.");
+        if (typeof eventName !== "string" || typeof listener !== "function") throw new Error("Provide an event name and listener.");
+        if (eventName === "onBeforeUserMessageSend") {
+          if (!hookOptions || typeof hookOptions.namespace !== "string" || !hookOptions.namespace.trim())
+            throw new Error("Before-send listeners require an exclusive namespace.");
+          if (beforeSendListeners.some(function (entry) { return entry.namespace === hookOptions.namespace; }))
+            throw new Error("A before-send listener already owns namespace " + hookOptions.namespace + ".");
+          var hook = { listener: listener, namespace: hookOptions.namespace, priority: Number(hookOptions.priority) || 0,
+            timeoutMs: hookOptions.timeoutMs,
+            order: ++listenerOrder };
+          beforeSendListeners.push(hook);
+          return function () { beforeSendListeners = beforeSendListeners.filter(function (entry) { return entry !== hook; }); };
+        }
+        var entries = listeners.get(eventName) || [];
+        var entry = { listener: listener, original: listener, once: false };
+        entries.push(entry); listeners.set(eventName, entries);
+        return function () { var current = listeners.get(eventName) || []; listeners.set(eventName, current.filter(function (item) { return item !== entry; })); };
+      },
+      once: function (eventName, listener) {
+        if (eventName === "onBeforeUserMessageSend") throw new Error("once is only available for notification events.");
+        if (typeof listener !== "function") throw new Error("Provide a listener.");
+        var entries = listeners.get(eventName) || [];
+        var wrapped = function (payload) { remove(); listener(payload); };
+        var entry = { listener: wrapped, original: listener, once: true };
+        function remove() { listeners.set(eventName, (listeners.get(eventName) || []).filter(function (item) { return item !== entry; })); }
+        entries.push(entry); listeners.set(eventName, entries);
+        return remove;
+      },
+      off: function (eventName, listener) {
+        if (eventName === "onBeforeUserMessageSend") {
+          beforeSendListeners = beforeSendListeners.filter(function (entry) { return entry.listener !== listener; });
+          return;
+        }
+        listeners.set(eventName, (listeners.get(eventName) || []).filter(function (entry) { return entry.listener !== listener && entry.original !== listener; }));
+      },
+      setContext: function (namespace, snapshot, revision, displaySummary) {
+        if (typeof namespace !== "string" || !namespace.trim() || typeof revision !== "string") return Promise.reject(new Error("Provide a namespace and revision."));
+        var contribution = { context: snapshot, revision: revision,
+          ...(typeof displaySummary === "string" ? { displaySummary: displaySummary } : {}) };
+        try {
+          if (!isJsonValue(contribution, 0) || revision.length > 256
+              || (displaySummary !== undefined && displaySummary.length > 1024)) throw new Error("Context contains unsupported values.");
+          if (payloadSize(contribution) > maxContextBytes) throw new Error("Context exceeds 32 KiB.");
+        }
+        catch (error) { return Promise.reject(error); }
+        contextSnapshots.set(namespace, JSON.parse(JSON.stringify(contribution)));
+        emit("onContextChanged", { protocolVersion: publicProtocolVersion, instanceId: id, agentId: options.agentId, namespace: namespace, revision: revision, displaySummary: displaySummary });
+        return sendCommand("setContext", { namespace: namespace, contribution: contribution });
+      },
+      sendMessage: function (message) {
+        if (!isPlainObject(message) || typeof message.text !== "string") return Promise.reject(new Error("sendMessage requires text."));
+        return sendCommand("sendMessage", { text: message.text, source: message.source || "sdk" });
+      },
+      prefill: function (text) {
+        if (typeof text !== "string") return Promise.reject(new Error("prefill requires text."));
+        return sendCommand("prefill", { text: text });
+      },
+      newChat: function () { return sendCommand("newChat"); },
+      cancelTurn: function () { return sendCommand("cancelTurn"); },
+      reconnect: function () { return sendCommand("reconnect"); },
       setInputs: function (next) {
         if (destroyed) return Promise.reject(new Error("This embed was destroyed."));
         if (locked) return Promise.reject(new Error("Start a new chat before changing inputs."));
@@ -247,11 +427,16 @@
       },
       destroy: function () {
         if (destroyed) return;
+        emit("onDestroyed", { protocolVersion: publicProtocolVersion, instanceId: id, agentId: options.agentId,
+          eventId: crypto.randomUUID(), sequence: ++eventSequence, occurredAt: new Date().toISOString() });
         destroyed = true;
         clearTimeout(loadTimer);
         if (controller) controller.abort();
         pending.forEach(function (request) { clearTimeout(request.timer); request.reject(new Error("Embed destroyed.")); });
         pending.clear();
+        listeners.clear();
+        beforeSendListeners = [];
+        contextSnapshots.clear();
         global.removeEventListener("message", receive);
         global.removeEventListener("resize", position);
         global.removeEventListener("scroll", position, true);
@@ -261,5 +446,5 @@
       }
     };
   }
-  global.SolidAgentEmbed = { version: 3, mount: mount };
+  global.SolidAgentEmbed = { version: 4, mount: mount };
 })(window);
