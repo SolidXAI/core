@@ -1,12 +1,14 @@
 import {
   IsArray,
   IsBoolean,
+  IsIn,
   IsObject,
   IsOptional,
   IsString,
 } from 'class-validator';
 
 import type {
+  HealingPolicy,
   ScenarioSpec,
   ScenarioType,
   TestingDataRecord,
@@ -79,6 +81,11 @@ export class TestRunRequestDto {
   @IsOptional()
   @IsBoolean()
   recordVideo?: boolean;
+
+  /** Selector healing for UI steps: off | report (default) | auto. */
+  @IsOptional()
+  @IsIn(['off', 'report', 'auto'])
+  healing?: HealingPolicy;
 
   @IsOptional()
   @IsArray()

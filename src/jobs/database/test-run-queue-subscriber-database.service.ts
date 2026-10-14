@@ -104,7 +104,7 @@ export class TestRunQueueSubscriberDatabase extends DatabaseSubscriber<TestRunJo
                 reporter,
                 env: p.variables,
                 api: { baseUrl: p.baseUrl },
-                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true },
+                ui: { baseUrl: p.uiBaseUrl, headless: p.headless ?? true, capture: p.capture, recordVideo: p.recordVideo ?? true, healing: p.healing },
                 options: { printApiLogs: p.printApiLogs ?? true },
                 externalRunId: p.externalRunId,
                 resolveSecrets: (keys) => this.secretService.resolveAvailable(keys),

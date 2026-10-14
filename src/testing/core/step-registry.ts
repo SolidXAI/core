@@ -24,4 +24,8 @@ export class StepRegistry {
   has(op: string): boolean {
     return this.handlers.has(op);
   }
+
+  ops(): string[] {
+    return [...this.handlers.keys()].sort();
+  }
 }

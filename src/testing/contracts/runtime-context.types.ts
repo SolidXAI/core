@@ -39,4 +39,22 @@ export interface TestContext {
   options?: {
     printApiLogs?: boolean;
   };
+  /**
+   * Location of the step currently executing, as a path into the scenario
+   * (`steps[3].when`, `steps[5].then[1]`). Heal reports use it to address the step.
+   */
+  stepPath?: string;
+}
+
+/** A UI step that passed only because a fallback or fingerprint replaced its selector. */
+export interface HealEvent {
+  scenarioId: string;
+  stepPath?: string;
+  op: string;
+  stepName?: string;
+  field: "selector";
+  from: string;
+  to: string;
+  strategy: "fallback" | "fingerprint";
+  policy: "report" | "auto";
 }

@@ -1,9 +1,24 @@
 import type { TestContext, StepPhase } from "../contracts/runtime-context.types";
-import type { OpStep, ScenarioSpec } from "../contracts/testing-metadata.types";
+import type { OpStep, ScenarioSpec, StepBlock } from "../contracts/testing-metadata.types";
 import { interpolateDeep } from "./interpolation";
 import { normalizeBlock } from "./normalize-steps";
 import { StepRegistry } from "./step-registry";
 import { withTimeout } from "./timeout";
+
+/**
+ * Path of a step inside `scenario.steps`, matching the file layout so a consumer can
+ * patch the exact step: `steps[2]`, `steps[3].when`, `steps[5].then[1]`.
+ */
+export function stepPathFor(block: StepBlock, blockIndex: number, stepIndex: number): string {
+  const base = `steps[${blockIndex}]`;
+  if ("given" in block) return `${base}.given`;
+  if ("when" in block) return `${base}.when`;
+  if ("and" in block) return `${base}.and`;
+  if ("then" in block) {
+    return Array.isArray(block.then) ? `${base}.then[${stepIndex}]` : `${base}.then`;
+  }
+  return base;
+}
 
 export class TestingEngine {
   private readonly registry: StepRegistry;
@@ -45,9 +60,11 @@ export class TestingEngine {
 
       try {
         const execute = async () => {
-          for (const block of scenario.steps) {
+          for (const [blockIndex, block] of scenario.steps.entries()) {
             const normalized = normalizeBlock(block);
-            await this.runBlock(normalized.phase, normalized.steps, ctx);
+            for (const [stepIndex, step] of normalized.steps.entries()) {
+              await this.runStep(normalized.phase, step, ctx, stepPathFor(block, blockIndex, stepIndex));
+            }
           }
         };
 
@@ -83,10 +100,12 @@ export class TestingEngine {
         }
 
         const durationMs = Date.now() - scenarioStart;
+        const heals = ctx.ui?.getHeals() ?? [];
         reporter.onScenarioEnd(scenario, {
           ok: !scenarioError,
           error: scenarioError,
           durationMs,
+          ...(heals.length ? { heals } : {}),
         });
       }
 
@@ -100,50 +119,56 @@ export class TestingEngine {
     }
   }
 
-  private async runBlock(
+  /**
+   * Run one step exactly as a scenario would: interpolate, dispatch, honor `timeoutMs`,
+   * store `saveAs`, and report start/end. Throws the step's error.
+   */
+  async runStep(
     phase: StepPhase,
-    steps: OpStep[],
+    step: OpStep,
     ctx: TestContext,
-  ): Promise<void> {
-    for (const step of steps) {
-      const reporter = ctx.reporter;
-      const stepStart = Date.now();
-      let stepError: unknown;
-      let resolvedStep: OpStep | undefined;
+    stepPath?: string,
+  ): Promise<unknown> {
+    const reporter = ctx.reporter;
+    const stepStart = Date.now();
+    let stepError: unknown;
+    let resolvedStep: OpStep | undefined;
+    let result: unknown;
 
-      reporter.onStepStart({ scenarioId: ctx.scenarioId, phase, step });
+    ctx.stepPath = stepPath;
+    reporter.onStepStart({ scenarioId: ctx.scenarioId, phase, step, stepPath });
 
-      try {
-        resolvedStep = interpolateDeep(step, ctx) as OpStep;
-        const handler = this.registry.get(resolvedStep.op);
-        const run = handler(ctx, resolvedStep);
-        const result =
-          resolvedStep.timeoutMs !== undefined
-            ? await withTimeout(
-              run,
-              resolvedStep.timeoutMs,
-              `Step timeout after ${resolvedStep.timeoutMs}ms: "${resolvedStep.op}"`,
-            )
-            : await run;
+    try {
+      resolvedStep = interpolateDeep(step, ctx) as OpStep;
+      const handler = this.registry.get(resolvedStep.op);
+      const run = handler(ctx, resolvedStep);
+      result =
+        resolvedStep.timeoutMs !== undefined
+          ? await withTimeout(
+            run,
+            resolvedStep.timeoutMs,
+            `Step timeout after ${resolvedStep.timeoutMs}ms: "${resolvedStep.op}"`,
+          )
+          : await run;
 
-        if (resolvedStep.saveAs) {
-          // console.log(`Step ${resolvedStep.name} attempting to saveAs ${resolvedStep.saveAs}`, JSON.stringify(result));
-          ctx.resources.set(resolvedStep.saveAs, result);
-        }
-      } catch (err: any) {
-        stepError = err;
-        throw err;
-      } finally {
-        const durationMs = Date.now() - stepStart;
-        reporter.onStepEnd({
-          scenarioId: ctx.scenarioId,
-          phase,
-          step: resolvedStep ?? step,
-          ok: !stepError,
-          error: stepError,
-          durationMs,
-        });
+      if (resolvedStep.saveAs) {
+        ctx.resources.set(resolvedStep.saveAs, result);
       }
+      return result;
+    } catch (err: any) {
+      stepError = err;
+      throw err;
+    } finally {
+      const durationMs = Date.now() - stepStart;
+      reporter.onStepEnd({
+        scenarioId: ctx.scenarioId,
+        phase,
+        step: resolvedStep ?? step,
+        ok: !stepError,
+        error: stepError,
+        durationMs,
+        stepPath,
+      });
     }
   }
 }
