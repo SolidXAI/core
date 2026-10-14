@@ -17,6 +17,16 @@ export class UpdateAgentHubTagDto {
     name: string;
 
     @IsOptional()
+    @IsInt()
+    @ApiProperty({ required: false })
+    moduleId: number;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false })
+    moduleUserKey: string;
+
+    @IsOptional()
     @IsArray()
     @ValidateNested({ each: true })
     @Type(() => UpdateAgentSkillRegistryDto)

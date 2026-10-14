@@ -1,0 +1,51 @@
+import { Logger } from '@nestjs/common';
+import * as fs from 'fs/promises';
+import { SOLID_CORE_MODULE_NAME } from 'src/constants';
+import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
+
+export async function updateModuleMetadataJson(
+    moduleName: string | undefined,
+    helper: ModuleMetadataHelperService,
+    logger: Logger,
+    update: (metadata: any) => boolean,
+): Promise<void> {
+    if (!moduleName || moduleName === SOLID_CORE_MODULE_NAME) return;
+
+    const filePath = await helper.getModuleMetadataFilePath(moduleName);
+    try {
+        await fs.access(filePath);
+    } catch {
+        logger.error(`Module metadata file not found: ${filePath}`);
+        return;
+    }
+
+    const metadata = await helper.getModuleMetadataConfiguration(filePath);
+    if (!metadata) throw new Error(`Module metadata could not be read: ${filePath}`);
+    if (update(metadata)) await fs.writeFile(filePath, JSON.stringify(metadata, null, 2));
+}
+
+export async function syncEntityTagsToModuleMetadataJson(
+    moduleName: string | undefined,
+    metadataKey: 'agenthubAgents' | 'agenthubSkills' | 'agenthubTools',
+    entityName: string,
+    tags: Array<{ name: string }>,
+    helper: ModuleMetadataHelperService,
+    logger: Logger,
+): Promise<void> {
+    await updateModuleMetadataJson(moduleName, helper, logger, (metadata) => {
+        const entries = metadata[metadataKey];
+        if (!Array.isArray(entries)) return false;
+        const entity = entries.find((item: { name?: string }) => item.name === entityName);
+        if (!entity) return false;
+
+        const tagNames = tags.map((tag) => tag.name).sort();
+        if (JSON.stringify(entity.tags ?? []) === JSON.stringify(tagNames)) return false;
+        entity.tags = tagNames;
+        return true;
+    });
+}
+
+export function getRemoveEntityId(event: { entity?: { id?: number }; databaseEntity?: { id?: number }; entityId?: any }): number | undefined {
+    const id = event.entity?.id ?? event.databaseEntity?.id ?? event.entityId;
+    return typeof id === 'number' ? id : id?.id;
+}

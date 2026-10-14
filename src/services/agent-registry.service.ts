@@ -1,4 +1,4 @@
-import { Injectable } from '@nestjs/common';
+import { Injectable, Logger } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ModuleRef  } from "@nestjs/core";
 import { EntityManager } from 'typeorm';
@@ -7,9 +7,12 @@ import { AgentRegistry } from '../entities/agent-registry.entity';
 import { AgentRegistryRepository } from '../repository/agent-registry.repository';
 import { bumpAgentConfigVersions } from './agent-config-version.service';
 import { normalizeAgentRequiredInputs } from '../helpers/agent-required-inputs';
+import { ModuleMetadataHelperService } from '../helpers/module-metadata-helper.service';
+import { syncEntityTagsToModuleMetadataJson } from '../subscribers/agenthub-metadata-sync.util';
 
 @Injectable()
 export class AgentRegistryService extends CRUDService<AgentRegistry>{
+  private readonly logger = new Logger(AgentRegistryService.name);
   constructor(
     @InjectEntityManager("default")
     readonly entityManager: EntityManager,
@@ -32,6 +35,19 @@ export class AgentRegistryService extends CRUDService<AgentRegistry>{
     const { configVersion: _ignored, ...changes } = updateDto;
     if ('requiredInputs' in changes) changes.requiredInputs = normalizeAgentRequiredInputs(changes.requiredInputs);
     const saved = await super.update(id, changes, files, isPartialUpdate, solidRequestContext, isUpdate);
+    if ('tagsCommand' in changes) {
+      const agent = await this.repo.findOne({ where: { id: saved.id }, relations: { module: true, tags: true } });
+      if (agent) {
+        await syncEntityTagsToModuleMetadataJson(
+          agent.module?.name,
+          'agenthubAgents',
+          agent.name,
+          agent.tags ?? [],
+          this.moduleRef.get(ModuleMetadataHelperService, { strict: false }),
+          this.logger,
+        );
+      }
+    }
     await bumpAgentConfigVersions(this.entityManager, [saved.id]);
     return this.repo.findOne({ where: { id: saved.id } });
   }

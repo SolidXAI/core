@@ -1,10 +1,12 @@
-import { BadRequestException } from '@nestjs/common';
+import { BadRequestException, Logger } from '@nestjs/common';
 import { ModuleRef } from '@nestjs/core';
 import { EntityManager, EntityTarget, FindOptionsWhere, In } from 'typeorm';
 import { CommonEntity } from '../entities/common.entity';
 import { AgentRegistry } from '../entities/agent-registry.entity';
 import { CRUDService } from './crud.service';
 import { SolidBaseRepository } from '../repository/solid-base.repository';
+import { ModuleMetadataHelperService } from '../helpers/module-metadata-helper.service';
+import { syncEntityTagsToModuleMetadataJson } from '../subscribers/agenthub-metadata-sync.util';
 
 export async function bumpAgentConfigVersions(entityManager: EntityManager, agentIds: number[]): Promise<void> {
   const ids = [...new Set(agentIds.filter((id) => Number.isInteger(id) && id > 0))];
@@ -88,7 +90,13 @@ export abstract class AgentConfigLinkService<T extends CommonEntity> extends CRU
   }
 }
 
-export abstract class AgentConfigCatalogService<T extends CommonEntity & { type: string }> extends CRUDService<T> {
+export abstract class AgentConfigCatalogService<T extends CommonEntity & {
+  type: string;
+  name: string;
+  module?: { name: string };
+  tags?: Array<{ name: string }>;
+}> extends CRUDService<T> {
+  protected readonly metadataSyncLogger = new Logger(AgentConfigCatalogService.name);
   constructor(
     entityManager: EntityManager,
     repo: SolidBaseRepository<T>,
@@ -128,6 +136,23 @@ export abstract class AgentConfigCatalogService<T extends CommonEntity & { type:
     await this.assertEditable([id]);
     const before = await this.agentIds([id]);
     const saved = await super.update(id, updateDto, files, isPartialUpdate, solidRequestContext, isUpdate);
+    if ('tagsCommand' in updateDto) {
+      const metadataKey = this.modelName === 'agentSkillRegistry' ? 'agenthubSkills' : 'agenthubTools';
+      const entity = await this.repo.findOne({
+        where: { id: saved.id } as FindOptionsWhere<T>,
+        relations: { module: true, tags: true } as any,
+      });
+      if (entity) {
+        await syncEntityTagsToModuleMetadataJson(
+          entity.module?.name,
+          metadataKey,
+          entity.name,
+          entity.tags ?? [],
+          this.moduleRef.get(ModuleMetadataHelperService, { strict: false }),
+          this.metadataSyncLogger,
+        );
+      }
+    }
     const after = await this.agentIds([saved.id]);
     await bumpAgentConfigVersions(this.entityManager, [...before, ...after]);
     return saved;

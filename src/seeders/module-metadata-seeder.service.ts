@@ -35,6 +35,7 @@ import { SystemFieldsSeederService } from './system-fields-seeder.service';
 // import { CreateScheduledJobDto } from 'src/dtos/create-scheduled-job.dto';
 import { ActionMetadata } from '../entities/action-metadata.entity';
 import { AgentRegistry } from '../entities/agent-registry.entity';
+import { AgentHubTag } from '../entities/agent-hub-tag.entity';
 import { AgentSkill } from '../entities/agent-skill.entity';
 import { AgentSkillRegistry } from '../entities/agent-skill-registry.entity';
 import { AgentTool } from '../entities/agent-tool.entity';
@@ -797,7 +798,8 @@ export class ModuleMetadataSeederService {
         const agents = this.getSeedArray<any>(overallMetadata?.agenthubAgents);
         const tools = this.getSeedArray<any>(overallMetadata?.agenthubTools);
         const skills = this.getSeedArray<any>(overallMetadata?.agenthubSkills);
-        if (!agents.length && !tools.length && !skills.length) {
+        const tags = this.getSeedArray<any>(overallMetadata?.agenthubTags);
+        if (!agents.length && !tools.length && !skills.length && !tags.length) {
             return { pruned: 0, upserted: 0 };
         }
         const moduleName = overallMetadata?.moduleMetadata?.name;
@@ -806,10 +808,31 @@ export class ModuleMetadataSeederService {
             throw new Error(`Cannot seed AgentHub registries: module ${moduleName} was not found.`);
         }
 
+        const tagCount = await this.seedAgentHubTags(tags, module);
         const skillCount = await this.seedAgentHubSkills(skills, module);
         const toolCount = await this.seedAgentHubTools(tools, module);
         const agentCount = await this.seedAgentHubAgents(agents, module);
-        return { pruned: 0, upserted: agentCount + toolCount + skillCount };
+        return { pruned: 0, upserted: tagCount + skillCount + toolCount + agentCount };
+    }
+
+    private async seedAgentHubTags(tags: any[], defaultModule: ModuleMetadata): Promise<number> {
+        const repo = this.dataSource.getRepository(AgentHubTag);
+        let upserted = 0;
+        for (const record of tags) {
+            const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
+            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true }, withDeleted: true });
+            if (existing) {
+                if (!existing.module) {
+                    await repo.update(existing.id, { module: recordModule });
+                    upserted++;
+                }
+                continue;
+            }
+            const { moduleUserKey, ...data } = record;
+            await repo.save(repo.create({ ...data, module: recordModule }));
+            upserted++;
+        }
+        return upserted;
     }
 
     private async seedAgentHubAgents(agents: any[], defaultModule: ModuleMetadata): Promise<number> {
@@ -821,17 +844,18 @@ export class ModuleMetadataSeederService {
         let upserted = 0;
         for (const record of agents) {
             const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
-            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true }, withDeleted: true });
+            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true, tags: true }, withDeleted: true });
             if (existing?.deletedAt) continue;
-            const { tags, moduleUserKey, agentSkills = [], agentTools = [], ...data } = record;
+            const { tags: tagNames, moduleUserKey, agentSkills = [], agentTools = [], ...data } = record;
+            const tags = tagNames === undefined ? undefined : await this.getAgentHubSeedTags(tagNames, record.name);
             let agent = existing;
             if (existing) {
-                if (!existing.module) {
-                    await repo.update(existing.id, { module: recordModule });
+                if (!existing.module || (tags && !this.sameAgentHubTags(existing.tags, tags))) {
+                    agent = await repo.save({ ...existing, module: existing.module ?? recordModule, tags: tags ?? existing.tags });
                     upserted++;
                 }
             } else {
-                agent = await repo.save(repo.create({ ...data, module: recordModule } as AgentRegistry));
+                agent = await repo.save(repo.create({ ...data, module: recordModule, tags: tags ?? [] } as AgentRegistry));
                 upserted++;
             }
 
@@ -845,6 +869,8 @@ export class ModuleMetadataSeederService {
                         agentSkillRegistry: skill,
                         alwaysInclude: link.alwaysInclude ?? true,
                     }));
+                } else if (linked.alwaysInclude !== (link.alwaysInclude ?? true)) {
+                    await agentSkillRepo.save({ ...linked, alwaysInclude: link.alwaysInclude ?? true });
                 }
             }
             for (const link of agentTools) {
@@ -857,6 +883,8 @@ export class ModuleMetadataSeederService {
                         agentToolRegistry: tool,
                         requiresApproval: link.requiresApproval ?? false,
                     }));
+                } else if (linked.requiresApproval !== (link.requiresApproval ?? false)) {
+                    await agentToolRepo.save({ ...linked, requiresApproval: link.requiresApproval ?? false });
                 }
             }
         }
@@ -868,19 +896,20 @@ export class ModuleMetadataSeederService {
         let upserted = 0;
         for (const record of tools) {
             const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
-            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true }, withDeleted: true });
+            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true, tags: true }, withDeleted: true });
+            const { tags: tagNames, moduleUserKey, ...data } = record;
+            const tags = tagNames === undefined ? undefined : await this.getAgentHubSeedTags(tagNames, record.name);
             if (existing) {
-                if (!existing.module) {
-                    await repo.update(existing.id, { module: recordModule });
+                if (!existing.module || (tags && !this.sameAgentHubTags(existing.tags, tags))) {
+                    await repo.save({ ...existing, module: existing.module ?? recordModule, tags: tags ?? existing.tags });
                     upserted++;
                 }
                 continue;
             }
-            const { tags, moduleUserKey, ...data } = record;
             if (typeof data.sourceCode === 'string' && !data.checksum) {
                 data.checksum = createHash('sha256').update(data.sourceCode).digest('hex');
             }
-            await repo.save(repo.create({ ...data, module: recordModule }));
+            await repo.save(repo.create({ ...data, module: recordModule, tags: tags ?? [] }));
             upserted++;
         }
         return upserted;
@@ -891,19 +920,38 @@ export class ModuleMetadataSeederService {
         let upserted = 0;
         for (const record of skills) {
             const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
-            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true }, withDeleted: true });
+            const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true, tags: true }, withDeleted: true });
+            const { tags: tagNames, moduleUserKey, ...data } = record;
+            const tags = tagNames === undefined ? undefined : await this.getAgentHubSeedTags(tagNames, record.name);
             if (existing) {
-                if (!existing.module) {
-                    await repo.update(existing.id, { module: recordModule });
+                if (!existing.module || (tags && !this.sameAgentHubTags(existing.tags, tags))) {
+                    await repo.save({ ...existing, module: existing.module ?? recordModule, tags: tags ?? existing.tags });
                     upserted++;
                 }
                 continue;
             }
-            const { tags, moduleUserKey, ...data } = record;
-            await repo.save(repo.create({ ...data, module: recordModule }));
+            await repo.save(repo.create({ ...data, module: recordModule, tags: tags ?? [] }));
             upserted++;
         }
         return upserted;
+    }
+
+    private async getAgentHubSeedTags(names: unknown, recordName: string): Promise<AgentHubTag[]> {
+        if (!Array.isArray(names) || names.some((name) => typeof name !== 'string')) {
+            throw new Error(`Invalid tags for AgentHub registry ${recordName}: expected an array of tag names.`);
+        }
+        const repo = this.dataSource.getRepository(AgentHubTag);
+        const tags: AgentHubTag[] = [];
+        for (const name of new Set(names)) {
+            const tag = await repo.findOneBy({ name });
+            if (!tag) throw new Error(`Cannot link AgentHub registry ${recordName}: tag ${name} was not found.`);
+            tags.push(tag);
+        }
+        return tags;
+    }
+
+    private sameAgentHubTags(current: AgentHubTag[] = [], expected: AgentHubTag[]): boolean {
+        return current.length === expected.length && expected.every((tag) => current.some((item) => item.id === tag.id));
     }
 
     private async getAgentHubSeedModule(record: any, defaultModule: ModuleMetadata): Promise<ModuleMetadata> {
