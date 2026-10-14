@@ -3,6 +3,7 @@ import type { OpStep, ScenarioSpec } from "../contracts/testing-metadata.types";
 import { interpolateDeep } from "./interpolation";
 import { normalizeBlock } from "./normalize-steps";
 import { StepRegistry } from "./step-registry";
+import { scenarioNeedsMobile } from "../runner/lifecycle";
 import { withTimeout } from "./timeout";
 
 export class TestingEngine {
@@ -42,6 +43,8 @@ export class TestingEngine {
       // Start a clean capture window for this scenario (UI adapter buffers console/network
       // events; they're only flushed to the reporter if the scenario fails below).
       ctx.ui?.resetCapture();
+      const usesMobile = scenarioNeedsMobile(scenario) && !!ctx.mobile?.isStarted();
+      if (usesMobile) await ctx.mobile?.resetCapture();
 
       try {
         const execute = async () => {
@@ -79,6 +82,23 @@ export class TestingEngine {
             }
           } catch {
             // Artifact capture is best-effort; never let it mask the scenario error.
+          }
+        }
+
+        // Same for a mobile scenario: device log and a screenshot of the failing screen.
+        if (scenarioError && usesMobile && reporter.attach) {
+          try {
+            const artifacts = (await ctx.mobile?.collectFailureArtifacts()) ?? [];
+            for (const a of artifacts) {
+              reporter.attach({
+                scenarioId: ctx.scenarioId,
+                name: a.name,
+                contentType: a.contentType,
+                data: a.data,
+              });
+            }
+          } catch {
+            // Best-effort, like the UI artifacts above.
           }
         }
 

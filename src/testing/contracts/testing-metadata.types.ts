@@ -1,4 +1,4 @@
-export type ScenarioType = "api" | "ui" | "mixed";
+export type ScenarioType = "api" | "ui" | "mixed" | "mobile";
 
 export interface TestingDataRecord {
   modelUserKey: string;

@@ -1,4 +1,5 @@
 import type { ApiAdapter } from "../adapters/api/api-adapter";
+import type { MobileAdapter } from "../adapters/mobile/mobile-adapter";
 import type { PlaywrightAdapter } from "../adapters/ui/playwright-adapter";
 import type { Reporter } from "../reporter/reporter.types";
 import type { SpecRegistry } from "../core/spec-registry";
@@ -26,6 +27,7 @@ export interface TestContext {
   resources: ResourceStore;
   api?: ApiAdapter;
   ui?: PlaywrightAdapter;
+  mobile?: MobileAdapter;
   last?: { apiResponse?: ApiResponse };
   reporter: Reporter;
   specRegistry?: SpecRegistry;
