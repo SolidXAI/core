@@ -1,5 +1,22 @@
 # Changelog
 
+## [0.1.21-beta.0] - 2026-10-15
+
+### Added
+
+- upgrade SolidAgentEmbed to version 4 with enhanced context handling and event management
+- enhance agent and tool metadata synchronization
+- add agent registry, tool, and skill subscribers with metadata synchronization
+
+### Fixed
+
+- improve mode handling and refactor control button creation in agent embed SDK
+
+### Other
+
+- Feat/media storage root (#196)
+- New tab op changes (#193)
+
 ## [0.1.20] - 2026-10-14
 
 ### Added
