@@ -24,7 +24,7 @@ export class ModuleMetadataHelperService {
             return JSON.parse(fileContent);
         }
         catch (error: any) {
-            this.logger.error(`module metadata configuration non existent at: ${configFilePath}`);
+            this.logger.error(`failed to read or parse module metadata at ${configFilePath}: ${error?.message ?? error}`);
         }
 
         return null;

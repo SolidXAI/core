@@ -6,6 +6,16 @@ export class UpdateSecretDto {
     @IsInt()
     id: number;
 
+    @IsOptional()
+    @IsInt()
+    @ApiProperty({ required: false })
+    moduleId: number;
+
+    @IsOptional()
+    @IsString()
+    @ApiProperty({ required: false })
+    moduleUserKey: string;
+
     @IsNotEmpty()
     @IsOptional()
     @IsString()

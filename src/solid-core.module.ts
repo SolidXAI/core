@@ -390,6 +390,9 @@ import { AgentSkillRegistrySubscriber } from './subscribers/agent-skill-registry
 import { AgentHubTagSubscriber } from './subscribers/agent-hub-tag.subscriber';
 import { AgentSkillSubscriber } from './subscribers/agent-skill.subscriber';
 import { AgentToolSubscriber } from './subscribers/agent-tool.subscriber';
+import { SecretSubscriber } from './subscribers/secret.subscriber';
+import { AgentSecretSubscriber } from './subscribers/agent-secret.subscriber';
+import { AgentRoleSubscriber } from './subscribers/agent-role.subscriber';
 import { MediaStorageProviderMetadataRepository } from './repository/media-storage-provider-metadata.repository';
 import { McpCommand } from './commands/mcp.command';
 import { FixturesService } from './services/fixtures.service';
@@ -980,6 +983,9 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentHubTagSubscriber,
     AgentSkillSubscriber,
     AgentToolSubscriber,
+    SecretSubscriber,
+    AgentSecretSubscriber,
+    AgentRoleSubscriber,
     SavedFiltersService,
     UserViewMetadataService,
     SecurityRuleService,

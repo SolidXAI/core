@@ -23,7 +23,7 @@ export class AgentSkillRegistry extends CommonEntity {
     body: string;
 
     @Index()
-    @ManyToOne(() => ModuleMetadata, { onDelete: "SET NULL", nullable: true })
+    @ManyToOne(() => ModuleMetadata, { onDelete: "RESTRICT", nullable: false })
     @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })
     module: ModuleMetadata;
 

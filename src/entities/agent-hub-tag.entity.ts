@@ -12,7 +12,7 @@ export class AgentHubTag extends CommonEntity {
     name: string;
 
     @Index()
-    @ManyToOne(() => ModuleMetadata, { onDelete: 'SET NULL', nullable: true })
+    @ManyToOne(() => ModuleMetadata, { onDelete: 'RESTRICT', nullable: false })
     @JoinColumn({ name: 'module_id', referencedColumnName: 'id' })
     module: ModuleMetadata;
 

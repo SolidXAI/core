@@ -3,6 +3,8 @@ import * as fs from 'fs/promises';
 import { SOLID_CORE_MODULE_NAME } from 'src/constants';
 import { ModuleMetadataHelperService } from 'src/helpers/module-metadata-helper.service';
 
+const metadataUpdateQueues = new Map<string, Promise<void>>();
+
 export async function updateModuleMetadataJson(
     moduleName: string | undefined,
     helper: ModuleMetadataHelperService,
@@ -12,16 +14,25 @@ export async function updateModuleMetadataJson(
     if (!moduleName || moduleName === SOLID_CORE_MODULE_NAME) return;
 
     const filePath = await helper.getModuleMetadataFilePath(moduleName);
-    try {
-        await fs.access(filePath);
-    } catch {
-        logger.error(`Module metadata file not found: ${filePath}`);
-        return;
-    }
+    const previous = metadataUpdateQueues.get(filePath) ?? Promise.resolve();
+    const current = previous.catch(() => undefined).then(async () => {
+        try {
+            await fs.access(filePath);
+        } catch {
+            logger.error(`Module metadata file not found: ${filePath}`);
+            return;
+        }
 
-    const metadata = await helper.getModuleMetadataConfiguration(filePath);
-    if (!metadata) throw new Error(`Module metadata could not be read: ${filePath}`);
-    if (update(metadata)) await fs.writeFile(filePath, JSON.stringify(metadata, null, 2));
+        const metadata = await helper.getModuleMetadataConfiguration(filePath);
+        if (!metadata) throw new Error(`Module metadata could not be read: ${filePath}`);
+        if (update(metadata)) await fs.writeFile(filePath, JSON.stringify(metadata, null, 2));
+    });
+    metadataUpdateQueues.set(filePath, current);
+    try {
+        await current;
+    } finally {
+        if (metadataUpdateQueues.get(filePath) === current) metadataUpdateQueues.delete(filePath);
+    }
 }
 
 export async function syncEntityTagsToModuleMetadataJson(
@@ -43,9 +54,4 @@ export async function syncEntityTagsToModuleMetadataJson(
         entity.tags = tagNames;
         return true;
     });
-}
-
-export function getRemoveEntityId(event: { entity?: { id?: number }; databaseEntity?: { id?: number }; entityId?: any }): number | undefined {
-    const id = event.entity?.id ?? event.databaseEntity?.id ?? event.entityId;
-    return typeof id === 'number' ? id : id?.id;
 }

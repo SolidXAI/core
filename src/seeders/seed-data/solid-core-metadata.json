@@ -7758,7 +7758,7 @@
         "singularName": "secret",
         "pluralName": "secrets",
         "displayName": "Secret",
-        "description": "Stores encrypted global secrets available to workflow expressions.",
+        "description": "Stores encrypted module-owned secrets available to workflow expressions.",
         "dataSource": "default",
         "dataSourceType": "postgres",
         "tableName": "ss_secret",
@@ -7964,6 +7964,22 @@
             "decryptWhen": null,
             "columnName": null,
             "enableAuditTracking": true
+          },
+          {
+            "name": "module",
+            "displayName": "Module",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "moduleMetadata",
+            "relationCreateInverse": false,
+            "relationCascade": "restrict",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           }
         ],
         "moduleUserKey": "solid-core"
@@ -8010,7 +8026,7 @@
             "relationType": "many-to-one",
             "relationCoModelSingularName": "moduleMetadata",
             "relationCreateInverse": false,
-            "relationCascade": "set null",
+            "relationCascade": "restrict",
             "relationModelModuleName": "solid-core",
             "isSystem": true
           },
@@ -8383,7 +8399,7 @@
             "name": "module",
             "displayName": "Module",
             "type": "relation",
-            "required": false,
+            "required": true,
             "unique": false,
             "index": true,
             "private": false,
@@ -8391,7 +8407,7 @@
             "relationType": "many-to-one",
             "relationCoModelSingularName": "moduleMetadata",
             "relationCreateInverse": false,
-            "relationCascade": "set null",
+            "relationCascade": "restrict",
             "relationModelModuleName": "solid-core",
             "isSystem": true
           },
@@ -8799,7 +8815,7 @@
             "name": "module",
             "displayName": "Module",
             "type": "relation",
-            "required": false,
+            "required": true,
             "unique": false,
             "index": true,
             "private": false,
@@ -8807,7 +8823,7 @@
             "relationType": "many-to-one",
             "relationCoModelSingularName": "moduleMetadata",
             "relationCreateInverse": false,
-            "relationCascade": "set null",
+            "relationCascade": "restrict",
             "relationModelModuleName": "solid-core",
             "isSystem": true
           },
@@ -8984,7 +9000,7 @@
             "name": "module",
             "displayName": "Module",
             "type": "relation",
-            "required": false,
+            "required": true,
             "unique": false,
             "index": true,
             "private": false,
@@ -8992,7 +9008,7 @@
             "relationType": "many-to-one",
             "relationCoModelSingularName": "moduleMetadata",
             "relationCreateInverse": false,
-            "relationCascade": "set null",
+            "relationCascade": "restrict",
             "relationModelModuleName": "solid-core",
             "isSystem": true
           },
@@ -9375,7 +9391,7 @@
               }
             ],
             "computedFieldValueProvider": "ConcatEntityComputedFieldProvider",
-            "computedFieldValueProviderCtxt": "{\"fields\":[\"agentRegistry.id\",\"roleMetadata.id\"],\"separator\":\":\",\"slugify\":false}",
+            "computedFieldValueProviderCtxt": "{\"fields\":[\"agentRegistry.name\",\"roleMetadata.name\"],\"separator\":\":\",\"slugify\":false}",
             "required": false,
             "unique": true,
             "index": true,
@@ -24053,6 +24069,14 @@
           {
             "type": "field",
             "attrs": {
+              "name": "module",
+              "sortable": true,
+              "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
               "name": "displayName",
               "sortable": true,
               "isSearchable": true
@@ -24137,6 +24161,12 @@
             "type": "field",
             "attrs": {
               "name": "id"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
             }
           },
           {
@@ -24270,6 +24300,12 @@
                             "type": "field",
                             "attrs": {
                               "name": "status"
+                            }
+                          },
+                          {
+                            "type": "field",
+                            "attrs": {
+                              "name": "module"
                             }
                           }
                         ]
@@ -24433,6 +24469,12 @@
             "attrs": {
               "name": "configVersion",
               "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
             }
           }
         ]
@@ -24789,6 +24831,12 @@
             "attrs": {
               "name": "lastLoadError"
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
+            }
           }
         ]
       }
@@ -25062,6 +25110,12 @@
             "attrs": {
               "name": "lastLoadError"
             }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
+            }
           }
         ]
       }
@@ -25323,6 +25377,12 @@
             "attrs": {
               "name": "tags",
               "isSearchable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
             }
           }
         ]
@@ -25593,6 +25653,12 @@
             "type": "field",
             "attrs": {
               "name": "tags"
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "module"
             }
           }
         ]
@@ -29067,5 +29133,6 @@
       "tags": [],
       "moduleUserKey": "solid-core"
     }
-  ]
+  ],
+  "secrets": []
 }

@@ -1,6 +1,6 @@
 import { Injectable } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DataSource, EntitySubscriberInterface, InsertEvent, RemoveEvent, UpdateEvent } from 'typeorm';
+import { DataSource, EntitySubscriberInterface, InsertEvent, UpdateEvent } from 'typeorm';
 import { AgentSkill } from 'src/entities/agent-skill.entity';
 import { AgentRegistrySubscriber } from './agent-registry.subscriber';
 
@@ -25,15 +25,9 @@ export class AgentSkillSubscriber implements EntitySubscriberInterface<AgentSkil
         await this.sync(event);
     }
 
-    async afterRemove(event: RemoveEvent<AgentSkill>): Promise<void> {
-        await this.sync(event);
-    }
-
-    private async sync(event: InsertEvent<AgentSkill> | UpdateEvent<AgentSkill> | RemoveEvent<AgentSkill>): Promise<void> {
+    private async sync(event: InsertEvent<AgentSkill> | UpdateEvent<AgentSkill>): Promise<void> {
         const entity = event.entity as AgentSkill | undefined;
-        const databaseEntity = 'databaseEntity' in event ? event.databaseEntity as AgentSkill | undefined : undefined;
-        let agentId = entity?.agentRegistry?.id ?? entity?.agentRegistryId
-            ?? databaseEntity?.agentRegistry?.id ?? databaseEntity?.agentRegistryId;
+        let agentId = entity?.agentRegistry?.id ?? entity?.agentRegistryId;
         if (!agentId && entity?.id) {
             const link = await event.manager.getRepository(AgentSkill).findOne({
                 where: { id: entity.id },
