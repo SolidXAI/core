@@ -1,4 +1,4 @@
-import { ClassSerializerInterceptor, ValidationPipe } from '@nestjs/common';
+import { ClassSerializerInterceptor, Logger, ValidationPipe } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { NestExpressApplication } from '@nestjs/platform-express';
 import { WsAdapter } from '@nestjs/platform-ws';
@@ -6,8 +6,8 @@ import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { NextFunction, Request, Response } from 'express';
 import helmet from 'helmet';
 import qs from 'qs';
-import { existsSync } from 'fs';
-import { resolve } from 'path';
+import { existsSync, promises as fsPromises } from 'fs';
+import { join, resolve } from 'path';
 import { WINSTON_MODULE_NEST_PROVIDER, WinstonModule } from 'nest-winston';
 import { CommandFactory } from 'nest-commander';
 import { createWinstonLoggerConfig } from '../winston.logger';
@@ -21,6 +21,7 @@ import {
 } from './security.helper';
 import { parseBooleanEnv } from './environment.helper';
 import { Environment } from 'src/decorators/disallow-in-production.decorator';
+import { getPublicMediaStorageDir } from '../services/file/media-storage-paths';
 
 // ---- Shared process handlers ----
 
@@ -83,6 +84,36 @@ export interface SolidBootstrapOptions {
    * route: NestJS wires this at `NestFactory.create()` time, before any route exists to opt out.
    */
   captureRawBody?: boolean;
+}
+
+// Core ships a few images (e.g. the solid-core menu icon seeded as
+// "media-files-storage/solid-core-menu-icon.png"). The consuming app's postinstall copies them
+// into <cwd>/media-files-storage, which is not where they are served from once
+// AB_MEDIA_FILE_STORAGE_ROOT points elsewhere, so mirror them into the public media folder.
+async function syncBundledMediaAssets(logger: Pick<Logger, 'warn'>): Promise<void> {
+  const packaged = resolve(__dirname, '../resources/images');
+  const source = resolve(__dirname, '../../resources/images');
+  const imagesDir = existsSync(packaged) ? packaged : source;
+  if (!existsSync(imagesDir)) {
+    return;
+  }
+  const targetDir = getPublicMediaStorageDir();
+  try {
+    await fsPromises.mkdir(targetDir, { recursive: true });
+    for (const name of await fsPromises.readdir(imagesDir)) {
+      const from = join(imagesDir, name);
+      const to = join(targetDir, name);
+      const [fromStat, toStat] = await Promise.all([
+        fsPromises.stat(from),
+        fsPromises.stat(to).catch(() => null),
+      ]);
+      if (fromStat.isFile() && (!toStat || toStat.size !== fromStat.size)) {
+        await fsPromises.copyFile(from, to);
+      }
+    }
+  } catch (error: any) {
+    logger.warn(`Could not sync bundled media assets into ${targetDir}: ${error?.message ?? error}`);
+  }
 }
 
 /**
@@ -255,6 +286,8 @@ export async function bootstrapSolidApp(
   // Wire up Winston as the runtime logger only AFTER listen — this suppresses all
   // framework init noise (route mapping, module deps, onModuleInit) during boot.
   app.useLogger(app.get(WINSTON_MODULE_NEST_PROVIDER));
+
+  await syncBundledMediaAssets(new Logger('bootstrapSolidApp'));
 
   const elapsed = ((Date.now() - startTime) / 1000).toFixed(2);
   process.stdout.write(`\x1b[32mServer started on port ${port} in ${elapsed}s\x1b[0m\n`);

@@ -1,7 +1,6 @@
 import { BadRequestException, forwardRef, Inject, Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectDataSource } from '@nestjs/typeorm';
-import { DEFAULT_MEDIA_FILE_STORAGE_DIR } from "src/services/settings/default-settings-provider.service";
-import type { SolidCoreSetting } from "src/services/settings/default-settings-provider.service";
+import { PUBLIC_MEDIA_URL_PREFIX, resolveDiskMediaPath } from "src/services/file/media-storage-paths";
 import { DataSource, EntityManager, In, SelectQueryBuilder } from 'typeorm';
 import { ActionMetadata } from '../entities/action-metadata.entity';
 import { CreateModuleMetadataDto } from '../dtos/create-module-metadata.dto';
@@ -141,10 +140,10 @@ export class ModuleMetadataService {
       if (isDangerousMediaFile(files[0])) {
         throw new BadRequestException('Dangerous file types are not allowed for the menu icon.');
       }
-      const fileStoragePath = this.getFullFilePathForDisk(this.getFileName(files[0]));
-      await this.fileService.copy(files[0].path, fileStoragePath);
+      const fileName = this.getFileName(files[0]);
+      await this.fileService.copy(files[0].path, resolveDiskMediaPath(fileName));
       await this.fileService.delete(files[0].path);
-      createDto.menuIconUrl = fileStoragePath;
+      createDto.menuIconUrl = `${PUBLIC_MEDIA_URL_PREFIX}/${fileName}`;
     }
     const moduleMetadata = this.moduleMetadataRepo.create(createDto);
     return manager.save(moduleMetadata); // Use the provided manager to perform DB operations
@@ -249,10 +248,10 @@ export class ModuleMetadataService {
         throw new BadRequestException('Dangerous file types are not allowed for the menu icon.');
       }
 
-      const fileStoragePath = this.getFullFilePathForDisk(this.getFileName(files[0]));
-      await this.fileService.copy(files[0].path, fileStoragePath);
+      const fileName = this.getFileName(files[0]);
+      await this.fileService.copy(files[0].path, resolveDiskMediaPath(fileName));
       await this.fileService.delete(files[0].path);
-      module.menuIconUrl = fileStoragePath;
+      module.menuIconUrl = `${PUBLIC_MEDIA_URL_PREFIX}/${fileName}`;
     }
     return manager.save(ModuleMetadata, module);
   }
@@ -605,15 +604,6 @@ export class ModuleMetadataService {
       outputLines.push(output)
     }
     return outputLines.join('\n');
-  }
-
-  private getFullFilePathForDisk(fileName: string): string {
-    const base = this.settingService.getConfigValue<SolidCoreSetting>("fileStorageDir")
-      || DEFAULT_MEDIA_FILE_STORAGE_DIR;
-    if (path.isAbsolute(fileName) || fileName.startsWith(`${base}/`)) {
-      return fileName;
-    }
-    return `${base}/${fileName}`;
   }
 
   private getFileName(file: Express.Multer.File): string {

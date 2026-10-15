@@ -55,7 +55,8 @@ import { ModulePackageService } from "./services/module-package.service";
 import { SolidIntrospectService } from "./services/solid-introspect.service";
 // import { ListOfComputedFieldProvider } from './providers/list-of-computed-field-provider.service';
 import { ServeStaticModule } from "@nestjs/serve-static";
-import { basename, join } from "path";
+import { basename } from "path";
+import { PUBLIC_MEDIA_URL_PREFIX, getPublicMediaStorageDir } from "./services/file/media-storage-paths";
 import { RefreshModelCommand } from "./commands/refresh-model.command";
 import { MediaController } from "./controllers/media.controller";
 import { getLowercaseFileExtension, INLINE_SAFE_EXTENSIONS } from "./constants/media-file-types";
@@ -598,8 +599,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     CacheModule.registerAsync(CacheManagerOptions),
     ScheduleModule.forRoot(),
     ServeStaticModule.forRoot({
-      rootPath: join(process.cwd(), "media-files-storage"),
-      serveRoot: "/media-files-storage",
+      rootPath: getPublicMediaStorageDir(),
+      serveRoot: `/${PUBLIC_MEDIA_URL_PREFIX}`,
       serveStaticOptions: {
         setHeaders: (res, path) => {
           // Allow use of these files from a different origin (e.g., :3000 UI)
