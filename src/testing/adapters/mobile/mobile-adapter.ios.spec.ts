@@ -189,3 +189,80 @@ describe("MobileAdapter on iOS", () => {
     });
   });
 });
+
+describe("MobileAdapter on a real iPhone", () => {
+  const PHONE = "00008140-001A202611B8801C";
+  const phoneOptions: Partial<MobileAdapterOptions> = {
+    udid: PHONE,
+    simulator: false,
+    appSource: "installed",
+    appPath: undefined,
+    appPackage: "com.oswald.mydemoapp",
+    appProcessName: "My Demo App",
+  };
+
+  it("is a phone when it is iOS and not a simulator", () => {
+    expect(setup(phoneOptions).adapter.phone).toBe(true);
+    expect(setup().adapter.phone).toBe(false);
+    expect(setup({ platformName: undefined, simulator: undefined }).adapter.phone).toBe(false);
+  });
+
+  it("clearData is refused before anything is sent to the phone (D41)", async () => {
+    const { adapter, driver } = setup(phoneOptions);
+    await adapter.start();
+    const before = driver.callsTo("execute").length;
+    await expect(adapter.launch({ clearData: true })).rejects.toThrow(
+      "Clearing data on an iPhone is not supported: Test Hub uses the app already installed on the phone. Remove clearData from mobile.launch, or log out at the start of the scenario.",
+    );
+    expect(driver.callsTo("execute")).toHaveLength(before);
+  });
+
+  it("a launch without clearData starts the installed app and never runs simctl", async () => {
+    const { adapter, driver, runCommand } = setup(phoneOptions);
+    await adapter.start();
+    await adapter.launch();
+    expect(scripts(driver)).toEqual(expect.arrayContaining(["mobile: terminateApp", "mobile: activateApp"]));
+    expect(scripts(driver)).not.toContain("mobile: removeApp");
+    expect(runCommand).not.toHaveBeenCalled();
+  });
+
+  it("the Simulator still reinstalls on clearData", async () => {
+    const { adapter, driver } = setup();
+    await adapter.start();
+    await adapter.launch({ clearData: true });
+    expect(scripts(driver)).toEqual(expect.arrayContaining(["mobile: removeApp", "mobile: installApp"]));
+  });
+
+  describe("why a session did not start", () => {
+    const failingWith = (message: string, overrides: Partial<MobileAdapterOptions> = phoneOptions) =>
+      setup({ ...overrides, driverFactory: async () => { throw new Error(message); } }).adapter.start();
+
+    it.each([
+      ["xcodebuild failed: The application has not been explicitly trusted by the user.", "Trust the developer on the iPhone: Settings › General › VPN & Device Management, then run again."],
+      ["Failed to install: invalid code signature, inode, or entitlements", "Trust the developer on the iPhone: Settings › General › VPN & Device Management, then run again."],
+      ["Provisioning profile \"iOS Team Provisioning Profile\" has expired", "WebDriverAgent's provisioning profile has expired. Run again: Test Hub rebuilds it."],
+      ["Failed Registering Bundle Identifier: The app identifier \"io.solidx.wda.x\" cannot be registered to your development team because it is not available.", "Apple refused WebDriverAgent's app id. Set TESTHUB_IOS_WDA_BUNDLE_ID to another unique id."],
+      ["The device is not ready: Developer Mode is disabled", "Turn on Developer Mode: Settings › Privacy & Security › Developer Mode."],
+    ])("%s", async (raw, hint) => {
+      await expect(failingWith(raw)).rejects.toThrow(hint);
+    });
+
+    it("keeps the first line of the original error in front of the fix", async () => {
+      await expect(failingWith("xcodebuild failed: has not been explicitly trusted by the user.\nmore detail")).rejects.toThrow(
+        /^xcodebuild failed: has not been explicitly trusted by the user\. Trust the developer/,
+      );
+    });
+
+    it("rethrows an error it does not know unchanged", async () => {
+      await expect(failingWith("connect ECONNREFUSED 127.0.0.1:4723")).rejects.toThrow("connect ECONNREFUSED 127.0.0.1:4723");
+    });
+
+    it("does not treat 'is not available' alone as an app id problem", async () => {
+      await expect(failingWith("Simulator device is not available")).rejects.toThrow("Simulator device is not available");
+    });
+
+    it("leaves a simulator's errors alone, whatever they say", async () => {
+      await expect(failingWith("has not been explicitly trusted by the user", {})).rejects.toThrow(/^has not been explicitly trusted by the user$/);
+    });
+  });
+});

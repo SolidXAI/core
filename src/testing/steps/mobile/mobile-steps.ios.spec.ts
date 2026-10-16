@@ -6,17 +6,17 @@ import { registerMobileSteps } from "./index";
 
 const NAV_BUTTONS = "-ios class chain:**/XCUIElementTypeNavigationBar/XCUIElementTypeButton";
 
-async function setup() {
+async function setup(phone = false) {
   const driver = new FakeDriver();
   const runCommand = jest.fn(async () => undefined);
   const mobile = new MobileAdapter({
     appiumUrl: "http://localhost:4723",
-    udid: "1674E718-0EBA-4568-9644-F18E0DDF7705",
+    udid: phone ? "00008140-001A202611B8801C" : "1674E718-0EBA-4568-9644-F18E0DDF7705",
     platformName: "iOS",
-    simulator: true,
-    appSource: "upload",
-    appPath: "/builds/Sample.app",
-    appPackage: "io.solidx.testhub.sample",
+    simulator: !phone,
+    appSource: phone ? "installed" : "upload",
+    appPath: phone ? undefined : "/builds/Sample.app",
+    appPackage: phone ? "com.oswald.mydemoapp" : "io.solidx.testhub.sample",
     recordVideo: false,
     driverFactory: async () => driver,
     runCommand,
@@ -124,5 +124,56 @@ describe("mobile steps on iOS", () => {
       await run("mobile.reset");
       expect(executes(driver).map((a) => a[0])).toContain("mobile: installApp");
     });
+  });
+});
+
+describe("mobile.hideKeyboard on a real iPhone (D47)", () => {
+  const NOT_HIDDEN = "mobile.hideKeyboard: the keyboard could not be hidden on this screen. Tap the app's own control instead (a Done or Return key the app handles, or a button outside the keyboard).";
+  const cannotDismiss = (driver: FakeDriver) => {
+    driver.failing.add("hideKeyboard");
+    driver.failureMessages.set("hideKeyboard", "Did not know how to dismiss the keyboard. Try to dismiss it in the way supported by your application under test.");
+  };
+
+  it("passes when the keyboard went away", async () => {
+    const { run, driver } = await setup(true);
+    driver.keyboardShown = true;
+    await expect(run("mobile.hideKeyboard")).resolves.toBeUndefined();
+    expect(driver.callsTo("hideKeyboard")).toHaveLength(1);
+    expect(driver.callsTo("isKeyboardShown")).toHaveLength(1);
+  });
+
+  it("fails when the driver cannot dismiss it and it stays up", async () => {
+    const { run, driver } = await setup(true);
+    driver.keyboardShown = true;
+    cannotDismiss(driver);
+    await expect(run("mobile.hideKeyboard")).rejects.toThrow(NOT_HIDDEN);
+  });
+
+  it("fails when the driver says nothing but the keyboard is still shown", async () => {
+    const { run, driver } = await setup(true);
+    driver.keyboardShown = true;
+    driver.hideKeyboard = async () => { /* succeeds without hiding anything */ };
+    await expect(run("mobile.hideKeyboard")).rejects.toThrow(NOT_HIDDEN);
+  });
+
+  it("passes when there was no keyboard to dismiss", async () => {
+    const { run, driver } = await setup(true);
+    driver.keyboardShown = false;
+    cannotDismiss(driver);
+    await expect(run("mobile.hideKeyboard")).resolves.toBeUndefined();
+  });
+
+  it("still fails on any other error", async () => {
+    const { run, driver } = await setup(true);
+    driver.failing.add("hideKeyboard");
+    await expect(run("mobile.hideKeyboard")).rejects.toThrow("hideKeyboard failed");
+  });
+
+  it("the Simulator is unchanged: it never asks whether the keyboard is shown", async () => {
+    const { run, driver } = await setup(false);
+    driver.keyboardShown = true;
+    cannotDismiss(driver);
+    await expect(run("mobile.hideKeyboard")).resolves.toBeUndefined();
+    expect(driver.callsTo("isKeyboardShown")).toHaveLength(0);
   });
 });

@@ -43,3 +43,66 @@ describe("toSyslogConsoleEntries", () => {
     expect(kept.map((e) => e.text.slice(-2))).toEqual(["n7", "n8", "n9"]);
   });
 });
+
+describe("toSyslogConsoleEntries: a real iPhone's lines (D48)", () => {
+  // Lines in the shape of a capture from an iPhone 16 on iOS 26.6.1 (see spikes/mobile-ios/FINDINGS-ios-device.md),
+  // with the host name changed.
+  const device = (proc: string, level: string, text: string, subsystem = "") =>
+    ({ level: "ALL", message: `Oct 16 07:23:55 Test-iPhone ${proc}${subsystem ? `(${subsystem})` : ""}[2006] <${level}>: ${text}` });
+  const phone = { processName: "My Demo App", bundleId: "com.oswald.mydemoapp" };
+
+  it("keeps the app's own process, even when its name has spaces and it names a subsystem", () => {
+    const kept = toSyslogConsoleEntries(
+      [device("My Demo App", "Notice", "HTAssertion: HTBeginAssertion: track assertionId=136", "HangTracer"), device("My Demo App", "Notice", "plain")],
+      phone,
+      500,
+    );
+    expect(kept).toHaveLength(2);
+    expect(kept[0].text).toContain("HTBeginAssertion");
+  });
+
+  it("drops WebDriverAgent's and the system's lines", () => {
+    const kept = toSyslogConsoleEntries(
+      [
+        device("WebDriverAgentRunner-Runner", "Notice", "nw_connection_report_state_with_handler_on_nw_queue", "Network"),
+        device("inputanalyticsd", "Error", "textInputSessionId '<private>' already exists!", "InputAnalyticsServer"),
+        device("testmanagerd", "Error", "Uncaptured runtime issue reported: <private>", "XCTAutomationSupport"),
+      ],
+      phone,
+      500,
+    );
+    expect(kept).toEqual([]);
+  });
+
+  it("keeps an error from another process only when it names the app", () => {
+    const kept = toSyslogConsoleEntries(
+      [device("runningboardd", "Error", `Failed to launch ${phone.bundleId}`), device("runningboardd", "Error", "unrelated"), device("runningboardd", "Notice", `Launched ${phone.bundleId}`)],
+      phone,
+      500,
+    );
+    expect(kept).toHaveLength(1);
+    expect(kept[0]).toMatchObject({ type: "error" });
+  });
+
+  it.each([
+    ["Debug", "debug"],
+    ["Info", "info"],
+    ["Notice", "info"],
+    ["Error", "error"],
+    ["Fault", "error"],
+    ["Surprise", "info"],
+  ])("maps the level %s to %s", (level, type) => {
+    expect(toSyslogConsoleEntries([device("My Demo App", level, "x")], phone, 500)[0].type).toBe(type);
+  });
+
+  it("skips the continuation lines a multi-line message leaves behind", () => {
+    const entries = [{ level: "ALL", message: "\t{name: Thermal Policy, policyWeight: 5.000, response: {100, 0.00}}" }, { level: "ALL", message: " ], Decision: AMNP}" }];
+    expect(toSyslogConsoleEntries(entries, phone, 500)).toEqual([]);
+  });
+
+  it("reads a phone's lines and a simulator's together", () => {
+    const entries = [device("My Demo App", "Notice", "from the phone"), line("I", "SampleApp", "from the simulator")];
+    expect(toSyslogConsoleEntries(entries, { processName: "My Demo App", bundleId: "x.y" }, 500)).toHaveLength(1);
+    expect(toSyslogConsoleEntries(entries, { processName: "SampleApp", bundleId: "x.y" }, 500)).toHaveLength(1);
+  });
+});

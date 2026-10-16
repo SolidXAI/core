@@ -1,5 +1,6 @@
 import type { TestContext } from "../../contracts/runtime-context.types";
 import type { OpStep } from "../../contracts/testing-metadata.types";
+import { KEYBOARD_STAYS_ON_PHONE } from "../../adapters/mobile/phone-errors";
 import { StepRegistry } from "../../core/step-registry";
 import { optionalBoolean, requireLocator, requireMobile, stepTimeout } from "./shared";
 
@@ -59,6 +60,9 @@ export function registerActionSteps(registry: StepRegistry): void {
       } catch (error: any) {
         if (!String(error?.message ?? error).includes("dismiss the keyboard")) throw error;
       }
+      // A phone reports its keyboard truthfully, and what hides it depends on the app: a step that "passed" with the keyboard
+      // still covering the screen would only fail later, at a tap that cannot reach its target (D47).
+      if (mobile.phone && (await driver.isKeyboardShown())) throw new Error(KEYBOARD_STAYS_ON_PHONE);
       return;
     }
     // Hiding a keyboard that is not shown is an error on some devices, so check first.

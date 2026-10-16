@@ -5,6 +5,7 @@ import { execFile } from "node:child_process";
 import { resolveLocator } from "./locator";
 import { toConsoleEntries } from "./logcat";
 import { appIdArg, BUNDLE_ID_RE, isIos } from "./platform";
+import { CLEAR_DATA_ON_PHONE, withPhoneHint } from "./phone-errors";
 import { toSyslogConsoleEntries } from "./syslog";
 import type { ResolvedLocator } from "./locator";
 import type {
@@ -115,6 +116,11 @@ export class MobileAdapter {
     return isIos(this.opts);
   }
 
+  /** Whether this session drives a real iPhone: iOS, and not a simulator. */
+  get phone(): boolean {
+    return isIos(this.opts) && !this.opts.simulator;
+  }
+
   /** An explicit per-step value wins, otherwise the run-wide default applies. */
   resolveTimeout(stepTimeoutMs?: number): number {
     return typeof stepTimeoutMs === "number" && Number.isFinite(stepTimeoutMs)
@@ -160,7 +166,14 @@ export class MobileAdapter {
     };
 
     const factory = this.opts.driverFactory ?? defaultDriverFactory;
-    this.driver = await factory(remoteOptions);
+    try {
+      this.driver = await factory(remoteOptions);
+    } catch (error: any) {
+      // Only on a phone: these texts mean signing and trust there, and could mean something else on a simulator.
+      const explained = this.phone ? withPhoneHint(String(error?.message ?? error)) : undefined;
+      if (explained) throw new Error(explained);
+      throw error;
+    }
 
     if (this.recordVideo) {
       try {
@@ -219,6 +232,8 @@ export class MobileAdapter {
    * after the app is installed and before it starts, because the permission prompt cannot be accepted by the session (D28).
    */
   async launch(opts: { clearData?: boolean; timeoutMs?: number; grantPermissions?: boolean } = {}): Promise<void> {
+    // A phone's app is installed once, by hand, so there is no build to reinstall from: refuse before touching the app (D41).
+    if (opts.clearData && this.phone) throw new Error(CLEAR_DATA_ON_PHONE);
     const driver = this.getDriver();
     const appId = this.opts.appPackage;
     const idArg = appIdArg(this.opts);
