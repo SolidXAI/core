@@ -163,6 +163,7 @@ export class AgentRegistrySubscriber implements EntitySubscriberInterface<AgentR
         const agents = Array.isArray(metadata.agenthubAgents) ? metadata.agenthubAgents : [];
         const index = agents.findIndex((item: { name: string }) => item.name === agent.name);
         const existingEntry = index === -1 ? {} : agents[index];
+        delete existingEntry.status;
         const entry = {
             ...existingEntry,
             name: agent.name,
@@ -173,7 +174,6 @@ export class AgentRegistrySubscriber implements EntitySubscriberInterface<AgentR
             requiredInputs: agent.requiredInputs,
             reasoningModelKey: agent.reasoningModelKey,
             fastModelKey: agent.fastModelKey,
-            status: agent.status,
             stepLimit: agent.stepLimit,
             turnStepLimit: agent.turnStepLimit,
             costLimit: Number(agent.costLimit),

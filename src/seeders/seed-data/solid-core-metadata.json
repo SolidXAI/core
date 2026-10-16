@@ -8090,6 +8090,79 @@
         ]
       },
       {
+        "singularName": "agentConfigVersion",
+        "pluralName": "agentConfigVersions",
+        "displayName": "Agent Config Versions",
+        "dataSource": "default",
+        "dataSourceType": "postgres",
+        "tableName": "ss_agent_config_version",
+        "userKeyFieldUserKey": "id",
+        "isChild": false,
+        "isSystem": true,
+        "enableSoftDelete": false,
+        "enableAuditTracking": true,
+        "draftPublishWorkflow": false,
+        "internationalisation": false,
+        "legacyTableType": "none",
+        "fields": [
+          {
+            "name": "versionNumber",
+            "displayName": "Version Number",
+            "type": "int",
+            "ormType": "integer",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "name",
+            "displayName": "Name",
+            "type": "shortText",
+            "ormType": "varchar",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "description",
+            "displayName": "Description",
+            "type": "longText",
+            "ormType": "text",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "isSystem": true,
+            "enableAuditTracking": true
+          },
+          {
+            "name": "agentRegistry",
+            "displayName": "Agent",
+            "type": "relation",
+            "required": true,
+            "unique": false,
+            "index": true,
+            "private": false,
+            "encrypt": false,
+            "relationType": "many-to-one",
+            "relationCoModelSingularName": "agentRegistry",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
+          }
+        ]
+      },
+      {
         "singularName": "agentRegistry",
         "pluralName": "agentRegistries",
         "displayName": "Agent Registry",
@@ -8394,6 +8467,23 @@
             "columnName": null,
             "enableAuditTracking": true,
             "isPrimaryKey": false
+          },
+          {
+            "name": "configVersions",
+            "displayName": "Config Versions",
+            "type": "relation",
+            "required": false,
+            "unique": false,
+            "index": false,
+            "private": false,
+            "encrypt": false,
+            "relationType": "one-to-many",
+            "relationCoModelSingularName": "agentConfigVersion",
+            "relationCoModelFieldName": "agentRegistry",
+            "relationCreateInverse": false,
+            "relationCascade": "cascade",
+            "relationModelModuleName": "solid-core",
+            "isSystem": true
           },
           {
             "name": "module",
@@ -12603,6 +12693,19 @@
       "modelUserKey": "agentSkillRegistry"
     },
     {
+      "displayName": "Agent Config Versions List Action",
+      "name": "agentConfigVersion-list-action",
+      "type": "solid",
+      "domain": "",
+      "context": "",
+      "customComponent": "",
+      "customIsModal": true,
+      "serverEndpoint": "",
+      "viewUserKey": "agentConfigVersion-list-view",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentConfigVersion"
+    },
+    {
       "displayName": "Agent Hub Tags List Action",
       "name": "agentHubTag-list-action",
       "type": "solid",
@@ -13386,6 +13489,15 @@
       "moduleUserKey": "solid-core",
       "parentMenuItemUserKey": "agent-menu-item",
       "iconName": "chat"
+    },
+    {
+      "displayName": "Config Versions",
+      "name": "agentConfigVersion-menu-item",
+      "sequenceNumber": 9,
+      "actionUserKey": "agentConfigVersion-list-action",
+      "moduleUserKey": "solid-core",
+      "parentMenuItemUserKey": "agent-menu-item",
+      "iconName": "history"
     },
     {
       "displayName": "Tags",
@@ -25121,6 +25233,63 @@
       }
     },
     {
+      "name": "agentConfigVersion-list-view",
+      "displayName": "Agent Config Versions",
+      "type": "list",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentConfigVersion",
+      "layout": {
+        "type": "list",
+        "attrs": {
+          "pagination": true,
+          "pageSizeOptions": [10, 25, 50],
+          "enableGlobalSearch": true,
+          "create": true,
+          "edit": true,
+          "delete": true,
+          "allowedViews": ["list"]
+        },
+        "children": [
+          { "type": "field", "attrs": { "name": "id" } },
+          { "type": "field", "attrs": { "name": "agentRegistry", "isSearchable": true, "sortable": true } },
+          { "type": "field", "attrs": { "name": "versionNumber", "isSearchable": true, "sortable": true } },
+          { "type": "field", "attrs": { "name": "name", "isSearchable": true, "sortable": true } },
+          { "type": "field", "attrs": { "name": "description" } }
+        ]
+      }
+    },
+    {
+      "name": "agentConfigVersion-form-view",
+      "displayName": "Agent Config Version",
+      "type": "form",
+      "context": "{}",
+      "moduleUserKey": "solid-core",
+      "modelUserKey": "agentConfigVersion",
+      "layout": {
+        "type": "form",
+        "attrs": { "name": "form-1", "label": "Agent Config Version", "className": "grid" },
+        "children": [
+          {
+            "type": "sheet",
+            "attrs": { "name": "sheet-1" },
+            "children": [
+              {
+                "type": "group",
+                "attrs": { "name": "details-fields", "className": "col-12 sm:col-12 md:col-6 lg:col-6" },
+                "children": [
+                  { "type": "field", "attrs": { "name": "agentRegistry" } },
+                  { "type": "field", "attrs": { "name": "versionNumber" } },
+                  { "type": "field", "attrs": { "name": "name" } },
+                  { "type": "field", "attrs": { "name": "description" } }
+                ]
+              }
+            ]
+          }
+        ]
+      }
+    },
+    {
       "name": "agentHubTag-list-view",
       "displayName": "Agent Hub Tags",
       "type": "list",
@@ -26767,7 +26936,21 @@
           "enableGlobalSearch": true,
           "create": true,
           "edit": true,
-          "delete": true
+          "delete": true,
+          "headerButtons": [
+            {
+              "attrs": {
+                "label": "Compare sessions",
+                "action": "AgentSessionComparisonHeaderAction",
+                "icon": "si-git-compare",
+                "actionInContextMenu": false,
+                "openInPopup": true,
+                "closable": true,
+                "popupWidth": "min(1100px, calc(100vw - 32px))",
+                "customComponentIsSystem": true
+              }
+            }
+          ]
         },
         "children": [
           {
@@ -26781,6 +26964,13 @@
             "attrs": {
               "name": "sessionId",
               "isSearchable": true,
+              "sortable": true
+            }
+          },
+          {
+            "type": "field",
+            "attrs": {
+              "name": "configVersion",
               "sortable": true
             }
           },
@@ -26830,13 +27020,6 @@
             "type": "field",
             "attrs": {
               "name": "inputs"
-            }
-          },
-          {
-            "type": "field",
-            "attrs": {
-              "name": "configVersion",
-              "sortable": true
             }
           },
           {

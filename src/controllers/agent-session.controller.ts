@@ -1,10 +1,12 @@
-import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch } from '@nestjs/common';
+import { Controller, Post, Body, Param, UploadedFiles, UseInterceptors, Put, Get, Query, Delete, Patch, ParseIntPipe } from '@nestjs/common';
 import { AnyFilesInterceptor } from "@nestjs/platform-express";
 import { ApiBearerAuth, ApiQuery, ApiTags } from '@nestjs/swagger';
 import { AgentSessionService } from '../services/agent-session.service';
 import { CreateAgentSessionDto } from '../dtos/create-agent-session.dto';
 import { UpdateAgentSessionDto } from '../dtos/update-agent-session.dto';
 import { ShowSoftDeleted } from '../enums/show-soft-deleted.enum';
+import { ActiveUser } from '../decorators/active-user.decorator';
+import { ActiveUserData } from '../interfaces/active-user-data.interface';
 
 @ApiTags('Agent Hub')
 @Controller('agent-session')
@@ -66,6 +68,19 @@ export class AgentSessionController {
   @Get()
   async findMany(@Query() query: any) { 
     return this.service.find(query);  
+  }
+
+  @ApiBearerAuth("jwt")
+  @ApiQuery({ name: 'page', required: false, type: Number })
+  @ApiQuery({ name: 'page_size', required: false, type: Number })
+  @Get(':id/messages')
+  async messages(
+    @Param('id', ParseIntPipe) id: number,
+    @Query('page') page: string,
+    @Query('page_size') pageSize: string,
+    @ActiveUser() activeUser: ActiveUserData,
+  ) {
+    return this.service.getMessages(id, Number(page) || 1, Number(pageSize) || 50, activeUser);
   }
 
   @ApiBearerAuth("jwt")

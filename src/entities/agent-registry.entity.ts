@@ -9,6 +9,7 @@ import { AgentSecret } from './agent-secret.entity';
 import { AgentProcess } from './agent-process.entity';
 import { AgentSession } from './agent-session.entity';
 import { AgentJob } from './agent-job.entity'
+import { AgentConfigVersion } from './agent-config-version.entity';
 
 @Entity('ss_agent_registry')
 export class AgentRegistry extends CommonEntity {
@@ -82,4 +83,7 @@ export class AgentRegistry extends CommonEntity {
 
     @OneToMany(() => AgentJob, agentJob => agentJob.agent, { cascade: true })
     agentJobs: AgentJob[];
+
+    @OneToMany(() => AgentConfigVersion, configVersion => configVersion.agentRegistry)
+    configVersions: AgentConfigVersion[];
 }

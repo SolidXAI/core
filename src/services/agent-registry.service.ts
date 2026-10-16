@@ -1,11 +1,13 @@
-import { Injectable, Logger } from '@nestjs/common';
+import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { InjectEntityManager } from '@nestjs/typeorm';
 import { ModuleRef  } from "@nestjs/core";
 import { EntityManager } from 'typeorm';
 import { CRUDService } from './crud.service';
 import { AgentRegistry } from '../entities/agent-registry.entity';
 import { AgentRegistryRepository } from '../repository/agent-registry.repository';
-import { bumpAgentConfigVersions } from './agent-config-version.service';
+import { AgentConfigVersion } from '../entities/agent-config-version.entity';
+import { ActivateAgentRegistryDto } from '../dtos/activate-agent-registry.dto';
+import { markActiveAgentsDraft } from './agent-config-version.service';
 import { normalizeAgentRequiredInputs } from '../helpers/agent-required-inputs';
 import { ModuleMetadataHelperService } from '../helpers/module-metadata-helper.service';
 import { syncEntityTagsToModuleMetadataJson } from '../subscribers/agenthub-metadata-sync.util';
@@ -48,7 +50,34 @@ export class AgentRegistryService extends CRUDService<AgentRegistry>{
         );
       }
     }
-    await bumpAgentConfigVersions(this.entityManager, [saved.id]);
+    await markActiveAgentsDraft(this.entityManager, [saved.id]);
     return this.repo.findOne({ where: { id: saved.id } });
+  }
+
+  async activate(id: number, dto: ActivateAgentRegistryDto = {}): Promise<AgentRegistry> {
+    return this.entityManager.transaction(async (manager) => {
+      const agentRepository = manager.getRepository(AgentRegistry);
+      const versionRepository = manager.getRepository(AgentConfigVersion);
+      const agent = await agentRepository.findOne({ where: { id } });
+      if (!agent) throw new NotFoundException(`Agent ${id} was not found.`);
+
+      const latestVersion = await versionRepository.findOne({
+        where: { agentRegistry: { id } },
+        order: { versionNumber: 'DESC' },
+      });
+      const currentVersion = Math.max(Number(agent.configVersion ?? 1), Number(latestVersion?.versionNumber ?? 0));
+      const versionNumber = latestVersion ? currentVersion + 1 : currentVersion;
+
+      await versionRepository.save(versionRepository.create({
+        agentRegistry: agent,
+        versionNumber,
+        name: dto.name?.trim() || null,
+        description: dto.description?.trim() || null,
+      }));
+
+      agent.configVersion = versionNumber;
+      agent.status = 'active';
+      return agentRepository.save(agent);
+    });
   }
 }

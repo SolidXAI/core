@@ -8,6 +8,7 @@ import { SolidBaseRepository } from '../repository/solid-base.repository';
 import { ModuleMetadataHelperService } from '../helpers/module-metadata-helper.service';
 import { syncEntityTagsToModuleMetadataJson } from '../subscribers/agenthub-metadata-sync.util';
 
+/*
 export async function bumpAgentConfigVersions(entityManager: EntityManager, agentIds: number[]): Promise<void> {
   const ids = [...new Set(agentIds.filter((id) => Number.isInteger(id) && id > 0))];
   if (!ids.length) return;
@@ -18,6 +19,19 @@ export async function bumpAgentConfigVersions(entityManager: EntityManager, agen
     .update(AgentRegistry)
     .set({ configVersion: () => `COALESCE(${versionColumn}, 1) + 1` })
     .whereInIds(ids)
+    .execute();
+}
+*/
+
+export async function markActiveAgentsDraft(entityManager: EntityManager, agentIds: number[]): Promise<void> {
+  const ids = [...new Set(agentIds.filter((id) => Number.isInteger(id) && id > 0))];
+  if (!ids.length) return;
+
+  await entityManager.createQueryBuilder()
+    .update(AgentRegistry)
+    .set({ status: 'draft' })
+    .whereInIds(ids)
+    .andWhere('status = :status', { status: 'active' })
     .execute();
 }
 
@@ -57,13 +71,13 @@ export abstract class AgentConfigLinkService<T extends CommonEntity> extends CRU
 
   override async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
     const saved = await super.create(createDto, files, solidRequestContext);
-    await bumpAgentConfigVersions(this.entityManager, await agentIdsForLinks(this.entityManager, this.linkEntity, [saved.id]));
+    await markActiveAgentsDraft(this.entityManager, await agentIdsForLinks(this.entityManager, this.linkEntity, [saved.id]));
     return saved;
   }
 
   override async createMany(createDtos: any[], solidRequestContext: any = {}): Promise<T[]> {
     const saved = await super.createMany(createDtos, solidRequestContext);
-    await bumpAgentConfigVersions(this.entityManager, await agentIdsForLinks(this.entityManager, this.linkEntity, saved.map((row) => row.id)));
+    await markActiveAgentsDraft(this.entityManager, await agentIdsForLinks(this.entityManager, this.linkEntity, saved.map((row) => row.id)));
     return saved;
   }
 
@@ -71,21 +85,21 @@ export abstract class AgentConfigLinkService<T extends CommonEntity> extends CRU
     const before = await agentIdsForLinks(this.entityManager, this.linkEntity, [id]);
     const saved = await super.update(id, updateDto, files, isPartialUpdate, solidRequestContext, isUpdate);
     const after = await agentIdsForLinks(this.entityManager, this.linkEntity, [saved.id]);
-    await bumpAgentConfigVersions(this.entityManager, [...before, ...after]);
+    await markActiveAgentsDraft(this.entityManager, [...before, ...after]);
     return saved;
   }
 
   override async delete(id: number, solidRequestContext: any = {}) {
     const agentIds = await agentIdsForLinks(this.entityManager, this.linkEntity, [id]);
     const result = await super.delete(id, solidRequestContext);
-    await bumpAgentConfigVersions(this.entityManager, agentIds);
+    await markActiveAgentsDraft(this.entityManager, agentIds);
     return result;
   }
 
   override async deleteMany(ids: number[], solidRequestContext: any = {}) {
     const agentIds = await agentIdsForLinks(this.entityManager, this.linkEntity, ids);
     const result = await super.deleteMany(ids, solidRequestContext);
-    await bumpAgentConfigVersions(this.entityManager, agentIds);
+    await markActiveAgentsDraft(this.entityManager, agentIds);
     return result;
   }
 }
@@ -122,13 +136,13 @@ export abstract class AgentConfigCatalogService<T extends CommonEntity & {
 
   override async create(createDto: any, files: Express.Multer.File[] = [], solidRequestContext: any = {}): Promise<T> {
     const saved = await super.create(createDto, files, solidRequestContext);
-    await bumpAgentConfigVersions(this.entityManager, await this.agentIds([saved.id]));
+    await markActiveAgentsDraft(this.entityManager, await this.agentIds([saved.id]));
     return saved;
   }
 
   override async createMany(createDtos: any[], solidRequestContext: any = {}): Promise<T[]> {
     const saved = await super.createMany(createDtos, solidRequestContext);
-    await bumpAgentConfigVersions(this.entityManager, await this.agentIds(saved.map((row) => row.id)));
+    await markActiveAgentsDraft(this.entityManager, await this.agentIds(saved.map((row) => row.id)));
     return saved;
   }
 
@@ -154,7 +168,7 @@ export abstract class AgentConfigCatalogService<T extends CommonEntity & {
       }
     }
     const after = await this.agentIds([saved.id]);
-    await bumpAgentConfigVersions(this.entityManager, [...before, ...after]);
+    await markActiveAgentsDraft(this.entityManager, [...before, ...after]);
     return saved;
   }
 
@@ -162,7 +176,7 @@ export abstract class AgentConfigCatalogService<T extends CommonEntity & {
     await this.assertEditable([id]);
     const agentIds = await this.agentIds([id]);
     const result = await super.delete(id, solidRequestContext);
-    await bumpAgentConfigVersions(this.entityManager, agentIds);
+    await markActiveAgentsDraft(this.entityManager, agentIds);
     return result;
   }
 
@@ -170,7 +184,7 @@ export abstract class AgentConfigCatalogService<T extends CommonEntity & {
     await this.assertEditable(ids);
     const agentIds = await this.agentIds(ids);
     const result = await super.deleteMany(ids, solidRequestContext);
-    await bumpAgentConfigVersions(this.entityManager, agentIds);
+    await markActiveAgentsDraft(this.entityManager, agentIds);
     return result;
   }
 }

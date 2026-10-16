@@ -494,6 +494,7 @@ import { AgentJob } from "./entities/agent-job.entity";
 import { AgentRole } from "./entities/agent-role.entity";
 import { AgentSessionCheckpoint } from "./entities/agent-session-checkpoint.entity";
 import { AgentHumanRequest } from "./entities/agent-human-request.entity";
+import { AgentConfigVersion } from "./entities/agent-config-version.entity";
 import { AgentRegistryController } from "./controllers/agent-registry.controller";
 import { AgentEmbedController } from './controllers/agent-embed.controller';
 import { AgentToolRegistryController } from "./controllers/agent-tool-registry.controller";
@@ -508,8 +509,11 @@ import { AgentSessionController } from "./controllers/agent-session.controller";
 import { AgentJobController } from "./controllers/agent-job.controller";
 import { AgentSessionCheckpointController } from "./controllers/agent-session-checkpoint.controller";
 import { AgentHumanRequestController } from "./controllers/agent-human-request.controller";
+import { AgentConfigVersionController } from "./controllers/agent-config-version.controller";
 import { AgentHumanRequestRepository } from "./repository/agent-human-request.repository";
+import { AgentConfigVersionRepository } from "./repository/agent-config-version.repository";
 import { AgentHumanRequestService } from "./services/agent-human-request.service";
+import { AgentConfigVersionRecordService } from "./services/agent-config-version-record.service";
 import { AgentSessionCheckpointRepository } from "./repository/agent-session-checkpoint.repository";
 import { AgentSessionCheckpointService } from "./services/agent-session-checkpoint.service";
 import { AgentSessionRepository } from "./repository/agent-session.repository";
@@ -597,7 +601,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
       AgentSession,
       AgentJob,
       AgentSessionCheckpoint,
-      AgentHumanRequest
+      AgentHumanRequest,
+      AgentConfigVersion
     ]),
     CacheModule.registerAsync(CacheManagerOptions),
     ScheduleModule.forRoot(),
@@ -746,7 +751,8 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentSessionController,
     AgentJobController,
     AgentSessionCheckpointController,
-    AgentHumanRequestController
+    AgentHumanRequestController,
+    AgentConfigVersionController
   ],
   providers: [
     {
@@ -1141,7 +1147,9 @@ import { AgentToolRegistryService } from "./services/agent-tool-registry.service
     AgentSessionCheckpointService,
     AgentSessionCheckpointRepository,
     AgentHumanRequestService,
-    AgentHumanRequestRepository
+    AgentHumanRequestRepository,
+    AgentConfigVersionRecordService,
+    AgentConfigVersionRepository
   ],
   exports: [
     // Exported for DI, not merely re-exported from index.ts: a consuming
