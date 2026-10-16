@@ -819,9 +819,7 @@ export class ModuleMetadataSeederService {
         const skillCount = await this.seedAgentHubSkills(skills, module);
         const toolCount = await this.seedAgentHubTools(tools, module);
         const agentCount = await this.seedAgentHubAgents(agents, module);
-        const agentRoleRelationCounts = await this.seedAgentRoleRelations(agents);
-        const agentSecretRelationCounts = await this.seedAgentSecretRelations(overallMetadata);
-        return { pruned: 0, upserted: tagCount + skillCount + toolCount + agentCount + agentRoleRelationCounts.upserted + agentSecretRelationCounts.upserted };
+        return { pruned: 0, upserted: tagCount + skillCount + toolCount + agentCount };
     }
 
     private async seedSecrets(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
@@ -842,66 +840,6 @@ export class ModuleMetadataSeederService {
                 await repo.save(repo.create({ ...data, value: '', module: recordModule }));
             }
             upserted++;
-        }
-        return { pruned: 0, upserted };
-    }
-
-    private async seedAgentSecretRelations(overallMetadata: any): Promise<{ pruned: number; upserted: number }> {
-        const agents = this.getSeedArray<any>(overallMetadata?.agenthubAgents);
-        if (!agents.some((agent) => Array.isArray(agent.agentSecrets) && agent.agentSecrets.length)) {
-            return { pruned: 0, upserted: 0 };
-        }
-        const agentRepo = this.dataSource.getRepository(AgentRegistry);
-        const secretRepo = this.dataSource.getRepository(Secret);
-        const linkRepo = this.dataSource.getRepository(AgentSecret);
-        let upserted = 0;
-        for (const record of agents) {
-            for (const link of record.agentSecrets ?? []) {
-                const agent = await agentRepo.findOneBy({ name: record.name });
-                if (!agent) throw new Error(`Cannot link secrets: agent ${record.name} was not found.`);
-                const secretKey = typeof link === 'string' ? link : link.key;
-                const secret = await secretRepo.findOneBy({ key: secretKey });
-                if (!secret) throw new Error(`Cannot link agent ${record.name}: secret ${secretKey} was not found.`);
-                const linked = await linkRepo.findOneBy({ agentRegistry: { id: agent.id }, secret: { id: secret.id } });
-                const envVarName = typeof link === 'string' ? undefined : link.envVarName;
-                if (!linked) {
-                    await linkRepo.save(linkRepo.create({ agentRegistry: agent, secret, envVarName }));
-                    upserted++;
-                } else if (linked.envVarName !== envVarName) {
-                    await linkRepo.save({ ...linked, envVarName });
-                    upserted++;
-                }
-            }
-        }
-        return { pruned: 0, upserted };
-    }
-
-    private async seedAgentRoleRelations(agents: any[]): Promise<{ pruned: number; upserted: number }> {
-        if (!agents.some((agent) => Array.isArray(agent.agentRoles) && agent.agentRoles.length)) {
-            return { pruned: 0, upserted: 0 };
-        }
-        const agentRepo = this.dataSource.getRepository(AgentRegistry);
-        const roleRepo = this.dataSource.getRepository(RoleMetadata);
-        const linkRepo = this.dataSource.getRepository(AgentRole);
-        let upserted = 0;
-        for (const record of agents) {
-            for (const link of record.agentRoles ?? []) {
-                const agent = await agentRepo.findOneBy({ name: record.name });
-                if (!agent) throw new Error(`Cannot link roles: agent ${record.name} was not found.`);
-                const roleName = typeof link === 'string' ? link : link.roleMetadataUserKey ?? link.name;
-                if (!roleName) throw new Error(`Cannot link agent ${record.name}: role name is missing.`);
-                const role = await roleRepo.findOneBy({ name: roleName });
-                if (!role) throw new Error(`Cannot link agent ${record.name}: role ${roleName} was not found.`);
-                const linked = await linkRepo.findOneBy({ agentRegistry: { id: agent.id }, roleMetadata: { id: role.id } });
-                const agentRoleKey = typeof link === 'string' ? undefined : link.agentRoleKey;
-                if (!linked) {
-                    await linkRepo.save(linkRepo.create({ agentRegistry: agent, roleMetadata: role, agentRoleKey }));
-                    upserted++;
-                } else if (linked.agentRoleKey !== agentRoleKey) {
-                    await linkRepo.save({ ...linked, agentRoleKey });
-                    upserted++;
-                }
-            }
         }
         return { pruned: 0, upserted };
     }
@@ -932,49 +870,68 @@ export class ModuleMetadataSeederService {
         const toolRepo = this.dataSource.getRepository(AgentToolRegistry);
         const agentSkillRepo = this.dataSource.getRepository(AgentSkill);
         const agentToolRepo = this.dataSource.getRepository(AgentTool);
+        const roleRepo = this.dataSource.getRepository(RoleMetadata);
+        const agentRoleRepo = this.dataSource.getRepository(AgentRole);
+        const secretRepo = this.dataSource.getRepository(Secret);
+        const agentSecretRepo = this.dataSource.getRepository(AgentSecret);
         let upserted = 0;
         for (const record of agents) {
             const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
             const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true, tags: true }, withDeleted: true });
             if (existing?.deletedAt) continue;
-            const { tags: tagNames, moduleUserKey, agentSkills = [], agentTools = [], agentRoles: _agentRoles = [], agentSecrets: _agentSecrets = [], ...data } = record;
-            const tags = tagNames === undefined ? undefined : await this.getAgentHubSeedTags(tagNames, record.name);
+            const { tags: tagNames = [], moduleUserKey, agentSkills = [], agentTools = [], agentRoles = [], agentSecrets = [], ...data } = record;
+            const tags = await this.getAgentHubSeedTags(tagNames, record.name);
             let agent = existing;
             if (existing) {
-                agent = await repo.save({ ...existing, ...data, name: existing.name, module: recordModule, tags: tags ?? existing.tags });
+                await agentSkillRepo.delete({ agentRegistry: { id: existing.id } });
+                await agentToolRepo.delete({ agentRegistry: { id: existing.id } });
+                await agentRoleRepo.delete({ agentRegistry: { id: existing.id } });
+                await agentSecretRepo.delete({ agentRegistry: { id: existing.id } });
+                agent = await repo.save({ ...existing, ...data, name: existing.name, module: recordModule, tags });
                 upserted++;
             } else {
-                agent = await repo.save(repo.create({ ...data, module: recordModule, tags: tags ?? [] } as AgentRegistry));
+                agent = await repo.save(repo.create({ ...data, module: recordModule, tags } as AgentRegistry));
                 upserted++;
             }
 
             for (const link of agentSkills) {
                 const skill = await skillRepo.findOneBy({ name: link.name });
                 if (!skill) throw new Error(`Cannot link agent ${record.name}: skill ${link.name} was not found.`);
-                const linked = await agentSkillRepo.findOneBy({ agentRegistry: { id: agent.id }, agentSkillRegistry: { id: skill.id } });
-                if (!linked) {
-                    await agentSkillRepo.save(agentSkillRepo.create({
-                        agentRegistry: agent,
-                        agentSkillRegistry: skill,
-                        alwaysInclude: link.alwaysInclude ?? true,
-                    }));
-                } else if (linked.alwaysInclude !== (link.alwaysInclude ?? true)) {
-                    await agentSkillRepo.save({ ...linked, alwaysInclude: link.alwaysInclude ?? true });
-                }
+                await agentSkillRepo.save(agentSkillRepo.create({
+                    agentRegistry: agent,
+                    agentSkillRegistry: skill,
+                    alwaysInclude: link.alwaysInclude ?? true,
+                }));
+                upserted++;
             }
             for (const link of agentTools) {
                 const tool = await toolRepo.findOneBy({ name: link.name });
                 if (!tool) throw new Error(`Cannot link agent ${record.name}: tool ${link.name} was not found.`);
-                const linked = await agentToolRepo.findOneBy({ agentRegistry: { id: agent.id }, agentToolRegistry: { id: tool.id } });
-                if (!linked) {
-                    await agentToolRepo.save(agentToolRepo.create({
-                        agentRegistry: agent,
-                        agentToolRegistry: tool,
-                        requiresApproval: link.requiresApproval ?? false,
-                    }));
-                } else if (linked.requiresApproval !== (link.requiresApproval ?? false)) {
-                    await agentToolRepo.save({ ...linked, requiresApproval: link.requiresApproval ?? false });
-                }
+                await agentToolRepo.save(agentToolRepo.create({
+                    agentRegistry: agent,
+                    agentToolRegistry: tool,
+                    requiresApproval: link.requiresApproval ?? false,
+                }));
+                upserted++;
+            }
+
+            for (const link of agentRoles) {
+                const roleName = typeof link === 'string' ? link : link.roleMetadataUserKey ?? link.name;
+                if (!roleName) throw new Error(`Cannot link agent ${record.name}: role name is missing.`);
+                const role = await roleRepo.findOneBy({ name: roleName });
+                if (!role) throw new Error(`Cannot link agent ${record.name}: role ${roleName} was not found.`);
+                const agentRoleKey = typeof link === 'string' ? undefined : link.agentRoleKey;
+                await agentRoleRepo.save(agentRoleRepo.create({ agentRegistry: agent, roleMetadata: role, agentRoleKey }));
+                upserted++;
+            }
+
+            for (const link of agentSecrets) {
+                const secretKey = typeof link === 'string' ? link : link.key;
+                const secret = await secretRepo.findOneBy({ key: secretKey });
+                if (!secret) throw new Error(`Cannot link agent ${record.name}: secret ${secretKey} was not found.`);
+                const envVarName = typeof link === 'string' ? undefined : link.envVarName;
+                await agentSecretRepo.save(agentSecretRepo.create({ agentRegistry: agent, secret, envVarName }));
+                upserted++;
             }
         }
         return upserted;
@@ -986,20 +943,20 @@ export class ModuleMetadataSeederService {
         for (const record of tools) {
             const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
             const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true, tags: true }, withDeleted: true });
-            const { tags: tagNames, moduleUserKey, ...data } = record;
-            const tags = tagNames === undefined ? undefined : await this.getAgentHubSeedTags(tagNames, record.name);
+            const { tags: tagNames = [], moduleUserKey, ...data } = record;
+            const tags = await this.getAgentHubSeedTags(tagNames, record.name);
             if (existing) {
                 if (typeof data.sourceCode === 'string' && !data.checksum) {
                     data.checksum = createHash('sha256').update(data.sourceCode).digest('hex');
                 }
-                await repo.save({ ...existing, ...data, name: existing.name, module: recordModule, tags: tags ?? existing.tags });
+                await repo.save({ ...existing, ...data, name: existing.name, module: recordModule, tags });
                 upserted++;
                 continue;
             }
             if (typeof data.sourceCode === 'string' && !data.checksum) {
                 data.checksum = createHash('sha256').update(data.sourceCode).digest('hex');
             }
-            await repo.save(repo.create({ ...data, module: recordModule, tags: tags ?? [] }));
+            await repo.save(repo.create({ ...data, module: recordModule, tags }));
             upserted++;
         }
         return upserted;
@@ -1011,14 +968,14 @@ export class ModuleMetadataSeederService {
         for (const record of skills) {
             const recordModule = await this.getAgentHubSeedModule(record, defaultModule);
             const existing = await repo.findOne({ where: { name: record.name }, relations: { module: true, tags: true }, withDeleted: true });
-            const { tags: tagNames, moduleUserKey, ...data } = record;
-            const tags = tagNames === undefined ? undefined : await this.getAgentHubSeedTags(tagNames, record.name);
+            const { tags: tagNames = [], moduleUserKey, ...data } = record;
+            const tags = await this.getAgentHubSeedTags(tagNames, record.name);
             if (existing) {
-                await repo.save({ ...existing, ...data, name: existing.name, module: recordModule, tags: tags ?? existing.tags });
+                await repo.save({ ...existing, ...data, name: existing.name, module: recordModule, tags });
                 upserted++;
                 continue;
             }
-            await repo.save(repo.create({ ...data, module: recordModule, tags: tags ?? [] }));
+            await repo.save(repo.create({ ...data, module: recordModule, tags }));
             upserted++;
         }
         return upserted;

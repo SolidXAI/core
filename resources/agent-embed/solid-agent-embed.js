@@ -101,6 +101,11 @@
       status.style.display = "block";
       if (typeof options.onError === "function") options.onError(error);
     }
+    function emitRecovered() {
+      if (destroyed) return;
+      status.style.display = "none";
+      if (typeof options.onRecovered === "function") options.onRecovered();
+    }
     function post(type, data) {
       if (!destroyed && frame.contentWindow) frame.contentWindow.postMessage(Object.assign({ channel: channel, version: 1, instanceId: id, type: type }, data || {}), embedUrl.origin);
     }
@@ -285,6 +290,7 @@
       else if (data.type === "before_send_request") runBeforeSend(data);
       else if (data.type === "public_event" && data.protocolVersion === publicProtocolVersion
           && typeof data.event === "string" && isPlainObject(data.payload) && payloadSize(data.payload) <= 64 * 1024) {
+        if (data.event === "onAfterUserMessageSend") emitRecovered();
         emit(data.event, data.payload);
       }
       else if (data.type === "command_result" && data.protocolVersion === publicProtocolVersion) {
@@ -294,7 +300,7 @@
       else if (data.type === "token_request") {
         fetchToken().then(function (auth) { debug(id, "sending token bootstrap to iframe", { requestId: data.requestId, inputsCount: Object.keys(inputs).length }); post("token", { requestId: data.requestId, auth: auth, inputs: inputs }); })
           .catch(function (error) { post("token_error", { requestId: data.requestId, error: error.message }); emitError(error); });
-      } else if (data.type === "authenticated") { status.style.display = "none"; emit("onAuthenticationStateChanged", { state: "authenticated" }); }
+      } else if (data.type === "authenticated") { emitRecovered(); emit("onAuthenticationStateChanged", { state: "authenticated" }); }
       else if (data.type === "error") { emit("onAuthenticationStateChanged", { state: "failed", code: "embed_error" }); emitError(new Error(data.error)); }
       else if (data.type === "inputs_locked") locked = !!data.locked;
       else if (data.type === "inputs_result") {
