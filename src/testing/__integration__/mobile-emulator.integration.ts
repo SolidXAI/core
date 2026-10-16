@@ -17,6 +17,18 @@
 // It installs the small sample app from the iOS spike (MOBILE_IT_IOS_APP, default
 // test-hub/spikes/mobile-ios/sample-app/out/SampleApp.app, built by its build.sh). WebDriverAgent is cached in
 // MOBILE_IT_WDA (default ~/.solidx/wda/xcode-27.0); the first run builds it, which takes minutes.
+//
+// A real iPhone instead, with the demo app already installed on it (from Xcode, TestFlight or the App Store). Plug the
+// phone into this Mac with a USB cable, unlock it, start Appium, then
+//
+//   MOBILE_IT_PLATFORM=ios-device MOBILE_IT_UDID=<phone udid> MOBILE_IT_IOS_TEAM=<10-character team id> \
+//     NODE_PATH=/path/to/node_modules npm run test:mobile
+//
+// The phone's UDID is in `xcrun devicectl list devices`; the team id is the OU of the "Apple Development" certificate.
+// MOBILE_IT_IOS_BUNDLE (default com.oswald.mydemoapp) is the installed app's bundle id and MOBILE_IT_IOS_PROCESS (default
+// "My Demo App") its executable, which names its lines in the device log. WebDriverAgent is built and signed for the
+// phone into MOBILE_IT_WDA (default ~/.solidx/wda/xcode-27.0-iphoneos-<team>): the first run takes minutes, and the
+// Mac's keychain asks for its password (answer Always Allow).
 import * as assert from "node:assert/strict";
 import * as fs from "node:fs";
 import * as os from "node:os";
@@ -32,6 +44,7 @@ const APPS_DIR =
   process.env.MOBILE_IT_APPS_DIR ?? "/Users/oswald/projects/Solid_Starters/test-hub/spikes/mobile-appium/apps";
 
 const IOS = process.env.MOBILE_IT_PLATFORM === "ios";
+const IOS_DEVICE = process.env.MOBILE_IT_PLATFORM === "ios-device";
 const IOS_APP =
   process.env.MOBILE_IT_IOS_APP ??
   path.join(APPS_DIR, "..", "..", "mobile-ios", "sample-app", "out", "SampleApp.app");
@@ -177,6 +190,109 @@ async function iosChecks() {
   });
 }
 
+// ---- A real iPhone: the demo app, already installed ---------------------------------------------------------------------
+
+/** Keeps what a scenario attached, which the shared RecordingReporter drops. */
+class ContentReporter extends RecordingReporter {
+  contents = new Map<string, string>();
+  attach(args: { scenarioId: string; name: string; contentType: string; data: Buffer | string }) {
+    super.attach(args);
+    this.contents.set(`${args.scenarioId}/${args.name}`, String(args.data));
+  }
+}
+
+const phoneApp = (): MobileAdapterOptions => {
+  const team = process.env.MOBILE_IT_IOS_TEAM ?? "";
+  const wdaDir = process.env.MOBILE_IT_WDA ?? path.join(os.homedir(), ".solidx", "wda", `xcode-27.0-iphoneos-${team}`);
+  return {
+    appiumUrl: APPIUM,
+    udid: UDID,
+    platformName: "iOS",
+    simulator: false,
+    appSource: "installed",
+    appPackage: process.env.MOBILE_IT_IOS_BUNDLE ?? "com.oswald.mydemoapp",
+    appProcessName: process.env.MOBILE_IT_IOS_PROCESS ?? "My Demo App",
+    wdaSigning: { teamId: team },
+    wdaDerivedDataPath: wdaDir,
+    wdaPrebuilt: fs.existsSync(path.join(wdaDir, "Build", "Products", "Debug-iphoneos", "WebDriverAgentRunner-Runner.app")),
+    capture: { console: true },
+  };
+};
+
+async function iosDeviceChecks() {
+  if (!process.env.MOBILE_IT_UDID) throw new Error("MOBILE_IT_UDID must be the phone's UDID (xcrun devicectl list devices) for MOBILE_IT_PLATFORM=ios-device");
+  if (!/^[A-Z0-9]{10}$/.test(process.env.MOBILE_IT_IOS_TEAM ?? "")) {
+    throw new Error("MOBILE_IT_IOS_TEAM must be the 10-character Apple team id (the OU of the Apple Development certificate)");
+  }
+
+  await check("iPhone: the installed app opens on its catalog without clearing anything", async () => {
+    const scenario: ScenarioSpec = {
+      id: "phone-catalog",
+      type: "mobile",
+      steps: [
+        { given: { op: "mobile.launch" } },
+        { then: { op: "mobile.expectVisible", with: { locator: acc("Catalog-screen"), timeoutMs: 15000 } } },
+      ],
+    };
+    const reporter = new ContentReporter();
+    await runFromMetadata({ scenarios: [scenario], mobile: phoneApp(), reporter });
+    assert.deepEqual(reporter.scenarioEnds, [{ id: "phone-catalog", ok: true }]);
+  });
+
+  await check("iPhone: a tap moves between screens (More tab, then the menu)", async () => {
+    const scenario: ScenarioSpec = {
+      id: "phone-menu",
+      type: "mobile",
+      steps: [
+        { given: { op: "mobile.launch" } },
+        { when: { op: "mobile.tap", with: { locator: acc("More-tab-item") } } },
+        { then: { op: "mobile.expectVisible", with: { locator: acc("GeoLocation-menu-item"), timeoutMs: 15000 } } },
+      ],
+    };
+    const reporter = new ContentReporter();
+    await runFromMetadata({ scenarios: [scenario], mobile: phoneApp(), reporter });
+    assert.deepEqual(reporter.scenarioEnds, [{ id: "phone-menu", ok: true }]);
+  });
+
+  await check("iPhone: clearData is refused with the reason, before the app is touched", async () => {
+    const scenario: ScenarioSpec = {
+      id: "phone-clear",
+      type: "mobile",
+      steps: [{ given: { op: "mobile.launch", with: { clearData: true } } }],
+    };
+    const reporter = new ContentReporter();
+    await assert.rejects(
+      runFromMetadata({ scenarios: [scenario], mobile: phoneApp(), reporter }),
+      /Clearing data on an iPhone is not supported: Test Hub uses the app already installed on the phone/,
+    );
+  });
+
+  await check("iPhone: a failing scenario keeps the recording and a device log with the app's own lines", async () => {
+    const failing: ScenarioSpec = {
+      id: "phone-fails",
+      type: "mobile",
+      steps: [
+        { given: { op: "mobile.launch" } },
+        { then: { op: "mobile.expectVisible", with: { locator: acc("does-not-exist"), timeoutMs: 3000 } } },
+      ],
+    };
+    const reporter = new ContentReporter();
+    await assert.rejects(
+      runFromMetadata({ scenarios: [failing], mobile: phoneApp(), reporter }),
+      /No element matches \{ by: "accessibilityId", value: "does-not-exist" \} after 3000 ms/,
+    );
+    assert.deepEqual(reporter.runArtifacts.map((a) => a.name), ["run.mp4"]);
+    assert.ok(reporter.runArtifacts[0].bytes > 1000, "recording looks empty");
+    const log = reporter.contents.get("phone-fails/console.json");
+    assert.ok(log, "no console.json was attached");
+    const entries = JSON.parse(log) as Array<{ type: string; text: string }>;
+    const own = entries.filter((e) => e.text.includes(`${process.env.MOBILE_IT_IOS_PROCESS ?? "My Demo App"}`));
+    assert.ok(own.length > 0, `the device log has no line from the app (${entries.length} lines kept)`);
+    assert.ok(!entries.some((e) => e.text.includes("WebDriverAgentRunner-Runner")), "WebDriverAgent's own lines should be filtered out");
+    console.log(`      ${entries.length} log lines kept, ${own.length} from the app; recording ${reporter.runArtifacts[0].bytes} bytes`);
+  });
+}
+
 /** Reads the duration, in seconds, from an MP4's movie header. */
 function mp4Duration(data: Buffer): number {
   const at = data.indexOf("mvhd");
@@ -198,6 +314,12 @@ async function check(name: string, fn: () => Promise<void>) {
 }
 
 async function main() {
+  if (IOS_DEVICE) {
+    await iosDeviceChecks();
+    const failedPhone = results.filter((r) => !r.ok);
+    console.log(`\n${results.length - failedPhone.length}/${results.length} checks passed`);
+    process.exit(failedPhone.length ? 1 : 0);
+  }
   if (IOS) {
     await iosChecks();
     const failedIos = results.filter((r) => !r.ok);
