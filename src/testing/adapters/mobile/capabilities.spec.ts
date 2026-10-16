@@ -1,4 +1,4 @@
-import { buildCapabilities } from "./capabilities";
+import { buildCapabilities, IOS_ALLOW_BUTTON_SELECTOR } from "./capabilities";
 import type { MobileAdapterOptions } from "./mobile.types";
 
 const base: MobileAdapterOptions = {
@@ -158,5 +158,84 @@ describe("buildCapabilities: iOS first build", () => {
     expect(buildCapabilities(ios)["appium:wdaLaunchTimeout"]).toBe(480_000);
     expect(buildCapabilities({ ...ios, wdaDerivedDataPath: "/w", wdaPrebuilt: false })["appium:wdaLaunchTimeout"]).toBe(480_000);
     expect(buildCapabilities({ ...ios, wdaDerivedDataPath: "/w", wdaPrebuilt: true })["appium:wdaLaunchTimeout"]).toBe(240_000);
+  });
+});
+
+describe("buildCapabilities: iOS on a phone and on the Simulator", () => {
+  const TEAM = "LN5367MMM6";
+  const phone: MobileAdapterOptions = {
+    appiumUrl: "http://localhost:4723",
+    udid: "00008140-001A202611B8801C",
+    platformName: "iOS",
+    simulator: false,
+    appSource: "installed",
+    appPackage: "com.oswald.mydemoapp",
+  };
+  const simulator: MobileAdapterOptions = { ...phone, udid: "1674E718-0EBA-4568-9644-F18E0DDF7705", simulator: true };
+  const signingKeys = ["appium:xcodeOrgId", "appium:xcodeSigningId", "appium:updatedWDABundleId", "appium:allowProvisioningDeviceRegistration"];
+  const SETTING = "appium:settings[acceptAlertButtonSelector]";
+
+  it("a phone with signing: the team, the identity, WebDriverAgent's own bundle id and permission to register", () => {
+    expect(buildCapabilities({ ...phone, wdaSigning: { teamId: TEAM } })).toMatchObject({
+      "appium:xcodeOrgId": TEAM,
+      "appium:xcodeSigningId": "Apple Development",
+      "appium:updatedWDABundleId": "io.solidx.wda.ln5367mmm6",
+      "appium:allowProvisioningDeviceRegistration": true,
+    });
+  });
+
+  it("a signing identity and a WebDriverAgent bundle id given by the caller win over the defaults", () => {
+    const caps = buildCapabilities({ ...phone, wdaSigning: { teamId: TEAM, signingId: "iPhone Developer", wdaBundleId: "com.acme.wda" } });
+    expect(caps["appium:xcodeSigningId"]).toBe("iPhone Developer");
+    expect(caps["appium:updatedWDABundleId"]).toBe("com.acme.wda");
+  });
+
+  it("a phone allows the permission prompt through a WebDriverAgent setting, not a capability the driver would ignore", () => {
+    const caps = buildCapabilities(phone);
+    expect(caps[SETTING]).toBe(IOS_ALLOW_BUTTON_SELECTOR);
+    expect(Object.keys(caps)).not.toContain("appium:acceptAlertButtonSelector");
+    expect(caps["appium:autoAcceptAlerts"]).toBe(true);
+  });
+
+  it("the allow rule never taps Allow Once", () => {
+    expect(IOS_ALLOW_BUTTON_SELECTOR).toContain("Allow While Using App");
+    expect(IOS_ALLOW_BUTTON_SELECTOR).not.toContain("Allow Once");
+  });
+
+  it("a phone without signing still gets the allow rule but none of the signing keys", () => {
+    const caps = buildCapabilities(phone);
+    expect(Object.keys(caps)).toContain(SETTING);
+    for (const key of signingKeys) expect(Object.keys(caps)).not.toContain(key);
+  });
+
+  it("the Simulator gets neither signing nor the allow rule", () => {
+    const caps = buildCapabilities({ ...simulator, wdaSigning: undefined });
+    expect(Object.keys(caps)).not.toContain(SETTING);
+    for (const key of signingKeys) expect(Object.keys(caps)).not.toContain(key);
+  });
+
+  it("the Simulator's capabilities are exactly what they were before phones", () => {
+    expect(buildCapabilities(simulator)).toEqual({
+      platformName: "iOS",
+      "appium:automationName": "XCUITest",
+      "appium:udid": "1674E718-0EBA-4568-9644-F18E0DDF7705",
+      "appium:newCommandTimeout": 120,
+      "appium:autoAcceptAlerts": true,
+      "appium:wdaLaunchTimeout": 480_000,
+      "appium:bundleId": "com.oswald.mydemoapp",
+      "appium:noReset": true,
+      "appium:forceAppLaunch": true,
+      "appium:shouldTerminateApp": true,
+    });
+  });
+
+  it("extraCapabilities still override what the phone sets", () => {
+    expect(buildCapabilities({ ...phone, extraCapabilities: { [SETTING]: "custom" } })[SETTING]).toBe("custom");
+  });
+
+  it("Android gets none of it", () => {
+    const android = buildCapabilities({ appiumUrl: "http://localhost:4723", udid: "emulator-5554", appSource: "installed", appPackage: "com.acme.app", appActivity: ".Main" });
+    expect(Object.keys(android)).not.toContain(SETTING);
+    for (const key of signingKeys) expect(Object.keys(android)).not.toContain(key);
   });
 });

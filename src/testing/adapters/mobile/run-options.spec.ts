@@ -76,3 +76,41 @@ describe("toMobileAdapterOptions: iOS", () => {
     expect(toMobileAdapterOptions(android).platformName).toBeUndefined();
   });
 });
+
+describe("toMobileAdapterOptions: phone signing", () => {
+  const phone: MobileRunOptionsInput = {
+    appiumUrl: "http://localhost:4723",
+    udid: "00008140-001A202611B8801C",
+    platformName: "iOS",
+    simulator: false,
+    appSource: "installed",
+    appPackage: "com.oswald.mydemoapp",
+  };
+
+  it("copies wdaSigning", () => {
+    expect(toMobileAdapterOptions({ ...phone, wdaSigning: { teamId: "LN5367MMM6", wdaBundleId: "io.solidx.wda.ln5367mmm6" } }).wdaSigning).toEqual({
+      teamId: "LN5367MMM6",
+      signingId: undefined,
+      wdaBundleId: "io.solidx.wda.ln5367mmm6",
+    });
+  });
+
+  it("copies only the known signing fields", () => {
+    const sneaky = { teamId: "LN5367MMM6", extra: "x" } as unknown as NonNullable<MobileRunOptionsInput["wdaSigning"]>;
+    expect(toMobileAdapterOptions({ ...phone, wdaSigning: sneaky }).wdaSigning).not.toHaveProperty("extra");
+  });
+
+  it("leaves wdaSigning out when there is none", () => {
+    expect(toMobileAdapterOptions(phone).wdaSigning).toBeUndefined();
+  });
+
+  it.each(["short", "lowercase1", "TOOLONGTEAMID", "", "LN5367MMM!"])("rejects the team id %p", (teamId) => {
+    expect(() => toMobileAdapterOptions({ ...phone, wdaSigning: { teamId } })).toThrow("wdaSigning.teamId must be a 10-character Apple team id");
+  });
+
+  it("rejects a WebDriverAgent bundle id that could be taken for an option", () => {
+    expect(() => toMobileAdapterOptions({ ...phone, wdaSigning: { teamId: "LN5367MMM6", wdaBundleId: "-bad" } })).toThrow(
+      "wdaSigning.wdaBundleId must look like io.example.wda",
+    );
+  });
+});

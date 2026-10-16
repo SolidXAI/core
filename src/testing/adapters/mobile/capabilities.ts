@@ -49,6 +49,12 @@ function androidCapabilities(o: MobileAdapterOptions): Record<string, unknown> {
 }
 
 /**
+ * The class chain of the buttons that allow a permission prompt on a phone (D44). "Allow Once" is left out on purpose: it is
+ * listed before "Allow While Using App" on the location prompt, and its grant would not last. English labels only.
+ */
+export const IOS_ALLOW_BUTTON_SELECTOR = '**/XCUIElementTypeButton[`label IN {"Allow While Using App", "Allow", "OK"}`]';
+
+/**
  * XCUITest session. `autoAcceptAlerts` handles the app's own alerts, but it denies permission prompts, so permissions are
  * granted another way (D28). WebDriverAgent is built once into `wdaDerivedDataPath` and reused (D34).
  */
@@ -65,6 +71,18 @@ function iosCapabilities(o: MobileAdapterOptions): Record<string, unknown> {
   if (o.wdaDerivedDataPath) {
     caps["appium:derivedDataPath"] = o.wdaDerivedDataPath;
     caps["appium:usePrebuiltWDA"] = !!o.wdaPrebuilt;
+  }
+  // A phone only runs apps that are signed for it, and WebDriverAgent is one (D42). The team comes from the Mac's certificate.
+  if (o.wdaSigning) {
+    caps["appium:xcodeOrgId"] = o.wdaSigning.teamId;
+    caps["appium:xcodeSigningId"] = o.wdaSigning.signingId ?? "Apple Development";
+    caps["appium:updatedWDABundleId"] = o.wdaSigning.wdaBundleId ?? `io.solidx.wda.${o.wdaSigning.teamId.toLowerCase()}`;
+    caps["appium:allowProvisioningDeviceRegistration"] = true;
+  }
+  if (!o.simulator) {
+    // A WebDriverAgent setting, not a capability: as "appium:acceptAlertButtonSelector" the driver ignores it, and
+    // WebDriverAgent's default rule then taps "Don't Allow" on a location prompt (spikes/mobile-ios/FINDINGS-ios-device.md).
+    caps["appium:settings[acceptAlertButtonSelector]"] = IOS_ALLOW_BUTTON_SELECTOR;
   }
 
   if (o.appSource === "upload") {

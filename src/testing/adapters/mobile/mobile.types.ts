@@ -81,6 +81,7 @@ export type MobileRunOptionsInput = Pick<
   | "appProcessName"
   | "wdaDerivedDataPath"
   | "wdaPrebuilt"
+  | "wdaSigning"
   | "defaultTimeoutMs"
   | "navigationTimeoutMs"
   | "strictLocators"
@@ -123,6 +124,11 @@ export interface MobileAdapterOptions {
   wdaDerivedDataPath?: string;
   /** iOS: WebDriverAgent is already built in `wdaDerivedDataPath`. */
   wdaPrebuilt?: boolean;
+  /**
+   * iOS device: how WebDriverAgent is signed so it can run on the phone (D42). Set by Test Hub, which reads the team from
+   * the Mac's signing certificate. Absent on a simulator, which needs no signing.
+   */
+  wdaSigning?: { teamId: string; signingId?: string; wdaBundleId?: string };
   /** Element waits. Defaults to DEFAULT_UI_TIMEOUT_MS, the same as the UI adapter (D7). */
   defaultTimeoutMs?: number;
   /** App launch and screen changes. Defaults to defaultTimeoutMs, like the UI adapter (D7). */

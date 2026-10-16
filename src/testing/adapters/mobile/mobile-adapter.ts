@@ -4,7 +4,7 @@ import { buildCapabilities } from "./capabilities";
 import { execFile } from "node:child_process";
 import { resolveLocator } from "./locator";
 import { toConsoleEntries } from "./logcat";
-import { appIdArg, isIos } from "./platform";
+import { appIdArg, BUNDLE_ID_RE, isIos } from "./platform";
 import { toSyslogConsoleEntries } from "./syslog";
 import type { ResolvedLocator } from "./locator";
 import type {
@@ -38,7 +38,6 @@ const IOS_RECORDING_OPTIONS = {
 
 const SIMCTL_TIMEOUT_MS = 15_000;
 const SIMULATOR_ID_RE = /^[A-Za-z0-9][A-Za-z0-9-]*$/;
-const BUNDLE_ID_RE = /^[A-Za-z0-9][A-Za-z0-9._-]*$/;
 
 function defaultRunCommand(file: string, args: string[]): Promise<void> {
   return new Promise((resolve, reject) => {
