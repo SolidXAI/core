@@ -213,7 +213,7 @@ Each run starts afresh. Every generator takes `unique=false` to allow repeats.
   `country=us` (555-0100 to 555-0199 in each area code). India has no such range, so `country=in`
   with `fictional=true` is an error. A phone number counts as
   used whatever its format, so the same number cannot come back as `e164` after `digits`.
-- **Names come from fixed lists** (50 per locale, about 140 for `any`). A run that asks for more
+- **Names come from fixed lists** (50 first and 50 last names per locale; 150 first and 123 last names for `any`). A run that asks for more
   distinct names than the list holds fails with a message saying so; pass `unique=false` then.
 - **Emails** use `example.com` by default, which never receives mail. The digits after the name
   keep addresses distinct across runs as well, where an application's unique-email rule would
