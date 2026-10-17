@@ -26946,7 +26946,8 @@
                 "actionInContextMenu": false,
                 "openInPopup": true,
                 "closable": true,
-                "popupWidth": "min(1100px, calc(100vw - 32px))",
+                "popupWidth": "95vw",
+                "popupClassName": "solid-agent-session-compare-popup",
                 "customComponentIsSystem": true
               }
             }
@@ -26971,7 +26972,8 @@
             "type": "field",
             "attrs": {
               "name": "configVersion",
-              "sortable": true
+              "sortable": true,
+              "viewWidget": "AgentSessionConfigVersionListWidget"
             }
           },
           {
