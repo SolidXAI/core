@@ -39,14 +39,14 @@ afterEach(() => {
 });
 
 describe("${now:...}", () => {
-  it("gives each kind in the requested zone", () => {
+  it("gives each kind in the requested zone, and iso and epoch as formats", () => {
     expect(resolveNow("date", { tz: "utc" })).toBe("2026-10-17");
     expect(resolveNow("time", { tz: "utc" })).toBe("10:29:05");
     expect(resolveNow("datetime", { tz: "utc" })).toBe("2026-10-17 10:29:05");
-    expect(resolveNow("iso", { tz: "utc" })).toBe("2026-10-17T10:29:05Z");
-    expect(resolveNow("epoch", { tz: "utc" })).toBe(String(Date.parse(NOW)));
+    expect(resolveNow("datetime", { tz: "utc", format: "iso" })).toBe("2026-10-17T10:29:05Z");
+    expect(resolveNow("datetime", { tz: "utc", format: "epoch" })).toBe(String(Date.parse(NOW)));
     expect(resolveNow("time", { tz: "Asia/Kolkata" })).toBe("15:59:05");
-    expect(resolveNow("iso", { tz: "Asia/Kolkata" })).toBe("2026-10-17T15:59:05+05:30");
+    expect(resolveNow("datetime", { tz: "Asia/Kolkata", format: "iso" })).toBe("2026-10-17T15:59:05+05:30");
   });
 
   it("shifts by an offset", () => {
@@ -89,7 +89,8 @@ describe("${now:...}", () => {
   });
 
   it("explains an unknown kind, zone, offset and argument", () => {
-    expect(() => resolveNow("day")).toThrow('Unknown now kind "day". Use one of: date, time, datetime, iso, epoch');
+    expect(() => resolveNow("day")).toThrow('Unknown now kind "day". Use one of: date, time, datetime');
+    expect(() => resolveNow("iso")).toThrow('Unknown now kind "iso". Use one of: date, time, datetime');
     expect(() => resolveNow("date", { tz: "Mars/Olympus" })).toThrow(
       'now:date "tz" must be local, utc or an IANA time zone such as Asia/Kolkata (got "Mars/Olympus")',
     );
@@ -241,6 +242,16 @@ describe("random:date", () => {
     expect(gen(ctx, "${random:date(from=now, to=now, tz=Asia/Kolkata, time=random, format=HH:mm)}")).toBe("15:59");
   });
 
+  it("reads a shift with no base from the start of today, and now+2h from the current moment", () => {
+    const ctx = makeCtx();
+    for (let i = 0; i < 50; i += 1) {
+      const v = gen(ctx, "${random:date(from=now, to=now+2h, time=random, tz=utc, format=HH:mm)}");
+      expect(v >= "10:29" && v <= "12:29").toBe(true);
+    }
+    // +2h alone is 02:00 today, which is before now.
+    expect(() => gen(ctx, "${random:date(from=now, to=+2h, tz=utc)}")).toThrow('random:date "from" (now) is after "to" (+2h)');
+  });
+
   it("formats as iso and epoch", () => {
     const ctx = makeCtx();
     expect(gen(ctx, "${random:date(from=now, to=now, tz=utc, time=random, format=iso)}")).toBe("2026-10-17T10:29:05Z");
@@ -290,7 +301,7 @@ describe("util.now", () => {
 
   it("returns today's date by default, and takes a kind and arguments", async () => {
     await expect(run({ args: { tz: "utc" } })).resolves.toBe("2026-10-17");
-    await expect(run({ kind: "iso", args: { tz: "utc", offset: "+1d" } })).resolves.toBe("2026-10-18T10:29:05Z");
+    await expect(run({ kind: "datetime", args: { tz: "utc", offset: "+1d", format: "iso" } })).resolves.toBe("2026-10-18T10:29:05Z");
   });
 
   it("explains an unknown kind and bad args", async () => {

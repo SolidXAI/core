@@ -235,8 +235,8 @@ the same instant gives the same value.
 | `date` | `YYYY-MM-DD` | `2026-10-17` |
 | `time` | `HH:mm:ss` | `14:46:15` |
 | `datetime` | `YYYY-MM-DD HH:mm:ss` | `2026-10-17 14:46:15` |
-| `iso` | ISO 8601 | `2026-10-17T14:46:15+05:30`, or `…Z` with `tz=utc` |
-| `epoch` | milliseconds | `1792228575000` |
+
+ISO 8601 and epoch milliseconds are formats, not kinds: `${now:datetime(format=iso)}` gives `2026-10-17T14:46:15+05:30` (`…Z` with `tz=utc`), and `${now:datetime(format=epoch)}` gives `1792228575000`.
 
 - `offset` is `0` or terms such as `+7d`, `-1m`, `+1d+2h`: `y` years, `m` months, `w` weeks, `d` days,
   `h` hours, `min` minutes, `s` seconds. A month shift stops at the end of a shorter month (31 Jan + 1m is 28 Feb).
@@ -247,9 +247,27 @@ the same instant gives the same value.
   midnight can differ between zones, so set `tz` when the app compares dates in one.
 - Two `${now:...}` tokens can differ by a second. To type a timestamp and then assert it, take it once with
   `util.now` and `saveAs`.
-- `random:date` takes the same `format`, `tz` and shifts. A date of birth for an adult:
-  `${random:date(from=-60y, to=-18y, format=DD/MM/YYYY)}`. It allows repeats by default, since a year has only
-  365 days; pass `unique=true` when a date must be distinct.
+- `random:date` takes the same `format`, `tz` and shifts. It allows repeats by default (a year has
+  only 365 days); pass `unique=true` when a date must be distinct.
+
+Date recipes:
+
+| Need | Token |
+|---|---|
+| Date of birth, aged 18 to 60 | `${random:date(from=-60y, to=-18y)}` |
+| The same, written 12/04/1987 | `${random:date(from=-60y, to=-18y, format=DD/MM/YYYY)}` |
+| A date in the past year | `${random:date(from=-1y, to=today)}` |
+| A due date in the next 30 days | `${random:date(from=today, to=+30d)}` |
+| A date in a fixed period | `${random:date(from=2026-04-01, to=2027-03-31)}` |
+| A slot in business hours, next two weeks | `${random:date(from=today, to=+14d, time=09:00-18:00)}` |
+| A time in the next two hours | `${random:date(from=now, to=now+2h, time=random)}` |
+| Today | `${now:date}` |
+| A week from today | `${now:date(offset=+7d)}` |
+| Yesterday (an expired date) | `${now:date(offset=-1d)}` |
+| Exactly 18 years ago today (an age-limit boundary) | `${now:date(offset=-18y)}` |
+| The current moment as an ISO timestamp, in UTC | `${now:datetime(tz=utc, format=iso)}` |
+
+In `from`, `to` and `offset`, `now` and shifts in `h`, `min` or `s` mean an exact moment. Anything else (`today`, a fixed date, shifts in `y`, `m`, `w` or `d`) means the whole day, so `to=today` includes all of today. A shift with no base counts from the start of today, so a time ahead of the current moment is written with the base: `to=now+2h`, not `to=+2h`.
 
 ## Ops Reference
 
@@ -516,7 +534,8 @@ Options in `with`:
 Description: Returns the current date or time (see *Current date and time*), to keep with `saveAs`.
 
 Options in `with`:
-- `kind` (optional): `date` (default), `time`, `datetime`, `iso` or `epoch`
+- `kind` (optional): `date` (default), `time` or `datetime`. For ISO 8601 or epoch milliseconds, pass
+  `"format": "iso"` or `"epoch"` in `args`
 - `args` (optional): `offset`, `format` and `tz` as an object, e.g. `{ "offset": "+7d" }`
 
 ### **Op: `test.spec`**

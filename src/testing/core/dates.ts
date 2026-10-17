@@ -122,12 +122,11 @@ export function formatDate(d: Dayjs, format: string): string {
 
 // ---- ${now:...} -----------------------------------------------------------------------------
 
+// ISO 8601 and epoch are formats (format=iso, format=epoch), not kinds: one way to write each.
 const NOW_FORMATS: Record<string, string> = {
   date: "YYYY-MM-DD",
   time: "HH:mm:ss",
   datetime: "YYYY-MM-DD HH:mm:ss",
-  iso: "iso",
-  epoch: "epoch",
 };
 
 export const NOW_KINDS = Object.keys(NOW_FORMATS);
