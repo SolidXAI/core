@@ -32,6 +32,8 @@ interface Generator {
    * in E.164, so the same number written in two formats still counts as a repeat.
    */
   next?: (args: Args) => string;
+  /** Checks combinations of arguments that are each valid alone; throws a message that says what to change. */
+  validate?: (args: Args) => void;
   /** Every canonical value, for a generator whose values come from a small, fixed set. */
   pool?: (args: Args) => readonly string[] | undefined;
   /** Turns a canonical value into the requested output format. Defaults to the value itself. */
@@ -46,6 +48,7 @@ const UNIQUE_ARG: ArgSpec = { type: "boolean", default: true };
 
 const PHONE_FORMATS = ["digits", "national", "e164", "international"] as const;
 const LOCALES = ["any", "in", "gb", "us"] as const;
+const COUNTRIES = ["in", "gb", "us"] as const;
 const DIGITS = "0123456789";
 const UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const LOWER_ALNUM = "abcdefghijklmnopqrstuvwxyz0123456789";
@@ -121,65 +124,65 @@ const GENERATORS: Record<string, Generator> = {
       return `${local}@${String(a.domain).toLowerCase()}`;
     },
   },
-  indianMobileNo: {
-    args: { format: { type: "string", default: "digits", values: PHONE_FORMATS } },
-    // Indian mobile numbers are 10 digits starting with 6, 7, 8 or 9.
-    next: () => `+91${pick(["6", "7", "8", "9"])}${chars(DIGITS, 9)}`,
-    render: (e164, a) => {
-      const n = e164.slice(3);
-      switch (a.format) {
-        case "national": return `${n.slice(0, 5)} ${n.slice(5)}`;
-        case "e164": return e164;
-        case "international": return `+91 ${n.slice(0, 5)} ${n.slice(5)}`;
-        default: return n;
-      }
-    },
-  },
-  britishMobileNo: {
+  mobileNo: {
     args: {
+      country: { type: "string", default: "in", values: COUNTRIES },
       format: { type: "string", default: "digits", values: PHONE_FORMATS },
-      // Ofcom's range for drama, 07700 900000 to 900999: never given to a subscriber, so nothing
-      // is sent to a real person. Only 1,000 numbers, so one run can use at most that many.
+      // Numbers set aside for fiction, so nothing is sent to a real person: the UK's Ofcom drama
+      // range (07700 900000 to 900999, 1,000 numbers) and the US's 555-0100 to 555-0199 in every
+      // area code (100 per area code). India has no such range.
       fictional: { type: "boolean", default: false },
     },
-    next: () => `+447${pick(UK_MOBILE_THIRD_DIGITS)}${chars(DIGITS, 8)}`,
-    pool: (a) => (a.fictional ? Array.from({ length: 1000 }, (_, i) => `+447700900${String(i).padStart(3, "0")}`) : undefined),
-    render: (e164, a) => {
-      const n = `0${e164.slice(3)}`;
-      switch (a.format) {
-        case "national": return `${n.slice(0, 5)} ${n.slice(5)}`;
-        case "e164": return e164;
-        case "international": return `+44 ${n.slice(1, 5)} ${n.slice(5)}`;
-        default: return n;
+    validate: (a) => {
+      if (a.fictional && a.country === "in") {
+        throw new Error(
+          'random:mobileNo "fictional" works only for country gb or us; India has no range reserved for fiction',
+        );
       }
     },
-  },
-  americanMobileNo: {
-    args: {
-      format: { type: "string", default: "digits", values: PHONE_FORMATS },
-      // 555-0100 to 555-0199 are reserved for fiction in every area code; 100 per area code.
-      fictional: { type: "boolean", default: false },
+    next: (a) => {
+      switch (a.country) {
+        // Indian mobile numbers are 10 digits starting with 6, 7, 8 or 9.
+        case "in": return `+91${pick(["6", "7", "8", "9"])}${chars(DIGITS, 9)}`;
+        case "gb": return `+447${pick(UK_MOBILE_THIRD_DIGITS)}${chars(DIGITS, 8)}`;
+        default: {
+          // The exchange's first digit is 2-9, and N11 (service codes) and 555 are left out.
+          let exchange: string;
+          do {
+            exchange = `${randomInt(2, 10)}${chars(DIGITS, 2)}`;
+          } while (exchange.endsWith("11") || exchange === "555");
+          return `+1${pick(US_AREA_CODES)}${exchange}${chars(DIGITS, 4)}`;
+        }
+      }
     },
-    next: () => {
-      // The exchange's first digit is 2-9, and N11 (service codes) and 555 are left out.
-      let exchange: string;
-      do {
-        exchange = `${randomInt(2, 10)}${chars(DIGITS, 2)}`;
-      } while (exchange.endsWith("11") || exchange === "555");
-      return `+1${pick(US_AREA_CODES)}${exchange}${chars(DIGITS, 4)}`;
+    pool: (a) => {
+      if (!a.fictional) return undefined;
+      if (a.country === "gb") {
+        return Array.from({ length: 1000 }, (_, i) => `+447700900${String(i).padStart(3, "0")}`);
+      }
+      return US_AREA_CODES.flatMap((area) =>
+        Array.from({ length: 100 }, (_, i) => `+1${area}55501${String(i).padStart(2, "0")}`),
+      );
     },
-    pool: (a) =>
-      a.fictional
-        ? US_AREA_CODES.flatMap((area) => Array.from({ length: 100 }, (_, i) => `+1${area}55501${String(i).padStart(2, "0")}`))
-        : undefined,
     render: (e164, a) => {
+      const format = a.format;
+      if (format === "e164") return e164;
+      if (a.country === "in") {
+        const n = e164.slice(3);
+        if (format === "national") return `${n.slice(0, 5)} ${n.slice(5)}`;
+        if (format === "international") return `+91 ${n.slice(0, 5)} ${n.slice(5)}`;
+        return n;
+      }
+      if (a.country === "gb") {
+        const n = `0${e164.slice(3)}`;
+        if (format === "national") return `${n.slice(0, 5)} ${n.slice(5)}`;
+        if (format === "international") return `+44 ${n.slice(1, 5)} ${n.slice(5)}`;
+        return n;
+      }
       const n = e164.slice(2);
-      switch (a.format) {
-        case "national": return `(${n.slice(0, 3)}) ${n.slice(3, 6)}-${n.slice(6)}`;
-        case "e164": return e164;
-        case "international": return `+1 ${n.slice(0, 3)}-${n.slice(3, 6)}-${n.slice(6)}`;
-        default: return n;
-      }
+      if (format === "national") return `(${n.slice(0, 3)}) ${n.slice(3, 6)}-${n.slice(6)}`;
+      if (format === "international") return `+1 ${n.slice(0, 3)}-${n.slice(3, 6)}-${n.slice(6)}`;
+      return n;
     },
   },
   panNo: {
@@ -199,12 +202,14 @@ const GENERATORS: Record<string, Generator> = {
       separator: { type: "string", default: "-", values: ["-", "/", "_", "none"] },
       // Number of digits in the running number.
       length: { type: "number", default: 8, min: 4, max: 20 },
-      date: { type: "string", default: "none", values: ["none", "yyyy", "yyyymm", "yyyymmdd"] },
+      date: { type: "string", default: "none", values: ["none", "yyyy", "yyyymm", "yyyymmdd", "yyyymmddhhmm", "yyyymmddhhmmss"] },
     },
     next: (a) => {
+      // The runner machine's local time, when the value is generated; `date` keeps the leading part.
       const now = new Date();
-      const ymd = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}${String(now.getDate()).padStart(2, "0")}`;
-      const date = a.date === "none" ? "" : ymd.slice(0, String(a.date).length);
+      const two = (n: number) => String(n).padStart(2, "0");
+      const stamp = `${now.getFullYear()}${two(now.getMonth() + 1)}${two(now.getDate())}${two(now.getHours())}${two(now.getMinutes())}${two(now.getSeconds())}`;
+      const date = a.date === "none" ? "" : stamp.slice(0, String(a.date).length);
       const sep = a.separator === "none" ? "" : String(a.separator);
       return [a.prefix, date, chars(DIGITS, Number(a.length))].filter(Boolean).join(sep);
     },
@@ -291,6 +296,7 @@ export class RandomDataRegistry {
       throw new Error(`Unknown random generator "${name}". Use one of: ${RANDOM_GENERATOR_NAMES.join(", ")}`);
     }
     const args = resolveArgs(name, generator, rawArgs);
+    generator.validate?.(args);
     const used = this.used.get(name) ?? new Set<string>();
     this.used.set(name, used);
     const render = (canonical: string) => (generator.render ? generator.render(canonical, args) : canonical);

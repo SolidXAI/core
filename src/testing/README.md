@@ -183,6 +183,7 @@ Examples:
 ```
 
 ### Random test data
+Every generator, argument and value is listed on the docs page *Random Test Data* (`developer-docs/testing/random-test-data`); the table below is the short form.
 `${random:...}` generates realistic values that are never repeated within one run, so a run can
 create several records whose fields must be unique (emails, phone numbers, PANs, invoice numbers).
 Each run starts afresh. Every generator takes `unique=false` to allow repeats.
@@ -192,11 +193,9 @@ Each run starts afresh. Every generator takes `unique=false` to allow repeats.
 | `firstName` | `locale`: `any`, `in`, `gb`, `us` | `Priya` |
 | `lastName` | `locale`: `any`, `in`, `gb`, `us` | `Sharma` |
 | `emailAddress` | `domain`: `example.com`; `format`: `first.last`, `firstlast`, `first_last`, `flast`, `random`; `digits` (after the name): `4`, 0–8; `length` (for `random`): `10`, 4–64 | `priya.sharma4821@example.com` |
-| `indianMobileNo` | `format`: `digits`, `national`, `e164`, `international` | `9876543210`, `98765 43210`, `+919876543210`, `+91 98765 43210` |
-| `britishMobileNo` | `format` as above; `fictional`: `false` | `07912345678`, `07912 345678`, `+447912345678`, `+44 7912 345678` |
-| `americanMobileNo` | `format` as above; `fictional`: `false` | `4152345678`, `(415) 234-5678`, `+14152345678`, `+1 415-234-5678` |
+| `mobileNo` | `country`: `in`, `gb`, `us`; `format`: `digits`, `national`, `e164`, `international`; `fictional`: `false` (UK and US only) | India `9876543210`, `+91 98765 43210`; UK `07912 345678`, `+447912345678`; US `(415) 234-5678`, `+1 415-234-5678` |
 | `panNo` | `holderType`: `P`, `C`, `H`, `F`, `A`, `T`, `B`, `L`, `J`, `G` | `ABCPK1234Z` |
-| `invoiceId` | `prefix`: `INV` (empty for none); `separator`: `-`, `/`, `_`, `none`; `length` (digits): `8`, 4–20; `date`: `none`, `yyyy`, `yyyymm`, `yyyymmdd` | `INV-00482913`, `INV-202610-00482913` |
+| `invoiceId` | `prefix`: `INV` (empty for none); `separator`: `-`, `/`, `_`, `none`; `length` (digits): `8`, 4–20; `date`: `none`, `yyyy`, `yyyymm`, `yyyymmdd`, `yyyymmddhhmm`, `yyyymmddhhmmss` | `INV-00482913`, `INV-20261017143205-00482913` |
 
 - **Arguments** are plain text without quotes: `${random:emailAddress(domain=acme.test, digits=0)}`.
   A value cannot contain `,`, `)`, `|` or `}`.
@@ -210,8 +209,9 @@ Each run starts afresh. Every generator takes `unique=false` to allow repeats.
   ```
 
 - **Phone numbers are real-looking, so they may belong to someone.** Run against a test SMS
-  provider, or pass `fictional=true` for the UK (Ofcom's drama range, 07700 900000–900999) or the
-  US (555-0100 to 555-0199 in each area code). India has no such range. A phone number counts as
+  provider, or pass `fictional=true` with `country=gb` (Ofcom's drama range, 07700 900000–900999) or
+  `country=us` (555-0100 to 555-0199 in each area code). India has no such range, so `country=in`
+  with `fictional=true` is an error. A phone number counts as
   used whatever its format, so the same number cannot come back as `e164` after `digits`.
 - **Names come from fixed lists** (50 per locale, about 140 for `any`). A run that asks for more
   distinct names than the list holds fails with a message saying so; pass `unique=false` then.
@@ -480,7 +480,7 @@ Options in `with`:
 Description: Returns one random value (see *Random test data*), to keep with `saveAs`.
 
 Options in `with`:
-- `generator` (required): `firstName`, `lastName`, `emailAddress`, `indianMobileNo`, `britishMobileNo`, `americanMobileNo`, `panNo` or `invoiceId`
+- `generator` (required): `firstName`, `lastName`, `emailAddress`, `mobileNo`, `panNo` or `invoiceId`
 - `args` (optional): the generator's arguments as an object, e.g. `{ "format": "e164" }`
 
 ### **Op: `test.spec`**

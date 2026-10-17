@@ -45,31 +45,42 @@ describe("random generators: formats", () => {
     expect(registry.generate("emailAddress", { format: "random", length: 12 })).toMatch(/^[a-z0-9]{12}@example\.com$/);
   });
 
-  it("indianMobileNo is 10 digits starting with 6-9, in each format", () => {
-    for (const v of many(registry, "indianMobileNo")) expect(v).toMatch(/^[6-9]\d{9}$/);
-    expect(registry.generate("indianMobileNo", { format: "national" })).toMatch(/^[6-9]\d{4} \d{5}$/);
-    expect(registry.generate("indianMobileNo", { format: "e164" })).toMatch(/^\+91[6-9]\d{9}$/);
-    expect(registry.generate("indianMobileNo", { format: "international" })).toMatch(/^\+91 [6-9]\d{4} \d{5}$/);
+  it("mobileNo is Indian by default: 10 digits starting with 6-9, in each format", () => {
+    for (const v of many(registry, "mobileNo")) expect(v).toMatch(/^[6-9]\d{9}$/);
+    expect(registry.generate("mobileNo", { format: "national" })).toMatch(/^[6-9]\d{4} \d{5}$/);
+    expect(registry.generate("mobileNo", { format: "e164" })).toMatch(/^\+91[6-9]\d{9}$/);
+    expect(registry.generate("mobileNo", { format: "international" })).toMatch(/^\+91 [6-9]\d{4} \d{5}$/);
   });
 
-  it("britishMobileNo is 07 and 9 digits in a mobile range, in each format", () => {
-    for (const v of many(registry, "britishMobileNo")) expect(v).toMatch(/^07[1-57-9]\d{8}$/);
-    expect(registry.generate("britishMobileNo", { format: "national" })).toMatch(/^07[1-57-9]\d{2} \d{6}$/);
-    expect(registry.generate("britishMobileNo", { format: "e164" })).toMatch(/^\+447[1-57-9]\d{8}$/);
-    expect(registry.generate("britishMobileNo", { format: "international" })).toMatch(/^\+44 7[1-57-9]\d{2} \d{6}$/);
-    expect(registry.generate("britishMobileNo", { fictional: true })).toMatch(/^07700900\d{3}$/);
+  it("mobileNo for gb is 07 and 9 digits in a mobile range, in each format", () => {
+    const gb = { country: "gb" };
+    for (const v of many(registry, "mobileNo", gb)) expect(v).toMatch(/^07[1-57-9]\d{8}$/);
+    expect(registry.generate("mobileNo", { ...gb, format: "national" })).toMatch(/^07[1-57-9]\d{2} \d{6}$/);
+    expect(registry.generate("mobileNo", { ...gb, format: "e164" })).toMatch(/^\+447[1-57-9]\d{8}$/);
+    expect(registry.generate("mobileNo", { ...gb, format: "international" })).toMatch(/^\+44 7[1-57-9]\d{2} \d{6}$/);
+    expect(registry.generate("mobileNo", { ...gb, fictional: true })).toMatch(/^07700900\d{3}$/);
   });
 
-  it("americanMobileNo has a real area code and a valid exchange, in each format", () => {
-    for (const v of many(registry, "americanMobileNo")) {
+  it("mobileNo for us has a real area code and a valid exchange, in each format", () => {
+    const us = { country: "us" };
+    for (const v of many(registry, "mobileNo", us)) {
       expect(v).toMatch(/^[2-9]\d{2}[2-9]\d{6}$/);
       const exchange = v.slice(3, 6);
       expect(exchange.endsWith("11") || exchange === "555").toBe(false);
     }
-    expect(registry.generate("americanMobileNo", { format: "national" })).toMatch(/^\(\d{3}\) \d{3}-\d{4}$/);
-    expect(registry.generate("americanMobileNo", { format: "e164" })).toMatch(/^\+1\d{10}$/);
-    expect(registry.generate("americanMobileNo", { format: "international" })).toMatch(/^\+1 \d{3}-\d{3}-\d{4}$/);
-    expect(registry.generate("americanMobileNo", { fictional: true })).toMatch(/^\d{3}55501\d{2}$/);
+    expect(registry.generate("mobileNo", { ...us, format: "national" })).toMatch(/^\(\d{3}\) \d{3}-\d{4}$/);
+    expect(registry.generate("mobileNo", { ...us, format: "e164" })).toMatch(/^\+1\d{10}$/);
+    expect(registry.generate("mobileNo", { ...us, format: "international" })).toMatch(/^\+1 \d{3}-\d{3}-\d{4}$/);
+    expect(registry.generate("mobileNo", { ...us, fictional: true })).toMatch(/^\d{3}55501\d{2}$/);
+  });
+
+  it("mobileNo refuses fictional for India, and an unknown country", () => {
+    expect(() => registry.generate("mobileNo", { fictional: true })).toThrow(
+      'random:mobileNo "fictional" works only for country gb or us; India has no range reserved for fiction',
+    );
+    expect(() => registry.generate("mobileNo", { country: "xx" })).toThrow(
+      'random:mobileNo "country" must be one of: in, gb, us (got "xx")',
+    );
   });
 
   it("panNo has the PAN shape, with the holder type as its 4th letter", () => {
@@ -88,6 +99,14 @@ describe("random generators: formats", () => {
     const now = new Date();
     const yyyymm = `${now.getFullYear()}${String(now.getMonth() + 1).padStart(2, "0")}`;
     expect(registry.generate("invoiceId", { date: "yyyymm" })).toMatch(new RegExp(`^INV-${yyyymm}-\\d{8}$`));
+    // Compare only up to the day: a test that ran across a minute boundary must still pass.
+    const yyyymmdd = `${yyyymm}${String(now.getDate()).padStart(2, "0")}`;
+    expect(registry.generate("invoiceId", { date: "yyyymmddhhmm" })).toMatch(
+      new RegExp(`^INV-${yyyymmdd}([01]\\d|2[0-3])[0-5]\\d-\\d{8}$`),
+    );
+    expect(registry.generate("invoiceId", { date: "yyyymmddhhmmss", prefix: "" })).toMatch(
+      new RegExp(`^${yyyymmdd}([01]\\d|2[0-3])[0-5]\\d[0-5]\\d-\\d{8}$`),
+    );
   });
 });
 
@@ -104,15 +123,15 @@ describe("random generators: no repeats in a run", () => {
 
   it("counts one phone number written in two formats as a repeat", () => {
     const registry = new RandomDataRegistry();
-    const digits = many(registry, "britishMobileNo", { fictional: true }, 500).map((v) => `+44${v.slice(1)}`);
-    const e164 = many(registry, "britishMobileNo", { fictional: true, format: "e164" }, 500);
+    const digits = many(registry, "mobileNo", { country: "gb", fictional: true }, 500).map((v) => `+44${v.slice(1)}`);
+    const e164 = many(registry, "mobileNo", { country: "gb", fictional: true, format: "e164" }, 500);
     expect(new Set([...digits, ...e164]).size).toBe(1000);
-    expect(() => registry.generate("britishMobileNo", { fictional: true })).toThrow(/has used all 1000/);
+    expect(() => registry.generate("mobileNo", { country: "gb", fictional: true })).toThrow(/has used all 1000/);
   });
 
   it("does not run out over 2,000 draws of a wide generator", () => {
     const registry = new RandomDataRegistry();
-    for (const name of ["emailAddress", "indianMobileNo", "americanMobileNo", "panNo", "invoiceId"]) {
+    for (const name of ["emailAddress", "mobileNo", "panNo", "invoiceId"]) {
       const values = many(registry, name, {}, 2000);
       expect(new Set(values).size).toBe(values.length);
     }
@@ -130,7 +149,7 @@ describe("random generators: argument errors", () => {
 
   it("names the generators when one is unknown", () => {
     expect(() => registry.generate("phone")).toThrow(
-      'Unknown random generator "phone". Use one of: firstName, lastName, emailAddress, indianMobileNo, britishMobileNo, americanMobileNo, panNo, invoiceId',
+      'Unknown random generator "phone". Use one of: firstName, lastName, emailAddress, mobileNo, panNo, invoiceId',
     );
   });
 
@@ -139,8 +158,8 @@ describe("random generators: argument errors", () => {
   });
 
   it("explains a bad value", () => {
-    expect(() => registry.generate("indianMobileNo", { format: "dotted" })).toThrow(
-      'random:indianMobileNo "format" must be one of: digits, national, e164, international (got "dotted")',
+    expect(() => registry.generate("mobileNo", { format: "dotted" })).toThrow(
+      'random:mobileNo "format" must be one of: digits, national, e164, international (got "dotted")',
     );
     expect(() => registry.generate("invoiceId", { length: "3" })).toThrow(
       'random:invoiceId "length" must be a whole number from 4 to 20 (got "3")',
@@ -148,8 +167,8 @@ describe("random generators: argument errors", () => {
     expect(() => registry.generate("emailAddress", { domain: "not a domain" })).toThrow(
       'random:emailAddress "domain" must be a domain such as example.com (got "not a domain")',
     );
-    expect(() => registry.generate("britishMobileNo", { fictional: "yes" })).toThrow(
-      'random:britishMobileNo "fictional" must be true or false (got "yes")',
+    expect(() => registry.generate("mobileNo", { fictional: "yes" })).toThrow(
+      'random:mobileNo "fictional" must be true or false (got "yes")',
     );
   });
 });
@@ -177,7 +196,7 @@ describe("${random:...} interpolation", () => {
     expect(interpolateString("mail ${random:emailAddress(domain=acme.test, digits=0, format=firstlast)}", ctx)).toMatch(
       /^mail [a-z]+@acme\.test$/,
     );
-    const step = interpolateDeep({ with: { json: { phone: "${random:indianMobileNo(format=e164)}" } } }, ctx);
+    const step = interpolateDeep({ with: { json: { phone: "${random:mobileNo(format=e164)}" } } }, ctx);
     expect(step.with.json.phone).toMatch(/^\+91[6-9]\d{9}$/);
   });
 
@@ -219,7 +238,7 @@ describe("util.random", () => {
     await expect(step(ctx, { op: "util.random", with: { generator: "invoiceId", args: { length: 5, prefix: "PO" } } } as any)).resolves.toMatch(
       /^PO-\d{5}$/,
     );
-    await expect(step(ctx, { op: "util.random", with: { generator: "britishMobileNo", args: { fictional: "true" } } } as any)).resolves.toMatch(
+    await expect(step(ctx, { op: "util.random", with: { generator: "mobileNo", args: { country: "gb", fictional: "true" } } } as any)).resolves.toMatch(
       /^07700900\d{3}$/,
     );
   });
