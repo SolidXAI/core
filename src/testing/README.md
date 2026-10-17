@@ -146,6 +146,7 @@ Available tokens:
 - `${env:NAME}` (environment variables)
 - `${params.foo}` (scenario params)
 - `${res:saveAs.path}` (saved step results)
+- `${random:<generator>}` or `${random:<generator>(name=value, ...)}` (random test data; see below)
 - `${data:modelUserKey["recUserKeyValue"].field}` (test data from `testing.data`)
 - `${data:modelUserKey["recUserKeyValue"]._rec}` (raw record object when used alone)
 
@@ -180,6 +181,46 @@ Examples:
   ]
 }
 ```
+
+### Random test data
+`${random:...}` generates realistic values that are never repeated within one run, so a run can
+create several records whose fields must be unique (emails, phone numbers, PANs, invoice numbers).
+Each run starts afresh. Every generator takes `unique=false` to allow repeats.
+
+| Generator | Arguments (default first) | Example |
+|---|---|---|
+| `firstName` | `locale`: `any`, `in`, `gb`, `us` | `Priya` |
+| `lastName` | `locale`: `any`, `in`, `gb`, `us` | `Sharma` |
+| `emailAddress` | `domain`: `example.com`; `format`: `first.last`, `firstlast`, `first_last`, `flast`, `random`; `digits` (after the name): `4`, 0–8; `length` (for `random`): `10`, 4–64 | `priya.sharma4821@example.com` |
+| `indianMobileNo` | `format`: `digits`, `national`, `e164`, `international` | `9876543210`, `98765 43210`, `+919876543210`, `+91 98765 43210` |
+| `britishMobileNo` | `format` as above; `fictional`: `false` | `07912345678`, `07912 345678`, `+447912345678`, `+44 7912 345678` |
+| `americanMobileNo` | `format` as above; `fictional`: `false` | `4152345678`, `(415) 234-5678`, `+14152345678`, `+1 415-234-5678` |
+| `panNo` | `holderType`: `P`, `C`, `H`, `F`, `A`, `T`, `B`, `L`, `J`, `G` | `ABCPK1234Z` |
+| `invoiceId` | `prefix`: `INV` (empty for none); `separator`: `-`, `/`, `_`, `none`; `length` (digits): `8`, 4–20; `date`: `none`, `yyyy`, `yyyymm`, `yyyymmdd` | `INV-00482913`, `INV-202610-00482913` |
+
+- **Arguments** are plain text without quotes: `${random:emailAddress(domain=acme.test, digits=0)}`.
+  A value cannot contain `,`, `)`, `|` or `}`.
+- **Each token gives a new value.** To type a value in one step and assert it in another, generate
+  it once with `util.random` and read it back with `${res:...}`:
+
+  ```json
+  { "given": { "op": "util.random", "with": { "generator": "emailAddress", "args": { "domain": "acme.test" } }, "saveAs": "newEmail" } },
+  { "when":  { "op": "ui.fill", "with": { "selector": "#email", "value": "${res:newEmail}" } } },
+  { "then":  { "op": "ui.expectText", "with": { "selector": ".profile-email", "equals": "${res:newEmail}" } } }
+  ```
+
+- **Phone numbers are real-looking, so they may belong to someone.** Run against a test SMS
+  provider, or pass `fictional=true` for the UK (Ofcom's drama range, 07700 900000–900999) or the
+  US (555-0100 to 555-0199 in each area code). India has no such range. A phone number counts as
+  used whatever its format, so the same number cannot come back as `e164` after `digits`.
+- **Names come from fixed lists** (50 per locale, about 140 for `any`). A run that asks for more
+  distinct names than the list holds fails with a message saying so; pass `unique=false` then.
+- **Emails** use `example.com` by default, which never receives mail. The digits after the name
+  keep addresses distinct across runs as well, where an application's unique-email rule would
+  otherwise reject one seen in an earlier run.
+- **PANs** have the right shape (3 letters, holder type, a letter, 4 digits, a letter). The last
+  letter is a check letter whose rule is not published, so it is random: fine for format checks,
+  not for a service that verifies the PAN.
 
 ## Ops Reference
 
@@ -434,6 +475,13 @@ Description: Fails the step if a required resource is missing.
 Options in `with`:
 - `resource` (required)
 - `message` (optional)
+
+### **Op: `util.random`**
+Description: Returns one random value (see *Random test data*), to keep with `saveAs`.
+
+Options in `with`:
+- `generator` (required): `firstName`, `lastName`, `emailAddress`, `indianMobileNo`, `britishMobileNo`, `americanMobileNo`, `panNo` or `invoiceId`
+- `args` (optional): the generator's arguments as an object, e.g. `{ "format": "e164" }`
 
 ### **Op: `test.spec`**
 Description: Runs a custom test spec registered via testing.specs.

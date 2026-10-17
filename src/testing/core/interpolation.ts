@@ -1,5 +1,6 @@
 import type { TestContext } from "../contracts/runtime-context.types";
 import { parsePathSegments } from "./path-segments";
+import { parseRandomToken, randomDataFor } from "./random-data";
 
 const TOKEN_REGEX = /\$\{([^}]+)\}/g;
 
@@ -28,6 +29,9 @@ function getByPathWithBrackets(obj: Record<string, any>, path: string): unknown 
 type TokenResolution = { value: unknown; raw: boolean };
 
 const SECRET_PREFIX = "secret:";
+// A fresh value on every resolution: `${random:emailAddress}` twice gives two addresses. To use
+// one value in several steps, generate it once with `util.random` and `saveAs`.
+const RANDOM_PREFIX = "random:";
 
 /**
  * Collects the secret keys referenced anywhere inside `value` — step args, headers,
@@ -105,6 +109,11 @@ function resolveToken(token: string, ctx: TestContext): TokenResolution {
       throw new Error(`Missing test data for token: "${token}"`);
     }
     return { value, raw };
+  }
+
+  if (token.startsWith(RANDOM_PREFIX)) {
+    const { name, args } = parseRandomToken(token.slice(RANDOM_PREFIX.length));
+    return { value: randomDataFor(ctx).generate(name, args), raw: false };
   }
 
   if (token.startsWith("res:")) {

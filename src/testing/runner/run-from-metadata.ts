@@ -9,6 +9,7 @@ import { registerAssertSteps } from "../steps/assert";
 import { registerUtilSteps } from "../steps/util";
 import { registerTestSteps } from "../steps/test";
 import { SimpleResourceStore } from "../core/resource-store";
+import { RandomDataRegistry } from "../core/random-data";
 import { StepRegistry } from "../core/step-registry";
 import { SpecRegistry } from "../core/spec-registry";
 import { TestingEngine } from "../core/testing-engine";
@@ -134,7 +135,8 @@ export async function runFromMetadata(opts: RunnerOptions): Promise<void> {
   const api = new ApiAdapter(opts.api);
   const { PlaywrightAdapter } = await import("../adapters/ui/playwright-adapter");
   const ui = new PlaywrightAdapter(opts.ui);
-  const ctxBase = { resources, reporter, api, ui, specRegistry, testData, env: opts.env, options: opts.options };
+  const randomData = new RandomDataRegistry();
+  const ctxBase = { resources, randomData, reporter, api, ui, specRegistry, testData, env: opts.env, options: opts.options };
   const uiStarted = { value: false };
   let passed = 0;
   let failed = 0;
