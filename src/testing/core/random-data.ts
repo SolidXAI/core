@@ -1,4 +1,5 @@
-// Random test data: the `${random:<generator>(args)}` token and the `util.random` step.
+// Random test data: the `${random:<generator>(args)}` token and the `util.random` step. Dates are
+// built in dates.ts; arguments are declared and parsed in call-args.ts.
 //
 // Generated values must look like real input (a form or an API validates them) and must not
 // repeat within a run, because a run often creates several records whose fields are unique in the
@@ -7,23 +8,10 @@
 
 import { randomInt } from "crypto";
 import type { TestContext } from "../contracts/runtime-context.types";
+import { parseCallToken, resolveArgs, type ArgSpec, type Args } from "./call-args";
+import { checkFormat, dayAt, daysIn, formatDate, parseWindow, rangeOf, TIME_ARG } from "./dates";
 import { FIRST_NAMES, LAST_NAMES, type NameLocale } from "./random-names";
 
-type ArgValue = string | number | boolean;
-
-interface ArgSpec {
-  type: "string" | "number" | "boolean";
-  default: ArgValue;
-  /** Allowed values of a string argument, compared case-insensitively. */
-  values?: readonly string[];
-  /** Shape of a free-text string argument, with the wording used when it does not match. */
-  pattern?: RegExp;
-  patternHint?: string;
-  min?: number;
-  max?: number;
-}
-
-type Args = Record<string, ArgValue>;
 
 interface Generator {
   args: Record<string, ArgSpec>;
@@ -44,6 +32,9 @@ interface Generator {
 // it has run out; its value space is millions wide, so reaching it means a real exhaustion.
 const MAX_TRIES = 200;
 
+// A date range with more days than this is drawn by retrying, not from a list of its days.
+const MAX_DATE_POOL_DAYS = 20_000;
+
 const UNIQUE_ARG: ArgSpec = { type: "boolean", default: true };
 
 const PHONE_FORMATS = ["digits", "national", "e164", "international"] as const;
@@ -52,6 +43,10 @@ const COUNTRIES = ["in", "gb", "us"] as const;
 const DIGITS = "0123456789";
 const UPPER = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
 const LOWER_ALNUM = "abcdefghijklmnopqrstuvwxyz0123456789";
+
+function dateFormat(a: Args): string {
+  return String(a.format) || (String(a.time).toLowerCase() === "none" ? "YYYY-MM-DD" : "YYYY-MM-DD HH:mm");
+}
 
 function pick<T>(items: readonly T[]): T {
   return items[randomInt(items.length)];
@@ -196,6 +191,48 @@ const GENERATORS: Record<string, Generator> = {
     // The check letter's rule is not published, so it is random; validators check the shape only.
     next: (a) => `${chars(UPPER, 3)}${a.holderType}${chars(UPPER, 1)}${String(randomInt(1, 10000)).padStart(4, "0")}${chars(UPPER, 1)}`,
   },
+  date: {
+    args: {
+      // Where the range starts and ends: today, now, 2026-10-17, or a shift such as -18y or +30d.
+      from: { type: "string", default: "-1y" },
+      to: { type: "string", default: "+1y" },
+      // none: midnight; random: any time of day; HH:mm-HH:mm: a time inside that window.
+      time: { type: "string", default: "none", pattern: TIME_ARG, patternHint: "none, random or a window such as 09:00-18:00" },
+      // A dayjs format, iso or epoch. Empty means YYYY-MM-DD, or with a time YYYY-MM-DD HH:mm.
+      format: { type: "string", default: "" },
+      tz: { type: "string", default: "local" },
+      // A year has only 365 days, so repeats are allowed unless asked otherwise.
+      unique: { type: "boolean", default: false },
+    },
+    validate: (a) => {
+      rangeOf("random:date", String(a.from), String(a.to), String(a.tz));
+      if (String(a.format)) checkFormat("random:date", String(a.format));
+      if (!["none", "random"].includes(String(a.time).toLowerCase())) parseWindow("random:date", String(a.time));
+    },
+    // Every distinct day of a short range, so `unique` runs out exactly when the days do.
+    pool: (a) => {
+      if (!a.unique || String(a.time).toLowerCase() !== "none") return undefined;
+      const range = rangeOf("random:date", String(a.from), String(a.to), String(a.tz));
+      const days = daysIn(range);
+      if (days > MAX_DATE_POOL_DAYS) return undefined;
+      const format = dateFormat(a);
+      return [...new Set(Array.from({ length: days }, (_, i) => formatDate(dayAt(range, i), format)))];
+    },
+    next: (a) => {
+      const range = rangeOf("random:date", String(a.from), String(a.to), String(a.tz));
+      const format = dateFormat(a);
+      const time = String(a.time).toLowerCase();
+      if (time === "random") {
+        const seconds = Math.floor((range.end.valueOf() - range.start.valueOf()) / 1000);
+        return formatDate(range.start.add(randomInt(seconds + 1), "second"), format);
+      }
+      const day = dayAt(range, randomInt(daysIn(range)));
+      if (time === "none") return formatDate(day, format);
+      const [from, to] = parseWindow("random:date", time);
+      const minute = randomInt(from, to + 1);
+      return formatDate(day.hour(Math.floor(minute / 60)).minute(minute % 60), format);
+    },
+  },
   invoiceId: {
     args: {
       prefix: { type: "string", default: "INV", pattern: /^[A-Za-z0-9]{0,10}$/, patternHint: "up to 10 letters or digits" },
@@ -216,74 +253,19 @@ const GENERATORS: Record<string, Generator> = {
   },
 };
 
+// A generator's own arguments, then `unique` (true unless the generator declares its own default).
+function argSpecsOf(generator: Generator): Record<string, ArgSpec> {
+  return "unique" in generator.args ? generator.args : { ...generator.args, unique: UNIQUE_ARG };
+}
+
 export const RANDOM_GENERATOR_NAMES = Object.keys(GENERATORS);
-
-function coerceArg(generator: string, key: string, raw: unknown, spec: ArgSpec): ArgValue {
-  const where = `random:${generator} "${key}"`;
-  if (spec.type === "boolean") {
-    if (raw === true || raw === "true") return true;
-    if (raw === false || raw === "false") return false;
-    throw new Error(`${where} must be true or false (got "${String(raw)}")`);
-  }
-  if (spec.type === "number") {
-    const n = typeof raw === "number" ? raw : Number(String(raw).trim());
-    if (String(raw).trim() === "" || !Number.isInteger(n) || n < (spec.min ?? -Infinity) || n > (spec.max ?? Infinity)) {
-      throw new Error(`${where} must be a whole number from ${spec.min} to ${spec.max} (got "${String(raw)}")`);
-    }
-    return n;
-  }
-  const text = String(raw);
-  if (spec.values) {
-    const match = spec.values.find((v) => v.toLowerCase() === text.toLowerCase());
-    if (match === undefined) {
-      throw new Error(`${where} must be one of: ${spec.values.join(", ")} (got "${text}")`);
-    }
-    return match;
-  }
-  if (spec.pattern && !spec.pattern.test(text)) {
-    throw new Error(`${where} must be ${spec.patternHint} (got "${text}")`);
-  }
-  return text;
-}
-
-function resolveArgs(name: string, generator: Generator, raw: Record<string, unknown>): Args {
-  const specs: Record<string, ArgSpec> = { ...generator.args, unique: UNIQUE_ARG };
-  for (const key of Object.keys(raw)) {
-    if (!specs[key]) {
-      throw new Error(`random:${name} does not take "${key}". It takes: ${Object.keys(specs).join(", ")}`);
-    }
-  }
-  const args: Args = {};
-  for (const [key, spec] of Object.entries(specs)) {
-    args[key] = raw[key] === undefined ? spec.default : coerceArg(name, key, raw[key], spec);
-  }
-  return args;
-}
 
 /**
  * Parses what follows `random:` in a token: `emailAddress` or
- * `emailAddress(domain=acme.test, digits=0)`. Values are plain text, without quotes; a value
- * cannot contain `,`, `)`, `|` or `}`.
+ * `emailAddress(domain=acme.test, digits=0)`. See call-args.ts for how values are written.
  */
 export function parseRandomToken(spec: string): { name: string; args: Record<string, string> } {
-  const m = spec.trim().match(/^([A-Za-z][A-Za-z0-9]*)\s*(?:\(([^()]*)\))?$/);
-  if (!m) {
-    throw new Error(`Invalid random token "random:${spec}". Write random:<generator> or random:<generator>(name=value, ...)`);
-  }
-  const args: Record<string, string> = {};
-  for (const part of (m[2] ?? "").split(",")) {
-    if (!part.trim()) continue;
-    const eq = part.indexOf("=");
-    const key = eq === -1 ? "" : part.slice(0, eq).trim();
-    if (!key) {
-      throw new Error(`Invalid argument "${part.trim()}" in "random:${spec}". Write name=value`);
-    }
-    if (key in args) {
-      throw new Error(`Argument "${key}" is given twice in "random:${spec}"`);
-    }
-    args[key] = part.slice(eq + 1).trim();
-  }
-  return { name: m[1], args };
+  return parseCallToken("random", "generator", spec);
 }
 
 /** Hands out random values for one run, never the same value twice per generator unless asked. */
@@ -295,7 +277,7 @@ export class RandomDataRegistry {
     if (!generator) {
       throw new Error(`Unknown random generator "${name}". Use one of: ${RANDOM_GENERATOR_NAMES.join(", ")}`);
     }
-    const args = resolveArgs(name, generator, rawArgs);
+    const args = resolveArgs(`random:${name}`, argSpecsOf(generator), rawArgs);
     generator.validate?.(args);
     const used = this.used.get(name) ?? new Set<string>();
     this.used.set(name, used);

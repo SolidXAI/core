@@ -147,6 +147,7 @@ Available tokens:
 - `${params.foo}` (scenario params)
 - `${res:saveAs.path}` (saved step results)
 - `${random:<generator>}` or `${random:<generator>(name=value, ...)}` (random test data; see below)
+- `${now:<kind>}` or `${now:<kind>(offset=+7d, format=DD/MM/YYYY)}` (the current date or time; see below)
 - `${data:modelUserKey["recUserKeyValue"].field}` (test data from `testing.data`)
 - `${data:modelUserKey["recUserKeyValue"]._rec}` (raw record object when used alone)
 
@@ -195,10 +196,13 @@ Each run starts afresh. Every generator takes `unique=false` to allow repeats.
 | `emailAddress` | `domain`: `example.com`; `format`: `first.last`, `firstlast`, `first_last`, `flast`, `random`; `digits` (after the name): `4`, 0–8; `length` (for `random`): `10`, 4–64 | `priya.sharma4821@example.com` |
 | `mobileNo` | `country`: `in`, `gb`, `us`; `format`: `digits`, `national`, `e164`, `international`; `fictional`: `false` (UK and US only) | India `9876543210`, `+91 98765 43210`; UK `07912 345678`, `+447912345678`; US `(415) 234-5678`, `+1 415-234-5678` |
 | `panNo` | `holderType`: `P`, `C`, `H`, `F`, `A`, `T`, `B`, `L`, `J`, `G` | `ABCPK1234Z` |
+| `date` | `from`: `-1y` and `to`: `+1y` (`today`, `now`, `2026-10-17`, or shifts such as `-18y`, `+30d`, `+1d+2h`); `time`: `none`, `random`, or a window `09:00-18:00`; `format`: a dayjs pattern, `iso` or `epoch` (default `YYYY-MM-DD`); `tz`: `local`, `utc` or `Asia/Kolkata`; `unique`: **`false`** | `1987-04-12`, `03/11/2026` |
 | `invoiceId` | `prefix`: `INV` (empty for none); `separator`: `-`, `/`, `_`, `none`; `length` (digits): `8`, 4–20; `date`: `none`, `yyyy`, `yyyymm`, `yyyymmdd`, `yyyymmddhhmm`, `yyyymmddhhmmss` | `INV-00482913`, `INV-20261017143205-00482913` |
 
-- **Arguments** are plain text without quotes: `${random:emailAddress(domain=acme.test, digits=0)}`.
-  A value cannot contain `,`, `)`, `|` or `}`.
+- **Arguments** are `name=value` pairs: `${random:emailAddress(domain=acme.test, digits=0)}`. A simple
+  value (letters, digits and `. - / _ + : @`) is written bare. Anything else, such as a space, comma or
+  bracket, goes in quotes: `${now:date(format='D MMM, YYYY')}`. Prefer single quotes, since double quotes
+  must be escaped inside JSON; a backslash writes the quote character itself (`'it\'s'`).
 - **Each token gives a new value.** To type a value in one step and assert it in another, generate
   it once with `util.random` and read it back with `${res:...}`:
 
@@ -221,6 +225,31 @@ Each run starts afresh. Every generator takes `unique=false` to allow repeats.
 - **PANs** have the right shape (3 letters, holder type, a letter, 4 digits, a letter). The last
   letter is a check letter whose rule is not published, so it is random: fine for format checks,
   not for a service that verifies the PAN.
+
+### Current date and time
+`${now:<kind>(offset=…, format=…, tz=…)}` gives the current moment, shifted by `offset`. It is not random:
+the same instant gives the same value.
+
+| Kind | Default format | Example |
+|---|---|---|
+| `date` | `YYYY-MM-DD` | `2026-10-17` |
+| `time` | `HH:mm:ss` | `14:46:15` |
+| `datetime` | `YYYY-MM-DD HH:mm:ss` | `2026-10-17 14:46:15` |
+| `iso` | ISO 8601 | `2026-10-17T14:46:15+05:30`, or `…Z` with `tz=utc` |
+| `epoch` | milliseconds | `1792226175000` |
+
+- `offset` is `0` or terms such as `+7d`, `-1m`, `+1d+2h`: `y` years, `m` months, `w` weeks, `d` days,
+  `h` hours, `min` minutes, `s` seconds. A month shift stops at the end of a shorter month (31 Jan + 1m is 28 Feb).
+- `format` is a [dayjs](https://day.js.org/docs/en/display/format) pattern: `YYYY` year, `MM` month,
+  `DD` day, `HH` hour, `mm` minutes, `MMM` month name. Text in `[brackets]` is literal. Java and C# patterns
+  (`dd/mm/yyyy`) are refused with the token to use instead.
+- `tz` is `local` (the machine running the test), `utc`, or a zone such as `Asia/Kolkata`. A date near
+  midnight can differ between zones, so set `tz` when the app compares dates in one.
+- Two `${now:...}` tokens can differ by a second. To type a timestamp and then assert it, take it once with
+  `util.now` and `saveAs`.
+- `random:date` takes the same `format`, `tz` and shifts. A date of birth for an adult:
+  `${random:date(from=-60y, to=-18y, format=DD/MM/YYYY)}`. It allows repeats by default, since a year has only
+  365 days; pass `unique=true` when a date must be distinct.
 
 ## Ops Reference
 
@@ -480,8 +509,15 @@ Options in `with`:
 Description: Returns one random value (see *Random test data*), to keep with `saveAs`.
 
 Options in `with`:
-- `generator` (required): `firstName`, `lastName`, `emailAddress`, `mobileNo`, `panNo` or `invoiceId`
+- `generator` (required): `firstName`, `lastName`, `emailAddress`, `mobileNo`, `panNo`, `date` or `invoiceId`
 - `args` (optional): the generator's arguments as an object, e.g. `{ "format": "e164" }`
+
+### **Op: `util.now`**
+Description: Returns the current date or time (see *Current date and time*), to keep with `saveAs`.
+
+Options in `with`:
+- `kind` (optional): `date` (default), `time`, `datetime`, `iso` or `epoch`
+- `args` (optional): `offset`, `format` and `tz` as an object, e.g. `{ "offset": "+7d" }`
 
 ### **Op: `test.spec`**
 Description: Runs a custom test spec registered via testing.specs.
