@@ -236,7 +236,7 @@ the same instant gives the same value.
 | `time` | `HH:mm:ss` | `14:46:15` |
 | `datetime` | `YYYY-MM-DD HH:mm:ss` | `2026-10-17 14:46:15` |
 | `iso` | ISO 8601 | `2026-10-17T14:46:15+05:30`, or `…Z` with `tz=utc` |
-| `epoch` | milliseconds | `1792226175000` |
+| `epoch` | milliseconds | `1792228575000` |
 
 - `offset` is `0` or terms such as `+7d`, `-1m`, `+1d+2h`: `y` years, `m` months, `w` weeks, `d` days,
   `h` hours, `min` minutes, `s` seconds. A month shift stops at the end of a shorter month (31 Jan + 1m is 28 Feb).
