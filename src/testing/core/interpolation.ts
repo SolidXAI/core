@@ -1,8 +1,9 @@
 import type { TestContext } from "../contracts/runtime-context.types";
 import { parsePathSegments } from "./path-segments";
+import { resolveNow } from "./dates";
+import { parseCallToken } from "./call-args";
 import { parseRandomToken, randomDataFor } from "./random-data";
-
-const TOKEN_REGEX = /\$\{([^}]+)\}/g;
+import { findTokens, splitOutsideQuotes } from "./token-scan";
 
 function getByPath(obj: Record<string, any>, path: string): unknown {
   if (!path) return undefined;
@@ -32,24 +33,39 @@ const SECRET_PREFIX = "secret:";
 // A fresh value on every resolution: `${random:emailAddress}` twice gives two addresses. To use
 // one value in several steps, generate it once with `util.random` and `saveAs`.
 const RANDOM_PREFIX = "random:";
+// The current date or time, e.g. `${now:date(offset=+7d)}`. Unlike random, the same instant gives the same value.
+const NOW_PREFIX = "now:";
 
 /**
  * Collects the secret keys referenced anywhere inside `value` — step args, headers,
  * bodies — without depending on its shape. Used by the runner to resolve exactly the
  * secrets a scenario needs, rather than loading the whole store into a run.
  *
- * Shares TOKEN_REGEX with the resolver deliberately: a second hand-written matcher is
+ * Shares findTokens with the resolver deliberately: a second hand-written matcher is
  * how the two drift, and drift means a scenario silently losing a secret it referenced.
  */
 export function collectSecretKeys(value: unknown): string[] {
   const keys = new Set<string>();
-  for (const match of JSON.stringify(value ?? null).matchAll(TOKEN_REGEX)) {
-    const token = match[1];
-    if (token.startsWith(SECRET_PREFIX)) {
-      const name = token.slice(SECRET_PREFIX.length);
-      if (name) keys.add(name);
+  const visit = (node: unknown): void => {
+    if (typeof node === "string") {
+      for (const { inner } of findTokens(node)) {
+        // A pipe transform (`${secret:key | default:x}`) is not part of the key.
+        const base = splitOutsideQuotes(inner, "|")[0].trim();
+        if (base.startsWith(SECRET_PREFIX)) {
+          const name = base.slice(SECRET_PREFIX.length);
+          if (name) keys.add(name);
+        }
+      }
+    } else if (Array.isArray(node)) {
+      node.forEach(visit);
+    } else if (node && typeof node === "object") {
+      for (const [key, child] of Object.entries(node)) {
+        visit(key);
+        visit(child);
+      }
     }
-  }
+  };
+  visit(value);
   return [...keys];
 }
 
@@ -116,6 +132,11 @@ function resolveToken(token: string, ctx: TestContext): TokenResolution {
     return { value: randomDataFor(ctx).generate(name, args), raw: false };
   }
 
+  if (token.startsWith(NOW_PREFIX)) {
+    const { name, args } = parseCallToken("now", "kind", token.slice(NOW_PREFIX.length));
+    return { value: resolveNow(name, args), raw: false };
+  }
+
   if (token.startsWith("res:")) {
     const path = token.slice("res:".length);
     if (!path) {
@@ -152,15 +173,14 @@ function applyTransform(value: unknown, name: string, arg: string | undefined): 
 // Split a token into its base (before the first `|`) and an ordered list of
 // transforms. Each transform is `name:arg` (arg may itself contain `:`).
 function resolveTokenWithTransforms(token: string, ctx: TestContext): TokenResolution {
-  const pipeIdx = token.indexOf("|");
-  if (pipeIdx === -1) {
+  // Split outside quotes, so a quoted `|` in an argument is not a transform.
+  const [first, ...transforms] = splitOutsideQuotes(token, "|");
+  if (!transforms.length) {
     return resolveToken(token, ctx);
   }
-  const base = token.slice(0, pipeIdx).trim();
-  const rest = token.slice(pipeIdx + 1);
-  const resolved = resolveToken(base, ctx);
+  const resolved = resolveToken(first.trim(), ctx);
   let value = resolved.value;
-  for (const rawTransform of rest.split("|")) {
+  for (const rawTransform of transforms) {
     const t = rawTransform.trim();
     if (!t) continue;
     const colon = t.indexOf(":");
@@ -172,22 +192,27 @@ function resolveTokenWithTransforms(token: string, ctx: TestContext): TokenResol
 }
 
 export function interpolateString(input: string, ctx: TestContext): string {
-  return input.replace(TOKEN_REGEX, (_match, token: string) => {
-    const resolved = resolveTokenWithTransforms(token, ctx);
-    return typeof resolved.value === "string"
-      ? resolved.value
-      : JSON.stringify(resolved.value);
-  });
+  let out = "";
+  let last = 0;
+  for (const { start, end, inner } of findTokens(input)) {
+    const resolved = resolveTokenWithTransforms(inner, ctx);
+    out += input.slice(last, start);
+    out += typeof resolved.value === "string" ? resolved.value : JSON.stringify(resolved.value);
+    last = end;
+  }
+  return out + input.slice(last);
 }
 
 export function interpolateDeep<T>(input: T, ctx: TestContext): T {
   if (typeof input === "string") {
-    const tokenMatch = input.match(/^\$\{([^}]+)\}$/);
-    if (tokenMatch) {
-      const resolved = resolveTokenWithTransforms(tokenMatch[1], ctx);
+    const [only, ...more] = findTokens(input);
+    if (only && !more.length && only.start === 0 && only.end === input.length) {
+      // Resolved once: a second resolution would draw a second random value.
+      const resolved = resolveTokenWithTransforms(only.inner, ctx);
       if (resolved.raw) {
         return resolved.value as T;
       }
+      return (typeof resolved.value === "string" ? resolved.value : JSON.stringify(resolved.value)) as T;
     }
     return interpolateString(input, ctx) as T;
   }

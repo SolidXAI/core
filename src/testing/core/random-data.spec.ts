@@ -149,7 +149,7 @@ describe("random generators: argument errors", () => {
 
   it("names the generators when one is unknown", () => {
     expect(() => registry.generate("phone")).toThrow(
-      'Unknown random generator "phone". Use one of: firstName, lastName, emailAddress, mobileNo, panNo, invoiceId',
+      'Unknown random generator "phone". Use one of: firstName, lastName, emailAddress, mobileNo, panNo, date, invoiceId',
     );
   });
 
